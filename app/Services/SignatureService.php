@@ -117,7 +117,7 @@ class SignatureService
                 $template = 'emails.signature.send_agreement';
             }
             
-            $subject = $options['subject'] ?? 'Document Signature Request from Bansal Migration';
+            $subject = $options['subject'] ?? ('Document Signature Request from ' . config('app.name'));
             $message = $options['message'] ?? "Please review and sign the attached document.";
             $from = $this->resolveFrom($options['from_email'] ?? null);
             
@@ -256,7 +256,7 @@ class SignatureService
 
             Mail::mailer('sendgrid')->send('emails.signature.reminder', $templateData, function (Message $mail) use ($signer, $from) {
                 $mail->to($signer->email, $signer->name)
-                    ->subject('Reminder: Please Sign Your Document - Bansal Migration')
+                    ->subject('Reminder: Please Sign Your Document - ' . config('app.name'))
                     ->from($from['from_address'], $from['from_name']);
             });
 

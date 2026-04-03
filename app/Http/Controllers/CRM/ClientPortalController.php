@@ -139,6 +139,8 @@ class ClientPortalController extends Controller
                 throw new \Exception('No email address found for client');
             }
 
+            $playStoreUrl = config('app.brand.client_portal_play_store_url');
+
             // Email content
             $subject = 'Client Portal Access Activated - ' . config('app.name');
             $message = "
@@ -150,7 +152,7 @@ class ClientPortalController extends Controller
                     <p><strong>Email:</strong> {$client->email}</p>
                     <p><strong>Password:</strong> {$password}</p>
                     <p>You can now access your client portal using the mobile app with these credentials to view your case details.</p>
-                    <p>Download the mobile app from the following link: <a href='https://play.google.com/store/apps/details?id=com.bansalimmigration.clientportal'>https://play.google.com/store/apps/details?id=com.bansalimmigration.clientportal</a></p>
+                    <p>Download the mobile app from the following link: <a href='" . e($playStoreUrl) . "'>" . e($playStoreUrl) . "</a></p>
                     <p><strong>Important:</strong> Please keep your login credentials secure and do not share them with anyone. After Login in mboile App you can chnage your password.</p>
                     <p>Please contact us if you have any questions.</p>
                     <br>

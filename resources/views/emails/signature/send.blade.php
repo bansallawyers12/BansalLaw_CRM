@@ -261,10 +261,10 @@
                 <div class="footer-brand-tagline">Immigration & Visa Services</div>
                 
                 <div class="footer-contact-item">
-                    Email: <a href="mailto:info@bansalimmigration.com.au">info@bansalimmigration.com.au</a>
+                    Email: <a href="mailto:{{ config('app.brand.public_email') }}">{{ config('app.brand.public_email') }}</a>
                 </div>
                 <div class="footer-contact-item">
-                    Website: <a href="https://www.bansalimmigration.com.au" target="_blank">www.bansalimmigration.com.au</a>
+                    Website: <a href="{{ config('app.brand.website_url') }}" target="_blank">{{ config('app.brand.website_label') }}</a>
                 </div>
                 
                 <div class="footer-disclaimer">

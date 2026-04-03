@@ -160,7 +160,7 @@
                     <div class="company-info">
                         Level 8, 278 Collins Street<br/>
                         Melbourne VIC 3000<br/>
-                        E-mail: invoice@bansalimmigration.com.au<br/>
+                        E-mail: {{ config('app.brand.invoice_email') }}<br/>
                         Phone: 03 96021330
                     </div>
                 </td>

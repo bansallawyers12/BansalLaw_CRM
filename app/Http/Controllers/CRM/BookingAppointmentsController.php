@@ -427,7 +427,7 @@ class BookingAppointmentsController extends Controller
                     'appointment_id' => $appointment->id,
                     'status' => $request->status,
                 ]);
-                $syncError = 'Missing Bansal appointment identifier.';
+                $syncError = 'Missing website booking identifier.';
             }
         }
 

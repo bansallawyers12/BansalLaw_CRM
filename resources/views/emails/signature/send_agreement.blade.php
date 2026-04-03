@@ -202,9 +202,9 @@
         <div class="email-footer">
             <p><strong>{{ config('app.name') }}</strong></p>
             <p>Immigration & Visa Services</p>
-            <p>Email: <a href="mailto:info@bansalimmigration.com.au">info@bansalimmigration.com.au</a></p>
+            <p>Email: <a href="mailto:{{ config('app.brand.public_email') }}">{{ config('app.brand.public_email') }}</a></p>
             <p>Phone: <a href="tel:+61292673945">+61 2 9267 3945</a></p>
-            <p>Website: <a href="https://www.bansalimmigration.com.au">www.bansalimmigration.com.au</a></p>
+            <p>Website: <a href="{{ config('app.brand.website_url') }}">{{ config('app.brand.website_label') }}</a></p>
             
             <p style="margin-top: 15px; font-size: 11px; color: #666666;">
                 This is an automated message. Please do not reply to this email.

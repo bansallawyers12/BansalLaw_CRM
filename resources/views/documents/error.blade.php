@@ -149,7 +149,7 @@
         <!-- Footer -->
         <div class="footer">
             <p><strong>Need Help?</strong></p>
-            <p>Email: <a href="mailto:info@bansalimmigration.com.au" style="color: #dc3545; text-decoration: none;">info@bansalimmigration.com.au</a></p>
+            <p>Email: <a href="mailto:{{ config('app.brand.public_email') }}" style="color: #dc3545; text-decoration: none;">{{ config('app.brand.public_email') }}</a></p>
             <p>Phone: <a href="tel:+61292673945" style="color: #dc3545; text-decoration: none;">+61 2 9267 3945</a></p>
             <p style="margin-top: 15px; font-size: 12px;">
                 © {{ date('Y') }} {{ config('app.name') }}. All rights reserved.

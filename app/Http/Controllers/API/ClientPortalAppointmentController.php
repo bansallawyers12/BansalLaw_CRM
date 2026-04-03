@@ -660,7 +660,7 @@ class ClientPortalAppointmentController extends BaseController
                     throw new \Exception('Bansal API did not return appointment ID. Response: ' . json_encode($bansalApiResponse));
                 }
                 
-                Log::info('Appointment created on Bansal website', [
+                Log::info('Appointment created on public booking website', [
                     'bansal_appointment_id' => $bansalAppointmentId,
                     'client_id' => $client->id,
                     'client_email' => $clientEmail
@@ -758,7 +758,7 @@ class ClientPortalAppointmentController extends BaseController
             // Prepare response message
             $successMessage = 'Appointment created successfully';
             if ($bansalApiError) {
-                $successMessage .= '. Note: Appointment created in CRM but could not be synced to Bansal website. Error: ' . $bansalApiError;
+                $successMessage .= '. Note: Appointment created in CRM but could not be synced to the public booking website. Error: ' . $bansalApiError;
                 Log::warning('Appointment created locally but Bansal API sync failed', [
                     'appointment_id' => $appointment->id,
                     'bansal_appointment_id' => $bansalAppointmentId,
@@ -997,14 +997,14 @@ class ClientPortalAppointmentController extends BaseController
                     throw new \Exception('Bansal API did not return appointment ID. Response: ' . json_encode($bansalApiResponse));
                 }
 
-                Log::info('Public appointment created on Bansal website', [
+                Log::info('Public appointment created on public booking website', [
                     'bansal_appointment_id' => $bansalAppointmentId,
                     'client_id' => $client->id,
                     'client_email' => $clientEmail,
                 ]);
             } catch (\Exception $apiException) {
                 $bansalApiError = $apiException->getMessage();
-                Log::error('Failed to create public appointment on Bansal website via API', [
+                Log::error('Failed to create public appointment on public booking website via API', [
                     'error' => $bansalApiError,
                     'client_id' => $client->id,
                     'client_email' => $clientEmail,
@@ -1078,7 +1078,7 @@ class ClientPortalAppointmentController extends BaseController
 
             $successMessage = 'Appointment created successfully';
             if ($bansalApiError) {
-                $successMessage .= '. Note: Appointment created in CRM but could not be synced to Bansal website. Error: ' . $bansalApiError;
+                $successMessage .= '. Note: Appointment created in CRM but could not be synced to the public booking website. Error: ' . $bansalApiError;
             }
 
             return response()->json([
@@ -1699,7 +1699,7 @@ class ClientPortalAppointmentController extends BaseController
 
             $message = 'Appointment status updated successfully';
             if ($syncError) {
-                $message .= '. Note: Status updated locally but could not be synced to Bansal website. Error: ' . $syncError;
+                $message .= '. Note: Status updated locally but could not be synced to the public booking website. Error: ' . $syncError;
             }
 
             return response()->json([
@@ -2227,7 +2227,7 @@ class ClientPortalAppointmentController extends BaseController
                 try {
                     $bansalApiClient = app(BansalApiClient::class);
 
-                    // Update appointment status on Bansal website
+                    // Update appointment status on public booking website
                     Log::info('Payment successful - should sync with Bansal API', [
                         'appointment_id' => $appointment->id,
                         'bansal_appointment_id' => $appointment->bansal_appointment_id,

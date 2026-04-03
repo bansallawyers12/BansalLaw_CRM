@@ -27,7 +27,7 @@ class AppointmentCancellation extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Appointment Cancellation - Bansal Immigration',
+            subject: 'Appointment Cancellation - ' . config('app.name'),
         );
     }
 

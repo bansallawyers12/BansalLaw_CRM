@@ -27,7 +27,7 @@ class AppointmentDetailedConfirmation extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Appointment Confirmation - Bansal Immigration',
+            subject: 'Appointment Confirmation - ' . config('app.name'),
         );
     }
 

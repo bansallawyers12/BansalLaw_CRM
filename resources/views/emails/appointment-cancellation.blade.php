@@ -133,8 +133,8 @@
             <p style="margin: 10px 0 0 0; color: #1a1a1a;">
                 Please contact us to book a new appointment:<br>
                 Phone: <a href="tel:{{ str_replace([' ', '-'], '', $locationPhone) }}" style="color: #2563eb; text-decoration: none; font-weight: 600;">{{ $locationPhone }}</a><br>
-                Email: <a href="mailto:info@bansalimmigration.com" style="color: #2563eb; text-decoration: none; font-weight: 600;">info@bansalimmigration.com</a><br>
-                Website: <a href="https://bansalimmigration.com" style="color: #2563eb; text-decoration: none; font-weight: 600;">bansalimmigration.com</a>
+                Email: <a href="mailto:{{ config('app.brand.public_email') }}" style="color: #2563eb; text-decoration: none; font-weight: 600;">{{ config('app.brand.public_email') }}</a><br>
+                Website: <a href="{{ config('app.brand.website_short_url') }}" style="color: #2563eb; text-decoration: none; font-weight: 600;">{{ config('app.brand.website_short_label') }}</a>
             </p>
         </div>
 

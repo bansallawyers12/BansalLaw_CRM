@@ -487,7 +487,7 @@ class SignatureDashboardController extends Controller
                 $template = $signer->email_template ?? 'emails.signature.send';
                 
                 // Use the signer's stored email settings, or fallback to defaults
-                $subject = $signer->email_subject ?? 'Document Signature Request from Bansal Migration';
+                $subject = $signer->email_subject ?? ('Document Signature Request from ' . config('app.name'));
                 $message = $signer->email_message ?? "Please review and sign the attached document.";
                 
                 // Prepare template data

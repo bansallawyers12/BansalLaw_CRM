@@ -7523,10 +7523,10 @@ class ClientsController extends Controller
             if ($confirmationEmailFailed) {
                 $successMessage = 'Appointment saved, but the confirmation email could not be sent.';
                 if ($bansalApiError) {
-                    $successMessage .= ' Note: Appointment created in CRM but could not be synced to Bansal website. Error: ' . $bansalApiError;
+                    $successMessage .= ' Note: Appointment created in CRM but could not be synced to the public booking website. Error: ' . $bansalApiError;
                 }
             } elseif ($bansalApiError) {
-                $successMessage .= '. Note: Appointment created in CRM but could not be synced to Bansal website. Error: ' . $bansalApiError;
+                $successMessage .= '. Note: Appointment created in CRM but could not be synced to the public booking website. Error: ' . $bansalApiError;
             }
 
             // Return JSON response matching expected format

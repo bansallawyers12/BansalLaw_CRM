@@ -56,6 +56,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Public firm contact (emails, PDFs, client portal)
+    |--------------------------------------------------------------------------
+    |
+    | Override in .env when the firm domain or inboxes change.
+    |
+    */
+
+    'brand' => [
+        'public_email' => env('APP_PUBLIC_EMAIL', 'info@bansalimmigration.com.au'),
+        'invoice_email' => env('APP_INVOICE_EMAIL', 'invoice@bansalimmigration.com.au'),
+        'website_url' => env('APP_PUBLIC_WEBSITE_URL', 'https://www.bansalimmigration.com.au'),
+        'website_label' => env('APP_PUBLIC_WEBSITE_LABEL', 'www.bansalimmigration.com.au'),
+        'website_short_url' => env('APP_PUBLIC_WEBSITE_SHORT_URL', 'https://bansalimmigration.com'),
+        'website_short_label' => env('APP_PUBLIC_WEBSITE_SHORT_LABEL', 'bansalimmigration.com'),
+        'client_portal_play_store_url' => env('CLIENT_PORTAL_PLAY_STORE_URL', 'https://play.google.com/store/apps/details?id=com.bansalimmigration.clientportal'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
