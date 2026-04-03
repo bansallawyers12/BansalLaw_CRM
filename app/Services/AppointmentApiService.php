@@ -15,7 +15,7 @@ class AppointmentApiService
 
     public function __construct($baseUrl = null, $serviceToken = null)
     {
-        $this->baseUrl = $baseUrl ?? config('services.appointment_api.url', 'https://bansalimmigration.com.au/api');
+        $this->baseUrl = rtrim($baseUrl ?? config('services.appointment_api.url'), '/');
         $this->serviceToken = $serviceToken ?? config('services.appointment_api.service_token');
     }
 

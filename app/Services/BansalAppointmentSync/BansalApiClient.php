@@ -18,7 +18,7 @@ class BansalApiClient
         protected ?string $apiToken = null,
         protected int $timeout = 30
     ) {
-        $this->baseUrl = $baseUrl ?: config('services.bansal_api.url', 'https://www.bansalimmigration.com.au/api/crm');
+        $this->baseUrl = rtrim($baseUrl ?: config('services.bansal_api.url'), '/');
         $this->apiToken = $apiToken ?: config('services.bansal_api.token');
         $this->timeout = $timeout ?: config('services.bansal_api.timeout', 30);
 

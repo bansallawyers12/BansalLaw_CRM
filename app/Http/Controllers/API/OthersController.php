@@ -19,7 +19,7 @@ class OthersController extends Controller
     private function getBansalApiConfig()
     {
         return [
-            'baseUrl' => config('services.bansal_api.url', 'https://www.bansalimmigration.com.au/api/crm'),
+            'baseUrl' => rtrim(config('services.bansal_api.url'), '/'),
             'apiToken' => config('services.bansal_api.token'),
             'timeout' => config('services.bansal_api.timeout', 30)
         ];

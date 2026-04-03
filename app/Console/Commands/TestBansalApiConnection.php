@@ -95,7 +95,7 @@ class TestBansalApiConnection extends Command
             $this->newLine();
             $this->warn('Troubleshooting tips:');
             $this->line('  1. Check BANSAL_API_TOKEN is set in .env');
-            $this->line('  2. Verify BANSAL_API_URL is correct');
+            $this->line('  2. Verify BANSAL_API_BASE_URL or BANSAL_API_URL in .env');
             $this->line('  3. Ensure API token has not expired');
             $this->line('  4. Check network connectivity to API server');
             

@@ -51,6 +51,10 @@ class SignatureTemplateService
      */
     private static function getProfessionalTemplate(): string
     {
+        $webUrl = htmlspecialchars(config('app.brand.website_url'), ENT_QUOTES, 'UTF-8');
+        $webLabel = htmlspecialchars(config('app.brand.website_label'), ENT_QUOTES, 'UTF-8');
+        $pubEmail = htmlspecialchars(config('app.brand.public_email'), ENT_QUOTES, 'UTF-8');
+
         return '
         <div style="font-family: \'Aptos Display\', Arial, sans-serif; font-size: 15px; line-height: 1.4; color: #333; max-width: 600px;">
             <p style="margin: 0 0 15px 0; color: #333;">Kind Regards,</p>
@@ -67,8 +71,8 @@ class SignatureTemplateService
             <div style="margin: 15px 0;">
                 <p style="margin: 3px 0; font-size: 12px; color: #374151;"><strong>T:</strong> 03 9602 1330</p>
                 <p style="margin: 3px 0; font-size: 12px; color: #374151;"><strong>M:</strong> 0404 000 058</p>
-                <p style="margin: 3px 0; font-size: 12px; color: #374151;"><strong>W:</strong> <a href="http://www.bansalimmigration.com.au" style="color: #1e40af; text-decoration: none;">www.bansalimmigration.com.au</a></p>
-                <p style="margin: 3px 0; font-size: 12px; color: #374151;"><strong>E:</strong> <a href="mailto:arun@bansalimmigration.com.au" style="color: #1e40af; text-decoration: none;">arun@bansalimmigration.com.au</a></p>
+                <p style="margin: 3px 0; font-size: 12px; color: #374151;"><strong>W:</strong> <a href="' . $webUrl . '" style="color: #1e40af; text-decoration: none;">' . $webLabel . '</a></p>
+                <p style="margin: 3px 0; font-size: 12px; color: #374151;"><strong>E:</strong> <a href="mailto:' . $pubEmail . '" style="color: #1e40af; text-decoration: none;">' . $pubEmail . '</a></p>
                 <p style="margin: 3px 0; font-size: 12px; color: #374151;"><strong>A:</strong> Level 8/278 Collins St, Melbourne 3000</p>
             </div>
             

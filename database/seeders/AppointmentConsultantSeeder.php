@@ -46,7 +46,7 @@ class AppointmentConsultantSeeder extends Seeder
         $consultants = [
             [
                 'name' => 'Arun Kumar (Pr_complex matters)',
-                'email' => 'arun@bansalimmigration.com',
+                'email' => 'arun@bansallawyers.com.au',
                 'calendar_type' => 'paid',
                 'location' => 'melbourne',
                 'specializations' => json_encode([1, 6, 7, 8]),
@@ -54,7 +54,7 @@ class AppointmentConsultantSeeder extends Seeder
             ],
             [
                 'name' => 'Shubham/Yadwinder (JRP)',
-                'email' => 'shubham@bansalimmigration.com',
+                'email' => 'shubham@bansallawyers.com.au',
                 'calendar_type' => 'jrp',
                 'location' => 'melbourne',
                 'specializations' => json_encode([2, 3]),
@@ -62,7 +62,7 @@ class AppointmentConsultantSeeder extends Seeder
             ],
             [
                 'name' => 'Education Team',
-                'email' => 'education@bansalimmigration.com',
+                'email' => 'education@bansallawyers.com.au',
                 'calendar_type' => 'education',
                 'location' => 'melbourne',
                 'specializations' => json_encode([5]),
@@ -70,7 +70,7 @@ class AppointmentConsultantSeeder extends Seeder
             ],
             [
                 'name' => 'Tourist Visa Team',
-                'email' => 'tourist@bansalimmigration.com',
+                'email' => 'tourist@bansallawyers.com.au',
                 'calendar_type' => 'tourist',
                 'location' => 'melbourne',
                 'specializations' => json_encode([4]),
@@ -78,7 +78,7 @@ class AppointmentConsultantSeeder extends Seeder
             ],
             [
                 'name' => 'Adelaide Office',
-                'email' => 'adelaide@bansalimmigration.com',
+                'email' => 'adelaide@bansallawyers.com.au',
                 'calendar_type' => 'adelaide',
                 'location' => 'adelaide',
                 'specializations' => json_encode([1, 2, 3, 4, 5, 6, 7, 8]),
@@ -86,7 +86,7 @@ class AppointmentConsultantSeeder extends Seeder
             ],
             [
                 'name' => 'Ajay Calendar',
-                'email' => 'ajay@bansalimmigration.com',
+                'email' => 'ajay@bansallawyers.com.au',
                 'calendar_type' => 'ajay',
                 'location' => 'melbourne',
                 'specializations' => json_encode([]), // Transfer-only calendar, no specializations needed
@@ -94,7 +94,7 @@ class AppointmentConsultantSeeder extends Seeder
             ],
             [
                 'name' => 'Kunal Calendar',
-                'email' => 'kunal@bansalimmigration.com',
+                'email' => 'kunal@bansallawyers.com.au',
                 'calendar_type' => 'kunal',
                 'location' => 'melbourne',
                 'specializations' => json_encode([]),

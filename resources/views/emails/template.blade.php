@@ -53,16 +53,9 @@
                     </p>
                   </td>
                   <td style="padding:0;width:50%;" align="right">
-                    <table role="presentation" style="border-collapse:collapse;border:0;border-spacing:0;">
-                      <tr>
-                        <td style="padding:0 0 0 10px;width:38px;">
-                          <a href="https://twitter.com/Bansalimmi" style="color:#ffffff;"><img src="https://assets.codepen.io/210284/tw_1.png" alt="Twitter" width="38" style="height:auto;display:block;border:0;" /></a>
-                        </td>
-                        <td style="padding:0 0 0 10px;width:38px;">
-                          <a href="https://www.facebook.com/BANSALImmigration/" style="color:#ffffff;"><img src="https://assets.codepen.io/210284/fb_1.png" alt="Facebook" width="38" style="height:auto;display:block;border:0;" /></a>
-                        </td>
-                      </tr>
-                    </table>
+                    <p style="margin:0;font-size:14px;line-height:16px;font-family:Arial,sans-serif;color:#ffffff;">
+                      <a href="{{ config('app.brand.website_url') }}" style="color:#ffffff;text-decoration:underline;">{{ config('app.brand.website_label') }}</a>
+                    </p>
                   </td>
                 </tr>
               </table>

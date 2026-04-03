@@ -95,7 +95,7 @@ class HomeController extends Controller
     /**
      * Get date/time backend settings (office hours, duration, disabled days)
      * Returns appointment configuration for calendar initialization
-     * Now uses external API: https://www.bansalimmigration.com.au/api/crm
+     * Uses external CRM API (services.bansal_api).
      */
     public function getdatetimebackend(Request $request)
     {
@@ -150,7 +150,7 @@ class HomeController extends Controller
         
         try {
             // Get API configuration
-            $baseUrl = 'https://www.bansalimmigration.com.au/api/crm';
+            $baseUrl = rtrim(config('services.bansal_api.url'), '/');
             $apiToken = config('services.bansal_api.token');
             $timeout = config('services.bansal_api.timeout', 30);
             
@@ -228,7 +228,7 @@ class HomeController extends Controller
 
     /**
      * Get disabled date/time slots for selected date
-     * Now uses external API: https://www.bansalimmigration.com.au/api/crm
+     * Uses BansalApiClient (services.bansal_api).
      */
     public function getdisableddatetime(Request $request)
     {

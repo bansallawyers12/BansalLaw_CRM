@@ -195,9 +195,9 @@ For every flow below, create/verify the sender in SendGrid first, then apply the
 | Area / Flow | Current dependency to replace | File(s) to change | Sender email to create/verify in SendGrid |
 |---|---|---|---|
 | Base template/compose sends | Bare `Mail::to()` + legacy SMTP behavior | `app/Http/Controllers/Controller.php` | All active sender addresses from `emails.email` |
-| Invoice + receipts (client sends) | SMTP-style/bare mail sends | `app/Http/Controllers/CRM/ClientAccountsController.php`, `app/Mail/InvoiceEmailManager.php`, `app/Mail/MultipleattachmentEmailManager.php` | `invoice@bansalimmigration.com.au` |
-| EOI/ROI confirmation | `EmailConfigService::applyConfig()` (SMTP runtime swap) | `app/Http/Controllers/CRM/ClientEoiRoiController.php`, `app/Http/Controllers/CRM/EoiRoiSheetController.php` | `admin@bansalimmigration.com.au` (or your chosen EOI sender) |
-| Signature send/reminder | ZeptoMail API (`ZeptoMailService`) | `app/Services/SignatureService.php`, `app/Http/Controllers/CRM/SignatureDashboardController.php`, `app/Http/Controllers/CRM/DocumentController.php` | `signature@bansalimmigration.com.au` |
+| Invoice + receipts (client sends) | SMTP-style/bare mail sends | `app/Http/Controllers/CRM/ClientAccountsController.php`, `app/Mail/InvoiceEmailManager.php`, `app/Mail/MultipleattachmentEmailManager.php` | `APP_INVOICE_EMAIL` / `config('app.brand.invoice_email')` (e.g. `admin@bansallawyers.com.au`) |
+| EOI/ROI confirmation | `EmailConfigService::applyConfig()` (SMTP runtime swap) | `app/Http/Controllers/CRM/ClientEoiRoiController.php`, `app/Http/Controllers/CRM/EoiRoiSheetController.php` | `EOI_FROM_EMAIL` / `admin@bansallawyers.com.au` |
+| Signature send/reminder | ZeptoMail API (`ZeptoMailService`) | `app/Services/SignatureService.php`, `app/Http/Controllers/CRM/SignatureDashboardController.php`, `app/Http/Controllers/CRM/DocumentController.php` | Verified sender used by signature flows (often `MAIL_FROM_ADDRESS`) |
 | Client portal activation/deactivation | Bare `Mail::send()` | `app/Http/Controllers/CRM/ClientPortalController.php` | `MAIL_FROM_ADDRESS` value |
 | Appointment confirmation/cancellation | Bare `Mail::to()` | `app/Services/BansalAppointmentSync/NotificationService.php` | `MAIL_FROM_ADDRESS` value (or dedicated appointments sender) |
 | Visa expiry + cron email jobs | Bare `Mail` sends | `app/Console/Commands/VisaExpireReminderEmail.php`, `app/Console/Commands/CronJob.php` | `MAIL_FROM_ADDRESS` value (or dedicated reminders sender) |
@@ -207,10 +207,10 @@ For every flow below, create/verify the sender in SendGrid first, then apply the
 
 Create/verify these first:
 
-1. `signature@bansalimmigration.com.au` (signature flows)
-2. `invoice@bansalimmigration.com.au` (invoice/receipt flows)
-3. `admin@bansalimmigration.com.au` (EOI/ROI confirmations)
-4. `MAIL_FROM_ADDRESS` current value (global fallback sender)
+1. `MAIL_FROM_ADDRESS` / signature sender (signature flows)
+2. `APP_INVOICE_EMAIL` (invoice/receipt flows)
+3. `EOI_FROM_EMAIL` / `admin@bansallawyers.com.au` (EOI/ROI confirmations)
+4. Any extra identities in `emails.email` used by compose
 
 Also verify any additional active sender rows in `emails.email` because compose/template sends may use them.
 
@@ -270,7 +270,7 @@ All hardcoded From addresses in mailables must be **verified SendGrid senders**.
 | Mailable | File | From address source |
 |----------|------|---------------------|
 | `CommonMail` | `app/Mail/CommonMail.php` | Passed in via `$this->sender` |
-| `InvoiceEmailManager` | `app/Mail/InvoiceEmailManager.php` | `$this->array['from']` — currently `invoice@bansalimmigration.com.au` |
+| `InvoiceEmailManager` | `app/Mail/InvoiceEmailManager.php` | `$this->array['from']` — from `config('app.brand.invoice_email')` / controller |
 | `MultipleattachmentEmailManager` | `app/Mail/MultipleattachmentEmailManager.php` | `$this->array['from']` |
 | `EoiConfirmationMail` | `app/Mail/EoiConfirmationMail.php` | Resolved via `EmailConfigService` |
 | `AppointmentMail` | `app/Mail/AppointmentMail.php` | Check for hardcoded From |
@@ -288,7 +288,7 @@ Three queued email flows for financial documents tied to client matters:
 | Send Client Fund Receipt | `InvoiceEmailManager` | `Mail::mailer('sendgrid')->to()->queue()` |
 | Send Office Receipt | `InvoiceEmailManager` | `Mail::mailer('sendgrid')->to()->queue()` |
 
-The `$invoiceArray['from']` is hardcoded to `invoice@bansalimmigration.com.au` — verify this is a SendGrid verified sender.
+The `$invoiceArray['from']` uses `config('app.brand.invoice_email')` — verify that address in SendGrid.
 
 ### 4.5 EOI/ROI confirmation emails
 
@@ -565,7 +565,7 @@ MAIL_FROM_NAME="Bansal Migration"
 **ZeptoMail vars (remove entirely):**
 
 ```env
-ZEPTO_EMAIL=signature@bansalimmigration.com.au
+ZEPTO_EMAIL=admin@bansallawyers.com.au
 ZEPTO_SMTP_HOST=smtp.zeptomail.com
 ZEPTO_SMTP_PORT=587
 ZEPTO_SMTP_ENCRYPTION=tls
@@ -573,7 +573,7 @@ ZEPTO_SMTP_USERNAME=emailapikey
 ZEPTO_SMTP_PASSWORD=wSsVR61x/hDz...
 ZEPTO_FROM_NAME="Bansal Migration"
 ZEPTOMAIL_API_KEY=wSsVR61y+UWj...
-ZEPTOMAIL_FROM_EMAIL=signature@bansalimmigration.com.au
+ZEPTOMAIL_FROM_EMAIL=admin@bansallawyers.com.au
 ZEPTOMAIL_FROM_NAME="Bansal Migration"
 ```
 

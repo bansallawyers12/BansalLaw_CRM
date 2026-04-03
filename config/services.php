@@ -129,9 +129,15 @@ return [
     ],
 
     'bansal_api' => [
-        'url' => env('BANSAL_API_BASE_URL', 'https://staging.bansalimmigration.com.au/api/crm'),
+        'url' => rtrim(env('BANSAL_API_BASE_URL', env('BANSAL_API_URL', 'https://www.bansallawyers.com.au/api/crm')), '/'),
         'token' => env('BANSAL_API_TOKEN'),
         'timeout' => env('BANSAL_API_TIMEOUT', 30),
+    ],
+
+    'appointment_api' => [
+        'url' => rtrim(env('APPOINTMENT_API_URL', 'https://www.bansallawyers.com.au/api'), '/'),
+        'service_token' => env('APPOINTMENT_API_SERVICE_TOKEN'),
+        'timeout' => (int) env('APPOINTMENT_API_TIMEOUT', 30000),
     ],
 
     /*
