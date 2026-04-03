@@ -156,12 +156,12 @@ return [
     |
     | From address for EOI/ROI confirmation emails. Lookup order:
     | 1. EOI_FROM_EMAIL in .env (exact match in emails table)
-    | 2. First active email in DB matching admin@bansalimmigration%
+    | 2. First active email in DB matching admin@bansallawyers% then legacy admin@bansalimmigration%
     |
     */
 
     'eoi' => [
-        'from_email' => env('EOI_FROM_EMAIL', 'admin@bansalimmigration.com.au'),
+        'from_email' => env('EOI_FROM_EMAIL', 'admin@bansallawyers.com.au'),
     ],
 
     /*

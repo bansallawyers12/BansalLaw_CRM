@@ -30,61 +30,61 @@
 								<h4>PERSONAL DETAILS</h4>
 								<div class="form-group">
 									<label for="first_name">First Name</label>
-									<input type="text" name="first_name" value="" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Staff First Name">
+									<input type="text" name="first_name" value="{{ old('first_name') }}" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Staff First Name">
 									@if ($errors->has('first_name'))
 										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('first_name') }}</strong>
+											<strong>{{ $errors->first('first_name') }}</strong>
 										</span>
 									@endif
 								</div>
 								<div class="form-group">
 									<label for="last_name">Last Name</label>
-									<input type="text" name="last_name" value="" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Staff Last Name">
-                                    @if ($errors->has('last_name'))
+									<input type="text" name="last_name" value="{{ old('last_name') }}" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Staff Last Name">
+									@if ($errors->has('last_name'))
 										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('last_name') }}</strong>
+											<strong>{{ $errors->first('last_name') }}</strong>
 										</span>
 									@endif
 								</div>
 								<div class="form-group">
 									<label for="email">Email</label>
-									<input type="text" name="email" value="" class="form-control" data-valid="required email" autocomplete="off" placeholder="Enter Email">
-                                    @if ($errors->has('email'))
+									<input type="text" name="email" value="{{ old('email') }}" class="form-control" data-valid="required email" autocomplete="off" placeholder="Enter Email">
+									@if ($errors->has('email'))
 										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('email') }}</strong>
+											<strong>{{ $errors->first('email') }}</strong>
 										</span>
 									@endif
 								</div>
 
 								<div class="form-group">
-									<label for="name">Password (CRM login)</label>
-									<input type="password" value="" name="password" class="form-control" autocomplete="new-password" placeholder="Choose their sign-in password" data-valid="required" />
+									<label for="password">Password (CRM login)</label>
+									<input type="password" name="password" class="form-control" autocomplete="new-password" placeholder="Min. 8 characters" data-valid="required" />
 									<small class="form-text text-muted">Staff use this email and password at <a href="{{ url('/login') }}" target="_blank" rel="noopener">the CRM login page</a>.</small>
 									@if ($errors->has('password'))
 										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('password') }}</strong>
+											<strong>{{ $errors->first('password') }}</strong>
 										</span>
 									@endif
 								</div>
 								<div class="form-group">
-									<label for="name">Password Confirmation</label>
-									<input type="password" value="" name="password_confirmation" class="form-control" autocomplete="new-password" placeholder="Repeat password" data-valid="required" />
-									@if ($errors->has('password'))
+									<label for="password_confirmation">Confirm Password</label>
+									<input type="password" name="password_confirmation" class="form-control" autocomplete="new-password" placeholder="Repeat password" data-valid="required" />
+									@if ($errors->has('password_confirmation'))
 										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('password') }}</strong>
+											<strong>{{ $errors->first('password_confirmation') }}</strong>
 										</span>
 									@endif
 								</div>
 								<div class="form-group">
-									<label for="name">Phone Number</label>
+									<label for="phone">Phone Number</label>
 									<div class="cus_field_input">
 									<div class="country_code">
 										<input class="telephone" id="telephone" type="tel" name="country_code" readonly value="{{ old('country_code', '') }}" >
 									</div>
-									<input type="text" name="phone" value="" class="form-control tel_input" data-valid="" autocomplete="off" placeholder="Enter Phone">
-                                    @if ($errors->has('phone'))
+									<input type="text" name="phone" value="{{ old('phone') }}" class="form-control tel_input" data-valid="required" autocomplete="off" placeholder="Enter Phone">
+									@if ($errors->has('phone'))
 										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('phone') }}</strong>
+											<strong>{{ $errors->first('phone') }}</strong>
 										</span>
 									@endif
 								</div>
@@ -99,61 +99,52 @@
 								<h4>Office DETAILS</h4>
 								<div class="form-group">
 									<label for="position">Position Title</label>
-									<input type="text" name="position" value="" class="form-control" data-valid="" autocomplete="off" placeholder="Enter Position Title">
-                                    @if ($errors->has('position'))
+									<input type="text" name="position" value="{{ old('position') }}" class="form-control" data-valid="" autocomplete="off" placeholder="Enter Position Title">
+									@if ($errors->has('position'))
 										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('position') }}</strong>
+											<strong>{{ $errors->first('position') }}</strong>
 										</span>
 									@endif
 								</div>
-
 
                                 <div class="form-group">
 									<label for="role">User Role (Type)</label>
 									<select name="role" id="role" class="form-control" data-valid="required" autocomplete="new-password">
 										<option value="">Choose One...</option>
-										@if(count(@$usertype) !== 0)
-											@foreach (@$usertype as $ut)
-												<option value="{{ @$ut->id }}">{{ @$ut->name }}</option>
-											@endforeach
-										@endif
+										@foreach ($usertype as $ut)
+											<option value="{{ $ut->id }}" @if(old('role') == $ut->id) selected @endif>{{ $ut->name }}</option>
+										@endforeach
 									</select>
 									@if ($errors->has('role'))
 										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('role') }}</strong>
+											<strong>{{ $errors->first('role') }}</strong>
 										</span>
 									@endif
 								</div>
 
 								<div class="form-group">
-                                    <?php
-                                    $branchx = \App\Models\Branch::all();
-                                    ?>
+                                    @php $branchx = \App\Models\Branch::all(); @endphp
 									<label for="office">Office</label>
 									<select class="form-control" data-valid="required" name="office">
 										<option value="">Select</option>
 										@foreach($branchx as $branch)
-											<option value="{{$branch->id}}">{{$branch->office_name}}</option>
+											<option value="{{ $branch->id }}" @if(old('office') == $branch->id) selected @endif>{{ $branch->office_name }}</option>
 										@endforeach
 									</select>
 									@if ($errors->has('office'))
 										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('office') }}</strong>
+											<strong>{{ $errors->first('office') }}</strong>
 										</span>
 									@endif
 								</div>
 
-
-
 								<div class="form-group">
-									<label for="role">Department (Team)</label>
-									<select name="team" id="team" class="form-control" data-valid="" autocomplete="new-password">
+									<label for="team">Department (Team)</label>
+									<select name="team" id="team" class="form-control" autocomplete="new-password">
 										<option value="">Choose One...</option>
-
-											@foreach (\App\Models\Team::all() as $tm)
-												<option value="{{ @$tm->id }}">{{ @$tm->name }}</option>
-											@endforeach
-
+										@foreach (\App\Models\Team::all() as $tm)
+											<option value="{{ $tm->id }}" @if(old('team') == $tm->id) selected @endif>{{ $tm->name }}</option>
+										@endforeach
 									</select>
                                 </div>
 

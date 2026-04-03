@@ -57,23 +57,31 @@
 									@endif
 								</div>
 								<div class="form-group">
-									<label for="name">New password (optional)</label>
-									<input type="password" value="" name="password" class="form-control" autocomplete="new-password" placeholder="Leave blank to keep current password" data-valid="" />
-									<small class="form-text text-muted">If set, staff sign in at <a href="{{ url('/login') }}" target="_blank" rel="noopener">the CRM login</a> with this email and the new password.</small>
+									<label for="password">New Password (optional)</label>
+									<input type="password" name="password" class="form-control" autocomplete="new-password" placeholder="Leave blank to keep current password" data-valid="" />
+									<small class="form-text text-muted">Min. 8 characters. Staff sign in at <a href="{{ url('/login') }}" target="_blank" rel="noopener">the CRM login</a> with their email and this password.</small>
 									@if ($errors->has('password'))
 										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('password') }}</strong>
+											<strong>{{ $errors->first('password') }}</strong>
 										</span>
 									@endif
 								</div>
 								<div class="form-group">
-									<label for="name">New password confirmation</label>
-									<input type="password" value="" name="password_confirmation" class="form-control" autocomplete="new-password" placeholder="Repeat new password" data-valid="" />
-									@if ($errors->has('password'))
+									<label for="password_confirmation">Confirm New Password</label>
+									<input type="password" name="password_confirmation" class="form-control" autocomplete="new-password" placeholder="Repeat new password" data-valid="" />
+									@if ($errors->has('password_confirmation'))
 										<span class="custom-error" role="alert">
-											<strong>{{ @$errors->first('password') }}</strong>
+											<strong>{{ $errors->first('password_confirmation') }}</strong>
 										</span>
 									@endif
+								</div>
+								<div class="form-group">
+									<label for="status"><strong>Account Status</strong></label>
+									<select name="status" id="status" class="form-control">
+										<option value="1" @if(old('status', $fetchedData->status ?? 1) == 1) selected @endif>Active</option>
+										<option value="0" @if(old('status', $fetchedData->status ?? 1) == 0) selected @endif>Inactive</option>
+									</select>
+									<small class="form-text text-muted">Inactive staff cannot log in.</small>
 								</div>
 								<div class="form-group">
 									<label for="name">Phone Number</label>

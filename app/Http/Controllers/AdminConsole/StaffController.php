@@ -113,7 +113,7 @@ class StaffController extends Controller
                 'first_name' => 'required|max:255',
                 'last_name' => 'required|max:255',
                 'email' => 'required|email|max:255|unique:staff',
-                'password' => 'required|max:255|confirmed',
+                'password' => 'required|string|min:8|max:255|confirmed',
                 'phone' => 'required',
                 'role' => 'required',
                 'office' => 'required',
@@ -236,8 +236,9 @@ class StaffController extends Controller
             $this->validate($request, [
                 'first_name' => 'required|max:255',
                 'last_name' => 'required|max:255',
+                'email' => 'required|email|max:255|unique:staff,email,' . $id,
                 'phone' => 'required|max:255',
-                'password' => 'nullable|string|max:255|confirmed',
+                'password' => 'nullable|string|min:8|max:255|confirmed',
             ]);
 
             $obj = Staff::find($id);
@@ -294,9 +295,11 @@ class StaffController extends Controller
                 $obj->tax_number = null;
             }
 
-            if (!empty(@$requestData['password'])) {
-                $obj->password = Hash::make(@$requestData['password']);
+            if (!empty($requestData['password'] ?? '')) {
+                $obj->password = Hash::make($requestData['password']);
             }
+
+            $obj->status = isset($requestData['status']) ? (int) $requestData['status'] : 1;
 
             if ($actor instanceof Staff && $crmAccess->canManageStaffQuickAccess($actor)) {
                 $obj->quick_access_enabled = $request->boolean('quick_access_enabled');

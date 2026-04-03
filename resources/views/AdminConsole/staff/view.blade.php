@@ -36,8 +36,18 @@
 								<p class="form-control-plaintext">{{ $fetchedData->last_name ?? 'N/A' }}</p>
 							</div>
 							<div class="form-group">
-								<label for="email"><strong>Email</strong></label>
+								<label for="email"><strong>Email (CRM login)</strong></label>
 								<p class="form-control-plaintext">{{ $fetchedData->email ?? 'N/A' }}</p>
+							</div>
+							<div class="form-group">
+								<label><strong>Account Status</strong></label>
+								<p class="form-control-plaintext">
+									@if(($fetchedData->status ?? 1) == 1)
+										<span class="badge badge-success">Active — can log in</span>
+									@else
+										<span class="badge badge-danger">Inactive — login disabled</span>
+									@endif
+								</p>
 							</div>
 							<div class="form-group">
 								<label for="phone"><strong>Phone Number</strong></label>
