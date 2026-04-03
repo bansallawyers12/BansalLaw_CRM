@@ -164,7 +164,12 @@ class StaffController extends Controller
                 return redirect()->back()->with('error', config('constants.server_error'));
             }
 
-            return redirect()->route('adminconsole.staff.active')->with('success', 'Staff added successfully.');
+            $loginUrl = url('/login');
+
+            return redirect()->route('adminconsole.staff.active')->with(
+                'success',
+                "Staff added successfully. They can sign in at {$loginUrl} using this email address and the password you set."
+            );
         }
 
         return redirect()->route('adminconsole.staff.create');
@@ -232,6 +237,7 @@ class StaffController extends Controller
                 'first_name' => 'required|max:255',
                 'last_name' => 'required|max:255',
                 'phone' => 'required|max:255',
+                'password' => 'nullable|string|max:255|confirmed',
             ]);
 
             $obj = Staff::find($id);

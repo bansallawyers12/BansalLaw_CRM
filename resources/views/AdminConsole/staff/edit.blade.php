@@ -57,8 +57,9 @@
 									@endif
 								</div>
 								<div class="form-group">
-									<label for="name">Password</label>
-									<input type="password" value="" name="password" class="form-control" autocomplete="off" placeholder="Enter Staff Password" data-valid="" />
+									<label for="name">New password (optional)</label>
+									<input type="password" value="" name="password" class="form-control" autocomplete="new-password" placeholder="Leave blank to keep current password" data-valid="" />
+									<small class="form-text text-muted">If set, staff sign in at <a href="{{ url('/login') }}" target="_blank" rel="noopener">the CRM login</a> with this email and the new password.</small>
 									@if ($errors->has('password'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('password') }}</strong>
@@ -66,8 +67,8 @@
 									@endif
 								</div>
 								<div class="form-group">
-									<label for="name">Password Confirmation</label>
-									<input type="password" value="" name="password_confirmation" class="form-control" autocomplete="off" placeholder="Enter Staff Password" data-valid="" />
+									<label for="name">New password confirmation</label>
+									<input type="password" value="" name="password_confirmation" class="form-control" autocomplete="new-password" placeholder="Repeat new password" data-valid="" />
 									@if ($errors->has('password'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('password') }}</strong>
