@@ -346,8 +346,6 @@ window.validateForm = function() {
                 context = ' (Skills & Education tab)';
             } else if (tabId === 'otherInformationTab') {
                 context = ' (Other Information tab)';
-            } else if (tabId === 'eoiReferenceTab') {
-                context = ' (EOI Reference tab)';
             }
         }
         
@@ -622,61 +620,6 @@ function removePartnerRow(button, type, relationshipId = null) {
         }
         section.remove();
     }
-}
-
-/**
- * Function to add a new EOI Reference row
- */
-function addEoiReference() {
-    // Check if we're in summary mode, if so switch to edit mode first
-    const summaryView = document.getElementById('eoiInfoSummary');
-    const editView = document.getElementById('eoiInfoEdit');
-    
-    if (summaryView && editView && summaryView.style.display !== 'none') {
-        toggleEditMode('eoiInfo');
-    }
-    
-    const container = document.getElementById('eoiReferencesContainer');
-    const index = container.children.length;
-
-    container.insertAdjacentHTML('beforeend', `
-        <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove EOI Reference" onclick="removeEoiField(this)"><i class="fas fa-trash"></i></button>
-            <div class="content-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
-                <div class="form-group">
-                    <label>EOI Number</label>
-                    <input type="text" name="EOI_number[${index}]" placeholder="EOI Number">
-                </div>
-                <div class="form-group">
-                    <label>Subclass</label>
-                    <input type="text" name="EOI_subclass[${index}]" placeholder="Subclass">
-                </div>
-                <div class="form-group">
-                    <label>Occupation</label>
-                    <input type="text" name="EOI_occupation[${index}]" placeholder="Occupation">
-                </div>
-                <div class="form-group">
-                    <label>Point</label>
-                    <input type="text" name="EOI_point[${index}]" placeholder="Point">
-                </div>
-                <div class="form-group">
-                    <label>State</label>
-                    <input type="text" name="EOI_state[${index}]" placeholder="State">
-                </div>
-                <div class="form-group">
-                    <label>Submission Date</label>
-                    <input type="text" name="EOI_submission_date[${index}]" placeholder="dd/mm/yyyy" class="date-picker">
-                </div>
-                <div class="form-group">
-                    <label>ROI</label>
-                    <input type="text" name="EOI_ROI[${index}]" placeholder="ROI">
-                </div>
-            </div>
-        </div>
-    `);
-
-    // Reinitialize datepickers for the newly added field
-    initializeDatepickers();
 }
 
 /**
@@ -1912,32 +1855,6 @@ window.toggleEditMode = function(sectionType) {
             setTimeout(function() {
                 initializeEmailSectionPolling();
             }, 100);
-        } else if (sectionType === 'partnerEoiInfo') {
-            // Attach partner selection event listener when opening partner EOI section
-            console.log('👫 Opening partner EOI section - attaching event listener');
-            setTimeout(function() {
-                const partnerSelect = document.querySelector('select[name="selected_partner_id"]');
-                if (partnerSelect) {
-                    // Remove any existing event listeners to avoid duplicates
-                    const newSelect = partnerSelect.cloneNode(true);
-                    partnerSelect.parentNode.replaceChild(newSelect, partnerSelect);
-                    
-                    // Attach the change event listener
-                    newSelect.addEventListener('change', function() {
-                        console.log('Partner selected:', this.value);
-                        fetchPartnerEoiData(this.value);
-                    });
-                    
-                    // If a partner is already selected, load their data
-                    if (newSelect.value) {
-                        console.log('Auto-loading partner data for:', newSelect.value);
-                        fetchPartnerEoiData(newSelect.value);
-                    }
-                    console.log('✅ Partner selection event listener attached');
-                } else {
-                    console.error('❌ Partner select dropdown not found');
-                }
-            }, 100);
         } else if (sectionType === 'relatedFilesInfo') {
             // Reinitialize Select2 when opening related files edit mode
             console.log('🔗 Opening related files section - reinitializing Select2');
@@ -3139,7 +3056,7 @@ window.saveAdditionalInfo = function() {
     const pyTest = document.getElementById('pyTest').value;
     const pyDate = document.getElementById('pyDate').value;
     
-    // New EOI qualification fields
+    // Study / additional qualification flags
     const australianStudy = document.getElementById('australianStudy').value;
     const australianStudyDate = document.getElementById('australianStudyDate').value;
     const specialistEducation = document.getElementById('specialistEducation').value;
@@ -3745,236 +3662,6 @@ window.saveChildrenInfo = function() {
     });
 };
 
-// ===== PARTNER EOI INFORMATION FUNCTIONS =====
-
-window.savePartnerEoiInfo = function() {
-    // Get the selected partner ID
-    const selectedPartnerSelect = document.querySelector('select[name="selected_partner_id"]');
-    const selectedPartnerId = selectedPartnerSelect ? selectedPartnerSelect.value : '';
-    
-    if (!selectedPartnerId) {
-        showNotification('Please select a partner for EOI calculation', 'error');
-        return;
-    }
-    
-    const formData = new FormData();
-    formData.append('selected_partner_id', selectedPartnerId);
-    
-    saveSectionData('partnerEoiInfo', formData, function() {
-        showNotification('Partner EOI information saved successfully!', 'success');
-        
-        // Return to summary view
-        cancelEdit('partnerEoiInfo');
-        
-        // Reload page to show updated data
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000);
-    });
-};
-
-// ===== PARTNER EOI AUTO-POPULATION FUNCTIONS =====
-
-// Function to fetch and display partner EOI data when partner is selected
-function fetchPartnerEoiData(partnerId) {
-    const formFields = document.getElementById('partnerEoiFormFields');
-    
-    if (!partnerId || partnerId === '') {
-        // Hide form fields when no partner is selected
-        if (formFields) {
-            formFields.style.display = 'none';
-        }
-        return;
-    }
-
-    // Show form fields and display loading in all fields
-    if (formFields) {
-        formFields.style.display = 'block';
-        // Show loading in each field
-        const inputs = formFields.querySelectorAll('input, select');
-        inputs.forEach(input => {
-            if (input.tagName === 'INPUT') {
-                input.value = 'Loading...';
-            }
-        });
-    }
-
-    Promise.resolve({
-        success: false,
-        message: 'Partner-linked immigration (EOI) data is no longer loaded in this CRM.',
-    }).then(data => {
-        if (data.success) {
-            displayPartnerEoiData(data.data);
-        } else if (formFields) {
-            formFields.innerHTML = `
-                <div class="alert alert-secondary" style="margin-top: 20px;">
-                    <p class="mb-0">${data.message}</p>
-                </div>
-            `;
-        }
-    });
-}
-
-// Function to display partner EOI data in form fields
-function displayPartnerEoiData(partnerData) {
-    // Show the form fields section
-    const formFields = document.getElementById('partnerEoiFormFields');
-    if (formFields) {
-        formFields.style.display = 'block';
-    }
-
-    // Populate basic information
-    document.getElementById('partner_name').value = partnerData.partner_name || '';
-    document.getElementById('partner_dob').value = partnerData.dob || 'Not set';
-    
-    // Calculate and display age
-    if (partnerData.dob && partnerData.dob !== 'Not set') {
-        try {
-            const dobParts = partnerData.dob.split('/');
-            const dob = new Date(dobParts[2], dobParts[1] - 1, dobParts[0]);
-            const today = new Date();
-            let age = today.getFullYear() - dob.getFullYear();
-            const monthDiff = today.getMonth() - dob.getMonth();
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-                age--;
-            }
-            document.getElementById('partner_age').value = age + ' years old';
-        } catch (e) {
-            document.getElementById('partner_age').value = 'Not set';
-        }
-    } else {
-        document.getElementById('partner_age').value = 'Not set';
-    }
-    
-    // Populate citizenship and PR status
-    document.getElementById('partner_is_citizen').value = partnerData.is_citizen ? '1' : '0';
-    document.getElementById('partner_has_pr').value = partnerData.has_pr ? '1' : '0';
-    
-    // Populate English test scores
-    if (partnerData.english_test) {
-        document.getElementById('partner_test_type').value = partnerData.english_test.test_type || 'Not set';
-        document.getElementById('partner_test_date').value = partnerData.english_test.test_date || 'Not set';
-        document.getElementById('partner_listening').value = partnerData.english_test.listening || 'Not set';
-        document.getElementById('partner_reading').value = partnerData.english_test.reading || 'Not set';
-        document.getElementById('partner_writing').value = partnerData.english_test.writing || 'Not set';
-        document.getElementById('partner_speaking').value = partnerData.english_test.speaking || 'Not set';
-        document.getElementById('partner_overall').value = partnerData.english_test.overall || 'Not set';
-    } else {
-        document.getElementById('partner_test_type').value = 'Not set';
-        document.getElementById('partner_test_date').value = 'Not set';
-        document.getElementById('partner_listening').value = 'Not set';
-        document.getElementById('partner_reading').value = 'Not set';
-        document.getElementById('partner_writing').value = 'Not set';
-        document.getElementById('partner_speaking').value = 'Not set';
-        document.getElementById('partner_overall').value = 'Not set';
-    }
-    
-    // Populate skills assessment
-    if (partnerData.skills_assessment) {
-        document.getElementById('partner_has_assessment').value = partnerData.skills_assessment.has_assessment || 'Not set';
-        document.getElementById('partner_occupation').value = partnerData.skills_assessment.occupation || 'Not set';
-        document.getElementById('partner_assessment_date').value = partnerData.skills_assessment.assessment_date || 'Not set';
-        document.getElementById('partner_assessment_status').value = partnerData.skills_assessment.status || 'Not set';
-    } else {
-        document.getElementById('partner_has_assessment').value = 'No';
-        document.getElementById('partner_occupation').value = 'Not set';
-        document.getElementById('partner_assessment_date').value = 'Not set';
-        document.getElementById('partner_assessment_status').value = 'Not set';
-    }
-}
-
-// Partner selection event listener is now attached in toggleEditMode('partnerEoiInfo')
-// This ensures the dropdown is visible before attaching the listener
-
-/**
- * Save EOI information and update summary
- */
-window.saveEoiInfo = function() {
-    // Get all EOI entries
-    const container = document.getElementById('eoiReferencesContainer');
-    const sections = container.querySelectorAll('.repeatable-section');
-    const eois = [];
-    
-    sections.forEach(section => {
-        const eoiId = section.querySelector('input[name*="eoi_id"]')?.value;
-        const eoiNumber = section.querySelector('input[name*="EOI_number"]').value;
-        const subclass = section.querySelector('input[name*="EOI_subclass"]').value;
-        const occupation = section.querySelector('input[name*="EOI_occupation"]').value;
-        const point = section.querySelector('input[name*="EOI_point"]').value;
-        const state = section.querySelector('input[name*="EOI_state"]').value;
-        const submissionDate = section.querySelector('input[name*="EOI_submission_date"]').value;
-        const roi = section.querySelector('input[name*="EOI_ROI"]').value;
-        
-        if (eoiNumber || subclass || occupation || point || state || submissionDate || roi) {
-            eois.push({
-                eoi_id: eoiId || '',
-                eoi_number: eoiNumber,
-                subclass: subclass,
-                occupation: occupation,
-                point: point,
-                state: state,
-                submission_date: submissionDate,
-                roi: roi
-            });
-        }
-    });
-    
-    const formData = new FormData();
-    formData.append('eois', JSON.stringify(eois));
-    
-    saveSectionData('eoiInfo', formData, function() {
-        // Update summary view on success
-        const summaryView = document.getElementById('eoiInfoSummary');
-        
-        if (eois.length > 0) {
-            let summaryHTML = '<div style="margin-top: 15px;">';
-            eois.forEach(eoi => {
-                summaryHTML += `
-                    <div class="eoi-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #007bff;">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: center;">
-                            <div class="summary-item-inline">
-                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">EOI NUMBER:</span>
-                                <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.eoi_number || 'Not set'}</span>
-                            </div>
-                            <div class="summary-item-inline">
-                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">SUBCLASS:</span>
-                                <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.subclass || 'Not set'}</span>
-                            </div>
-                            <div class="summary-item-inline">
-                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">OCCUPATION:</span>
-                                <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.occupation || 'Not set'}</span>
-                            </div>
-                            <div class="summary-item-inline">
-                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">POINT:</span>
-                                <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.point || 'Not set'}</span>
-                            </div>
-                            <div class="summary-item-inline">
-                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">STATE:</span>
-                                <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.state || 'Not set'}</span>
-                            </div>
-                            <div class="summary-item-inline">
-                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">SUBMISSION DATE:</span>
-                                <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.submission_date || 'Not set'}</span>
-                            </div>
-                            <div class="summary-item-inline">
-                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">ROI:</span>
-                                <span class="summary-value" style="color: #212529; font-weight: 500;">${eoi.roi || 'Not set'}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            summaryHTML += '</div>';
-            summaryView.innerHTML = summaryHTML;
-        } else {
-            summaryView.innerHTML = '<div class="empty-state" style="margin-top: 15px;"><p>No EOI references added yet.</p></div>';
-        }
-        
-        // Return to summary view
-        cancelEdit('eoiInfo');
-    });
-};
-
 /**
  * Remove phone field with confirmation
  */
@@ -4096,15 +3783,6 @@ window.removeCharacterField = function(button) {
 };
 
 /**
- * Remove EOI field with confirmation
- */
-window.removeEoiField = function(button) {
-    if (confirm('Are you sure you want to remove this EOI reference?')) {
-        button.closest('.repeatable-section').remove();
-    }
-};
-
-/**
  * Show notification message
  */
 function showNotification(message, type = 'info') {
@@ -4146,7 +3824,6 @@ function showNotification(message, type = 'info') {
 window.initGoogleMaps = initGoogleMaps;
 window.addPartnerRow = addPartnerRow;
 window.removePartnerRow = removePartnerRow;
-window.addEoiReference = addEoiReference;
 window.toggleVisaDetails = toggleVisaDetails;
 window.addPassportDetail = addPassportDetail;
 window.addTravelDetail = addTravelDetail;
@@ -4855,30 +4532,6 @@ $(document).ready(function() {
 
         // Initial validation on page load
         validatePersonalEmailTypes();
-    }
-
-    // Handle EOI Reference removal with confirmation
-    const eoiReferencesContainer = document.getElementById('eoiReferencesContainer');
-    if (eoiReferencesContainer) {
-        eoiReferencesContainer.addEventListener('click', function(e) {
-            if (e.target.closest('.remove-item-btn')) {
-                const section = e.target.closest('.repeatable-section');
-                const eoiIdInput = section.querySelector('input[name^="eoi_id"]');
-                const confirmDelete = confirm('Are you sure you want to delete this EOI Reference?');
-
-                if (confirmDelete) {
-                    if (eoiIdInput) {
-                        const eoiId = eoiIdInput.value;
-                        const hiddenInput = document.createElement('input');
-                        hiddenInput.type = 'hidden';
-                        hiddenInput.name = 'delete_eoi_ids[]';
-                        hiddenInput.value = eoiId;
-                        document.getElementById('editClientForm').appendChild(hiddenInput);
-                    }
-                    section.remove();
-                }
-            }
-        });
     }
 
     // Handle qualification removal

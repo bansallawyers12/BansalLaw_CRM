@@ -15,7 +15,6 @@ ClientAddress.php
 ClientCharacter.php
 ClientContact.php
 ClientEmail.php
-ClientEoiReference.php
 ClientExperience.php
 ClientMatter.php
 ClientOccupation.php

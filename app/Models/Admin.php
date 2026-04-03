@@ -51,7 +51,7 @@ class Admin extends Authenticatable
         'service_token', 'token_generated_at',
         // Client Portal (for staff access)
         'cp_status', 'cp_random_code', 'cp_code_verify', 'cp_token_generated_at',
-        // EOI Qualification Fields (for immigration points calculation)
+        // Study / additional qualification flags (admins table)
         'australian_study', 'australian_study_date', 'specialist_education', 'specialist_education_date', 'regional_study', 'regional_study_date',
         // Verification (staff can verify documents)
         'visa_expiry_verified_at', 'visa_expiry_verified_by',
@@ -209,22 +209,12 @@ class Admin extends Authenticatable
         return $this->hasMany(\App\Models\Admin::class, 'visa_expiry_verified_by');
     }
 
-    /**
-     * Get the EOI/ROI references for this client
-     * Note: Admins table also stores client records
-     */
-    public function eoiReferences(): HasMany
-    {
-        return $this->hasMany(\App\Models\ClientEoiReference::class, 'client_id');
-    }
-
     // ============================================================
-    // CLIENT RELATIONSHIPS (For Immigration/EOI Data)
+    // CLIENT RELATIONSHIPS
     // ============================================================
 
     /**
      * Get the partner/spouse details for this client
-     * Used for EOI points calculation
      */
     public function partner()
     {

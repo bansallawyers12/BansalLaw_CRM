@@ -240,7 +240,7 @@ Route::middleware(['auth:admin'])->group(function() {
 	| SECTION: Client Management Routes
 	|--------------------------------------------------*/
 	// All client routes moved to routes/clients.php
-	// Includes: CRUD, documents, verification, invoices, EOI/ROI, notes, agreements
+	// Includes: CRUD, documents, verification, invoices, notes, agreements
 	require __DIR__ . '/clients.php';
 
 	/*--------------------------------------------------

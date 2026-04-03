@@ -16,7 +16,6 @@ use App\Models\ClientPassportInformation;
 use App\Models\ClientTravelInformation;
 use App\Models\ClientCharacter;
 use App\Models\ClientRelationship;
-use App\Models\ClientEoiReference;
 use App\Models\Matter;
 use App\Models\Country;
 
@@ -59,7 +58,6 @@ class ClientEditService
             'clientTravels' => $this->getTravels($clientId),
             'clientCharacters' => $this->getCharacters($clientId),
             'clientPartners' => $this->getRelationships($clientId),
-            'clientEoiReferences' => $this->getEoiReferences($clientId),
             
             // Dropdown data - loaded ONCE to prevent N+1 queries
             'visaTypes' => $this->getVisaTypes(),
@@ -231,14 +229,6 @@ class ClientEditService
         return ClientRelationship::where('client_id', $clientId)
             ->with(['relatedClient:id,first_name,last_name,email,phone,client_id'])  // Eager load to prevent N+1
             ->get() ?? [];
-    }
-
-    /**
-     * Get EOI references
-     */
-    protected function getEoiReferences(int $clientId)
-    {
-        return ClientEoiReference::where('client_id', $clientId)->get() ?? [];
     }
 
     /**

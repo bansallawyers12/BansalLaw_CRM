@@ -28,7 +28,6 @@ use App\Models\ClientPassportInformation;
 use App\Models\ClientTravelInformation;
 use App\Models\ClientCharacter;
 use App\Models\ClientRelationship;
-use App\Models\ClientEoiReference;
 use App\Models\ClientMatter;
 use App\Models\Company;
 use App\Models\CompanyDirector;
@@ -1480,35 +1479,18 @@ class ClientPersonalDetailsController extends Controller
         foreach ($requestData['delete_partner_ids'] as $partnerId) {
             $partner = ClientRelationship::find($partnerId);
             if ($partner && $partner->client_id == $obj->id) {
-                // Check if this partner is used for EOI calculation
-                // Match by related_client_id in client_spouse_details
+                // Remove linked spouse detail when partner relationship is deleted
                 $spouseDetail = ClientSpouseDetail::where('client_id', $obj->id)
                     ->where('related_client_id', $partner->related_client_id)
                     ->first();
                 
                 if ($spouseDetail) {
-                    // Clear EOI data since partner is being deleted
                     $spouseDetail->delete();
-                    
-                    // Clear points cache to recalculate without partner
-                    if (class_exists('\App\Services\PointsService')) {
-                        $pointsService = new \App\Services\PointsService();
-                        $pointsService->clearCache($obj->id);
-                    }
-                    
-                    Log::info('Cleared partner EOI data for deleted partner', [
+                    Log::info('Removed spouse detail for deleted partner', [
                         'partner_id' => $partnerId,
                         'related_client_id' => $partner->related_client_id,
                         'client_id' => $obj->id
                     ]);
-                    
-                    // Log activity for audit trail
-                    $this->logClientActivity(
-                        $obj->id,
-                        'cleared partner EOI information',
-                        "Partner removed from EOI calculation (partner deleted from family section)",
-                        'activity'
-                    );
                 }
                 
                 // Delete reciprocal relationship if exists
@@ -1776,8 +1758,6 @@ class ClientPersonalDetailsController extends Controller
                     return $this->saveCharacterInfoSection($request, $client);
                 case 'partnerInfo':
                     return $this->savePartnerInfoSection($request, $client);
-                case 'partnerEoiInfo':
-                    return $this->savePartnerEoiInfoSection($request, $client);
                 case 'childrenInfo':
                     return $this->saveChildrenInfoSection($request, $client);
                 case 'parentsInfo':
@@ -1786,8 +1766,6 @@ class ClientPersonalDetailsController extends Controller
                     return $this->saveSiblingsInfoSection($request, $client);
                 case 'othersInfo':
                     return $this->saveOthersInfoSection($request, $client);
-                case 'eoiInfo':
-                    return $this->saveEoiInfoSection($request, $client);
                 case 'occupation':
                     return $this->saveOccupationInfoSection($request, $client);
                 case 'test_scores':
@@ -4312,7 +4290,7 @@ class ClientPersonalDetailsController extends Controller
             $pyTest = $request->input('py_test');
             $pyDate = $request->input('py_date');
             
-            // New EOI qualification fields
+            // Study / additional qualification flags
             $australianStudy = $request->input('australian_study');
             $australianStudyDate = $request->input('australian_study_date');
             $specialistEducation = $request->input('specialist_education');
@@ -4461,12 +4439,6 @@ class ClientPersonalDetailsController extends Controller
             $client->regional_study = $regionalStudy;
             $client->regional_study_date = $regionalStudyDateFormatted;
             $client->save();
-
-            // Clear points cache when EOI qualification data changes
-            if (class_exists('\App\Services\PointsService')) {
-                $pointsService = new \App\Services\PointsService();
-                $pointsService->clearCache($client->id);
-            }
 
             // Log activity with before/after values
             if (!empty($changedFields)) {
@@ -4631,9 +4603,7 @@ class ClientPersonalDetailsController extends Controller
                 }
             }
 
-            // Clear ClientSpouseDetail when points calculation would be stale:
-            // 1. All partners removed - no partner to calculate for
-            // 2. Selected partner (related_client_id) was removed but other partners remain - orphaned EOI data
+            // Clear ClientSpouseDetail when the selected linked partner is no longer in the list
             $hasValidPartners = collect($partners)->contains(fn ($p) => !empty($p['details']) || !empty($p['relationship_type']));
             $newPartnerClientIds = collect($partners)
                 ->filter(fn ($p) => !empty($p['details']) || !empty($p['relationship_type']))
@@ -4655,9 +4625,6 @@ class ClientPersonalDetailsController extends Controller
 
             if ($shouldClearSpouse) {
                 ClientSpouseDetail::where('client_id', $client->id)->delete();
-                if (class_exists(\App\Services\PointsService::class)) {
-                    (new \App\Services\PointsService())->clearCache($client->id);
-                }
             }
 
             // Insert new partner records
@@ -4762,208 +4729,6 @@ class ClientPersonalDetailsController extends Controller
                 return 'Defacto';
             default:
                 return $relationshipType; // Return same type if no specific reciprocal
-        }
-    }
-
-    private function savePartnerEoiInfoSection($request, $client)
-    {
-        try {
-            $selectedPartnerId = $request->input('selected_partner_id');
-            
-            if (!$selectedPartnerId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Please select a partner for EOI calculation'
-                ], 400);
-            }
-
-            // Get the selected partner's data from their actual profile
-            $partnerClient = \App\Models\Admin::find($selectedPartnerId);
-            if (!$partnerClient) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Selected partner not found'
-                ], 404);
-            }
-
-            // Get or create spouse details record
-            $spouseDetail = \App\Models\ClientSpouseDetail::firstOrNew(['client_id' => $client->id]);
-            
-            // Auto-populate from partner's actual profile
-            $spouseDetail->related_client_id = $selectedPartnerId;
-            $spouseDetail->dob = $partnerClient->dob;
-            
-            // Check if partner is citizen/PR from their visa records
-            $spouseDetail->is_citizen = 0; // Default
-            $spouseDetail->has_pr = 0; // Default
-            
-            // Get partner's English test scores
-            $partnerTestScore = $partnerClient->testScores()->latest()->first();
-            if ($partnerTestScore) {
-                $spouseDetail->spouse_has_english_score = 1;
-                $spouseDetail->spouse_test_type = $partnerTestScore->test_type;
-                $spouseDetail->spouse_listening_score = $partnerTestScore->listening;
-                $spouseDetail->spouse_reading_score = $partnerTestScore->reading;
-                $spouseDetail->spouse_writing_score = $partnerTestScore->writing;
-                $spouseDetail->spouse_speaking_score = $partnerTestScore->speaking;
-                $spouseDetail->spouse_overall_score = $partnerTestScore->overall_score;
-                $spouseDetail->spouse_test_date = $partnerTestScore->test_date;
-            } else {
-                $spouseDetail->spouse_has_english_score = 0;
-                $spouseDetail->spouse_test_type = null;
-                $spouseDetail->spouse_listening_score = null;
-                $spouseDetail->spouse_reading_score = null;
-                $spouseDetail->spouse_writing_score = null;
-                $spouseDetail->spouse_speaking_score = null;
-                $spouseDetail->spouse_overall_score = null;
-                $spouseDetail->spouse_test_date = null;
-            }
-
-            // Get partner's skills assessment
-            $partnerOccupation = $partnerClient->occupations()->latest()->first();
-            if ($partnerOccupation) {
-                $spouseDetail->spouse_has_skill_assessment = 1;
-                $spouseDetail->spouse_nomi_occupation = $partnerOccupation->nomi_occupation;
-                $spouseDetail->spouse_assessment_date = $partnerOccupation->dates;
-                $spouseDetail->spouse_skill_assessment_status = 'Valid'; // Default status
-            } else {
-                $spouseDetail->spouse_has_skill_assessment = 0;
-                $spouseDetail->spouse_nomi_occupation = null;
-                $spouseDetail->spouse_assessment_date = null;
-                $spouseDetail->spouse_skill_assessment_status = null;
-            }
-
-            $spouseDetail->save();
-
-            // Also create/update ClientPartner record to keep both tables in sync
-            // This ensures the summary view displays correctly
-            $partnerRelationship = ClientRelationship::where('client_id', $client->id)
-                ->where('related_client_id', $selectedPartnerId)
-                ->first();
-
-            if (!$partnerRelationship) {
-                // Determine relationship type from client's marital status
-                $relationshipType = 'Partner'; // Default
-                if ($client->marital_status === 'Married') {
-                    // Determine if Husband or Wife based on client's gender if available
-                    $relationshipType = 'Partner'; // Use generic Partner for married
-                } elseif (in_array($client->marital_status, ['De Facto', 'Defacto'])) {
-                    $relationshipType = 'Defacto';
-                }
-                
-                // Create new ClientPartner record
-                ClientRelationship::create([
-                    'client_id' => $client->id,
-                    'related_client_id' => $selectedPartnerId,
-                    'relationship_type' => $relationshipType,
-                    'details' => $partnerClient->first_name . ' ' . $partnerClient->last_name,
-                ]);
-                
-                Log::info('Created ClientPartner record for EOI synchronization', [
-                    'client_id' => $client->id,
-                    'partner_id' => $selectedPartnerId,
-                    'relationship_type' => $relationshipType
-                ]);
-            }
-
-            // Clear points cache when partner EOI data changes
-            if (class_exists('\App\Services\PointsService')) {
-                $pointsService = new \App\Services\PointsService();
-                $pointsService->clearCache($client->id);
-            }
-
-            // Log activity for partner EOI information update
-            $this->logClientActivity(
-                $client->id,
-                'updated partner EOI information',
-                "Updated partner EOI information for {$partnerClient->first_name} {$partnerClient->last_name}",
-                'activity'
-            );
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Partner EOI information updated successfully'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error saving partner EOI information: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function getPartnerEoiData($partnerId)
-    {
-        try {
-            $this->ensureCrmRecordAccess((int) $partnerId);
-
-            // Get the partner's data from their actual profile
-            $partnerClient = \App\Models\Admin::find($partnerId);
-            if (!$partnerClient) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Partner not found'
-                ], 404);
-            }
-
-            // Get partner's English test scores
-            $partnerTestScore = $partnerClient->testScores()->latest()->first();
-            
-            // Get partner's skills assessment
-            $partnerOccupation = $partnerClient->occupations()->latest()->first();
-            
-            // Check if partner is citizen/PR from their visa records
-            $isCitizen = 0;
-            $hasPR = 0;
-            
-            // Build the response data
-            $partnerData = [
-                'partner_name' => $partnerClient->first_name . ' ' . $partnerClient->last_name,
-                'dob' => $partnerClient->dob ? date('d/m/Y', strtotime($partnerClient->dob)) : 'Not set',
-                'is_citizen' => $isCitizen,
-                'has_pr' => $hasPR,
-                'english_test' => null,
-                'skills_assessment' => null
-            ];
-
-            if ($partnerTestScore) {
-                $partnerData['english_test'] = [
-                    'test_type' => $partnerTestScore->test_type ?? 'Not set',
-                    'listening' => $partnerTestScore->listening ?? 'Not set',
-                    'reading' => $partnerTestScore->reading ?? 'Not set',
-                    'writing' => $partnerTestScore->writing ?? 'Not set',
-                    'speaking' => $partnerTestScore->speaking ?? 'Not set',
-                    'overall' => $partnerTestScore->overall ?? 'Not set',
-                    'test_date' => $partnerTestScore->test_date ? date('d/m/Y', strtotime($partnerTestScore->test_date)) : 'Not set'
-                ];
-            }
-
-            if ($partnerOccupation) {
-                $partnerData['skills_assessment'] = [
-                    'has_assessment' => 'Yes',
-                    'occupation' => $partnerOccupation->nomi_occupation ?? 'Not set',
-                    'assessment_date' => $partnerOccupation->dates ? date('d/m/Y', strtotime($partnerOccupation->dates)) : 'Not set',
-                    'status' => 'Valid'
-                ];
-            } else {
-                $partnerData['skills_assessment'] = [
-                    'has_assessment' => 'No',
-                    'occupation' => 'Not set',
-                    'assessment_date' => 'Not set',
-                    'status' => 'Not set'
-                ];
-            }
-
-            return response()->json([
-                'success' => true,
-                'data' => $partnerData
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error fetching partner EOI data: ' . $e->getMessage()
-            ], 500);
         }
     }
 
@@ -5120,73 +4885,6 @@ class ClientPersonalDetailsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error saving children information: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    private function saveEoiInfoSection($request, $client)
-    {
-        try {
-            $eois = json_decode($request->input('eois'), true);
-            
-            if (!is_array($eois)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid EOI data'
-                ], 400);
-            }
-
-            // Delete existing EOI references for this client
-            ClientEoiReference::where('client_id', $client->id)->delete();
-
-            // Save new EOI references
-            foreach ($eois as $eoiData) {
-                if (!empty($eoiData['eoi_number']) || !empty($eoiData['subclass']) || !empty($eoiData['occupation'])) {
-                    // Format submission date from d/m/Y to Y-m-d
-                    $formatted_submission_date = null;
-                    if (!empty($eoiData['submission_date'])) {
-                        try {
-                            $date = \Carbon\Carbon::createFromFormat('d/m/Y', $eoiData['submission_date']);
-                            $formatted_submission_date = $date->format('Y-m-d');
-                        } catch (\Exception $e) {
-                            // If format conversion fails, try to use the date as-is
-                            $formatted_submission_date = $eoiData['submission_date'];
-                        }
-                    }
-                    
-                    ClientEoiReference::create([
-                        'client_id' => $client->id,
-                        'admin_id' => Auth::id(),
-                        'EOI_number' => $eoiData['eoi_number'] ?? null,
-                        'EOI_subclass' => $eoiData['subclass'] ?? null,
-                        'EOI_occupation' => $eoiData['occupation'] ?? null,
-                        'EOI_point' => $eoiData['point'] ?? null,
-                        'EOI_state' => $eoiData['state'] ?? null,
-                        'EOI_submission_date' => $formatted_submission_date,
-                        'EOI_ROI' => $eoiData['roi'] ?? null,
-                    ]);
-                }
-            }
-
-            // Log activity for EOI references update
-            $eoiCount = count(array_filter($eois, function($eoi) { 
-                return !empty($eoi['eoi_number']) || !empty($eoi['subclass']) || !empty($eoi['occupation']); 
-            }));
-            $this->logClientActivity(
-                $client->id,
-                'updated EOI references',
-                "Updated {$eoiCount} EOI reference record(s)",
-                'activity'
-            );
-
-            return response()->json([
-                'success' => true,
-                'message' => 'EOI reference information updated successfully'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error saving EOI information: ' . $e->getMessage()
             ], 500);
         }
     }

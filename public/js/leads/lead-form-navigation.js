@@ -35,8 +35,7 @@ function updateActiveNavItem(sectionId) {
         'addressTravelSection': 2,
         'skillsEducationSection': 3,
         'otherInformationSection': 4,
-        'familySection': 5,
-        'eoiReferenceSection': 6
+        'familySection': 5
     };
     
     const index = sectionMap[sectionId];
@@ -72,8 +71,7 @@ function handleScroll() {
         'addressTravelSection',
         'skillsEducationSection',
         'otherInformationSection',
-        'familySection',
-        'eoiReferenceSection'
+        'familySection'
     ];
     
     let currentSection = null;

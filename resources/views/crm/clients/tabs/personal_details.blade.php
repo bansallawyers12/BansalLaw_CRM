@@ -819,39 +819,6 @@
                     } ?>
 
 
-                    <?php
-                    $clientEoi_Info = App\Models\ClientEoiReference::where('client_id', $fetchedData->id)->orderBy('id','desc')->get();
-                    ?>
-                    @if(!empty($clientEoi_Info) && $clientEoi_Info->count() > 0)
-                    <div class="card">
-                        <div class="eoi-section">
-                            <h3><i class="fas fa-file-alt"></i> EOI Reference Information</h3>
-                            <div class="eoi-list" style="overflow-x: auto;/*max-height: 300px; overflow-y: auto;*/">
-                                <table class="table eoi-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Subclass</th>
-                                            <th>Occupation</th>
-                                            <th>Point</th>
-                                            <th>State</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($clientEoi_Info as $Eoi_Info)
-                                            <tr>
-                                                <td>{{ $Eoi_Info->EOI_subclass ?: 'N/A' }}</td>
-                                                <td>{{ $Eoi_Info->EOI_occupation ?: 'N/A' }}</td>
-                                                <td>{{ $Eoi_Info->EOI_point ?: 'N/A' }}</td>
-                                                <td>{{ $Eoi_Info->EOI_state ?: 'N/A' }}</td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
-
                     <style>
                         .eoi-table{
                             width: 100%;
@@ -913,23 +880,6 @@
                             width: 35%; 
                         } /* End Date */
                         
-                        /* EOI table column widths */
-                        .eoi-section .eoi-table th:nth-child(1),
-                        .eoi-section .eoi-table td:nth-child(1) { 
-                            width: 20%; 
-                        } /* Subclass */
-                        .eoi-section .eoi-table th:nth-child(2),
-                        .eoi-section .eoi-table td:nth-child(2) { 
-                            width: 35%; 
-                        } /* Occupation */
-                        .eoi-section .eoi-table th:nth-child(3),
-                        .eoi-section .eoi-table td:nth-child(3) { 
-                            width: 20%; 
-                        } /* Point */
-                        .eoi-section .eoi-table th:nth-child(4),
-                        .eoi-section .eoi-table td:nth-child(4) { 
-                            width: 25%; 
-                        } /* State */
                         .eoi-table tbody tr:hover {
                             background-color: #f1f5f9;
                         }
@@ -946,17 +896,6 @@
                             white-space: normal;
                             word-break: break-word;
                             overflow-wrap: break-word;
-                        }
-                        .eoi-section .eoi-table td:nth-child(2) {
-                            white-space: normal;
-                            word-break: break-word;
-                            overflow-wrap: break-word;
-                        }
-                        /* Allow State column to wrap properly */
-                        .eoi-section .eoi-table td:nth-child(4) {
-                            white-space: normal;
-                            word-break: normal;
-                            overflow-wrap: normal;
                         }
                         /* Allow End Date columns to wrap to 2 lines */
                         .qualification-section .eoi-table td:nth-child(4) {

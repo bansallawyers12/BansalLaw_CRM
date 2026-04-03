@@ -705,7 +705,7 @@ class LeadController extends Controller
                     'cp_status' => 0, // Client portal status (NOT NULL, default 0 - inactive)
                     'cp_code_verify' => 0, // Client portal code verification (NOT NULL, default 0)
                     
-                    // EOI Qualification fields (required NOT NULL columns, default 0 for new leads)
+                    // Study flags (required NOT NULL columns, default 0 for new leads)
                     'australian_study' => 0, // Australian study requirement (NOT NULL, default 0)
                     'specialist_education' => 0, // Specialist education qualification (NOT NULL, default 0)
                     'regional_study' => 0, // Regional study qualification (NOT NULL, default 0)

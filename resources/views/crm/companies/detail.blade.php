@@ -326,7 +326,7 @@ use App\Http\Controllers\Controller;
             
             // Valid tab names that should NOT be treated as matter IDs
             $validTabNames = ['companydetails', 'activityfeed', 'noteterm', 'personaldocuments', 'visadocuments', 'nominationdocuments',
-                              'eoiroi', 'emails', 
+                              'emails', 
                               // Legacy removed tab slugs
                               'formgenerations', 'formgenerationsl',
                               'client_portal', 'application', 'workflow', 'checklists'];

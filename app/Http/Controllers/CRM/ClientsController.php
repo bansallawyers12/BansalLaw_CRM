@@ -75,7 +75,6 @@ use PhpOffice\PhpWord\TemplateProcessor;
 use App\Models\CostAssignmentForm;
 use App\Models\PersonalDocumentType;
 use App\Models\VisaDocumentType;
-use App\Models\ClientEoiReference;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
 use App\Mail\HubdocInvoiceMail;
@@ -2062,7 +2061,7 @@ class ClientsController extends Controller
             // so that every downstream view receives a clean null $id1.
             $knownTabNames = [
                 'personaldetails', 'companydetails', 'activityfeed', 'noteterm', 'personaldocuments', 'visadocuments', 'nominationdocuments',
-                'eoiroi', 'emails', 'client_portal',
+                'emails', 'client_portal',
                 // Legacy removed tab slugs - keep as reserved so they are not treated as matter IDs
                 'formgenerations', 'formgenerationsl',
                 'workflow', 'checklists', 'account', 'notuseddocuments',

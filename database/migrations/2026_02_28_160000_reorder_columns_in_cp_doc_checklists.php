@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * PostgreSQL does not support reordering columns in-place.
@@ -20,6 +21,16 @@ return new class extends Migration
 
     public function up(): void
     {
+        if (! Schema::hasTable('cp_doc_checklists')) {
+            return;
+        }
+
+        foreach (explode(', ', $this->cols) as $col) {
+            if (! Schema::hasColumn('cp_doc_checklists', trim($col))) {
+                return;
+            }
+        }
+
         DB::statement("
             CREATE TABLE cp_doc_checklists_new (
                 id               SERIAL PRIMARY KEY,
@@ -51,9 +62,18 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Restore original column order (wf_stage / wf_stage_id back at the end)
-        $origCols = 'id, user_id, client_id, client_matter_id, cp_checklist_name, description, allow_client, created_at, updated_at, wf_stage, wf_stage_id';
+        if (! Schema::hasTable('cp_doc_checklists')) {
+            return;
+        }
 
+        $origCols = 'id, user_id, client_id, client_matter_id, cp_checklist_name, description, allow_client, created_at, updated_at, wf_stage, wf_stage_id';
+        foreach (explode(', ', $origCols) as $col) {
+            if (! Schema::hasColumn('cp_doc_checklists', trim($col))) {
+                return;
+            }
+        }
+
+        // Restore original column order (wf_stage / wf_stage_id back at the end)
         DB::statement("
             CREATE TABLE cp_doc_checklists_prev (
                 id               SERIAL PRIMARY KEY,

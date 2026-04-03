@@ -61,10 +61,6 @@
                         <i class="fas fa-users"></i>
                         <span>Family Information</span>
                     </button>
-                    <button class="nav-item" onclick="scrollToSection('eoiReferenceSection')">
-                        <i class="fas fa-file-alt"></i>
-                        <span>EOI Reference</span>
-                    </button>
                 </nav>
                 
                 <!-- Back Button in Sidebar -->
@@ -1411,87 +1407,6 @@
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveChildrenInfo()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('childrenInfo')">Cancel</button>
-                            </div>
-                        </div>
-                    </section>
-                </section>
-
-                <!-- EOI Reference Section -->
-                <section id="eoiReferenceSection" class="content-section">
-                    <section class="form-section">
-                        <div class="section-header">
-                            <h3><i class="fas fa-file-alt"></i> EOI References</h3>
-                            <div class="section-actions" style="display: none;">
-                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('eoiInfo')">
-                                    <i class="fas fa-pen"></i>
-                                </button>
-                                <button type="button" class="add-section-btn" onclick="addEoiReference()" title="Add EOI Reference">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Summary View -->
-                        <div id="eoiInfoSummary" class="summary-view">
-                            @if($clientEoiReferences->count() > 0)
-                                <div style="margin-top: 15px;">
-                                    @foreach($clientEoiReferences as $index => $eoi)
-                                        <div class="eoi-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #007bff;">
-                                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: center;">
-                                                <div class="summary-item-inline">
-                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">EOI NUMBER:</span>
-                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $eoi->EOI_number ?: 'Not set' }}</span>
-                                                </div>
-                                                <div class="summary-item-inline">
-                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">SUBCLASS:</span>
-                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $eoi->EOI_subclass ?: 'Not set' }}</span>
-                                                </div>
-                                                <div class="summary-item-inline">
-                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">OCCUPATION:</span>
-                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $eoi->EOI_occupation ?: 'Not set' }}</span>
-                                                </div>
-                                                <div class="summary-item-inline">
-                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">POINT:</span>
-                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $eoi->EOI_point ?: 'Not set' }}</span>
-                                                </div>
-                                                <div class="summary-item-inline">
-                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">STATE:</span>
-                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $eoi->EOI_state ?: 'Not set' }}</span>
-                                                </div>
-                                                <div class="summary-item-inline">
-                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">SUBMISSION DATE:</span>
-                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $eoi->EOI_submission_date ? date('d/m/Y', strtotime($eoi->EOI_submission_date)) : 'Not set' }}</span>
-                                                </div>
-                                                <div class="summary-item-inline">
-                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">ROI:</span>
-                                                    <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $eoi->EOI_ROI ?: 'Not set' }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <div class="empty-state" style="margin-top: 15px;">
-                                    <p>No EOI references added yet.</p>
-                                </div>
-                            @endif
-                        </div>
-
-                        <!-- Edit View -->
-                        <div id="eoiInfoEdit" class="edit-view" style="display: none;">
-                            <div id="eoiReferencesContainer">
-                                @foreach($clientEoiReferences as $index => $eoi)
-                                    <x-client-edit.eoi-reference-field 
-                                        :index="$index" 
-                                        :eoi="$eoi" 
-                                    />
-                                @endforeach
-                            </div>
-
-                            <button type="button" class="add-item-btn" onclick="addEoiReference()" style="display: none;"><i class="fas fa-plus-circle"></i> Add EOI Reference</button>
-                            <div class="edit-actions">
-                                <button type="button" class="btn btn-primary" onclick="saveEoiInfo()">Save</button>
-                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('eoiInfo')">Cancel</button>
                             </div>
                         </div>
                     </section>
