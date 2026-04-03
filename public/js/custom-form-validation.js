@@ -146,7 +146,7 @@ function customValidate(formName, savetype = '')
 					console.warn('[ConvertLeadToClient] Validation failed (i=' + i + '), form not submitted');
 				}
 				if (formName === 'change_matter_assignee') {
-					console.warn('[ChangeMatterAssignee] Validation FAILED, error count i=' + i + ', form will NOT submit. Check required fields (Migration Agent, Person Responsible, Person Assisting).');
+					console.warn('[ChangeMatterAssignee] Validation FAILED, error count i=' + i + ', form will NOT submit. Check required fields (Legal Practitioner, Person Responsible, Person Assisting).');
 				}
 				if(formName == 'add-query'){
 					$('html, body').animate({scrollTop:$("#row_scroll"). offset(). top}, 'slow');

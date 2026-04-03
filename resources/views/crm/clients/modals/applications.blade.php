@@ -56,7 +56,7 @@
 	</div>
 </div>
 
-{{-- 2a-1. Verification: Payment, Service Agreement, Forms - Migration Agent must tick before proceeding --}}
+{{-- 2a-1. Verification: Payment, Service Agreement, Forms - Legal Practitioner must tick before proceeding --}}
 <div class="modal fade custom_modal" id="verification-payment-forms-modal" tabindex="-1" role="dialog" aria-labelledby="verificationPaymentFormsModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -67,7 +67,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<p class="mb-3" style="color: #374151;">As a Migration Agent, please confirm that you have verified the Payment, Service Agreement, and Forms before proceeding.</p>
+				<p class="mb-3" style="color: #374151;">As a Legal Practitioner, please confirm that you have verified the Payment, Service Agreement, and Forms before proceeding.</p>
 				<form id="verification-payment-forms-form" name="verification-payment-forms-form" autocomplete="off">
 					@csrf
 					<input type="hidden" name="matter_id" id="verification-payment-forms-matter-id" value="">

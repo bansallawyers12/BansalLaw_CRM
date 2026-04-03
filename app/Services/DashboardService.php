@@ -52,7 +52,7 @@ class DashboardService
         // Column restrictions can prevent relationships from loading if data doesn't match exactly
         $query = ClientMatter::with([
             'client',           // Load full client record
-            'migrationAgent',  // Load full migration agent record
+            'migrationAgent',  // Load full Legal Practitioner (matter assignee) record
             'personResponsible', // Load full person responsible record
             'personAssisting',  // Load full person assisting record
             'workflowStage',    // Load workflow stage

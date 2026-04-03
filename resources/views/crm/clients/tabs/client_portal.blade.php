@@ -97,7 +97,7 @@
                     $verificationStageNames = ['payment verified', 'verification: payment, service agreement, forms'];
                     $isVerificationStage = $currentStageName && in_array(strtolower(trim($currentStageName)), $verificationStageNames);
                     $currentUserRole = (int) (Auth::guard('admin')->user()->role ?? 0);
-                    $canVerifyAndProceed = in_array($currentUserRole, [1, 16]); // Admin (1) or Migration Agent (16)
+                    $canVerifyAndProceed = in_array($currentUserRole, [1, 16]); // Admin (1) or Legal Practitioner (16)
                 }
                 ?>
                 
@@ -180,7 +180,7 @@
                                                 $portalNextBtnTitle = 'Proceed to Next Stage';
                                                 if (isset($isVerificationStage) && $isVerificationStage && (!isset($canVerifyAndProceed) || !$canVerifyAndProceed)) {
                                                     $portalNextBtnDisabled = true;
-                                                    $portalNextBtnTitle = 'Only a Migration Agent (or Admin) can verify and proceed.';
+                                                    $portalNextBtnTitle = 'Only a Legal Practitioner (or Admin) can verify and proceed.';
                                                 }
                                             @endphp
                                             <button class="btn btn-success btn-sm" id="proceed-to-next-stage" data-matter-id="{{ $selectedMatter->id }}" data-next-stage-name="{{ $nextStageName ?? '' }}" data-current-stage-name="{{ $currentStageName ?? '' }}" data-is-verification-stage="{{ isset($isVerificationStage) && $isVerificationStage ? '1' : '0' }}" data-can-verify-and-proceed="{{ isset($canVerifyAndProceed) && $canVerifyAndProceed ? '1' : '0' }}" title="{{ $portalNextBtnTitle }}" {{ $portalNextBtnDisabled ? 'disabled' : '' }}>
@@ -3898,7 +3898,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // If at Verification stage (Payment, Service Agreement, Forms), Migration Agent must tick and add optional note
+            // If at Verification stage (Payment, Service Agreement, Forms), Legal Practitioner must tick and add optional note
             if (isVerificationStage && canVerifyAndProceed) {
                 document.getElementById('verification-payment-forms-matter-id').value = matterId;
                 document.getElementById('verification-confirm-checkbox').checked = false;

@@ -195,21 +195,21 @@
 						</div>
 					</div>
 
-					<!-- Migration Agent Details Section -->
+					<!-- Legal Practitioner details section -->
 					<div class="col-12 col-md-12 col-lg-12">
 						<div class="card">
 							<div class="card-body">
 								<div class="form-group">
 									<label class="d-flex align-items-center">
 										<input type="checkbox" id="is_migration_agent" name="is_migration_agent" value="1" class="mr-2">
-										<h5 class="mb-0">Is this staff a Migration Agent?</h5>
+										<h5 class="mb-0">Is this staff a Legal Practitioner?</h5>
 									</label>
 								</div>
 
 								<!-- Agent Details Fields (Hidden by default) -->
 								<div id="agent_details_section" style="display: none;">
 									<hr>
-									<h6 class="text-primary mb-3">Migration Agent Registration Details</h6>
+									<h6 class="text-primary mb-3">Legal Practitioner registration details</h6>
 									
 									<div class="row">
 										<div class="col-md-6">
@@ -289,7 +289,7 @@
 @section('scripts')
 <script>
 $(document).ready(function() {
-	// Toggle Migration Agent Details Section
+	// Toggle Legal Practitioner details section
 	$('#is_migration_agent').on('change', function() {
 		if ($(this).is(':checked')) {
 			$('#agent_details_section').slideDown();

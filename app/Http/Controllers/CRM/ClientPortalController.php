@@ -3782,19 +3782,19 @@ class ClientPortalController extends Controller
 				}
 			}
 
-			// When advancing FROM "Verification: Payment, Service Agreement, Forms", only a Migration Agent can proceed.
-			// Any Migration Agent (role 16) can verify and proceed. They must tick and may add optional text.
+			// When advancing FROM "Verification: Payment, Service Agreement, Forms", only a Legal Practitioner can proceed.
+			// Any Legal Practitioner (role 16) can verify and proceed. They must tick and may add optional text.
 			$currentStageName = $currentStage->name ?? '';
 			$verificationStageNames = ['payment verified', 'verification: payment, service agreement, forms'];
 			$isAtVerificationStage = in_array(strtolower(trim($currentStageName)), $verificationStageNames);
 			if ($isAtVerificationStage) {
 				$user = Auth::guard('admin')->user();
 				$userRole = $user ? (int) $user->role : 0;
-				// Role 16 = Migration Agent; Role 1 = Admin (typically can do anything - allow admin too)
+				// Role 16 = Legal Practitioner; Role 1 = Admin (typically can do anything - allow admin too)
 				if ($userRole !== 16 && $userRole !== 1) {
 					return response()->json([
 						'status' => false,
-						'message' => 'Only a Migration Agent (or Admin) can verify and proceed to the next stage.'
+						'message' => 'Only a Legal Practitioner (or Admin) can verify and proceed to the next stage.'
 					], 403);
 				}
 				$userId = Auth::guard('admin')->id();

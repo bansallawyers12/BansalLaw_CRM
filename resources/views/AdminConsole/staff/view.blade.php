@@ -147,7 +147,7 @@
 					</div>
 				</div>
 
-				<!-- Migration Agent Details Section -->
+				<!-- Legal Practitioner details section -->
 				@if($fetchedData->is_migration_agent == 1)
 				<div class="col-12 col-md-12 col-lg-12">
 					<div class="card">

@@ -535,7 +535,7 @@
 					<div class="row">
                         <div class="col-12 col-md-6 col-lg-6">
                             <div class="form-group">
-                                <label for="migration_agent">Responsible solicitor <span class="span_req">*</span></label>
+                                <label for="migration_agent">Legal Practitioner <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control select2" name="migration_agent" id="sel_migration_agent_id_lead">
                                     <option value="">Select responsible solicitor</option>
                                     @foreach(\App\Models\Staff::where('role',16)->select('id','first_name','last_name','email')->where('status',1)->get() as $migAgntlist)

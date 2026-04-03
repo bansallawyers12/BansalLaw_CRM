@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  * Row-level visibility for CRM staff.
  *
  * Matter allocation: access is granted when the staff member appears on any client_matters row
- * for that CRM record (admins.id) as sel_migration_agent, sel_person_responsible, or
+ * for that CRM record (admins.id) as Legal Practitioner (sel_migration_agent), sel_person_responsible, or
  * sel_person_assisting — in addition to admins.user_id and active cross-access grants.
  *
  * Cross-access grants and strict allocation are controlled by config/crm_access.php
@@ -658,7 +658,7 @@ final class StaffClientVisibility
 
     /**
      * True when any client_matters row for this CRM client/lead (admins.id) lists the staff
-     * as migration agent, person responsible, or person assisting.
+     * as Legal Practitioner, person responsible, or person assisting.
      */
     private static function clientHasAllocatingMatter(int $clientAdminId, int $staffId): bool
     {

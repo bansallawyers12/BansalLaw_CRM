@@ -49,7 +49,7 @@
             $verificationStageNames = ['payment verified', 'verification: payment, service agreement, forms'];
             $workflowIsVerificationStage = $workflowCurrentStageName && in_array(strtolower(trim($workflowCurrentStageName)), $verificationStageNames);
             $currentUserRole = (int) (Auth::guard('admin')->user()->role ?? 0);
-            $workflowCanVerifyAndProceed = in_array($currentUserRole, [1, 16]); // Admin (1) or Migration Agent (16)
+            $workflowCanVerifyAndProceed = in_array($currentUserRole, [1, 16]); // Admin (1) or Legal Practitioner (16)
         }
         ?>
 
@@ -161,7 +161,7 @@
                                         $workflowNextBtnTitle = 'Proceed to Next Stage';
                                         if ($workflowIsVerificationStage && !$workflowCanVerifyAndProceed) {
                                             $workflowNextBtnDisabled = true;
-                                            $workflowNextBtnTitle = 'Only a Migration Agent (or Admin) can verify and proceed.';
+                                            $workflowNextBtnTitle = 'Only a Legal Practitioner (or Admin) can verify and proceed.';
                                         }
                                     @endphp
                                     <button class="btn btn-success btn-sm" id="workflow-tab-proceed-to-next-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" data-next-stage-name="{{ $workflowNextStageName ?? '' }}" data-current-stage-name="{{ $workflowCurrentStageName ?? '' }}" data-is-verification-stage="{{ $workflowIsVerificationStage ? '1' : '0' }}" data-can-verify-and-proceed="{{ $workflowCanVerifyAndProceed ? '1' : '0' }}" title="{{ $workflowNextBtnTitle }}" {{ $workflowNextBtnDisabled ? 'disabled' : '' }}>
@@ -287,7 +287,7 @@
                 var canVerifyAndProceed = this.getAttribute('data-can-verify-and-proceed') === '1';
                 if (!matterId) { alert('Error: Matter ID not found'); return; }
 
-                // If at Verification stage (Payment, Service Agreement, Forms), Migration Agent must tick and add optional note
+                // If at Verification stage (Payment, Service Agreement, Forms), Legal Practitioner must tick and add optional note
                 if (isVerificationStage && canVerifyAndProceed) {
                     document.getElementById('verification-payment-forms-matter-id').value = matterId;
                     document.getElementById('verification-confirm-checkbox').checked = false;

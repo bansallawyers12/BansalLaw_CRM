@@ -1,16 +1,79 @@
-# Bansal Law CRM - Immigration CRM System
+# Bansal Law CRM
 
-A comprehensive Laravel-based Customer Relationship Management (CRM) system specifically designed for immigration consultancies and migration agencies to manage clients, applications, appointments, invoices, and all aspects of the immigration process.
+A comprehensive Laravel-based Customer Relationship Management (CRM) system. **The product is being positioned for use by an Australian law firm.** The codebase today retains strong **immigration and migration-agency** workflows (matters framed around visas, employer sponsorship, and migration-style reporting), but the underlying modules—clients, matters, documents, billing, portal, access control—are suitable as a foundation for broader legal practice management once terminology, compliance, and financial rules are aligned with Australian practice.
 
 ## Purpose
 
-- Streamline immigration case management from lead to visa approval
+- Streamline matter-based client work from intake to closure (today: immigration-focused stages and labels)
 - Centralize client information, documents, and communication in one platform
 - Automate appointment scheduling and reminders
-- Track visa applications, progress, and important deadlines
+- Track matters, progress, and important deadlines
 - Manage invoices, payments, and financial transactions
 - Provide secure client portal access for document submission and status tracking
-- Offer comprehensive reporting for business insights and compliance
+- Offer comprehensive reporting for business insights and internal controls
+
+## What this codebase provides today
+
+The following is implemented and usable in the current application (see **Features** and **Project Structure** for detail):
+
+- **CRM core**: Multi-role staff access (`Admin` / `Staff` / related roles), dashboard, leads pipeline, client profiles (individual and company), notes/tasks (assignee actions), email logging, broadcasts, office visits.
+- **Matters**: Case tracking via `ClientMatter` and matter types—workflow and UI copy are oriented to **visa applications** rather than generic legal matter types.
+- **Employer / company track**: Company profiles, trading names, directors, trust entities, nominations, and sponsorship-style fields—aligned to **employer-sponsored migration** scenarios.
+- **Money**: Invoices, receipts, quotations; Stripe and PayU hooks; PDF generation (DomPDF); financial stats on dashboard.
+- **Documents**: Uploads, checklists, expiry tracking, e-signatures (templates and workflow), optional **DOCX→PDF** via `python_services/`.
+- **Scheduling**: Booking/appointments (FullCalendar), Flatpickr-based dates (**DD/MM/YYYY** already matches Australian date convention).
+- **Client portal**: Status, documents, invoices, bookings—with staff/legal-practitioner style flags (e.g. migration-agent-oriented naming in places).
+- **Governance**: Row-level visibility, allocation, and **cross-access grants** (quick/supervisor approval, dashboards, CSV export)—see `docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md`.
+- **Infrastructure**: Laravel 12, PostgreSQL-first, Vite frontend, optional S3, queue-ready, SMS (Twilio / Cellcast), Windows/XAMPP-friendly docs.
+
+## Adapting for an Australian law firm
+
+To meet a **general Australian law firm** (or a firm that mixes migration with other practice areas), plan changes across product copy, configuration, data, and compliance—not only rebranding.
+
+### Terminology and user experience
+
+- Replace **immigration-specific** labels in views, emails, PDFs, and reports (e.g. “visa”, “sponsorship”, “application” where used as the default frame) with **neutral legal language** (“matter”, “stage”, “court/tribunal dates” as appropriate) or **practice-area-specific** labels driven by configuration.
+- Clarify **roles**: Australian distinctions (e.g. solicitor, paralegal, Legal Practitioner) may differ from current role names and flags such as `is_migration_agent`; align permissions and portal behaviour with your firm’s structure.
+- Ensure **trust account vs general account** language on receipts/invoices if you separate client money (many AU firms require strict trust accounting; the current model may need extension or an external trust system).
+
+### Practice areas and matter model
+
+- **Matter types and stages**: Today they reflect visa workflows. Add or migrate to **matter categories** that match your firm (e.g. property, family, litigation, estates, corporate, migration as one stream).
+- **Fields and checklists**: Document checklists and matter fields should map to **Australian forms and matter types**, not only immigration templates.
+- **Reporting**: Client/application reports filtered by “visa type” or country should be **generalised or duplicated** for AU-relevant dimensions (matter type, jurisdiction, lawyer, office).
+
+### Financial, tax, and commercial
+
+- Standardise on **AUD** for display, invoices, and gateway configuration; review any legacy currency assumptions in templates or seed data.
+- **GST**: Invoices and quotations should support **ABN**, **GST-inclusive / exclusive** lines, and wording consistent with **ATO** expectations (implement in templates and data model if not already present).
+- **Payment gateways**: Confirm **Stripe Australia** (and any other providers) match your merchant setup; **PayU** may be less relevant in AU—evaluate **BPAY**, direct debit, or other local methods if required.
+- **Professional costs and disclosures**: Cost agreements and engagement letters (including e-sign templates) may need **state-based or uniform law** compliant wording—legal review, not only software.
+
+### Privacy, records, and security
+
+- Map data handling to the **Australian Privacy Act** and **APPs** (privacy policy, consent, overseas disclosure if using offshore hosting or processors).
+- Review **retention and destruction** rules: README currently mentions long retention in an immigration context; align **destruction and archive** policy with your firm’s obligations.
+- **Hosting**: Prefer AU or approved regions if policy requires; document subprocessors (email, SMS, S3, SendGrid, etc.).
+
+### Addresses, identity, and locale
+
+- **Addresses**: Prefer **Australian states/territories** and **postcodes** in forms and validation (postal “ZIP” fields have been moved toward string storage in migrations—continue normalising labels and validation for AU).
+- **Phone numbers**: Validate and format for **Australian** mobiles and landlines where the UI collects them.
+- **Time zones**: Default `APP_TIMEZONE` and scheduler behaviour to the firm’s primary state (e.g. `Australia/Melbourne`).
+
+### Operations and integrations
+
+- **Email/SMS**: Sender domains, **SPF/DKIM**, and Australian spam/commercial messaging expectations.
+- **Calendar**: Public holidays and court/tribunal calendars are not built-in; integrate or configure as needed.
+
+### Technical and configuration checklist (starter)
+
+- `APP_NAME`, `APP_URL`, mail “from” names, and invoice/quote PDF headers footers.
+- Database **seeders**: default matter types, visa types, and demo data—replace with AU firm defaults.
+- `config/app.php` **timezone** and **locale** where relevant.
+- Any **hard-coded country lists** or default country should favour **AU** for a domestic-first firm.
+
+Together, **what we have** is a full-featured legal-style CRM with a **migration-agency-shaped** domain layer; **what needs to change** is chiefly **domain modelling, labels, financial/compliance fields, and integrations** so day-to-day use matches **Australian legal practice** and your firm’s areas of law.
 
 ## Features
 
@@ -32,7 +95,6 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
 - **Electronic Signatures**: Full signature workflow with templates and dashboard
 - **Task Management**: Assignee/action system for tasks related to cases and clients
 - **Company & Employer Sponsorship**: Full employer sponsorship management with company profiles, directors, trading names, Trust entities, nominations, and sponsorship tracking
-- **EOI (Expression of Interest) Workflows**: Client confirmation sheets, ROI forms, and amendment request flows for visa applications
 - **Windows Friendly**: Optimized for XAMPP on Windows environments
 
 ## Technology Stack
@@ -301,8 +363,8 @@ Add to `C:\Windows\System32\drivers\etc\hosts`:
 - Track visa expiry dates
 - Communication with case manager
 
-### Migration Agent (Staff Role)
-Staff can be designated as Migration Agents (`is_migration_agent`) with role-based permissions (e.g. verifying workflow stages in the client portal). They use the main Admin/CRM interface. A separate Agent portal is not implemented.
+### Legal Practitioner (staff role)
+Staff can be designated as Legal Practitioners (`is_migration_agent`) with role-based permissions (e.g. verifying workflow stages in the client portal). They use the main Admin/CRM interface. A separate external-agent portal is not implemented.
 
 ## Project Structure
 
@@ -321,7 +383,6 @@ Staff can be designated as Migration Agents (`is_migration_agent`) with role-bas
   - `CompanyTradingName` - Multiple trading names per company
   - `CompanyDirector` - Company directors with optional client/lead linking
   - `CompanyNomination` - Employer nomination tracking with nominated person linking
-  - `ClientEoiReference` - EOI (Expression of Interest) references
   - `Note` - Client/lead notes and assignee tasks
   - `EmailLog` - Email correspondence tracking
   - `ClientAccessGrant` - Cross-access audit trail (quick, supervisor-approved, exempt rows)
@@ -338,7 +399,6 @@ Staff can be designated as Migration Agents (`is_migration_agent`) with role-bas
   - `LeadController` / `LeadConversionController` / `LeadAnalyticsController` - Lead management
   - `AssigneeController` - Task/action assignment management
   - `ReportController` - Reports and data export
-  - `ClientEoiRoiController` / `EoiRoiSheetController` - EOI/ROI workflows
   - `BroadcastController` / `BroadcastNotificationAjaxController` - Broadcast notifications
   - `AccessGrantController` - Cross-access meta, quick/supervisor requests, approver queue, mini-queue API, grants dashboard, CSV export
   
@@ -587,7 +647,6 @@ This project is open-sourced software licensed under the [MIT license](https://o
 - **Matter-based tracking**: Legacy `applications` table removed; visa tracking is via `client_matters` (Matter model).
 - **Flatpickr migration**: All date pickers now use Flatpickr (DD/MM/YYYY format). Bootstrap Datepicker removed.
 - **Company Employer Sponsorship**: Full implementation including Trust entities, trading names, directors (with client/lead linking), nominations, sponsorship tracking, and per-section AJAX save.
-- **EOI workflows**: Client confirmation sheets (`eoi-client-confirmation`, `eoi-confirmation-success`, `eoi-roi`) for Expression of Interest visa flows.
 - **Assignee action view**: Dedicated action page for assigned tasks.
 - **CRM layouts**: Updated `crm_client_detail` and `crm_client_detail_dashboard` with Flatpickr components.
 - **Vite build**: Frontend built with Vite; includes FullCalendar, Flatpickr, Signature Pad, Alpine.js, Tailwind.

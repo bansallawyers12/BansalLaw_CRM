@@ -369,7 +369,7 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="sel_migration_agent" class="col-form-label" style="color:#4a5568 !important;">Responsible solicitor</label>
+                                        <label for="sel_migration_agent" class="col-form-label" style="color:#4a5568 !important;">Legal Practitioner</label>
                                         <select class="form-control" name="sel_migration_agent" id="sel_migration_agent">
                                             <option value="">All Agents</option>
                                             @foreach(($teamMembers ?? collect()) as $member)
@@ -509,7 +509,7 @@
                                             DOB {!! $sortIcon('ad.dob') !!}
                                         </a>
                                     </th>
-                                    <th class="thCls">Responsible solicitor</th>
+                                    <th class="thCls">Legal Practitioner</th>
                                     <th class="thCls">Person Responsible</th>
                                     <th class="thCls">Person Assisting</th>
                                     <th class="thCls sortable-header">

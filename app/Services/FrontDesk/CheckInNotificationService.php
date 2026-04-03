@@ -17,7 +17,7 @@ class CheckInNotificationService
      * Priority:
      *  1. Appointment assigner (booking_appointments.assigned_by_admin_id → staff)
      *  2. CRM record assignee (admins.user_id → staff), typical for leads
-     *  3. Client migration agent (admins.agent_id → staff) when type = client
+     *  3. Client Legal Practitioner (admins.agent_id → staff) when type = client
      *
      * Returns the Staff notified, or null if no one could be resolved.
      */

@@ -54,7 +54,7 @@ class ClientMatter extends Model
     }
 
     /**
-     * Get the migration agent assigned to the matter.
+     * Get the Legal Practitioner (matter lead) assigned to the matter (sel_migration_agent).
      */
     public function migrationAgent()
     {

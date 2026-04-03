@@ -195,7 +195,7 @@
                             <th class="col-client_id" role="columnheader">Client ID</th>
                             <th class="col-client_name" role="columnheader">Client Name</th>
                             <th class="col-dob" role="columnheader">DOB</th>
-                            <th class="col-migration_agent" role="columnheader">Responsible solicitor</th>
+                            <th class="col-migration_agent" role="columnheader">Legal Practitioner</th>
                             <th class="col-person_responsible" role="columnheader">Person Responsible</th>
                             <th class="col-person_assisting" role="columnheader">Person Assisting</th>
                             <th class="col-stage" role="columnheader">Stage</th>

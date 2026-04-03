@@ -13,10 +13,10 @@
                                     <h6 class="dropdown-title mb-3">Create New Checklist</h6>
                                     <form id="checklist-create-form" class="checklist-create-form">
                                         <div class="row">
-                                            <!-- Responsible solicitor - same design as Convert Lead To Client -->
+                                            <!-- Legal Practitioner - same design as Convert Lead To Client -->
                                             <div class="col-12 col-md-12 col-lg-12">
                                                 <div class="form-group">
-                                                    <label for="checklist_migration_agent">Responsible solicitor <span class="span_req">*</span></label>
+                                                    <label for="checklist_migration_agent">Legal Practitioner <span class="span_req">*</span></label>
                                                     <select data-valid="required" class="form-control select2 checklist-field" name="checklist_migration_agent" id="checklist_migration_agent">
                                                         <option value="">Select responsible solicitor</option>
                                                         @foreach(\App\Models\Staff::where('role',16)->select('id','first_name','last_name','email')->where('status',1)->get() as $migAgntlist)
@@ -115,7 +115,7 @@
                                 @if($checklist_forms->isEmpty())
                                     <div class="alert alert-info" id="checklists-empty-state">
                                         <i class="fas fa-info-circle mr-2"></i>
-                                        No checklists yet. Click <strong>Create Checklist</strong> to add one. You'll select matter, assign migration agent and team, complete cost assignment, and create cost agreement.
+                                        No checklists yet. Click <strong>Create Checklist</strong> to add one. You'll select matter, assign Legal Practitioner and team, complete cost assignment, and create cost agreement.
                                     </div>
                                     <div id="checklists-list" style="display: none;"></div>
                                 @else
@@ -184,7 +184,7 @@
                                                             <div class="col-md-6 mb-3">
                                                                 <h6 class="font-weight-bold mb-3"><i class="fas fa-users mr-2"></i>Team Members</h6>
                                                                 <div class="team-member mb-2">
-                                                                    <label class="mb-1">Responsible solicitor:</label>
+                                                                    <label class="mb-1">Legal Practitioner:</label>
                                                                     <div class="font-weight-500">
                                                                         {{ $migrationAgent ? $migrationAgent->first_name . ' ' . $migrationAgent->last_name : 'Not Assigned' }}
                                                                     </div>
@@ -816,7 +816,7 @@
             var officeId = $('#checklist_office').val();
 
             if (!migrationAgent || !personResponsible || !personAssisting || !officeId) {
-                alert('Please fill Responsible solicitor, Person Responsible, Person Assisting, and Office.');
+                alert('Please fill Legal Practitioner, Person Responsible, Person Assisting, and Office.');
                 return;
             }
 

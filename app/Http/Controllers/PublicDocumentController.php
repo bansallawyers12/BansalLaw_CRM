@@ -671,9 +671,9 @@ class PublicDocumentController extends Controller
                                 $verificationStages = ['payment verified', 'verification: payment, service agreement, forms'];
                                 $isAtVerificationStage = in_array($currentStageName, $verificationStages);
 
-                                // Do NOT auto-advance from Verification stage - Migration Agent must verify manually
+                                // Do NOT auto-advance from Verification stage - Legal Practitioner must verify manually
                                 if ($isAtVerificationStage) {
-                                    Log::info('Skipping workflow advancement - at Verification stage (requires Migration Agent)', [
+                                    Log::info('Skipping workflow advancement - at Verification stage (requires Legal Practitioner)', [
                                         'document_id' => $document->id,
                                         'current_stage' => $currentStage->name,
                                     ]);

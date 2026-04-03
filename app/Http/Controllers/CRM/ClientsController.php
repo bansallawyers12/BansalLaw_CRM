@@ -5009,7 +5009,7 @@ class ClientsController extends Controller
         }
     }
 
-    //Get Migration Agent Detail
+    // Get Legal Practitioner detail (matter assignee; column sel_migration_agent)
     public function getMigrationAgentDetail(Request $request)
     {
         $requestData = 	$request->all();
@@ -5055,7 +5055,7 @@ class ClientsController extends Controller
         echo json_encode($response);
     }
 
-    //Get Visa agreemnt Migration Agent Detail
+    // Get visa agreement Legal Practitioner detail
     public function getVisaAggreementMigrationAgentDetail(Request $request)
     {
         $requestData = 	$request->all();
@@ -5101,7 +5101,7 @@ class ClientsController extends Controller
         echo json_encode($response);
     }
 
-    //Get Cost assignment Migration Agent Detail
+    // Get cost assignment Legal Practitioner detail
     public function getCostAssignmentMigrationAgentDetail(Request $request)
     {
         $requestData = 	$request->all(); //dd($requestData);
@@ -5962,7 +5962,7 @@ class ClientsController extends Controller
         echo json_encode($response);
     }
 
-    //Get Cost assignment Migration Agent Detail Lead
+    // Get cost assignment Legal Practitioner detail Lead
     public function getCostAssignmentMigrationAgentDetailLead(Request $request)
     {
         $requestData = 	$request->all(); //dd($requestData);

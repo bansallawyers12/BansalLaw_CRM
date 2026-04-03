@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Comma-separated user_roles.id values. Default matches legacy behaviour
-    | (Super Admin, Admin, Migration Agent). Set CRM_EMAIL_LOG_DELETE_ROLE_IDS
+    | (Super Admin, Admin, Legal Practitioner). Set CRM_EMAIL_LOG_DELETE_ROLE_IDS
     | in .env to add roles without code changes, e.g. "1,12,16,20".
     |
     */
@@ -23,7 +23,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Staff with these roles only see clients/leads where they appear on a matter
-    | as migration agent, person responsible, or person assisting (client_matters
+    | as Legal Practitioner, person responsible, or person assisting (client_matters
     | sel_migration_agent / sel_person_responsible / sel_person_assisting), or
     | are assigned on the lead record (admins.user_id). Super admin (role 1) is
     | never restricted. Override via CRM_PERSON_ASSISTING_ROLE_IDS e.g. "13,21".
@@ -86,7 +86,7 @@ return [
     |
     | These roles may open /leads without client module keys 20–23. They only
     | see rows where admins.user_id = their staff id (via restrictLeadListQuery).
-    | Default: PA (13), Calling (14), Accountant (15), Migration Agent (16).
+    | Default: PA (13), Calling (14), Accountant (15), Legal Practitioner (16).
     | Set CRM_LEAD_LIST_ASSIGNED_ONLY_ROLE_IDS to override, e.g. "13,14,15,16".
     |
     */

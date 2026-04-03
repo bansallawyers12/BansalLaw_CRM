@@ -531,7 +531,7 @@
         <div class="panel-grid">
             <div class="insights-card">
                 <h4>
-                    Top Migration Agents
+                    Top Legal Practitioners
                     <span class="badge">Top 5</span>
                 </h4>
                 @forelse($mattersByAgent as $agent)

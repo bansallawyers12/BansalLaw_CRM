@@ -22,7 +22,7 @@ return new class extends Migration
             }
         });
 
-        if (Schema::hasColumn('admins', 'lead_status')) {
+        if (Schema::hasColumn('admins', 'lead_status') && Schema::hasColumn('admins', 'type')) {
             DB::table('admins')->where('type', 'lead')->whereNull('lead_status')->update(['lead_status' => 'new']);
         }
     }

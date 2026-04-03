@@ -122,6 +122,15 @@ return new class extends Migration
             });
         }
 
+        if (! Schema::hasTable('teams')) {
+            Schema::create('teams', function (Blueprint $table) {
+                $table->id();
+                $table->string('name')->nullable();
+                $table->string('color')->nullable();
+                $table->timestamps();
+            });
+        }
+
         foreach ([
             'branches',
             'user_roles',
@@ -169,6 +178,7 @@ return new class extends Migration
             'checkin_logs',
             'matters',
             'tags',
+            'teams',
             'client_matters',
             'notifications',
             'account_client_receipts',

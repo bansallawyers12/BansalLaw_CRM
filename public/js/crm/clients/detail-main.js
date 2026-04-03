@@ -385,7 +385,7 @@
                                 field.value = '';
                             }
                         });
-                        // Clear select dropdowns except migration agent
+                        // Clear select dropdowns except Legal Practitioner
                         form.querySelectorAll('select').forEach(field => {
                             if (!field.id || !field.id.includes('agent_id')) {
                                 field.selectedIndex = 0;
@@ -4100,7 +4100,7 @@ success: function(response) {
             $('#form956CreateFormModel').modal('show');
 
         });
-        //Get Migration Agent Detail
+        // Get Legal Practitioner detail
 
         function getMigrationAgentDetail(client_matter_id) {
 
@@ -4403,7 +4403,7 @@ success: function(response) {
 
 
 
-         //Get Visa agreement Migration Agent Detail
+         // Get visa agreement Legal Practitioner detail
 
         function getVisaAggreementMigrationAgentDetail(client_matter_id) {
 
@@ -4521,7 +4521,7 @@ success: function(response) {
 
 
 
-         //Get Cost assignment Migration Agent Detail
+         // Get cost assignment Legal Practitioner detail
         // modalContainer: optional selector (e.g. '#costAssignmentCreateFormModel') to scope field updates to a specific container (for modal edit)
         // onLoadedCallback: optional function called after data is loaded (e.g. to show modal)
         function getCostAssignmentMigrationAgentDetail(client_id,client_matter_id, modalContainer, onLoadedCallback) {
@@ -4955,7 +4955,7 @@ success: function(response) {
 
 
 
-            //Get Cost assignment Migration Agent Detail
+            // Get cost assignment Legal Practitioner detail
 
             function getCostAssignmentMigrationAgentDetailLead(client_id,client_matter_id) {
 

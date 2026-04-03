@@ -113,7 +113,7 @@ class Staff extends Authenticatable
     }
 
     /**
-     * Get the clients assigned to this staff member (as migration agent).
+     * Get the clients assigned to this staff member (as Legal Practitioner on matters).
      * Clients are in admins table with agent_id = this staff's id.
      */
     public function assignedClients(): HasMany
