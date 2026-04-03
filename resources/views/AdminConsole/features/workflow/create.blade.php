@@ -1,0 +1,112 @@
+@extends('layouts.crm_client_detail')
+@section('title', 'Add Workflow Stage')
+
+@section('content')
+
+<!-- Main Content -->
+<div class="main-content">
+	<section class="section">
+		<div class="section-body">
+			<form action="{{ route('adminconsole.features.workflow.store') }}" name="add-workflow" autocomplete="off" enctype="multipart/form-data" method="POST">
+				@csrf
+				<div class="row">
+					<div class="col-12 col-md-12 col-lg-12">
+						<div class="card">
+						<div class="card-header">
+						<h4>
+							Add Workflow Stage
+							@if(isset($workflow)) to {{ $workflow->name }}@endif
+							@if(!empty($insertAfterStage))
+							<small class="text-muted font-weight-normal">(after &ldquo;{{ \Illuminate\Support\Str::limit($insertAfterStage->name, 60) }}&rdquo;)</small>
+							@endif
+						</h4>
+							<div class="card-header-action">
+									<a href="{{ isset($workflow) ? route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($workflow->id))) : route('adminconsole.features.workflow.index') }}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+							</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-3 col-md-3 col-lg-3">
+			        	@include('../Elements/CRM/setting')
+    		        </div>
+    				<div class="col-9 col-md-9 col-lg-9">
+						<div class="card">
+							<div class="card-body">
+								<div id="accordion">
+									<div class="accordion">
+										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
+											<h4>Add Workflow Stage</h4>
+										</div>
+										<div class="accordion-body collapse show" id="primary_info" data-parent="#accordion">
+											@if(isset($workflow))
+											<input type="hidden" name="workflow_id" value="{{ $workflow->id }}">
+											@endif
+											@if(!empty($insertAfterStage))
+											<input type="hidden" name="after_stage_id" value="{{ $insertAfterStage->id }}">
+											<div class="alert alert-info mb-3" role="alert">
+												<strong>Insert position:</strong> new stage(s) will be placed <strong>immediately after</strong>
+												<em>{{ $insertAfterStage->name }}</em> in this workflow.
+											</div>
+											@endif
+											<div class="row">
+												<div class="col-12 col-md-12 col-lg-12">
+													<div class="form-group">
+														<!--<label for="stages">Workflow Stages <span class="span_req">*</span></label>-->
+														<div class="workflow_stges">
+															<table class="table">
+																<tr>
+																	<td>
+																		<input data-valid="required" type="text" name="stage_name[]" placeholder="Stage Name" class="form-control">
+																	</td>
+																	<td></td>
+																	<td></td>
+																</tr>
+																<!--<tr>
+																	<td>
+																		<input data-valid="required" type="text" name="stage_name[]" placeholder="Stage Name" class="form-control">
+																	</td>
+																	<td></td>
+																	<td></td>
+																</tr>-->
+															</table>
+														</div>
+														<div class="">
+															<a href="javascript:;" class="add_stage btn btn-info">Add Stage</a>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="form-group float-right">
+									<button type="submit" class="btn btn-primary">Save Workflow Stage</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</section>
+</div>
+
+@endsection
+@push('scripts')
+<script>
+jQuery(document).ready(function($){
+	$('.add_stage').on('click', function(){
+		var html = '<tr>'+
+            '<td><input type="text" data-valid="required" name="stage_name[]" placeholder="Stage Name" class="form-control"></td>'+
+            '<td><a href="javascript:;" class="remove_stage"><i class="fa fa-trash"></i></a></td>'+
+            '<td></td>'+
+        '</tr>';
+        $('.workflow_stges table').append(html);
+	});
+
+	$(document).delegate('.remove_stage', 'click', function(){
+		$(this).parent().parent().remove();
+	});
+});
+</script>
+@endpush

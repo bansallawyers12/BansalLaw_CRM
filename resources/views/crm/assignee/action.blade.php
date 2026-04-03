@@ -1,0 +1,1750 @@
+@extends('layouts.crm_client_detail')
+@section('title', 'Action')
+
+@section('content')
+<style>
+    /* Reset and base styles */
+    * { box-sizing: border-box; }
+    
+    /* Prevent horizontal overflow globally */
+    html, body {
+        overflow-x: hidden;
+        max-width: 100vw;
+    }
+    
+    /* Main content containers */
+    .main-content {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .section {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .section-body {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    /* Header styles */
+    .client-header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 30px; 
+        padding: 20px 0; 
+        border-bottom: 2px solid #e9ecef;
+        flex-wrap: wrap;
+        gap: 15px;
+        max-width: 100%;
+    }
+    
+    .client-header h1 { 
+        font-size: 2em; 
+        font-weight: 700; 
+        color: #2c3e50; 
+        margin: 0; 
+        word-wrap: break-word;
+    }
+    
+    .client-status {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        min-width: 0;
+    }
+    
+    /* Button styles */
+    .btn { 
+        padding: 10px 20px; 
+        border: none; 
+        border-radius: 8px; 
+        cursor: pointer; 
+        font-size: 0.9em; 
+        font-weight: 600; 
+        transition: all 0.3s ease;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Add New Task button specific styling */
+    .add_my_task {
+        margin-right: 15px !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        min-width: auto !important;
+        max-width: none !important;
+        flex-shrink: 0 !important;
+        width: auto !important;
+    }
+    
+    .btn-primary { 
+        background-color: #3498db; 
+        color: white; 
+        box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
+    }
+    
+    .btn-primary:hover { 
+        background-color: #2980b9; 
+        box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        transform: translateY(-1px);
+    }
+    
+    /* Tab styles */
+    .tabs { 
+        display: flex; 
+        gap: 8px; 
+        margin-bottom: 25px; 
+        flex-wrap: wrap;
+        max-width: 100%;
+        background-color: #f8f9fa;
+        padding: 8px;
+        border-radius: 10px;
+    }
+    
+    .tab-button { 
+        padding: 12px 20px; 
+        border: 2px solid transparent; 
+        border-radius: 8px; 
+        background-color: #6c757d; 
+        color: white; 
+        font-size: 0.9em; 
+        font-weight: 600; 
+        cursor: pointer; 
+        transition: all 0.3s ease;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .tab-button.active, .tab-button:hover { 
+        background-color: #3498db; 
+        color: white !important;
+        border-color: #2980b9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+    }
+    
+    .tab-button .badge { 
+        background-color: #ffffff; 
+        color: #3498db; 
+        border-radius: 12px; 
+        padding: 4px 8px; 
+        margin-left: 8px; 
+        font-size: 0.75em; 
+        font-weight: 700;
+    }
+    
+    /* Search controls */
+    .header-controls {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        gap: 15px;
+        max-width: 100%;
+        background-color: #f8f9fa;
+        padding: 15px 20px;
+        border-radius: 10px;
+    }
+    
+    .search-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+        min-width: 0;
+    }
+    
+    .search-bar label { 
+        font-size: 0.9em; 
+        color: #2c3e50; 
+        white-space: nowrap;
+        font-weight: 600;
+    }
+    
+    .search-bar input {
+        padding: 12px 16px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 0.9em;
+        width: 250px;
+        max-width: 100%;
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+        background-color: white;
+    }
+    
+    .search-bar input:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+    
+    /* Table container */
+    .table-responsive {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+    
+    /* Table styles */
+    .table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        margin-bottom: 20px; 
+        min-width: 800px; /* Ensure minimum width for readability */
+        background-color: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .table th, .table td { 
+        padding: 15px 12px; 
+        text-align: left; 
+        border-bottom: 1px solid #e9ecef; 
+        font-size: 0.9em; 
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        vertical-align: middle;
+        white-space: normal;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .table th { 
+        background-color: #2c3e50; 
+        font-weight: 700; 
+        color: white; 
+        text-transform: uppercase; 
+        cursor: pointer;
+        letter-spacing: 0.5px;
+        font-size: 0.8em;
+    }
+    
+    .table tbody tr { 
+        transition: background-color 0.2s ease;
+    }
+    
+    .table tbody tr:hover { 
+        background-color: #f8f9fa; 
+    }
+    
+    .table tbody tr:nth-child(even) {
+        background-color: #fafbfc;
+    }
+    
+    .table tbody tr:nth-child(even):hover {
+        background-color: #f1f3f4;
+    }
+    
+    .table tbody td, .table thead th { 
+        color: #2c3e50 !important; 
+    }
+    
+    /* Column width constraints to prevent overflow */
+    .table th:nth-child(1), .table td:nth-child(1) { 
+        width: 60px; 
+        min-width: 60px; 
+        max-width: 60px; 
+        text-align: center; /* Center align SNO column */
+    } /* Sno */
+    .table th:nth-child(2), .table td:nth-child(2) { width: 80px; min-width: 80px; max-width: 80px; } /* Done */
+    .table th:nth-child(3), .table td:nth-child(3) { width: 120px; min-width: 120px; max-width: 120px; } /* Assigner Name */
+    .table th:nth-child(4), .table td:nth-child(4) { width: 150px; min-width: 150px; max-width: 150px; } /* Client Reference */
+    .table th:nth-child(5), .table td:nth-child(5) { width: 100px; min-width: 100px; max-width: 100px; } /* Assign Date */
+    .table th:nth-child(6), .table td:nth-child(6) { width: 100px; min-width: 100px; max-width: 100px; } /* Type */
+    .table th:nth-child(7), .table td:nth-child(7) { width: 200px; min-width: 200px; } /* Note - flexible */
+    .table th:nth-child(8), .table td:nth-child(8) { width: 120px; min-width: 120px; max-width: 120px; } /* Action */
+    
+    /* Action buttons */
+    .action-buttons .btn { 
+        margin-right: 5px; 
+        margin-bottom: 3px;
+        font-size: 0.8em;
+        padding: 8px 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    
+    .action-buttons .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Pagination */
+    .pagination { 
+        display: flex; 
+        justify-content: flex-end; 
+        gap: 10px; 
+        margin-top: 20px; 
+        flex-wrap: wrap;
+    }
+    
+    .pagination a, .pagination span { 
+        padding: 8px 12px; 
+        border: 1px solid #dee2e6; 
+        border-radius: 6px; 
+        font-size: 0.9em; 
+        text-decoration: none; 
+        color: #343a40; 
+    }
+    
+    .pagination a:hover { 
+        background-color: #f8f9fa; 
+    }
+    
+    .pagination .active span { 
+        background-color: #0d6efd; 
+        color: white; 
+        border-color: #0d6efd; 
+    }
+    
+    /* DataTables customization */
+    .dataTables_wrapper {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .dataTables_wrapper .dataTables_length { 
+        margin-bottom: 0; 
+    }
+    
+    .dataTables_wrapper .dataTables_filter { 
+        display: none; 
+    }
+    
+    #DataTables_Table_0_info { 
+        margin-top: 20px; 
+    }
+    
+    .bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 25px;
+        flex-wrap: wrap;
+        gap: 15px;
+        max-width: 100%;
+        background-color: #f8f9fa;
+        padding: 15px 20px;
+        border-radius: 10px;
+    }
+    
+    .dataTables_length {
+        flex-shrink: 0;
+    }
+    
+    .dataTables_length select {
+        padding: 10px 15px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 0.9em;
+        background-color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .dataTables_length select:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+    
+    .dataTables_length label {
+        font-size: 0.9em;
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+        font-weight: 600;
+    }
+    
+    .dataTables_info {
+        flex-grow: 1;
+        text-align: center;
+        font-size: 0.9em;
+        color: #2c3e50;
+        word-wrap: break-word;
+        font-weight: 500;
+    }
+    
+    /* Error messages */
+    .error-message {
+        color: red;
+        font-size: 0.8em;
+        margin-top: 5px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .client-header {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 15px 0;
+            margin-bottom: 20px;
+        }
+        
+        .client-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        
+        .client-status {
+            width: 100%;
+            justify-content: flex-start;
+            gap: 8px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            font-size: 0.8em;
+        }
+        
+        .tabs {
+            gap: 4px;
+            padding: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .tab-button {
+            padding: 10px 16px;
+            font-size: 0.8em;
+        }
+        
+        .header-controls {
+            padding: 12px 15px;
+            margin-bottom: 20px;
+        }
+        
+        .search-bar {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        
+        .search-bar input {
+            width: 100%;
+            max-width: 300px;
+        }
+        
+        .table {
+            min-width: 600px;
+            font-size: 0.85em;
+        }
+        
+        .table th, .table td {
+            padding: 10px 8px;
+            font-size: 0.85em;
+        }
+        
+        .action-buttons .btn {
+            padding: 6px 10px;
+            font-size: 0.75em;
+            margin-right: 3px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .client-header h1 {
+            font-size: 1.3em;
+        }
+        
+        .tab-button {
+            padding: 8px 12px;
+            font-size: 0.75em;
+        }
+        
+        .table th, .table td {
+            padding: 8px 6px;
+            font-size: 0.8em;
+        }
+        
+        .action-buttons .btn {
+            padding: 5px 8px;
+            font-size: 0.7em;
+        }
+    }
+    
+    /* Hide horizontal scrollbar but keep functionality */
+    .table-responsive::-webkit-scrollbar {
+        height: 8px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+</style>
+
+<!-- Main Content -->
+<div class="main-content">
+    <section class="section" style="padding-top: 70px;">
+        <div class="section-body">
+            <div class="server-error">
+                @include('../Elements/flash-message')
+            </div>
+            <div class="custom-error-msg"></div>
+
+            <div class="client-header">
+                <h1>Action</h1>
+                <div class="client-status" style="margin-right: 50px;">
+                    <a class="btn btn-primary" style="border-radius: 0px;" id="assigned_by_me"  href="{{URL::to('/assigned_by_me')}}">Assigned by me</a>
+                    <a class="btn btn-primary" style="border-radius: 0px;" id="archived-tab"  href="{{URL::to('/action_completed')}}">Completed</a>
+                    <button class="btn btn-primary tab-button add_my_task" data-container="body" data-role="popover" data-placement="bottom-start" data-html="true" data-content="
+                        <div class='modern-popover-content add-task-layout'>
+                            <div class='form-group'>
+                                <label class='control-label'><i class='fa fa-user-circle'></i> Client</label>
+                                <select id='assign_client_id' class='form-control js-data-example-ajaxccsearch__addmytask' placeholder='Search and select client...'></select>
+                                <div id='client-error' class='error-message'></div>
+                            </div>
+                            
+                            <div class='form-group'>
+                                <label class='control-label'><i class='fa fa-users'></i> Assignees</label>
+                                <div class='dropdown-multi-select' style='width: 100%;'>
+                                    <button type='button' class='btn btn-default dropdown-toggle' id='dropdownMenuButton' data-bs-toggle='dropdown' aria-haspopup='true' aria-expanded='false' style='width: 100%;'>
+                                        Select assignees <span class='selected-count'></span>
+                                    </button>
+                                    <div class='dropdown-menu' aria-labelledby='dropdownMenuButton' style='width: 100%;'>
+                                        <div class='dropdown-search-wrapper' style='padding: 8px; border-bottom: 1px solid #e2e8f0;'>
+                                            <input type='text' class='form-control assignee-search-input' placeholder='Search assignees...' style='font-size: 13px; padding: 6px 10px;'>
+                                        </div>
+                                        <label class='dropdown-item'><input type='checkbox' id='select-all' /> <strong>Select All</strong></label>
+                                        <div style='border-top: 1px solid #e2e8f0; margin: 5px 0;'></div>
+                                        <div class='assignee-list'>
+                                            @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                                                <?php 
+                                                    $branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
+                                                    $searchText = strtolower($admin->first_name . $admin->last_name . @$branchname->office_name);
+                                                    $searchText = str_replace(' ', '', $searchText);
+                                                ?>
+                                                <label class='dropdown-item assignee-item' data-searchtext='{{ $searchText }}'>
+                                                    <input type='checkbox' class='checkbox-item' value='{{ $admin->id }}'>
+                                                    {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                                <select class='d-none' id='rem_cat' name='rem_cat[]' multiple='multiple'>
+                                    @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                                        <option value='{{ $admin->id }}'>{{ $admin->first_name }} {{ $admin->last_name }}</option>
+                                    @endforeach
+                                </select>
+                                <div id='assignees-error' class='error-message'></div>
+                            </div>
+                            
+                            <div class='form-group form-group-full-width'>
+                                <label class='control-label'><i class='fa fa-comment'></i> Task Description</label>
+                                <textarea id='assignnote' class='form-control' rows='3' placeholder='Enter task description...'></textarea>
+                                <div id='note-error' class='error-message'></div>
+                            </div>
+                            
+                            <input id='task_group' name='task_group' type='hidden' value='Personal Action'>
+                            
+                            <div class='text-center'>
+                                <button class='btn btn-primary' id='add_my_task'>
+                                    <i class='fa fa-plus-circle'></i> Add My Task
+                                </button>
+                            </div>
+                        </div>">
+                        <i class="fas fa-plus"></i> Add My Task
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs (Filters) -->
+            <div class="tabs">
+                <button class="tab-button active" data-filter="all">ALL <span class="badge" id="all-count">0</span></button>
+                <button class="tab-button" data-filter="call">Call <span class="badge" id="call-count">0</span></button>
+                <button class="tab-button" data-filter="checklist">Checklist <span class="badge" id="checklist-count">0</span></button>
+                <button class="tab-button" data-filter="review">Review <span class="badge" id="review-count">0</span></button>
+                <button class="tab-button" data-filter="query">Query <span class="badge" id="query-count">0</span></button>
+                <button class="tab-button" data-filter="urgent">Urgent <span class="badge" id="urgent-count">0</span></button>
+                <button class="tab-button" data-filter="personal_action">Personal Action <span class="badge" id="personal-task-count">0</span></button>
+                <button class="tab-button" data-filter="client_portal">Client Portal <span class="badge" id="client-portal-count">0</span></button>
+                <button class="tab-button" data-filter="follow_up">Follow up <span class="badge" id="follow-up-count">0</span></button>
+            </div>
+
+            <!-- Header Controls (Only Search Bar) -->
+            <div class="header-controls">
+                <div class="search-bar">
+                    <label for="searchInput">Search:</label>
+                    <input type="text" id="searchInput" placeholder="Search tasks...">
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-responsive">
+                <table class="table yajra-datatable">
+                    <thead>
+                        <tr>
+                            <th data-column="DT_RowIndex">Sno</th>
+                            <th data-column="done">Done</th>
+                            <th data-column="assigner_name">Assigner Name</th>
+                            <th data-column="client_reference">Client Reference</th>
+                            <th data-column="assign_date">Assign Date</th>
+                            <th data-column="task_group">Type</th>
+                            <th data-column="note_description">Note</th>
+                            <th data-column="action">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Assign Modal -->
+<div class="modal fade custom_modal" id="openassigneview" tabindex="-1" role="dialog" aria-labelledby="" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content taskview"></div>
+    </div>
+</div>
+
+<!-- Task Completion Notes Modal -->
+<div class="modal fade" id="completionNotesModal" tabindex="-1" role="dialog" aria-labelledby="completionNotesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #3498db; color: white;">
+                <h5 class="modal-title" id="completionNotesModalLabel">
+                    <i class="fa fa-check-circle"></i> Complete Task
+                </h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="completionNotes" class="font-weight-bold">
+                        <i class="fa fa-comment"></i> Completion Notes/Feedback
+                    </label>
+                    <textarea 
+                        class="form-control" 
+                        id="completionNotes" 
+                        rows="5" 
+                        placeholder="Enter any notes or feedback about completing this task..."
+                        style="resize: vertical; border: 2px solid #e9ecef; border-radius: 8px; padding: 12px;"
+                    ></textarea>
+                    <small class="form-text text-muted">
+                        <i class="fa fa-info-circle"></i> These notes will be saved in the activity log.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer" style="background-color: #f8f9fa;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-success" id="confirmTaskCompletion">
+                    <i class="fa fa-check"></i> Complete Task
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<link rel="stylesheet" href="{{URL::to('/')}}/css/task-popover-modern.css">
+<script src="{{URL::to('/')}}/js/popover.js"></script>
+<script src="{{URL::to('/')}}/js/components/dropdown-multi-select.js"></script>
+<style>
+/* Ensure popovers display correctly */
+
+.btn_readmore {
+    color: #007bff !important;
+    text-decoration: none !important;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    font-size: inherit !important;
+    cursor: pointer !important;
+}
+
+.btn_readmore:hover {
+    color: #0056b3 !important;
+    text-decoration: underline !important;
+}
+
+    /* Popover styling for better design */
+    .popover {
+        max-width: 600px !important;
+        width: 600px !important;
+        border-radius: 10px !important;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
+        border: none !important;
+        z-index: 9999 !important;
+        overflow: hidden !important;
+    }
+    
+    /* Center Add My Task popover in the middle of the page */
+    .popover.add-my-task-popover {
+        position: fixed !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        margin: 0 !important;
+    }
+    
+    /* Hide arrow for centered Add My Task popover */
+    .popover.add-my-task-popover .arrow,
+    .popover.add-my-task-popover .popover-arrow {
+        display: none !important;
+    }
+    
+    /* Add backdrop for Add My Task popup */
+    .popover-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 9998;
+        display: none;
+    }
+    
+    .popover-backdrop.show {
+        display: block;
+    }
+    
+    /* Fix popover display issues */
+    .popover {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+    
+    /* Ensure popover shows on click */
+    .popover.show {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+.popover .popover-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border-bottom: none !important;
+    border-radius: 8px 8px 0 0 !important;
+    padding: 16px 20px !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    letter-spacing: 0.5px !important;
+}
+
+.popover .popover-body {
+    padding: 20px !important;
+    word-wrap: break-word !important;
+    white-space: normal !important;
+}
+
+.popover .popover-body * {
+    box-sizing: border-box !important;
+}
+
+/* Form styling within popover */
+.popover .form-group {
+    margin-bottom: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.popover .modern-popover-content {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px !important;
+    padding: 5px !important;
+}
+
+.popover .modern-popover-content > .form-group {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+}
+
+.popover .modern-popover-content > .form-group-full-width {
+    grid-column: 1 / -1 !important;
+}
+
+.popover .modern-popover-content > .text-center {
+    grid-column: 1 / -1 !important;
+    margin-top: 10px !important;
+}
+
+.popover .form-group label {
+    font-weight: 600 !important;
+    color: #2c3e50 !important;
+    margin-bottom: 8px !important;
+    display: block !important;
+    font-size: 13px !important;
+}
+
+.popover .form-control {
+    border: 1px solid #ced4da !important;
+    border-radius: 6px !important;
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: block !important;
+}
+
+.popover .form-control:focus {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
+    outline: 0 !important;
+}
+
+.popover textarea.form-control {
+    min-height: 80px !important;
+    resize: vertical !important;
+    line-height: 1.5 !important;
+}
+
+.popover select.form-control {
+    appearance: auto !important;
+    -webkit-appearance: auto !important;
+    -moz-appearance: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+}
+
+.popover .select2-container {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.popover .assigneeselect2 {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Button styling */
+.popover .btn {
+    padding: 12px 30px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+    letter-spacing: 0.5px !important;
+}
+
+.popover .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.popover .btn-primary:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+}
+
+.popover .btn-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.popover .btn-info:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+}
+
+/* Error message styling */
+.popover .error-message {
+    color: #dc3545 !important;
+    font-size: 11px !important;
+    margin-top: 4px !important;
+    font-weight: 500 !important;
+    display: block !important;
+    min-height: 16px !important;
+}
+
+/* Box header styling */
+.popover .box-header {
+    border-bottom: 1px solid #e9ecef !important;
+    padding-bottom: 15px !important;
+    margin-bottom: 15px !important;
+}
+
+.popover .box-header:last-child {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* Box footer styling */
+.popover .box-footer {
+    border-top: 1px solid #e9ecef !important;
+    padding-top: 15px !important;
+    margin-top: 15px !important;
+    text-align: center !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .popover {
+        max-width: 90vw !important;
+        width: 90vw !important;
+        left: 5vw !important;
+    }
+    
+    .popover .popover-body {
+        padding: 15px !important;
+    }
+    
+    .popover .form-group {
+        margin-bottom: 12px !important;
+    }
+    
+    .popover .modern-popover-content {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Add My Task specific styling */
+.popover .dropdown-multi-select {
+    position: relative;
+    display: block;
+    width: 100%;
+}
+
+.popover .dropdown-multi-select .btn {
+    width: 100%;
+    text-align: left;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: #495057;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.popover .dropdown-multi-select .btn:hover,
+.popover .dropdown-multi-select .btn:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    outline: 0;
+}
+
+.popover .dropdown-multi-select .dropdown-menu {
+    width: 100%;
+    max-height: 300px;
+    overflow: hidden;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 0;
+    margin-top: 2px;
+}
+
+/* Bootstrap manages the show class on dropdown-menu directly */
+.popover .dropdown-multi-select .dropdown-menu:not(.show) {
+    display: none;
+}
+
+.popover .dropdown-multi-select .dropdown-search-wrapper {
+    padding: 8px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.popover .dropdown-multi-select .assignee-search-input {
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e0;
+    width: 100%;
+}
+
+.popover .dropdown-multi-select .assignee-search-input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
+    outline: none;
+}
+
+.popover .dropdown-multi-select .assignee-list {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.popover .dropdown-multi-select .dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+/* Override display for hidden items - CRITICAL for search to work */
+.popover .dropdown-multi-select .assignee-item[style*="display: none"],
+.popover .dropdown-multi-select .assignee-item.hidden {
+    display: none !important;
+}
+
+.popover .dropdown-multi-select .dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.popover .dropdown-multi-select .dropdown-item input[type="checkbox"] {
+    margin-right: 8px;
+    margin-bottom: 0;
+}
+
+.popover .form-label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 8px;
+    display: block;
+    font-size: 14px;
+}
+
+.popover .form-group {
+    margin-bottom: 20px;
+}
+
+.popover .form-group:last-child {
+    margin-bottom: 0;
+}
+
+/* Client search select styling */
+.popover .js-data-example-ajaxccsearch__addmytask {
+    width: 100%;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+    background-color: #fff;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+    .popover .js-data-example-ajaxccsearch__addmytask:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        outline: 0;
+    }
+    
+    /* Final overflow prevention */
+    /*body > * {
+        max-width: 100vw;
+        overflow-x: hidden;
+    }*/
+    
+    /* Ensure no horizontal scroll on the page */
+    /*.main-wrapper {
+        overflow-x: hidden;
+        max-width: 100vw;
+    }*/
+    
+    /* Flatpickr z-index fix to appear above popovers */
+    .flatpickr-calendar {
+        z-index: 99999 !important;
+    }
+</style>
+<script type="text/javascript">
+$(function () {
+    // Initialize Add New Task popover immediately
+    $('.add_my_task').popover({
+        html: true,
+        sanitize: false,
+        trigger: 'click',
+        placement: 'top',
+        boundary: 'viewport',
+        container: 'body',
+        title: '<i class="fa fa-plus-circle"></i> Add New Task',
+        template: '<div class="popover add-my-task-popover" role="tooltip"><div class="popover-header"></div><div class="popover-body"></div></div>'
+    });
+    
+    var table = $('.yajra-datatable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "{{ route('action.list') }}",
+            data: function(d) {
+                var $activeTab = $('.tab-button.active');
+                d.filter = $activeTab.length ? ($activeTab.data('filter') || 'all') : 'all';
+                d.search.value = $('#searchInput').val() || ''; // Pass the search term to the server in DataTables format
+            },
+            error: function(xhr, error, thrown) {
+                console.error('DataTables Ajax Error:', error, thrown);
+                // Handle UTF-8 encoding errors gracefully
+                if (xhr && xhr.responseText && xhr.responseText.includes('Malformed UTF-8')) {
+                    console.warn('UTF-8 encoding issue detected. Please refresh the page.');
+                }
+            }
+        },
+        columns: [
+            {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
+            {data: 'done_action', name: 'done', orderable: false, searchable: false},
+            {data: 'assigner_name', name: 'assigner_name', orderable: true, searchable: true},
+            {data: 'client_reference', name: 'client_reference', orderable: true, searchable: true},
+            {data: 'assign_date', name: 'assign_date', orderable: true, searchable: true},
+            {data: 'task_group', name: 'task_group', orderable: true, searchable: true},
+            {data: 'note_description', name: 'note_description', orderable: true, searchable: true},
+            {data: 'action', name: 'action', orderable: false, searchable: false}
+        ],
+        "fnDrawCallback": function() {
+            // Initialize popovers for dynamically added elements (exclude update_task buttons which are initialized manually)
+            $('[data-bs-toggle="popover"]').not('.update_task').popover({
+                html: true,
+                sanitize: false,
+                trigger: 'click',
+                placement: 'bottom',
+                boundary: 'viewport',
+                container: 'body'
+            });
+
+            // Update badge counts
+            updateBadgeCounts();
+        },
+        "bAutoWidth": false,
+        "scrollX": true,
+        "scrollCollapse": true,
+        "dom": 'rt<"bottom"lip><"clear">', // Move length menu (l) to bottom with info (i) and pagination (p)
+        "pageLength": 10,
+        "lengthMenu": [10, 25, 50, 100], // Options for entries dropdown
+        "order": [[4, 'desc']], // Default sorting by assign_date descending
+        "responsive": false,
+        "autoWidth": false
+    });
+
+    // Search functionality
+    $('#searchInput').on('keyup', function() {
+        table.ajax.reload(); // Trigger DataTables reload with the new search term
+    });
+
+    // Helper function to escape HTML to prevent XSS
+    function escapeHtml(text) {
+        if (!text) return '';
+        var map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
+    // Function to generate Update Task popover content
+    function getUpdateTaskContent(assignedTo, noteId, taskId, taskGroup, followupDate, clientId) {
+        // Sanitize all inputs to prevent XSS
+        assignedTo = String(assignedTo || '');
+        noteId = escapeHtml(noteId || '');
+        taskId = escapeHtml(taskId || '');
+        taskGroup = String(taskGroup || '');
+        clientId = escapeHtml(clientId || '');
+        
+        return `
+            <div id="popover-content" class="modern-popover-content update-task-layout">
+                <div class="form-group">
+                    <label class="control-label"><i class="fa fa-user"></i> Select Assignee</label>
+                    <select class="assigneeselect2 form-control" id="rem_cat" name="rem_cat">
+                        <option value="">Select Assignee...</option>
+                        @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
+                            <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
+                            <option value="{{ $admin->id }}" ${assignedTo == '{{ $admin->id }}' ? 'selected' : ''}>
+                                {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})
+                            </option>
+                        @endforeach
+                    </select>
+                    <div id="assignee-error" class="error-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="control-label"><i class="fa fa-tag"></i> Task Group</label>
+                    <select class="assigneeselect2 form-control" id="task_group" name="task_group">
+                        <option value="">Select Group...</option>
+                        <option value="Call" ${taskGroup == 'Call' ? 'selected' : ''}>📞 Call</option>
+                        <option value="Checklist" ${taskGroup == 'Checklist' ? 'selected' : ''}>✓ Checklist</option>
+                        <option value="Review" ${taskGroup == 'Review' ? 'selected' : ''}>📋 Review</option>
+                        <option value="Query" ${taskGroup == 'Query' ? 'selected' : ''}>❓ Query</option>
+                        <option value="Urgent" ${taskGroup == 'Urgent' ? 'selected' : ''}>🔥 Urgent</option>
+                        <option value="Personal Action" ${taskGroup == 'Personal Action' ? 'selected' : ''}>👤 Personal Action</option>
+                        <option value="Client Portal" ${taskGroup == 'Client Portal' ? 'selected' : ''}>🌐 Client Portal</option>
+                    </select>
+                    <div id="task-group-error" class="error-message"></div>
+                </div>
+                
+                <div class="form-group form-group-full-width">
+                    <label class="control-label"><i class="fa fa-comment"></i> Task Description</label>
+                    <textarea id="assignnote" class="form-control" rows="3" placeholder="Enter task description...">${noteId}</textarea>
+                    <div id="note-error" class="error-message"></div>
+                </div>
+                
+                <input id="assign_note_id" type="hidden" value="${taskId}">
+                <input id="assign_client_id" type="hidden" value="${clientId}">
+                
+                <div class="text-center">
+                    <button class="btn btn-primary" id="updateTask">
+                        <i class="fa fa-save"></i> Update Task
+                    </button>
+                </div>
+            </div>`;
+    }
+
+    // Initialize client select for Add My Task popover (combined handler)
+    $(document).on('shown.bs.popover', '.add_my_task', function() {
+        // Find the popover - try with class first, fallback to looking for all visible popovers
+        var $popover = $('.popover.add-my-task-popover');
+        if ($popover.length === 0) {
+            $popover = $('.popover:visible').last();
+            $popover.addClass('add-my-task-popover');
+        }
+        
+        // Center the popover in the middle of the screen
+        $popover.css({
+            'position': 'fixed',
+            'left': '50%',
+            'top': '50%',
+            'transform': 'translate(-50%, -50%)',
+            'margin': '0',
+            'z-index': '9999'
+        });
+        
+        // Create and show backdrop
+        if (!$('.popover-backdrop').length) {
+            $('body').append('<div class="popover-backdrop"></div>');
+        }
+        $('.popover-backdrop').addClass('show');
+        
+        // Close popup when clicking backdrop
+        $('.popover-backdrop').off('click').on('click', function() {
+            $('.add_my_task').popover('hide');
+        });
+        
+        // Initialize client search select with AJAX after positioning
+        setTimeout(function() {
+            initializeClientSelect2();
+            
+            // Verify dropdown elements are present
+            var $searchInput = $popover.find('.assignee-search-input');
+            var $assigneeItems = $popover.find('.assignee-item');
+            
+            console.log('=== POPOVER INITIALIZATION ===');
+            console.log('Popover found:', $popover.length);
+            console.log('Search input found:', $searchInput.length);
+            console.log('Assignee items found:', $assigneeItems.length);
+            
+            if ($assigneeItems.length > 0) {
+                console.log('✓ Dropdown structure is correct');
+                console.log('First assignee item text:', $assigneeItems.first().text().trim());
+            } else {
+                console.error('✗ ERROR: Assignee items not found in popover!');
+            }
+            console.log('==============================');
+        }, 100);
+    });
+    
+    // Hide backdrop when Add My Task popover is hidden
+    $(document).on('hidden.bs.popover', '.add_my_task', function() {
+        $('.popover-backdrop').removeClass('show');
+    });
+    
+    // Function to initialize client Select2
+    function initializeClientSelect2() {
+        // Try multiple times with increasing delays
+        var attempts = 0;
+        var maxAttempts = 10;
+        
+        function tryInitialize() {
+            attempts++;
+            var $clientSelect = $('#assign_client_id');
+            console.log('Attempt', attempts, '- Client select element found:', $clientSelect.length);
+            
+            if ($clientSelect.length && $clientSelect.is(':visible')) {
+                // Destroy any existing Select2 instance
+                if ($clientSelect.hasClass('select2-hidden-accessible')) {
+                    $clientSelect.select2('destroy');
+                }
+                
+                try {
+                    $clientSelect.select2({
+                        closeOnSelect: true,
+                        placeholder: 'Search client...',
+                        allowClear: true,
+                        width: '100%',
+                        dropdownParent: $('.popover'),
+                        ajax: {
+                            url: '{{URL::to('/clients/get-allclients')}}',
+                            dataType: 'json',
+                            delay: 250,
+                            processResults: function (data) {
+                                console.log('AJAX response:', data);
+                                // Validate data is an object and has items
+                                if (!data || typeof data !== 'object') {
+                                    console.warn('Invalid data received from server');
+                                    return { results: [] };
+                                }
+                                return {
+                                    results: data.items || []
+                                };
+                            },
+                            cache: true,
+                            error: function(xhr, status, error) {
+                                console.error('Error fetching clients:', error);
+                            }
+                        },
+                        templateResult: formatRepomainMYTask,
+                        templateSelection: formatRepoSelectionmainMYTask,
+                        minimumInputLength: 1
+                    });
+                    
+                    console.log('Select2 successfully initialized for client field');
+                    
+                    // Handle change event for client selection
+                    /*$clientSelect.off('change.select2client').on('change.select2client', function () {
+                        var v = $(this).val(); 
+                        console.log('Client selected:', v);
+                        var s = v.split('/');
+                        if(s[1] == 'Matter' && s[2] != ''){
+                            window.location = '{{URL::to('/clients/detail/')}}/'+s[0]+'/'+s[2];
+                        } else {
+                            if(s[1] == 'Client'){
+                                window.location = '{{URL::to('/clients/detail/')}}/'+s[0];
+                            } else {
+                                window.location = '{{URL::to('/leads/history/')}}/'+s[0];
+                            }
+                        }
+                        return false;
+                    });*/
+                    
+                    return true; // Success
+                } catch (error) {
+                    console.error('Error initializing Select2:', error);
+                    return false;
+                }
+            } else if (attempts < maxAttempts) {
+                console.log('Element not found or not visible, retrying in 50ms...');
+                setTimeout(tryInitialize, 50);
+            } else {
+                console.log('Max attempts reached, Select2 initialization failed');
+            }
+        }
+        
+        tryInitialize();
+    }
+    
+    // Helper functions for Select2 templates
+    function formatRepomainMYTask (repo) {
+        if (repo.loading) {
+            return repo.text;
+        }
+
+        var $container = $(
+            "<div dataid="+(repo.cid || '')+" class='selectclient select2-result-repository ag-flex ag-space-between ag-align-center')'>" +
+
+            "<div  class='ag-flex ag-align-start'>" +
+                "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
+                "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
+
+            "</div>" +
+            "</div>" +
+            "<div class='ag-flex ag-flex-column ag-align-end'>" +
+
+                "<span class='select2resultrepositorystatistics'>" +
+
+                "</span>" +
+            "</div>" +
+            "</div>"
+        );
+
+        $container.find(".select2-result-repository__title").text(repo.name || '');
+        $container.find(".select2-result-repository__description").text(repo.email || '');
+        if(repo.status == 'Archived'){
+            $container.find(".select2resultrepositorystatistics").append('<span class="ui label  select2-result-repository__statistics">'+(repo.status || '')+'</span>');
+        } else if(repo.status) {
+            $container.find(".select2resultrepositorystatistics").append('<span class="ui label yellow select2-result-repository__statistics">'+(repo.status || '')+'</span>');
+        }
+        return $container;
+    }
+
+    function formatRepoSelectionmainMYTask (repo) {
+        return (repo && repo.name) || (repo && repo.text) || '';
+    }
+    
+    // Ensure Add My Task popover works correctly (backup initialization on click)
+    $(document).on('click', '.add_my_task', function(e) {
+        // Backup initialization attempt - the main one happens on 'shown.bs.popover'
+        setTimeout(function() {
+            initializeClientSelect2();
+        }, 200);
+    });
+
+    // Initialize Update Task popover
+    $(document).on('shown.bs.popover', '.update_task', function() {
+        //$('.assigneeselect2').select2();
+        //$('.summernote-simple').summernote();
+    });
+
+    // Update badge counts
+    function updateBadgeCounts() {
+        $.ajax({
+            url: "{{ route('action.counts') }}",
+            method: "GET",
+            success: function(data) {
+                if (data && typeof data === 'object') {
+                    $('#all-count').text(data.all || 0);
+                    $('#call-count').text(data.call || 0);
+                    $('#checklist-count').text(data.checklist || 0);
+                    $('#review-count').text(data.review || 0);
+                    $('#query-count').text(data.query || 0);
+                    $('#urgent-count').text(data.urgent || 0);
+                    $('#personal-task-count').text(data.personal_action || 0);
+                    $('#client-portal-count').text(data.client_portal || 0);
+                    $('#follow-up-count').text(data.follow_up || 0);
+                } else {
+                    console.warn('Invalid badge count data received');
+                }
+            },
+            error: function(xhr) {
+                console.error('Error fetching badge counts:', xhr.responseText);
+            }
+        });
+    }
+
+    // Filter by tabs
+    $('.tab-button').on('click', function() {
+        $('.tab-button').removeClass('active');
+        $(this).addClass('active');
+        table.ajax.reload();
+    });
+
+    // Handle Update Task button click
+    $('.yajra-datatable').on('click', '.update_task', function() {
+        var $button = $(this);
+        var assignedTo = $button.data('assignedto') || '';
+        var noteId = $button.data('noteid') || '';
+        var taskId = $button.data('taskid') || '';
+        var taskGroup = $button.data('taskgroupid') || '';
+        var followupDate = $button.data('actiondate') || '';
+        var clientId = $button.data('clientid') || '';
+
+        // Set popover content
+        $button.popover('dispose'); // Dispose of any existing popover
+        $button.popover({
+            html: true,
+            sanitize: false,
+            title: 'Update Task',
+            content: getUpdateTaskContent(assignedTo, noteId, taskId, taskGroup, followupDate, clientId),
+            trigger: 'manual',
+            placement: 'auto',
+            boundary: 'viewport',
+            template: '<div class="popover" role="tooltip"><div class="popover-header"></div><div class="popover-body"></div></div>',
+            container: 'body'
+        }).popover('show');
+    });
+
+    // Close popover when clicking outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.popover').length && !$(e.target).closest('.update_task').length && !$(e.target).closest('.btn_readmore').length) {
+            $('.update_task').popover('hide');
+            $('.btn_readmore').popover('hide');
+        }
+    });
+
+    // Handle Read More button clicks specifically
+    $(document).on('click', '.btn_readmore', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var $button = $(this);
+        var fullContent = $button.data('full-content');
+        
+        // Only show popover if content exists
+        if (!fullContent) {
+            console.warn('No content found for read more button');
+            return;
+        }
+        
+        // Hide any other open popovers
+        $('.update_task').popover('hide');
+        $('.btn_readmore').popover('hide');
+        
+        // Set popover content and show
+        $button.popover('dispose');
+        $button.popover({
+            html: true,
+            sanitize: false,
+            content: fullContent,
+            trigger: 'manual',
+            placement: 'top'
+        }).popover('show');
+    });
+
+    // Re-initialize popovers after DataTable redraw
+    $(document).on('draw.dt', '.yajra-datatable', function() {
+        // Destroy existing popovers
+        $('.btn_readmore').popover('dispose');
+    });
+
+    // Handle Update Task submission
+    $(document).on('click', '#updateTask', function() {
+        var $popover = $(this).closest('.popover');
+        
+        if (!$popover.length) {
+            console.error('Popover not found');
+            return;
+        }
+        
+        var taskId = $popover.find('#assign_note_id').val() || '';
+        var clientId = $popover.find('#assign_client_id').val() || '';
+        var assignee = $popover.find('#rem_cat').val() || '';
+        var note = $popover.find('#assignnote').val() || '';
+        var taskGroup = $popover.find('#task_group').val() || '';
+
+        // Clear previous error messages
+        $popover.find('.error-message').text('');
+
+        // Client-side validation
+        var isValid = true;
+        if (!assignee) {
+            $popover.find('#assignee-error').text('Please select an assignee.');
+            isValid = false;
+        }
+        if (!note || note.trim() === '') {
+            $popover.find('#note-error').text('Please enter a note.');
+            isValid = false;
+        }
+        if (!taskGroup) {
+            $popover.find('#task-group-error').text('Please select a task group.');
+            isValid = false;
+        }
+
+        if (!isValid) {
+            return; // Stop submission if validation fails
+        }
+
+        $.ajax({
+            type: 'post',
+            url: "{{URL::to('/')}}/update-action",
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+            data: {
+                id: taskId,
+                client_id: clientId,
+                assigned_to: assignee,
+                description: note,
+                task_group: taskGroup
+            },
+            success: function(response) {
+                $('.update_task').popover('hide');
+                table.draw(false);
+            },
+            error: function(xhr) {
+                console.error('Error updating task:', xhr.responseText);
+                alert('An error occurred while updating the task. Please check the console for details.');
+            }
+        });
+    });
+
+    // Delete record
+    $('.yajra-datatable').on('click', '.deleteNote', function(e) {
+        e.preventDefault();
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+
+        var url = $(this).data('remote');
+        
+        if (!url) {
+            console.error('No delete URL found');
+            alert('Unable to delete: missing URL');
+            return;
+        }
+        
+        var deleteConfirm = confirm("Are you sure?");
+        if (deleteConfirm) {
+            $.ajax({
+                url: url,
+                type: 'DELETE',
+                dataType: 'json',
+                data: {method: '_DELETE', submit: true}
+            }).always(function(data) {
+                table.draw(false);
+            });
+        }
+    });
+
+    // Complete task - open modal
+    var currentTaskId = null;
+    var currentTaskGroupId = null;
+    
+    $('.yajra-datatable').on('click', '.complete_task', function() {
+        var row_id = $(this).attr('data-id');
+        var row_unique_group_id = $(this).attr('data-unique_group_id') || '';
+        
+        if (!row_id) {
+            console.error('No task ID found');
+            return;
+        }
+        
+        // Store task IDs for later use
+        currentTaskId = row_id;
+        currentTaskGroupId = row_unique_group_id;
+        
+        // Clear previous notes
+        $('#completionNotes').val('');
+        
+        // Show the completion notes modal
+        $('#completionNotesModal').modal('show');
+    });
+    
+    // Handle task completion with notes
+    $(document).on('click', '#confirmTaskCompletion', function() {
+        var completionNotes = $('#completionNotes').val().trim();
+        
+        if (!currentTaskId) {
+            console.error('No task ID found');
+            return;
+        }
+        
+        // Disable button to prevent double submission
+        var $button = $(this);
+        $button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Completing...');
+        
+        $.ajax({
+            type: 'post',
+            url: "{{URL::to('/')}}/update-action-completed",
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+            data: {
+                id: currentTaskId, 
+                unique_group_id: currentTaskGroupId,
+                completion_notes: completionNotes
+            },
+            success: function(response) {
+                // Close modal
+                $('#completionNotesModal').modal('hide');
+                
+                // Reset button
+                $button.prop('disabled', false).html('<i class="fa fa-check"></i> Complete Task');
+                
+                // Clear stored IDs
+                currentTaskId = null;
+                currentTaskGroupId = null;
+                
+                // Reload table
+                table.draw(false);
+                
+                // Show success message (optional)
+                if (response.message) {
+                    // You can add a toast notification here if you have one
+                    console.log('Success:', response.message);
+                }
+            },
+            error: function(xhr) {
+                console.error('Error completing task:', xhr.responseText);
+                alert('An error occurred while completing the task.');
+                
+                // Reset button
+                $button.prop('disabled', false).html('<i class="fa fa-check"></i> Complete Task');
+            }
+        });
+    });
+
+    // Add My Task submission
+    $(document).on('click', '#add_my_task', function() {
+        $(".popuploader").show();
+        var flag = true;
+        var error = "";
+        $(".custom-error").remove();
+
+        var selectedRemCat = [];
+        $(".checkbox-item:checked").each(function() {
+            selectedRemCat.push($(this).val());
+        });
+
+        if (selectedRemCat.length === 0) {
+            $('.popuploader').hide();
+            error = "Assignee field is required.";
+            $('#dropdownMenuButton').after("<span class='custom-error' role='alert'>" + error + "</span>");
+            flag = false;
+        }
+
+        if ($('#assignnote').val() == '') {
+            $('.popuploader').hide();
+            error = "Note field is required.";
+            $('#assignnote').after("<span class='custom-error' role='alert'>" + error + "</span>");
+            flag = false;
+        }
+
+        if (flag) {
+            $.ajax({
+                type: 'post',
+                url: "{{URL::to('/')}}/clients/action/personal/store",
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                dataType: 'json',
+                data: {
+                    note_type: 'follow_up',
+                    description: $('#assignnote').val(),
+                    client_id: $('#assign_client_id').val(),
+                    rem_cat: selectedRemCat,
+                    task_group: $('#task_group').val()
+                },
+                success: function(response) {
+                    $('.popuploader').hide();
+                    // Response is already parsed as JSON due to dataType: 'json'
+                    if (response && response.success) {
+                        $("[data-role=popover]").each(function() {
+                            (($(this).popover('hide').data('bs.popover')||{}).inState||{}).click = false
+                        });
+                        $('.popover-backdrop').removeClass('show');
+                        table.draw(false);
+                    } else {
+                        alert(response && response.message ? response.message : 'An error occurred');
+                        table.draw(false);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('.popuploader').hide();
+                    console.error('Error adding task:', error);
+                    alert('Failed to add task. Please try again.');
+                }
+            });
+        } else {
+            $(".popuploader").hide();
+        }
+    });
+});
+</script>
+@endpush

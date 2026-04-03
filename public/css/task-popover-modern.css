@@ -1,0 +1,319 @@
+/**
+ * Modern Task Popup Styling
+ * Matches the Add Notes modal design for consistency
+ */
+
+/* Base Popover Styling */
+.popover {
+    border-radius: 12px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
+    border: none !important;
+    max-width: 500px !important;
+    z-index: 9999 !important;
+}
+
+.popover-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border-bottom: none !important;
+    padding: 15px 20px !important;
+    border-radius: 12px 12px 0 0 !important;
+    font-weight: 600 !important;
+    font-size: 1.1rem !important;
+}
+
+.popover-body {
+    padding: 20px !important;
+    background: #fafbfc !important;
+    border-radius: 0 0 12px 12px !important;
+}
+
+/* Form Groups */
+.popover-body .form-group {
+    margin-bottom: 18px;
+}
+
+.popover-body .form-group:last-of-type {
+    margin-bottom: 0;
+}
+
+/* Labels */
+.popover-body .control-label {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    display: block;
+}
+
+.popover-body .control-label i {
+    font-size: 0.85rem;
+    margin-right: 5px;
+}
+
+/* Form Controls */
+.popover-body .form-control,
+.popover-body select,
+.popover-body textarea,
+.popover-body input[type="text"],
+.popover-body input[type="date"] {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    background: white;
+}
+
+.popover-body .form-control:focus,
+.popover-body select:focus,
+.popover-body textarea:focus,
+.popover-body input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+}
+
+/* Select2 inside popover */
+.popover-body .select2-container--default .select2-selection--single {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 8px 14px;
+    height: auto;
+}
+
+.popover-body .select2-container--default.select2-container--focus .select2-selection--single {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Buttons */
+.popover-body .btn {
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.popover-body .btn-primary,
+.popover-body .btn-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.popover-body .btn-primary:hover,
+.popover-body .btn-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.popover-body .btn-secondary,
+.popover-body .btn-outline-secondary {
+    border-radius: 8px;
+    border-width: 2px;
+}
+
+.popover-body .btn-secondary:hover,
+.popover-body .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    transform: translateY(-1px);
+}
+
+/* Button Container */
+.popover-body .text-center {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Error Messages */
+.popover-body .custom-error,
+.popover-body .error-message {
+    color: #e53e3e;
+    font-size: 0.8rem;
+    margin-top: 5px;
+    font-weight: 500;
+    display: block;
+}
+
+/* Dropdown Multi-Select in Popover */
+.popover-body .dropdown-multi-select {
+    position: relative;
+}
+
+.popover-body .dropdown-multi-select .dropdown-toggle {
+    width: 100%;
+    text-align: left;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+}
+
+.popover-body .dropdown-multi-select .dropdown-toggle:hover {
+    border-color: #667eea;
+}
+
+.popover-body .dropdown-multi-select .dropdown-menu {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    max-height: 300px;
+    overflow: hidden;
+}
+
+.popover-body .dropdown-multi-select .dropdown-search-wrapper {
+    padding: 8px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.popover-body .dropdown-multi-select .assignee-search-input {
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e0;
+    width: 100%;
+}
+
+.popover-body .dropdown-multi-select .assignee-search-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.popover-body .dropdown-multi-select .assignee-list {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.popover-body .dropdown-multi-select .checkbox-item {
+    margin: 5px 0;
+    cursor: pointer;
+}
+
+.popover-body .dropdown-multi-select .assignee-item {
+}
+
+.popover-body .dropdown-multi-select .assignee-item:hover {
+    background-color: #f1f5f9;
+}
+
+/* Read More Button in Table */
+.btn_readmore {
+    color: #667eea !important;
+    text-decoration: none !important;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    font-size: inherit !important;
+    cursor: pointer !important;
+    font-weight: 500;
+}
+
+.btn_readmore:hover {
+    color: #764ba2 !important;
+    text-decoration: underline !important;
+}
+
+/* Popover Arrow */
+.popover .arrow::before {
+    border-top-color: #667eea !important;
+}
+
+.popover[x-placement^="bottom"] .arrow::before {
+    border-bottom-color: #667eea !important;
+}
+
+.popover[x-placement^="left"] .arrow::before {
+    border-left-color: #667eea !important;
+}
+
+.popover[x-placement^="right"] .arrow::before {
+    border-right-color: #667eea !important;
+}
+
+/* Date Picker Input */
+.popover-body input[type="text"].form-control {
+    background: white;
+    cursor: pointer;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .popover {
+        max-width: 90vw !important;
+    }
+    
+    .popover-header {
+        padding: 12px 15px !important;
+        font-size: 1rem !important;
+    }
+    
+    .popover-body {
+        padding: 15px !important;
+    }
+    
+    .popover-body .form-control {
+        padding: 8px 12px !important;
+        font-size: 0.85rem !important;
+    }
+    
+    .popover-body .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+/* Animation for popover appearance */
+.popover.fade {
+    opacity: 0;
+}
+
+.popover.show {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+}
+
+/* Loading State */
+.popuploader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+}
+
+/* Improve spacing in rows */
+.popover-body .row {
+    margin-left: -5px;
+    margin-right: -5px;
+}
+
+.popover-body .row [class*="col-"] {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+/* Task Group Icons */
+.popover-body .control-label i.fa {
+    color: #667eea;
+}
+
+/* Placeholder styling */
+.popover-body .form-control::placeholder {
+    color: #a0aec0;
+    font-style: italic;
+}
+
+/* Focus visible for accessibility */
+.popover-body .form-control:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+

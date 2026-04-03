@@ -1,0 +1,47 @@
+/node_modules
+/public/hot
+/public/img/documents
+/public/img/invoice
+/public/checklists
+/public/storage
+/storage/*.key
+/vendor
+/.idea
+/.vscode
+/.vagrant
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+.env
+.phpunit.result.cache
+.github
+vite.config.js
+package-lock.json
+yarn.lock
+
+# Laravel bootstrap cache files
+bootstrap/cache/*.tmp
+bootstrap/cache/config.php
+
+old_crm_sql_dumps.sql
+bansal_law_crm_backup_*.sql
+.env.backup
+sample env need fix.txt
+pdftk_server_installer.exe
+
+*.backup
+*.temp
+
+# Python cache and logs
+__pycache__/
+*.pyc
+*.pyo
+python_services/logs/*.log
+python_services/__pycache__/
+python_services/*/__pycache__/
+python_pdf_service/
+python_services/start_services.sh
+
+# Zip archives
+*.zip

@@ -1,0 +1,24 @@
+{
+  "resources/css/app.css": {
+    "file": "assets/app-DBtyac8a.css",
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "names": [
+      "app.css"
+    ]
+  },
+  "resources/css/fullcalendar-v6.css": {
+    "file": "assets/fullcalendar-v6-DIxknijU.css",
+    "src": "resources/css/fullcalendar-v6.css",
+    "isEntry": true,
+    "names": [
+      "fullcalendar-v6.css"
+    ]
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-CcsAB41C.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  }
+}

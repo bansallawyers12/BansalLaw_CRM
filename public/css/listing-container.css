@@ -1,0 +1,468 @@
+/* General Listing Container Styles - Reusable across all listing pages */
+
+/* Main Container Structure */
+.listing-container {
+    overflow-x: hidden;
+    max-width: 100%;
+    margin-left:50px; /* Account for sidebar width */
+    padding: 0 20px;
+}
+
+.listing-section {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+.listing-section-body {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+/* Modern Card Design - general for all listing pages */
+.listing-container .card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+    margin: 20px 0;
+    border: none;
+    width: 100%;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    max-width: 100%;
+}
+
+.listing-container .card-header {
+    background: #fff;
+    padding: 20px 30px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 12px 12px 0 0;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.listing-container .card-header h4 {
+    font-size: 1.25rem;
+    color: #2d3748;
+    font-weight: 600;
+    margin: 0;
+    flex: 1;
+    min-width: 200px;
+}
+
+.listing-container .card-body {
+    padding: 30px;
+    background: #fff;
+    border-radius: 0 0 12px 12px;
+    overflow-x: auto; /* Allow horizontal scroll only for table */
+    max-width: 100%;
+}
+
+/* Table Styling - general for all listing pages */
+.listing-container .table-responsive {
+    border-radius: 8px;
+    overflow-x: auto;
+    box-shadow: 0 0 0 1px #f0f0f0;
+    width: 100%;
+    max-width: 100%;
+}
+
+.listing-container .table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.875rem;
+    margin: 0;
+    min-width: 1000px; /* Reduced minimum width */
+}
+
+.listing-container .table thead th {
+    background: #f8fafc;
+    color: #4a5568 !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 12px 8px;
+    border-bottom: 2px solid #edf2f7;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.listing-container .table tbody td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #edf2f7;
+    color: #4a5568 !important;
+    vertical-align: middle;
+    word-wrap: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 120px;
+}
+
+.listing-container .table tbody tr:hover td {
+    background-color: #f8fafc;
+}
+
+.listing-container .table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Checkbox Styling - general for all listing pages */
+.listing-container .custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
+    background-color: #4299e1;
+    border-color: #4299e1;
+}
+
+.listing-container .custom-control-label::before {
+    border-radius: 4px;
+    border: 2px solid #cbd5e0;
+}
+
+/* Button Styling - general for all listing pages */
+.listing-container .btn-primary {
+    background: #4299e1;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+}
+
+.listing-container .btn-primary:hover {
+    background: #3182ce;
+    box-shadow: 0 4px 6px rgba(66, 153, 225, 0.1);
+}
+
+.listing-container .btn-primary i {
+    font-size: 0.875rem;
+}
+
+/* Header Button Styling - Match Search button look and feel */
+.listing-container .card-header .btn {
+    min-width: 120px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    color: white;
+}
+
+.listing-container .card-header .btn:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.listing-container .card-header .filter_btn {
+    background: #394eea !important;
+    color: white !important;
+}
+
+.listing-container .card-header .filter_btn:hover {
+    background: #2d3fd8 !important;
+}
+
+.listing-container .card-header .is_checked_client_void_invoice {
+    background: #394eea !important;
+    color: white !important;
+}
+
+.listing-container .card-header .is_checked_client_void_invoice:hover {
+    background: #2d3fd8 !important;
+}
+
+/* Status Indicators - general for all listing pages */
+.listing-container .text-success, 
+.listing-container .text-danger {
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.listing-container .text-success {
+    background-color: #c6f6d5;
+    color: #2f855a !important;
+}
+
+.listing-container .text-danger {
+    background-color: #fed7d7;
+    color: #c53030 !important;
+}
+
+/* Column width adjustments - Fixed widths to prevent horizontal scroll */
+.listing-container .table th:nth-child(1), .listing-container .table td:nth-child(1) { width: 40px; min-width: 40px; max-width: 40px; }
+.listing-container .table th:nth-child(2), .listing-container .table td:nth-child(2) { width: 100px; min-width: 100px; max-width: 100px; }
+.listing-container .table th:nth-child(3), .listing-container .table td:nth-child(3) { width: 120px; min-width: 120px; max-width: 120px; }
+.listing-container .table th:nth-child(4), .listing-container .table td:nth-child(4) { width: 120px; min-width: 120px; max-width: 120px; }
+.listing-container .table th:nth-child(5), .listing-container .table td:nth-child(5) { width: 100px; min-width: 100px; max-width: 100px; }
+.listing-container .table th:nth-child(6), .listing-container .table td:nth-child(6) { width: 100px; min-width: 100px; max-width: 100px; }
+.listing-container .table th:nth-child(7), .listing-container .table td:nth-child(7) { width: 100px; min-width: 100px; max-width: 100px; }
+.listing-container .table th:nth-child(8), .listing-container .table td:nth-child(8) { width: 100px; min-width: 100px; max-width: 100px; }
+.listing-container .table th:nth-child(9), .listing-container .table td:nth-child(9) { width: 100px; min-width: 100px; max-width: 100px; }
+.listing-container .table th:nth-child(10), .listing-container .table td:nth-child(10) { width: 100px; min-width: 100px; max-width: 100px; }
+.listing-container .table th:nth-child(11), .listing-container .table td:nth-child(11) { width: 120px; min-width: 120px; max-width: 120px; }
+
+/* Empty State */
+.listing-container .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #718096;
+    background: #f8fafc;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.listing-container .empty-state div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.listing-container .empty-state i {
+    margin-bottom: 15px;
+    opacity: 0.6;
+}
+
+.listing-container .empty-state p {
+    font-size: 16px;
+    font-weight: 500;
+    margin: 0;
+    color: #4a5568;
+}
+
+/* Loading State */
+.listing-container .table tbody tr.loading {
+    opacity: 0.5;
+}
+
+/* Tooltip */
+.listing-container [data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+.listing-container [data-tooltip]:before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    background: #2d3748;
+    color: white;
+    font-size: 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+    display: none;
+}
+
+.listing-container [data-tooltip]:hover:before {
+    display: block;
+}
+
+/* Validation Message Styling */
+.listing-container .custom-error-msg {
+    padding: 15px 20px;
+    margin: 0;
+    display: none;
+}
+
+.listing-container .custom-error-msg.alert {
+    display: block;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+.listing-container .custom-error-msg.alert-success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.listing-container .custom-error-msg.alert-danger {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.listing-container .custom-error-msg.alert-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+}
+
+.listing-container .custom-error-msg.alert-info {
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+}
+
+/* Flash Message Styling */
+.listing-container .alert {
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.listing-container .alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.listing-container .alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.listing-container .alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+    color: #856404;
+}
+
+.listing-container .alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+/* Close button for alerts */
+.listing-container .alert .close {
+    float: right;
+    font-size: 20px;
+    font-weight: bold;
+    line-height: 1;
+    color: #000;
+    text-shadow: 0 1px 0 #fff;
+    opacity: 0.2;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+}
+
+.listing-container .alert .close:hover {
+    opacity: 0.5;
+}
+
+/* Removed animation for alerts - keeping it simple */
+
+.listing-container .strike-through {
+    text-decoration: line-through;
+    color: #000;
+}
+
+/* Filter Panel Styling */
+.listing-container .filter_panel {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    display: none;
+}
+
+.listing-container .filter_panel h4 {
+    color: #4a5568 !important;
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+/* Filter Panel Button Container Styling */
+.listing-container .filter-buttons-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.listing-container .filter-buttons-container .btn {
+    min-width: 120px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+}
+
+.listing-container .filter-buttons-container .btn:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .listing-container .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .listing-container .card-header .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .listing-container .btn-primary {
+        width: auto;
+        justify-content: center;
+    }
+}
+
+/* Additional responsive fixes */
+@media (max-width: 768px) {
+    .listing-container {
+        margin-left: 0; /* Remove sidebar margin on mobile */
+        padding: 0 15px;
+    }
+    
+    .listing-container .card-header {
+        padding: 15px 20px;
+    }
+    
+    .listing-container .card-header h4 {
+        font-size: 1.1rem;
+        min-width: auto;
+    }
+    
+    .listing-container .card-body {
+        padding: 15px;
+    }
+    
+    .listing-container .table {
+        min-width: 800px;
+    }
+    
+    .listing-container .table thead th,
+    .listing-container .table tbody td {
+        padding: 8px 6px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .listing-container {
+        padding: 0 10px;
+    }
+}

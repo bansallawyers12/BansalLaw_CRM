@@ -1,0 +1,169 @@
+/* Custom Datepicker Styling - Reusable across all listing pages */
+.listing-container .datepicker {
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+    padding: 10px 15px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    background-color: #fff;
+    color: #4a5568;
+}
+
+.listing-container .datepicker:focus {
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+    outline: none;
+}
+
+.listing-container .datepicker::placeholder {
+    color: #a0aec0;
+}
+
+/* Datepicker Dropdown Styling */
+.listing-container .datepicker-dropdown {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    padding: 15px;
+    background: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.listing-container .datepicker table {
+    border-collapse: separate;
+    border-spacing: 2px;
+}
+
+.listing-container .datepicker table tr td,
+.listing-container .datepicker table tr th {
+    border-radius: 8px;
+    border: none;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.listing-container .datepicker table tr th {
+    background: #f8fafc;
+    color: #4a5568;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+.listing-container .datepicker table tr td {
+    background: transparent;
+    color: #4a5568;
+    cursor: pointer;
+    position: relative;
+}
+
+.listing-container .datepicker table tr td:hover {
+    background: #edf2f7;
+    transform: scale(1.05);
+}
+
+.listing-container .datepicker table tr td.active {
+    background: #4299e1 !important;
+    color: white !important;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(66, 153, 225, 0.3);
+}
+
+.listing-container .datepicker table tr td.active:hover {
+    background: #3182ce !important;
+    transform: scale(1.05);
+}
+
+.listing-container .datepicker table tr td.today {
+    background: #e6fffa;
+    color: #2d3748;
+    font-weight: 600;
+    border: 2px solid #38b2ac;
+}
+
+.listing-container .datepicker table tr td.old,
+.listing-container .datepicker table tr td.new {
+    color: #cbd5e0;
+    background: #f7fafc;
+}
+
+.listing-container .datepicker table tr td.old:hover,
+.listing-container .datepicker table tr td.new:hover {
+    background: #edf2f7;
+    color: #a0aec0;
+}
+
+/* Datepicker Header */
+.listing-container .datepicker table tr th.datepicker-switch {
+    background: #4299e1;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.listing-container .datepicker table tr th.datepicker-switch:hover {
+    background: #3182ce;
+    transform: translateY(-1px);
+}
+
+.listing-container .datepicker table tr th.prev,
+.listing-container .datepicker table tr th.next {
+    background: #f8fafc;
+    color: #4a5568;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.listing-container .datepicker table tr th.prev:hover,
+.listing-container .datepicker table tr th.next:hover {
+    background: #e2e8f0;
+    color: #2d3748;
+    transform: scale(1.1);
+}
+
+/* Datepicker Footer */
+.listing-container .datepicker table tr td.today {
+    background: #e6fffa;
+    color: #2d3748;
+    font-weight: 600;
+    border: 2px solid #38b2ac;
+    cursor: pointer;
+}
+
+.listing-container .datepicker table tr td.today:hover {
+    background: #b2f5ea;
+    transform: scale(1.05);
+}
+
+.listing-container .datepicker table tr td.clear {
+    background: #fed7d7;
+    color: #c53030;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.listing-container .datepicker table tr td.clear:hover {
+    background: #feb2b2;
+    transform: scale(1.05);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .listing-container .datepicker-dropdown {
+        padding: 10px;
+    }
+    
+    .listing-container .datepicker table tr td,
+    .listing-container .datepicker table tr th {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+}

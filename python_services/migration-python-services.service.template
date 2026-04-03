@@ -1,0 +1,112 @@
+# Systemd Service Template for Migration Manager Python Services
+#
+# This is a template for the systemd service file.
+# It will be automatically created by install_service_linux.sh
+#
+# Manual installation:
+# 1. Copy this file to: /etc/systemd/system/migration-python-services.service
+# 2. Update the paths and user as needed
+# 3. Run: sudo systemctl daemon-reload
+# 4. Run: sudo systemctl enable migration-python-services
+# 5. Run: sudo systemctl start migration-python-services
+
+[Unit]
+Description=Migration Manager Python Services
+Documentation=https://github.com/bansallawyers12/BansalLaw_CRM
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# User and Group
+# Change this to your web server user (www-data, nginx, apache, etc.)
+User=www-data
+Group=www-data
+
+# Working Directory
+# Update this path to match your installation directory
+WorkingDirectory=/var/www/bansal-law-crm/python_services
+
+# Environment
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+Environment="SERVICE_HOST=127.0.0.1"
+Environment="SERVICE_PORT=5000"
+Environment="LOG_LEVEL=INFO"
+Environment="DEBUG=False"
+
+# If using virtual environment, uncomment and update the path:
+# Environment="PATH=/var/www/bansal-law-crm/python_services/venv/bin:/usr/local/bin:/usr/bin:/bin"
+
+# Command to start the service
+# Using system Python
+ExecStart=/usr/bin/python3 /var/www/bansal-law-crm/python_services/main.py --host 127.0.0.1 --port 5000
+
+# If using virtual environment, use this instead:
+# ExecStart=/var/www/bansal-law-crm/python_services/venv/bin/python /var/www/bansal-law-crm/python_services/main.py --host 127.0.0.1 --port 5000
+
+# If using Gunicorn for better performance, use this:
+# ExecStart=/usr/bin/python3 -m gunicorn main:app --bind 127.0.0.1:5000 --workers 4 --worker-class uvicorn.workers.UvicornWorker --timeout 300
+
+# Restart Policy
+Restart=always
+RestartSec=10
+
+# Timeout for start/stop operations
+TimeoutStartSec=60
+TimeoutStopSec=60
+
+# Output
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=migration-python-services
+
+# Logging
+# Logs are sent to systemd journal
+# View with: sudo journalctl -u migration-python-services -f
+
+# Resource Limits (optional, adjust as needed)
+# LimitNOFILE=65536
+# MemoryLimit=1G
+# CPUQuota=200%
+
+# Security Hardening
+# These settings improve security by restricting what the service can do
+
+# Prevent privilege escalation
+NoNewPrivileges=true
+
+# Use a separate /tmp directory
+PrivateTmp=true
+
+# Restrict access to /home, /root, and /run/user
+ProtectHome=true
+
+# Make /usr, /boot, /efi read-only
+ProtectSystem=strict
+
+# Allow writing to logs and temp directories
+ReadWritePaths=/var/www/bansal-law-crm/python_services/logs
+ReadWritePaths=/var/www/bansal-law-crm/python_services/temp
+
+# Restrict access to kernel tunables
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Restrict realtime scheduling
+RestrictRealtime=true
+
+# Prevent access to other processes
+PrivateDevices=true
+ProtectClock=true
+
+# System call filtering (comment out if it causes issues)
+# SystemCallFilter=@system-service
+# SystemCallFilter=~@privileged @resources
+# SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target
+

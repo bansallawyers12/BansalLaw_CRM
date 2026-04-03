@@ -1,0 +1,517 @@
+/* ANZSCO Admin Styles */
+
+/* Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+}
+
+input:checked + .slider {
+    background-color: #28a745;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #28a745;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 24px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Badge Styles */
+.badge {
+    font-size: 0.85rem;
+    padding: 0.35em 0.65em;
+}
+
+/* Info Boxes for Import Stats */
+.info-box {
+    min-height: 80px;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    color: #fff;
+}
+
+.info-box-icon {
+    font-size: 2rem;
+    display: block;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.info-box-content {
+    text-align: center;
+}
+
+.info-box-text {
+    display: block;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.info-box-number {
+    display: block;
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+/* Autocomplete Dropdown */
+.anzsco-autocomplete {
+    position: relative;
+}
+
+.anzsco-autocomplete-items {
+    position: absolute;
+    border: 1px solid #d4d4d4;
+    border-top: none;
+    z-index: 99;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.anzsco-autocomplete-item {
+    padding: 10px;
+    cursor: pointer;
+    background-color: #fff;
+    border-bottom: 1px solid #d4d4d4;
+}
+
+.anzsco-autocomplete-item:hover {
+    background-color: #e9e9e9;
+}
+
+.anzsco-autocomplete-active {
+    background-color: #007bff !important;
+    color: #ffffff;
+}
+
+.anzsco-code {
+    font-weight: bold;
+    color: #007bff;
+    font-family: monospace;
+}
+
+.anzsco-title {
+    display: block;
+    font-size: 0.95rem;
+}
+
+.anzsco-authority {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.anzsco-lists {
+    font-size: 0.8rem;
+    margin-top: 2px;
+}
+
+/* Database-sourced indicator */
+.from-database {
+    position: relative;
+}
+
+.from-database::after {
+    content: '\f1c0';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #28a745;
+    font-size: 0.9rem;
+    pointer-events: none;
+}
+
+/* Occupation Lists Display */
+.occupation-lists-display {
+    min-height: 30px;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.occupation-lists-display .badge {
+    font-size: 0.75rem;
+    padding: 0.25em 0.5em;
+    margin-right: 4px;
+}
+
+.occupation-lists-display .text-muted {
+    color: #6c757d !important;
+    font-style: italic;
+}
+
+.from-database-badge {
+    display: inline-block;
+    background-color: #28a745;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+/* Custom Control Labels */
+.custom-control-label small {
+    font-weight: normal;
+}
+
+/* Table Styling */
+.table {
+    background-color: #fff;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    color: #212529 !important;
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    color: #212529 !important;
+    padding: 12px 15px;
+    text-align: left;
+}
+
+.table tbody td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+    color: #212529 !important;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.table tbody tr:nth-child(even) {
+    background-color: #fdfdfd;
+}
+
+.table tbody tr:nth-child(even):hover {
+    background-color: #f1f3f4;
+}
+
+/* Ensure all text in table is dark and readable */
+.table td, .table th {
+    color: #212529 !important;
+}
+
+.table .badge {
+    color: #fff !important;
+}
+
+/* DataTables specific styling */
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    color: #212529 !important;
+}
+
+.dataTables_wrapper .dataTables_length select,
+.dataTables_wrapper .dataTables_filter input {
+    color: #212529 !important;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+}
+
+/* Empty table styling */
+.dataTables_empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #212529 !important;
+    font-style: italic;
+    background-color: #f8f9fa;
+}
+
+/* General text contrast improvements */
+.card-title, .card-header h3, .card-header h4 {
+    color: #212529 !important;
+    font-weight: 600;
+}
+
+.form-control, .form-select {
+    color: #212529 !important;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+}
+
+.form-control:focus, .form-select:focus {
+    color: #212529 !important;
+    background-color: #fff;
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+label {
+    color: #212529 !important;
+    font-weight: 500;
+}
+
+/* Button text contrast */
+.btn {
+    color: #fff !important;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: #fff !important;
+}
+
+.btn-info {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+    color: #fff !important;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: #fff !important;
+}
+
+/* Status toggle styling */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #28a745;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+/* Action buttons styling */
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    color: #fff !important;
+}
+
+.btn-info {
+    background-color: #17a2b8 !important;
+    border-color: #17a2b8 !important;
+}
+
+.btn-danger {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+}
+
+/* Card styling improvements */
+.card {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #e9ecef;
+    padding: 20px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Filter section styling */
+.row.mb-3 {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px !important;
+}
+
+/* Table Responsiveness */
+@media (max-width: 768px) {
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+    }
+    
+    .table-responsive {
+        border-radius: 8px;
+    }
+}
+
+/* Loading Spinner */
+.anzsco-loading {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    margin-left: 5px;
+    vertical-align: middle;
+    display: none;
+}
+
+/* Form validation feedback */
+.is-invalid {
+    border-color: #dc3545;
+}
+
+.invalid-feedback {
+    display: block;
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Force dark text for better readability */
+* {
+    color: inherit;
+}
+
+body, .card, .table, .form-control, .btn, label, .badge {
+    color: #212529 !important;
+}
+
+/* Specific overrides for better contrast */
+.table td, .table th {
+    color: #212529 !important;
+    background-color: transparent !important;
+}
+
+.table tbody tr {
+    background-color: #fff !important;
+}
+
+.table tbody tr:nth-child(even) {
+    background-color: #f8f9fa !important;
+}
+
+.table tbody tr:hover {
+    background-color: #e9ecef !important;
+}
+
+/* Ensure badges have white text on colored backgrounds */
+.badge-success {
+    background-color: #28a745 !important;
+    color: #fff !important;
+}
+
+.badge-info {
+    background-color: #17a2b8 !important;
+    color: #fff !important;
+}
+
+.badge-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.badge-secondary {
+    background-color: #6c757d !important;
+    color: #fff !important;
+}
+
+/* DataTables pagination and info text */
+.dataTables_info, .dataTables_paginate {
+    color: #212529 !important;
+}
+
+.dataTables_paginate .paginate_button {
+    color: #212529 !important;
+}
+
+.dataTables_paginate .paginate_button.current {
+    background-color: #007bff !important;
+    color: #fff !important;
+}
+

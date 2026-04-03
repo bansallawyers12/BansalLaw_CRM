@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Logs
+logs/*.log
+*.log
+
+# Temp files
+temp/
+*.tmp
+*.msg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs_archive/
+
+# Windows
+*.bat
+
+# Tests
+tests/
+__pycache__/
+
+# Cache
+.pytest_cache/
+.coverage
+htmlcov/
+
