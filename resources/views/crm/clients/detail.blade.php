@@ -323,8 +323,8 @@ use App\Http\Controllers\Controller;
             $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
             
             // Valid tab names that should NOT be treated as matter IDs
-            $validTabNames = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'visadocuments', 'nominationdocuments', 
-                              'eoiroi', 'emails', 
+            $validTabNames = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'visadocuments', 'nominationdocuments',
+                              'emails',
                               // Legacy removed tab slugs
                               'formgenerations', 'formgenerationsl',
                               'client_portal', 'application', 'workflow', 'checklists'];
@@ -356,12 +356,6 @@ use App\Http\Controllers\Controller;
                     <i class="fas fa-file-contract"></i>
                     <span>Visa Documents</span>
                 </button>
-                @if(isset($isEoiMatter) && $isEoiMatter)
-                <button class="client-nav-button" data-tab="eoiroi">
-                    <i class="fas fa-passport"></i>
-                    <span>EOI / ROI</span>
-                </button>
-                @endif
                 <button class="client-nav-button" data-tab="account">
                     <i class="fas fa-file-invoice-dollar"></i>
                     <span>Account</span>
@@ -452,10 +446,6 @@ use App\Http\Controllers\Controller;
             ?>
             @if((isset($id1) && $id1 != "") || $matter_cnt > 0)
                 @include('crm.clients.tabs.visa_documents')
-                
-                @if(isset($isEoiMatter) && $isEoiMatter)
-                    @include('crm.clients.tabs.eoi_roi')
-                @endif
                 
                 @include('crm.clients.tabs.account')
                 @include('crm.clients.tabs.emails')
@@ -1336,7 +1326,6 @@ $(document).ready(function() {
         urls: {
             base: '{{ URL::to("/") }}',
             admin: '{{ URL::to("/") }}',
-            fetchVisaExpiryMessages: '{{ URL::to("/fetch-visa_expiry_messages") }}',
             downloadDocument: '{{ url("/documents/download") }}',
             getTopInvoiceNo: '{{ URL::to("/clients/getTopInvoiceNoFromDB") }}',
             getTopReceiptVal: '{{ URL::to("/clients/getTopReceiptValInDB") }}',
@@ -1541,7 +1530,6 @@ $(document).ready(function() {
 {{-- Bootstrap Datepicker required by Schedule Appointment modal (appointments.js) --}}
 <script src="{{ URL::asset('js/bootstrap-datepicker.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/appointments.js') }}"></script>
-<script src="{{ URL::asset('js/crm/clients/modules/visa-expiry.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/subtabs.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/ledger-dragdrop.js') }}"></script>
 {{-- Main detail page JavaScript --}}

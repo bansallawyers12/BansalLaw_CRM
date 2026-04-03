@@ -15,12 +15,16 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('activities_logs') || ! Schema::hasColumn('activities_logs', 'use_for')) {
+            return;
+        }
+
         $driver = Schema::getConnection()->getDriverName();
 
         if ($driver === 'pgsql') {
             $row = DB::selectOne("
                 SELECT data_type FROM information_schema.columns
-                WHERE table_name = 'activities_logs' AND column_name = 'use_for'
+                WHERE table_schema = 'public' AND table_name = 'activities_logs' AND column_name = 'use_for'
             ");
             if ($row && in_array($row->data_type, ['integer', 'bigint', 'smallint'], true)) {
                 DB::statement('ALTER TABLE activities_logs ALTER COLUMN use_for TYPE VARCHAR(64) USING COALESCE(use_for::text, \'\')');
@@ -34,6 +38,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (! Schema::hasTable('activities_logs') || ! Schema::hasColumn('activities_logs', 'use_for')) {
+            return;
+        }
+
         DB::table('activities_logs')
             ->where('use_for', 'matter')
             ->update(['use_for' => 'application']);

@@ -11,13 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('admins', function (Blueprint $table) {
-            // Remove manual email verification fields
-            $table->dropColumn([
-                'email_verified_date',
-                'email_verified_by', 
-                'manual_email_phone_verified'
-            ]);
+        $cols = array_filter([
+            'email_verified_date',
+            'email_verified_by',
+            'manual_email_phone_verified',
+        ], fn (string $c) => Schema::hasColumn('admins', $c));
+
+        if ($cols === []) {
+            return;
+        }
+
+        Schema::table('admins', function (Blueprint $table) use ($cols) {
+            $table->dropColumn($cols);
         });
     }
 

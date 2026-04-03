@@ -18,7 +18,6 @@ use App\Http\Controllers\API\ClientPortalAppointmentController;
 use App\Http\Controllers\API\ClientPortalBillingController;
 use App\Http\Controllers\API\FCMController;
 use App\Http\Controllers\API\OthersController;
-use App\Http\Controllers\API\VisaPricingEstimatorController;
 use App\Http\Controllers\API\SignupController;
 
 /*
@@ -43,12 +42,6 @@ Route::post('/expire-token', [ClientPortalController::class, 'expireToken']);
 
 // Countries API (public route)
 Route::get('/countries', [ClientPortalCommonListingController::class, 'getCountries']);
-
-// Visa Types API (public route)
-Route::get('/visa-types', [ClientPortalCommonListingController::class, 'getVisaTypes']);
-
-// Search Occupations API (public route)
-Route::get('/search-occupation', [ClientPortalCommonListingController::class, 'searchOccupationDetail']);
 
 // Appointment Variable Lists API (public route)
 Route::get('/appointment-variable-lists', [ClientPortalAppointmentController::class, 'getAppointmentVariableLists']);
@@ -155,28 +148,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Blog detail (authenticated only; list remains public)
     Route::get('/blogs/detail/{id}', [OthersController::class, 'getBlogDetail']);
 
-    // PR Point Calculator (authenticated — client portal Sanctum)
-    Route::get('/pr-point-calc-lists', [OthersController::class, 'getPrPointCalcLists']);
-    Route::post('/pr-point-calc-result', [OthersController::class, 'calculatePrPointsResult']);
-
-    // Student Calculator (authenticated)
-    Route::get('/student-calc-lists', [OthersController::class, 'getStudentCalcLists']);
-    Route::post('/student-calc-result', [OthersController::class, 'calculateStudentFinancialRequirements']);
-
-    // Occupation Finder (authenticated)
-    Route::get('/occupation-finder', [OthersController::class, 'searchOccupation']);
-
     // Postcode Checker (authenticated)
     Route::get('/postcode-search', [OthersController::class, 'searchPostcode']);
     Route::get('/postcode-result', [OthersController::class, 'getPostcodeResult']);
 
-    // Visa Estimate (authenticated)
-    // Reference: https://immi.homeaffairs.gov.au/visas/visa-pricing-estimator
-    Route::prefix('visa-estimate')->name('visa-estimate.')->group(function () {
-        Route::get('/visa-list', [VisaPricingEstimatorController::class, 'getVisaList']);
-        Route::post('/estimate', [VisaPricingEstimatorController::class, 'getEstimate']);
-    });
-    
     // Dashboard routes
     Route::get('/dashboard', [ClientPortalDashboardController::class, 'dashboard']);
     Route::get('/recent-cases', [ClientPortalDashboardController::class, 'recentCaseViewAll']);
@@ -200,8 +175,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/update-client-travel-detail', [ClientPortalPersonalDetailsController::class, 'updateClientTravelDetail']);
     Route::post('/update-client-qualification-detail', [ClientPortalPersonalDetailsController::class, 'updateClientQualificationDetail']);
     Route::post('/update-client-experience-detail', [ClientPortalPersonalDetailsController::class, 'updateClientExperienceDetail']);
-    Route::post('/update-client-occupation-detail', [ClientPortalPersonalDetailsController::class, 'updateClientOccupationDetail']);
-    Route::post('/update-client-testscore-detail', [ClientPortalPersonalDetailsController::class, 'updateClientTestScoreDetail']);
     Route::post('/update-client-passport-detail', [ClientPortalPersonalDetailsController::class, 'updateClientPassportDetail']);
     Route::post('/delete-client-tab-detail', [ClientPortalPersonalDetailsController::class, 'deleteClientTabDetail']);
     Route::post('/delete-client-passport-detail', [ClientPortalPersonalDetailsController::class, 'deleteClientPassportDetail']); // Deprecated: Use delete-client-tab-detail instead

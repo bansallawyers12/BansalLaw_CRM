@@ -1714,39 +1714,6 @@ public function getChapters(Request $request)
     }
 
     /**
-     * Get visa expiry messages
-     */
-    public function fetchvisaexpirymessages(Request $request)
-    {
-        $this->validate($request, [
-            'client_id' => 'required|integer'
-        ]);
-
-        $this->ensureCrmRecordAccess((int) $request->client_id);
-
-        $visaInfo = \App\Models\ClientVisaCountry::where('client_id', $request->client_id)
-            ->latest('id')
-            ->first();
-
-        if (!$visaInfo || !$visaInfo->visa_expiry_date) {
-            return '';
-        }
-
-        $visaExpiredAt = \Carbon\Carbon::parse($visaInfo->visa_expiry_date);
-        $today = \Carbon\Carbon::now();
-        $sevenDaysFromNow = \Carbon\Carbon::now()->addDays(7);
-
-        if ($visaExpiredAt->lt($today)) {
-            return "Your visa has expired. Please contact us immediately.";
-        } elseif ($visaExpiredAt->gte($today) && $visaExpiredAt->lte($sevenDaysFromNow)) {
-            $daysRemaining = $visaExpiredAt->diffInDays($today);
-            return "Your visa is expiring in next $daysRemaining day" . ($daysRemaining == 1 ? '' : 's');
-        }
-
-        return '';
-    }
-
-    /**
      * Mark notification as seen
      */
     public function markNotificationSeen(Request $request)

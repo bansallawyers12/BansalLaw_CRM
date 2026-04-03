@@ -1,8 +1,6 @@
 <?php
 
 use App\Http\Controllers\CRM\ClientsController;
-use App\Http\Controllers\CRM\ClientEoiRoiController;
-use App\Http\Controllers\AdminConsole\AnzscoOccupationController;
 use App\Http\Controllers\CRM\Clients\ClientNotesController;
 use App\Http\Controllers\CRM\ClientPersonalDetailsController;
 use App\Http\Controllers\CRM\PhoneVerificationController;
@@ -19,7 +17,6 @@ use App\Http\Controllers\CRM\BroadcastNotificationAjaxController;
 use App\Http\Controllers\CRM\BroadcastController;
 // use App\Http\Controllers\CRM\EmailTemplateController; // DISABLED: email_templates table has been deleted
 use App\Http\Controllers\CRM\AuditLogController;
-use App\Http\Controllers\CRM\ReportController;
 use App\Http\Controllers\Auth\AdminLoginController;
 use App\Http\Controllers\CRM\ReverbMessagingLabController;
 
@@ -97,7 +94,6 @@ Route::middleware(['auth:admin'])->group(function() {
     Route::get('/dashboard/fetch-notifications', [CRMUtilityController::class, 'fetchnotification'])->name('dashboard.fetch-notifications');
     Route::get('/dashboard/fetch-office-visit-notifications', [CRMUtilityController::class, 'fetchOfficeVisitNotifications'])->name('dashboard.fetch-office-visit-notifications');
     Route::post('/dashboard/mark-notification-seen', [CRMUtilityController::class, 'markNotificationSeen'])->name('dashboard.mark-notification-seen');
-    Route::get('/dashboard/fetch-visa-expiry-messages', [CRMUtilityController::class, 'fetchvisaexpirymessages'])->name('dashboard.fetch-visa-expiry-messages');
     Route::get('/dashboard/fetch-in-person-waiting-count', [CRMUtilityController::class, 'fetchInPersonWaitingCount'])->name('dashboard.fetch-in-person-waiting-count');
     Route::get('/dashboard/fetch-total-activity-count', [CRMUtilityController::class, 'fetchTotalActivityCount'])->name('dashboard.fetch-total-activity-count');
     Route::post('/dashboard/check-checkin-status', [DashboardController::class, 'checkCheckinStatus'])->name('dashboard.check-checkin-status');
@@ -173,9 +169,6 @@ Route::middleware(['auth:admin'])->group(function() {
         Route::get('/top-staff', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'topStaff'])->name('top-staff');
         Route::get('/trends', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'trends'])->name('trends');
     });
-
-    /*---------- Reports Routes ----------*/
-    Route::get('/reports/visaexpires', [ReportController::class, 'visaexpires'])->name('reports.visaexpires');
 
 	/*---------- CRM & Staff Management Routes ----------*/
     // All staff management routes moved to routes/adminconsole.php
@@ -351,11 +344,3 @@ require __DIR__ . '/documents.php';
 // Public email verification route - no authentication required
 Route::get('/verify-email/{token}', [EmailVerificationController::class, 'verifyEmail'])->name('clients.email.verify');
 
-/*--------------------------------------------------
-|| SECTION: Public Client EOI Confirmation Routes
-||--------------------------------------------------*/
-// These routes are accessible without authentication for client confirmation
-Route::get('/client/eoi/confirm/{token}', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'showConfirmationPage'])->name('client.eoi.confirm');
-Route::get('/client/eoi/amend/{token}', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'showAmendmentPage'])->name('client.eoi.amend');
-Route::post('/client/eoi/process/{token}', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'processClientConfirmation'])->name('client.eoi.process');
-Route::get('/client/eoi/success/{token}', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'showSuccessPage'])->name('client.eoi.success');

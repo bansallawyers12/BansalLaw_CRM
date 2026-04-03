@@ -2165,44 +2165,6 @@ class ClientsController extends Controller
                     ->with(['relatedClient:id,first_name,last_name,client_id'])
                     ->get() ?? [];
                 
-                // Detect if current matter is EOI-related
-                $isEoiMatter = false;
-                if ($id1) {
-                    // Check if the current matter is EOI
-                    $currentMatter = DB::table('client_matters as cm')
-                        ->join('matters as m', 'cm.sel_matter_id', '=', 'm.id')
-                        ->where('cm.client_id', $id)
-                        ->where('cm.client_unique_matter_no', $id1)
-                        ->where('cm.matter_status', 1)
-                        ->select('m.nick_name', 'm.title')
-                        ->first();
-                    
-                    if ($currentMatter) {
-                        $isEoiMatter = (
-                            strtolower($currentMatter->nick_name) === 'eoi' ||
-                            stripos($currentMatter->title, 'eoi') !== false ||
-                            stripos($currentMatter->title, 'expression of interest') !== false ||
-                            stripos($currentMatter->title, 'expression') !== false ||
-                            stripos($currentMatter->title, 'interest') !== false
-                        );
-                    }
-                } else {
-                    // If no specific matter is selected, check if client has any EOI matter
-                    $eoiMatterExists = DB::table('client_matters as cm')
-                        ->join('matters as m', 'cm.sel_matter_id', '=', 'm.id')
-                        ->where('cm.client_id', $id)
-                        ->where('cm.matter_status', 1)
-                        ->where(function($query) {
-                            $query->where('m.nick_name', 'ILIKE', 'eoi')
-                                  ->orWhere('m.title', 'LIKE', '%eoi%')
-                                  ->orWhere('m.title', 'LIKE', '%expression of interest%')
-                                  ->orWhere('m.title', 'LIKE', '%expression%');
-                        })
-                        ->exists();
-                    
-                    $isEoiMatter = $eoiMatterExists;
-                }
-                
                 //dd($clientFamilyDetails);
                 
                 // Check and insert/update application record when Client Portal tab is accessed
@@ -2249,7 +2211,7 @@ class ClientsController extends Controller
                 return view('crm.clients.detail', compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
                     'experiences', 'testScores', 'visaCountries', 'clientOccupations','ClientPoints', 'clientSpouseDetail',
-                    'encodeId', 'id1','clientFamilyDetails', 'activeTab', 'isEoiMatter',
+                    'encodeId', 'id1','clientFamilyDetails', 'activeTab',
                     'staffName', 'matterNumber', 'officePhone', 'officeCountryCode',
                     'visibleNomineeNominations', 'notPickedCallSmsDefault',
                     'assignableStaff', 'leadStageLabels', 'showGoogleReviewReminderModal'

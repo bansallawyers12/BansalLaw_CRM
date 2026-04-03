@@ -14,6 +14,10 @@ return new class extends Migration
      */
     public function up()
     {
+        if (! Schema::hasTable('checkin_logs') || ! Schema::hasColumn('checkin_logs', 'is_archived')) {
+            return;
+        }
+
         Schema::table('checkin_logs', function (Blueprint $table) {
             $table->dropColumn('is_archived');
         });
@@ -26,8 +30,12 @@ return new class extends Migration
      */
     public function down()
     {
+        if (! Schema::hasTable('checkin_logs') || Schema::hasColumn('checkin_logs', 'is_archived')) {
+            return;
+        }
+
         Schema::table('checkin_logs', function (Blueprint $table) {
-            $table->boolean('is_archived')->default(0)->after('wait_type');
+            $table->boolean('is_archived')->default(false);
         });
     }
 };

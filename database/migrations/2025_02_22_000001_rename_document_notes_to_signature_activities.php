@@ -12,7 +12,9 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::rename('document_notes', 'signature_activities');
+        if (Schema::hasTable('document_notes') && ! Schema::hasTable('signature_activities')) {
+            Schema::rename('document_notes', 'signature_activities');
+        }
     }
 
     /**
@@ -22,6 +24,8 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::rename('signature_activities', 'document_notes');
+        if (Schema::hasTable('signature_activities') && ! Schema::hasTable('document_notes')) {
+            Schema::rename('signature_activities', 'document_notes');
+        }
     }
 };

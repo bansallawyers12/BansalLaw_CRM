@@ -14,6 +14,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('client_addresses') || ! Schema::hasColumn('client_addresses', 'city')) {
+            return;
+        }
+
         Schema::table('client_addresses', function (Blueprint $table) {
             $table->dropColumn('city');
         });
@@ -24,8 +28,12 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('client_addresses') || Schema::hasColumn('client_addresses', 'city')) {
+            return;
+        }
+
         Schema::table('client_addresses', function (Blueprint $table) {
-            $table->string('city')->nullable()->after('suburb');
+            $table->string('city')->nullable();
         });
     }
 };

@@ -19,7 +19,7 @@
                     'client_id' => 'Client ID',
                     'client_name' => 'Client Name',
                     'dob' => 'DOB',
-                    'migration_agent' => 'Migration Agent',
+                    'migration_agent' => 'Responsible solicitor',
                     'person_responsible' => 'Person Responsible',
                     'person_assisting' => 'Person Assisting',
                     'stage' => 'Stage'

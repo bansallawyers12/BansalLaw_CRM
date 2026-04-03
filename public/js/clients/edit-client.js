@@ -3799,47 +3799,16 @@ function fetchPartnerEoiData(partnerId) {
         });
     }
 
-    // Fetch partner data
-    fetch(`/clients/partner-eoi-data/${partnerId}`, {
-        method: 'GET',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
+    Promise.resolve({
+        success: false,
+        message: 'Partner-linked immigration (EOI) data is no longer loaded in this CRM.',
+    }).then(data => {
         if (data.success) {
             displayPartnerEoiData(data.data);
-        } else {
-            // Show error message
-            if (formFields) {
-                formFields.innerHTML = `
-                    <div class="alert alert-danger" style="margin-top: 20px;">
-                        <i class="fas fa-exclamation-triangle"></i> 
-                        <strong>Error Loading Partner Data</strong>
-                        <p>${data.message}</p>
-                        <p><small>The partner may not have a complete profile or required data for EOI calculation.</small></p>
-                    </div>
-                `;
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Error fetching partner EOI data:', error);
-        if (formFields) {
+        } else if (formFields) {
             formFields.innerHTML = `
-                <div class="alert alert-danger" style="margin-top: 20px;">
-                    <i class="fas fa-exclamation-triangle"></i> 
-                    <strong>Error Loading Partner Data</strong>
-                    <p>Unable to fetch partner information. Please try again.</p>
-                    <p><small>Error: ${error.message}</small></p>
+                <div class="alert alert-secondary" style="margin-top: 20px;">
+                    <p class="mb-0">${data.message}</p>
                 </div>
             `;
         }
@@ -5933,6 +5902,9 @@ function initializeOccupationAutocomplete() {
 
 // Search occupations via API
 async function searchOccupations(query, autocompleteContainer, row, searchType) {
+    autocompleteContainer.innerHTML = '';
+    autocompleteContainer.style.display = 'none';
+    return;
     try {
         // Show loading indicator
         autocompleteContainer.innerHTML = '<div class="autocomplete-item"><span class="anzsco-loading"></span> Searching...</div>';
@@ -6026,6 +5998,7 @@ async function searchOccupations(query, autocompleteContainer, row, searchType) 
 
 // Search occupation by code
 async function searchOccupationByCode(code, row) {
+    return;
     try {
         const response = await fetch(`/anzsco/code/${code}`, {
             method: 'GET',

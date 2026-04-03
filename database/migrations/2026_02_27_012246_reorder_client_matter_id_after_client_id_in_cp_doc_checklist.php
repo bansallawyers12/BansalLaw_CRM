@@ -20,8 +20,15 @@ return new class extends Migration
             ? 'cp_doc_checklist'
             : (Schema::hasTable('application_document_lists') ? 'application_document_lists' : null);
 
-        if (!$sourceTable) {
+        if (! $sourceTable) {
             return;
+        }
+
+        // Full reorder expects legacy columns; skip on minimal / fresh-install stubs.
+        foreach (['user_id', 'client_id', 'typename', 'type'] as $col) {
+            if (! Schema::hasColumn($sourceTable, $col)) {
+                return;
+            }
         }
 
         $hasClientMatterId = Schema::hasColumn($sourceTable, 'client_matter_id');

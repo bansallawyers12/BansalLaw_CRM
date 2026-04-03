@@ -17,7 +17,7 @@ return new class extends Migration
                 ->comment('Full-time equivalent multiplier (1.00 = full-time, 0.50 = half-time, etc.)');
             
             // Add index for points calculation queries
-            $table->index(['client_id', 'job_country'], 'idx_client_country');
+            $table->index(['client_id', 'job_country'], 'idx_client_experiences_client_job_country');
         });
     }
 
@@ -27,7 +27,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('client_experiences', function (Blueprint $table) {
-            $table->dropIndex('idx_client_country');
+            $table->dropIndex('idx_client_experiences_client_job_country');
             $table->dropColumn('fte_multiplier');
         });
     }

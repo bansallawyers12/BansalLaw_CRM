@@ -86,7 +86,6 @@
                     <a class="dropdown-item" href="{{route('clients.officereceiptlist')}}"><i class="fas fa-building mr-2"></i> Office Receipts</a>
                     <a class="dropdown-item" href="{{route('clients.journalreceiptlist')}}"><i class="fas fa-book mr-2"></i> Journal Receipts</a>
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{route('reports.visaexpires')}}"><i class="fas fa-calendar-times mr-2"></i> Visa Expiry Report</a>
                 </div>
             </div>
             @php
@@ -101,7 +100,7 @@
                 <a href="{{ \App\Support\CrmSheets::urlForKey($firstSheetKey) }}" class="icon-btn" title="Sheets"><i class="fas fa-table"></i></a>
                 <div class="icon-dropdown-menu">
                     @foreach($visibleCrmSheets as $vt => $vc)
-                    <a class="dropdown-item" href="{{ \App\Support\CrmSheets::urlForKey($vt) }}"><i class="fas fa-{{ $vt === 'eoi-roi' ? 'passport' : ($vt === 'art' ? 'gavel' : 'clipboard-list') }} mr-2"></i> {{ $vc }}</a>
+                    <a class="dropdown-item" href="{{ \App\Support\CrmSheets::urlForKey($vt) }}"><i class="fas fa-{{ $vt === 'art' ? 'gavel' : 'clipboard-list' }} mr-2"></i> {{ $vc }}</a>
                     @endforeach
                 </div>
             </div>

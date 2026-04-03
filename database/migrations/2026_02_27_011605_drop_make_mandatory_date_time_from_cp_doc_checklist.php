@@ -13,9 +13,15 @@ return new class extends Migration
             : (Schema::hasTable('application_document_lists') ? 'application_document_lists' : null);
 
         if ($tableName) {
-            Schema::table($tableName, function (Blueprint $table) {
-                $table->dropColumn(['make_mandatory', 'date', 'time']);
-            });
+            $cols = array_filter(
+                ['make_mandatory', 'date', 'time'],
+                fn (string $c) => Schema::hasColumn($tableName, $c)
+            );
+            if ($cols !== []) {
+                Schema::table($tableName, function (Blueprint $table) use ($cols) {
+                    $table->dropColumn($cols);
+                });
+            }
         }
     }
 
@@ -26,10 +32,16 @@ return new class extends Migration
             : (Schema::hasTable('application_document_lists') ? 'application_document_lists' : null);
 
         if ($tableName) {
-            Schema::table($tableName, function (Blueprint $table) {
-                $table->string('make_mandatory')->nullable();
-                $table->date('date')->nullable();
-                $table->time('time')->nullable();
+            Schema::table($tableName, function (Blueprint $table) use ($tableName) {
+                if (! Schema::hasColumn($tableName, 'make_mandatory')) {
+                    $table->string('make_mandatory')->nullable();
+                }
+                if (! Schema::hasColumn($tableName, 'date')) {
+                    $table->date('date')->nullable();
+                }
+                if (! Schema::hasColumn($tableName, 'time')) {
+                    $table->time('time')->nullable();
+                }
             });
         }
     }

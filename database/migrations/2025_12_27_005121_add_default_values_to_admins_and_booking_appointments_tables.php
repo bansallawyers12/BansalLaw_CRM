@@ -23,52 +23,31 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Fix admins.verified column
+        $pgsql = Schema::getConnection()->getDriverName() === 'pgsql';
+
+        // Fix admins.verified column (integer / smallint on PostgreSQL)
         if (Schema::hasTable('admins') && Schema::hasColumn('admins', 'verified')) {
-            DB::statement("
-                ALTER TABLE admins 
-                ALTER COLUMN verified SET DEFAULT 0
-            ");
+            DB::statement('ALTER TABLE admins ALTER COLUMN verified SET DEFAULT 0');
         }
-        
+
         // Fix admins.is_archived column
         if (Schema::hasTable('admins') && Schema::hasColumn('admins', 'is_archived')) {
-            DB::statement("
-                ALTER TABLE admins 
-                ALTER COLUMN is_archived SET DEFAULT 0
-            ");
+            DB::statement('ALTER TABLE admins ALTER COLUMN is_archived SET DEFAULT 0');
         }
-        
+
         // Fix admins.show_dashboard_per column
         if (Schema::hasTable('admins') && Schema::hasColumn('admins', 'show_dashboard_per')) {
-            DB::statement("
-                ALTER TABLE admins 
-                ALTER COLUMN show_dashboard_per SET DEFAULT 0
-            ");
+            DB::statement('ALTER TABLE admins ALTER COLUMN show_dashboard_per SET DEFAULT 0');
         }
-        
-        // Fix booking_appointments.follow_up_required column
-        if (Schema::hasTable('booking_appointments') && Schema::hasColumn('booking_appointments', 'follow_up_required')) {
-            DB::statement("
-                ALTER TABLE booking_appointments 
-                ALTER COLUMN follow_up_required SET DEFAULT 0
-            ");
-        }
-        
-        // Fix booking_appointments.confirmation_email_sent column
-        if (Schema::hasTable('booking_appointments') && Schema::hasColumn('booking_appointments', 'confirmation_email_sent')) {
-            DB::statement("
-                ALTER TABLE booking_appointments 
-                ALTER COLUMN confirmation_email_sent SET DEFAULT 0
-            ");
-        }
-        
-        // Fix booking_appointments.reminder_sms_sent column
-        if (Schema::hasTable('booking_appointments') && Schema::hasColumn('booking_appointments', 'reminder_sms_sent')) {
-            DB::statement("
-                ALTER TABLE booking_appointments 
-                ALTER COLUMN reminder_sms_sent SET DEFAULT 0
-            ");
+
+        // Fix booking_appointments boolean columns (PostgreSQL requires false, not 0)
+        if (Schema::hasTable('booking_appointments')) {
+            $boolDefault = $pgsql ? 'false' : '0';
+            foreach (['follow_up_required', 'confirmation_email_sent', 'reminder_sms_sent'] as $col) {
+                if (Schema::hasColumn('booking_appointments', $col)) {
+                    DB::statement("ALTER TABLE booking_appointments ALTER COLUMN {$col} SET DEFAULT {$boolDefault}");
+                }
+            }
         }
     }
 

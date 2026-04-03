@@ -7,8 +7,6 @@ namespace App\Support;
  */
 class CrmSheets
 {
-    public const KEY_EOI_ROI = 'eoi-roi';
-
     public const KEY_ART = 'art';
 
     /**
@@ -16,15 +14,9 @@ class CrmSheets
      */
     public static function definitions(): array
     {
-        $def = [
-            self::KEY_EOI_ROI => 'EOI/ROI Sheet',
+        return [
             self::KEY_ART => 'ART Submission and Hearing Files',
         ];
-        foreach (config('sheets.visa_types', []) as $key => $cfg) {
-            $def[(string) $key] = $cfg['title'] ?? ucfirst((string) $key);
-        }
-
-        return $def;
     }
 
     /**
@@ -40,13 +32,10 @@ class CrmSheets
         if (! array_key_exists($key, self::definitions())) {
             return url('/dashboard');
         }
-        if ($key === self::KEY_EOI_ROI) {
-            return route('clients.sheets.eoi-roi');
-        }
         if ($key === self::KEY_ART) {
             return route('clients.sheets.art');
         }
 
-        return route('clients.sheets.visa-type', ['visaType' => $key]);
+        return url('/dashboard');
     }
 }

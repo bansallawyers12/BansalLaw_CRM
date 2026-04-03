@@ -15,7 +15,6 @@ use App\Http\Controllers\AdminConsole\StaffController;
 use App\Http\Controllers\AdminConsole\UserroleController;
 use App\Http\Controllers\AdminConsole\TeamController;
 use App\Http\Controllers\AdminConsole\BranchesController;
-use App\Http\Controllers\AdminConsole\AnzscoOccupationController;
 use App\Http\Controllers\AdminConsole\Sms\SmsController;
 use App\Http\Controllers\AdminConsole\Sms\SmsSendController;
 use App\Http\Controllers\AdminConsole\Sms\SmsTemplateController;
@@ -213,17 +212,4 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         
     });
     
-    // Database routes - Database management
-    Route::prefix('database')->name('database.')->group(function() {
-        
-        // ANZSCO routes
-        Route::get('/anzsco', [AnzscoOccupationController::class, 'index'])->name('anzsco.index');
-        Route::get('/anzsco/data', [AnzscoOccupationController::class, 'getData'])->name('anzsco.data');
-        Route::get('/anzsco/create', [AnzscoOccupationController::class, 'create'])->name('anzsco.create');
-        Route::post('/anzsco/store', [AnzscoOccupationController::class, 'store'])->name('anzsco.store');
-        Route::get('/anzsco/edit/{id}', [AnzscoOccupationController::class, 'edit'])->name('anzsco.edit');
-        Route::put('/anzsco/{id}', [AnzscoOccupationController::class, 'update'])->name('anzsco.update');
-        Route::get('/anzsco/import', [AnzscoOccupationController::class, 'importPage'])->name('anzsco.import');
-        Route::post('/anzsco/import', [AnzscoOccupationController::class, 'import'])->name('anzsco.import.store');
-    });
 });

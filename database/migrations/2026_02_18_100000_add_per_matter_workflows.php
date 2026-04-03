@@ -18,6 +18,7 @@ return new class extends Migration
             Schema::create('workflows', function (Blueprint $table) {
                 $table->id();
                 $table->string('name');
+                $table->unsignedTinyInteger('status')->default(1);
                 $table->unsignedBigInteger('matter_id')->nullable();
                 $table->timestamps();
             });

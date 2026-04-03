@@ -1311,7 +1311,6 @@ $(document).ready(function() {
         urls: {
             base: '{{ URL::to("/") }}',
             admin: '{{ URL::to("/") }}',
-            fetchVisaExpiryMessages: '{{ URL::to("/fetch-visa_expiry_messages") }}',
             downloadDocument: '{{ url("/documents/download") }}',
             getTopInvoiceNo: '{{ URL::to("/clients/getTopInvoiceNoFromDB") }}',
             getTopReceiptVal: '{{ URL::to("/clients/getTopReceiptValInDB") }}',
@@ -1516,7 +1515,6 @@ $(document).ready(function() {
 {{-- Bootstrap Datepicker required by Schedule Appointment modal (appointments.js) --}}
 <script src="{{ URL::asset('js/bootstrap-datepicker.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/appointments.js') }}"></script>
-<script src="{{ URL::asset('js/crm/clients/modules/visa-expiry.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/subtabs.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/ledger-dragdrop.js') }}"></script>
 {{-- Main detail page JavaScript --}}

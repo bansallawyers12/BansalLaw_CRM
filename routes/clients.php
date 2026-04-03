@@ -3,14 +3,11 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CRM\ClientsController;
 use App\Http\Controllers\CRM\ClientAccountsController;
-use App\Http\Controllers\CRM\ClientEoiRoiController;
-use App\Http\Controllers\CRM\EoiRoiSheetController;
 use App\Http\Controllers\CRM\Clients\ClientNotesController;
 use App\Http\Controllers\CRM\Clients\ClientDocumentsController;
 use App\Http\Controllers\CRM\ClientPersonalDetailsController;
 use App\Http\Controllers\CRM\PhoneVerificationController;
 use App\Http\Controllers\CRM\EmailVerificationController;
-use App\Http\Controllers\AdminConsole\AnzscoOccupationController;
 use App\Http\Controllers\CRM\CRMUtilityController;
 use App\Http\Controllers\CRM\EmailUploadController;
 use App\Http\Controllers\CRM\EmailLabelController;
@@ -27,7 +24,7 @@ use App\Http\Controllers\CRM\AccessGrantController;
 |--------------------------------------------------------------------------
 |
 | All routes for client CRUD operations, documents, verification, invoices,
-| EOI/ROI management, notes, agreements, and related functionality.
+| notes, agreements, and related functionality.
 |
 | Prefix: None (routes at root level)
 | Middleware: auth:admin (inherited from web.php)
@@ -46,29 +43,10 @@ Route::get('/clients/export/{id}', [ClientsController::class, 'export'])->name('
 Route::post('/clients/import', [ClientsController::class, 'import'])->name('clients.import');
 Route::post('/clients/save-section', [ClientPersonalDetailsController::class, 'saveSection'])->name('clients.saveSection');
 Route::post('/edit-test-scores', [ClientsController::class, 'editTestScores'])->name('clients.editTestScores');
-Route::get('/clients/partner-eoi-data/{partnerId}', [ClientPersonalDetailsController::class, 'getPartnerEoiData'])->name('clients.partnerEoiData');
-
 /*---------- Sheets ----------*/
-Route::get('/clients/sheets/eoi-roi', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'index'])->name('clients.sheets.eoi-roi');
-Route::get('/clients/sheets/eoi-roi/insights', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'insights'])->name('clients.sheets.eoi-roi.insights');
-Route::post('/clients/sheets/eoi-roi/{eoiId}/toggle-pin', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'togglePin'])->name('clients.sheets.eoi-roi.toggle-pin');
-
 Route::get('/clients/sheets/art', [\App\Http\Controllers\CRM\ArtSheetController::class, 'index'])->name('clients.sheets.art');
 Route::get('/clients/sheets/art/insights', [\App\Http\Controllers\CRM\ArtSheetController::class, 'insights'])->name('clients.sheets.art.insights');
 Route::post('/clients/sheets/art/toggle-pin', [\App\Http\Controllers\CRM\ArtSheetController::class, 'togglePin'])->name('clients.sheets.art.toggle-pin');
-
-Route::get('/clients/sheets/{visaType}', [\App\Http\Controllers\CRM\VisaTypeSheetController::class, 'index'])
-    ->where('visaType', 'tr|visitor|student|pr|employer-sponsored|partner|parents')
-    ->name('clients.sheets.visa-type');
-
-// Sheet Pin/Star Actions
-Route::post('/clients/sheets/{visaType}/toggle-pin', [\App\Http\Controllers\CRM\VisaTypeSheetController::class, 'togglePin'])
-    ->where('visaType', 'tr|visitor|student|pr|employer-sponsored|partner|parents')
-    ->name('clients.sheets.visa-type.toggle-pin');
-
-// EOI Confirmation Workflow (Staff actions - requires auth)
-Route::post('/clients/sheets/eoi-roi/{eoiId}/verify', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'verifyByStaff'])->name('clients.sheets.eoi-roi.verify');
-Route::post('/clients/sheets/eoi-roi/{eoiId}/send-confirmation', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'sendConfirmationEmail'])->name('clients.sheets.eoi-roi.send-confirmation');
 
 /*---------- Phone & Email Verification ----------*/
 Route::prefix('clients/phone')->name('clients.phone.')->group(function () {
@@ -210,31 +188,6 @@ Route::post('/documents/get-auto-checklist-matches', [ClientDocumentsController:
 Route::post('/documents/bulk-upload-personal', [ClientDocumentsController::class, 'bulkUploadPersonalDocuments'])->name('clients.documents.bulkUploadPersonalDocuments');
 Route::post('/documents/bulk-upload-visa', [ClientDocumentsController::class, 'bulkUploadVisaDocuments'])->name('clients.documents.bulkUploadVisaDocuments');
 Route::post('/documents/bulk-upload-nomination', [ClientDocumentsController::class, 'bulkUploadNominationDocuments'])->name('clients.documents.bulkUploadNominationDocuments');
-
-/*---------- Client EOI/ROI Management ----------*/
-Route::prefix('clients/{client}/eoi-roi')->name('clients.eoi-roi.')->group(function () {
-    // IMPORTANT: Specific routes MUST come before generic /{eoiReference} routes
-    // to avoid route parameter conflicts
-
-    Route::get('/', [ClientEoiRoiController::class, 'index'])->name('index');
-    Route::post('/', [ClientEoiRoiController::class, 'upsert'])->name('upsert');
-
-    // Compose modal endpoints (NEW - MUST be before /{eoiReference} routes)
-    Route::get('/visa-documents', [ClientEoiRoiController::class, 'getVisaDocuments'])->name('visaDocuments');
-    Route::get('/calculate-points', [ClientEoiRoiController::class, 'calculatePoints'])->name('calculatePoints');
-
-    // Generic {eoiReference} routes (MUST be after specific routes)
-    Route::get('/{eoiReference}', [ClientEoiRoiController::class, 'show'])->name('show');
-    Route::delete('/{eoiReference}', [ClientEoiRoiController::class, 'destroy'])->name('destroy');
-    Route::get('/{eoiReference}/reveal-password', [ClientEoiRoiController::class, 'revealPassword'])->name('revealPassword');
-    Route::get('/{eoiReference}/email-preview', [ClientEoiRoiController::class, 'getEmailPreview'])->name('emailPreview');
-
-    // Workflow actions
-    Route::post('/{eoiReference}/verify', [ClientEoiRoiController::class, 'verifyByStaff'])->name('verify');
-    Route::post('/{eoiReference}/send-email', [ClientEoiRoiController::class, 'sendConfirmationEmail'])->name('sendEmail')
-        ->middleware('throttle:5,60'); // Rate limit: 5 emails per hour
-    Route::post('/{eoiReference}/resolve-amendment', [ClientEoiRoiController::class, 'resolveAmendment'])->name('resolveAmendment');
-});
 
 /*---------- Client Invoices & Receipts ----------*/
 Route::get('/clients/saveaccountreport/{id}', [ClientAccountsController::class, 'saveaccountreport'])->name('clients.saveaccountreport');
@@ -395,10 +348,6 @@ Route::get('/api/client-portal/checklist-documents', [ClientPortalController::cl
 Route::post('/api/client-portal/delete-document', [ClientPortalController::class, 'deleteChecklistDocument'])->name('clients.deleteChecklistDocument');
 Route::post('/api/client-portal/update-document-status', [ClientPortalController::class, 'updateChecklistDocumentStatus'])->name('clients.updateChecklistDocumentStatus');
 
-/*---------- ANZSCO Occupation Search ----------*/
-Route::get('/anzsco/search', [AnzscoOccupationController::class, 'search'])->name('anzsco.search');
-Route::get('/anzsco/code/{code}', [AnzscoOccupationController::class, 'getByCode'])->name('anzsco.getByCode');
-
 /*---------- Client Validation & Utilities ----------*/
 Route::post('/check-email', [ClientsController::class, 'checkEmail'])->name('check.email');
 Route::post('/check.phone', [ClientsController::class, 'checkContact'])->name('check.phone');
@@ -410,9 +359,6 @@ Route::post('/merge_records', [ClientsController::class, 'merge_records'])->name
 /*---------- Contact Person Search (for Company Leads) ----------*/
 Route::get('/api/search-contact-person', [ClientsController::class, 'searchContactPerson'])
     ->name('api.search.contact.person');
-
-/*---------- Visa Expiry Messages ----------*/
-Route::get('/fetch-visa_expiry_messages', [CRMUtilityController::class, 'fetchvisaexpirymessages']);
 
 /*---------- CRM cross-access grants ----------*/
 Route::prefix('crm/access')->name('crm.access.')->group(function () {

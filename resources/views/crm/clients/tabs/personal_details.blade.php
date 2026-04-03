@@ -756,7 +756,7 @@
                             ?>
 
                             <div class="field-group">
-                                <span class="field-label">Migration Agent</span>
+                                <span class="field-label">Responsible solicitor</span>
                                 <span class="field-value">
                                     <?php
                                     if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_migration_agent != '') {

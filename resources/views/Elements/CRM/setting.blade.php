@@ -73,7 +73,6 @@
 
 			<li class="{{(Route::currentRouteName() == 'adminconsole.features.documentchecklist.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.documentchecklist.index')}}">Document Checklist</a></li>
 
-			<li class="{{(Route::currentRouteName() == 'adminconsole.database.anzsco.index' || Route::currentRouteName() == 'adminconsole.database.anzsco.create' || Route::currentRouteName() == 'adminconsole.database.anzsco.edit' || Route::currentRouteName() == 'adminconsole.database.anzsco.import') ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.database.anzsco.index')}}">ANZSCO Database</a></li>
 
 			
 			<li class="{{(Route::currentRouteName() == 'adminconsole.features.matter.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.matter.index')}}">Matter List</a></li>

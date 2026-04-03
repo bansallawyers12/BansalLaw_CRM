@@ -14,17 +14,21 @@ return new class extends Migration
     {
         // Drop the old foreign key constraint if it exists
         if (DB::getDriverName() === 'pgsql') {
-            // PostgreSQL: Get constraint name from pg_constraint
             $constraints = DB::select(
-                "SELECT conname 
-                 FROM pg_constraint 
-                 WHERE conrelid = 'client_occupations'::regclass 
-                 AND contype = 'f' 
-                 AND conkey::text LIKE '%anzsco_occupation_id%'"
+                "SELECT tc.constraint_name
+                 FROM information_schema.table_constraints tc
+                 INNER JOIN information_schema.key_column_usage kcu
+                     ON tc.constraint_name = kcu.constraint_name
+                     AND tc.table_schema = kcu.table_schema
+                 WHERE tc.table_schema = 'public'
+                   AND tc.table_name = 'client_occupations'
+                   AND tc.constraint_type = 'FOREIGN KEY'
+                   AND kcu.column_name = 'anzsco_occupation_id'"
             );
-            
+
             foreach ($constraints as $constraint) {
-                DB::statement("ALTER TABLE client_occupations DROP CONSTRAINT IF EXISTS {$constraint->conname}");
+                $name = str_replace('"', '""', $constraint->constraint_name);
+                DB::statement("ALTER TABLE client_occupations DROP CONSTRAINT IF EXISTS \"{$name}\"");
             }
         } else {
             // MySQL: Get the actual foreign key constraint name from the database
