@@ -138,9 +138,9 @@
             <p class="greeting">Dear {{ $signerName }},</p>
             
             <!-- Custom Message -->
-            @if(isset($emailMessage) && !empty($emailMessage))
+            @if(!empty($emailMessage ?? $message ?? null))
             <div class="custom-message">
-                {!! nl2br(e($emailMessage)) !!}
+                {!! nl2br(e($emailMessage ?? $message)) !!}
             </div>
             @else
             <p class="message">

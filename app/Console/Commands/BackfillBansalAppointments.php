@@ -21,7 +21,7 @@ class BackfillBansalAppointments extends Command
     /**
      * The console command description.
      */
-    protected $description = 'Backfill historical appointments from Bansal API';
+    protected $description = 'Backfill historical appointments from the public booking API';
 
     /**
      * Execute the console command.

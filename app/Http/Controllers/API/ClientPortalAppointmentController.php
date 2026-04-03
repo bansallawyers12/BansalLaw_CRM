@@ -667,7 +667,7 @@ class ClientPortalAppointmentController extends BaseController
                 ]);
             } catch (\Exception $apiException) {
                 $bansalApiError = $apiException->getMessage();
-                Log::error('Failed to create appointment on Bansal website via API', [
+                Log::error('Failed to create appointment on public booking website via API', [
                     'error' => $bansalApiError,
                     'client_id' => $client->id,
                     'client_email' => $clientEmail,

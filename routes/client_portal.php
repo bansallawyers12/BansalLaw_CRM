@@ -164,11 +164,11 @@ Route::post('/getdisableddatetime', [HomeController::class, 'getdisableddatetime
 
 /*
 |--------------------------------------------------------------------------
-| Website Booking Appointments (Synced from Bansal Website)
+| Website Booking Appointments (Synced from public booking website)
 |--------------------------------------------------------------------------
 |
-| Routes for managing appointments synced from the Bansal Immigration
-| public website. This is a separate system from manual appointments.
+| Routes for managing appointments synced from the firm's public booking
+| website. This is a separate system from manual appointments.
 |
 */
 

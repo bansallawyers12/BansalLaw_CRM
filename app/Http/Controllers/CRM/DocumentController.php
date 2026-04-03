@@ -1580,7 +1580,7 @@ class DocumentController extends Controller
                         $obj5->from_mail 	=  $fromAddress;
                         $obj5->to_mail 		=  $document->client_id;
                         $obj5->template_id 	=  $request->template;
-                        $obj5->subject		=  $request->subject; //'Bansal Migration Requesting To Sign Your Agreement Document';
+                        $obj5->subject		=  $request->subject;
                         $obj5->type 		=  'client';
                         $obj5->message		=  $request->message ?? '';
                         $obj5->mail_type    =  1;

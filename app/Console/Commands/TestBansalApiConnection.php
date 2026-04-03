@@ -18,7 +18,7 @@ class TestBansalApiConnection extends Command
     /**
      * The console command description.
      */
-    protected $description = 'Test connection to Bansal Immigration API';
+    protected $description = 'Test connection to the public booking website API';
 
     /**
      * Execute the console command.

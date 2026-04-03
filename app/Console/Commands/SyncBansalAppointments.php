@@ -18,7 +18,7 @@ class SyncBansalAppointments extends Command
     /**
      * The console command description.
      */
-    protected $description = 'Sync recent appointments from Bansal Immigration API';
+    protected $description = 'Sync recent appointments from the public booking website API';
 
     /**
      * Execute the console command.

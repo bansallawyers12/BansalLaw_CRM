@@ -201,7 +201,7 @@
                 <p class="greeting">Dear {{ $signerName }},</p>
                 
                 <p class="message">
-                    {{ $emailMessage ?? 'Please review and sign the attached document.' }}
+                    {{ $emailMessage ?? $message ?? 'Please review and sign the attached document.' }}
                 </p>
 
                 <!-- Document Info Card -->

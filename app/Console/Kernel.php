@@ -77,7 +77,7 @@ class Kernel extends ConsoleKernel
         //visa expire Reminder email before 15 days daily at 1 time
         //$schedule->command('VisaExpireReminderEmail:daily')->daily();
         
-        // Appointment Sync System - Sync from Bansal website every 5 minutes (look back 24 hours)
+        // Appointment Sync System - Sync from public booking website every 5 minutes (look back 24 hours)
         $schedule->command('booking:sync-appointments --minutes=1440')
             ->everyFiveMinutes()
             ->withoutOverlapping(5) // Max 5 minutes lock time

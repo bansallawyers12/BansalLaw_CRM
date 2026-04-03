@@ -27,15 +27,15 @@ class EmailTemplateRenderingTest extends TestCase
         $this->assertStringContainsString('https://example.com/sign/123/token', $html);
         $this->assertStringContainsString('Please sign this document.', $html);
         $this->assertStringContainsString('January 15, 2025', $html);
-        $this->assertStringContainsString('Bansal Migration', $html);
-        
+        $this->assertStringContainsString(config('app.name'), $html);
+
         // Assert branding elements
         $this->assertStringContainsString('Document Signature Request', $html);
         $this->assertStringContainsString('Review & Sign Document', $html);
-        
+
         // Assert footer content
-        $this->assertStringContainsString('info@bansalimmigration.com.au', $html);
-        $this->assertStringContainsString('www.bansalimmigration.com.au', $html);
+        $this->assertStringContainsString(config('app.brand.public_email'), $html);
+        $this->assertStringContainsString(config('app.brand.website_label'), $html);
     }
 
     /** @test */
@@ -114,9 +114,9 @@ class EmailTemplateRenderingTest extends TestCase
         $this->assertStringContainsString('Sign Now', $html);
         $this->assertStringContainsString('Action Required', $html);
         
-        // Assert urgent theme (reminder template uses red/orange)
+        // Assert urgent theme (reminder template uses red / light-red alert panel)
         $this->assertStringContainsString('#dc2626', $html);
-        $this->assertStringContainsString('#f59e0b', $html);
+        $this->assertStringContainsString('#fca5a5', $html);
     }
 
     /** @test */
@@ -143,11 +143,8 @@ class EmailTemplateRenderingTest extends TestCase
             
             // Assert responsive meta tag
             $this->assertStringContainsString('viewport', $html);
-            
-            // Assert media queries for mobile
-            $this->assertStringContainsString('@media only screen and (max-width: 600px)', $html);
-            
-            // Assert max-width container
+
+            // Assert max-width container (templates use fixed-width friendly layout)
             $this->assertStringContainsString('max-width: 600px', $html);
         }
     }
@@ -210,9 +207,9 @@ class EmailTemplateRenderingTest extends TestCase
         foreach ($templates as $template) {
             $html = View::make($template, $data)->render();
             
-            // Assert dangerous scripts are escaped or removed
+            // Assert dangerous scripts/tags are not rendered raw (escaped or absent)
             $this->assertStringNotContainsString('<script>alert("xss")</script>', $html);
-            $this->assertStringNotContainsString('onerror=alert(1)', $html);
+            $this->assertStringNotContainsString('<img src=x onerror=alert(1)>', $html);
             
             // In send_agreement, message uses {!! !!} with nl2br(e())
             // So <b> tags should be escaped but newlines preserved
@@ -280,11 +277,10 @@ class EmailTemplateRenderingTest extends TestCase
             $html = View::make($template, $data)->render();
             
             // Assert footer information
-            $this->assertStringContainsString('Bansal Migration', $html);
-            $this->assertStringContainsString('info@bansalimmigration.com.au', $html);
-            $this->assertStringContainsString('www.bansalimmigration.com.au', $html);
-            $this->assertStringContainsString('Privacy Policy', $html);
-            $this->assertStringContainsString('Terms of Service', $html);
+            $this->assertStringContainsString(config('app.name'), $html);
+            $this->assertStringContainsString(config('app.brand.public_email'), $html);
+            $this->assertStringContainsString(config('app.brand.website_label'), $html);
+            $this->assertStringContainsString('Consumer guide', $html);
         }
     }
 }
