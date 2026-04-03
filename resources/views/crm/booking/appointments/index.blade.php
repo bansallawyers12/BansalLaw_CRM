@@ -70,7 +70,7 @@ html, body {
                     <h4>
                         <i class="fas fa-globe mr-2"></i> 
                         Website Bookings 
-                        <small class="text-muted">(Synced from Bansal Immigration Website)</small>
+                        <small class="text-muted">(Synced from public booking website)</small>
                     </h4>
                     <div class="card-header-action">
                         @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
@@ -403,7 +403,7 @@ html, body {
 
 <script>
 function manualSync() {
-    if (!confirm('Start manual sync now? This will fetch latest appointments from Bansal website.')) {
+    if (!confirm('Start manual sync now? This will fetch latest appointments from the public booking website.')) {
         return;
     }
     
@@ -412,7 +412,7 @@ function manualSync() {
     if (hasSweetAlert) {
         Swal.fire({
             title: 'Syncing...',
-            text: 'Fetching appointments from Bansal website',
+            text: 'Fetching appointments from public booking website',
             allowOutsideClick: false,
             didOpen: () => {
                 Swal.showLoading();

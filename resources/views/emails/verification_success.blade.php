@@ -107,14 +107,14 @@
         
         <div class="success-message">
             <p><strong>Verification Complete</strong></p>
-            <p style="margin-top: 10px;">You can now receive important updates and communications from Bansal Immigration.</p>
+            <p style="margin-top: 10px;">You can now receive important updates and communications from {{ config('app.name') }}.</p>
         </div>
         
         <p>Thank you for confirming your email address. You can now close this window.</p>
         <button class="close-button" onclick="window.close()" style="background-color: #10b981; color: #ffffff; padding: 15px 40px; border: 2px solid #059669; font-size: 16px; font-weight: 700; cursor: pointer;">Close Window</button>
         
         <div class="company-name">
-            Verified by <strong>Bansal Immigration</strong>
+            Verified by <strong>{{ config('app.name') }}</strong>
         </div>
     </div>
 </body>

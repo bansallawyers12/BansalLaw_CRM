@@ -9,7 +9,7 @@
     <meta name="keyword" content="CRM">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="current-user-id" content="{{ optional(auth('admin')->user())->id }}">
-    <title>CRM | Client Details</title>
+    <title>{{ config('app.name') }} | Client Details</title>
     <link rel="icon" type="image/png" href="{{asset('img/favicon.png')}}">
     <link rel="stylesheet" href="{{asset('css/app.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/iziToast.min.css')}}">

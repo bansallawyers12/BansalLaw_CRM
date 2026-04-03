@@ -6097,11 +6097,11 @@ public function getInvoiceAmount(Request $request)
             $clientFullName = trim(($clientname->first_name ?? '') . ' ' . ($clientname->last_name ?? ''));
             $invoiceNo = $receipt_entry->invoice_no ?? $id;
             
-            $subject = 'Invoice #' . $invoiceNo . ' from Bansal Immigration';
+            $subject = 'Invoice #' . $invoiceNo . ' from ' . config('app.name');
             $emailContent = "Dear " . $clientFullName . ",<br><br>" .
                 "Please find attached your invoice #" . $invoiceNo . ".<br><br>" .
                 "If you have any questions, please don't hesitate to contact us.<br><br>" .
-                "Best regards,<br>Bansal Immigration";
+                "Best regards,<br>" . e(config('app.name'));
 
             // Download PDF from S3 to temporary file
             $pdfContent = file_get_contents($pdfUrl);
@@ -6112,7 +6112,7 @@ public function getInvoiceAmount(Request $request)
             $invoiceArray = [
                 'view' => 'emails.template',
                 'from' => 'invoice@bansalimmigration.com.au',
-                'name' => 'Bansal Immigration',
+                'name' => config('app.name'),
                 'subject' => $subject,
                 'file' => $tempFilePath,
                 'file_name' => 'Invoice-' . $invoiceNo . '.pdf',
@@ -6227,11 +6227,11 @@ public function getInvoiceAmount(Request $request)
             $clientFullName = trim(($clientname->first_name ?? '') . ' ' . ($clientname->last_name ?? ''));
             $receiptNo = $record_get->trans_no ?? $id;
             
-            $subject = 'Client Fund Receipt #' . $receiptNo . ' from Bansal Immigration';
+            $subject = 'Client Fund Receipt #' . $receiptNo . ' from ' . config('app.name');
             $emailContent = "Dear " . $clientFullName . ",<br><br>" .
                 "Please find attached your client fund receipt #" . $receiptNo . ".<br><br>" .
                 "If you have any questions, please don't hesitate to contact us.<br><br>" .
-                "Best regards,<br>Bansal Immigration";
+                "Best regards,<br>" . e(config('app.name'));
 
             // Download PDF from S3 to temporary file
             $pdfContent = file_get_contents($pdfUrl);
@@ -6242,7 +6242,7 @@ public function getInvoiceAmount(Request $request)
             $invoiceArray = [
                 'view' => 'emails.template',
                 'from' => 'invoice@bansalimmigration.com.au',
-                'name' => 'Bansal Immigration',
+                'name' => config('app.name'),
                 'subject' => $subject,
                 'file' => $tempFilePath,
                 'file_name' => 'Receipt-' . $receiptNo . '.pdf',
@@ -6354,11 +6354,11 @@ public function getInvoiceAmount(Request $request)
             $clientFullName = trim(($clientname->first_name ?? '') . ' ' . ($clientname->last_name ?? ''));
             $receiptNo = $record_get->trans_no ?? $id;
             
-            $subject = 'Office Receipt #' . $receiptNo . ' from Bansal Immigration';
+            $subject = 'Office Receipt #' . $receiptNo . ' from ' . config('app.name');
             $emailContent = "Dear " . $clientFullName . ",<br><br>" .
                 "Please find attached your office receipt #" . $receiptNo . ".<br><br>" .
                 "If you have any questions, please don't hesitate to contact us.<br><br>" .
-                "Best regards,<br>Bansal Immigration";
+                "Best regards,<br>" . e(config('app.name'));
 
             // Download PDF from S3 to temporary file
             $pdfContent = file_get_contents($pdfUrl);
@@ -6369,7 +6369,7 @@ public function getInvoiceAmount(Request $request)
             $invoiceArray = [
                 'view' => 'emails.template',
                 'from' => 'invoice@bansalimmigration.com.au',
-                'name' => 'Bansal Immigration',
+                'name' => config('app.name'),
                 'subject' => $subject,
                 'file' => $tempFilePath,
                 'file_name' => 'Office-Receipt-' . $receiptNo . '.pdf',

@@ -70,7 +70,7 @@ class AppointmentCancellation extends Mailable
         return match ($location) {
             'melbourne' => 'Level 8/278 Collins St, Melbourne VIC 3000',
             'adelaide' => 'Unit 5, 55 Gawler Pl, Adelaide SA 5000, Australia',
-            default => 'Bansal Immigration Office'
+            default => config('app.name') . ' office'
         };
     }
 

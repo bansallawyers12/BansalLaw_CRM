@@ -66,7 +66,7 @@ class EmailConfigService
     {
         return [
             'from_address' => $emailConfig->email,
-            'from_name' => $emailConfig->display_name ?? 'Bansal Migration',
+            'from_name' => $emailConfig->display_name ?? config('app.name'),
             'email_signature' => $emailConfig->email_signature ?? '',
         ];
     }
@@ -124,7 +124,7 @@ class EmailConfigService
             if (env('MAIL_FROM_ADDRESS')) {
                 return [
                     'from_address' => env('MAIL_FROM_ADDRESS'),
-                    'from_name' => env('MAIL_FROM_NAME', 'Bansal Migration'),
+                    'from_name' => env('MAIL_FROM_NAME', config('app.name')),
                 ];
             }
 
@@ -149,7 +149,7 @@ class EmailConfigService
             if (env('MAIL_FROM_ADDRESS')) {
                 return [
                     'from_address' => env('MAIL_FROM_ADDRESS'),
-                    'from_name' => env('MAIL_FROM_NAME', 'Bansal Migration'),
+                    'from_name' => env('MAIL_FROM_NAME', config('app.name')),
                 ];
             }
 

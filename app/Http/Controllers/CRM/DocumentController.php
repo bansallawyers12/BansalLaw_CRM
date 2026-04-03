@@ -1114,7 +1114,7 @@ class DocumentController extends Controller
                 
                 // Prepare email options
                 $emailOptions = [
-                    'subject' => $pendingSigner['email_subject'] ?? 'Document Signature Request from Bansal Migration',
+                    'subject' => $pendingSigner['email_subject'] ?? ('Document Signature Request from ' . config('app.name')),
                     'message' => $pendingSigner['email_message'] ?? 'Please review and sign the attached document.',
                     'template' => $pendingSigner['email_template'] ?? 'emails.signature.send',
                 ];
@@ -1487,7 +1487,7 @@ class DocumentController extends Controller
                     }
 
                     $fromAddress = config('mail.from.address');
-                    $fromName = config('mail.from.name', 'Bansal Migration');
+                    $fromName = config('mail.from.name', config('app.name'));
                     $emailSignature = '';
                     $activeEmail = Email::where('status', true)->orderBy('id')->first();
                     if ($activeEmail) {
@@ -1644,7 +1644,7 @@ class DocumentController extends Controller
                 else
                 {
                     $fromAddress = config('mail.from.address');
-                    $fromName = config('mail.from.name', 'Bansal Migration');
+                    $fromName = config('mail.from.name', config('app.name'));
                     $emailSignature = '';
                     $activeEmail = Email::where('status', true)->orderBy('id')->first();
                     if ($activeEmail) {
@@ -1663,7 +1663,7 @@ class DocumentController extends Controller
                             ],
                             function ($message) use ($signerEmail, $signerName, $fromAddress, $fromName) {
                                 $message->to($signerEmail, $signerName)
-                                    ->subject('Bansal Migration Requesting To Sign Your Document')
+                                    ->subject(config('app.name') . ' Requesting To Sign Your Document')
                                     ->from($fromAddress, $fromName);
                             }
                         );

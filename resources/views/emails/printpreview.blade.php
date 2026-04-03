@@ -21,7 +21,7 @@
 			<table width="100%" border="0">
 				<tbody>
 					<tr>
-						<td><img src="{{URL::to('/public/img/logo.png')}}" alt="Company Logo" style="max-width: 180px; height: auto;"/></td>
+						<td><img src="{{ asset('img/logo.png') }}" alt="{{ config('app.name') }}" style="max-width: 180px; height: auto;"/></td>
 						<td>
 							<span style="font-size:21px;line-height:24px;color:#000;"><b>{{$admin->company_name}}</b></span>
 							<p style="font-size: 15px;line-height: 21px;color: #1a1a1a;font-weight: normal;margin: 10px 0px 0px;"> {{$admin->address}}<br/>

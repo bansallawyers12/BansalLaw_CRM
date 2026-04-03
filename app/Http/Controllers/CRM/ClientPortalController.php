@@ -140,7 +140,7 @@ class ClientPortalController extends Controller
             }
 
             // Email content
-            $subject = 'Client Portal Access Activated - Bansal Immigration';
+            $subject = 'Client Portal Access Activated - ' . config('app.name');
             $message = "
                 <html>
                 <body>
@@ -154,7 +154,7 @@ class ClientPortalController extends Controller
                     <p><strong>Important:</strong> Please keep your login credentials secure and do not share them with anyone. After Login in mboile App you can chnage your password.</p>
                     <p>Please contact us if you have any questions.</p>
                     <br>
-                    <p>Best regards,<br>Bansal Immigration Team</p>
+                    <p>Best regards,<br>" . htmlspecialchars(config('app.name'), ENT_QUOTES, 'UTF-8') . " Team</p>
                 </body>
                 </html>
             ";
@@ -186,7 +186,7 @@ class ClientPortalController extends Controller
             }
 
             // Email content for deactivation
-            $subject = 'Client Portal Access Deactivated - Bansal Immigration';
+            $subject = 'Client Portal Access Deactivated - ' . config('app.name');
             $message = "
                 <html>
                 <body>
@@ -195,7 +195,7 @@ class ClientPortalController extends Controller
                     <p>Your client portal access has been deactivated. Now you cannot access the client portal from mobile app.</p>
                     <p>Please contact the administrator for further assistance.</p>
                     <br>
-                    <p>Best regards,<br>Bansal Immigration Team</p>
+                    <p>Best regards,<br>" . htmlspecialchars(config('app.name'), ENT_QUOTES, 'UTF-8') . " Team</p>
                 </body>
                 </html>
             ";

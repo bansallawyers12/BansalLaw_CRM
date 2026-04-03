@@ -336,7 +336,7 @@ function triggerManualSync() {
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             title: 'Syncing...',
-            text: 'Fetching appointments from Bansal website',
+            text: 'Fetching appointments from public booking website',
             allowOutsideClick: false,
             didOpen: () => {
                 Swal.showLoading();
@@ -393,7 +393,7 @@ function testConnection() {
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             title: 'Testing Connection...',
-            text: 'Connecting to Bansal API',
+            text: 'Connecting to booking API',
             allowOutsideClick: false,
             didOpen: () => {
                 Swal.showLoading();
@@ -421,7 +421,7 @@ function testConnection() {
                 Swal.fire({
                     icon: 'error',
                     title: 'Connection Failed',
-                    text: xhr.responseJSON?.message || 'Could not connect to Bansal API',
+                    text: xhr.responseJSON?.message || 'Could not connect to booking API',
                     confirmButtonText: 'OK'
                 });
             } else {

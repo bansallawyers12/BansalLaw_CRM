@@ -498,7 +498,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             </div>
                             <small class="text-muted">
-                                <i class="fas fa-info-circle"></i> Changes will sync with the Bansal website if the appointment is linked.
+                                <i class="fas fa-info-circle"></i> Changes will sync with the public booking website if the appointment is linked.
                             </small>
                         </div>
                     </div>

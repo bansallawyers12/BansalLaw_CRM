@@ -219,7 +219,7 @@
                         }
                         ?>
                         <div class="row">
-                            <input type="hidden" name="email_from" value="info@bansalimmigration.com.au">
+                            <input type="hidden" name="email_from" value="{{ config('mail.from.address') }}">
 
                             <div class="col-12 col-md-6 col-lg-6">
                                 <div class="form-group">
@@ -348,7 +348,7 @@
                 client_firstname = client_firstname.charAt(0).toUpperCase() + client_firstname.slice(1);
             }
             var client_reference_number = $(this).data('clientreference_number'); //alert(client_reference_number);
-            var company_name = 'Bansal Education Group';
+            var company_name = @json(config('app.name'));
             var visa_valid_upto = $(this).data('clientvisaExpiry');
             if ( visa_valid_upto != '' && visa_valid_upto != '0000-00-00') {
                 visa_valid_upto = visa_valid_upto;

@@ -156,7 +156,7 @@
                     @else
                         <div style="width:85px;height:55px;background:#3abaf4;display:block;margin-bottom:10px;"></div>
                     @endif
-                    <div class="company-name">BANSAL IMMIGRATION</div>
+                    <div class="company-name">{{ strtoupper(config('app.name')) }}</div>
                     <div class="company-info">
                         Level 8, 278 Collins Street<br/>
                         Melbourne VIC 3000<br/>

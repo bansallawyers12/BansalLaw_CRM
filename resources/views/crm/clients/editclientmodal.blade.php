@@ -1,5 +1,5 @@
 <!-- REMOVED: Old appointment edit modal - no longer supported -->
-<!-- The current appointment system uses BookingAppointment model (synced from Bansal website) -->
+<!-- The current appointment system uses BookingAppointment model (synced from public booking website) -->
 <!-- and does not have edit functionality through the CRM interface -->
 
 <!-- Note & Terms Modal -->

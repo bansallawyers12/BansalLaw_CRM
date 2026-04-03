@@ -154,7 +154,7 @@
     <div class="email-container">
         <!-- Header -->
         <div class="email-header">
-            <img src="{{URL::to('/public/img/logo.png')}}" alt="Bansal Migration" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
+            <img src="{{ asset('img/logo.png') }}" alt="{{ config('app.name') }}" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
             <h1>Document Signature Reminder</h1>
             <div class="reminder-badge">Reminder #{{ $reminderNumber }}</div>
         </div>
@@ -219,7 +219,7 @@
 
             <p class="message" style="margin-top: 30px;">
                 <strong>Thank you for your cooperation,</strong><br>
-                Bansal Migration Team
+                {{ config('app.name') }} Team
             </p>
 
             @if(isset($emailSignature) && !empty($emailSignature))
@@ -231,7 +231,7 @@
 
         <!-- Footer -->
         <div class="email-footer">
-            <p><strong>Bansal Migration</strong></p>
+            <p><strong>{{ config('app.name') }}</strong></p>
             <p>Immigration & Visa Services</p>
             <p>Email: <a href="mailto:info@bansalimmigration.com.au">info@bansalimmigration.com.au</a></p>
             <p>Phone: <a href="tel:+61292673945">+61 2 9267 3945</a></p>

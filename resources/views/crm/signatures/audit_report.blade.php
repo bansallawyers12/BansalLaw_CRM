@@ -137,7 +137,7 @@
     <div class="header">
         <h1>📝 Signature Audit Report</h1>
         <p>Generated on {{ now()->format('F j, Y \a\t g:i A') }}</p>
-        <p>Bansal Migration Management System</p>
+        <p>{{ config('app.name') }}</p>
     </div>
     
     <!-- Summary Statistics -->
@@ -285,9 +285,9 @@
     
     <!-- Footer -->
     <div class="footer">
-        <p>This is a system-generated report from Bansal Migration Management System</p>
+        <p>This is a system-generated report from {{ config('app.name') }}</p>
         <p>Report contains {{ $documents->count() }} document(s) with {{ $documents->sum(fn($d) => $d->signers->count()) }} total signer(s)</p>
-        <p>© {{ now()->year }} Bansal Migration. All rights reserved.</p>
+        <p>© {{ now()->year }} {{ config('app.name') }}. All rights reserved.</p>
     </div>
 </body>
 </html>

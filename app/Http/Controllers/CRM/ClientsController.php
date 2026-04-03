@@ -136,7 +136,7 @@ class ClientsController extends Controller
             return $rendered;
         }
 
-        return "Hi {$first},\n\nWe tried reaching you but couldn't connect. Please call us at 0396021330 or let us know a suitable time.\n\nPlease do not reply via SMS.\n\nBansal Immigration";
+        return "Hi {$first},\n\nWe tried reaching you but couldn't connect. Please call us at 0396021330 or let us know a suitable time.\n\nPlease do not reply via SMS.\n\n" . config('app.name');
     }
 
 	/**

@@ -3646,7 +3646,7 @@ success: function(response) {
 
             var message = (window.ClientDetailConfig.notPickedCallSmsDefault || '').trim();
             if (!message) {
-                message = 'Hi ' + clientName + ',\n\nWe tried reaching you but couldn\'t connect. Please call us at 0396021330 or let us know a suitable time.\n\nPlease do not reply via SMS.\n\nBansal Immigration';
+                message = 'Hi ' + clientName + ',\n\nWe tried reaching you but couldn\'t connect. Please call us at 0396021330 or let us know a suitable time.\n\nPlease do not reply via SMS.\n\n' + (window.__CRM_APP_NAME__ || '');
             }
 
             $('#messageText').val(message); // Set dynamic message text
@@ -7104,7 +7104,7 @@ success: function(response) {
 
             var client_reference_number = $(this).data('clientreference_number'); //alert(client_reference_number);
 
-            var company_name = 'Bansal Education Group';
+            var company_name = window.__CRM_APP_NAME__ || '';
 
             var visa_valid_upto = $(this).data('clientvisaExpiry');
 

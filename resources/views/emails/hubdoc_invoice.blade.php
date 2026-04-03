@@ -22,7 +22,7 @@
         <p>Please process this invoice accordingly.</p>
         
         <p>Best regards,<br>
-        Bansal Immigration Team</p>
+        {{ config('app.name') }} Team</p>
     </div>
 </body>
 </html>

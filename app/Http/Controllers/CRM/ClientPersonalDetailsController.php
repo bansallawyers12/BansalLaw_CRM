@@ -295,7 +295,7 @@ class ClientPersonalDetailsController extends Controller
             curl_setopt($ch, CURLOPT_URL, $url . '?' . $params);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'Bansal Law CRM');
+            curl_setopt($ch, CURLOPT_USERAGENT, config('app.name') . ' CRM');
             $response = curl_exec($ch);
             // curl handles are closed automatically in recent PHP versions.
             

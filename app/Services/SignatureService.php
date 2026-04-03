@@ -76,7 +76,7 @@ class SignatureService
     protected function resolveFrom(?string $preferredFrom = null): array
     {
         $fromAddress = $preferredFrom ?: config('mail.from.address');
-        $fromName = config('mail.from.name', 'Bansal Migration');
+        $fromName = config('mail.from.name', config('app.name'));
         $signature = '';
 
         if (!empty($fromAddress)) {
@@ -93,7 +93,7 @@ class SignatureService
             $default = $this->emailConfigService->getDefaultAccount();
             $signature = $default['email_signature'] ?? '';
             $fromAddress = $fromAddress ?: ($default['from_address'] ?? config('mail.from.address'));
-            $fromName = $fromName ?: ($default['from_name'] ?? config('mail.from.name', 'Bansal Migration'));
+            $fromName = $fromName ?: ($default['from_name'] ?? config('mail.from.name', config('app.name')));
         }
 
         return [

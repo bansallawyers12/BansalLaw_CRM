@@ -351,7 +351,7 @@ html, body {
                                 <div class="card-body">
                                     <div class="info-row">
                                         <div class="row">
-                                            <div class="col-5 info-label">Bansal ID:</div>
+                                            <div class="col-5 info-label">Website booking ID:</div>
                                             <div class="col-7 info-value">
                                                 <code>{{ $appointment->bansal_appointment_id }}</code>
                                             </div>

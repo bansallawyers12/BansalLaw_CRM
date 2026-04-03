@@ -9,7 +9,7 @@
     <meta name="keyword" content="CRM">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="current-user-id" content="{{ optional(auth('admin')->user())->id }}">
-    <title>CRM | @yield('title', 'Client Details')</title>
+    <title>{{ config('app.name') }} | @yield('title', 'Client Details')</title>
     <link rel="icon" type="image/png" href="{{asset('img/favicon.png')}}">
     <link rel="stylesheet" href="{{asset('css/app.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/iziToast.min.css')}}">
@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="{{asset('css/dataTables_min_latest.css')}}">
     <link rel="stylesheet" href="{{asset('icons/font-awesome/css/all.min.css')}}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>window.__CRM_APP_NAME__=@json(config('app.name'));</script>
     <script src="{{ asset('js/datetime-display.js') }}"></script>
 
     <style>

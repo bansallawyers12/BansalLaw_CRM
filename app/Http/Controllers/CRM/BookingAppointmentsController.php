@@ -1376,7 +1376,7 @@ class BookingAppointmentsController extends Controller
             // Headers
             fputcsv($file, [
                 'ID',
-                'Bansal ID',
+                'Website booking ID',
                 'Client Name',
                 'Email',
                 'Phone',

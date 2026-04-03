@@ -501,7 +501,7 @@ class SignatureDashboardController extends Controller
                 ];
 
                 $fromAddress = $signer->from_email ?: config('mail.from.address');
-                $fromName = config('mail.from.name', 'Bansal Migration');
+                $fromName = config('mail.from.name', config('app.name'));
                 $emailSignature = '';
                 if (!empty($fromAddress)) {
                     $emailAccount = \App\Models\Email::where('status', true)->where('email', $fromAddress)->first();

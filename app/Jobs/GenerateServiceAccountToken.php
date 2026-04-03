@@ -34,7 +34,7 @@ class GenerateServiceAccountToken implements ShouldQueue
     public function __construct(Admin $admin, $serviceName = null, $description = null, $password = null)
     {
         $this->admin = $admin;
-        $this->serviceName = $serviceName ?? 'Bansal Immigration CRM';
+        $this->serviceName = $serviceName ?? (config('app.name') . ' CRM');
         $this->description = $description ?? 'Service account token for admin authentication';
         $this->password = $password;
     }

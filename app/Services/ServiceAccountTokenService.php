@@ -56,7 +56,7 @@ class ServiceAccountTokenService
             
             // Create a mock request object
             $request = new Request([
-                'service_name' => $serviceName ?? 'Bansal Immigration CRM',
+                'service_name' => $serviceName ?? (config('app.name') . ' CRM'),
                 'description' => $description ?? 'Service account token for admin authentication',
                 'admin_email' => $admin->email,
                 'admin_password' => $adminPassword,

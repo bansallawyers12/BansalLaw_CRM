@@ -136,11 +136,11 @@
         
         <div class="help-box">
             <p>Need help?</p>
-            <p>Please contact Bansal Immigration office to request a new verification email.</p>
+            <p>Please contact {{ config('app.name') }} to request a new verification email.</p>
         </div>
         
         <div class="company-name">
-            <strong>Bansal Immigration</strong>
+            <strong>{{ config('app.name') }}</strong>
         </div>
     </div>
 </body>

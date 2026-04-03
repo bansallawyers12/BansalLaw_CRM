@@ -138,7 +138,7 @@
     <div class="email-wrapper">
         <div class="email-container">
             <div class="email-header">
-                <img src="{{URL::to('/public/img/logo.png')}}" alt="Bansal Migration" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
+                <img src="{{ asset('img/logo.png') }}" alt="{{ config('app.name') }}" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
                 <h1>Document Signature Request</h1>
             </div>
             
@@ -162,12 +162,12 @@
                 
                 <div class="signature-section">
                     <p class="signature-text"><strong>Regards,</strong></p>
-                    <p class="signature-name">Bansal Migration Team</p>
+                    <p class="signature-name">{{ config('app.name') }} Team</p>
                 </div>
             </div>
             
             <div class="email-footer">
-                <div class="footer-brand">Bansal Migration</div>
+                <div class="footer-brand">{{ config('app.name') }}</div>
                 <div class="footer-contact">Immigration & Visa Services</div>
                 <div class="footer-contact">
                     Email: <a href="mailto:info@bansalimmigration.com.au">info@bansalimmigration.com.au</a>

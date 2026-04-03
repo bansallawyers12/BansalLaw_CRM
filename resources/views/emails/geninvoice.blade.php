@@ -185,7 +185,7 @@
                     @else
                         <div style="width:85px;height:55px;background:#3abaf4;display:block;margin-bottom:10px;"></div>
                     @endif
-                    <div class="company-name">BANSAL IMMIGRATION</div>
+                    <div class="company-name">{{ strtoupper(config('app.name')) }}</div>
                     <div class="company-info">
                         Level 8, 278 Collins Street<br/>
                         Melbourne VIC 3000<br/>
@@ -956,7 +956,7 @@
             <p class="payment-method-highlight">Payment Method: {{ $invoice_payment_method ?? 'N/A' }}</p>
             <p>If you wish to make payment by Direct Debit, use the following details in your Electronic Funds Transfer. Please remember to quote your MATTER NO <strong>{{ $client_matter_display ?? $client_matter_no ?? 'N/A' }}</strong> and advise us by email when you have made the transfer.</p>
             <div class="bank-details">
-                <strong>Account Name:</strong> Bansal Immigration<br/>
+                <strong>Account Name:</strong> {{ config('app.name') }}<br/>
                 <strong>BSB:</strong> 083419<br/>
                 <strong>Account Number:</strong> 362421793<br/>
                 <strong>Swift Code:</strong> ____________________

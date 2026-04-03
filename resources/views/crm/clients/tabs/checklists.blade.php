@@ -897,7 +897,7 @@
             var message = '<p>Dear ' + (clientName.trim() || 'there') + ',</p>' +
                 '<p>Please find attached the checklist for your matter.</p>' +
                 '<p>If you have any questions, please contact us.</p>' +
-                '<p><strong>Regards,</strong><br>Bansal Migration Team</p>';
+                '<p><strong>Regards,</strong><br>{{ config('app.name') }} Team</p>';
 
             $('#compose_email_subject').val(subject);
 
@@ -1006,7 +1006,7 @@
                 '<p style="margin:20px 0;"><a href="' + signingUrl + '" target="_blank" rel="noopener noreferrer" style="display:inline-block;background-color:#2563eb;color:#fff;text-decoration:none;padding:12px 24px;font-weight:600;">Sign Document Now</a></p>' +
                 '<p>Or copy this link: <a href="' + signingUrl + '" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;word-break:break-all;">' + signingUrl + '</a></p>' +
                 '<p>If you have any questions, please contact us.</p>' +
-                '<p><strong>Regards,</strong><br>Bansal Migration Team</p>';
+                '<p><strong>Regards,</strong><br>{{ config('app.name') }} Team</p>';
 
             $('#compose_email_subject').val(subject);
 

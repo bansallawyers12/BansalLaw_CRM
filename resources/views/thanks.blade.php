@@ -159,7 +159,7 @@
             <p><strong>Need Help?</strong></p>
             <p>Contact us at: {{ config('mail.from.address', 'support@bansalmigration.com') }}</p>
             <p style="margin-top: 15px; font-size: 12px;">
-                © {{ date('Y') }} Bansal Migration Management. All rights reserved.
+                © {{ date('Y') }} {{ config('app.name') }}. All rights reserved.
             </p>
         </div>
     </div>

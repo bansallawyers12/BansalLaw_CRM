@@ -82,15 +82,15 @@
 </head>
 <body>
     <div class="header">
-        <img src="{{URL::to('/public/img/logo.png')}}" alt="Bansal Immigration" style="max-width: 180px; height: auto; margin-bottom: 10px;" />
-        <h1>Bansal Immigration</h1>
+        <img src="{{ asset('img/logo.png') }}" alt="{{ config('app.name') }}" style="max-width: 180px; height: auto; margin-bottom: 10px;" />
+        <h1>{{ config('app.name') }}</h1>
         <p>Appointment Confirmation</p>
     </div>
 
     <div class="content">
         <p>Dear {{ $clientName }},</p>
 
-        <p>Thank you for booking an appointment with Bansal Immigration. This email confirms your appointment details:</p>
+        <p>Thank you for booking an appointment with {{ config('app.name') }}. This email confirms your appointment details:</p>
 
         <div class="appointment-details">
             <h2 style="margin-top: 0; color: #1a1a1a; font-size: 18px;">Appointment Details</h2>
@@ -149,7 +149,7 @@
         <p style="margin-top: 30px;">We look forward to assisting you with your immigration needs.</p>
 
         <p>Best regards,<br>
-        <strong>Bansal Immigration Team</strong></p>
+        <strong>{{ config('app.name') }} Team</strong></p>
     </div>
 
     <div class="footer">
@@ -158,7 +158,7 @@
             Consumer guide: <a href="https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf" style="color: #2563eb; text-decoration: none; font-weight: 600;">https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf</a>
         </p>
         <p style="font-size: 0.8em; color: #666666;">
-            &copy; {{ date('Y') }} Bansal Immigration. All rights reserved.
+            &copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.
         </p>
     </div>
 </body>

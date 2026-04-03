@@ -142,7 +142,7 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group col-md-4">
-                                <label class="font-weight-bold">Bansal ID</label>
+                                <label class="font-weight-bold">Website booking ID</label>
                                 <p class="mb-0">
                                     @if($appointment->bansal_appointment_id)
                                         <span style="color: #e91e63; font-weight: bold;">{{ $appointment->bansal_appointment_id }}</span>
