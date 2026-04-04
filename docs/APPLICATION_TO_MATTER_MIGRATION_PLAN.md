@@ -27,7 +27,7 @@ This document lists remaining changes to complete the migration from "applicatio
 
 ## 2. Payment Schedule & Invoice Forms – OBSOLETE ✓
 
-**Status:** All features removed. Payment schedule setup, Create Invoice from schedule, Commission Invoice, Edit/Add payment schedule, and workflow checklist upload no longer exist. See `docs/SECTION_2_PAYMENT_INVOICE_APPLICATION_TO_CLIENT_MATTER_PLAN.md` for details.
+**Status:** All features removed. Payment schedule setup, Create Invoice from schedule, Commission Invoice, Edit/Add payment schedule, and workflow checklist upload no longer exist.
 
 ---
 

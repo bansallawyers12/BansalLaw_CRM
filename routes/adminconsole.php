@@ -170,10 +170,6 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
     // System routes - System management
     Route::prefix('system')->name('system.')->group(function() {
         
-        // DEPRECATED: Legacy /users - Staff moved to adminconsole.staff.* (StaffController + staff table).
-        // Clients at adminconsole.system.clients.* (ClientController).
-        // Redirect /users for backwards compatibility.
-        Route::get('/users', fn () => redirect()->route('adminconsole.system.clients.clientlist'))->name('users.index');
         Route::get('/clients', [ClientController::class, 'clientlist'])->name('clients.clientlist');
         Route::get('/clients/create', [ClientController::class, 'createclient'])->name('clients.createclient');
         Route::post('/clients/store', [ClientController::class, 'storeclient'])->name('clients.storeclient');
@@ -201,9 +197,6 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::get('/offices/view/{id}', [BranchesController::class, 'view'])->name('offices.view');
         Route::get('/offices/view/client/{id}', [BranchesController::class, 'viewclient'])->name('offices.viewclient');
         Route::put('/offices/{id}', [BranchesController::class, 'update'])->name('offices.update');
-        
-        // Client Email List route
-        Route::get('/clientsemaillist', [\App\Http\Controllers\CRM\ClientsController::class, 'clientsemaillist'])->name('clientsemaillist');
         
         // Activity Search routes (Super Admin only)
         Route::get('/activity-search', [ActivitySearchController::class, 'index'])->name('activity-search.index');

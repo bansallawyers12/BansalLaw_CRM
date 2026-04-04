@@ -187,7 +187,7 @@
                 <div class="card-body">
                     <div class="filter_panel">
                         <h4>Search By Details</h4>
-                        <form action="{{URL::to('/adminconsole/clientsemaillist')}}" method="get">
+                        <form action="{{ route('clients.clientsemaillist') }}" method="get">
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
@@ -215,7 +215,7 @@
                                 <div class="col-md-12 text-center">
                                     <div class="filter-buttons-container">
                                         <button type="submit" class="btn btn-primary btn-theme-lg mr-3">Search</button>
-                                        <a class="btn btn-info" href="{{URL::to('/adminconsole/clientsemaillist')}}">Reset</a>
+                                        <a class="btn btn-info" href="{{ route('clients.clientsemaillist') }}">Reset</a>
                                     </div>
                                 </div>
                             </div>

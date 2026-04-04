@@ -67,15 +67,6 @@ class AdminConsoleRoutesTest extends TestCase
     }
 
     /** @test */
-    public function admin_can_access_adminconsole_system_users_index()
-    {
-        // /users redirects to clientlist
-        $this->actingAs($this->admin, 'admin')
-             ->get('/adminconsole/system/users')
-             ->assertRedirect(route('adminconsole.system.clients.clientlist'));
-    }
-
-    /** @test */
     public function admin_can_access_adminconsole_system_clients_clientlist()
     {
         $this->actingAs($this->admin, 'admin')
@@ -154,11 +145,7 @@ class AdminConsoleRoutesTest extends TestCase
             url('/adminconsole/features/matter'),
             route('adminconsole.features.matter.index')
         );
-        
-        $this->assertEquals(
-            url('/adminconsole/system/users'),
-            route('adminconsole.system.users.index')
-        );
+
         $this->assertEquals(
             url('/adminconsole/system/clients'),
             route('adminconsole.system.clients.clientlist')

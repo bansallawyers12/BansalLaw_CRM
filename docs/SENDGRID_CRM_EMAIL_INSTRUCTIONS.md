@@ -3,7 +3,7 @@
 This document covers how SendGrid should be configured and used across the CRM — architecture, `.env` setup, every backend send path, what gets removed, code changes required, and troubleshooting.
 
 > **Stack:** Laravel 12 · PostgreSQL · XAMPP/Windows  
-> **Related docs:** `README.md` · `docs/MATTER_REMINDERS_IMPLEMENTATION_REVIEW.md`
+> **Related docs:** `README.md`
 
 ---
 
