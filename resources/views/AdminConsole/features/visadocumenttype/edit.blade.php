@@ -1,5 +1,5 @@
 @extends('layouts.crm_client_detail')
-@section('title', 'Edit Visa Document Category')
+@section('title', 'Edit Matter Document Category')
 
 @section('content')
 <!-- Main Content -->
@@ -24,7 +24,7 @@
 					<div class="col-12 col-md-12 col-lg-12">
 						<div class="card">
 							<div class="card-header">
-								<h4>Edit Visa Document Category</h4>
+								<h4>Edit Matter Document Category</h4>
 								<div class="card-header-action">
 									<a href="{{route('adminconsole.features.visadocumenttype.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
 								</div>
@@ -39,7 +39,7 @@
 							<div class="card-body">
 								<div id="accordion">
 									<div class="accordion">
-										<h4>Edit Visa Document Category</h4>
+										<h4>Edit Matter Document Category</h4>
 
 										<div class="accordion-body collapse show" id="primary_info" data-parent="#accordion">
 											<div class="row">

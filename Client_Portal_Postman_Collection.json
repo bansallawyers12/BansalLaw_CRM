@@ -1441,7 +1441,7 @@
 								{
 									"key": "sel_matter_id",
 									"value": "9",
-									"description": "Required: Filter by specific matter ID (must be positive integer) - applies only to visa documents, personal documents always included"
+									"description": "Required: Filter by specific matter ID (must be positive integer) — applies to matter (visa) documents; personal documents are always included"
 								}
 							]
 						},
@@ -1809,7 +1809,7 @@
 					}
 				},
 				{
-					"name": "17. Document Management - Visa Document Categories",
+					"name": "17. Document Management - Matter Document Categories",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -1841,7 +1841,7 @@
 								}
 							]
 						},
-						"description": "Get visa document categories from visa_document_types table with client and matter filtering."
+						"description": "Get matter document categories from visa_document_types (API path still /documents/visa/categories) with client and matter filtering."
 					},
 					"response": [
 						{
@@ -1901,7 +1901,7 @@
 					]
 				},
 				{
-					"name": "18. Document Management - Visa Document Checklist",
+					"name": "18. Document Management - Matter Document Checklist",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -1926,7 +1926,7 @@
 								"checklist"
 							]
 						},
-						"description": "Get detailed checklist of visa documents from portal_document_checklists table where doc_type=2. No matter dependency required."
+						"description": "Get matter document checklist rows from portal_document_checklists where doc_type=2 (API path still /documents/visa/checklist). No matter dependency required."
 					},
 					"response": [
 						{
@@ -2001,7 +2001,7 @@
 								"checklist"
 							]
 						},
-						"description": "Add a new document checklist entry to the documents table. Uses checklist_id to fetch checklist name from portal_document_checklists table based on doc_type. Uses doc_category_id to validate category exists for the specified doc_type. For personal documents, do NOT include client_matter_id (it will be set to null). For visa documents, client_matter_id is MANDATORY."
+						"description": "Add a new document checklist entry to the documents table. Uses checklist_id to fetch checklist name from portal_document_checklists table based on doc_type. Uses doc_category_id to validate category exists for the specified doc_type. For personal documents, do NOT include client_matter_id (it will be set to null). For matter documents (doc_type visa), client_matter_id is MANDATORY."
 					},
 					"response": [
 						{

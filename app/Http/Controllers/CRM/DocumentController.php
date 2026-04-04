@@ -1298,8 +1298,8 @@ class DocumentController extends Controller
                     ActivitiesLog::create([
                         'client_id' => $client->id,
                         'created_by' => auth('admin')->id(),
-                        'subject' => 'placed signature fields on visa document',
-                        'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->checklist ?? $document->file_name ?? 'Visa document') . '</li><li><strong>Signer:</strong> ' . htmlspecialchars($signer->email) . '</li><li><strong>Next:</strong> Click Send in the action bar to send the signing link</li></ul>',
+                        'subject' => 'placed signature fields on matter document',
+                        'description' => '<ul><li><strong>Document:</strong> ' . htmlspecialchars($document->checklist ?? $document->file_name ?? 'Matter document') . '</li><li><strong>Signer:</strong> ' . htmlspecialchars($signer->email) . '</li><li><strong>Next:</strong> Click Send in the action bar to send the signing link</li></ul>',
                         'activity_type' => 'signature',
                         'task_status' => 0,
                         'pin' => 0,

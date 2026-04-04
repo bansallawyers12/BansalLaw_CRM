@@ -8,7 +8,7 @@ use App\Http\Controllers\AdminConsole\CrmEmailTemplateController;
 use App\Http\Controllers\AdminConsole\MatterEmailTemplateController;
 use App\Http\Controllers\AdminConsole\MatterOtherEmailTemplateController;
 use App\Http\Controllers\AdminConsole\PersonalDocumentTypeController;
-use App\Http\Controllers\AdminConsole\VisaDocumentTypeController;
+use App\Http\Controllers\AdminConsole\MatterDocumentTypeController;
 use App\Http\Controllers\AdminConsole\DocumentChecklistController;
 use App\Http\Controllers\AdminConsole\ClientController;
 use App\Http\Controllers\AdminConsole\StaffController;
@@ -109,12 +109,12 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::post('/personal-document-type/checkcreatefolder', [PersonalDocumentTypeController::class, 'checkcreatefolder']);
         
         // Visa Document Type routes
-        Route::get('/visa-document-type', [VisaDocumentTypeController::class, 'index'])->name('visadocumenttype.index');
-        Route::get('/visa-document-type/create', [VisaDocumentTypeController::class, 'create'])->name('visadocumenttype.create');
-        Route::post('/visa-document-type/store', [VisaDocumentTypeController::class, 'store'])->name('visadocumenttype.store');
-        Route::get('/visa-document-type/edit/{id}', [VisaDocumentTypeController::class, 'edit'])->name('visadocumenttype.edit');
-        Route::put('/visa-document-type/{id}', [VisaDocumentTypeController::class, 'update'])->name('visadocumenttype.update');
-        Route::post('/visa-document-type/checkcreatefolder', [VisaDocumentTypeController::class, 'checkcreatefolder']);
+        Route::get('/visa-document-type', [MatterDocumentTypeController::class, 'index'])->name('visadocumenttype.index');
+        Route::get('/visa-document-type/create', [MatterDocumentTypeController::class, 'create'])->name('visadocumenttype.create');
+        Route::post('/visa-document-type/store', [MatterDocumentTypeController::class, 'store'])->name('visadocumenttype.store');
+        Route::get('/visa-document-type/edit/{id}', [MatterDocumentTypeController::class, 'edit'])->name('visadocumenttype.edit');
+        Route::put('/visa-document-type/{id}', [MatterDocumentTypeController::class, 'update'])->name('visadocumenttype.update');
+        Route::post('/visa-document-type/checkcreatefolder', [MatterDocumentTypeController::class, 'checkcreatefolder']);
         
         // Document Checklist routes
         Route::get('/document-checklist', [DocumentChecklistController::class, 'index'])->name('documentchecklist.index');

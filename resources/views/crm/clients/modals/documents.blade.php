@@ -40,12 +40,12 @@
 	</div>
 </div>
 
-<!-- Add Visa Document Category Modal -->
+<!-- Add matter document category modal (visa_document_types) -->
 <div class="modal fade addvisadoccatmodel custom_modal" id="addvisadoccatmodel" tabindex="-1" role="dialog" aria-labelledby="addVisaDocCatModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="addVisaDocCatModalLabel">Add Visa Document Category</h5>
+				<h5 class="modal-title" id="addVisaDocCatModalLabel">Add Matter Document Category</h5>
 				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>

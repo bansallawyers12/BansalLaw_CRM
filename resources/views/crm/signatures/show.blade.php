@@ -811,7 +811,7 @@
                                 <label>Document Category <span style="color: #dc3545;">*</span></label>
                                 <select class="form-control" id="docCategory" name="doc_category" required>
                                     <option value="">-- Select Category --</option>
-                                    <option value="visa" data-for="client">Visa Documents (Client)</option>
+                                    <option value="visa" data-for="client">Matter Documents (Client)</option>
                                     <option value="personal" data-for="lead">Personal Documents (Lead)</option>
                                 </select>
                             </div>

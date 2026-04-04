@@ -1,5 +1,5 @@
 @extends('layouts.crm_client_detail')
-@section('title', 'Visa Document Category')
+@section('title', 'Matter Document Category')
 
 @section('content')
 
@@ -19,7 +19,7 @@
 				<div class="col-9 col-md-9 col-lg-9">
 					<div class="card">
 						<div class="card-header">
-							<h4>Visa Document Category</h4>
+							<h4>Matter Document Category</h4>
 							<div class="card-header-action">
 								<a href="{{route('adminconsole.features.visadocumenttype.create')}}" class="btn btn-primary">Add New</a>
 							</div>

@@ -52,12 +52,12 @@
 	</div>
 </div>
 
-<!-- Add Visa Checklist Modal -->
+<!-- Add matter document checklist modal (doc_type visa / matter documents tab) -->
 <div class="modal fade create_migration_docs custom_modal" id="openmigrationdocsmodal" tabindex="-1" role="dialog" aria-labelledby="taskModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="taskModalLabel">Add Visa Checklist</h5>
+				<h5 class="modal-title" id="taskModalLabel">Add Matter Document Checklist</h5>
 				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>

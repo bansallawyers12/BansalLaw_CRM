@@ -354,7 +354,7 @@ use App\Http\Controllers\Controller;
                 </button>
                 <button class="client-nav-button" data-tab="visadocuments">
                     <i class="fas fa-file-contract"></i>
-                    <span>Visa Documents</span>
+                    <span>Matter Documents</span>
                 </button>
                 <button class="client-nav-button" data-tab="account">
                     <i class="fas fa-file-invoice-dollar"></i>

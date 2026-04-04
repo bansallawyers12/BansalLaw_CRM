@@ -269,7 +269,7 @@
                                 <select id="moveTargetType" class="form-control" style="margin-bottom: 15px;">
                                     <option value="">-- Select Destination --</option>
                                     <option value="personal">Personal Documents</option>
-                                    <option value="visa">Visa Documents</option>
+                                    <option value="visa">Matter Documents</option>
                                 </select>
                             </div>
                             
@@ -281,16 +281,16 @@
                                 </select>
                             </div>
                             
-                            <!-- For Visa Documents: Show Matters first, then Categories -->
+                            <!-- For matter documents: show matters first, then categories -->
                             <div class="form-group" id="moveVisaMatterContainer" style="display: none;">
-                                <label>Select Visa Matter:</label>
+                                <label>Select matter:</label>
                                 <select id="moveVisaMatterId" class="form-control" style="margin-bottom: 15px;">
                                     <option value="">-- Select Matter --</option>
                                 </select>
                             </div>
                             
                             <div class="form-group" id="moveVisaCategoryContainer" style="display: none;">
-                                <label>Select Visa Category:</label>
+                                <label>Select matter document category:</label>
                                 <select id="moveVisaCategoryId" class="form-control">
                                     <option value="">-- Select Category --</option>
                                 </select>

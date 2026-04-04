@@ -12,7 +12,7 @@ use App\Models\VisaDocumentType;
 
 use Auth;
 
-class VisaDocumentTypeController extends Controller
+class MatterDocumentTypeController extends Controller
 {
     /**
      * Create a new controller instance.
@@ -62,14 +62,14 @@ class VisaDocumentTypeController extends Controller
 			}
 			else
 			{
-				return redirect()->route('adminconsole.features.visadocumenttype.index')->with('success', 'Visa Document Type Created Successfully');
+				return redirect()->route('adminconsole.features.visadocumenttype.index')->with('success', 'Matter document category created successfully.');
 			}
 		}
         return view('AdminConsole.features.visadocumenttype.create');
 	}
 
 	/**
-	 * Show the form for editing the specified visa document type.
+	 * Show the form for editing the specified matter document category.
 	 */
 	public function edit($id)
 	{
@@ -81,7 +81,7 @@ class VisaDocumentTypeController extends Controller
 				$fetchedData = VisaDocumentType::find($id);
 				return view('AdminConsole.features.visadocumenttype.edit', compact(['fetchedData']));
 			} else {
-				return redirect()->route('adminconsole.features.visadocumenttype.index')->with('error', 'Visa Document Type Not Exist');
+				return redirect()->route('adminconsole.features.visadocumenttype.index')->with('error', 'Matter document category not found.');
 			}
 		} else {
 			return redirect()->route('adminconsole.features.visadocumenttype.index')->with('error', config('constants.unauthorized'));
@@ -89,7 +89,7 @@ class VisaDocumentTypeController extends Controller
     }
 
 	/**
-	 * Update the specified visa document type in storage.
+	 * Update the specified matter document category in storage.
 	 */
 	public function update(Request $request, $id)
 	{
@@ -102,7 +102,7 @@ class VisaDocumentTypeController extends Controller
 
         $obj = VisaDocumentType::find($id);
         if (!$obj) {
-			return redirect()->route('adminconsole.features.visadocumenttype.index')->with('error', 'Visa Document Type Not Found');
+			return redirect()->route('adminconsole.features.visadocumenttype.index')->with('error', 'Matter document category not found.');
 		}
         
         $obj->title = @$requestData['title'];
@@ -111,7 +111,7 @@ class VisaDocumentTypeController extends Controller
         if(!$saved) {
 			return redirect()->back()->with('error', config('constants.server_error'));
 		} else {
-			return redirect()->route('adminconsole.features.visadocumenttype.index')->with('success', 'Visa Document Type Updated Successfully');
+			return redirect()->route('adminconsole.features.visadocumenttype.index')->with('success', 'Matter document category updated successfully.');
 		}
     }
 

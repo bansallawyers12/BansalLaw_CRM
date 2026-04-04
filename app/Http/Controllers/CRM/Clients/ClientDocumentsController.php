@@ -595,9 +595,9 @@ class ClientDocumentsController extends Controller
                         $checklistCount = count($checklistArray);
                         $matterRef = $this->getMatterReference($clientid, $request->client_matter_id ?? null);
                         $subject = !empty($matterRef) 
-                            ? "added Visa Checklist - {$matterRef}"
-                            : "added Visa Checklist";
-                        $description = "<p>Added {$checklistCount} visa document checklist items: " . implode(', ', array_slice($checklistArray, 0, 3)) . ($checklistCount > 3 ? '...' : '') . "</p>";
+                            ? "added matter document checklist - {$matterRef}"
+                            : "added matter document checklist";
+                        $description = "<p>Added {$checklistCount} matter document checklist items: " . implode(', ', array_slice($checklistArray, 0, 3)) . ($checklistCount > 3 ? '...' : '') . "</p>";
                         
                         $this->logClientActivity(
                             $clientid,
@@ -614,7 +614,7 @@ class ClientDocumentsController extends Controller
                         $obj1->save();
                     }
                     $response['status'] 	= 	true;
-                    $response['message']	=	'You have added uploaded your visa checklist';
+                    $response['message']	=	'You have added your matter document checklist';
 
                     // Get all documents for this client (original behavior - no strict filtering)
                     $fetchd = Document::with('staff')->where('client_id',$clientid)
@@ -1184,7 +1184,7 @@ class ClientDocumentsController extends Controller
                         $response['status'] = true;
                         $response['message'] = $doctype === 'nomination'
                             ? 'You have successfully uploaded your nomination document'
-                            : 'You have successfully uploaded your visa document';
+                            : 'You have successfully uploaded your matter document';
                         $response['filename'] = $name;
                         $response['filetype'] = $extension;
                         $response['fileurl'] = $fileUrl;
@@ -1722,7 +1722,7 @@ class ClientDocumentsController extends Controller
                 $targetName = $category->title;
                 
             } elseif ($targetType === 'visa') {
-                // Moving to Visa Documents - targetId is the CATEGORY ID
+                // Moving to matter documents - targetId is the category ID
                 // Get the category to find its matter
                 $category = \App\Models\VisaDocumentType::find($targetId);
                 if (!$category) {
@@ -1917,7 +1917,7 @@ class ClientDocumentsController extends Controller
         // Visa checklist functionality disabled - VisaDocChecklist model has been removed
         $response = [
             'status' => false, 
-            'message' => 'Visa checklist functionality has been disabled - VisaDocChecklist model has been removed', 
+            'message' => 'Matter document checklist (legacy API) is disabled — VisaDocChecklist model has been removed.', 
             'visaCheckListInfo' => []
         ];
         echo json_encode($response);
@@ -2515,7 +2515,7 @@ class ClientDocumentsController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Visa Document Category added successfully.'
+                'message' => 'Matter document category added successfully.'
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -2583,7 +2583,7 @@ class ClientDocumentsController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Visa Document Category updated successfully.'
+                'message' => 'Matter document category updated successfully.'
             ]);
         } catch (\Exception $e) {
             return response()->json([
