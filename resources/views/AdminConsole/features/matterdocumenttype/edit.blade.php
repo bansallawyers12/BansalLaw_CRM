@@ -1,5 +1,5 @@
 @extends('layouts.crm_client_detail')
-@section('title', 'Edit Visa Document Category')
+@section('title', 'Edit Matter Document Category')
 
 @section('content')
 <!-- Main Content -->
@@ -17,16 +17,16 @@
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
-			<form action="{{ route('adminconsole.features.visadocumenttype.update', $fetchedData->id) }}" name="edit-create-folder" autocomplete="off" enctype="multipart/form-data" method="POST">
+			<form action="{{ route('adminconsole.features.matterdocumenttype.update', $fetchedData->id) }}" name="edit-create-folder" autocomplete="off" enctype="multipart/form-data" method="POST">
 				@csrf
 				@method('PUT')
 				<div class="row">
 					<div class="col-12 col-md-12 col-lg-12">
 						<div class="card">
 							<div class="card-header">
-								<h4>Edit Visa Document Category</h4>
+								<h4>Edit Matter Document Category</h4>
 								<div class="card-header-action">
-									<a href="{{route('adminconsole.features.visadocumenttype.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+									<a href="{{route('adminconsole.features.matterdocumenttype.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
 								</div>
 							</div>
 						</div>
@@ -39,7 +39,7 @@
 							<div class="card-body">
 								<div id="accordion">
 									<div class="accordion">
-										<h4>Edit Visa Document Category</h4>
+										<h4>Edit Matter Document Category</h4>
 
 										<div class="accordion-body collapse show" id="primary_info" data-parent="#accordion">
 											<div class="row">

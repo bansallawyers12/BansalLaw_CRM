@@ -8,7 +8,7 @@ use App\Http\Controllers\AdminConsole\CrmEmailTemplateController;
 use App\Http\Controllers\AdminConsole\MatterEmailTemplateController;
 use App\Http\Controllers\AdminConsole\MatterOtherEmailTemplateController;
 use App\Http\Controllers\AdminConsole\PersonalDocumentTypeController;
-use App\Http\Controllers\AdminConsole\VisaDocumentTypeController;
+use App\Http\Controllers\AdminConsole\MatterDocumentTypeController;
 use App\Http\Controllers\AdminConsole\DocumentChecklistController;
 use App\Http\Controllers\AdminConsole\ClientController;
 use App\Http\Controllers\AdminConsole\StaffController;
@@ -106,15 +106,18 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::post('/personal-document-type/store', [PersonalDocumentTypeController::class, 'store'])->name('personaldocumenttype.store');
         Route::get('/personal-document-type/edit/{id}', [PersonalDocumentTypeController::class, 'edit'])->name('personaldocumenttype.edit');
         Route::put('/personal-document-type/{id}', [PersonalDocumentTypeController::class, 'update'])->name('personaldocumenttype.update');
-        Route::post('/personal-document-type/checkcreatefolder', [PersonalDocumentTypeController::class, 'checkcreatefolder']);
         
-        // Visa Document Type routes
-        Route::get('/visa-document-type', [VisaDocumentTypeController::class, 'index'])->name('visadocumenttype.index');
-        Route::get('/visa-document-type/create', [VisaDocumentTypeController::class, 'create'])->name('visadocumenttype.create');
-        Route::post('/visa-document-type/store', [VisaDocumentTypeController::class, 'store'])->name('visadocumenttype.store');
-        Route::get('/visa-document-type/edit/{id}', [VisaDocumentTypeController::class, 'edit'])->name('visadocumenttype.edit');
-        Route::put('/visa-document-type/{id}', [VisaDocumentTypeController::class, 'update'])->name('visadocumenttype.update');
-        Route::post('/visa-document-type/checkcreatefolder', [VisaDocumentTypeController::class, 'checkcreatefolder']);
+        // Matter document category (global types in visa_document_types table)
+        Route::get('/matter-document-type', [MatterDocumentTypeController::class, 'index'])->name('matterdocumenttype.index');
+        Route::get('/matter-document-type/create', [MatterDocumentTypeController::class, 'create'])->name('matterdocumenttype.create');
+        Route::post('/matter-document-type/store', [MatterDocumentTypeController::class, 'store'])->name('matterdocumenttype.store');
+        Route::get('/matter-document-type/edit/{id}', [MatterDocumentTypeController::class, 'edit'])->name('matterdocumenttype.edit');
+        Route::put('/matter-document-type/{id}', [MatterDocumentTypeController::class, 'update'])->name('matterdocumenttype.update');
+
+        // Legacy admin URLs (renamed from visa-document-type)
+        Route::get('/visa-document-type', fn () => redirect()->route('adminconsole.features.matterdocumenttype.index', [], 301));
+        Route::get('/visa-document-type/create', fn () => redirect()->route('adminconsole.features.matterdocumenttype.create', [], 301));
+        Route::get('/visa-document-type/edit/{id}', fn (string $id) => redirect()->route('adminconsole.features.matterdocumenttype.edit', ['id' => $id], 301));
         
         // Document Checklist routes
         Route::get('/document-checklist', [DocumentChecklistController::class, 'index'])->name('documentchecklist.index');

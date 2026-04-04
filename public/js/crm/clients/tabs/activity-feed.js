@@ -108,8 +108,13 @@
                     'updated.*personal document',
                     'added.*visa document',
                     'updated.*visa document',
+                    'added.*matter document',
+                    'updated.*matter document',
                     'added.*personal checklist',
                     'added.*visa checklist',
+                    'added.*matter document checklist',
+                    'placed signature fields on matter document',
+                    'placed signature fields on visa document',
                     'updated.*checklist',
                     'signed document',
                     'signed cost agreement',
@@ -305,7 +310,7 @@
             if ($item.hasClass('activity-type-document')) return true;
             var subject = ($item.find('.feed-content strong').text() || '').toLowerCase();
             if (/(receipt document|journal receipt document|client receipt document|office receipt document)/i.test(subject)) return false;
-            var docPatterns = ['document', 'added.*document', 'updated.*document', 'visa document', 'personal document', 'checklist', 'uploaded', 'signed document'];
+            var docPatterns = ['document', 'added.*document', 'updated.*document', 'visa document', 'matter document', 'personal document', 'checklist', 'uploaded', 'signed document', 'placed signature fields on matter document', 'placed signature fields on visa document'];
             return docPatterns.some(function(p) { return new RegExp(p, 'i').test(subject); });
         }
         if (filterType === 'accounting') {

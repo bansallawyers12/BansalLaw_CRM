@@ -275,7 +275,7 @@
 
     // Note: subtab3 (Form Generation subtabs: Form 956, Cost Assignment, Create Cost
     // Assignment) has been removed. Cost assignment create/amend now uses the modal
-    // in Checklists; Form 956 is accessed from Visa Documents.
+    // in Checklists; Form 956 is accessed from Matter Documents.
 
     }); // end $(document).ready
 

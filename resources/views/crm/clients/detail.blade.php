@@ -354,7 +354,7 @@ use App\Http\Controllers\Controller;
                 </button>
                 <button class="client-nav-button" data-tab="visadocuments">
                     <i class="fas fa-file-contract"></i>
-                    <span>Visa Documents</span>
+                    <span>Matter Documents</span>
                 </button>
                 <button class="client-nav-button" data-tab="account">
                     <i class="fas fa-file-invoice-dollar"></i>
@@ -445,7 +445,7 @@ use App\Http\Controllers\Controller;
                 ->count();
             ?>
             @if((isset($id1) && $id1 != "") || $matter_cnt > 0)
-                @include('crm.clients.tabs.visa_documents')
+                @include('crm.clients.tabs.matter_documents')
                 
                 @include('crm.clients.tabs.account')
                 @include('crm.clients.tabs.emails')

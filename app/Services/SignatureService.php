@@ -418,8 +418,8 @@ class SignatureService
 
             // Determine document type based on category
             $docType = match($docCategory) {
-                'visa' => 'visa_documents',
-                'personal' => 'personal_documents',
+                'visa' => 'visa',
+                'personal' => 'personal',
                 default => 'general'
             };
 

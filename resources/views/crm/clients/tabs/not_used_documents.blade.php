@@ -6,7 +6,7 @@
                         <div style="flex: 1; min-width: 0;">
                             <div class="subtab-header" style="margin-bottom: 15px;">
                                 <h3><i class="fas fa-folder"></i> Not Used Documents</h3>
-                                <p style="color: #374151;">Documents marked as "Not Used" from both Personal and Visa document tabs are shown here.</p>
+                                <p style="color: #374151;">Documents marked as "Not Used" from both Personal and Matter Documents tabs are shown here.</p>
                             </div>
                             <div style="overflow: auto; max-height: calc(100vh - 250px);">
                                 <table class="checklist-table" style="width: 100%;">

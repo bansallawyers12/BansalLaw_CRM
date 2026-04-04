@@ -49,7 +49,7 @@
 			
 			<li class="{{(Route::currentRouteName() == 'adminconsole.features.personaldocumenttype.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.personaldocumenttype.index')}}">Personal Document Category</a></li>
 
-            <li class="{{(Route::currentRouteName() == 'adminconsole.features.visadocumenttype.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.visadocumenttype.index')}}">Visa Document Category</a></li>
+            <li class="{{(Route::currentRouteName() == 'adminconsole.features.matterdocumenttype.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.matterdocumenttype.index')}}">Matter Document Category</a></li>
 
 			<li class="{{(Route::currentRouteName() == 'adminconsole.features.documentchecklist.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.documentchecklist.index')}}">Document Checklist</a></li>
 

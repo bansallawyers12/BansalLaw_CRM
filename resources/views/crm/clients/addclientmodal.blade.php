@@ -46,7 +46,7 @@
 
 <!-- Upload Document Modal removed - now in modals/documents.blade.php -->
 
-<!-- Personal & Visa checklist modals removed - now in modals/checklists.blade.php -->
+<!-- Personal & matter document checklist modals — see modals/checklists.blade.php -->
 
 <!-- All Receipt-Related Modals moved to resources/views/Admin/clients/modals/receipts.blade.php -->
 @include('crm.clients.modals.receipts')
@@ -60,7 +60,7 @@
 <!-- Financial Modals (Edit Ledger Entry, Cost Assignments) removed - now in modals/financial.blade.php -->
 <!-- Change Matter Assignee Modal removed - now in modals/client-management.blade.php -->
 
-<!-- Document Category Modals (Add Personal Doc Category, Add Visa Doc Category) removed - now in modals/documents.blade.php -->
+<!-- Document category modals (personal + matter document) — see modals/documents.blade.php -->
 
 <!-- Activity Modals (edit_datetime_modal, notPickedCallModal, convertActivityToNoteModal) removed - now in modals/activities.blade.php -->
 

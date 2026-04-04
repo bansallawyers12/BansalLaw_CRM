@@ -232,7 +232,7 @@ class ClientPortalDocumentController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch visa document categories',
+                'message' => 'Failed to fetch matter document categories',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -291,7 +291,7 @@ class ClientPortalDocumentController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch visa document checklist',
+                'message' => 'Failed to fetch matter document checklist',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -358,7 +358,7 @@ class ClientPortalDocumentController extends Controller
             if ($docType === 'visa' && empty($clientMatterId)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'client_matter_id is mandatory for visa documents'
+                    'message' => 'client_matter_id is mandatory for matter documents'
                 ], 422);
             }
 

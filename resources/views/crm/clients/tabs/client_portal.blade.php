@@ -6255,7 +6255,7 @@ $(document).on('click', '.cp-reject-doc-btn', function () {
                     <select class="form-control" id="moveDestination">
                         <option value="">-- Select Destination --</option>
                         <option value="personal">Personal Documents</option>
-                        <option value="visa">Visa Documents</option>
+                        <option value="visa">Matter Documents</option>
                     </select>
                 </div>
                 <div class="form-group" id="moveCategoryGroup" style="display:none;">
@@ -6303,7 +6303,7 @@ $('#moveDestination').on('change', function () {
 
     var params = { type: type, client_id: clientId, matter_id: matterId };
 
-    $('#moveCategoryLabel').text(type === 'personal' ? 'Select Personal Category:' : 'Select Visa Category:');
+    $('#moveCategoryLabel').text(type === 'personal' ? 'Select Personal Category:' : 'Select matter document category:');
     $('#moveCategory').html('<option value="">-- Loading... --</option>');
     $('#moveCategoryGroup').show();
 

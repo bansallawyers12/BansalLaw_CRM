@@ -1,4 +1,4 @@
-           <!-- Visa Documents Tab (Matter-Specific) -->
+           <!-- Matter Documents tab (matter-specific; internal id visadocuments-tab) -->
            <div class="tab-pane" id="visadocuments-tab">
                 <div class="card full-width documentalls-container">
                     <?php
@@ -76,9 +76,9 @@
 
                     ?>
 
-                    <!-- Visa Documents Content -->
+                    <!-- Matter Documents content -->
                     <div class="visa-documents-content" id="visa-documents-content">
-                        <!-- Visa Document Type Subtabs Container -->
+                        <!-- Matter document type subtabs container -->
                         <div class="subtab-header-container" style="background-color: #4a90e2; padding: 10px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                             <nav class="subtabs6" style="display: flex; gap: 5px; flex-wrap: wrap; flex: 1;">
                                 <?php foreach ($visaDocCatList as $catVal): ?>
@@ -135,7 +135,7 @@
                                             </div>
                                         </div>
                                         
-                                        <!-- Bulk Upload Dropzone for Visa (Hidden by default) -->
+                                        <!-- Bulk upload dropzone for matter documents (hidden by default) -->
                                         <div class="bulk-upload-dropzone-container-visa" id="bulk-upload-visa-<?= $id ?>" style="display: none; margin: 15px 0; padding: 20px; border: 2px dashed #4a90e2; border-radius: 8px; background-color: #f8f9fa;">
                                             <div class="bulk-upload-dropzone-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" style="text-align: center; padding: 30px; cursor: pointer;">
                                                 <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #2563eb; margin-bottom: 15px;"></i>
@@ -435,7 +435,7 @@
                 </div>
             </div>
 
-            <!-- Custom Context Menu for Visa Documents -->
+            <!-- Custom context menu for matter documents -->
             <div id="visaFileContextMenu" class="context-menu" style="display: none; position: fixed; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10000; min-width: 180px;">
                 <div id="visa-context-send-signature" class="context-menu-item" onclick="handleVisaContextAction('send-for-signature')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; display: none;">
                     <i class="fa fa-pen-fancy" style="margin-right: 8px;"></i> Send for Signature
@@ -463,7 +463,7 @@
                 </div>
             </div>
 
-            <!-- Move Visa Document Modal (shared with personal docs or separate if needed) -->
+            <!-- Move document modal (shared with personal docs) -->
             <div class="modal fade" id="moveVisaDocumentModal" tabindex="-1" role="dialog">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
@@ -479,7 +479,7 @@
                                 <select id="moveVisaTargetType" class="form-control" style="margin-bottom: 15px;">
                                     <option value="">-- Select Destination --</option>
                                     <option value="personal">Personal Documents</option>
-                                    <option value="visa">Visa Documents</option>
+                                    <option value="visa">Matter Documents</option>
                                 </select>
                             </div>
                             
@@ -491,9 +491,9 @@
                                 </select>
                             </div>
                             
-                            <!-- For Visa Documents: Show Categories (like Personal Documents) -->
+                            <!-- For matter documents: show categories (like personal documents) -->
                             <div class="form-group" id="moveVisaVisaCategoryContainer" style="display: none;">
-                                <label>Select Visa Category:</label>
+                                <label>Select matter document category:</label>
                                 <select id="moveVisaVisaCategoryId" class="form-control">
                                     <option value="">-- Select Category --</option>
                                 </select>
@@ -769,7 +769,7 @@
                     } else if (targetType === 'visa') {
                         targetId = $('#moveVisaVisaCategoryId').val();
                         if (!targetId) {
-                            $error.text('Please select a visa category').show();
+                            $error.text('Please select a matter document category').show();
                             return;
                         }
                     }
@@ -871,7 +871,7 @@
                 // ============================================================================
                 // VISA DOCUMENTS - DRAG AND DROP INITIALIZATION
                 // ============================================================================
-                console.log('🚀 Visa Documents Tab Script Loading...');
+                console.log('🚀 Matter Documents tab script loading...');
                 
                 function initVisaDocDragDrop() {
                     console.log('🔄 Initializing Visa Doc Drag & Drop...');
@@ -1038,13 +1038,13 @@
                 
                 // Initialize on DOM ready
                 $(document).ready(function() {
-                    console.log('✅ Visa Documents DOM Ready');
+                    console.log('✅ Matter Documents DOM ready');
                     initVisaDocDragDrop();
                 });
                 
-                // Re-initialize when Visa Documents tab is shown
+                // Re-initialize when Matter Documents tab is shown
                 $(document).on('click', '.client-nav-button[data-tab="visadocuments"]', function() {
-                    console.log('📂 Visa Documents tab clicked, reinitializing...');
+                    console.log('📂 Matter Documents tab clicked, reinitializing...');
                     setTimeout(function() {
                         initVisaDocDragDrop();
                     }, 200);
@@ -1052,7 +1052,7 @@
                 
                 // Also check if tab is already active (e.g., direct URL navigation)
                 if ($('#visadocuments-tab').hasClass('active')) {
-                    console.log('📂 Visa Documents tab already active on load');
+                    console.log('📂 Matter Documents tab already active on load');
                     setTimeout(function() {
                         initVisaDocDragDrop();
                     }, 500);

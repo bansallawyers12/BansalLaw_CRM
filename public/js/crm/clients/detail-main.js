@@ -4085,13 +4085,13 @@ success: function(response) {
 
             $('#form956_client_matter_id').val(hidden_client_matter_id);
 
-            // When clicked from visa document page, set folder for checklist placement
+            // When clicked from matter documents tab, set folder for checklist placement
             var folderId = $(this).data('form956-folder');
             $('#form956_folder_name').val(folderId || '');
 
-            // Matter is required for agent details and for saving Form 956 to visa checklist
+            // Matter is required for agent details and for saving Form 956 to the matter document checklist
             if (!hidden_client_matter_id || hidden_client_matter_id === '' || hidden_client_matter_id === null) {
-                alert('Please select a matter before creating Form 956.\n\nA matter is required to populate agent information and to save the form to the visa document checklist.');
+                alert('Please select a matter before creating Form 956.\n\nA matter is required to populate agent information and to save the form to the matter document checklist.');
                 return;
             }
 
@@ -6065,7 +6065,7 @@ success: function(response) {
 
                     if(res.status){
 
-                        // Remove document from current tab (Personal or Visa)
+                        // Remove document from current tab (Personal or matter documents)
                         if(res.doc_type == 'personal') {
                             $('.documnetlist_'+res.doc_category+' #id_'+res.doc_id).remove();
                         } else if( res.doc_type == 'visa' || res.doc_type == 'nomination') {
@@ -6221,7 +6221,7 @@ success: function(response) {
                         getallactivities();
                         
                         // Show success message with info
-                        var docTypeLabel = res.doc_type === 'personal' ? 'Personal Documents' : 'Visa Documents';
+                        var docTypeLabel = res.doc_type === 'personal' ? 'Personal Documents' : 'Matter Documents';
                         if(typeof toastr !== 'undefined') {
                             toastr.success('Document moved back to ' + docTypeLabel + ' tab');
                         }
@@ -7719,7 +7719,7 @@ success: function(response) {
 
 
 
-        // --- DRAG AND DROP: Personal & Visa Documents ---
+        // --- DRAG AND DROP: Personal & matter documents ---
 
         // Prevent browser's default drag behavior (required for file drops to work)
         // This must be on document level, but we let drop zones handle their own events
@@ -7809,7 +7809,7 @@ success: function(response) {
             return false;
         });
         
-        // Visa Documents - Drag and Drop Handlers
+        // Matter documents - drag and drop handlers
         
         $(document).delegate('.visa-doc-drag-zone', 'dragover', function(e) {
             e.preventDefault();
@@ -7953,7 +7953,7 @@ success: function(response) {
             });
         }
         
-        // Visa Documents - Upload Handler
+        // Matter documents - upload handler
         
         function handleVisaDocDragDrop(dragZone, file) {
             var fileid = dragZone.data('fileid');
@@ -8068,7 +8068,7 @@ success: function(response) {
 
         });
 
-        //Add Visa Document category
+        // Add matter document category (opens addvisadoccatmodel)
 
         $(document).delegate('.add-visa-doc-category', 'click', function (e) {
 

@@ -11,7 +11,7 @@
 
     $(document).ready(function() {
         // ---- Application checklist: open modal ----
-        // NOTE: .openchecklist handler moved to detail-main.js (same pattern as Add Personal/Visa Checklist)
+        // NOTE: .openchecklist handler moved to detail-main.js (same pattern as add personal / matter document checklist)
 
         // ---- Due date toggle ----
         $(document).delegate('.due_date_sec a.due_date_btn', 'click', function(){
