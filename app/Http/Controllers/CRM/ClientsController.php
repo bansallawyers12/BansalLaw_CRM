@@ -3305,7 +3305,8 @@ class ClientsController extends Controller
             && ( isset($request->merge_into) && $request->merge_into != "" )
         ){
             //Update merge_into to be deleted
-            DB::table('admins')->where('id',$request->merge_into)->update( array('is_deleted'=>1) );
+            // Must be a timestamp (same as Lead::softDelete); integer breaks PostgreSQL and datetime cast.
+            DB::table('admins')->where('id', $request->merge_into)->update(['is_deleted' => now()]);
 
             //activities_logs
             $activitiesLogs = DB::table('activities_logs')->where('client_id', $request->merge_from)->get(); //dd($activitiesLogs);

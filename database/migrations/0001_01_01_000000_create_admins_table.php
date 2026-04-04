@@ -43,6 +43,7 @@ return new class extends Migration
             $table->date('naati_date')->nullable();
             $table->date('py_date')->nullable();
             $table->string('martial_status')->nullable();
+            $table->timestamp('is_deleted')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

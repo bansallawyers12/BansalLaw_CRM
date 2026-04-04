@@ -107,7 +107,7 @@ Directory: `resources/views/components/client-edit/`
 | `travel-field` | Travel history row |
 | `qualification-field` | Education row |
 | `work-experience-field` | Employment row |
-| `occupation-field` | ANZSCO / skill assessment UI |
+| `occupation-field` | Skill assessment / nominated occupation / occupation code UI |
 | `test-score-field` | English test row |
 | `family-member-field` | Family repeats (multiple `type=` modes) |
 
@@ -142,7 +142,6 @@ Directory: `resources/views/components/client-edit/`
 |-------|------------------------|
 | `public/css/client-forms.css` | Client edit, lead edit, lead create, company edit |
 | `public/css/clients/edit-client-components.css` | Same |
-| `public/css/anzsco-admin.css` | **Client edit, lead edit** (occupation / ANZSCO styling) |
 | `public/css/address-autocomplete.css` | Client edit |
 | `public/js/clients/edit-client.js` | Client edit, lead edit, company edit |
 | `public/js/clients/english-proficiency.js` | Client edit, lead edit |

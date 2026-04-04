@@ -193,7 +193,7 @@ Use this if you want qualification data to be inserted directly into the CRM's *
 
 ### 4.7 Occupation & Skill Assessment (optional — `occupations` array)
 
-Use this when your lead form asks for nominated occupation / ANZSCO / skill assessment details.  
+Use this when your lead form asks for nominated occupation / occupation code / skill assessment details.  
 Each entry creates one row in the CRM occupation table (`client_occupations`) and appears on the edit page.
 
 ```json
@@ -215,15 +215,13 @@ Each entry creates one row in the CRM occupation table (`client_occupations`) an
 |-----------------------|-------|
 | `skill_assessment`    | `Yes` / `No` (also accepts `1`/`0`, `true`/`false`) |
 | `nomi_occupation`     | Nominated occupation text |
-| `occupation_code`     | ANZSCO code |
+| `occupation_code`     | Occupation or classification code (free text) |
 | `list`                | Assessing authority (e.g. `ACS`, `VETASSESS`) |
 | `assessment_date`     | Optional. **YYYY-MM-DD** or **DD/MM/YYYY** |
 | `expiry_date`         | Optional. **YYYY-MM-DD** or **DD/MM/YYYY** |
 | `relevant_occupation` | Optional. `1`/`0` |
 | `occ_reference_no`    | Optional reference number |
 | `visa_subclass`       | Optional subclass label/value |
-| `anzsco_occupation_id`| Optional numeric ANZSCO occupation ID (if available) |
-
 > Alias keys accepted by importer: `skill_assessment_yes_no`, `nomination_occupation`, `nominated_occupation`, `assessing_authority`, `dates`, `expiry_dates`, `reference_no`.
 
 ### 4.8 Employment History (optional — `experiences` array)
@@ -249,7 +247,7 @@ Use this to insert work history directly into CRM **Work Experience** (`client_e
 | Key                   | Notes |
 |-----------------------|-------|
 | `job_title`           | Job title/position |
-| `job_code`            | ANZSCO code |
+| `job_code`            | Job / occupation code (free text) |
 | `job_emp_name`        | Employer name |
 | `job_country`         | Country name |
 | `job_state`           | Address/location text |

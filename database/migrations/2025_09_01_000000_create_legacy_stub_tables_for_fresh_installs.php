@@ -83,8 +83,15 @@ return new class extends Migration
         if (! Schema::hasTable('signers')) {
             Schema::create('signers', function (Blueprint $table) {
                 $table->id();
-                $table->string('status', 7)->nullable();
+                $table->unsignedBigInteger('document_id')->nullable()->index();
+                $table->string('email')->nullable();
+                $table->string('name')->nullable();
+                $table->string('token', 64)->nullable();
+                $table->string('status', 20)->nullable();
                 $table->unsignedInteger('reminder_count')->nullable()->default(0);
+                $table->timestamp('signed_at')->nullable();
+                $table->timestamp('opened_at')->nullable();
+                $table->timestamp('last_reminder_sent_at')->nullable();
                 $table->timestamps();
             });
         }

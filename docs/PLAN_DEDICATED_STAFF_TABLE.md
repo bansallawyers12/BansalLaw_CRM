@@ -520,7 +520,6 @@ echo "✓ Verification passed: {$staffCount} staff copied, mapping table complet
 | `email_labels` | `user_id` | admins | staff | Staff label owner |
 | `notes` | `user_id`, `assigned_to` | admins | staff | Staff notes |
 | `activities_log` | `created_by` | admins | staff | Staff action |
-| `anzsco_occupations` | `created_by`, `updated_by` | admins | staff | Admin data |
 | `sms_templates` | `created_by` | admins | staff | Staff template |
 | `tags` | `created_by`, `updated_by` | admins | staff | Staff actions |
 | `cost_assignment_forms` | `agent_id` | admins | staff | Migration agent |
@@ -696,7 +695,6 @@ DB::transaction(function () {
 - `email_labels`: user_id
 - `notes`: user_id, assigned_to
 - `activities_log`: created_by
-- `anzsco_occupations`: created_by, updated_by
 - `sms_templates`: created_by
 - `tags`: created_by, updated_by
 - `cost_assignment_forms`, `form956`: agent_id
@@ -777,7 +775,7 @@ public function createdBy(): BelongsTo
 - `ActivitiesLog`
 - `Company` (contactPerson)
 - `BookingAppointment`
-- `Tag`, `SmsTemplate`, `AnzscoOccupation`
+- `Tag`, `SmsTemplate`
 - `RefreshToken`, `DeviceToken`
 - `Message`, `MessageRecipient`, `Notification`
 - `EmailLabel`, `SignatureActivity`

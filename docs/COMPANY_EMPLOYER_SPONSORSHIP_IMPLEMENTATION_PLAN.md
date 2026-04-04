@@ -125,7 +125,7 @@ All phases (0–5) have been implemented. See summary at end of document.
 
 ## Phase 5: UI Flow – Nomination Section
 
-1. Position details (title, ANZSCO, description, salary, duration, etc.)
+1. Position details (title, position/occupation code, description, salary, duration, etc.)
 2. "Nominated person (visa applicant):"
    - Option A: Search/select existing client – **reuse** `route("api.search.contact.person")` (already excludes companies via `is_company = false`, scopes to client/lead).
    - Option B: "Not in our system" → show text field for **name only** (nominated_person_name)

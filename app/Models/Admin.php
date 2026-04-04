@@ -55,8 +55,9 @@ class Admin extends Authenticatable
         'australian_study', 'australian_study_date', 'specialist_education', 'specialist_education_date', 'regional_study', 'regional_study_date',
         // Verification (staff can verify documents)
         'visa_expiry_verified_at', 'visa_expiry_verified_by',
-        // Archive fields
+        // Archive / soft-delete (Lead::softDelete sets timestamp; null = active)
         'is_archived', 'archived_by', 'archived_on',
+        'is_deleted',
         // Personal
         'marital_status',
         // Client/Lead Tags
@@ -80,6 +81,7 @@ class Admin extends Authenticatable
     protected $casts = [
         'followup_date' => 'datetime',
         'google_review_reminder_snooze_until' => 'datetime',
+        'is_deleted' => 'datetime',
     ];
 
 	public $sortable = [
