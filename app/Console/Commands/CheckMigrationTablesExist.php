@@ -30,7 +30,6 @@ class CheckMigrationTablesExist extends Command
         'phone_verifications',
         'email_verifications',
         'message_recipients',
-        'anzsco_occupations',
         'sms_logs',
         'sms_templates',
         'signature_activities',

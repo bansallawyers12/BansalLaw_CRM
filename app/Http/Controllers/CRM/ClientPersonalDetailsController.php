@@ -4912,7 +4912,6 @@ class ClientPersonalDetailsController extends Controller
                 foreach ($requestData['nomi_occupation'] as $key => $nomiOccupation) {
                     if (!empty($nomiOccupation) || isset($requestData['skill_assessment_hidden'][$key])) {
                         $occupationId = $requestData['occupation_id'][$key] ?? null;
-                        $anzscoOccupationId = $requestData['anzsco_occupation_id'][$key] ?? null;
                         $skillAssessment = $requestData['skill_assessment_hidden'][$key] ?? null;
                         $occupationCode = $requestData['occupation_code'][$key] ?? null;
                         $list = $requestData['list'][$key] ?? null;
@@ -4964,7 +4963,6 @@ class ClientPersonalDetailsController extends Controller
                                     'expiry_dates' => $formattedExpiryDate,
                                     'occ_reference_no' => $occReferenceNo,
                                     'relevant_occupation' => $relevantOccupation,
-                                    'anzsco_occupation_id' => $anzscoOccupationId
                                 ]);
                             }
                         } else {
@@ -4981,7 +4979,6 @@ class ClientPersonalDetailsController extends Controller
                                 'expiry_dates' => $formattedExpiryDate,
                                 'occ_reference_no' => $occReferenceNo,
                                 'relevant_occupation' => $relevantOccupation,
-                                'anzsco_occupation_id' => $anzscoOccupationId
                             ]);
                         }
                     }

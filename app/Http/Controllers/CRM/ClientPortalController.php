@@ -2463,7 +2463,7 @@ class ClientPortalController extends Controller
                 return response()->json(['success' => false, 'message' => 'Client not found'], 404);
             }
 
-            $occupationKeys = ['occupation', 'occupation_skill_assessment', 'occupation_nominated', 'occupation_code', 'occupation_assessing_authority', 'occupation_visa_subclass', 'occupation_assessment_date', 'occupation_expiry_date', 'occupation_reference_no', 'occupation_relevant', 'occupation_anzsco_id'];
+            $occupationKeys = ['occupation', 'occupation_skill_assessment', 'occupation_nominated', 'occupation_code', 'occupation_assessing_authority', 'occupation_visa_subclass', 'occupation_assessment_date', 'occupation_expiry_date', 'occupation_reference_no', 'occupation_relevant'];
             $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
                 ->where('meta_order', $metaOrder)
                 ->whereIn('meta_key', $occupationKeys)
@@ -2482,7 +2482,6 @@ class ClientPortalController extends Controller
             $expiryDate = null;
             $referenceNo = null;
             $relevant = false;
-            $anzscoId = null;
             $existingOccupationId = null;
             foreach ($auditEntries as $entry) {
                 $v = $entry->new_value;
@@ -2507,8 +2506,6 @@ class ClientPortalController extends Controller
                     $referenceNo = $v;
                 } elseif ($entry->meta_key === 'occupation_relevant') {
                     $relevant = ($v == '1' || $v == 1);
-                } elseif ($entry->meta_key === 'occupation_anzsco_id') {
-                    $anzscoId = $v !== null && $v !== '' ? (int) $v : null;
                 }
             }
             if (empty($nominatedOccupation) && empty($occupationCode)) {
@@ -2531,7 +2528,6 @@ class ClientPortalController extends Controller
                         'expiry_dates' => $expiryDate,
                         'occ_reference_no' => $referenceNo,
                         'relevant_occupation' => $relevant ? 1 : 0,
-                        'anzsco_occupation_id' => $anzscoId,
                     ]);
                 } else {
                     ClientOccupation::create([
@@ -2546,7 +2542,6 @@ class ClientPortalController extends Controller
                         'expiry_dates' => $expiryDate,
                         'occ_reference_no' => $referenceNo,
                         'relevant_occupation' => $relevant ? 1 : 0,
-                        'anzsco_occupation_id' => $anzscoId,
                     ]);
                 }
                 foreach ($auditEntries as $e) {
@@ -2656,7 +2651,7 @@ class ClientPortalController extends Controller
                 return response()->json(['success' => false, 'message' => 'Client not found'], 404);
             }
 
-            $occupationKeys = ['occupation', 'occupation_skill_assessment', 'occupation_nominated', 'occupation_code', 'occupation_assessing_authority', 'occupation_visa_subclass', 'occupation_assessment_date', 'occupation_expiry_date', 'occupation_reference_no', 'occupation_relevant', 'occupation_anzsco_id'];
+            $occupationKeys = ['occupation', 'occupation_skill_assessment', 'occupation_nominated', 'occupation_code', 'occupation_assessing_authority', 'occupation_visa_subclass', 'occupation_assessment_date', 'occupation_expiry_date', 'occupation_reference_no', 'occupation_relevant'];
             $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
                 ->where('meta_order', $metaOrder)
                 ->whereIn('meta_key', $occupationKeys)

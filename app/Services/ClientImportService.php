@@ -240,7 +240,6 @@ class ClientImportService
                     $expiryDate = $this->parseDate($occupationData['expiry_dates'] ?? $occupationData['expiry_date'] ?? null);
                     $relevantOccupation = $this->parseBooleanFlag($occupationData['relevant_occupation'] ?? null, 0);
                     $referenceNo = $occupationData['occ_reference_no'] ?? $occupationData['reference_no'] ?? null;
-                    $anzscoOccupationId = $occupationData['anzsco_occupation_id'] ?? null;
 
                     $hasOccupationData =
                         !empty($nomiOccupation) ||
@@ -251,26 +250,24 @@ class ClientImportService
                         !empty($assessmentDate) ||
                         !empty($expiryDate) ||
                         $relevantOccupation === 1 ||
-                        !empty($referenceNo) ||
-                        !empty($anzscoOccupationId);
+                        !empty($referenceNo);
 
                     if (!$hasOccupationData) {
                         continue;
                     }
 
                     ClientOccupation::create([
-                        'client_id'            => $newClientId,
-                        'admin_id'             => Auth::id(),
-                        'skill_assessment'     => $skillAssessment,
-                        'nomi_occupation'      => $nomiOccupation,
-                        'occupation_code'      => $occupationCode,
-                        'list'                 => $assessingAuthority,
-                        'visa_subclass'        => $visaSubclass,
-                        'dates'                => $assessmentDate,
-                        'expiry_dates'         => $expiryDate,
-                        'relevant_occupation'  => $relevantOccupation,
-                        'occ_reference_no'     => $referenceNo,
-                        'anzsco_occupation_id' => (is_numeric($anzscoOccupationId) ? (int) $anzscoOccupationId : null),
+                        'client_id'           => $newClientId,
+                        'admin_id'            => Auth::id(),
+                        'skill_assessment'    => $skillAssessment,
+                        'nomi_occupation'     => $nomiOccupation,
+                        'occupation_code'     => $occupationCode,
+                        'list'                => $assessingAuthority,
+                        'visa_subclass'       => $visaSubclass,
+                        'dates'               => $assessmentDate,
+                        'expiry_dates'        => $expiryDate,
+                        'relevant_occupation' => $relevantOccupation,
+                        'occ_reference_no'    => $referenceNo,
                     ]);
                 }
             } else {

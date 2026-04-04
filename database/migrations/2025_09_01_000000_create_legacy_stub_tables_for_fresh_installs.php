@@ -131,13 +131,20 @@ return new class extends Migration
             });
         }
 
+        if (! Schema::hasTable('documents')) {
+            Schema::create('documents', function (Blueprint $table) {
+                $table->id();
+                $table->string('status', 32)->nullable();
+                $table->timestamps();
+            });
+        }
+
         foreach ([
             'branches',
             'user_roles',
             'client_addresses',
             'messages',
             'client_occupations',
-            'documents',
             'emails',
             'mail_reports',
             'account_client_receipts',

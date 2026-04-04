@@ -380,6 +380,5 @@ Route::post('/broadcasting/auth', function (Request $request) {
 // Service Account Token Generation
 Route::post('/service-account/generate-token', [ServiceAccountController::class, 'generateToken']);
 
-// ANZSCO Occupation API Routes moved to web.php for proper authentication
 
     

@@ -3682,7 +3682,7 @@ class ClientPortalPersonalDetailsController extends Controller
     {
         // Get all occupation-related audit entries
         $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
-            ->whereIn('meta_key', ['occupation', 'occupation_skill_assessment', 'occupation_nominated', 'occupation_code', 'occupation_assessing_authority', 'occupation_visa_subclass', 'occupation_assessment_date', 'occupation_expiry_date', 'occupation_reference_no', 'occupation_relevant', 'occupation_anzsco_id'])
+            ->whereIn('meta_key', ['occupation', 'occupation_skill_assessment', 'occupation_nominated', 'occupation_code', 'occupation_assessing_authority', 'occupation_visa_subclass', 'occupation_assessment_date', 'occupation_expiry_date', 'occupation_reference_no', 'occupation_relevant'])
             ->get();
 
         // Group by meta_order and meta_key, taking the latest new_value for each combination
@@ -3755,7 +3755,6 @@ class ClientPortalPersonalDetailsController extends Controller
                     'expiry_date' => null,
                     'reference_no' => null,
                     'relevant_occupation' => false,
-                    'anzsco_occupation_id' => null,
                     'action' => $action,
                 ];
             }
@@ -3797,9 +3796,6 @@ class ClientPortalPersonalDetailsController extends Controller
                     break;
                 case 'occupation_relevant':
                     $occupationData[$order]['relevant_occupation'] = ($entry->new_value == '1' || $entry->new_value == 1) ? true : false;
-                    break;
-                case 'occupation_anzsco_id':
-                    $occupationData[$order]['anzsco_occupation_id'] = $entry->new_value ? (int) $entry->new_value : null;
                     break;
             }
         }
@@ -3847,7 +3843,6 @@ class ClientPortalPersonalDetailsController extends Controller
                 'expiry_date' => !empty($occupation->expiry_dates) ? $this->formatDate($occupation->expiry_dates) : null,
                 'reference_no' => $occupation->occ_reference_no ?? null,
                 'relevant_occupation' => ($occupation->relevant_occupation == 1) ? true : false,
-                'anzsco_occupation_id' => $occupation->anzsco_occupation_id ? (int) $occupation->anzsco_occupation_id : null,
                 'action' => null, // Records from source table have action: null
             ];
         }
@@ -6341,7 +6336,7 @@ class ClientPortalPersonalDetailsController extends Controller
                 $metaOrder = $existingAuditEntry->meta_order;
 
                 ClientPortalDetailAudit::where('client_id', $clientId)
-                    ->whereIn('meta_key', ['occupation', 'occupation_skill_assessment', 'occupation_nominated', 'occupation_code', 'occupation_assessing_authority', 'occupation_visa_subclass', 'occupation_assessment_date', 'occupation_expiry_date', 'occupation_reference_no', 'occupation_relevant', 'occupation_anzsco_id'])
+                    ->whereIn('meta_key', ['occupation', 'occupation_skill_assessment', 'occupation_nominated', 'occupation_code', 'occupation_assessing_authority', 'occupation_visa_subclass', 'occupation_assessment_date', 'occupation_expiry_date', 'occupation_reference_no', 'occupation_relevant'])
                     ->where('meta_order', $metaOrder)
                     ->update([
                         'action' => 'delete',
@@ -6380,7 +6375,7 @@ class ClientPortalPersonalDetailsController extends Controller
 
             // Step 3: Insert into audit table
             $maxMetaOrder = ClientPortalDetailAudit::where('client_id', $clientId)
-                ->whereIn('meta_key', ['occupation', 'occupation_skill_assessment', 'occupation_nominated', 'occupation_code', 'occupation_assessing_authority', 'occupation_visa_subclass', 'occupation_assessment_date', 'occupation_expiry_date', 'occupation_reference_no', 'occupation_relevant', 'occupation_anzsco_id'])
+                ->whereIn('meta_key', ['occupation', 'occupation_skill_assessment', 'occupation_nominated', 'occupation_code', 'occupation_assessing_authority', 'occupation_visa_subclass', 'occupation_assessment_date', 'occupation_expiry_date', 'occupation_reference_no', 'occupation_relevant'])
                 ->max('meta_order') ?? -1;
             $metaOrder = $maxMetaOrder + 1;
 
@@ -6553,20 +6548,6 @@ class ClientPortalPersonalDetailsController extends Controller
                 'updated_at' => now(),
             ]);
 
-            if ($sourceOccupation->anzsco_occupation_id) {
-                ClientPortalDetailAudit::create([
-                    'client_id' => $clientId,
-                    'meta_key' => 'occupation_anzsco_id',
-                    'old_value' => null,
-                    'new_value' => (string) $sourceOccupation->anzsco_occupation_id,
-                    'meta_order' => $metaOrder,
-                    'meta_type' => (string) $occupationId,
-                    'action' => 'delete',
-                    'updated_by' => $userId,
-                    'updated_at' => now(),
-                ]);
-            }
-
             DB::commit();
 
             $this->notifyStaffAndCreateActionForDetailUpdate($clientId, 'Occupation detail deleted');
@@ -6586,7 +6567,6 @@ class ClientPortalPersonalDetailsController extends Controller
                     'expiry_date' => $expiryDate,
                     'reference_no' => $sourceOccupation->occ_reference_no ?? null,
                     'relevant_occupation' => ($sourceOccupation->relevant_occupation == 1) ? true : false,
-                    'anzsco_occupation_id' => $sourceOccupation->anzsco_occupation_id ? (int) $sourceOccupation->anzsco_occupation_id : null,
                     'action' => 'delete'
                 ]
             ]);
@@ -9384,14 +9364,12 @@ class ClientPortalPersonalDetailsController extends Controller
                 'occupations.*.expiry_date' => 'nullable|date_format:d/m/Y',
                 'occupations.*.reference_no' => 'nullable|string|max:255',
                 'occupations.*.relevant_occupation' => 'nullable|boolean',
-                'occupations.*.anzsco_occupation_id' => 'nullable|integer',
             ], [
                 'occupations.required' => 'At least one occupation entry is required.',
                 'occupations.*.id.present' => 'Occupation ID field is required for each occupation. Use null for new occupations or provide the existing occupation ID for updates.',
                 'occupations.*.id.integer' => 'Occupation ID must be an integer or null.',
                 'occupations.*.assessment_date.date_format' => 'Assessment date must be in dd/mm/yyyy format.',
                 'occupations.*.expiry_date.date_format' => 'Expiry date must be in dd/mm/yyyy format.',
-                'occupations.*.anzsco_occupation_id.integer' => 'ANZSCO occupation ID must be an integer.',
             ]);
 
             // Custom validation: Ensure id field is always present and check date logic
@@ -9452,7 +9430,7 @@ class ClientPortalPersonalDetailsController extends Controller
 
                 // Get the highest existing meta_order BEFORE deleting (to ensure unique values for new occupations)
                 $maxMetaOrder = ClientPortalDetailAudit::where('client_id', $clientId)
-                    ->whereIn('meta_key', ['occupation', 'occupation_skill_assessment', 'occupation_nominated', 'occupation_code', 'occupation_assessing_authority', 'occupation_visa_subclass', 'occupation_assessment_date', 'occupation_expiry_date', 'occupation_reference_no', 'occupation_relevant', 'occupation_anzsco_id'])
+                    ->whereIn('meta_key', ['occupation', 'occupation_skill_assessment', 'occupation_nominated', 'occupation_code', 'occupation_assessing_authority', 'occupation_visa_subclass', 'occupation_assessment_date', 'occupation_expiry_date', 'occupation_reference_no', 'occupation_relevant'])
                     ->max('meta_order') ?? -1;
 
                 // Get meta_order values for existing occupations BEFORE deleting (if IDs provided)
@@ -9473,7 +9451,7 @@ class ClientPortalPersonalDetailsController extends Controller
                     if (!empty($occupationIdToMetaOrderMap)) {
                         $ordersToDelete = array_values($occupationIdToMetaOrderMap);
                         ClientPortalDetailAudit::where('client_id', $clientId)
-                            ->whereIn('meta_key', ['occupation', 'occupation_skill_assessment', 'occupation_nominated', 'occupation_code', 'occupation_assessing_authority', 'occupation_visa_subclass', 'occupation_assessment_date', 'occupation_expiry_date', 'occupation_reference_no', 'occupation_relevant', 'occupation_anzsco_id'])
+                            ->whereIn('meta_key', ['occupation', 'occupation_skill_assessment', 'occupation_nominated', 'occupation_code', 'occupation_assessing_authority', 'occupation_visa_subclass', 'occupation_assessment_date', 'occupation_expiry_date', 'occupation_reference_no', 'occupation_relevant'])
                             ->whereIn('meta_order', $ordersToDelete)
                             ->delete();
                     }
@@ -9505,7 +9483,6 @@ class ClientPortalPersonalDetailsController extends Controller
                     $expiryDate = $occupationData['expiry_date'] ?? null;
                     $referenceNo = $occupationData['reference_no'] ?? null;
                     $relevantOccupation = isset($occupationData['relevant_occupation']) ? (bool) $occupationData['relevant_occupation'] : false;
-                    $anzscoOccupationId = isset($occupationData['anzsco_occupation_id']) ? (int) $occupationData['anzsco_occupation_id'] : null;
 
                     // Skip if both nominated_occupation and occupation_code are empty
                     if (empty($nominatedOccupation) && empty($occupationCode)) {
@@ -9704,21 +9681,6 @@ class ClientPortalPersonalDetailsController extends Controller
                         'updated_at' => now(),
                     ]);
 
-                    // Save anzsco_occupation_id if provided
-                    if ($anzscoOccupationId) {
-                        ClientPortalDetailAudit::create([
-                            'client_id' => $clientId,
-                            'meta_key' => 'occupation_anzsco_id',
-                            'old_value' => null,
-                            'new_value' => (string) $anzscoOccupationId,
-                            'meta_order' => $metaOrder,
-                            'meta_type' => (string) $occupationId, // Store record ID for consistency
-                            'action' => $action,
-                            'updated_by' => $userId,
-                            'updated_at' => now(),
-                        ]);
-                    }
-
                     $updatedOccupations[] = [
                         'id' => $occupationId,
                         'skill_assessment' => $skillAssessment,
@@ -9730,7 +9692,6 @@ class ClientPortalPersonalDetailsController extends Controller
                         'expiry_date' => $expiryDate,
                         'reference_no' => $referenceNo,
                         'relevant_occupation' => $relevantOccupation,
-                        'anzsco_occupation_id' => $anzscoOccupationId,
                     ];
                 }
 
