@@ -116,14 +116,6 @@ class AdminConsoleRoutesTest extends TestCase
     }
 
     /** @test */
-    public function admin_can_access_adminconsole_database_anzsco_index()
-    {
-        $this->actingAs($this->admin, 'admin')
-             ->get('/adminconsole/database/anzsco')
-             ->assertStatus(200);
-    }
-
-    /** @test */
     public function unauthenticated_user_cannot_access_adminconsole_routes()
     {
         $this->get('/adminconsole/features/matter')
@@ -172,10 +164,6 @@ class AdminConsoleRoutesTest extends TestCase
             route('adminconsole.system.clients.clientlist')
         );
         
-        $this->assertEquals(
-            url('/adminconsole/database/anzsco'),
-            route('adminconsole.database.anzsco.index')
-        );
     }
 
     /** @test */

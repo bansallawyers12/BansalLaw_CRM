@@ -18,7 +18,6 @@
     <link rel="stylesheet" href="{{ asset('css/address-autocomplete.css') }}">
     <link rel="stylesheet" href="{{asset('css/client-forms.css')}}">
     <link rel="stylesheet" href="{{asset('css/clients/edit-client-components.css')}}">
-    <link rel="stylesheet" href="{{asset('css/anzsco-admin.css')}}">
 @endpush
 
 @section('content')
@@ -739,7 +738,7 @@
                                                     <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $experience->job_title ?: 'Not set' }}</span>
                                                 </div>
                                                 <div class="summary-item-inline">
-                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">ANZSCO CODE:</span>
+                                                    <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">JOB CODE:</span>
                                                     <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $experience->job_code ?: 'Not set' }}</span>
                                                 </div>
                                                 <div class="summary-item-inline">

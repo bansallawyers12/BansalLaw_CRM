@@ -842,7 +842,7 @@
                                     <input type="hidden" name="nomination_ids[]" value="{{ $nom->id ?? '' }}">
                                     <div class="content-grid" style="margin-bottom:10px;">
                                         <div class="form-group"><label>Position Title</label><input type="text" name="nomination_position_titles[]" value="{{ $nom->position_title ?? '' }}" placeholder="Position title"></div>
-                                        <div class="form-group"><label>ANZSCO Code</label><input type="text" name="nomination_anzsco_codes[]" value="{{ $nom->anzsco_code ?? '' }}" placeholder="e.g. 261312"></div>
+                                        <div class="form-group"><label>Position Code</label><input type="text" name="nomination_anzsco_codes[]" value="{{ $nom->anzsco_code ?? '' }}" placeholder="e.g. 261312"></div>
                                         <div class="form-group full-width"><label>Description</label><textarea name="nomination_descriptions[]" rows="2" placeholder="Position description">{{ $nom->position_description ?? '' }}</textarea></div>
                                         <div class="form-group"><label>Salary</label><input type="number" name="nomination_salaries[]" value="{{ $nom->salary ?? '' }}" step="0.01" placeholder="0"></div>
                                         <div class="form-group"><label>Duration</label><input type="text" name="nomination_durations[]" value="{{ $nom->duration ?? '' }}" placeholder="e.g. 2 years"></div>
@@ -1197,7 +1197,7 @@
             '<input type="hidden" name="nomination_ids[]" value="">' +
             '<div class="content-grid" style="margin-bottom:10px;">' +
             '<div class="form-group"><label>Position Title</label><input type="text" name="nomination_position_titles[]" placeholder="Position title"></div>' +
-            '<div class="form-group"><label>ANZSCO Code</label><input type="text" name="nomination_anzsco_codes[]" placeholder="e.g. 261312"></div>' +
+            '<div class="form-group"><label>Position Code</label><input type="text" name="nomination_anzsco_codes[]" placeholder="e.g. 261312"></div>' +
             '<div class="form-group full-width"><label>Description</label><textarea name="nomination_descriptions[]" rows="2" placeholder="Position description"></textarea></div>' +
             '<div class="form-group"><label>Salary</label><input type="number" name="nomination_salaries[]" step="0.01" placeholder="0"></div>' +
             '<div class="form-group"><label>Duration</label><input type="text" name="nomination_durations[]" placeholder="e.g. 2 years"></div></div>' +

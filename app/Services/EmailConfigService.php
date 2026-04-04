@@ -163,41 +163,6 @@ class EmailConfigService
     }
 
     /**
-     * Get email configuration for EOI verification/confirmation emails.
-     * Looks up EOI_FROM_EMAIL / services.eoi.from_email in the emails table, then admin@bansallawyers%, then legacy admin@bansalimmigration%.
-     * Returns sender details for setting the from-address before sending.
-     *
-     * @return array|null Config array (from_address, from_name, email_signature) or null if not found
-     */
-    public function getEoiFromAccount(): ?array
-    {
-        $preferredEmail = config('services.eoi.from_email');
-
-        // Try exact match first (from config/env)
-        $emailConfig = Email::where('status', true)
-            ->where('email', $preferredEmail)
-            ->first();
-
-        if (!$emailConfig) {
-            $emailConfig = Email::where('status', true)
-                ->where('email', 'like', 'admin@bansallawyers%')
-                ->first();
-        }
-
-        if (!$emailConfig) {
-            $emailConfig = Email::where('status', true)
-                ->where('email', 'like', 'admin@bansalimmigration%')
-                ->first();
-        }
-
-        if ($emailConfig) {
-            return $this->buildConfig($emailConfig);
-        }
-
-        return null;
-    }
-
-    /**
      * Validate email configuration by attempting connection
      *
      * @param array $config

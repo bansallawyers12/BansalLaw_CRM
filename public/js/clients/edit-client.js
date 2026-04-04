@@ -1690,7 +1690,7 @@ async function addExperience() {
                     <input type="text" name="job_title[${index}]" placeholder="e.g., Software Engineer">
                 </div>
                 <div class="form-group">
-                    <label>ANZSCO Code</label>
+                                <label>Job Code</label>
                     <input type="text" name="job_code[${index}]" placeholder="e.g., 261313">
                 </div>
                 <div class="form-group">
@@ -2948,7 +2948,7 @@ window.saveExperienceInfo = function() {
                                 <span class="summary-value" style="color: #212529; font-weight: 500;">${exp.job_title || 'Not set'}</span>
                             </div>
                             <div class="summary-item-inline">
-                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">ANZSCO CODE:</span>
+                                <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">JOB CODE:</span>
                                 <span class="summary-value" style="color: #212529; font-weight: 500;">${exp.job_code || 'Not set'}</span>
                             </div>
                             <div class="summary-item-inline">
@@ -5076,7 +5076,6 @@ function addOccupationRow() {
     const newOccupationHTML = `
         <div class="repeatable-section">
             <button type="button" class="remove-item-btn" title="Remove Occupation" onclick="removeOccupationField(this)"><i class="fas fa-trash"></i></button>
-            <input type="hidden" name="anzsco_occupation_id[${index}]" class="anzsco_occupation_id" value="">
             <div class="content-grid">
                 <div class="form-group">
                     <label>Skill Assessment</label>
@@ -5092,18 +5091,12 @@ function addOccupationRow() {
                     <div class="autocomplete-items"></div>
                 </div>
                 <div class="form-group">
-                    <label>Occupation Code (ANZSCO)</label>
+                    <label>Occupation Code</label>
                     <input type="text" name="occupation_code[${index}]" class="occupation_code" placeholder="Enter Code">
                 </div>
                 <div class="form-group">
                     <label>Assessing Authority</label>
                     <input type="text" name="list[${index}]" class="list" placeholder="e.g., ACS, VETASSESS">
-                </div>
-                <div class="form-group">
-                    <label>Occupation Lists</label>
-                    <div class="occupation-lists-display" id="occupation-lists-${index}">
-                        <span class="text-muted">Select an occupation to see lists</span>
-                    </div>
                 </div>
                 <div class="form-group">
                     <label>Assessment Date</label>
@@ -5128,8 +5121,6 @@ function addOccupationRow() {
     container.insertAdjacentHTML('beforeend', newOccupationHTML);
     
     // Initialize autocomplete for nominated occupation
-    initializeOccupationAutocomplete();
-    
     // Initialize expiry date calculation for the new row (native date inputs)
     const newRow = container.lastElementChild;
     const assessmentDateInput = newRow.querySelector('.dates');
@@ -5487,290 +5478,6 @@ function validateTestScoreInput(input, range) {
 
 // ===== OCCUPATION AUTOCOMPLETE FUNCTIONS =====
 
-// ANZSCO Occupation Autocomplete
-let occupationAutocompleteTimeout;
-
-function initializeOccupationAutocomplete() {
-    const occupationInputs = document.querySelectorAll('.nomi_occupation');
-    const codeInputs = document.querySelectorAll('.occupation_code');
-    
-    // Initialize autocomplete for occupation name fields
-    occupationInputs.forEach(input => {
-        if (input.dataset.autocompleteInitialized) return;
-        
-        input.addEventListener('input', function() {
-            const query = this.value;
-            const autocompleteContainer = this.nextElementSibling;
-            const row = this.closest('.repeatable-section') || this.closest('.content-grid');
-            
-            if (query.length < 2) {
-                autocompleteContainer.innerHTML = '';
-                autocompleteContainer.style.display = 'none';
-                return;
-            }
-            
-            // Clear previous timeout
-            clearTimeout(occupationAutocompleteTimeout);
-            
-            // Debounce API call
-            occupationAutocompleteTimeout = setTimeout(() => {
-                searchOccupations(query, autocompleteContainer, row, 'name');
-            }, 300);
-        });
-        
-        // Close autocomplete on outside click
-        document.addEventListener('click', function(e) {
-            if (!input.contains(e.target)) {
-                const container = input.nextElementSibling;
-                if (container && container.classList.contains('autocomplete-items')) {
-                    container.innerHTML = '';
-                    container.style.display = 'none';
-                }
-            }
-        });
-        
-        input.dataset.autocompleteInitialized = 'true';
-    });
-    
-    // Initialize autocomplete for occupation code fields
-    codeInputs.forEach(input => {
-        if (input.dataset.autocompleteInitialized) return;
-        
-        input.addEventListener('input', function() {
-            const query = this.value;
-            const row = this.closest('.repeatable-section') || this.closest('.content-grid');
-            
-            // Search by code if it's numeric and at least 3 digits
-            if (query.length >= 3 && /^\d+$/.test(query)) {
-                clearTimeout(occupationAutocompleteTimeout);
-                occupationAutocompleteTimeout = setTimeout(() => {
-                    searchOccupationByCode(query, row);
-                }, 300);
-            }
-        });
-        
-        input.dataset.autocompleteInitialized = 'true';
-    });
-}
-
-// Search occupations via API
-async function searchOccupations(query, autocompleteContainer, row, searchType) {
-    autocompleteContainer.innerHTML = '';
-    autocompleteContainer.style.display = 'none';
-    return;
-    try {
-        // Show loading indicator
-        autocompleteContainer.innerHTML = '<div class="autocomplete-item"><span class="anzsco-loading"></span> Searching...</div>';
-        autocompleteContainer.style.display = 'block';
-        
-        const response = await fetch(`/anzsco/search?q=${encodeURIComponent(query)}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            credentials: 'same-origin'
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('API response error:', {
-                status: response.status,
-                statusText: response.statusText,
-                body: errorText
-            });
-            throw new Error(`Search failed: ${response.status} ${response.statusText}`);
-        }
-        
-        const responseText = await response.text();
-        console.log('API response:', responseText); // Debug log
-        
-        let occupations;
-        try {
-            occupations = JSON.parse(responseText);
-        } catch (parseError) {
-            console.error('JSON parse error:', parseError);
-            console.error('Response text:', responseText);
-            throw new Error('Invalid JSON response from server');
-        }
-        
-        if (occupations.length === 0) {
-            autocompleteContainer.innerHTML = '<div class="autocomplete-item text-muted">No occupations found</div>';
-            return;
-        }
-        
-        // Build autocomplete items
-        autocompleteContainer.innerHTML = '';
-        occupations.forEach(occ => {
-            const item = document.createElement('div');
-            item.className = 'autocomplete-item anzsco-autocomplete-item';
-            
-            // Build lists badges
-            let listBadges = '';
-            if (occ.lists && occ.lists.length > 0) {
-                occ.lists.forEach(list => {
-                    const badgeClass = {
-                        'MLTSSL': 'success',
-                        'STSOL': 'info',
-                        'ROL': 'warning',
-                        'CSOL': 'secondary'
-                    }[list] || 'secondary';
-                    listBadges += `<span class="badge badge-${badgeClass} mr-1">${list}</span>`;
-                });
-            }
-            
-            item.innerHTML = `
-                <div>
-                    <span class="anzsco-code">${occ.anzsco_code}</span> - 
-                    <span class="anzsco-title">${occ.occupation_title}</span>
-                </div>
-                <div class="anzsco-lists">${listBadges}</div>
-                ${occ.assessing_authority ? `<div class="anzsco-authority"><small>Authority: ${occ.assessing_authority}</small></div>` : ''}
-            `;
-            
-            item.addEventListener('click', function() {
-                fillOccupationData(row, occ);
-                autocompleteContainer.innerHTML = '';
-                autocompleteContainer.style.display = 'none';
-            });
-            
-            autocompleteContainer.appendChild(item);
-        });
-        
-    } catch (error) {
-        console.error('Occupation search error:', error);
-        console.error('Error details:', {
-            message: error.message,
-            stack: error.stack,
-            query: query
-        });
-        autocompleteContainer.innerHTML = '<div class="autocomplete-item text-danger">Error searching occupations. Please try again.</div>';
-    }
-}
-
-// Search occupation by code
-async function searchOccupationByCode(code, row) {
-    return;
-    try {
-        const response = await fetch(`/anzsco/code/${code}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            credentials: 'same-origin'
-        });
-        
-        if (!response.ok) {
-            return; // Code not found, user can still enter manually
-        }
-        
-        const result = await response.json();
-        
-        if (result.success && result.data) {
-            // Ask user if they want to autofill
-            const shouldFill = confirm(`Found ANZSCO occupation: ${result.data.occupation_title}\n\nAutofill occupation details?`);
-            if (shouldFill) {
-                fillOccupationData(row, result.data);
-            }
-        }
-        
-    } catch (error) {
-        console.error('Occupation code search error:', error);
-    }
-}
-
-// Fill occupation data into form fields
-function fillOccupationData(row, occupationData) {
-    if (!row) return;
-    
-    // Fill occupation name
-    const nameInput = row.querySelector('.nomi_occupation');
-    if (nameInput) {
-        nameInput.value = occupationData.occupation_title;
-        nameInput.classList.add('from-database');
-        nameInput.dataset.anzscoId = occupationData.id;
-    }
-    
-    // Fill occupation code
-    const codeInput = row.querySelector('.occupation_code');
-    if (codeInput) {
-        codeInput.value = occupationData.anzsco_code;
-        codeInput.classList.add('from-database');
-    }
-    
-    // Fill assessing authority (into the "list" field)
-    const listInput = row.querySelector('.list');
-    if (listInput && occupationData.assessing_authority) {
-        listInput.value = occupationData.assessing_authority;
-        listInput.classList.add('from-database');
-        // Store validity years for expiry date calculation
-        listInput.dataset.validityYears = occupationData.assessment_validity_years || 3;
-    }
-    
-    // Store ANZSCO occupation ID
-    const anzscoIdInput = row.querySelector('.anzsco_occupation_id');
-    if (anzscoIdInput) {
-        anzscoIdInput.value = occupationData.id;
-    }
-    
-    // Display occupation lists
-    displayOccupationLists(occupationData, row);
-    
-    // Calculate and fill expiry date if assessment date exists
-    const assessmentDateInput = row.querySelector('.dates');
-    const expiryDateInput = row.querySelector('.expiry_dates');
-    
-    if (assessmentDateInput && expiryDateInput && assessmentDateInput.value) {
-        const validityYears = occupationData.assessment_validity_years || 3;
-        const expiryDate = calculateExpiryDate(assessmentDateInput.value, validityYears);
-        if (expiryDate) {
-            // Convert dd/mm/yyyy to YYYY-MM-DD for HTML date input
-            const [day, month, year] = expiryDate.split('/');
-            const htmlDateFormat = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-            
-            expiryDateInput.value = htmlDateFormat;
-            expiryDateInput.classList.add('from-database');
-        }
-    }
-    
-    // Show notification
-    showNotification(`Occupation filled from ANZSCO database: ${occupationData.occupation_title}`, 'success');
-}
-
-// Display occupation lists as badges
-function displayOccupationLists(occupationData, row) {
-    const listsContainer = row.querySelector('.occupation-lists-display');
-    if (!listsContainer) return;
-    
-    const lists = occupationData.lists || [];
-    
-    if (lists.length === 0) {
-        listsContainer.innerHTML = '<span class="text-muted">No lists available</span>';
-        return;
-    }
-    
-    const badges = lists.map(list => {
-        const color = getListBadgeColor(list);
-        return `<span class="badge badge-${color} mr-1">${list}</span>`;
-    }).join('');
-    
-    listsContainer.innerHTML = badges;
-}
-
-// Get badge color for occupation list
-function getListBadgeColor(list) {
-    const colors = {
-        'MLTSSL': 'success',
-        'STSOL': 'info', 
-        'ROL': 'warning',
-        'CSOL': 'secondary'
-    };
-    return colors[list] || 'secondary';
-}
-
 // Calculate expiry date
 function calculateExpiryDate(assessmentDateValue, validityYears) {
     try {
@@ -5929,11 +5636,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ===== INITIALIZATION FUNCTIONS =====
 
-// Initialize occupation autocomplete and test score validation on page load
+// Initialize test score validation on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize occupation autocomplete for existing fields
-    initializeOccupationAutocomplete();
-    
     // Initialize test score validation for existing fields
     const existingTestSelectors = document.querySelectorAll('.test-type-selector');
     existingTestSelectors.forEach((selector, index) => {

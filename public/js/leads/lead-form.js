@@ -551,8 +551,8 @@ function addOccupation() {
                     <input type="text" name="nominated_occupation[${index}]" placeholder="Enter occupation">
                 </div>
                 <div class="form-group">
-                    <label>ANZSCO Code</label>
-                    <input type="text" name="anzsco_code[${index}]" placeholder="ANZSCO code">
+                    <label>Occupation Code</label>
+                    <input type="text" name="occupation_code[${index}]" placeholder="Occupation code">
                 </div>
                 <div class="form-group">
                     <label>Assessment Status</label>

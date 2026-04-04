@@ -7,7 +7,6 @@
     </button>
     
     <input type="hidden" name="occupation_id[{{ $index }}]" value="{{ $occupation->id ?? '' }}">
-    <input type="hidden" name="anzsco_occupation_id[{{ $index }}]" class="anzsco_occupation_id" value="{{ $occupation->anzsco_occupation_id ?? '' }}">
     
     <div class="content-grid">
         <div class="form-group">
@@ -30,7 +29,7 @@
         </div>
         
         <div class="form-group">
-            <label>Occupation Code (ANZSCO)</label>
+            <label>Occupation Code</label>
             <input type="text" 
                    name="occupation_code[{{ $index }}]" 
                    class="occupation_code" 
@@ -47,34 +46,6 @@
                    placeholder="e.g., ACS, VETASSESS">
         </div>
         
-        <div class="form-group">
-            <label>Occupation Lists</label>
-            <div class="occupation-lists-display" id="occupation-lists-{{ $index }}">
-                @if(isset($occupation->anzsco_occupation_id) && $occupation->anzsco_occupation_id)
-                    @php
-                        $anzscoOccupation = \App\Models\AnzscoOccupation::find($occupation->anzsco_occupation_id);
-                    @endphp
-                    @if($anzscoOccupation)
-                        @if($anzscoOccupation->is_on_mltssl)
-                            <span class="badge badge-success mr-1">MLTSSL</span>
-                        @endif
-                        @if($anzscoOccupation->is_on_stsol)
-                            <span class="badge badge-info mr-1">STSOL</span>
-                        @endif
-                        @if($anzscoOccupation->is_on_rol)
-                            <span class="badge badge-warning mr-1">ROL</span>
-                        @endif
-                        @if($anzscoOccupation->is_on_csol)
-                            <span class="badge badge-secondary mr-1">CSOL</span>
-                        @endif
-                    @else
-                        <span class="text-muted">Select an occupation to see lists</span>
-                    @endif
-                @else
-                    <span class="text-muted">Select an occupation to see lists</span>
-                @endif
-            </div>
-        </div>
         
         <div class="form-group">
             <label>Assessment Date</label>

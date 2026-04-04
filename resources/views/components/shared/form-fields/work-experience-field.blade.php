@@ -19,7 +19,7 @@
         </div>
         
         <div class="form-group">
-            <label>ANZSCO Code</label>
+            <label>Job Code</label>
             <input type="text" 
                    name="job_code[{{ $index }}]" 
                    value="{{ $experience->job_code ?? old("job_code.$index") }}" 
