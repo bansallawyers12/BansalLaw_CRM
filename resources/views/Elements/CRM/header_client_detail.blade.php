@@ -27,21 +27,6 @@
                         @endif
                     </a>
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'paid']) }}">
-                        <i class="far fa-calendar-check mr-2"></i> Pr_complex matters
-                    </a>
-                    <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'jrp']) }}">
-                        <i class="far fa-calendar mr-2"></i> JRP Calendar
-                    </a>
-                    <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'education']) }}">
-                        <i class="fas fa-graduation-cap mr-2"></i> Education
-                    </a>
-                    <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'tourist']) }}">
-                        <i class="fas fa-plane mr-2"></i> Tourist Visa
-                    </a>
-                    <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'adelaide']) }}">
-                        <i class="fas fa-city mr-2"></i> Adelaide
-                    </a>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}">
                         <i class="fas fa-calendar-alt mr-2"></i> Ajay Calendar
                     </a>

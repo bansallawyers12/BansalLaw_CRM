@@ -302,7 +302,7 @@ class BookingAppointmentsController extends Controller
      */
     public function calendar($type)
     {
-        $validTypes = ['paid', 'jrp', 'education', 'tourist', 'adelaide', 'ajay', 'kunal'];
+        $validTypes = ['ajay', 'kunal'];
         
         if (!in_array($type, $validTypes)) {
             abort(404);
@@ -320,11 +320,6 @@ class BookingAppointmentsController extends Controller
         $appointments = $appointmentsQuery->get();
 
         $calendarTitle = match($type) {
-            'paid' => 'Pr_complex matters',
-            'jrp' => 'JRP/Skill Assessment',
-            'education' => 'Education/Student Visa',
-            'tourist' => 'Tourist Visa',
-            'adelaide' => 'Adelaide Office',
             'ajay' => 'Ajay Calendar',
             'kunal' => 'Kunal Calendar',
             default => ucfirst($type)
@@ -349,9 +344,7 @@ class BookingAppointmentsController extends Controller
             'no_show' => (clone $calendarStatsBase())->where('status', 'no_show')->count(),
         ];
 
-        // Get all active consultants for transfer dropdown (including Ajay calendar for transfers)
-        // Use distinct() to ensure no duplicates
-        $consultants = AppointmentConsultant::active()->distinct()->get();
+        $consultants = AppointmentConsultant::active()->get();
 
         // Use FullCalendar v6 version
         return view('crm.booking.appointments.calendar-v6', compact('type', 'appointments', 'calendarTitle', 'stats', 'consultants'));

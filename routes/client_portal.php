@@ -196,10 +196,15 @@ Route::controller(BookingAppointmentsController::class)
             ->name('appointments.json')
             ->whereNumber('id');
         
-        // Calendar Views (by type)
+        // Calendar Views (by type). Legacy URLs redirect to Ajay calendar.
+        Route::redirect('/calendar/paid', '/booking/calendar/ajay', 301);
+        Route::redirect('/calendar/jrp', '/booking/calendar/ajay', 301);
+        Route::redirect('/calendar/education', '/booking/calendar/ajay', 301);
+        Route::redirect('/calendar/tourist', '/booking/calendar/ajay', 301);
+        Route::redirect('/calendar/adelaide', '/booking/calendar/ajay', 301);
         Route::get('/calendar/{type}', 'calendar')
             ->name('appointments.calendar')
-            ->whereIn('type', ['paid', 'jrp', 'education', 'tourist', 'adelaide', 'ajay', 'kunal']);
+            ->whereIn('type', ['ajay', 'kunal']);
         
         // Update Actions
         Route::post('/appointments/{id}/update-status', 'updateStatus')

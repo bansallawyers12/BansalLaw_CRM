@@ -15,26 +15,6 @@
                     <i class="fas fa-arrow-left"></i> Back to List
                 </a>
                 <div class="btn-group ml-2" role="group">
-                    <a href="{{ route('booking.appointments.calendar', ['type' => 'paid']) }}" 
-                       class="btn btn-sm {{ $type === 'paid' ? 'btn-primary' : 'btn-outline-primary' }}">
-                        <i class="far fa-calendar-check"></i> Pr_complex matters
-                    </a>
-                    <a href="{{ route('booking.appointments.calendar', ['type' => 'jrp']) }}" 
-                       class="btn btn-sm {{ $type === 'jrp' ? 'btn-primary' : 'btn-outline-primary' }}">
-                        <i class="far fa-calendar"></i> JRP
-                    </a>
-                    <a href="{{ route('booking.appointments.calendar', ['type' => 'education']) }}" 
-                       class="btn btn-sm {{ $type === 'education' ? 'btn-primary' : 'btn-outline-primary' }}">
-                        <i class="fas fa-graduation-cap"></i> Education
-                    </a>
-                    <a href="{{ route('booking.appointments.calendar', ['type' => 'tourist']) }}" 
-                       class="btn btn-sm {{ $type === 'tourist' ? 'btn-primary' : 'btn-outline-primary' }}">
-                        <i class="fas fa-plane"></i> Tourist
-                    </a>
-                    <a href="{{ route('booking.appointments.calendar', ['type' => 'adelaide']) }}" 
-                       class="btn btn-sm {{ $type === 'adelaide' ? 'btn-primary' : 'btn-outline-primary' }}">
-                        <i class="fas fa-city"></i> Adelaide
-                    </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}" 
                        class="btn btn-sm {{ $type === 'ajay' ? 'btn-primary' : 'btn-outline-primary' }}">
                         <i class="fas fa-calendar-alt"></i> Ajay Calendar
