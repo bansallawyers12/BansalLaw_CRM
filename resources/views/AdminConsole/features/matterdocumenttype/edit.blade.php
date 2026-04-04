@@ -17,7 +17,7 @@
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
-			<form action="{{ route('adminconsole.features.visadocumenttype.update', $fetchedData->id) }}" name="edit-create-folder" autocomplete="off" enctype="multipart/form-data" method="POST">
+			<form action="{{ route('adminconsole.features.matterdocumenttype.update', $fetchedData->id) }}" name="edit-create-folder" autocomplete="off" enctype="multipart/form-data" method="POST">
 				@csrf
 				@method('PUT')
 				<div class="row">
@@ -26,7 +26,7 @@
 							<div class="card-header">
 								<h4>Edit Matter Document Category</h4>
 								<div class="card-header-action">
-									<a href="{{route('adminconsole.features.visadocumenttype.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+									<a href="{{route('adminconsole.features.matterdocumenttype.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
 								</div>
 							</div>
 						</div>

@@ -460,7 +460,7 @@ Apply these changes **in the same release** as Phase 4 migrations. The code must
 | `resources/views/crm/assignee/assign_to_me.blade.php` | `$list->user_id`, `$listC->user_id` → `staff_id` (lines ~98, 274) |
 | `resources/views/crm/assignee/action_completed.blade.php` | `$list->user_id` → `staff_id` (line ~276) |
 | `resources/views/crm/officevisits/index.blade.php` | `CheckinLog::where('user_id',...)`, `$list->user_id` → `staff_id` (lines 12–14, 130) |
-| `resources/views/crm/clients/tabs/visa_documents.blade.php` | `$fetch->user_id` → `staff_id` (lines 152, 246) |
+| `resources/views/crm/clients/tabs/matter_documents.blade.php` | `$fetch->user_id` → `staff_id` (lines 152, 246) |
 | `resources/views/crm/clients/tabs/client_portal.blade.php` | `$document->user_id` → `staff_id` (line ~352) |
 | `resources/views/crm/clients/tabs/appointments.blade.php` | `$appointmentlist->user_id`, `$appointmentlistslast->user_id` → `staff_id` (lines 19, 73) |
 | `resources/views/crm/clients/detail.blade.php` | `$appointmentlist->user_id` → `staff_id` (line ~1413) |
@@ -656,7 +656,7 @@ If Phase 4 renames `device_tokens.user_id` → `client_id`, this MAY break mobil
 | Models | 14+ | Lead, Note, StaffLoginLog, CheckinLog, Document, EmailLabel, MailReport, Application, AccountClientReceipt, AccountAllInvoiceReceipt, BookingAppointment, ClientMatter, DeviceToken, RefreshToken |
 | Controllers | 12+ | ClientsController, LeadConversionController, LeadController, ClientAccountsController, ClientPortalController, AssigneeController, CRMUtilityController, OfficeVisitController, AdminLoginController, ClientPortalController (API), ClientPortalMessageController |
 | Services | 4 | ActiveUserService, StaffLoginAnalyticsService, DashboardService, SignatureAnalyticsService |
-| Views | 8+ | assign_to_me, action_completed, officevisits, visa_documents, client_portal, appointments, detail, quotaion, client-management |
+| Views | 8+ | assign_to_me, action_completed, officevisits, matter_documents, client_portal, appointments, detail, quotaion, client-management |
 | Migrations | 13–15 | One per table in Phase 4.2–4.3 |
 
 ---

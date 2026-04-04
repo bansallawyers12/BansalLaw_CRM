@@ -34,12 +34,12 @@ class MatterDocumentTypeController extends Controller
         $query 		= VisaDocumentType::where('status', 1);
         $totalData 	= $query->count();	//for all data
         $lists		= $query->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
-        return view('AdminConsole.features.visadocumenttype.index',compact(['lists', 'totalData']));
+        return view('AdminConsole.features.matterdocumenttype.index',compact(['lists', 'totalData']));
     }
 
 	public function create(Request $request)
 	{
-		return view('AdminConsole.features.visadocumenttype.create');
+		return view('AdminConsole.features.matterdocumenttype.create');
 	}
 
 	public function store(Request $request)
@@ -62,10 +62,10 @@ class MatterDocumentTypeController extends Controller
 			}
 			else
 			{
-				return redirect()->route('adminconsole.features.visadocumenttype.index')->with('success', 'Matter document category created successfully.');
+				return redirect()->route('adminconsole.features.matterdocumenttype.index')->with('success', 'Matter document category created successfully.');
 			}
 		}
-        return view('AdminConsole.features.visadocumenttype.create');
+        return view('AdminConsole.features.matterdocumenttype.create');
 	}
 
 	/**
@@ -79,12 +79,12 @@ class MatterDocumentTypeController extends Controller
 			$id = $this->decodeString($id);
 			if(VisaDocumentType::where('id', '=', $id)->exists()) {
 				$fetchedData = VisaDocumentType::find($id);
-				return view('AdminConsole.features.visadocumenttype.edit', compact(['fetchedData']));
+				return view('AdminConsole.features.matterdocumenttype.edit', compact(['fetchedData']));
 			} else {
-				return redirect()->route('adminconsole.features.visadocumenttype.index')->with('error', 'Matter document category not found.');
+				return redirect()->route('adminconsole.features.matterdocumenttype.index')->with('error', 'Matter document category not found.');
 			}
 		} else {
-			return redirect()->route('adminconsole.features.visadocumenttype.index')->with('error', config('constants.unauthorized'));
+			return redirect()->route('adminconsole.features.matterdocumenttype.index')->with('error', config('constants.unauthorized'));
 		}
     }
 
@@ -102,7 +102,7 @@ class MatterDocumentTypeController extends Controller
 
         $obj = VisaDocumentType::find($id);
         if (!$obj) {
-			return redirect()->route('adminconsole.features.visadocumenttype.index')->with('error', 'Matter document category not found.');
+			return redirect()->route('adminconsole.features.matterdocumenttype.index')->with('error', 'Matter document category not found.');
 		}
         
         $obj->title = @$requestData['title'];
@@ -111,7 +111,7 @@ class MatterDocumentTypeController extends Controller
         if(!$saved) {
 			return redirect()->back()->with('error', config('constants.server_error'));
 		} else {
-			return redirect()->route('adminconsole.features.visadocumenttype.index')->with('success', 'Matter document category updated successfully.');
+			return redirect()->route('adminconsole.features.matterdocumenttype.index')->with('success', 'Matter document category updated successfully.');
 		}
     }
 

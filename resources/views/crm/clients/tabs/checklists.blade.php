@@ -1396,7 +1396,7 @@
             $('.sig-field-preview').removeClass('dragging');
             $('#sig-preview-image').attr('src', '');
             var source = $('#signaturePlacementModal').data('lastSaveSource');
-            if (source === 'visa_documents') {
+            if (source === 'matter_documents' || source === 'visa_documents') {
                 localStorage.setItem('activeTab', 'visadocuments');
             } else {
                 localStorage.setItem('activeTab', 'checklists');

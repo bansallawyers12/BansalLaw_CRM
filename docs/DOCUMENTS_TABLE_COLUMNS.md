@@ -327,7 +327,7 @@ This document describes every column in the `documents` table, how it is used in
 - **Usage:** Link to Form 956 when document is a generated Form 956
 - **Used in:**
   - `Form956Controller` – set when creating Form 956 doc
-  - `visa_documents.blade.php` – if `form956_id` present, use form preview/download routes
+  - `matter_documents.blade.php` – if `form956_id` present, use form preview/download routes
 - **Added by:** `2026_02_18_201513_add_form956_id_to_documents_table.php`
 - **Status:** ✅ **Actively used**
 
@@ -364,7 +364,7 @@ This document describes every column in the `documents` table, how it is used in
 - **Usage:** Soft exclude – documents marked "Not Used" are filtered out from normal lists
 - **Used in:**
   - `ClientDocumentsController` – `whereNull('not_used_doc')`, `update(array('not_used_doc' => 1))` to mark, `update(array('not_used_doc' => null))` to unmark
-  - `ClientPortalDashboardController`, `ClientEoiRoiController`, `EoiRoiSheetController`, `visa_documents.blade.php`, `personal_documents.blade.php`
+  - `ClientPortalDashboardController`, `ClientEoiRoiController`, `EoiRoiSheetController`, `matter_documents.blade.php`, `personal_documents.blade.php`
   - `not_used_documents.blade.php` – shows docs where `not_used_doc = 1`
 - **Status:** ✅ **Actively used**
 

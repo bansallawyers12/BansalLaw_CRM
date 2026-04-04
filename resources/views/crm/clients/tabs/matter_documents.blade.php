@@ -769,7 +769,7 @@
                     } else if (targetType === 'visa') {
                         targetId = $('#moveVisaVisaCategoryId').val();
                         if (!targetId) {
-                            $error.text('Please select a visa category').show();
+                            $error.text('Please select a matter document category').show();
                             return;
                         }
                     }
