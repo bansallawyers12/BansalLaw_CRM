@@ -16,6 +16,11 @@ return [
     'name' => env('APP_NAME', 'Laravel'),
 
     /*
+     * Staff login page: card heading, document title, meta author. Falls back to APP_NAME when unset.
+     */
+    'login_brand' => env('LOGIN_BRAND'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
