@@ -117,7 +117,7 @@ phases:
         echo "Restarting services..."
 
         systemctl restart $PHP_FPM
-        systemctl restart bansallaw-queue
+        systemctl restart bansallaw-queue || true
         systemctl restart bansallaw-reverb || true
         systemctl restart bansallaw-email || true
         systemctl restart migration-python-services || true
