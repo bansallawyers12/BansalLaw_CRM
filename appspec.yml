@@ -1,10 +1,9 @@
 version: 0.0
 os: linux
-
 files:
   - source: /
     destination: /tmp/bansallawyercrm-build
-
+file_exists_behavior: OVERWRITE
 hooks:
   AfterInstall:
     - location: scripts/deploy.sh
