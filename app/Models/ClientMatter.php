@@ -20,12 +20,14 @@ class ClientMatter extends Model
      */
     protected $casts = [
         'deadline' => 'date',
+        'date_of_incidence' => 'date',
     ];
 
     /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
+        'user_id',
         'client_id',
         'office_id',
         'sel_migration_agent',
@@ -39,6 +41,9 @@ class ClientMatter extends Model
         'deadline',
         'client_unique_matter_no',
         'sel_matter_id',
+        'case_detail',
+        'date_of_incidence',
+        'incidence_type',
         'updated_at_type',
         // Reference fields
         'department_reference',

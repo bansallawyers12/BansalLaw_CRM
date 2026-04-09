@@ -3,6 +3,12 @@
     This file contains all receipt and financial reporting modals
     Total: 6 large modals for comprehensive financial management
     ======================================== --}}
+@php
+    $__agentDetailsTableOk = \Illuminate\Support\Facades\Schema::hasTable('agent_details');
+    $__receiptModalAgents = $__agentDetailsTableOk
+        ? \App\Models\AgentDetails::where('status', 1)->orderBy('agent_name')->orderBy('id')->get()
+        : collect();
+@endphp
 
 <style>
 /* ============================================================================
@@ -733,7 +739,7 @@
                                 <label for="agent_id">Agent <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control select2" name="agent_id" id="sel_client_agent_id">
                                     <option value="">Select Agent</option>
-                                    @foreach(\App\Models\AgentDetails::where('status',1)->get() as $aplist)
+                                    @foreach($__receiptModalAgents as $aplist)
                                         <option value="{{$aplist->id}}">{{@$aplist->full_name}} ({{@$aplist->email}})</option>
                                     @endforeach
                                 </select>
@@ -864,7 +870,7 @@
                                 <label for="agent_id">Agent <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control select2" name="agent_id" id="sel_invoice_agent_id">
                                     <option value="">Select Agent</option>
-                                    @foreach(\App\Models\AgentDetails::where('status',1)->get() as $aplist)
+                                    @foreach($__receiptModalAgents as $aplist)
                                         <option value="{{$aplist->id}}">{{@$aplist->full_name}} ({{@$aplist->email}})</option>
                                     @endforeach
                                 </select>
@@ -1004,7 +1010,7 @@
                                 <label for="agent_id">Agent <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control select2" name="agent_id" id="sel_office_agent_id">
                                     <option value="">Select Agent</option>
-                                    @foreach(\App\Models\AgentDetails::where('status',1)->get() as $aplist)
+                                    @foreach($__receiptModalAgents as $aplist)
                                         <option value="{{$aplist->id}}">{{@$aplist->full_name}} ({{@$aplist->email}})</option>
                                     @endforeach
                                 </select>
@@ -1156,7 +1162,7 @@
                                 <label for="agent_id">Agent <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control select2" name="agent_id" id="sel_journal_agent_id">
                                     <option value="">Select Agent</option>
-                                    @foreach(\App\Models\AgentDetails::where('status',1)->get() as $aplist)
+                                    @foreach($__receiptModalAgents as $aplist)
                                         <option value="{{$aplist->id}}">{{@$aplist->full_name}} ({{@$aplist->email}})</option>
                                     @endforeach
                                 </select>

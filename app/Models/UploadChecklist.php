@@ -13,7 +13,12 @@ class UploadChecklist extends Authenticatable
 	protected $table = 'matter_checklists';
 
 	protected $fillable = [
-        'id', 'created_at', 'updated_at'
+        'id',
+        'matter_id',
+        'name',
+        'file',
+        'created_at',
+        'updated_at',
     ];
 	
 	public $sortable = ['id'];

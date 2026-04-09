@@ -2,7 +2,7 @@
 
 @php
     $latestMatterRefNo = null;
-    if (isset($fetchedData) && $fetchedData->type === 'client') {
+    if (isset($fetchedData) && in_array($fetchedData->type, ['client', 'lead'], true)) {
         $latestMatter = \App\Models\ClientMatter::where('client_id', $fetchedData->id)
             ->where('matter_status', 1)
             ->orderByDesc('id')
@@ -15,9 +15,20 @@
 @endphp
 
 @push('styles')
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="{{ asset('css/address-autocomplete.css') }}">
     <link rel="stylesheet" href="{{asset('css/client-forms.css')}}">
     <link rel="stylesheet" href="{{asset('css/clients/edit-client-components.css')}}">
+    <style>
+        .tab-content{
+            display:block !important
+        }
+        tr.matter-tab-row-highlight td {
+            background-color: #e8ecff !important;
+            transition: background-color 0.35s ease;
+        }
+        </style>
 @endpush
 
 @section('content')
@@ -49,30 +60,29 @@
                     </div>
                 </div>
                 <nav class="nav-menu">
-                    <button class="nav-item active" onclick="scrollToSection('personalSection')">
+                    <button class="nav-item " >
                         <i class="fas fa-user-circle"></i>
-                        <span>Personal</span>
+                        <span>Name :   {{ $fetchedData->first_name }} {{ $fetchedData->last_name }}
+                    </span>
                     </button>
-                    <button class="nav-item" onclick="scrollToSection('visaPassportSection')">
+                    <button class="nav-item" >
                         <i class="fas fa-id-card"></i>
-                        <span>Visa, Passport & Citizenship</span>
+                        <span>Client ID :   {{ $fetchedData->type == 'lead' ? 'Lead ID' : ($fetchedData->type == 'client' ? 'Client ID' : '') }} : {{ $fetchedData->client_id }}
+                        </span>
                     </button>
-                    <button class="nav-item" onclick="scrollToSection('addressTravelSection')">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>Address & Travel</span>
+                    <button class="nav-item" >
+                        <i class="fas fa fa-calendar"></i>
+                        <span>Date of Birth : {{ $fetchedData->dob ? date('d/m/Y', strtotime($fetchedData->dob)) : 'Not set' }}</span>
                     </button>
-                    <button class="nav-item" onclick="scrollToSection('skillsEducationSection')">
-                        <i class="fas fa-briefcase"></i>
-                        <span>Skills & Education</span>
-                    </button>
-                    <button class="nav-item" onclick="scrollToSection('otherInformationSection')">
+                    <button class="nav-item" >
                         <i class="fas fa-info-circle"></i>
-                        <span>Other Information</span>
+                        <span>Gender : {{ $fetchedData->gender ?: 'Not set' }}</span>
                     </button>
-                    <button class="nav-item" onclick="scrollToSection('familySection')">
-                        <i class="fas fa-users"></i>
-                        <span>Family Information</span>
+                    <button class="nav-item" >
+                        <i class="fas fa-info-circle"></i>
+                        <span>Marital Status : {{ $fetchedData->marital_status ?: 'Not set' }}</span>
                     </button>
+                   
                 </nav>
                 
                 <!-- Back Button in Sidebar -->
@@ -88,6 +98,7 @@
             <script>
                 // Configuration object for edit-client.js
                 window.editClientConfig = {
+                    rootUrl: @json(rtrim(url('/'), '/')),
                     visaTypesRoute: '{{ route("getVisaTypes") }}',
                     countriesRoute: '{{ route("getCountries") }}',
                     searchPartnerRoute: '{{ route("clients.searchPartner") }}',
@@ -98,14 +109,38 @@
                 window.currentClientId = '{{ $fetchedData->id }}';
                 window.currentClientType = @json($fetchedData->type);
                 window.latestClientMatterRef = @json($latestMatterRefNo);
+
+               function showTab(tabId){
+
+    // 1. Hide all tab panes
+    $(".tab-pane").hide();
+    
+    // 2. Show the one corresponding to the clicked tab (using its href ID)
+    var target = $(this).attr("href");
+    $(target).show();
+               }
+
             </script>
 
             <!-- Main Content Area -->
             <div class="main-content-area">
-                <form id="editClientForm" action="{{ route('clients.update') }}" method="POST">
+
+            <ul class="nav nav-pills client-edit-top-pills">
+    <li class="active"><a data-toggle="pill" href="#home" onclick="showTab('home')">Basic Information</a></li>
+    <li><a data-toggle="pill" href="#menu1" onclick="showTab('menu1')">Additional Info</a></li>
+    <li><a data-toggle="pill" href="#menu2" onclick="showTab('menu2')">Matter and case details</a></li>
+    <li><a data-toggle="pill" href="#menu3" onclick="showTab('menu3')">Family details</a></li>
+    </ul>
+  
+  <div class="tab-content">
+  <form  id="editClientForm" action="{{ route('clients.update') }}" method="POST">
                     @csrf
                     <input type="hidden" name="id" value="{{ $fetchedData->id }}">
                     <input type="hidden" name="type" value="{{ $fetchedData->type }}">
+
+    <div id="home" class="tab-pane fade in active">
+      <h3>Basic Information</h3>
+     
 
                 <!-- Personal Section -->
                 <section id="personalSection" class="content-section">
@@ -355,8 +390,28 @@
                     </section>
                 </section>
 
+               
+    </div>
+    <div id="menu1" class="tab-pane fade">
+      <h3>Additional Information</h3>
+
+                <section class="content-section" style="margin-bottom: 1.25rem;">
+                    <section class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-user-friends"></i> Refer by</h3>
+                        </div>
+                        <p class="text-muted" style="margin-top: 0;">Who referred this {{ $fetchedData->type === 'lead' ? 'lead' : 'client' }} (optional).</p>
+                        <div class="form-group">
+                            <label for="client_refer_by">Refer by</label>
+                            <input type="text" class="form-control" id="client_refer_by" name="refer_by" value="{{ old('refer_by', $fetchedData->refer_by ?? '') }}" maxlength="500" placeholder="e.g. name, staff member, campaign">
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="saveReferByInfo()"><i class="fas fa-save"></i> Save</button>
+                        <span id="referBySaveMsg" class="text-muted small" style="margin-left: 10px;" role="status"></span>
+                    </section>
+                </section>
+
                 <!-- Visa, Passport & Citizenship Section -->
-                <section id="visaPassportSection" class="content-section">
+                <section id="visaPassportSection" class="content-section" style="display:none">
                     <section class="form-section">
                         <div class="section-header">
                             <h3><i class="fas fa-id-card"></i> Passport Information</h3>
@@ -525,7 +580,7 @@
                     />
                     
                     <!-- Travel Information Section -->
-                    <section class="form-section">
+                    <section class="form-section" style="display:none">
                         <div class="section-header">
                             <h3><i class="fas fa-plane-departure"></i> Travel Information</h3>
                             <div class="section-actions">
@@ -600,7 +655,7 @@
                 </section>
 
                 <!-- Skills & Education Section -->
-                <section id="skillsEducationSection" class="content-section">
+                <section id="skillsEducationSection" class="content-section" style="display:none">
                     <section class="form-section">
                         <div class="section-header">
                             <h3><i class="fas fa-graduation-cap"></i> Educational Qualifications</h3>
@@ -988,7 +1043,7 @@
                 </section>
 
                 <!-- Other Information Section -->
-                <section id="otherInformationSection" class="content-section">
+                <section id="otherInformationSection" class="content-section" style="display:none">
                     <section class="form-section">
                         <div class="section-header">
                             <h3><i class="fas fa-info-circle"></i> Additional Information</h3>
@@ -1198,7 +1253,7 @@
                     </section>
 
                     <!-- Related Files Section -->
-                    <section class="form-section">
+                    <section class="form-section" style="display:none">
                         <div class="section-header">
                             <h3><i class="fas fa-link"></i> Related Files</h3>
                             <div class="section-actions">
@@ -1293,8 +1348,123 @@
                     </section>
                 </section>
 
-                <!-- Family Information Section -->
-                <section id="familySection" class="content-section">
+               
+    </div>
+    <div id="menu2" class="tab-pane fade matter-tab-pane">
+      @php
+          $editMatterList = $clientMatters ?? collect();
+          $editDetailBase = isset($fetchedData) ? url('/clients/detail/' . base64_encode(convert_uuencode($fetchedData->id))) : '';
+      @endphp
+      <section id="matterAndCaseSection" class="content-section matter-tab-section">
+      <section class="form-section matter-tab-section__card">
+          <div class="section-header matter-tab-section__header">
+              <div>
+                  <h3 class="matter-tab-section__title"><i class="fas fa-folder-open"></i> Matter and case details</h3>
+                  <p class="matter-tab-section__subtitle text-muted">Active matters for {{ $fetchedData->first_name }} {{ $fetchedData->last_name }} ({{ $fetchedData->type === 'lead' ? 'Lead' : 'Client' }} ID: {{ $fetchedData->client_id }})</p>
+              </div>
+              @if(is_array($matterFormForLead ?? null))
+                  <button type="button" class="btn btn-primary matter-tab-section__add-btn" onclick="openAddMatterModal()">
+                      <i class="fas fa-plus"></i> Add matter
+                  </button>
+              @endif
+          </div>
+          @if($editMatterList->isEmpty())
+              <div class="matter-tab-empty">
+                  <div class="matter-tab-empty__icon"><i class="fas fa-briefcase"></i></div>
+                  <p class="matter-tab-empty__title">No matters yet</p>
+                  <p class="matter-tab-empty__hint text-muted">Create a matter to track workflow, documents, and references for this {{ $fetchedData->type === 'lead' ? 'lead' : 'client' }}.</p>
+                  @if(is_array($matterFormForLead ?? null))
+                      <button type="button" class="btn btn-primary matter-tab-empty__cta" onclick="openAddMatterModal()">
+                          <i class="fas fa-plus"></i> Add your first matter
+                      </button>
+                  @endif
+                  <p class="matter-tab-empty__link text-muted">
+                      <a href="{{ route('clients.clientsmatterslist', array_filter(['client_id' => $fetchedData->client_id])) }}">Open full matter list</a>
+                      @if($fetchedData->client_id)
+                          <span> — filter: <strong>{{ $fetchedData->client_id }}</strong></span>
+                      @endif
+                  </p>
+              </div>
+          @else
+              <div class="table-responsive matter-tab-table-wrap">
+                  <table class="table table-hover matter-tab-table">
+                      <thead>
+                          <tr>
+                              <th>Matter ref</th>
+                              <th>Type</th>
+                              <th>Stage</th>
+                              <th>Status</th>
+                              <th>Date of incidence</th>
+                              <th>Incidence type</th>
+                              <th>Case detail</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          @foreach($editMatterList as $cmatter)
+                              @php
+                                  $ref = $cmatter->client_unique_matter_no;
+                                  $detailUrl = $ref !== null && $ref !== ''
+                                      ? $editDetailBase . '/' . $ref
+                                      : $editDetailBase;
+                                  $typeLabel = $cmatter->matter
+                                      ? ($cmatter->matter->title . ($cmatter->matter->nick_name ? ' (' . $cmatter->matter->nick_name . ')' : ''))
+                                      : '—';
+                                  $caseSnippet = trim((string) ($cmatter->case_detail ?? ''));
+                                  $incidenceTypeStr = trim((string) ($cmatter->incidence_type ?? ''));
+                              @endphp
+                              <tr>
+                                  <td>
+                                      <a href="{{ $detailUrl }}" class="matter-tab-ref-link">{{ $ref !== null && $ref !== '' ? $ref : '—' }}</a>
+                                  </td>
+                                  <td>{{ \Illuminate\Support\Str::limit($typeLabel, 80) }}</td>
+                                  <td>{{ $cmatter->workflowStage->name ?? '—' }}</td>
+                                  <td>
+                                      @if((int) $cmatter->matter_status === 1)
+                                          <span class="label label-success">Active</span>
+                                      @else
+                                          <span class="label label-default">Closed</span>
+                                      @endif
+                                  </td>
+                                  <td>
+                                      @if($cmatter->date_of_incidence)
+                                          {{ $cmatter->date_of_incidence->format('d/m/Y') }}
+                                      @else
+                                          <span class="text-muted">—</span>
+                                      @endif
+                                  </td>
+                                  <td>
+                                      @if($incidenceTypeStr !== '')
+                                          {{ \Illuminate\Support\Str::limit($incidenceTypeStr, 60) }}
+                                      @else
+                                          <span class="text-muted">—</span>
+                                      @endif
+                                  </td>
+                                  <td class="matter-tab-case-cell">
+                                      @if($caseSnippet !== '')
+                                          <span class="matter-tab-case-preview" title="{{ e($caseSnippet) }}">{{ \Illuminate\Support\Str::limit($caseSnippet, 120) }}</span>
+                                      @else
+                                          <span class="text-muted">—</span>
+                                      @endif
+                                  </td>
+                              </tr>
+                          @endforeach
+                      </tbody>
+                  </table>
+              </div>
+              <p class="matter-tab-footer-link text-muted">
+                  <a href="{{ route('clients.clientsmatterslist', array_filter(['client_id' => $fetchedData->client_id])) }}"><i class="fas fa-external-link-alt"></i> Full matter list</a>
+                  @if($fetchedData->client_id)
+                      <span> (filter: {{ $fetchedData->client_id }})</span>
+                  @endif
+              </p>
+          @endif
+      </section>
+    </section>
+    </div>
+    <div id="menu3" class="tab-pane fade">
+      <h3>Family Information</h3>
+      <!-- Family Information Section -->
+      <section id="familySection" class="content-section">
                     <!-- Partner Section -->
                     <section class="form-section">
                         <div class="section-header">
@@ -1721,8 +1891,10 @@
                         </div>
                     </section>
                 </section>
-                </section>
-                </form>
+    </div>
+    </form>
+  </div>
+               
             </div>
         </div>
     </div>
@@ -1732,6 +1904,101 @@
         <i class="fas fa-chevron-up"></i>
     </button>
 
+    @if(is_array($matterFormForLead ?? null))
+    <div id="addMatterModal" class="modal add-matter-modal" style="display: none; z-index: 9998;" role="dialog" aria-modal="true" aria-labelledby="addMatterModalTitle" onclick="addMatterModalBackdropClick(event)">
+        <div class="modal-content add-matter-modal__content" style="max-width: 720px;" onclick="event.stopPropagation()">
+            <div class="modal-header add-matter-modal__header">
+                <h3 id="addMatterModalTitle" class="add-matter-modal__title">Add matter</h3>
+                <button type="button" class="close-btn add-matter-modal__close" onclick="closeAddMatterModal()" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body add-matter-modal__body">
+                <p class="text-muted add-matter-modal__intro">Creates an active matter for {{ $fetchedData->first_name }} {{ $fetchedData->last_name }} ({{ $fetchedData->type === 'lead' ? 'Lead' : 'Client' }} ID: {{ $fetchedData->client_id }}).</p>
+                <div id="editAddMatterMsg" class="add-matter-modal__msg"></div>
+                <div class="row add-matter-modal__grid">
+                    <div class="col-md-6 add-matter-modal__field">
+                        <div class="form-group">
+                            <label for="edit_add_matter_matter_id">Matter type <span class="text-danger">*</span></label>
+                            <select class="form-control" id="edit_add_matter_matter_id">
+                                <option value="">Select matter</option>
+                                @foreach($matterFormForLead['mattersForAdd'] as $m)
+                                    <option value="{{ $m->id }}">{{ $m->title }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6 add-matter-modal__field">
+                        <div class="form-group">
+                            <label for="edit_add_matter_office_id">Handling office</label>
+                            <select class="form-control" id="edit_add_matter_office_id">
+                                <option value="">Default (your office)</option>
+                                @foreach($matterFormForLead['branchOffices'] as $office)
+                                    <option value="{{ $office->id }}" @selected(optional(Auth::user())->office_id == $office->id)>{{ $office->office_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6 add-matter-modal__field">
+                        <div class="form-group">
+                            <label for="edit_add_matter_migration_agent">Legal practitioner <span class="text-danger">*</span></label>
+                            <select class="form-control" id="edit_add_matter_migration_agent">
+                                <option value="">Select</option>
+                                @foreach($matterFormForLead['migrationAgents'] as $st)
+                                    <option value="{{ $st->id }}">{{ $st->first_name }} {{ $st->last_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6 add-matter-modal__field">
+                        <div class="form-group">
+                            <label for="edit_add_matter_person_responsible">Person responsible</label>
+                            <select class="form-control" id="edit_add_matter_person_responsible">
+                                <option value="">—</option>
+                                @foreach($matterFormForLead['personResponsibleOptions'] as $st)
+                                    <option value="{{ $st->id }}">{{ $st->first_name }} {{ $st->last_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6 add-matter-modal__field">
+                        <div class="form-group">
+                            <label for="edit_add_matter_person_assisting">Person assisting</label>
+                            <select class="form-control" id="edit_add_matter_person_assisting">
+                                <option value="">—</option>
+                                @foreach($matterFormForLead['personAssistingOptions'] as $st)
+                                    <option value="{{ $st->id }}">{{ $st->first_name }} {{ $st->last_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6 add-matter-modal__field">
+                        <div class="form-group">
+                            <label for="edit_add_matter_date_of_incidence">Date of incidence <small class="text-muted">(optional)</small></label>
+                            <input type="date" class="form-control" id="edit_add_matter_date_of_incidence" name="date_of_incidence" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="col-md-6 add-matter-modal__field">
+                        <div class="form-group">
+                            <label for="edit_add_matter_incidence_type">Incidence type <small class="text-muted">(optional)</small></label>
+                            <input type="text" class="form-control" id="edit_add_matter_incidence_type" name="incidence_type" maxlength="255" placeholder="e.g. workplace, refusal, relationship breakdown">
+                        </div>
+                    </div>
+                </div>
+                <div class="row add-matter-modal__grid add-matter-modal__case-row">
+                    <div class="col-md-12 add-matter-modal__field">
+                        <div class="form-group">
+                            <label for="edit_add_matter_case_detail">Case detail <small class="text-muted">(optional)</small></label>
+                            <textarea class="form-control add-matter-modal__textarea" id="edit_add_matter_case_detail" name="case_detail" rows="4" maxlength="5000" placeholder="Brief description, instructions, or context for this matter"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer add-matter-modal__footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAddMatterModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" id="editAddMatterSubmitBtn" onclick="submitLeadMatterFromEdit()">Create matter</button>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <!-- OTP Verification Modal -->
     <div id="otpVerificationModal" class="modal" style="display: none;">
@@ -1782,8 +2049,162 @@
     <script>
         // Pass countries data to JavaScript
         window.countriesData = @json($countries);
+        window.storeLeadMatterFromEditUrl = @json(route('clients.storeLeadMatterFromEdit'));
+        function openAddMatterModal() {
+            var el = document.getElementById('addMatterModal');
+            if (!el) return;
+            el.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        function closeAddMatterModal() {
+            var el = document.getElementById('addMatterModal');
+            if (!el) return;
+            el.style.display = 'none';
+            document.body.style.overflow = '';
+            var msg = document.getElementById('editAddMatterMsg');
+            if (msg) msg.innerHTML = '';
+            var caseDetail = document.getElementById('edit_add_matter_case_detail');
+            if (caseDetail) caseDetail.value = '';
+            var doi = document.getElementById('edit_add_matter_date_of_incidence');
+            if (doi) doi.value = '';
+            var it = document.getElementById('edit_add_matter_incidence_type');
+            if (it) it.value = '';
+        }
+        function addMatterModalBackdropClick(e) {
+            if (e.target && e.target.id === 'addMatterModal') {
+                closeAddMatterModal();
+            }
+        }
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                var m = document.getElementById('addMatterModal');
+                if (m && m.style.display === 'flex') closeAddMatterModal();
+            }
+        });
+        async function submitLeadMatterFromEdit() {
+            var msgEl = document.getElementById('editAddMatterMsg');
+            var btn = document.getElementById('editAddMatterSubmitBtn');
+            if (!msgEl || !window.storeLeadMatterFromEditUrl || !window.editClientConfig) return;
+            msgEl.innerHTML = '';
+            var matterId = document.getElementById('edit_add_matter_matter_id');
+            var agentId = document.getElementById('edit_add_matter_migration_agent');
+            if (!matterId.value || !agentId.value) {
+                msgEl.innerHTML = '<div class="alert alert-warning">Select a matter type and legal practitioner.</div>';
+                return;
+            }
+            var fd = new FormData();
+            fd.append('_token', window.editClientConfig.csrfToken);
+            var matterClientPk = (window.currentClientId != null && String(window.currentClientId).trim() !== '')
+                ? String(window.currentClientId).trim()
+                : String({{ (int) $fetchedData->id }});
+            fd.append('client_id', matterClientPk);
+            fd.append('matter_id', matterId.value);
+            fd.append('migration_agent', agentId.value);
+            var office = document.getElementById('edit_add_matter_office_id');
+            if (office && office.value) fd.append('office_id', office.value);
+            var pr = document.getElementById('edit_add_matter_person_responsible');
+            if (pr && pr.value) fd.append('person_responsible', pr.value);
+            var pa = document.getElementById('edit_add_matter_person_assisting');
+            if (pa && pa.value) fd.append('person_assisting', pa.value);
+            var caseDetailEl = document.getElementById('edit_add_matter_case_detail');
+            if (caseDetailEl && caseDetailEl.value.trim() !== '') {
+                fd.append('case_detail', caseDetailEl.value.trim());
+            }
+            var doiEl = document.getElementById('edit_add_matter_date_of_incidence');
+            if (doiEl && doiEl.value) fd.append('date_of_incidence', doiEl.value);
+            var itEl = document.getElementById('edit_add_matter_incidence_type');
+            if (itEl && itEl.value.trim() !== '') fd.append('incidence_type', itEl.value.trim());
+            btn.disabled = true;
+            try {
+                var res = await fetch(window.storeLeadMatterFromEditUrl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': window.editClientConfig.csrfToken
+                    },
+                    body: fd
+                });
+                var data = await res.json().catch(function () { return {}; });
+                if (res.ok && data.success) {
+                    msgEl.innerHTML = '<div class="alert alert-success">' + (data.message || 'Matter created.') + '</div>';
+                    window.setTimeout(function () {
+                        closeAddMatterModal();
+                        window.location.reload();
+                    }, 600);
+                    return;
+                }
+                var errText = data.message || 'Could not create matter.';
+                if (data.errors) {
+                    errText += ' ' + Object.values(data.errors).flat().join(' ');
+                }
+                msgEl.innerHTML = '<div class="alert alert-danger">' + errText + '</div>';
+            } catch (e) {
+                msgEl.innerHTML = '<div class="alert alert-danger">Network error. Try again.</div>';
+            } finally {
+                btn.disabled = false;
+            }
+        }
     </script>
     <script src="{{asset('js/clients/edit-client.js')}}"></script>
+    <script>
+        (function () {
+            function activateMatterAndCaseDetailsTab() {
+                try {
+                    var qs = new URLSearchParams(window.location.search || '');
+                    var wantMatter = qs.get('edit_tab') === 'matter_case' || window.location.hash === '#menu2';
+                    if (!wantMatter) {
+                        return;
+                    }
+                    var $link = $('.client-edit-top-pills a[href="#menu2"]');
+                    var $pane = $('#menu2');
+                    if (!$link.length || !$pane.length) {
+                        return;
+                    }
+                    $('.client-edit-top-pills li').removeClass('active');
+                    $link.closest('li').addClass('active');
+                    // Panes live inside #editClientForm, not direct children of .tab-content — do not use .tab-content > .tab-pane
+                    $('#editClientForm > .tab-pane').removeClass('in active').hide();
+                    $pane.addClass('in active').css('display', 'block').show();
+                    if (typeof $link.tab === 'function') {
+                        try {
+                            $link.tab('show');
+                        } catch (e2) { /* BS5 / missing plugin */ }
+                    }
+                    var ref = qs.get('matter_ref');
+                    if (ref) {
+                        window.setTimeout(function () {
+                            var decoded = decodeURIComponent(String(ref).replace(/\+/g, ' '));
+                            var $rowLink = $('.matter-tab-ref-link').filter(function () {
+                                return $(this).text().trim() === decoded;
+                            });
+                            if ($rowLink.length) {
+                                var $tr = $rowLink.closest('tr');
+                                var top = $tr.offset() ? $tr.offset().top : 0;
+                                $('html, body').animate({ scrollTop: Math.max(top - 100, 0) }, 350);
+                                $tr.addClass('matter-tab-row-highlight');
+                                window.setTimeout(function () {
+                                    $tr.removeClass('matter-tab-row-highlight');
+                                }, 5000);
+                            }
+                        }, 250);
+                    }
+                } catch (e) { /* ignore */ }
+            }
+            if (window.jQuery) {
+                jQuery(function () {
+                    activateMatterAndCaseDetailsTab();
+                    window.setTimeout(activateMatterAndCaseDetailsTab, 100);
+                });
+            } else {
+                document.addEventListener('DOMContentLoaded', function () {
+                    window.setTimeout(activateMatterAndCaseDetailsTab, 0);
+                    window.setTimeout(activateMatterAndCaseDetailsTab, 200);
+                });
+            }
+        })();
+    </script>
     <script src="{{asset('js/clients/english-proficiency.js')}}"></script>
     <script src="{{asset('js/address-autocomplete.js')}}"></script>
     <script src="{{asset('js/clients/address-regional-codes.js')}}"></script>

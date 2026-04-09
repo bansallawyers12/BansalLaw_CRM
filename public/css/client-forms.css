@@ -330,13 +330,16 @@
     margin: 0 !important;
     display: flex !important;
     flex-direction: column !important;
+    overflow: visible !important;
 }
 
 /* Override layout's .main-content to create CSS Grid layout */
 .main-content {
     display: grid !important;
     grid-template-columns: 280px 1fr !important;
-    grid-template-rows: auto 1fr !important;
+    /* auto + 1fr stretched the second row to fill the viewport, leaving a huge gap under the tabs */
+    grid-template-rows: auto auto !important;
+    align-content: start !important;
     gap: 0 !important;
     padding: 0 !important;
     margin-left: 0 !important;
@@ -346,6 +349,7 @@
     border-radius: 0 !important;
     min-height: calc(100vh - 70px) !important;
     width: 100% !important;
+    overflow: visible !important;
 }
 
 .client-header {
@@ -718,16 +722,15 @@ input:checked + .slider:before {
     background-color: transparent;
 }
 
-/* Sidebar Navigation - Fixed floating compact position */
+/* Sidebar: align to top of the content row (fixed + 50% centered the nav in the viewport) */
 .sidebar-navigation {
     grid-column: 1;
     grid-row: 2;
-    position: fixed;
-    left: 20px;
-    top: 50%;
-    transform: translateY(-50%);
+    position: sticky;
+    top: 88px;
+    align-self: start;
     width: 280px;
-    max-height: 80vh;
+    max-height: calc(100vh - 100px);
     background: #fafbfc;
     border: 1px solid #e8eaed;
     border-radius: 12px;
@@ -838,9 +841,10 @@ input:checked + .slider:before {
     grid-column: 2;
     grid-row: 2;
     min-width: 0;
+    align-self: start;
     padding: 30px;
     background-color: var(--background-color);
-    min-height: calc(100vh - 70px);
+    min-height: 0;
     position: relative;
     overflow-x: hidden;
 }
@@ -1507,7 +1511,8 @@ input:checked + .slider:before {
 @media (max-width: 1024px) {
     .main-content {
         grid-template-columns: 1fr !important;
-        grid-template-rows: auto auto 1fr !important;
+        grid-template-rows: auto auto auto !important;
+        align-content: start !important;
     }
     
     .client-header {
@@ -1525,6 +1530,7 @@ input:checked + .slider:before {
         max-height: 400px;
         border-right: none;
         border-bottom: 1px solid #e8eaed;
+        align-self: stretch;
     }
     
     .main-content-area {

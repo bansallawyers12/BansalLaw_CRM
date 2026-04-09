@@ -103,14 +103,22 @@
                         </div>
                     </div>
                     <div class="card-body">
+                        @if (! \Illuminate\Support\Facades\Schema::hasTable('cost_assignment_forms'))
+                            <div class="alert alert-warning mb-3">
+                                Checklists need the <code>cost_assignment_forms</code> table. Run <code>php artisan migrate</code>, then reload.
+                            </div>
+                        @endif
                         <div class="checklists-sent-section">
                             <h5 class="font-weight-bold mb-3"><i class="fas fa-list mr-2"></i>Your Checklists</h5>
                             <div id="checklists-list-container">
                                 <?php
-                                $checklist_forms = \App\Models\CostAssignmentForm::where('client_id', $fetchedData->id)
-                                    ->with(['client', 'agent', 'clientMatter'])
-                                    ->orderBy('created_at', 'DESC')
-                                    ->get();
+                                $checklist_forms = collect();
+                                if (\Illuminate\Support\Facades\Schema::hasTable('cost_assignment_forms')) {
+                                    $checklist_forms = \App\Models\CostAssignmentForm::where('client_id', $fetchedData->id)
+                                        ->with(['client', 'agent', 'clientMatter'])
+                                        ->orderBy('created_at', 'DESC')
+                                        ->get();
+                                }
                                 ?>
                                 @if($checklist_forms->isEmpty())
                                     <div class="alert alert-info" id="checklists-empty-state">
@@ -145,11 +153,15 @@
                                                 $totalSurcharge = $form->TotalDoHASurcharges ?? 0;
                                                 $totalOurCost = $form->TotalBLOCKFEE ?? 0;
                                                 
-                                                // Check if agreement document exists
-                                                $agreementDoc = \App\Models\Document::where('client_matter_id', $form->client_matter_id)
-                                                    ->where('doc_type', 'agreement')
-                                                    ->latest()
-                                                    ->first();
+                                                $agreementDoc = null;
+                                                if (\Illuminate\Support\Facades\Schema::hasTable('documents')
+                                                    && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'client_matter_id')
+                                                    && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'doc_type')) {
+                                                    $agreementDoc = \App\Models\Document::where('client_matter_id', $form->client_matter_id)
+                                                        ->where('doc_type', 'agreement')
+                                                        ->latest()
+                                                        ->first();
+                                                }
                                             @endphp
                                             <div class="checklist-item-wrapper" data-id="{{ $form->id }}">
                                                 <div class="checklist-item-header" data-bs-toggle="collapse" data-bs-target="#checklist-detail-{{ $form->id }}">

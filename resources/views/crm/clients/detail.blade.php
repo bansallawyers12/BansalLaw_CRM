@@ -2,6 +2,7 @@
 @section('title', 'Client Detail')
 
 @section('content')
+@php \App\Support\EnsureDummyMatterStaff::ensure(); @endphp
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="stylesheet" href="{{ URL::asset('css/client-detail.css') }}">
 
@@ -17,10 +18,29 @@ use App\Http\Controllers\Controller;
     <!-- Client Navigation Sidebar -->
     <aside class="client-navigation-sidebar" id="client-sidebar">
         <div class="sidebar-header">
-            <!-- Sidebar Toggle Button -->
-            <button id="sidebar-toggle" class="sidebar-toggle-btn" title="Hide Sidebar">
-                <i class="fas fa-chevron-left"></i>
-            </button>
+            @php
+                $clientDetailBackTabSlugs = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'visadocuments', 'nominationdocuments', 'emails', 'formgenerations', 'formgenerationsl', 'client_portal', 'application', 'workflow', 'checklists', 'account', 'notuseddocuments', 'companydetails'];
+                $clientDetailBackMatterRef = null;
+                if (! empty($id1) && ! in_array(strtolower((string) $id1), array_map('strtolower', $clientDetailBackTabSlugs), true)) {
+                    $clientDetailBackMatterRef = (string) $id1;
+                }
+                $clientDetailBackEditUrl = route('clients.edit', base64_encode(convert_uuencode($fetchedData->id)));
+                $clientDetailBackEditUrl .= '?edit_tab=matter_case';
+                if ($clientDetailBackMatterRef !== null && $clientDetailBackMatterRef !== '') {
+                    $clientDetailBackEditUrl .= '&matter_ref='.rawurlencode($clientDetailBackMatterRef);
+                }
+            @endphp
+            <div class="sidebar-header-toolbar">
+                {{-- Single-quoted onclick: @json() emits double quotes; double-quoted onclick would truncate the attribute --}}
+                <button type="button" class="client-detail-back-btn" id="client-detail-back-btn" title="Back to client edit — Matter and case details"
+                    onclick='window.location.href = @json($clientDetailBackEditUrl);'>
+                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                    <span class="client-detail-back-btn__text">Back</span>
+                </button>
+                <button type="button" id="sidebar-toggle" class="sidebar-toggle-btn" title="Hide Sidebar">
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                </button>
+            </div>
             <div class="client-info">
                 <h3 class="client-id">
                     <?php
@@ -264,21 +284,24 @@ use App\Http\Controllers\Controller;
                 <div class="sidebar-references-label" style="font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Reference</div>
                 <?php
                 // Load reference values - SAME LOGIC AS ACCOUNTS TAB
-                $matter__ref_info_arr = [];
-                if($id1) {
-                    // If client unique reference id is present in url
-                    $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference','other_reference')
-                        ->where('client_id', $fetchedData->id)
-                        ->where('client_unique_matter_no', $id1)
-                        ->first();
-                } else {
-                    $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->where('matter_status', 1)->count();
-                    if($matter_cnt > 0) {
-                        $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference','other_reference')
+                $matter__ref_info_arr = null;
+                if (\Illuminate\Support\Facades\Schema::hasTable('client_matters')
+                    && \Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'department_reference')
+                    && \Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'other_reference')) {
+                    if ($id1) {
+                        $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')
                             ->where('client_id', $fetchedData->id)
-                            ->where('matter_status', 1)
-                            ->orderBy('id', 'desc')
+                            ->where('client_unique_matter_no', $id1)
                             ->first();
+                    } else {
+                        $matter_cnt_ref = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->where('matter_status', 1)->count();
+                        if ($matter_cnt_ref > 0) {
+                            $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')
+                                ->where('client_id', $fetchedData->id)
+                                ->where('matter_status', 1)
+                                ->orderBy('id', 'desc')
+                                ->first();
+                        }
                     }
                 }
                 ?>
@@ -287,12 +310,12 @@ use App\Http\Controllers\Controller;
                 <input type="hidden" 
                        id="department_reference" 
                        name="department_reference" 
-                       value="<?php if(isset($matter__ref_info_arr) && !empty($matter__ref_info_arr) && $matter__ref_info_arr->department_reference != ''){ echo $matter__ref_info_arr->department_reference; } ?>">
+                       value="<?php echo e($matter__ref_info_arr ? ($matter__ref_info_arr->department_reference ?? '') : ''); ?>">
                 
                 <input type="hidden" 
                        id="other_reference" 
                        name="other_reference" 
-                       value="<?php if(isset($matter__ref_info_arr) && !empty($matter__ref_info_arr) && $matter__ref_info_arr->other_reference != ''){ echo $matter__ref_info_arr->other_reference; } ?>">
+                       value="<?php echo e($matter__ref_info_arr ? ($matter__ref_info_arr->other_reference ?? '') : ''); ?>">
                 
                 <!-- Reference Chips Container -->
                 <div id="references-container" class="references-chips-container">
@@ -331,6 +354,9 @@ use App\Http\Controllers\Controller;
             
             // Check if $id1 is a valid matter ID (not a tab name)
             $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array(strtolower($id1), array_map('strtolower', $validTabNames));
+
+            $hideMatterDocumentsForBankMatter = isset($id1) && $id1 !== ''
+                && preg_match('/^bank_/i', (string) $id1) === 1;
             
             // Show client menu if: valid matter ID in URL OR client has any matters
             if( $isMatterIdInUrl || $matter_cnt > 0 )
@@ -352,10 +378,12 @@ use App\Http\Controllers\Controller;
                     <i class="fas fa-folder-open"></i>
                     <span>Personal Documents</span>
                 </button>
+                @if(!$hideMatterDocumentsForBankMatter)
                 <button class="client-nav-button" data-tab="visadocuments">
                     <i class="fas fa-file-contract"></i>
                     <span>Matter Documents</span>
                 </button>
+                @endif
                 <button class="client-nav-button" data-tab="account">
                     <i class="fas fa-file-invoice-dollar"></i>
                     <span>Account</span>
@@ -444,9 +472,10 @@ use App\Http\Controllers\Controller;
                 ->where('matter_status',1)
                 ->count();
             ?>
-            @if((isset($id1) && $id1 != "") || $matter_cnt > 0)
+            @if(((isset($id1) && $id1 != "") || $matter_cnt > 0) && !($hideMatterDocumentsForBankMatter ?? false))
                 @include('crm.clients.tabs.matter_documents')
-                
+            @endif
+            @if((isset($id1) && $id1 != "") || $matter_cnt > 0)
                 @include('crm.clients.tabs.account')
                 @include('crm.clients.tabs.emails')
                 @include('crm.clients.tabs.checklists')
@@ -589,7 +618,12 @@ use App\Http\Controllers\Controller;
 							        </tr>
 							    </thead>
 							    <tbody>
-							        @foreach(\App\Models\UploadChecklist::all() as $uclist)
+							        @php
+							            $__matterChecklistRows = \Illuminate\Support\Facades\Schema::hasTable('matter_checklists')
+							                ? \App\Models\UploadChecklist::orderBy('id')->get()
+							                : collect();
+							        @endphp
+							        @foreach($__matterChecklistRows as $uclist)
 							        <tr data-matter-id="{{ $uclist->matter_id ?? '' }}" data-checklist-id="{{ $uclist->id }}">
 							            <td><input type="checkbox" name="checklistfile[]" value="<?php echo $uclist->id; ?>" class="checklistfile-cb"></td>
 							            <td><?php echo $uclist->name; ?></td>

@@ -1,4 +1,7 @@
 <!-- Legacy create_checklist modal removed - functionality moved to adminconsole DocumentChecklist -->
+@php
+    $__portalChecklistsOk = \Illuminate\Support\Facades\Schema::hasTable('portal_document_checklists');
+@endphp
 
 <!-- Add Personal Checklist Modal -->
 <div class="modal fade create_education_docs custom_modal" id="openeducationdocsmodal" tabindex="-1" role="dialog" aria-labelledby="taskModalLabel" aria-hidden="true">
@@ -11,6 +14,9 @@
 				</button>
 			</div>
 			<div class="modal-body">
+                @if (! $__portalChecklistsOk)
+                    <div class="alert alert-warning">Document checklist options require the <code>portal_document_checklists</code> table. Run <code>php artisan migrate</code>, then add items under Admin → Document checklist.</div>
+                @endif
 				<form method="post" action="{{URL::to('/documents/add-edu-checklist')}}" name="edu_upload_form" id="edu_upload_form" autocomplete="off"  enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="clientid" value="{{$fetchedData->id}}">
@@ -26,7 +32,9 @@
 								<select data-valid="required" class="form-control select2" name="checklist[]" id="checklist" multiple>
 									<option value="">Select</option>
 									<?php
-									$eduChkList = \App\Models\DocumentChecklist::where('status',1)->where('doc_type',1)->get();
+									$eduChkList = $__portalChecklistsOk
+                                        ? \App\Models\DocumentChecklist::where('status', 1)->where('doc_type', 1)->get()
+                                        : collect();
 									foreach($eduChkList as $edulist){
 									?>
 										<option value="{{$edulist->name}}">{{$edulist->name}}</option>
@@ -63,6 +71,9 @@
 				</button>
 			</div>
 			<div class="modal-body">
+                @if (! $__portalChecklistsOk)
+                    <div class="alert alert-warning">Document checklist options require the <code>portal_document_checklists</code> table. Run <code>php artisan migrate</code>.</div>
+                @endif
 				<form method="post" action="{{URL::to('/documents/add-visa-checklist')}}" name="mig_upload_form" id="mig_upload_form" autocomplete="off"  enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="clientid" value="{{$fetchedData->id}}">
@@ -78,7 +89,9 @@
 								<select data-valid="required" class="form-control select2" name="visa_checklist[]" id="visa_checklist" multiple>
 									<option value="">Select</option>
 									<?php
-									$visaChkList = \App\Models\DocumentChecklist::where('status',1)->where('doc_type',2)->get();
+									$visaChkList = $__portalChecklistsOk
+                                        ? \App\Models\DocumentChecklist::where('status', 1)->where('doc_type', 2)->get()
+                                        : collect();
 									foreach($visaChkList as $visalist){
 									?>
 										<option value="{{$visalist->name}}">{{$visalist->name}}</option>
@@ -116,6 +129,9 @@
 				</button>
 			</div>
 			<div class="modal-body">
+                @if (! $__portalChecklistsOk)
+                    <div class="alert alert-warning">Document checklist options require the <code>portal_document_checklists</code> table. Run <code>php artisan migrate</code>.</div>
+                @endif
 				<form method="post" action="{{ URL::to('/documents/add-nomination-checklist') }}" name="nom_upload_checklist_form" id="nom_upload_checklist_form" autocomplete="off"  enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="clientid" value="{{$fetchedData->id}}">
@@ -131,7 +147,9 @@
 								<select data-valid="required" class="form-control select2" name="nomination_checklist[]" id="nomination_checklist" multiple>
 									<option value="">Select</option>
 									<?php
-									$nomChkList = \App\Models\DocumentChecklist::where('status',1)->where('doc_type',3)->get();
+									$nomChkList = $__portalChecklistsOk
+                                        ? \App\Models\DocumentChecklist::where('status', 1)->where('doc_type', 3)->get()
+                                        : collect();
 									foreach($nomChkList as $nomlist){
 									?>
 										<option value="{{$nomlist->name}}">{{$nomlist->name}}</option>

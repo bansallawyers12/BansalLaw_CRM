@@ -20,14 +20,23 @@
                                     </thead>
                                     <tbody class="tdata notuseddocumnetlist">
                                         <?php
-                                        $fetchd = \App\Models\Document::where('client_id', $fetchedData->id)
-                                        ->where('not_used_doc', 1)
-                                        ->where('type','client')
-                                        ->where(function($query) {
-                                            $query->orWhere('doc_type','personal')
-                                            ->orWhere('doc_type','visa')
-                                            ->orWhere('doc_type','nomination');
-                                        })->orderBy('type', 'DESC')->get();
+                                        $fetchd = collect();
+                                        if (\Illuminate\Support\Facades\Schema::hasTable('documents')
+                                            && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'client_id')
+                                            && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'not_used_doc')
+                                            && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'doc_type')
+                                            && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'type')
+                                            && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'checklist')
+                                            && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'user_id')) {
+                                            $fetchd = \App\Models\Document::where('client_id', $fetchedData->id)
+                                                ->where('not_used_doc', 1)
+                                                ->where('type', 'client')
+                                                ->where(function ($query) {
+                                                    $query->orWhere('doc_type', 'personal')
+                                                        ->orWhere('doc_type', 'visa')
+                                                        ->orWhere('doc_type', 'nomination');
+                                                })->orderBy('type', 'DESC')->get();
+                                        }
                                         foreach($fetchd as $notuseKey=>$fetch)
                                         {
                                             $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();

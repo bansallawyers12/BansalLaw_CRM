@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Admin;
 use App\Models\Company;
 use App\Models\Lead;
@@ -34,6 +35,30 @@ class LeadController extends Controller
     public function __construct()
     {
         $this->middleware('auth:admin');
+    }
+
+    /**
+     * Persist lead assignee (staff id): admins.user_id or admins.agent_id depending on schema.
+     */
+    private function applyLeadAssigneeToAdminRow(array &$adminData, int $assignUserId): void
+    {
+        if (Schema::hasColumn('admins', 'user_id')) {
+            $adminData['user_id'] = $assignUserId;
+        } elseif (Schema::hasColumn('admins', 'agent_id')) {
+            $adminData['agent_id'] = $assignUserId;
+        }
+    }
+
+    /**
+     * Remove insert keys whose columns are missing on admins (PostgreSQL phased drops).
+     */
+    private function pruneAdminInsertData(array &$adminData): void
+    {
+        foreach (array_keys($adminData) as $col) {
+            if (! Schema::hasColumn('admins', $col)) {
+                unset($adminData[$col]);
+            }
+        }
     }
 
     /**
@@ -688,8 +713,7 @@ class LeadController extends Controller
 
                 // Create new lead using DB query builder - only fields from simplified form
                 $adminData = [
-                    // System fields
-                    'user_id' => $assignUserId,
+                    // System fields (assignee applied via applyLeadAssigneeToAdminRow)
                     'password' => Hash::make('LEAD_PLACEHOLDER'), // Placeholder password for leads (NOT NULL constraint, will be overwritten if client portal activated)
                     'client_counter' => $client_current_counter,
                     'client_id' => $client_id,
@@ -744,6 +768,8 @@ class LeadController extends Controller
                     'updated_at' => now(),
                 ];
 
+                $this->applyLeadAssigneeToAdminRow($adminData, $assignUserId);
+                $this->pruneAdminInsertData($adminData);
 
                 Log::info('Attempting to insert lead into database');
                 Log::info('Admin data to insert: ' . json_encode($adminData));
@@ -1167,10 +1193,18 @@ class LeadController extends Controller
                 }
             }
             
-            $lead->contact_type = $lastContactType;
-            $lead->country_code = $lastCountryCode;
-            $lead->phone = $lastPhone;
-            $lead->email_type = $lastEmailType;
+            if (Schema::hasColumn('admins', 'contact_type')) {
+                $lead->contact_type = $lastContactType;
+            }
+            if (Schema::hasColumn('admins', 'country_code')) {
+                $lead->country_code = $lastCountryCode;
+            }
+            if (Schema::hasColumn('admins', 'phone')) {
+                $lead->phone = $lastPhone;
+            }
+            if (Schema::hasColumn('admins', 'email_type')) {
+                $lead->email_type = $lastEmailType;
+            }
             $lead->email = $lastEmail;
             $lead->source = $requestData['lead_source'] ?? null;
             $lead->related_files = rtrim($related_files, ',');
@@ -1205,7 +1239,12 @@ class LeadController extends Controller
 
             if (array_key_exists('assigned_staff_id', $requestData)) {
                 $asid = $requestData['assigned_staff_id'];
-                $lead->user_id = ($asid === '' || $asid === null) ? Auth::user()->id : (int) $asid;
+                $assignId = ($asid === '' || $asid === null) ? Auth::user()->id : (int) $asid;
+                if (Schema::hasColumn('admins', 'user_id')) {
+                    $lead->user_id = $assignId;
+                } elseif (Schema::hasColumn('admins', 'agent_id')) {
+                    $lead->agent_id = $assignId;
+                }
             }
 
             // Additional fields with null coalescing
