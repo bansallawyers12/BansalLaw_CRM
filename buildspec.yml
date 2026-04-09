@@ -116,13 +116,18 @@ phases:
         # ========================================
         echo "Restarting services..."
 
-        systemctl restart $PHP_FPM
+        systemctl restart $PHP_FPM || true
         systemctl restart bansallaw-queue || true
         systemctl restart bansallaw-reverb || true
         systemctl restart bansallaw-email || true
         systemctl restart migration-python-services || true
 
-        systemctl reload nginx
+        echo "Reloading web server..."
+        if systemctl is-active --quiet nginx; then
+            systemctl reload nginx
+        elif systemctl is-active --quiet apache2; then
+            systemctl reload apache2
+        fi
 
         echo "Disabling maintenance mode..."
         sudo -u $APP_USER php artisan up
