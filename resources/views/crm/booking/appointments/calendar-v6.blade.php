@@ -21,7 +21,7 @@
                     </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}" 
                        class="btn btn-sm {{ $type === 'kunal' ? 'btn-primary' : 'btn-outline-primary' }}">
-                        <i class="fas fa-calendar-alt"></i> Kunal Calendar
+                        <i class="fas fa-calendar-alt"></i> Michael
                     </a>
                 </div>
             </div>

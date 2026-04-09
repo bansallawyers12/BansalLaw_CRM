@@ -31,7 +31,7 @@
                         <i class="fas fa-calendar-alt mr-2"></i> Ajay Calendar
                     </a>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}">
-                        <i class="fas fa-calendar-alt mr-2"></i> Kunal Calendar
+                        <i class="fas fa-calendar-alt mr-2"></i> Michael
                     </a>
                     @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
                     <div class="dropdown-divider"></div>

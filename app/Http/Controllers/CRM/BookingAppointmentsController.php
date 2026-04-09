@@ -321,7 +321,7 @@ class BookingAppointmentsController extends Controller
 
         $calendarTitle = match($type) {
             'ajay' => 'Ajay Calendar',
-            'kunal' => 'Kunal Calendar',
+            'kunal' => 'Michael',
             default => ucfirst($type)
         };
 

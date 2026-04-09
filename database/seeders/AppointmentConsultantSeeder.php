@@ -23,7 +23,7 @@ class AppointmentConsultantSeeder extends Seeder
             9 => 4,  // Tourist Visa Team - old ID 9 -> new ID 4
             10 => 5, // Adelaide Office - old ID 10 -> new ID 5
             11 => 6, // Ajay Calendar - old ID 11 -> new ID 6
-            12 => 7, // Kunal Calendar - old ID 12 -> new ID 7 (if exists)
+            12 => 7, // Michael (kunal calendar) - old ID 12 -> new ID 7 (if exists)
         ];
         
         // Update appointments to use temporary IDs (1000+) to avoid conflicts
@@ -93,7 +93,7 @@ class AppointmentConsultantSeeder extends Seeder
                 'is_active' => true,
             ],
             [
-                'name' => 'Kunal Calendar',
+                'name' => 'Michael',
                 'email' => 'kunal@bansallawyers.com.au',
                 'calendar_type' => 'kunal',
                 'location' => 'melbourne',
@@ -123,7 +123,7 @@ class AppointmentConsultantSeeder extends Seeder
                 ->update(['consultant_id' => $newId]);
         }
         
-        $this->command->info('✓ Created 7 appointment consultants with IDs 1-7 (including Ajay Calendar and Kunal Calendar)');
+        $this->command->info('✓ Created 7 appointment consultants with IDs 1-7 (including Ajay Calendar and Michael)');
         $this->command->info('✓ Updated all appointments to reference new consultant IDs');
     }
 }
