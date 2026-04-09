@@ -1,34 +1,8 @@
 version: 0.2
 
 phases:
-  install:
-    runtime-versions:
-      php: 8.2
-      nodejs: 22
-    commands:
-      - php -v
-      - composer --version || (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer)
-      - node -v
-
-  pre_build:
-    commands:
-      # CodeBuild's PHP (phpenv) often lacks ext-gd, ext-zip, ext-intl, etc. Your server has them;
-      # --ignore-platform-reqs only affects this CI install, not production.
-      - composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress --ignore-platform-reqs --no-scripts
-      # Composer scripts are skipped above: artisan needs a writable .env with APP_KEY before package:discover.
-      - |
-        if [ ! -f .env ]; then
-          printf '%s\n' 'APP_NAME=Laravel' 'APP_ENV=local' 'APP_KEY=' 'APP_DEBUG=false' 'APP_URL=http://localhost' > .env
-          php artisan key:generate --force --no-interaction
-        fi
-      - php artisan package:discover --ansi
-      - composer dump-autoload --optimize --no-dev --no-interaction
-      - npm install --no-audit --no-fund
-
   build:
     commands:
-      - npm run build
-
       - echo "======================================"
       - echo "Creating deploy script..."
       - echo "======================================"
@@ -83,7 +57,7 @@ phases:
             python3 -m venv venv
         fi
 
-        echo 'Installing Python dependencies...'
+        echo "Installing Python dependencies..."
         ./venv/bin/pip install --upgrade pip >/dev/null 2>&1
         ./venv/bin/pip install -r requirements.txt --quiet
         "
