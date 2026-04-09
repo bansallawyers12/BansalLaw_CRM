@@ -23,7 +23,7 @@ phases:
         fi
       - php artisan package:discover --ansi
       - composer dump-autoload --optimize --no-dev --no-interaction
-      - npm ci
+      - npm install --no-audit --no-fund
 
   build:
     commands:
