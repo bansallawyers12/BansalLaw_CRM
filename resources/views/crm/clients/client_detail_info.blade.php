@@ -1,5 +1,10 @@
 
 <div class="section-body clientDetailCls">
+@php
+    $__agentListForSubagent = \Illuminate\Support\Facades\Schema::hasTable('agent_details')
+        ? \App\Models\AgentDetails::where('status', 1)->orderBy('agent_name')->get()
+        : collect();
+@endphp
     <form action="{{ url('clients/clientdetailsinfo') }}" method="POST" name="edit-clients" autocomplete="off" enctype="multipart/form-data">
         @csrf
         <input type="hidden" name="id" value="{{ @$fetchedData->id }}">
@@ -3989,7 +3994,7 @@
                                     <label for="subagent">Sub Agent <span class="span_req">*</span></label>
                                     <select class="form-control select2" name="subagent">
                                         <option>-- Choose a sub agent --</option>
-                                        @foreach(\App\Models\AgentDetails::where('status', 1)->orderBy('agent_name')->get() as $agentlist)
+                                        @foreach($__agentListForSubagent as $agentlist)
                                             <option <?php if(@$fetchedData->agent_id == $agentlist->id){ echo 'selected'; } ?> value="{{$agentlist->id}}">{{$agentlist->agent_name ?? $agentlist->business_name ?? 'Agent'}}</option>
                                         @endforeach
                                     </select>

@@ -79,6 +79,7 @@
             <script>
                 // Configuration object for edit-client.js
                 window.editClientConfig = {
+                    rootUrl: @json(rtrim(url('/'), '/')),
                     visaTypesRoute: '{{ route("getVisaTypes") }}',
                     countriesRoute: '{{ route("getCountries") }}',
                     searchPartnerRoute: '{{ route("clients.searchPartner") }}',

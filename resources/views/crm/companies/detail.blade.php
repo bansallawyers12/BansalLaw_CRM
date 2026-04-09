@@ -2,6 +2,7 @@
 @section('title', 'Company Detail')
 
 @section('content')
+@php \App\Support\EnsureDummyMatterStaff::ensure(); @endphp
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="stylesheet" href="{{ URL::asset('css/client-detail.css') }}">
 
@@ -591,7 +592,12 @@ use App\Http\Controllers\Controller;
 							        </tr>
 							    </thead>
 							    <tbody>
-							        @foreach(\App\Models\UploadChecklist::all() as $uclist)
+							        @php
+							            $__matterChecklistRows = \Illuminate\Support\Facades\Schema::hasTable('matter_checklists')
+							                ? \App\Models\UploadChecklist::orderBy('id')->get()
+							                : collect();
+							        @endphp
+							        @foreach($__matterChecklistRows as $uclist)
 							        <tr data-matter-id="{{ $uclist->matter_id ?? '' }}" data-checklist-id="{{ $uclist->id }}">
 							            <td><input type="checkbox" name="checklistfile[]" value="<?php echo $uclist->id; ?>" class="checklistfile-cb"></td>
 							            <td><?php echo $uclist->name; ?></td>

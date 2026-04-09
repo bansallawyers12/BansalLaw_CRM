@@ -411,7 +411,12 @@
 								<div class="table-responsive"><table class="table table-sm table-bordered">
 									<thead><tr><th></th><th>File name</th></tr></thead>
 									<tbody>
-									@foreach(\App\Models\UploadChecklist::all() as $uclist)
+									@php
+									    $__matterChecklistRows = \Illuminate\Support\Facades\Schema::hasTable('matter_checklists')
+									        ? \App\Models\UploadChecklist::orderBy('id')->get()
+									        : collect();
+									@endphp
+									@foreach($__matterChecklistRows as $uclist)
 									<tr><td><input type="checkbox" name="checklistfile[]" value="{{ $uclist->id }}"></td><td><a href="{{ url('checklists/'.$uclist->file) }}" target="_blank">{{ $uclist->name }}</a></td></tr>
 									@endforeach
 									</tbody>

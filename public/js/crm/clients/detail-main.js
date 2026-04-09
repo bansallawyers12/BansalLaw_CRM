@@ -734,6 +734,26 @@ $(document).ready(function() {
 
                 else $('#change_office_id').val('').trigger('change');
 
+                if ($('#change_matter_incidence_type').length) {
+                    $('#change_matter_incidence_type').val(m.incidence_type ? String(m.incidence_type) : '');
+                }
+
+                if ($('#change_matter_date_of_incidence').length) {
+                    var doi = m.date_of_incidence;
+                    if (doi) {
+                        doi = String(doi);
+                        if (doi.indexOf('T') > 0) { doi = doi.split('T')[0]; }
+                        else if (doi.indexOf(' ') > 0) { doi = doi.split(' ')[0]; }
+                        $('#change_matter_date_of_incidence').val(doi);
+                    } else {
+                        $('#change_matter_date_of_incidence').val('');
+                    }
+                }
+
+                if ($('#change_matter_case_detail').length) {
+                    $('#change_matter_case_detail').val(m.case_detail ? String(m.case_detail) : '');
+                }
+
             }
 
         });

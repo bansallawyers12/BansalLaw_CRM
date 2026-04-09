@@ -45,26 +45,24 @@
 
 
                     $SelectedClientId = $fetchedData->id;
-                    $visaDocCatList = \App\Models\VisaDocumentType::select('id', 'title', 'client_id', 'client_matter_id')
-                        ->where('status', 1)
-                        ->where(function($query) use ($SelectedClientId,$client_selected_matter_id1) {
-                            $query->where(function($q) {
-                                    // 1️⃣ Both client_id and client_matter_id are NULL
+                    $visaDocCatList = \Illuminate\Support\Facades\Schema::hasTable('visa_document_types')
+                        ? \App\Models\VisaDocumentType::select('id', 'title', 'client_id', 'client_matter_id')
+                            ->where('status', 1)
+                            ->where(function ($query) use ($SelectedClientId, $client_selected_matter_id1) {
+                                $query->where(function ($q) {
                                     $q->whereNull('client_id')
-                                    ->whereNull('client_matter_id');
+                                        ->whereNull('client_matter_id');
                                 })
-                                ->orWhere(function($q) use ($SelectedClientId) {
-                                    // 2️⃣ client_id matches and client_matter_id is NULL
-                                    $q->where('client_id', $SelectedClientId)
-                                    ->whereNull('client_matter_id');
-                                })
-                                ->orWhere(function($q) use ($SelectedClientId, $client_selected_matter_id1) {
-                                    // 3️⃣ client_id matches and client_matter_id matches
-                                    $q->where('client_id', $SelectedClientId)
-                                    ->where('client_matter_id', $client_selected_matter_id1);
-                                });
-                        })
-                        ->orderByRaw("
+                                    ->orWhere(function ($q) use ($SelectedClientId) {
+                                        $q->where('client_id', $SelectedClientId)
+                                            ->whereNull('client_matter_id');
+                                    })
+                                    ->orWhere(function ($q) use ($SelectedClientId, $client_selected_matter_id1) {
+                                        $q->where('client_id', $SelectedClientId)
+                                            ->where('client_matter_id', $client_selected_matter_id1);
+                                    });
+                            })
+                            ->orderByRaw("
                             CASE
                                 WHEN (client_id IS NULL AND client_matter_id IS NULL) THEN 1
                                 WHEN (client_id = ? AND client_matter_id = ?) THEN 2
@@ -72,9 +70,27 @@
                                 ELSE 4
                             END, id ASC
                         ", [$SelectedClientId, $client_selected_matter_id1, $SelectedClientId])
-                        ->get();
+                            ->get()
+                        : collect();
+
+                    $documentsTableReady = \Illuminate\Support\Facades\Schema::hasTable('documents')
+                        && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'client_id')
+                        && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'not_used_doc')
+                        && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'folder_name')
+                        && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'doc_type')
+                        && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'type')
+                        && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'checklist')
+                        && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'client_matter_id')
+                        && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'form956_id');
 
                     ?>
+
+                    @if (! \Illuminate\Support\Facades\Schema::hasTable('visa_document_types'))
+                        <div class="alert alert-warning" style="margin: 15px;">
+                            Matter document categories are unavailable: the <code>visa_document_types</code> table is missing.
+                            Run <code>php artisan migrate</code> on the server, then reload this page.
+                        </div>
+                    @endif
 
                     <!-- Matter Documents content -->
                     <div class="visa-documents-content" id="visa-documents-content">
@@ -160,20 +176,21 @@
                                             </thead>
                                             <tbody class="tdata migdocumnetlist1 migdocumnetlist_<?= $id ?>">
                                                 <?php
-                                                 $documents = \App\Models\Document::with('signers')->where('client_id', $fetchedData->id)
-                                                    ->whereNull('not_used_doc')
-                                                    ->where('doc_type', 'visa')
-                                                    ->where('folder_name', $folderName)
-                                                    ->where('type', 'client')
-                                                    ->orderBy('created_at', 'DESC')
-                                                    ->get();
-                                                 $parentDocs = $documents->filter(fn($d) => !str_ends_with($d->checklist ?? '', '_signed'));
-                                                 $signedByParent = $documents->filter(fn($d) => str_ends_with($d->checklist ?? '', '_signed'))
-                                                    ->groupBy(fn($d) => ($d->folder_name ?? '') . '|' . ($d->client_matter_id ?? '') . '|' . substr($d->checklist ?? '', 0, -7));
-                                                 // Keys that still have an active (visible) parent row — signed docs under these are rendered in the main loop
-                                                 $parentKeysWithActiveParent = $parentDocs->map(fn($d) => ($d->folder_name ?? '') . '|' . ($d->client_matter_id ?? '') . '|' . ($d->checklist ?? ''))->unique()->values();
-                                                 // Signed groups with no active parent (parent moved to not used or deleted) — show signed rows standalone
-                                                 $orphanSignedKeys = $signedByParent->keys()->filter(fn($k) => !$parentKeysWithActiveParent->contains($k))->sortBy(fn($k) => $signedByParent->get($k)->min('created_at'));
+                                                $documents = collect();
+                                                if ($documentsTableReady) {
+                                                    $documents = \App\Models\Document::with('signers')->where('client_id', $fetchedData->id)
+                                                        ->whereNull('not_used_doc')
+                                                        ->where('doc_type', 'visa')
+                                                        ->where('folder_name', $folderName)
+                                                        ->where('type', 'client')
+                                                        ->orderBy('created_at', 'DESC')
+                                                        ->get();
+                                                }
+                                                $parentDocs = $documents->filter(fn ($d) => ! str_ends_with($d->checklist ?? '', '_signed'));
+                                                $signedByParent = $documents->filter(fn ($d) => str_ends_with($d->checklist ?? '', '_signed'))
+                                                    ->groupBy(fn ($d) => ($d->folder_name ?? '') . '|' . ($d->client_matter_id ?? '') . '|' . substr($d->checklist ?? '', 0, -7));
+                                                $parentKeysWithActiveParent = $parentDocs->map(fn ($d) => ($d->folder_name ?? '') . '|' . ($d->client_matter_id ?? '') . '|' . ($d->checklist ?? ''))->unique()->values();
+                                                $orphanSignedKeys = $signedByParent->keys()->filter(fn ($k) => ! $parentKeysWithActiveParent->contains($k))->sortBy(fn ($k) => $signedByParent->get($k)->min('created_at'));
                                                 ?>
                                                 <?php foreach ($parentDocs as $visaKey => $fetch): ?>
                                                     <?php
@@ -390,13 +407,16 @@
                                     <div class="grid_data miggriddata" style="display:none;">
                                         <?php foreach ($visaDocCatList as $catVal):
                                             $id = $catVal->id;
-                                            $documents = \App\Models\Document::where('client_id', $fetchedData->id)
-                                                ->whereNull('not_used_doc')
-                                                ->where('doc_type', 'visa')
-                                                ->where('folder_name', $id)
-                                                ->where('type', 'client')
-                                                ->orderBy('updated_at', 'DESC')
-                                                ->get();
+                                            $documents = collect();
+                                            if ($documentsTableReady) {
+                                                $documents = \App\Models\Document::where('client_id', $fetchedData->id)
+                                                    ->whereNull('not_used_doc')
+                                                    ->where('doc_type', 'visa')
+                                                    ->where('folder_name', $id)
+                                                    ->where('type', 'client')
+                                                    ->orderBy('updated_at', 'DESC')
+                                                    ->get();
+                                            }
                                             foreach ($documents as $fetch):
                                                 if ($fetch->myfile):
                                                     $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();

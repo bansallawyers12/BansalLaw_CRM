@@ -59,9 +59,10 @@ class Admin extends Authenticatable
         'is_archived', 'archived_by', 'archived_on',
         'is_deleted',
         // Personal
-        'marital_status',
+        'dob', 'age', 'gender', 'marital_status',
         // Client/Lead Tags
         'tagname',
+        'refer_by',
         // Google review staff reminder (client/lead detail)
         'google_review_reminder_status',
         'google_review_reminder_snooze_until',
@@ -79,6 +80,7 @@ class Admin extends Authenticatable
     ];
 
     protected $casts = [
+        'dob' => 'date',
         'followup_date' => 'datetime',
         'google_review_reminder_snooze_until' => 'datetime',
         'is_deleted' => 'datetime',
@@ -311,6 +313,48 @@ class Admin extends Authenticatable
     public function isCompany(): bool
     {
         return (bool) $this->is_company;
+    }
+
+    /**
+     * True if this admins row represents a CRM client/lead subject (can own matters, etc.).
+     * Handles legacy rows: empty type with client_id, lead pipeline / converted, or old role=7.
+     */
+    public function isCrmClientOrLeadSubject(): bool
+    {
+        $rawType = trim((string) ($this->type ?? ''));
+        // trim() does not remove ZWSP/BOM; those break strict equality with 'client'/'lead'
+        $rawType = preg_replace('/[\x{200B}-\x{200D}\x{FEFF}\x{00A0}]/u', '', $rawType);
+        $rawType = trim($rawType);
+        $t = mb_strtolower($rawType, 'UTF-8');
+        if (in_array($t, ['client', 'lead'], true)) {
+            return true;
+        }
+
+        $crmRef = trim((string) ($this->client_id ?? ''));
+        $crmRef = preg_replace('/[\x{200B}-\x{200D}\x{FEFF}\x{00A0}]/u', '', $crmRef);
+        $crmRef = trim($crmRef);
+
+        // Legacy: wrong/stale type string but CRM reference already assigned (e.g. imports)
+        if ($crmRef !== '' && $t !== '') {
+            return true;
+        }
+
+        if ($rawType !== '') {
+            return false;
+        }
+
+        $ls = mb_strtolower(trim((string) ($this->lead_status ?? '')), 'UTF-8');
+        if (in_array($ls, ['new', 'follow_up', 'not_qualified', 'hostile', 'converted'], true)) {
+            return true;
+        }
+        if ($crmRef !== '') {
+            return true;
+        }
+        if ((int) ($this->role ?? 0) === 7) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

@@ -16,8 +16,12 @@ use App\Models\ClientPassportInformation;
 use App\Models\ClientTravelInformation;
 use App\Models\ClientCharacter;
 use App\Models\ClientRelationship;
+use App\Models\ClientMatter;
 use App\Models\Matter;
 use App\Models\Country;
+use App\Models\Staff;
+use App\Models\Branch;
+use App\Support\EnsureDummyMatterStaff;
 
 /**
  * ClientEditService
@@ -42,7 +46,14 @@ class ClientEditService
     {
         // Get client data with partner relationship eager loaded
         $clientData = $this->getClientData($clientId);
-        
+
+        // Always load matter dropdowns when we have an admin row (same screen as clients.edit).
+        // Rely on storeLeadMatterFromEdit to enforce lead/client (and visibility).
+        $matterFormForLead = null;
+        if ($clientData) {
+            $matterFormForLead = $this->getMatterFormOptionsForLead((bool) ($clientData->is_company ?? false));
+        }
+
         return [
             'fetchedData' => $clientData,
             'clientContacts' => $this->getClientContacts($clientId),
@@ -58,11 +69,54 @@ class ClientEditService
             'clientTravels' => $this->getTravels($clientId),
             'clientCharacters' => $this->getCharacters($clientId),
             'clientPartners' => $this->getRelationships($clientId),
-            
+            'clientMatters' => $this->getClientMatters($clientId),
+
             // Dropdown data - loaded ONCE to prevent N+1 queries
             'visaTypes' => $this->getVisaTypes(),
             'countries' => $this->getCountries(),
+            'matterFormForLead' => $matterFormForLead,
         ];
+    }
+
+    /**
+     * Dropdown data for "add matter" on lead edit (matches lead cost-assignment staff roles).
+     */
+    protected function getMatterFormOptionsForLead(bool $isCompany): array
+    {
+        EnsureDummyMatterStaff::ensure();
+
+        return [
+            'mattersForAdd' => $this->getMattersForSubject($isCompany),
+            'migrationAgents' => Staff::query()
+                ->where('role', 16)
+                ->where('status', 1)
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get(['id', 'first_name', 'last_name', 'email']),
+            'personResponsibleOptions' => Staff::query()
+                ->where('role', 12)
+                ->where('status', 1)
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get(['id', 'first_name', 'last_name', 'email']),
+            'personAssistingOptions' => Staff::query()
+                ->where('role', 13)
+                ->where('status', 1)
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get(['id', 'first_name', 'last_name', 'email']),
+            'branchOffices' => Branch::query()->orderBy('office_name')->get(['id', 'office_name']),
+        ];
+    }
+
+    protected function getMattersForSubject(bool $isCompany)
+    {
+        return Matter::query()
+            ->select('id', 'title', 'nick_name')
+            ->where('status', 1)
+            ->forClientType($isCompany)
+            ->orderBy('title')
+            ->get();
     }
 
     /**
@@ -229,6 +283,21 @@ class ClientEditService
         return ClientRelationship::where('client_id', $clientId)
             ->with(['relatedClient:id,first_name,last_name,email,phone,client_id'])  // Eager load to prevent N+1
             ->get() ?? [];
+    }
+
+    /**
+     * Matters linked to this admin row (client or lead). client_matters.client_id stores admins.id.
+     */
+    protected function getClientMatters(int $clientId)
+    {
+        return ClientMatter::query()
+            ->where('client_id', $clientId)
+            ->with([
+                'matter:id,title,nick_name',
+                'workflowStage:id,name',
+            ])
+            ->orderByDesc('id')
+            ->get();
     }
 
     /**

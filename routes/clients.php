@@ -299,6 +299,7 @@ Route::get('/forms/{form}/pdf', [Form956Controller::class, 'generatePdf'])->name
 /*---------- Client Matter Management ----------*/
 Route::get('/get-matter-templates', [CRMUtilityController::class, 'getmattertemplates'])->name('clients.getmattertemplates');
 Route::get('/get-client-matters/{clientId}', [ClientsController::class, 'getClientMatters'])->name('clients.getClientMatters');
+Route::post('/clients/store-lead-matter', [ClientsController::class, 'storeLeadMatterFromEdit'])->name('clients.storeLeadMatterFromEdit');
 Route::post('/clients/fetchClientMatterAssignee', [ClientPersonalDetailsController::class, 'fetchClientMatterAssignee']);
 Route::post('/clients/updateClientMatterAssignee', [ClientPersonalDetailsController::class, 'updateClientMatterAssignee']);
 

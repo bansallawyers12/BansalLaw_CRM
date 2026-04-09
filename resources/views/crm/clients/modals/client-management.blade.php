@@ -811,12 +811,12 @@
     </div>
 </div>
 
-<!-- Change Matter Assignee Modal -->
+<!-- Change Matter Assignee / matter details modal -->
 <div class="modal fade custom_modal" id="changeMatterAssigneeModal" tabindex="-1" role="dialog" aria-labelledby="change_MatterModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="change_MatterModalLabel">Change Matter Assignee</h5>
+				<h5 class="modal-title" id="change_MatterModalLabel">Edit matter details</h5>
 				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
@@ -879,8 +879,33 @@
                             </div>
                         </div>
 
+                        @if(\Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'incidence_type'))
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label for="change_matter_incidence_type">Incidence type</label>
+                                <input type="text" class="form-control" name="incidence_type" id="change_matter_incidence_type" maxlength="255" placeholder="e.g. workplace, refusal, relationship breakdown" autocomplete="off">
+                            </div>
+                        </div>
+                        @endif
+                        @if(\Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'date_of_incidence'))
+                        <div class="col-12 col-md-6">
+                            <div class="form-group">
+                                <label for="change_matter_date_of_incidence">Date of incidence</label>
+                                <input type="date" class="form-control" name="date_of_incidence" id="change_matter_date_of_incidence" autocomplete="off">
+                            </div>
+                        </div>
+                        @endif
+                        @if(\Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'case_detail'))
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label for="change_matter_case_detail">Case detail</label>
+                                <textarea class="form-control" name="case_detail" id="change_matter_case_detail" rows="4" maxlength="5000" placeholder="Brief description or context for this matter"></textarea>
+                            </div>
+                        </div>
+                        @endif
+
                         <div class="col-9 col-md-9 col-lg-9 text-right">
-                            <button onclick="customValidate('change_matter_assignee')" type="button" class="btn btn-primary">Change</button>
+                            <button onclick="customValidate('change_matter_assignee')" type="button" class="btn btn-primary">Save</button>
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
                     </div>

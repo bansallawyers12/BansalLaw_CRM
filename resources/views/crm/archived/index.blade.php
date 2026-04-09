@@ -234,7 +234,9 @@
                                         </td>
                                         <td style="white-space: initial;"> {{ @$list->first_name == "" ? config('constants.empty') : Str::limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : Str::limit(@$list->last_name, '50', '...') }}</td>
                                         <?php
-                                        $agent = \App\Models\AgentDetails::where('id', $list->agent_id)->first();
+                                        $agent = \Illuminate\Support\Facades\Schema::hasTable('agent_details') && ! empty($list->agent_id)
+                                            ? \App\Models\AgentDetails::where('id', $list->agent_id)->first()
+                                            : null;
                                         ?>
                                         <td style="white-space: initial;">@if($agent) {{ @$agent->full_name }} @else - @endif</td>
                                         <td style="white-space: initial;">-</td>

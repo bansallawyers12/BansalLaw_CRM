@@ -2104,6 +2104,12 @@ class ClientsController extends Controller
             // Set default tab if not provided
             $activeTab = $tab ?? 'personaldetails';
 
+            // Banking matters (BANK_1, …): hide Matter Documents tab — remap stale /visadocuments URLs.
+            if ($id1 !== null && $id1 !== '' && preg_match('/^bank_/i', (string) $id1) === 1
+                && strtolower((string) $activeTab) === 'visadocuments') {
+                $activeTab = 'personaldetails';
+            }
+
             if (Admin::where('id', '=', $id)->whereIn('type', ['client', 'lead'])->exists()) {
                 $fetchedData = Admin::with([
                     'company.contactPerson',
@@ -2156,7 +2162,9 @@ class ClientsController extends Controller
                 $visaCountries = ClientVisaCountry::where('client_id', $id)->get() ?? [];
                 $clientSpouseDetail = ClientSpouseDetail::where('client_id', $id)->get();
                 $clientOccupations = ClientOccupation::where('client_id', $id)->get();
-                $ClientPoints = ClientPoint::where('client_id', $id)->get();
+                $ClientPoints = \Illuminate\Support\Facades\Schema::hasTable('client_points')
+                    ? ClientPoint::where('client_id', $id)->get()
+                    : collect();
 
                 // Fetch client family details with optimized query
                 // Eager load related client to prevent N+1 queries in the view
@@ -5646,6 +5654,98 @@ class ClientsController extends Controller
         return response()->json(['exists' => $exists]);
     }
 
+    /**
+     * Create an active client_matters row for a lead from the CRM client edit page (no cost assignment).
+     * client_matters.client_id is admins.id (same pattern as savecostassignmentlead).
+     */
+    public function storeLeadMatterFromEdit(Request $request)
+    {
+        $validated = $request->validate([
+            'client_id' => 'required|integer|exists:admins,id',
+            'matter_id' => 'required|integer|exists:matters,id',
+            'migration_agent' => 'required|integer|exists:staff,id',
+            'person_responsible' => 'nullable|integer|exists:staff,id',
+            'person_assisting' => 'nullable|integer|exists:staff,id',
+            'office_id' => 'nullable|integer|exists:branches,id',
+            'case_detail' => 'nullable|string|max:5000',
+            'date_of_incidence' => 'nullable|date',
+            'incidence_type' => 'nullable|string|max:255',
+        ]);
+
+        $admin = Admin::query()->find((int) $validated['client_id']);
+        if (! $admin || ! $admin->isCrmClientOrLeadSubject()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Matters can only be added for lead or client records from this form.',
+            ], 422);
+        }
+
+        if (! StaffClientVisibility::canAccessClientOrLead((int) $admin->id, Auth::user())) {
+            return response()->json([
+                'success' => false,
+                'message' => config('constants.unauthorized'),
+            ], 403);
+        }
+
+        $matterId = (int) $validated['matter_id'];
+        if (! Matter::allowedForClientIsCompany($matterId, (bool) $admin->is_company)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This matter type is not valid for this record.',
+            ], 422);
+        }
+
+        $row = new ClientMatter();
+        $row->user_id = Auth::id();
+        $row->client_id = (int) $admin->id;
+        $row->office_id = $validated['office_id'] ?? optional(Auth::user())->office_id ?? null;
+        $row->sel_migration_agent = (int) $validated['migration_agent'];
+        $row->sel_person_responsible = $validated['person_responsible'] ?? null;
+        $row->sel_person_assisting = $validated['person_assisting'] ?? null;
+        $row->sel_matter_id = $matterId;
+        $caseDetail = isset($validated['case_detail']) ? trim((string) $validated['case_detail']) : '';
+        $row->case_detail = $caseDetail !== '' ? $caseDetail : null;
+        $row->date_of_incidence = $validated['date_of_incidence'] ?? null;
+        $incidenceType = isset($validated['incidence_type']) ? trim((string) $validated['incidence_type']) : '';
+        $row->incidence_type = $incidenceType !== '' ? $incidenceType : null;
+
+        $countForType = DB::table('client_matters')
+            ->where('sel_matter_id', $matterId)
+            ->where('client_id', $admin->id)
+            ->count();
+        $nextNo = $countForType + 1;
+        if ($matterId === 1) {
+            $row->client_unique_matter_no = 'GN_' . $nextNo;
+        } else {
+            $matterInfo = Matter::query()->where('id', $matterId)->value('nick_name');
+            $prefix = $matterInfo ?: 'Matter';
+            $row->client_unique_matter_no = $prefix . '_' . $nextNo;
+        }
+
+        $matterType = Matter::find($matterId);
+        $workflowId = $matterType && $matterType->workflow_id
+            ? $matterType->workflow_id
+            : \App\Models\Workflow::where('name', 'General')->value('id');
+        $firstStageId = \App\Models\WorkflowStage::where('workflow_id', $workflowId)
+            ->orderByRaw('COALESCE(sort_order, id) ASC')
+            ->value('id')
+            ?? \App\Models\WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')->value('id')
+            ?? 1;
+        $row->workflow_id = $workflowId;
+        $row->workflow_stage_id = $firstStageId;
+        $row->matter_status = 1;
+        $row->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Matter ' . $row->client_unique_matter_no . ' created.',
+            'matter' => [
+                'id' => $row->id,
+                'client_unique_matter_no' => $row->client_unique_matter_no,
+            ],
+        ]);
+    }
+
     //Store Cost Assignment Form Values of Lead
     public function savecostassignmentlead(Request $request)
     {   
@@ -5654,7 +5754,7 @@ class ClientsController extends Controller
         {
             $requestData = $request->all(); //dd($requestData);
             $clientForMatter = Admin::find($requestData['client_id'] ?? null);
-            if (!$clientForMatter || ! in_array($clientForMatter->type, ['client', 'lead'], true)) {
+            if (!$clientForMatter || ! $clientForMatter->isCrmClientOrLeadSubject()) {
                 $response['message'] = 'Invalid client.';
                 echo json_encode($response);
                 return;

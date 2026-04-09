@@ -3,6 +3,23 @@
  * Contains all functionality for the client edit form
  */
 
+/**
+ * Absolute URL for app routes (fixes subdirectory installs e.g. /BansalLaw_CRM/public).
+ * Set window.editClientConfig.rootUrl from Blade via rtrim(url('/'), '/').
+ */
+function crmClientUrl(path) {
+    var root = (typeof window.editClientConfig !== 'undefined' && window.editClientConfig.rootUrl)
+        ? String(window.editClientConfig.rootUrl).replace(/\/$/, '')
+        : '';
+    if (!path || typeof path !== 'string') {
+        path = '';
+    }
+    if (!path.startsWith('/')) {
+        path = '/' + path;
+    }
+    return root ? root + path : path;
+}
+
 // ===== SCROLL-TO-SECTION FUNCTIONALITY =====
 
 // Define scrollToSection function IMMEDIATELY in global scope
@@ -1925,7 +1942,7 @@ window.saveSectionData = function(sectionName, formData, successCallback) {
     formData.append('type', type);
     formData.append('section', sectionName);
     
-    fetch('/clients/save-section', {
+    fetch(crmClientUrl('/clients/save-section'), {
         method: 'POST',
         body: formData,
         headers: {
@@ -3152,6 +3169,30 @@ window.saveAdditionalInfo = function() {
 };
 
 /**
+ * Save "Refer by" (Additional Information tab)
+ */
+window.saveReferByInfo = function () {
+    const input = document.getElementById('client_refer_by');
+    if (!input) {
+        return;
+    }
+    const msg = document.getElementById('referBySaveMsg');
+    if (msg) {
+        msg.textContent = '';
+    }
+    const formData = new FormData();
+    formData.append('refer_by', input.value || '');
+    saveSectionData('referBy', formData, function () {
+        if (msg) {
+            msg.textContent = 'Saved.';
+            window.setTimeout(function () {
+                msg.textContent = '';
+            }, 3000);
+        }
+    });
+};
+
+/**
  * Save character information and update summary
  */
 window.saveCharacterInfo = function() {
@@ -4091,7 +4132,7 @@ $(document).ready(function() {
         }, 100);
         
         // Send OTP request
-        fetch('/clients/phone/send-otp', {
+        fetch(crmClientUrl('/clients/phone/send-otp'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -4146,7 +4187,7 @@ $(document).ready(function() {
         // Disable verify button
         document.getElementById('verifyOTPBtn').disabled = true;
         
-        fetch('/clients/phone/verify-otp', {
+        fetch(crmClientUrl('/clients/phone/verify-otp'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -4207,7 +4248,7 @@ $(document).ready(function() {
         // Disable resend button temporarily
         document.getElementById('resendOTPBtn').disabled = true;
         
-        fetch('/clients/phone/resend-otp', {
+        fetch(crmClientUrl('/clients/phone/resend-otp'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -4670,10 +4711,8 @@ window.goBackWithRefresh = function() {
             }
         }
 
-        // Redirect to the client detail page
-        const detailUrl = window.location.origin + detailPath;
-        //window.location.href = detailUrl + '?_t=' + Date.now();
-        window.location.href = detailUrl;
+        // Redirect to the client detail page (respect app subdirectory)
+        window.location.href = crmClientUrl(detailPath);
     } else {
         // Fallback to normal back navigation
         window.history.back();
@@ -4702,7 +4741,7 @@ window.sendEmailVerification = function(emailId, emailAddress) {
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
     button.disabled = true;
 
-    fetch('/clients/email/send-verification', {
+    fetch(crmClientUrl('/clients/email/send-verification'), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -4754,7 +4793,7 @@ function resendEmailVerification(emailId, emailAddress) {
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
     button.disabled = true;
 
-    fetch('/clients/email/resend-verification', {
+    fetch(crmClientUrl('/clients/email/resend-verification'), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -4865,7 +4904,7 @@ function checkEmailVerificationStatus(emailId) {
         return;
     }
     
-    fetch(`/clients/email/status/${emailId}`, {
+    fetch(crmClientUrl('/clients/email/status/' + emailId), {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -5190,7 +5229,7 @@ async function saveOccupationInfo() {
     }
     
     try {
-        const response = await fetch('/clients/save-section', {
+        const response = await fetch(crmClientUrl('/clients/save-section'), {
             method: 'POST',
             body: formData,
             headers: {
@@ -5325,7 +5364,7 @@ async function saveTestScoreInfo() {
     formData.append('section', 'test_scores');
     
     try {
-        const response = await fetch('/clients/save-section', {
+        const response = await fetch(crmClientUrl('/clients/save-section'), {
             method: 'POST',
             body: formData,
             headers: {
@@ -5893,7 +5932,7 @@ async function saveParentsInfo() {
     }
 
     try {
-        const response = await fetch('/clients/save-section', {
+        const response = await fetch(crmClientUrl('/clients/save-section'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -5984,7 +6023,7 @@ async function saveSiblingsInfo() {
     }
 
     try {
-        const response = await fetch('/clients/save-section', {
+        const response = await fetch(crmClientUrl('/clients/save-section'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -6075,7 +6114,7 @@ async function saveOthersInfo() {
     }
 
     try {
-        const response = await fetch('/clients/save-section', {
+        const response = await fetch(crmClientUrl('/clients/save-section'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

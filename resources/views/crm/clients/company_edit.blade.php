@@ -122,6 +122,7 @@
             <script>
                 // Configuration object for edit-client.js
                 window.editClientConfig = {
+                    rootUrl: @json(rtrim(url('/'), '/')),
                     searchContactPersonRoute: '{{ route("api.search.contact.person") }}',
                     searchAddressRoute: '{{ route("clients.searchAddressFull") }}',
                     getPlaceDetailsRoute: '{{ route("clients.getPlaceDetails") }}',

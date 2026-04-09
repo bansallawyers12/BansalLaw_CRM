@@ -1,4 +1,27 @@
 <div class="tab-pane active" id="personaldetails-tab">
+                @php
+                    $__sch = \Illuminate\Support\Facades\Schema::class;
+                    $detailHasMatterRefs = $__sch::hasTable('client_matters')
+                        && $__sch::hasColumn('client_matters', 'department_reference')
+                        && $__sch::hasColumn('client_matters', 'other_reference');
+                    $detailHasMatterTeam = $__sch::hasTable('client_matters')
+                        && $__sch::hasColumn('client_matters', 'sel_migration_agent');
+                    $detailHasClientAddressCols = $__sch::hasTable('client_addresses')
+                        && $__sch::hasColumn('client_addresses', 'client_id')
+                        && $__sch::hasColumn('client_addresses', 'address');
+                    $detailHasVisaCols = $__sch::hasTable('client_visa_countries')
+                        && $__sch::hasColumn('client_visa_countries', 'visa_type');
+                    $detailHasOccupationCols = $__sch::hasTable('client_occupations')
+                        && $__sch::hasColumn('client_occupations', 'nomi_occupation');
+                    $detailHasTestScoreCols = $__sch::hasTable('client_testscore')
+                        && $__sch::hasColumn('client_testscore', 'test_type');
+                    $detailHasQualCols = $__sch::hasTable('client_qualifications')
+                        && $__sch::hasColumn('client_qualifications', 'level');
+                    $detailHasExpCols = $__sch::hasTable('client_experiences')
+                        && $__sch::hasColumn('client_experiences', 'job_title');
+                    // Visa block hidden on client detail (Personal Details); visa data remains editable on client edit.
+                    $hidePersonalDetailsVisaCard = true;
+                @endphp
                 <div class="content-grid">
                     <div class="card">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -158,7 +181,10 @@
                         </div>
 
                         <?php
-                        $address_Info = App\Models\ClientAddress::select('address','suburb','country','zip','regional_code')->where('client_id', $fetchedData->id)->latest('id')->first();
+                        $address_Info = null;
+                        if ($detailHasClientAddressCols) {
+                            $address_Info = App\Models\ClientAddress::select('address', 'suburb', 'country', 'zip', 'regional_code')->where('client_id', $fetchedData->id)->latest('id')->first();
+                        }
                         ?>
 
                         <div class="field-group">
@@ -263,29 +289,26 @@
                     </div>
                     @endif
 
-
+                    @if(!$hidePersonalDetailsVisaCard)
                     <div class="card">
                         <h3><i class="fas fa-passport"></i>Visa</h3>
                         <?php
-                        // Get visa with latest expiry date
-                        $visa_Info_with_expiry = App\Models\ClientVisaCountry::select('visa_type','visa_expiry_date','visa_grant_date','visa_description')
-                            ->where('client_id', $fetchedData->id)
-                            ->whereNotNull('visa_expiry_date')
-                            ->orderBy('visa_expiry_date', 'desc')
-                            ->first();
-                        
-                        // Get all visas without expiry date
-                        $visas_without_expiry = App\Models\ClientVisaCountry::select('visa_type','visa_expiry_date','visa_grant_date','visa_description')
-                            ->where('client_id', $fetchedData->id)
-                            ->whereNull('visa_expiry_date')
-                            ->get();
-                        
-                        // Combine both: visa with expiry first, then visas without expiry
                         $all_visas_to_display = collect();
-                        if($visa_Info_with_expiry) {
-                            $all_visas_to_display->push($visa_Info_with_expiry);
+                        if ($detailHasVisaCols) {
+                            $visa_Info_with_expiry = App\Models\ClientVisaCountry::select('visa_type', 'visa_expiry_date', 'visa_grant_date', 'visa_description')
+                                ->where('client_id', $fetchedData->id)
+                                ->whereNotNull('visa_expiry_date')
+                                ->orderBy('visa_expiry_date', 'desc')
+                                ->first();
+                            $visas_without_expiry = App\Models\ClientVisaCountry::select('visa_type', 'visa_expiry_date', 'visa_grant_date', 'visa_description')
+                                ->where('client_id', $fetchedData->id)
+                                ->whereNull('visa_expiry_date')
+                                ->get();
+                            if ($visa_Info_with_expiry) {
+                                $all_visas_to_display->push($visa_Info_with_expiry);
+                            }
+                            $all_visas_to_display = $all_visas_to_display->merge($visas_without_expiry);
                         }
-                        $all_visas_to_display = $all_visas_to_display->merge($visas_without_expiry);
                         ?>
                         
                         <?php if($all_visas_to_display->count() > 0): ?>
@@ -387,7 +410,10 @@
                             <span class="field-label">Nomi Occupation / Code / Assessing Authority</span>
                             <span class="field-value">
                                 <?php
-                                $clientOccupation_Info = App\Models\ClientOccupation::select('skill_assessment','nomi_occupation','occupation_code','list','visa_subclass','dates')->where('client_id', $fetchedData->id)->latest('id')->first();
+                                $clientOccupation_Info = null;
+                                if ($detailHasOccupationCols) {
+                                    $clientOccupation_Info = App\Models\ClientOccupation::select('skill_assessment', 'nomi_occupation', 'occupation_code', 'list', 'visa_subclass', 'dates')->where('client_id', $fetchedData->id)->latest('id')->first();
+                                }
                                 if( $clientOccupation_Info && $clientOccupation_Info->nomi_occupation != "" ){ echo $clientOccupation_Info->nomi_occupation; } else { echo 'N/A'; }
                                 ?>
                                 <?php
@@ -403,7 +429,10 @@
                             <span class="field-label">English Test Score</span>
                             <span class="field-value">
                                 <?php
-                                $clientTest_Info = App\Models\ClientTestScore::select('test_type','listening','reading','writing','speaking','overall_score','test_date')->where('client_id', $fetchedData->id)->latest('id')->first();
+                                $clientTest_Info = null;
+                                if ($detailHasTestScoreCols) {
+                                    $clientTest_Info = App\Models\ClientTestScore::select('test_type', 'listening', 'reading', 'writing', 'speaking', 'overall_score', 'test_date')->where('client_id', $fetchedData->id)->latest('id')->first();
+                                }
                                 if( $clientTest_Info && $clientTest_Info->test_type != "" ){ echo $clientTest_Info->test_type.": "; } else { echo 'N/A'; }
                                 ?>
 
@@ -428,10 +457,14 @@
                             </span>
                         </div>
                     </div>
+                    @endif
 
 
                     <?php
-                    $clientQualification_Info = App\Models\ClientQualification::select('level','name','qual_campus','finish_date')->where('client_id', $fetchedData->id)->orderByRaw('finish_date DESC NULLS LAST')->get();
+                    $clientQualification_Info = collect();
+                    if ($detailHasQualCols) {
+                        $clientQualification_Info = App\Models\ClientQualification::select('level', 'name', 'qual_campus', 'finish_date')->where('client_id', $fetchedData->id)->orderByRaw('finish_date DESC NULLS LAST')->get();
+                    }
                     ?>
                     @if(!empty($clientQualification_Info) && $clientQualification_Info->count() > 0)
                     <div class="card">
@@ -489,7 +522,10 @@
 
 
                     <?php
-                    $clientExperience_Info = App\Models\ClientExperience::select('job_title','job_country','job_start_date','job_finish_date')->where('client_id', $fetchedData->id)->orderByRaw('job_finish_date DESC NULLS LAST')->get();
+                    $clientExperience_Info = collect();
+                    if ($detailHasExpCols) {
+                        $clientExperience_Info = App\Models\ClientExperience::select('job_title', 'job_country', 'job_start_date', 'job_finish_date')->where('client_id', $fetchedData->id)->orderByRaw('job_finish_date DESC NULLS LAST')->get();
+                    }
                     ?>
                     @if(!empty($clientExperience_Info) && $clientExperience_Info->count() > 0)
                     <div class="card">
@@ -676,26 +712,24 @@
                     //dd($matter_cnt);
                     if($matter_cnt >0)
                     {
-                        //Display reference values
-                        $matter_dis_ref_info_arr = []; // Always a Collection
-                        if($id1)
-                        { //if client unique reference id is present in url
-                            $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('department_reference','other_reference')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
-                        }
-                        else
-                        {
-                            $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
-                            //dd($matter_cnt);
-                            if($matter_cnt >0){
-                                $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('department_reference','other_reference')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
+                        $matter_dis_ref_info_arr = null;
+                        if ($detailHasMatterRefs) {
+                            if ($id1) {
+                                $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')->where('client_id', $fetchedData->id)->where('client_unique_matter_no', $id1)->first();
+                            } else {
+                                $matter_cnt_inner = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->where('matter_status', 1)->count();
+                                if ($matter_cnt_inner > 0) {
+                                    $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')->where('client_id', $fetchedData->id)->where('matter_status', 1)->orderBy('id', 'desc')->first();
+                                }
                             }
-                        } //dd($matter_dis_ref_info_arr);
-
+                        }
 
                         if(
-                            ( isset($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->department_reference != '' )
-                            ||
-                            ( isset($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->other_reference != '' )
+                            $matter_dis_ref_info_arr
+                            && (
+                                ($matter_dis_ref_info_arr->department_reference ?? '') != ''
+                                || ($matter_dis_ref_info_arr->other_reference ?? '') != ''
+                            )
                         )
                         { ?>
                             <div class="card">
@@ -736,23 +770,42 @@
                     {
                     ?>
                         <div class="card">
-                            <h3><i class="fas fa-user"></i> Matter Assignee  <a style="margin-left: 110px;" class="changeMatterAssignee" href="javascript:;" role="button">Change Assignee</a></h3>
+                            <h3><i class="fas fa-user"></i> Matter assignee
+                                <a style="margin-left: 24px;" class="changeMatterAssignee" href="javascript:;" role="button">Edit details</a>
+                            </h3>
 
                             <?php
-                            //Display reference values
-                            $matter_dis_ref_info_arr = []; // Always a Collection
-                            if($id1)
-                            { //if client unique reference id is present in url
-                                $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('sel_migration_agent','sel_person_responsible','sel_person_assisting','office_id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
+                            $matter_dis_ref_info_arr = null;
+                            $matterAssigneeCols = [];
+                            if ($detailHasMatterTeam) {
+                                $matterAssigneeCols = array_merge($matterAssigneeCols, ['sel_migration_agent', 'sel_person_responsible', 'sel_person_assisting', 'office_id']);
                             }
-                            else
-                            {
-                                $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
-                                //dd($matter_cnt);
-                                if($matter_cnt >0){
-                                    $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('sel_migration_agent','sel_person_responsible','sel_person_assisting','office_id')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
+                            if ($__sch::hasColumn('client_matters', 'incidence_type')) {
+                                $matterAssigneeCols[] = 'incidence_type';
+                            }
+                            if ($__sch::hasColumn('client_matters', 'date_of_incidence')) {
+                                $matterAssigneeCols[] = 'date_of_incidence';
+                            }
+                            if ($__sch::hasColumn('client_matters', 'case_detail')) {
+                                $matterAssigneeCols[] = 'case_detail';
+                            }
+                            if ($matterAssigneeCols !== []) {
+                                if ($id1) {
+                                    $matter_dis_ref_info_arr = \App\Models\ClientMatter::select($matterAssigneeCols)
+                                        ->where('client_id', $fetchedData->id)
+                                        ->where('client_unique_matter_no', $id1)
+                                        ->first();
+                                } else {
+                                    $matter_cnt_inner2 = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->where('matter_status', 1)->count();
+                                    if ($matter_cnt_inner2 > 0) {
+                                        $matter_dis_ref_info_arr = \App\Models\ClientMatter::select($matterAssigneeCols)
+                                            ->where('client_id', $fetchedData->id)
+                                            ->where('matter_status', 1)
+                                            ->orderBy('id', 'desc')
+                                            ->first();
+                                    }
                                 }
-                            } //dd($matter_dis_ref_info_arr);
+                            }
                             ?>
 
                             <div class="field-group">
@@ -814,6 +867,33 @@
                                     } ?>
                                 </span>
                             </div>
+
+                            @if($__sch::hasColumn('client_matters', 'incidence_type'))
+                            <div class="field-group">
+                                <span class="field-label">Incidence type</span>
+                                <span class="field-value">
+                                    {{ ($matter_dis_ref_info_arr && isset($matter_dis_ref_info_arr->incidence_type) && trim((string) $matter_dis_ref_info_arr->incidence_type) !== '') ? $matter_dis_ref_info_arr->incidence_type : 'N/A' }}
+                                </span>
+                            </div>
+                            @endif
+                            @if($__sch::hasColumn('client_matters', 'date_of_incidence'))
+                            <div class="field-group">
+                                <span class="field-label">Date of incidence</span>
+                                <span class="field-value">
+                                    @if($matter_dis_ref_info_arr && !empty($matter_dis_ref_info_arr->date_of_incidence))
+                                        {{ \Carbon\Carbon::parse($matter_dis_ref_info_arr->date_of_incidence)->format('d/m/Y') }}
+                                    @else
+                                        N/A
+                                    @endif
+                                </span>
+                            </div>
+                            @endif
+                            @if($__sch::hasColumn('client_matters', 'case_detail'))
+                            <div class="field-group">
+                                <span class="field-label">Case detail</span>
+                                <span class="field-value" style="white-space: pre-wrap;">{{ ($matter_dis_ref_info_arr && isset($matter_dis_ref_info_arr->case_detail) && trim((string) $matter_dis_ref_info_arr->case_detail) !== '') ? $matter_dis_ref_info_arr->case_detail : 'N/A' }}</span>
+                            </div>
+                            @endif
                         </div>
                     <?php
                     } ?>

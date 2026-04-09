@@ -10,8 +10,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 use App\Models\Admin;
 use App\Models\ClientAddress;
@@ -782,19 +784,32 @@ class ClientPersonalDetailsController extends Controller
                 $obj->office_id = $requstData['office_id'];
             }
 
+            if (Schema::hasColumn('client_matters', 'incidence_type')) {
+                $incidenceType = isset($requstData['incidence_type']) ? trim((string) $requstData['incidence_type']) : '';
+                $obj->incidence_type = $incidenceType !== '' ? $incidenceType : null;
+            }
+            if (Schema::hasColumn('client_matters', 'date_of_incidence')) {
+                $doi = $requstData['date_of_incidence'] ?? null;
+                $obj->date_of_incidence = ($doi !== null && $doi !== '') ? $doi : null;
+            }
+            if (Schema::hasColumn('client_matters', 'case_detail')) {
+                $caseDetail = isset($requstData['case_detail']) ? trim((string) $requstData['case_detail']) : '';
+                $obj->case_detail = $caseDetail !== '' ? $caseDetail : null;
+            }
+
             $saved = $obj->save();
             if ($saved) {
                 $objs = new \App\Models\ActivitiesLog;
                 $objs->client_id = $requstData['client_id'];
                 $objs->created_by = Auth::user()->id;
                 $objs->description = '';
-                $objs->subject = 'updated client matter assignee';
+                $objs->subject = 'updated client matter details';
                 $objs->task_status = 0;
                 $objs->pin = 0;
                 $objs->save();
 
                 $response['status'] = true;
-                $response['message'] = 'Matter assignee updated successfully.';
+                $response['message'] = 'Matter details updated successfully.';
             } else {
                 $response['message'] = 'Record could not be updated. Please try again.';
             }
@@ -1717,12 +1732,12 @@ class ClientPersonalDetailsController extends Controller
             $section = $request->input('section');
             $clientId = $request->input('id'); // Use 'id' instead of 'client_id' - 'id' is the database ID
             
-            // Validate client exists
-            $client = Admin::where('id', $clientId)->whereIn('type', ['client', 'lead'])->first();
-            if (!$client) {
+            // Validate client exists (same eligibility as matter add / legacy rows)
+            $client = Admin::query()->find($clientId);
+            if (! $client || ! $client->isCrmClientOrLeadSubject()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Client not found'
+                    'message' => 'Client not found',
                 ], 404);
             }
 
@@ -1796,12 +1811,16 @@ class ClientPersonalDetailsController extends Controller
                     return $this->saveNominationsSection($request, $client);
                 case 'leadPipeline':
                     return $this->saveLeadPipelineSection($request, $client);
+                case 'referBy':
+                    return $this->saveReferBySection($request, $client);
                 default:
                     return response()->json([
                         'success' => false,
                         'message' => 'Invalid section specified'
                     ], 400);
             }
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -4280,6 +4299,33 @@ class ClientPersonalDetailsController extends Controller
                 'message' => 'Error saving experience: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    private function saveReferBySection($request, $client)
+    {
+        $validated = $request->validate([
+            'refer_by' => 'nullable|string|max:500',
+        ]);
+        $raw = $validated['refer_by'] ?? null;
+        $trimmed = $raw !== null ? trim((string) $raw) : '';
+        $value = $trimmed === '' ? null : $trimmed;
+
+        if (! Schema::hasColumn('admins', 'refer_by')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Database is missing column admins.refer_by. Run migrations (add_refer_by_to_admins_table).',
+            ], 503);
+        }
+
+        DB::table('admins')->where('id', (int) $client->id)->update([
+            'refer_by' => $value,
+            'updated_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Refer by saved successfully',
+        ]);
     }
 
     private function saveAdditionalInfoSection($request, $client)

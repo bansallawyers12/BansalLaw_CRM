@@ -4,15 +4,30 @@
                     <?php
                     $clientId = $fetchedData->id ?? null;
                     $isSuperAdmin = \Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->role == 1;
-                    $persDocCatList = \App\Models\PersonalDocumentType::select('id', 'title','client_id')
-                        ->where('status', 1)
-                        ->where(function($query) use ($clientId) {
-                            $query->whereNull('client_id')
-                                ->orWhere('client_id', $clientId);
-                        })
-                        ->orderBy('id', 'ASC')
-                        ->get();
+                    $persDocCatList = \Illuminate\Support\Facades\Schema::hasTable('personal_document_types')
+                        ? \App\Models\PersonalDocumentType::select('id', 'title', 'client_id')
+                            ->where('status', 1)
+                            ->where(function ($query) use ($clientId) {
+                                $query->whereNull('client_id')
+                                    ->orWhere('client_id', $clientId);
+                            })
+                            ->orderBy('id', 'ASC')
+                            ->get()
+                        : collect();
+                    $documentsTableReadyPersonal = \Illuminate\Support\Facades\Schema::hasTable('documents')
+                        && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'client_id')
+                        && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'not_used_doc')
+                        && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'folder_name')
+                        && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'doc_type')
+                        && \Illuminate\Support\Facades\Schema::hasColumn('documents', 'type');
                     ?>
+
+                    @if (! \Illuminate\Support\Facades\Schema::hasTable('personal_document_types'))
+                        <div class="alert alert-warning" style="margin: 15px;">
+                            Personal document categories are unavailable: the <code>personal_document_types</code> table is missing.
+                            Run <code>php artisan migrate</code> on the server, then reload this page.
+                        </div>
+                    @endif
 
                     <!-- Personal Documents Content -->
                     <div class="personal-documents-content" id="personal-documents-content">
@@ -101,13 +116,16 @@
                                             </thead>
                                             <tbody class="tdata persdocumnetlist documnetlist_<?= $id ?>">
                                                 <?php
-                                                $documents = \App\Models\Document::with('staff')->where('client_id', $clientId)
-                                                    ->whereNull('not_used_doc')
-                                                    ->where('doc_type', 'personal')
-                                                    ->where('folder_name', $folderName)
-                                                    ->where('type', 'client')
-                                                    ->orderBy('created_at', 'DESC')
-                                                    ->get();
+                                                $documents = collect();
+                                                if ($documentsTableReadyPersonal) {
+                                                    $documents = \App\Models\Document::with('staff')->where('client_id', $clientId)
+                                                        ->whereNull('not_used_doc')
+                                                        ->where('doc_type', 'personal')
+                                                        ->where('folder_name', $folderName)
+                                                        ->where('type', 'client')
+                                                        ->orderBy('created_at', 'DESC')
+                                                        ->get();
+                                                }
                                                 ?>
                                                 <?php foreach ($documents as $docKey => $fetch): ?>
                                                     <?php
