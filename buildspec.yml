@@ -1,0 +1,143 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      php: 8.2
+      nodejs: 22
+    commands:
+      - php -v
+      - composer --version || (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer)
+      - node -v
+
+  pre_build:
+    commands:
+      # CodeBuild's PHP (phpenv) often lacks ext-gd, ext-zip, ext-intl, etc. Your server has them;
+      # --ignore-platform-reqs only affects this CI install, not production.
+      - composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress --ignore-platform-reqs --no-scripts
+      # Composer scripts are skipped above: artisan needs a writable .env with APP_KEY before package:discover.
+      - |
+        if [ ! -f .env ]; then
+          printf '%s\n' 'APP_NAME=Laravel' 'APP_ENV=local' 'APP_KEY=' 'APP_DEBUG=false' 'APP_URL=http://localhost' > .env
+          php artisan key:generate --force --no-interaction
+        fi
+      - php artisan package:discover --ansi
+      - composer dump-autoload --optimize --no-dev --no-interaction
+      - npm ci
+
+  build:
+    commands:
+      - npm run build
+
+      - echo "======================================"
+      - echo "Creating deploy script..."
+      - echo "======================================"
+
+      - mkdir -p scripts
+
+      - |
+        cat > scripts/deploy.sh << 'DEPLOYEOF'
+        #!/bin/bash
+        set -e
+
+        PROJECT_DIR="/home/bansallawyercrm"
+        APP_USER="ubuntu"
+        WEB_USER="www-data"
+        PHP_FPM="php8.2-fpm"
+
+        SOURCE_DIR="/tmp/bansallawyercrm-build"
+
+        echo "======================================"
+        echo "Starting Deployment..."
+        echo "======================================"
+
+        echo "Syncing source → project..."
+        rsync -av --delete \
+          --exclude='.env' \
+          --exclude='storage/' \
+          --exclude='node_modules/' \
+          --exclude='vendor/' \
+          $SOURCE_DIR/ $PROJECT_DIR/
+
+        echo "Fixing ownership..."
+        chown -R $APP_USER:$WEB_USER $PROJECT_DIR
+
+        cd $PROJECT_DIR
+
+        echo "Enabling maintenance mode..."
+        sudo -u $APP_USER php artisan down --retry=60 || true
+
+        echo "Installing backend dependencies..."
+        sudo -u $APP_USER composer install --no-dev --optimize-autoloader --no-interaction
+
+        # ========================================
+        # PYTHON VENV SETUP (SAFE + OPTIMIZED)
+        # ========================================
+        echo "Setting up Python virtual environment..."
+
+        sudo -u $APP_USER bash -lc "
+        cd $PROJECT_DIR/python_services
+
+        if [ ! -d 'venv' ]; then
+            echo 'Creating new virtual environment...'
+            python3 -m venv venv
+        fi
+
+        echo 'Installing Python dependencies...'
+        ./venv/bin/pip install --upgrade pip >/dev/null 2>&1
+        ./venv/bin/pip install -r requirements.txt --quiet
+        "
+
+        echo "Running migrations..."
+        sudo -u $APP_USER php artisan migrate --force
+
+        echo "Building frontend assets..."
+        sudo -u $APP_USER bash -lc "cd $PROJECT_DIR && npm ci && npm run build"
+
+        echo "Ensuring required directories..."
+        sudo -u $APP_USER mkdir -p storage/framework/{sessions,views,cache/data}
+        sudo -u $APP_USER mkdir -p bootstrap/cache
+
+        echo "Rebuilding caches..."
+        sudo -u $APP_USER php artisan config:cache
+        sudo -u $APP_USER php artisan route:cache
+        sudo -u $APP_USER php artisan event:cache
+        sudo -u $APP_USER php artisan storage:link --force
+
+        echo "Fixing permissions..."
+        chown -R $APP_USER:$WEB_USER storage
+        chown -R $APP_USER:$WEB_USER bootstrap/cache
+
+        chmod -R 775 storage
+        chmod -R 775 bootstrap/cache
+
+        # ========================================
+        # SERVICE RESTARTS
+        # ========================================
+        echo "Restarting services..."
+
+        systemctl restart $PHP_FPM
+        systemctl restart bansallaw-queue
+        systemctl restart bansallaw-reverb || true
+        systemctl restart bansallaw-email || true
+        systemctl restart migration-python-services || true
+
+        systemctl reload nginx
+
+        echo "Disabling maintenance mode..."
+        sudo -u $APP_USER php artisan up
+
+        echo "======================================"
+        echo "Deployment Complete!"
+        echo "======================================"
+        DEPLOYEOF
+
+      - chmod +x scripts/deploy.sh
+
+artifacts:
+  files:
+    - '**/*'
+  exclude-paths:
+    - 'node_modules/**/*'
+    - '.git/**/*'
+    - 'tests/**/*'
