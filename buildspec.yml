@@ -1,5 +1,9 @@
 version: 0.2
 
+# CodeBuild packages the repo; the generated scripts/deploy.sh runs on the app server
+# (e.g. via CodeDeploy / SSH) and performs: composer, migrate --force, npm build, cache, restarts.
+# Do not run migrations here in CodeBuild unless this build has DB access and the same .env as production.
+
 phases:
   build:
     commands:
@@ -62,8 +66,14 @@ phases:
         ./venv/bin/pip install -r requirements.txt --quiet
         "
 
+        echo "Clearing config cache (so .env changes apply before migrate)..."
+        sudo -u $APP_USER php artisan config:clear
+
         echo "Running migrations..."
         sudo -u $APP_USER php artisan migrate --force
+
+        # Optional: sync user_roles/branches/teams from PG_REFERENCE_* database (uncomment only if production .env has reference DB and you want this on every deploy)
+        # sudo -u $APP_USER php artisan import:reference-master-data
 
         echo "Building frontend assets..."
         sudo -u $APP_USER bash -lc "cd $PROJECT_DIR && npm ci && npm run build"
