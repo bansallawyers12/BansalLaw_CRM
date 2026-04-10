@@ -90,6 +90,28 @@ return [
             ] : [],
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Reference PostgreSQL (e.g. local Migration Manager CRM)
+        |--------------------------------------------------------------------------
+        |
+        | Read-only source for importing master data (user_roles, branches, etc.)
+        | into the default database. Configure PG_REFERENCE_* in .env.
+        |
+        */
+        'pgsql_reference' => [
+            'driver' => 'pgsql',
+            'host' => env('PG_REFERENCE_HOST', '127.0.0.1'),
+            'port' => env('PG_REFERENCE_PORT', env('DB_PORT', '5432')),
+            'database' => env('PG_REFERENCE_DATABASE', ''),
+            'username' => env('PG_REFERENCE_USERNAME', env('DB_USERNAME', 'forge')),
+            'password' => env('PG_REFERENCE_PASSWORD', env('DB_PASSWORD', '')),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'schema' => env('PG_REFERENCE_SCHEMA', 'public'),
+            'sslmode' => env('PG_REFERENCE_SSLMODE', 'prefer'),
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'host' => env('DB_HOST', 'localhost'),

@@ -38,6 +38,7 @@ class Kernel extends ConsoleKernel
         
         // Login Data Import
         '\App\Console\Commands\ImportLoginDataFromMySQL',
+        '\App\Console\Commands\ImportReferenceMasterData',
         
         // Client Reference Management Commands
         '\App\Console\Commands\FixDuplicateClientReferences',

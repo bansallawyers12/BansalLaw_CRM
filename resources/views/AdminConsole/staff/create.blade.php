@@ -123,9 +123,9 @@
 								</div>
 
 								<div class="form-group">
-                                    @php $branchx = \App\Models\Branch::all(); @endphp
+                                    @php $branchx = \App\Models\Branch::query()->orderBy('office_name')->get(); @endphp
 									<label for="office">Office</label>
-									<select class="form-control" data-valid="required" name="office">
+									<select class="form-control" data-valid="required" name="office" id="office">
 										<option value="">Select</option>
 										@foreach($branchx as $branch)
 											<option value="{{ $branch->id }}" @if(old('office') == $branch->id) selected @endif>{{ $branch->office_name }}</option>
@@ -142,7 +142,7 @@
 									<label for="team">Department (Team)</label>
 									<select name="team" id="team" class="form-control" autocomplete="new-password">
 										<option value="">Choose One...</option>
-										@foreach (\App\Models\Team::all() as $tm)
+										@foreach (\App\Models\Team::query()->orderBy('name')->get() as $tm)
 											<option value="{{ $tm->id }}" @if(old('team') == $tm->id) selected @endif>{{ $tm->name }}</option>
 										@endforeach
 									</select>

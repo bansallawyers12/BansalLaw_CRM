@@ -86,7 +86,7 @@ return [
     |
     | These roles may open /leads without client module keys 20–23. They only
     | see rows where admins.user_id = their staff id (via restrictLeadListQuery).
-    | Default: PA (13), Calling (14), Accountant (15), Legal Practitioner (16).
+    | Default: PA (13), Calling (14), Accountant (15), Solicitor (16; user_roles name).
     | Set CRM_LEAD_LIST_ASSIGNED_ONLY_ROLE_IDS to override, e.g. "13,14,15,16".
     |
     */

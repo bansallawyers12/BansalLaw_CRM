@@ -120,7 +120,7 @@
 										<option value="">Choose One...</option>
 										@if(count(@$usertype) !== 0)
 											@foreach (@$usertype as $ut)
-												<option value="{{ @$ut->id }}" @if($fetchedData->role == $ut->id) selected @endif>{{ @$ut->name }}</option>
+												<option value="{{ @$ut->id }}" @if(old('role', $fetchedData->role) == $ut->id) selected @endif>{{ @$ut->name }}</option>
 											@endforeach
 										@endif
 									</select>
@@ -133,13 +133,13 @@
 
 								<div class="form-group">
                                     <?php
-                                    $branchx = \App\Models\Branch::all();
+                                    $branchx = \App\Models\Branch::query()->orderBy('office_name')->get();
                                     ?>
 									<label for="office">Office</label>
-									<select class="form-control" data-valid="required" name="office">
+									<select class="form-control" data-valid="required" name="office" id="office">
 										<option value="">Select</option>
 										@foreach($branchx as $branch)
-											<option @if($fetchedData->office_id == $branch->id) selected @endif value="{{$branch->id}}">{{$branch->office_name}}</option>
+											<option @if(old('office', $fetchedData->office_id) == $branch->id) selected @endif value="{{$branch->id}}">{{$branch->office_name}}</option>
 										@endforeach
 									</select>
 									@if ($errors->has('office'))
@@ -150,12 +150,12 @@
 								</div>
 
                                 <div class="form-group">
-									<label for="role">Department (Team)</label>
+									<label for="team">Department (Team)</label>
 									<select name="team" id="team" class="form-control" data-valid="" autocomplete="new-password">
 										<option value="">Choose One...</option>
 
-											@foreach (\App\Models\Team::all() as $tm)
-												<option @if($fetchedData->team == $tm->id) selected @endif value="{{ @$tm->id }}">{{ @$tm->name }}</option>
+											@foreach (\App\Models\Team::query()->orderBy('name')->get() as $tm)
+												<option @if(old('team', $fetchedData->team) == $tm->id) selected @endif value="{{ @$tm->id }}">{{ @$tm->name }}</option>
 											@endforeach
 
 									</select>
