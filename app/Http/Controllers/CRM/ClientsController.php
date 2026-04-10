@@ -228,8 +228,8 @@ class ClientsController extends Controller
                 }
             }
 
-            if ($request->filled('sel_migration_agent')) {
-                $query->where('cm.sel_migration_agent', '=', $request->input('sel_migration_agent'));
+            if ($request->filled('sel_legal_practitioner')) {
+                $query->where('cm.sel_legal_practitioner', '=', $request->input('sel_legal_practitioner'));
             }
 
             if ($request->filled('sel_person_responsible')) {
@@ -359,8 +359,8 @@ class ClientsController extends Controller
                 }
             }
 
-            if ($request->filled('sel_migration_agent')) {
-                $query->where('cm.sel_migration_agent', '=', $request->input('sel_migration_agent'));
+            if ($request->filled('sel_legal_practitioner')) {
+                $query->where('cm.sel_legal_practitioner', '=', $request->input('sel_legal_practitioner'));
             }
 
             if ($request->filled('sel_person_responsible')) {
@@ -483,11 +483,11 @@ class ClientsController extends Controller
         $matterStats = [
             'total' => (clone $matterBase)->count(),
             'new30' => (clone $matterBase)->where('cm.created_at', '>=', $now->copy()->subDays(30))->count(),
-            'assigned' => (clone $matterBase)->whereNotNull('cm.sel_migration_agent')->count(),
+            'assigned' => (clone $matterBase)->whereNotNull('cm.sel_legal_practitioner')->count(),
         ];
 
         $mattersByAgent = DB::table('client_matters as cm')
-            ->leftJoin('staff as agent', 'agent.id', '=', 'cm.sel_migration_agent')
+            ->leftJoin('staff as agent', 'agent.id', '=', 'cm.sel_legal_practitioner')
             ->select(
                 DB::raw("COALESCE(agent.first_name || ' ' || agent.last_name, 'Unassigned') as agent_name"),
                 DB::raw('COUNT(*) as total')
@@ -499,7 +499,7 @@ class ClientsController extends Controller
 
         $recentMatters = DB::table('client_matters as cm')
             ->join('admins as client', 'client.id', '=', 'cm.client_id')
-            ->leftJoin('staff as agent', 'agent.id', '=', 'cm.sel_migration_agent')
+            ->leftJoin('staff as agent', 'agent.id', '=', 'cm.sel_legal_practitioner')
             ->select(
                 'cm.client_unique_matter_no',
                 'cm.created_at',
@@ -5018,12 +5018,12 @@ class ClientsController extends Controller
         }
     }
 
-    // Get Legal Practitioner detail (matter assignee; column sel_migration_agent)
-    public function getMigrationAgentDetail(Request $request)
+    // Get Legal Practitioner detail (matter assignee; column sel_legal_practitioner)
+    public function getLegalPractitionerDetail(Request $request)
     {
         $requestData = 	$request->all();
         $client_matter_id = $requestData['client_matter_id'];
-        $clientMatterInfo = DB::table('client_matters')->select('sel_migration_agent','sel_matter_id')->where('id',$client_matter_id)->first();
+        $clientMatterInfo = DB::table('client_matters')->select('sel_legal_practitioner','sel_matter_id')->where('id',$client_matter_id)->first();
         //dd($clientMatterInfo);
         if($clientMatterInfo) {
             //get matter name
@@ -5035,13 +5035,13 @@ class ClientsController extends Controller
                 $response['matterInfo'] = "";
             }
 
-            $sel_migration_agent = $clientMatterInfo->sel_migration_agent;
+            $sel_legal_practitioner = $clientMatterInfo->sel_legal_practitioner;
             $agentInfo = DB::table('staff')->select(
                 'id as agentId',
                 'first_name',
                 'last_name',
                 'company_name',
-                'is_migration_agent',
+                'is_solicitor',
                 'marn_number',
                 'legal_practitioner_number',
                 'business_address',
@@ -5049,7 +5049,7 @@ class ClientsController extends Controller
                 'business_mobile',
                 'business_email',
                 'tax_number'
-            )->where('id', $sel_migration_agent)->first();
+            )->where('id', $sel_legal_practitioner)->first();
             //dd($agentInfo);
             if($agentInfo){
                 $response['agentInfo'] 	= $agentInfo;
@@ -5065,11 +5065,11 @@ class ClientsController extends Controller
     }
 
     // Get visa agreement Legal Practitioner detail
-    public function getVisaAggreementMigrationAgentDetail(Request $request)
+    public function getVisaAgreementLegalPractitionerDetail(Request $request)
     {
         $requestData = 	$request->all();
         $client_matter_id = $requestData['client_matter_id'];
-        $clientMatterInfo = DB::table('client_matters')->select('sel_migration_agent','sel_matter_id')->where('id',$client_matter_id)->first();
+        $clientMatterInfo = DB::table('client_matters')->select('sel_legal_practitioner','sel_matter_id')->where('id',$client_matter_id)->first();
         //dd($clientMatterInfo);
         if($clientMatterInfo) {
             //get matter name
@@ -5081,13 +5081,13 @@ class ClientsController extends Controller
                 $response['matterInfo'] = "";
             }
 
-            $sel_migration_agent = $clientMatterInfo->sel_migration_agent;
+            $sel_legal_practitioner = $clientMatterInfo->sel_legal_practitioner;
             $agentInfo = DB::table('staff')->select(
                 'id as agentId',
                 'first_name',
                 'last_name',
                 'company_name',
-                'is_migration_agent',
+                'is_solicitor',
                 'marn_number',
                 'legal_practitioner_number',
                 'business_address',
@@ -5095,7 +5095,7 @@ class ClientsController extends Controller
                 'business_mobile',
                 'business_email',
                 'tax_number'
-            )->where('id', $sel_migration_agent)->first();
+            )->where('id', $sel_legal_practitioner)->first();
             //dd($agentInfo);
             if($agentInfo){
                 $response['agentInfo'] 	= $agentInfo;
@@ -5111,11 +5111,11 @@ class ClientsController extends Controller
     }
 
     // Get cost assignment Legal Practitioner detail
-    public function getCostAssignmentMigrationAgentDetail(Request $request)
+    public function getCostAssignmentLegalPractitionerDetail(Request $request)
     {
         $requestData = 	$request->all(); //dd($requestData);
         $client_matter_id = $requestData['client_matter_id'];
-        $clientMatterInfo = DB::table('client_matters')->select('sel_migration_agent','sel_matter_id')->where('id',$client_matter_id)->first();
+        $clientMatterInfo = DB::table('client_matters')->select('sel_legal_practitioner','sel_matter_id')->where('id',$client_matter_id)->first();
         //dd($clientMatterInfo);
         if($clientMatterInfo) {
             //get matter name
@@ -5136,13 +5136,13 @@ class ClientsController extends Controller
                 $response['cost_assignment_matterInfo'] = "";
             }
 
-            $sel_migration_agent = $clientMatterInfo->sel_migration_agent;
+            $sel_legal_practitioner = $clientMatterInfo->sel_legal_practitioner;
             $agentInfo = DB::table('staff')->select(
                 'id as agentId',
                 'first_name',
                 'last_name',
                 'company_name',
-                'is_migration_agent',
+                'is_solicitor',
                 'marn_number',
                 'legal_practitioner_number',
                 'business_address',
@@ -5150,7 +5150,7 @@ class ClientsController extends Controller
                 'business_mobile',
                 'business_email',
                 'tax_number'
-            )->where('id', $sel_migration_agent)->first();
+            )->where('id', $sel_legal_practitioner)->first();
             //dd($agentInfo);
             if($agentInfo){
                 $response['agentInfo'] 	= $agentInfo;
@@ -5663,7 +5663,7 @@ class ClientsController extends Controller
         $validated = $request->validate([
             'client_id' => 'required|integer|exists:admins,id',
             'matter_id' => 'required|integer|exists:matters,id',
-            'migration_agent' => 'required|integer|exists:staff,id',
+            'legal_practitioner' => 'required|integer|exists:staff,id',
             'person_responsible' => 'nullable|integer|exists:staff,id',
             'person_assisting' => 'nullable|integer|exists:staff,id',
             'office_id' => 'nullable|integer|exists:branches,id',
@@ -5699,7 +5699,7 @@ class ClientsController extends Controller
         $row->user_id = Auth::id();
         $row->client_id = (int) $admin->id;
         $row->office_id = $validated['office_id'] ?? optional(Auth::user())->office_id ?? null;
-        $row->sel_migration_agent = (int) $validated['migration_agent'];
+        $row->sel_legal_practitioner = (int) $validated['legal_practitioner'];
         $row->sel_person_responsible = $validated['person_responsible'] ?? null;
         $row->sel_person_assisting = $validated['person_assisting'] ?? null;
         $row->sel_matter_id = $matterId;
@@ -5775,7 +5775,7 @@ class ClientsController extends Controller
             $obj5->user_id = Auth::user()->id;
             $obj5->client_id = $requestData['client_id'];
             $obj5->office_id = $requestData['office_id'] ?? optional(Auth::user())->office_id ?? null;
-            $obj5->sel_migration_agent = $requestData['migration_agent'];
+            $obj5->sel_legal_practitioner = $requestData['legal_practitioner'];
             $obj5->sel_person_responsible = $requestData['person_responsible'];
             $obj5->sel_person_assisting = $requestData['person_assisting'];
             $obj5->sel_matter_id = $requestData['matter_id'];
@@ -5998,7 +5998,7 @@ class ClientsController extends Controller
                     $obj = new CostAssignmentForm;
                     $obj->client_id = $requestData['client_id'];
                     $obj->client_matter_id = $lastInsertedId;
-                    $obj->agent_id = $requestData['migration_agent'];
+                    $obj->agent_id = $requestData['legal_practitioner'];
                     $obj->surcharge = $surcharge;
                     
                     $obj->Dept_Base_Application_Charge = $requestData['Dept_Base_Application_Charge'];
@@ -6064,7 +6064,7 @@ class ClientsController extends Controller
     }
 
     // Get cost assignment Legal Practitioner detail Lead
-    public function getCostAssignmentMigrationAgentDetailLead(Request $request)
+    public function getCostAssignmentLegalPractitionerDetailLead(Request $request)
     {
         $requestData = 	$request->all(); //dd($requestData);
         //get matter info
@@ -6336,7 +6336,7 @@ class ClientsController extends Controller
                     $matter->user_id = $request['user_id'];
                     $matter->client_id = (int) $id;
                     $matter->office_id = $request['office_id'] ?? optional(Auth::user())->office_id ?? null;
-                    $matter->sel_migration_agent = $request['migration_agent'];
+                    $matter->sel_legal_practitioner = $request['legal_practitioner'];
                     $matter->sel_person_responsible = $request['person_responsible'];
                     $matter->sel_person_assisting = $request['person_assisting'];
                     $matter->sel_matter_id = $request['matter_id'];
@@ -6345,7 +6345,7 @@ class ClientsController extends Controller
                         'user_id' => $request['user_id'],
                         'matter_id' => $request['matter_id'],
                         'office_id' => $matter->office_id,
-                        'migration_agent' => $request['migration_agent'],
+                        'legal_practitioner' => $request['legal_practitioner'],
                     ]);
 
                     $client_matters_cnt_per_client = DB::table('client_matters')->select('id')->where('sel_matter_id',$request['matter_id'])->where('client_id',(int) $id)->count();

@@ -30,7 +30,7 @@ class ClientMatter extends Model
         'user_id',
         'client_id',
         'office_id',
-        'sel_migration_agent',
+        'sel_legal_practitioner',
         'sel_person_responsible',
         'sel_person_assisting',
         'workflow_stage_id',
@@ -59,11 +59,11 @@ class ClientMatter extends Model
     }
 
     /**
-     * Get the Legal Practitioner (matter lead) assigned to the matter (sel_migration_agent).
+     * Get the Legal Practitioner (matter lead) assigned to the matter.
      */
-    public function migrationAgent()
+    public function legalPractitioner()
     {
-        return $this->belongsTo(Staff::class, 'sel_migration_agent');
+        return $this->belongsTo(Staff::class, 'sel_legal_practitioner');
     }
 
     /**

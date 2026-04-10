@@ -105,7 +105,7 @@ class ClientPortalDashboardController extends Controller
             $query = DB::table('client_matters')
                 ->join('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
                 ->join('workflow_stages', 'client_matters.workflow_stage_id', '=', 'workflow_stages.id')
-                ->leftJoin('staff as migration_agent', 'client_matters.sel_migration_agent', '=', 'migration_agent.id')
+                ->leftJoin('staff as legal_practitioner', 'client_matters.sel_legal_practitioner', '=', 'legal_practitioner.id')
                 ->leftJoin('staff as person_responsible', 'client_matters.sel_person_responsible', '=', 'person_responsible.id')
                 ->leftJoin('staff as person_assisting', 'client_matters.sel_person_assisting', '=', 'person_assisting.id')
                 ->where('client_matters.client_id', $clientId)
@@ -139,8 +139,8 @@ class ClientPortalDashboardController extends Controller
                     'client_matters.*', 
                     'matters.title', 
                     'workflow_stages.name as stage_name',
-                    'migration_agent.first_name as migration_agent_first_name',
-                    'migration_agent.last_name as migration_agent_last_name',
+                    'legal_practitioner.first_name as legal_practitioner_first_name',
+                    'legal_practitioner.last_name as legal_practitioner_last_name',
                     'person_responsible.first_name as person_responsible_first_name',
                     'person_responsible.last_name as person_responsible_last_name',
                     'person_assisting.first_name as person_assisting_first_name',
@@ -165,9 +165,9 @@ class ClientPortalDashboardController extends Controller
                     $isFileClosedStatus = ($workflowStageId == 14);
                     
                     // Format agent names
-                    $migrationAgentName = 'Unassigned';
-                    if (!empty($case->migration_agent_first_name) || !empty($case->migration_agent_last_name)) {
-                        $migrationAgentName = trim(($case->migration_agent_first_name ?? '') . ' ' . ($case->migration_agent_last_name ?? ''));
+                    $legalPractitionerName = 'Unassigned';
+                    if (!empty($case->legal_practitioner_first_name) || !empty($case->legal_practitioner_last_name)) {
+                        $legalPractitionerName = trim(($case->legal_practitioner_first_name ?? '') . ' ' . ($case->legal_practitioner_last_name ?? ''));
                     }
                     
                     $personResponsibleName = 'Unassigned';
@@ -191,9 +191,9 @@ class ClientPortalDashboardController extends Controller
                         'progress_display' => $progressPercentage . '%',
                         'is_file_closed' => $isFileClosedStatus,
                         'agents' => [
-                            'migration_agent' => [
-                                'id' => $case->sel_migration_agent,
-                                'name' => $migrationAgentName
+                            'legal_practitioner' => [
+                                'id' => $case->sel_legal_practitioner,
+                                'name' => $legalPractitionerName
                             ],
                             'person_responsible' => [
                                 'id' => $case->sel_person_responsible,
@@ -850,7 +850,7 @@ class ClientPortalDashboardController extends Controller
         $query = DB::table('client_matters')
             ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
             ->join('workflow_stages', 'client_matters.workflow_stage_id', '=', 'workflow_stages.id')
-            ->leftJoin('staff as migration_agent', 'client_matters.sel_migration_agent', '=', 'migration_agent.id')
+            ->leftJoin('staff as legal_practitioner', 'client_matters.sel_legal_practitioner', '=', 'legal_practitioner.id')
             ->leftJoin('staff as person_responsible', 'client_matters.sel_person_responsible', '=', 'person_responsible.id')
             ->leftJoin('staff as person_assisting', 'client_matters.sel_person_assisting', '=', 'person_assisting.id')
             ->where('client_matters.client_id', $clientId)
@@ -869,8 +869,8 @@ class ClientPortalDashboardController extends Controller
                 'client_matters.*', 
                 'matters.title', 
                 'workflow_stages.name as stage_name',
-                'migration_agent.first_name as migration_agent_first_name',
-                'migration_agent.last_name as migration_agent_last_name',
+                'legal_practitioner.first_name as legal_practitioner_first_name',
+                'legal_practitioner.last_name as legal_practitioner_last_name',
                 'person_responsible.first_name as person_responsible_first_name',
                 'person_responsible.last_name as person_responsible_last_name',
                 'person_assisting.first_name as person_assisting_first_name',
@@ -894,9 +894,9 @@ class ClientPortalDashboardController extends Controller
                 $progressPercentage = round(($workflowStageId / 14) * 100);
                 
                 // Format agent names
-                $migrationAgentName = 'Unassigned';
-                if (!empty($case->migration_agent_first_name) || !empty($case->migration_agent_last_name)) {
-                    $migrationAgentName = trim(($case->migration_agent_first_name ?? '') . ' ' . ($case->migration_agent_last_name ?? ''));
+                $legalPractitionerName = 'Unassigned';
+                if (!empty($case->legal_practitioner_first_name) || !empty($case->legal_practitioner_last_name)) {
+                    $legalPractitionerName = trim(($case->legal_practitioner_first_name ?? '') . ' ' . ($case->legal_practitioner_last_name ?? ''));
                 }
                 
                 $personResponsibleName = 'Unassigned';
@@ -918,9 +918,9 @@ class ClientPortalDashboardController extends Controller
                     'progress_percentage' => $progressPercentage,
                     'progress_display' => $progressPercentage . '%',
                     'agents' => [
-                        'migration_agent' => [
-                            'id' => $case->sel_migration_agent,
-                            'name' => $migrationAgentName
+                        'legal_practitioner' => [
+                            'id' => $case->sel_legal_practitioner,
+                            'name' => $legalPractitionerName
                         ],
                         'person_responsible' => [
                             'id' => $case->sel_person_responsible,

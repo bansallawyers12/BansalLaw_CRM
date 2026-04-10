@@ -289,12 +289,12 @@ class Form956Controller extends Controller
                                  ($form->assistance_nomination == 1 ? 'nom' : 'visa')),
 
                 // Agent type
-                'mg.prov assist' => $form->is_registered_migration_agent ? 'reg' : ($form->is_legal_practitioner ? 'Legal' : ($form->is_exempt_person ? 'exampt' : 'Off')),
+                'mg.prov assist' => $form->is_legal_practitioner ? 'Legal' : ($form->is_exempt_person ? 'exampt' : 'Off'),
 
                 // Exempt person reason
                 'mg.reason ex' => 'Off', // exempt_person_reason column dropped Phase 4
 
-                // Question 10: Is there another registered migration agent or legal practitioner
+                // Question 10: Is there another legal practitioner
                 'mg.oth mig' => 'No',
 
                  // Question 15: Application Date lodged,Not yet lodged
@@ -462,7 +462,7 @@ class Form956Controller extends Controller
     }
 
     /**
-     * Form 956 question 6 — migration agent Mobile/cell: staff.country_code + business_mobile (or business_phone).
+     * Form 956 question 6 — legal practitioner mobile/cell: staff.country_code + business_mobile (or business_phone).
      *
      * @param  \App\Models\Staff|object|null  $agent
      */
@@ -959,12 +959,12 @@ class Form956Controller extends Controller
                                  ($form->assistance_nomination == 1 ? 'nom' : 'visa')),
 
                 // Agent type
-                'mg.prov assist' => $form->is_registered_migration_agent ? 'reg' : ($form->is_legal_practitioner ? 'Legal' : ($form->is_exempt_person ? 'exampt' : 'Off')),
+                'mg.prov assist' => $form->is_legal_practitioner ? 'Legal' : ($form->is_exempt_person ? 'exampt' : 'Off'),
 
                 // Exempt person reason
                 'mg.reason ex' => 'Off', // exempt_person_reason column dropped Phase 4
 
-                // Question 10: Is there another registered migration agent or legal practitioner
+                // Question 10: Is there another legal practitioner
                 'mg.oth mig' => 'No',
 
                  // Question 15: Application Date lodged,Not yet lodged

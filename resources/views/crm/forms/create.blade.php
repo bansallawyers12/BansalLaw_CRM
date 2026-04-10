@@ -123,8 +123,8 @@
                     <div class="mt-2 space-y-2">
                         <div>
                             <label class="inline-flex items-center">
-                                <input type="checkbox" name="is_registered_migration_agent" value="1" checked class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                <span class="ml-2 text-sm text-gray-700">Registered Migration Agent</span>
+                                <input type="checkbox" name="is_legal_practitioner" value="1" checked class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                <span class="ml-2 text-sm text-gray-700">Legal Practitioner</span>
                             </label>
                         </div>
                         <div>

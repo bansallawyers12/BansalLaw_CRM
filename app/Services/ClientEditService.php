@@ -87,7 +87,7 @@ class ClientEditService
 
         return [
             'mattersForAdd' => $this->getMattersForSubject($isCompany),
-            'migrationAgents' => Staff::query()
+            'legalPractitioners' => Staff::query()
                 ->where('role', 16)
                 ->where('status', 1)
                 ->orderBy('first_name')

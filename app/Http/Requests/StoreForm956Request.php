@@ -35,7 +35,6 @@ class StoreForm956Request extends FormRequest
             'not_lodged' => 'nullable|boolean',
 
             // Part A fields
-            'is_registered_migration_agent' => 'nullable|boolean',
             'is_legal_practitioner' => 'nullable|boolean',
             'is_exempt_person' => 'nullable|boolean',
 

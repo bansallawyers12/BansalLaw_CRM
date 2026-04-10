@@ -275,15 +275,15 @@ Route::post('/clients/save-relationship', [ClientPersonalDetailsController::clas
 
 /*---------- Client Agreements & Forms ----------*/
 Route::post('/clients/generateagreement', [ClientsController::class, 'generateagreement'])->name('clients.generateagreement');
-Route::post('/clients/getMigrationAgentDetail', [ClientsController::class, 'getMigrationAgentDetail'])->name('clients.getMigrationAgentDetail');
-Route::post('/clients/getVisaAggreementMigrationAgentDetail', [ClientsController::class, 'getVisaAggreementMigrationAgentDetail'])->name('clients.getVisaAggreementMigrationAgentDetail');
-Route::post('/clients/getCostAssignmentMigrationAgentDetail', [ClientsController::class, 'getCostAssignmentMigrationAgentDetail'])->name('clients.getCostAssignmentMigrationAgentDetail');
+Route::post('/clients/getLegalPractitionerDetail', [ClientsController::class, 'getLegalPractitionerDetail'])->name('clients.getLegalPractitionerDetail');
+Route::post('/clients/getVisaAgreementLegalPractitionerDetail', [ClientsController::class, 'getVisaAgreementLegalPractitionerDetail'])->name('clients.getVisaAgreementLegalPractitionerDetail');
+Route::post('/clients/getCostAssignmentLegalPractitionerDetail', [ClientsController::class, 'getCostAssignmentLegalPractitionerDetail'])->name('clients.getCostAssignmentLegalPractitionerDetail');
 Route::post('/clients/savecostassignment', [ClientsController::class, 'savecostassignment'])->name('clients.savecostassignment');
 Route::post('/clients/check-cost-assignment', [ClientsController::class, 'checkCostAssignment']);
 
 // Lead cost assignment
 Route::post('/clients/savecostassignmentlead', [ClientsController::class, 'savecostassignmentlead'])->name('clients.savecostassignmentlead');
-Route::post('/clients/getCostAssignmentMigrationAgentDetailLead', [ClientsController::class, 'getCostAssignmentMigrationAgentDetailLead'])->name('clients.getCostAssignmentMigrationAgentDetailLead');
+Route::post('/clients/getCostAssignmentLegalPractitionerDetailLead', [ClientsController::class, 'getCostAssignmentLegalPractitionerDetailLead'])->name('clients.getCostAssignmentLegalPractitionerDetailLead');
 
 Route::post('/clients/{admin}/upload-agreement', [ClientsController::class, 'uploadAgreement'])->name('clients.uploadAgreement');
 

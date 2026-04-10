@@ -775,7 +775,7 @@ class ClientPersonalDetailsController extends Controller
 
         if (ClientMatter::where('id', '=', $requstData['selectedMatterLM'])->exists()) {
             $obj = ClientMatter::find($requstData['selectedMatterLM']);
-            $obj->sel_migration_agent = $requstData['migration_agent'];
+            $obj->sel_legal_practitioner = $requstData['legal_practitioner'];
             $obj->sel_person_responsible = $requstData['person_responsible'];
             $obj->sel_person_assisting = $requstData['person_assisting'];
             $obj->user_id = $requstData['user_id'];

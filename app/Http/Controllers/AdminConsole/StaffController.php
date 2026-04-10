@@ -144,9 +144,9 @@ class StaffController extends Controller
                 ? implode(',', $requestData['permission'])
                 : '';
             $obj->sheet_access = $this->normalizeStaffSheetAccess($requestData['sheet_access'] ?? null);
-            $obj->is_migration_agent = isset($requestData['is_migration_agent']) ? 1 : 0;
+            $obj->is_solicitor = isset($requestData['is_solicitor']) ? 1 : 0;
 
-            if (isset($requestData['is_migration_agent'])) {
+            if (isset($requestData['is_solicitor'])) {
                 $obj->marn_number = @$requestData['marn_number'];
                 $obj->company_name = @$requestData['company_name'];
                 $obj->business_address = @$requestData['business_address'];
@@ -275,9 +275,9 @@ class StaffController extends Controller
                 : '';
             $obj->sheet_access = $this->normalizeStaffSheetAccess($requestData['sheet_access'] ?? null);
             $obj->show_dashboard_per = isset($requestData['show_dashboard_per']) ? 1 : 0;
-            $obj->is_migration_agent = isset($requestData['is_migration_agent']) ? 1 : 0;
+            $obj->is_solicitor = isset($requestData['is_solicitor']) ? 1 : 0;
 
-            if (isset($requestData['is_migration_agent'])) {
+            if (isset($requestData['is_solicitor'])) {
                 $obj->marn_number = @$requestData['marn_number'];
                 $obj->company_name = @$requestData['company_name'];
                 $obj->business_address = @$requestData['business_address'];

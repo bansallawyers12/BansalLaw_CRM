@@ -386,7 +386,7 @@ class ClientPortalMessageController extends Controller
             $matterUsers = [];
             if ($clientMatter) {
                 $matterUsers = [
-                    $clientMatter->sel_migration_agent,
+                    $clientMatter->sel_legal_practitioner,
                     $clientMatter->sel_person_responsible,
                     $clientMatter->sel_person_assisting
                 ];

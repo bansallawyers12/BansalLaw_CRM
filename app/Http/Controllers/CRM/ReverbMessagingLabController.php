@@ -115,7 +115,7 @@ class ReverbMessagingLabController extends Controller
             ->where(function ($query) use ($user) {
                 $uid = (int) $user->id;
                 $query->where('client_id', $uid)
-                    ->orWhere('sel_migration_agent', $uid)
+                    ->orWhere('sel_legal_practitioner', $uid)
                     ->orWhere('sel_person_responsible', $uid)
                     ->orWhere('sel_person_assisting', $uid);
             })

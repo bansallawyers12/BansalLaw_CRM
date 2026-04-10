@@ -19,7 +19,6 @@ class Form956 extends Model
         'business_address',
         'question_7',
         'question_10',
-		'is_registered_migration_agent',
         'is_legal_practitioner',
         'is_exempt_person',
 		'assistance_visa_application',

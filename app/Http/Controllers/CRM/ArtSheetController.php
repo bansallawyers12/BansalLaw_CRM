@@ -99,7 +99,7 @@ class ArtSheetController extends Controller
                 cm.id AS matter_id,
                 cm.other_reference,
                 cm.department_reference,
-                cm.sel_migration_agent,
+                cm.sel_legal_practitioner,
                 cm.sel_person_responsible,
                 cm.sel_person_assisting,
                 cm.office_id,
@@ -119,7 +119,7 @@ class ArtSheetController extends Controller
         if ($driver === 'mysql') {
             $latestArtMatterSql = "
                 SELECT cm.client_id, cm.client_unique_matter_no, cm.id AS matter_id,
-                       cm.other_reference, cm.department_reference, cm.sel_migration_agent,
+                       cm.other_reference, cm.department_reference, cm.sel_legal_practitioner,
                        cm.sel_person_responsible, cm.sel_person_assisting, cm.office_id,
                        cm.deadline
                 FROM client_matters cm
@@ -148,12 +148,12 @@ class ArtSheetController extends Controller
                     ->on('art.client_matter_id', '=', 'latest_art_matter.matter_id');
             })
             ->join('admins', 'latest_art_matter.client_id', '=', 'admins.id')
-            ->leftJoin('staff as agents', 'latest_art_matter.sel_migration_agent', '=', 'agents.id');
+            ->leftJoin('staff as agents', 'latest_art_matter.sel_legal_practitioner', '=', 'agents.id');
 
         // Person Assisting role: rows where this staff is MA / PR / PA on the matter
         if ($paId = StaffClientVisibility::personAssistingStaffIdOrNull(Auth::user())) {
             $query->where(function ($q) use ($paId) {
-                $q->where('latest_art_matter.sel_migration_agent', $paId)
+                $q->where('latest_art_matter.sel_legal_practitioner', $paId)
                     ->orWhere('latest_art_matter.sel_person_responsible', $paId)
                     ->orWhere('latest_art_matter.sel_person_assisting', $paId);
             });
@@ -262,7 +262,7 @@ class ArtSheetController extends Controller
             $agentId = $request->input('agent') === 'me' ? Auth::id() : $request->input('agent');
             if ($agentId) {
                 $query->where(function ($q) use ($agentId) {
-                    $q->where('latest_art_matter.sel_migration_agent', $agentId)
+                    $q->where('latest_art_matter.sel_legal_practitioner', $agentId)
                         ->orWhere('latest_art_matter.sel_person_responsible', $agentId)
                         ->orWhere('latest_art_matter.sel_person_assisting', $agentId);
                 });
@@ -345,10 +345,10 @@ class ArtSheetController extends Controller
         $allIds = DB::table('client_matters as cm')
             ->join('matters as m', 'cm.sel_matter_id', '=', 'm.id')
             ->whereRaw($artCondition)
-            ->select('cm.sel_migration_agent')
-            ->whereNotNull('cm.sel_migration_agent')
+            ->select('cm.sel_legal_practitioner')
+            ->whereNotNull('cm.sel_legal_practitioner')
             ->distinct()
-            ->pluck('sel_migration_agent')
+            ->pluck('sel_legal_practitioner')
             ->merge(
                 DB::table('client_matters as cm')
                     ->join('matters as m', 'cm.sel_matter_id', '=', 'm.id')

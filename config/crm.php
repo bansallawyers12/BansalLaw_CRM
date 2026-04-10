@@ -24,7 +24,7 @@ return [
     |
     | Staff with these roles only see clients/leads where they appear on a matter
     | as Legal Practitioner, person responsible, or person assisting (client_matters
-    | sel_migration_agent / sel_person_responsible / sel_person_assisting), or
+    | sel_legal_practitioner / sel_person_responsible / sel_person_assisting), or
     | are assigned on the lead record (admins.user_id). Super admin (role 1) is
     | never restricted. Override via CRM_PERSON_ASSISTING_ROLE_IDS e.g. "13,21".
     |

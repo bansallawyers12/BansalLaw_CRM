@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Colour 4 — White & Deep Purple | Bansal Law CRM Preview</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --sidebar-bg:    #2D1B69;
+      --sidebar-hover: #3D2880;
+      --sidebar-active:#4A2F9C;
+      --accent:        #3D2C8D;
+      --accent-amber:  #F0A500;
+      --accent-light:  #F3F1FA;
+      --page-bg:       #FFFFFF;
+      --card-bg:       #FFFFFF;
+      --secondary-bg:  #F3F1FA;
+      --text-dark:     #1A1A2E;
+      --text-muted:    #7B7B9D;
+      --border:        #E4E0F5;
+      --success:       #1D7A5F;
+      --danger:        #D64045;
+      --header-bg:     #FFFFFF;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--page-bg); color: var(--text-dark); display: flex; min-height: 100vh; font-size: 14px; }
+
+    .sidebar { width: 250px; min-height: 100vh; background: var(--sidebar-bg); display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar-logo { padding: 22px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 12px; }
+    .sidebar-logo .logo-icon { width: 38px; height: 38px; background: var(--accent-amber); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--sidebar-bg); font-size: 18px; font-weight: 700; }
+    .sidebar-logo .logo-text { color: #fff; font-size: 15px; font-weight: 600; line-height: 1.3; }
+    .sidebar-logo .logo-text span { color: rgba(240,165,0,0.7); display: block; font-size: 11px; font-weight: 400; letter-spacing: 1px; text-transform: uppercase; }
+    .sidebar-section-label { padding: 18px 20px 6px; font-size: 10px; font-weight: 600; color: rgba(208,201,240,0.5); letter-spacing: 1.5px; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 11px 20px; color: rgba(208,201,240,0.75); cursor: pointer; border-left: 3px solid transparent; transition: all .2s; text-decoration: none; font-size: 13.5px; }
+    .nav-item:hover { background: var(--sidebar-hover); color: #fff; }
+    .nav-item.active { background: var(--sidebar-active); color: #fff; border-left-color: var(--accent-amber); }
+    .nav-item .icon { width: 18px; text-align: center; font-size: 14px; }
+    .nav-item .badge { margin-left: auto; background: var(--accent-amber); color: var(--sidebar-bg); font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+    .sidebar-footer { margin-top: auto; padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px; }
+    .sidebar-footer .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-amber); display: flex; align-items: center; justify-content: center; color: var(--sidebar-bg); font-weight: 700; font-size: 13px; }
+    .sidebar-footer .user-info { color: rgba(208,201,240,0.7); font-size: 12px; }
+    .sidebar-footer .user-info strong { display: block; color: #fff; font-size: 13px; }
+
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .topbar { background: var(--header-bg); border-bottom: 1px solid var(--border); padding: 0 28px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+    .topbar-left h1 { font-size: 18px; font-weight: 600; color: var(--text-dark); }
+    .breadcrumb { font-size: 12px; color: var(--text-muted); }
+    .breadcrumb span { color: var(--accent); }
+    .topbar-right { display: flex; align-items: center; gap: 14px; }
+    .btn { padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; transition: all .2s; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #2D1B69; }
+    .btn-amber { background: var(--accent-amber); color: var(--sidebar-bg); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--accent); }
+    .btn-outline:hover { background: var(--secondary-bg); }
+    .icon-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: #fff; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; position: relative; }
+    .icon-btn .dot { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; background: var(--danger); border-radius: 50%; border: 2px solid #fff; }
+
+    .content { flex: 1; padding: 28px; overflow-y: auto; background: var(--secondary-bg); }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 26px; }
+    .kpi-card { background: var(--card-bg); border-radius: 12px; padding: 20px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 4px rgba(61,44,141,0.06); }
+    .kpi-label { font-size: 11.5px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; }
+    .kpi-value { font-size: 28px; font-weight: 700; color: var(--text-dark); }
+    .kpi-footer { font-size: 12px; color: var(--success); display: flex; align-items: center; gap: 5px; }
+    .kpi-footer.down { color: var(--danger); }
+    .kpi-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .kpi-icon.purple { background: rgba(61,44,141,0.1);  color: var(--accent); }
+    .kpi-icon.amber  { background: rgba(240,165,0,0.12); color: #C48600; }
+    .kpi-icon.green  { background: rgba(29,122,95,0.1);  color: var(--success); }
+    .kpi-icon.red    { background: rgba(214,64,69,0.1);  color: var(--danger); }
+    .kpi-top { display: flex; justify-content: space-between; align-items: flex-start; }
+
+    .row-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; margin-bottom: 20px; }
+    .card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 1px 4px rgba(61,44,141,0.06); }
+    .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .card-header h3 { font-size: 14px; font-weight: 600; color: var(--text-dark); }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { padding: 11px 16px; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; background: var(--secondary-bg); border-bottom: 1px solid var(--border); text-align: left; }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #F7F5FD; }
+    tbody td { padding: 12px 16px; font-size: 13px; color: var(--text-dark); vertical-align: middle; }
+    .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .status-active  { background: rgba(29,122,95,0.1);  color: var(--success); }
+    .status-pending { background: rgba(240,165,0,0.12); color: #8A5D00; }
+    .status-closed  { background: rgba(123,123,157,0.12); color: var(--text-muted); }
+    .status-review  { background: rgba(61,44,141,0.1);  color: var(--accent); }
+
+    .activity-list { padding: 6px 0; }
+    .activity-item { display: flex; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--border); }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; margin-top: 2px; }
+    .dot-purple { background: rgba(61,44,141,0.1);  color: var(--accent); }
+    .dot-green  { background: rgba(29,122,95,0.1);  color: var(--success); }
+    .dot-amber  { background: rgba(240,165,0,0.12); color: #C48600; }
+    .dot-red    { background: rgba(214,64,69,0.1);  color: var(--danger); }
+    .dot-gray   { background: rgba(123,123,157,0.1); color: var(--text-muted); }
+    .activity-text { font-size: 13px; color: var(--text-dark); line-height: 1.5; }
+    .activity-text strong { color: var(--accent); }
+    .activity-time { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+    .preview-banner { position: fixed; bottom: 0; left: 0; right: 0; background: var(--sidebar-bg); border-top: 2px solid var(--accent-amber); padding: 10px 28px; display: flex; align-items: center; justify-content: space-between; z-index: 999; }
+    .preview-banner .palette { display: flex; align-items: center; gap: 10px; }
+    .swatch { width: 22px; height: 22px; border-radius: 4px; border: 2px solid rgba(255,255,255,0.2); }
+    .preview-banner p { color: rgba(255,255,255,0.9); font-size: 13px; }
+    .preview-banner strong { color: var(--accent-amber); }
+    .nav-links { display: flex; gap: 16px; }
+    .nav-links a { color: var(--accent-amber); font-size: 13px; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">BL</div>
+    <div class="logo-text">Bansal Law <span>Case Management CRM</span></div>
+  </div>
+  <div class="sidebar-section-label">Main Menu</div>
+  <a class="nav-item active" href="#"><span class="icon"><i class="fas fa-th-large"></i></span> Dashboard</a>
+  <a class="nav-item" href="#"><span class="icon"><i class="fas fa-briefcase"></i></span> Cases <span class="badge">12</span></a>
+  <a class="nav-item" href="#"><span class="icon"><i class="fas fa-users"></i></span> Clients</a>
+  <a class="nav-item" href="#"><span class="icon"><i class="fas fa-calendar-alt"></i></span> Hearings</a>
+  <a class="nav-item" href="#"><span class="icon"><i class="fas fa-file-alt"></i></span> Documents</a>
+  <a class="nav-item" href="#"><span class="icon"><i class="fas fa-rupee-sign"></i></span> Billing</a>
+  <div class="sidebar-section-label">Management</div>
+  <a class="nav-item" href="#"><span class="icon"><i class="fas fa-user-tie"></i></span> Staff</a>
+  <a class="nav-item" href="#"><span class="icon"><i class="fas fa-tasks"></i></span> Tasks <span class="badge">5</span></a>
+  <a class="nav-item" href="#"><span class="icon"><i class="fas fa-chart-bar"></i></span> Reports</a>
+  <a class="nav-item" href="#"><span class="icon"><i class="fas fa-cog"></i></span> Settings</a>
+  <div class="sidebar-footer">
+    <div class="avatar">AK</div>
+    <div class="user-info"><strong>Adv. A. Kumar</strong>Senior Partner</div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div>
+        <h1>Dashboard</h1>
+        <div class="breadcrumb">Home &rsaquo; <span>Dashboard</span></div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="icon-btn"><i class="fas fa-bell"></i><span class="dot"></span></div>
+      <div class="icon-btn"><i class="fas fa-search"></i></div>
+      <button class="btn btn-amber"><i class="fas fa-plus"></i> New Case</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-top"><div><div class="kpi-label">Active Cases</div><div class="kpi-value">84</div></div><div class="kpi-icon purple"><i class="fas fa-briefcase"></i></div></div>
+        <div class="kpi-footer"><i class="fas fa-arrow-up"></i> +6 this month</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top"><div><div class="kpi-label">Total Clients</div><div class="kpi-value">213</div></div><div class="kpi-icon amber"><i class="fas fa-users"></i></div></div>
+        <div class="kpi-footer"><i class="fas fa-arrow-up"></i> +14 this month</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top"><div><div class="kpi-label">Hearings This Week</div><div class="kpi-value">19</div></div><div class="kpi-icon green"><i class="fas fa-gavel"></i></div></div>
+        <div class="kpi-footer"><i class="fas fa-arrow-up"></i> 4 today</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top"><div><div class="kpi-label">Pending Invoices</div><div class="kpi-value">₹2.4L</div></div><div class="kpi-icon red"><i class="fas fa-file-invoice-dollar"></i></div></div>
+        <div class="kpi-footer down"><i class="fas fa-clock"></i> 7 overdue</div>
+      </div>
+    </div>
+
+    <div class="row-grid">
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fas fa-briefcase" style="color:var(--accent); margin-right:8px;"></i>Recent Cases</h3>
+          <button class="btn btn-outline" style="padding:6px 14px;font-size:12px;">View All</button>
+        </div>
+        <table>
+          <thead><tr><th>Case No.</th><th>Client</th><th>Type</th><th>Court</th><th>Next Hearing</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><strong>#BL-2024-0091</strong></td><td>Ramesh Sharma</td><td>Civil</td><td>Delhi HC</td><td>14 Apr 2026</td><td><span class="status-badge status-active">Active</span></td></tr>
+            <tr><td><strong>#BL-2024-0087</strong></td><td>Priya Mehta</td><td>Criminal</td><td>Sessions Court</td><td>18 Apr 2026</td><td><span class="status-badge status-pending">Pending</span></td></tr>
+            <tr><td><strong>#BL-2024-0083</strong></td><td>Suresh Industries</td><td>Corporate</td><td>NCLT Delhi</td><td>22 Apr 2026</td><td><span class="status-badge status-review">In Review</span></td></tr>
+            <tr><td><strong>#BL-2024-0079</strong></td><td>Anita Kapoor</td><td>Family</td><td>Family Court</td><td>–</td><td><span class="status-badge status-closed">Closed</span></td></tr>
+            <tr><td><strong>#BL-2024-0076</strong></td><td>V.K. Constructions</td><td>Property</td><td>Delhi HC</td><td>28 Apr 2026</td><td><span class="status-badge status-active">Active</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3><i class="fas fa-stream" style="color:var(--accent); margin-right:8px;"></i>Recent Activity</h3></div>
+        <div class="activity-list">
+          <div class="activity-item"><div class="activity-dot dot-amber"><i class="fas fa-file-upload"></i></div><div><div class="activity-text"><strong>Ramesh Sharma</strong> — Document uploaded</div><div class="activity-time">10 mins ago</div></div></div>
+          <div class="activity-item"><div class="activity-dot dot-green"><i class="fas fa-gavel"></i></div><div><div class="activity-text">Hearing scheduled for <strong>#BL-2024-0091</strong></div><div class="activity-time">1 hour ago</div></div></div>
+          <div class="activity-item"><div class="activity-dot dot-purple"><i class="fas fa-user-plus"></i></div><div><div class="activity-text">New client <strong>Kavita Nair</strong> added</div><div class="activity-time">3 hours ago</div></div></div>
+          <div class="activity-item"><div class="activity-dot dot-red"><i class="fas fa-exclamation-circle"></i></div><div><div class="activity-text">Invoice overdue — <strong>Priya Mehta</strong></div><div class="activity-time">Yesterday</div></div></div>
+          <div class="activity-item"><div class="activity-dot dot-gray"><i class="fas fa-check-circle"></i></div><div><div class="activity-text">Case <strong>#BL-2024-0079</strong> closed</div><div class="activity-time">2 days ago</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="preview-banner">
+  <div class="palette">
+    <div class="swatch" style="background:#2D1B69;"></div>
+    <div class="swatch" style="background:#3D2C8D;"></div>
+    <div class="swatch" style="background:#F0A500;"></div>
+    <div class="swatch" style="background:#F3F1FA;"></div>
+    <div class="swatch" style="background:#1D7A5F;"></div>
+    <p style="margin-left:8px;"><strong>Colour 4</strong> — White &amp; Deep Purple &nbsp;|&nbsp; Minimalist Premium &amp; Luxury</p>
+  </div>
+  <div class="nav-links">
+    <a href="colour3.html">&larr; Charcoal &amp; Crimson</a>
+    <a href="colour5.html">British Green &rarr;</a>
+  </div>
+</div>
+
+</body>
+</html>

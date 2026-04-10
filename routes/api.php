@@ -311,7 +311,7 @@ Route::post('/broadcasting/auth', function (Request $request) {
             $isAssociated = DB::table('client_matters')
                 ->where('id', $matterId)
                 ->where(function($query) use ($user) {
-                    $query->where('sel_migration_agent', $user->id)
+                    $query->where('sel_legal_practitioner', $user->id)
                           ->orWhere('sel_person_responsible', $user->id)
                           ->orWhere('sel_person_assisting', $user->id);
                 })

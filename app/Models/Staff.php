@@ -44,7 +44,7 @@ class Staff extends Authenticatable
         'office_id',
         'show_dashboard_per',
         'time_zone',
-        'is_migration_agent',
+        'is_solicitor',
         'marn_number',
         'legal_practitioner_number',
         'company_name',
@@ -72,7 +72,7 @@ class Staff extends Authenticatable
     protected $casts = [
         'status' => 'integer',
         'show_dashboard_per' => 'integer',
-        'is_migration_agent' => 'integer',
+        'is_solicitor' => 'integer',
         'quick_access_enabled' => 'boolean',
         'grant_super_admin_access' => 'boolean',
         'created_at' => 'datetime',

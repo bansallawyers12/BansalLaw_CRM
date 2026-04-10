@@ -30,7 +30,7 @@ Broadcast::channel('matter.{matterId}', function ($user, $matterId) {
     $isAssociated = DB::table('client_matters')
         ->where('id', $matterId)
         ->where(function($query) use ($user) {
-            $query->where('sel_migration_agent', $user->id)
+            $query->where('sel_legal_practitioner', $user->id)
                   ->orWhere('sel_person_responsible', $user->id)
                   ->orWhere('sel_person_assisting', $user->id);
         })
@@ -49,7 +49,7 @@ Broadcast::channel('private-matter.{matterId}', function ($user, $matterId) {
         ->where('id', $matterId)
         ->where(function($query) use ($user) {
             $query->where('client_id', $user->id)
-                  ->orWhere('sel_migration_agent', $user->id)
+                  ->orWhere('sel_legal_practitioner', $user->id)
                   ->orWhere('sel_person_responsible', $user->id)
                   ->orWhere('sel_person_assisting', $user->id);
         })

@@ -86,7 +86,7 @@ class LeadConversionController extends Controller
             }
 
             // Create matter if matter data is provided
-            if(isset($requestData['matter_id']) && isset($requestData['migration_agent'])) {
+            if(isset($requestData['matter_id']) && isset($requestData['legal_practitioner'])) {
                 $matterIdSingle = (int) $requestData['matter_id'];
                 if (! Matter::allowedForClientIsCompany($matterIdSingle, (bool) $client->is_company)) {
                     DB::rollback();
@@ -95,7 +95,7 @@ class LeadConversionController extends Controller
                 $matter = new ClientMatter();
                 $matter->user_id = $requestData['user_id'] ?? Auth::user()->id;
                 $matter->client_id = $client->id;
-                $matter->sel_migration_agent = $requestData['migration_agent'];
+                $matter->sel_legal_practitioner = $requestData['legal_practitioner'];
                 $matter->sel_person_responsible = $requestData['person_responsible'] ?? null;
                 $matter->sel_person_assisting = $requestData['person_assisting'] ?? null;
                 $matter->sel_matter_id = $requestData['matter_id'];

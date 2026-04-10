@@ -52,7 +52,7 @@ class DashboardService
         // Column restrictions can prevent relationships from loading if data doesn't match exactly
         $query = ClientMatter::with([
             'client',           // Load full client record
-            'migrationAgent',  // Load full Legal Practitioner (matter assignee) record
+            'legalPractitioner',  // Load full Legal Practitioner (matter assignee) record
             'personResponsible', // Load full person responsible record
             'personAssisting',  // Load full person assisting record
             'workflowStage',    // Load workflow stage
@@ -231,11 +231,11 @@ class DashboardService
         if ($role === 1) {
             return;
         }
-        // MA / PR / PA roles: any matter where they are assigned in any of the three roles
+        // LP / PR / PA roles: any matter where they are assigned in any of the three roles
         if (in_array($role, [12, 13, 16], true)) {
             $uid = (int) $user->id;
             $query->where(function ($q) use ($uid) {
-                $q->where('client_matters.sel_migration_agent', $uid)
+                $q->where('client_matters.sel_legal_practitioner', $uid)
                     ->orWhere('client_matters.sel_person_responsible', $uid)
                     ->orWhere('client_matters.sel_person_assisting', $uid);
             });
@@ -295,7 +295,7 @@ class DashboardService
     {
         $defaultColumns = [
             'matter', 'client_id', 'client_name', 'dob', 
-            'migration_agent', 'person_responsible', 
+            'legal_practitioner', 'person_responsible', 
             'person_assisting', 'stage'
         ];
 
@@ -332,7 +332,7 @@ class DashboardService
         
         $validColumns = [
             'matter', 'client_id', 'client_name', 'dob', 
-            'migration_agent', 'person_responsible', 
+            'legal_practitioner', 'person_responsible', 
             'person_assisting', 'stage'
         ];
         
