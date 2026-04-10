@@ -260,7 +260,7 @@
                                             <div class="col-md-3 col-lg-2">
                                                 <select class="form-control form-control-sm active-staff-filter-select" id="active-staff-role-filter">
                                                     <option value="">All Roles</option>
-                                                    @foreach(\App\Models\UserRole::all() as $role)
+                                                    @foreach(\App\Models\UserRole::orderedForSelect() as $role)
                                                         <option value="{{ $role->id }}">{{ $role->name ?? 'Role #' . $role->id }}</option>
                                                     @endforeach
                                                 </select>

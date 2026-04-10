@@ -89,7 +89,7 @@ class StaffController extends Controller
             return Redirect::to('/dashboard')->with('error', config('constants.unauthorized'));
         }
 
-        $usertype = UserRole::all();
+        $usertype = UserRole::orderedForSelect();
         $sheetDefinitions = CrmSheets::definitions();
         $selectedSheetKeys = array_keys($sheetDefinitions);
 
@@ -185,8 +185,6 @@ class StaffController extends Controller
             return Redirect::to('/dashboard')->with('error', config('constants.unauthorized'));
         }
 
-        $usertype = UserRole::all();
-
         if (!isset($id) || $id === '' || !is_numeric($id) || (int) $id <= 0) {
             return redirect()->route('adminconsole.staff.active')->with('error', 'Invalid staff ID.');
         }
@@ -197,6 +195,9 @@ class StaffController extends Controller
         if (!$fetchedData) {
             return redirect()->route('adminconsole.staff.active')->with('error', 'Staff not found.');
         }
+
+        $currentRoleId = isset($fetchedData->role) ? (int) $fetchedData->role : 0;
+        $usertype = UserRole::orderedForSelect($currentRoleId > 0 ? $currentRoleId : null);
 
         $sheetDefinitions = CrmSheets::definitions();
         $allSheetKeys = array_keys($sheetDefinitions);
