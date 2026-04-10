@@ -6,74 +6,72 @@
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
 <style>
-    /* Page-specific styles for leads index page */
-    
-    /* Edit Icon Button Styling */
+    /* Leads index — docs/theme.md (CSS variables from crm-theme.css :root) */
+
     .btn-edit-icon {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         width: 36px;
         height: 36px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--navy, #1e3d60);
         border: none;
         border-radius: 8px;
-        color: white !important;
+        color: #fff !important;
         text-decoration: none;
-        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+        box-shadow: 0 2px 4px rgba(30, 61, 96, 0.2);
         margin-right: 8px;
     }
 
     .btn-edit-icon:hover {
-        background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
-        color: white !important;
+        filter: brightness(1.08);
+        box-shadow: 0 4px 8px rgba(30, 61, 96, 0.25);
+        color: #fff !important;
         text-decoration: none;
     }
 
     .btn-edit-icon:focus {
         outline: none;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
-        color: white !important;
+        box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.35);
+        color: #fff !important;
     }
 
     .btn-edit-icon i {
         font-size: 14px;
-        color: white;
+        color: #fff;
     }
 
-    /* Archive Icon Button Styling */
     .btn-archive-icon {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         width: 36px;
         height: 36px;
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        background: var(--accent-gold, #c8992a);
         border: none;
         border-radius: 8px;
-        color: white !important;
+        color: #fff !important;
         text-decoration: none;
-        box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+        box-shadow: 0 2px 4px rgba(200, 153, 42, 0.25);
         cursor: pointer;
     }
 
     .btn-archive-icon:hover {
-        background: linear-gradient(135deg, #e58e0a 0%, #c26505 100%);
-        box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
-        color: white !important;
+        filter: brightness(1.06);
+        box-shadow: 0 4px 8px rgba(200, 153, 42, 0.3);
+        color: #fff !important;
         text-decoration: none;
     }
 
     .btn-archive-icon:focus {
         outline: none;
-        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
-        color: white !important;
+        box-shadow: 0 0 0 3px rgba(200, 153, 42, 0.35);
+        color: #fff !important;
     }
 
     .btn-archive-icon i {
         font-size: 14px;
-        color: white;
+        color: #fff;
     }
 
     .action-buttons {
@@ -98,77 +96,47 @@
     }
 
     .listing-container .per-page-select {
-        border: 1px solid white !important;
+        border: 1px solid var(--border, #c8dcef) !important;
         border-radius: 8px !important;
-        background: white !important;
-        color: #667eea !important;
+        background: var(--card-bg, #ffffff) !important;
+        color: var(--navy, #1e3d60) !important;
         font-weight: 600 !important;
         padding: 8px 16px !important;
         min-width: 110px;
         width: auto !important;
         flex: 0 0 auto;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
     }
 
     .listing-container .per-page-select:focus {
         outline: none;
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        border-color: var(--sidebar-active, #3a6fa8) !important;
+        box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.2);
     }
 
     .listing-container .per-page-select option {
-        background: white;
-        color: #667eea;
+        background: var(--card-bg, #ffffff);
+        color: var(--navy, #1e3d60);
     }
 
     .listing-container .filter_panel {
-        background: #f8fafc;
-        border-radius: 12px;
+        background: var(--page-bg, #f0f6ff);
+        border-radius: 10px;
         padding: 24px;
         margin-bottom: 24px;
         display: none;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--border, #c8dcef);
+        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
     }
 
     .listing-container .filter_panel h4 {
-        color: #1e293b;
+        color: var(--navy, #1e3d60) !important;
         font-size: 18px;
         font-weight: 700;
         margin-bottom: 20px;
         display: flex;
         align-items: center;
         gap: 12px;
-    }
-
-    .active-filters-badge {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-        border-radius: 12px;
-        padding: 4px 12px;
-        font-size: 12px;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .clear-filter-btn {
-        background: transparent;
-        border: 2px solid #ef4444;
-        color: #ef4444;
-        padding: 6px 14px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .clear-filter-btn:hover {
-        background: #ef4444;
-        color: white;
     }
 
     .status-badge {
@@ -184,18 +152,21 @@
     }
 
     .status-badge.open {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        color: white;
+        background: rgba(58, 111, 168, 0.15);
+        color: var(--sidebar-active, #3a6fa8);
+        border: 1px solid rgba(58, 111, 168, 0.35);
     }
 
     .status-badge.closed {
-        background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
-        color: white;
+        background: rgba(168, 48, 32, 0.12);
+        color: var(--danger, #a83020);
+        border: 1px solid rgba(168, 48, 32, 0.3);
     }
 
     .status-badge.converted {
-        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-        color: white;
+        background: rgba(30, 122, 82, 0.12);
+        color: var(--success, #1e7a52);
+        border: 1px solid rgba(30, 122, 82, 0.35);
     }
 
     .sortable-header a {
@@ -207,7 +178,7 @@
     }
 
     .sortable-header i {
-        color: #94a3b8;
+        color: var(--text-muted, #5e7a90);
     }
 </style>
 @include('crm.clients.partials.enhanced-date-filter-styles')

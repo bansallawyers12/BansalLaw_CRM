@@ -1,10 +1,10 @@
-/* General Listing Container Styles - Reusable across all listing pages */
+/* General Listing Container Styles — uses docs/theme.md tokens (:root in crm-theme.css) */
 
 /* Main Container Structure */
 .listing-container {
     overflow-x: hidden;
     max-width: 100%;
-    margin-left:50px; /* Account for sidebar width */
+    margin-left: 50px; /* Account for sidebar width */
     padding: 0 20px;
 }
 
@@ -20,32 +20,32 @@
 
 /* Modern Card Design - general for all listing pages */
 .listing-container .card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+    background: var(--card-bg, #ffffff);
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
     margin: 20px 0;
-    border: none;
+    border: 1px solid var(--border, #c8dcef);
     width: 100%;
-    overflow-x: hidden; /* Prevent horizontal scroll */
+    overflow-x: hidden;
     max-width: 100%;
 }
 
 .listing-container .card-header {
-    background: #fff;
+    background: var(--card-bg, #ffffff);
     padding: 20px 30px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border, #c8dcef);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-radius: 12px 12px 0 0;
+    border-radius: 10px 10px 0 0;
     flex-wrap: wrap;
     gap: 15px;
 }
 
 .listing-container .card-header h4 {
     font-size: 1.25rem;
-    color: #2d3748;
-    font-weight: 600;
+    color: var(--navy, #1e3d60) !important;
+    font-weight: 700;
     margin: 0;
     flex: 1;
     min-width: 200px;
@@ -53,9 +53,9 @@
 
 .listing-container .card-body {
     padding: 30px;
-    background: #fff;
-    border-radius: 0 0 12px 12px;
-    overflow-x: auto; /* Allow horizontal scroll only for table */
+    background: var(--card-bg, #ffffff);
+    border-radius: 0 0 10px 10px;
+    overflow-x: auto;
     max-width: 100%;
 }
 
@@ -63,7 +63,7 @@
 .listing-container .table-responsive {
     border-radius: 8px;
     overflow-x: auto;
-    box-shadow: 0 0 0 1px #f0f0f0;
+    box-shadow: 0 0 0 1px var(--border, #c8dcef);
     width: 100%;
     max-width: 100%;
 }
@@ -74,18 +74,18 @@
     border-spacing: 0;
     font-size: 0.875rem;
     margin: 0;
-    min-width: 1000px; /* Reduced minimum width */
+    min-width: 1000px;
 }
 
 .listing-container .table thead th {
-    background: #f8fafc;
-    color: #4a5568 !important;
+    background: var(--page-bg, #f0f6ff) !important;
+    color: var(--navy, #1e3d60) !important;
     font-weight: 600;
     text-transform: uppercase;
     font-size: 0.75rem;
     letter-spacing: 0.05em;
     padding: 12px 8px;
-    border-bottom: 2px solid #edf2f7;
+    border-bottom: 2px solid var(--border, #c8dcef);
     white-space: nowrap;
     position: sticky;
     top: 0;
@@ -96,8 +96,8 @@
 
 .listing-container .table tbody td {
     padding: 12px 8px;
-    border-bottom: 1px solid #edf2f7;
-    color: #4a5568 !important;
+    border-bottom: 1px solid var(--border, #c8dcef);
+    color: var(--text-dark, #1a2c40) !important;
     vertical-align: middle;
     word-wrap: break-word;
     overflow: hidden;
@@ -107,7 +107,7 @@
 }
 
 .listing-container .table tbody tr:hover td {
-    background-color: #f8fafc;
+    background-color: #ebf3ff !important;
 }
 
 .listing-container .table tbody tr:last-child td {
@@ -116,31 +116,31 @@
 
 /* Checkbox Styling - general for all listing pages */
 .listing-container .custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
-    background-color: #4299e1;
-    border-color: #4299e1;
+    background-color: var(--sidebar-active, #3a6fa8);
+    border-color: var(--sidebar-active, #3a6fa8);
 }
 
 .listing-container .custom-control-label::before {
     border-radius: 4px;
-    border: 2px solid #cbd5e0;
+    border: 2px solid var(--border, #c8dcef);
 }
 
 /* Button Styling - general for all listing pages */
 .listing-container .btn-primary {
-    background: #4299e1;
-    border: none;
+    background: var(--navy, #1e3d60) !important;
+    border: 1px solid var(--navy, #1e3d60) !important;
     padding: 10px 20px;
     border-radius: 8px;
-    font-weight: 500;
+    font-weight: 600;
     display: flex;
     align-items: center;
     gap: 8px;
-    color: white;
+    color: #fff !important;
 }
 
 .listing-container .btn-primary:hover {
-    background: #3182ce;
-    box-shadow: 0 4px 6px rgba(66, 153, 225, 0.1);
+    filter: brightness(1.08);
+    box-shadow: 0 4px 6px rgba(30, 61, 96, 0.12);
 }
 
 .listing-container .btn-primary i {
@@ -152,39 +152,69 @@
     min-width: 120px;
     padding: 10px 20px;
     font-size: 14px;
-    font-weight: 500;
-    border-radius: 6px;
+    font-weight: 600;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     gap: 8px;
     border: none;
-    color: white;
+    color: #fff;
 }
 
 .listing-container .card-header .btn:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(30, 61, 96, 0.1);
+}
+
+.listing-container .card-header .btn-theme,
+.listing-container .card-header .filter_btn {
+    background: var(--sidebar-active, #3a6fa8) !important;
+    color: #fff !important;
+}
+
+.listing-container .card-header .btn-theme:hover,
+.listing-container .card-header .filter_btn:hover {
+    filter: brightness(1.06);
 }
 
 .listing-container .card-header .filter_btn {
-    background: #394eea !important;
-    color: white !important;
+    background: var(--navy, #1e3d60) !important;
 }
 
 .listing-container .card-header .filter_btn:hover {
-    background: #2d3fd8 !important;
+    filter: brightness(1.08);
 }
 
 .listing-container .card-header .is_checked_client_void_invoice {
-    background: #394eea !important;
-    color: white !important;
+    background: var(--navy, #1e3d60) !important;
+    color: #fff !important;
 }
 
 .listing-container .card-header .is_checked_client_void_invoice:hover {
-    background: #2d3fd8 !important;
+    filter: brightness(1.08);
+}
+
+/* Clients / Archived / Leads tabs */
+.listing-container .nav-pills .nav-link {
+    color: var(--text-dark, #1a2c40);
+    border: 1px solid var(--border, #c8dcef);
+    margin-right: 8px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.listing-container .nav-pills .nav-link:hover {
+    background: var(--sidebar-hover, #c8dcef);
+    color: var(--navy, #1e3d60);
+}
+
+.listing-container .nav-pills .nav-link.active {
+    background: var(--navy, #1e3d60) !important;
+    color: #fff !important;
+    border-color: var(--navy, #1e3d60);
 }
 
 /* Status Indicators - general for all listing pages */
-.listing-container .text-success, 
+.listing-container .text-success,
 .listing-container .text-danger {
     font-weight: 500;
     padding: 4px 8px;
@@ -193,13 +223,13 @@
 }
 
 .listing-container .text-success {
-    background-color: #c6f6d5;
-    color: #2f855a !important;
+    background-color: rgba(30, 122, 82, 0.12);
+    color: var(--success, #1e7a52) !important;
 }
 
 .listing-container .text-danger {
-    background-color: #fed7d7;
-    color: #c53030 !important;
+    background-color: rgba(168, 48, 32, 0.1);
+    color: var(--danger, #a83020) !important;
 }
 
 /* Column width adjustments - Fixed widths to prevent horizontal scroll */
@@ -219,8 +249,8 @@
 .listing-container .empty-state {
     text-align: center;
     padding: 60px 20px;
-    color: #718096;
-    background: #f8fafc;
+    color: var(--text-muted, #5e7a90);
+    background: var(--page-bg, #f0f6ff);
     border-radius: 8px;
     margin: 20px 0;
 }
@@ -241,7 +271,7 @@
     font-size: 16px;
     font-weight: 500;
     margin: 0;
-    color: #4a5568;
+    color: var(--text-dark, #1a2c40);
 }
 
 /* Loading State */
@@ -262,8 +292,8 @@
     left: 50%;
     transform: translateX(-50%);
     padding: 4px 8px;
-    background: #2d3748;
-    color: white;
+    background: var(--navy, #1e3d60);
+    color: #fff;
     font-size: 12px;
     border-radius: 4px;
     white-space: nowrap;
@@ -283,34 +313,34 @@
 
 .listing-container .custom-error-msg.alert {
     display: block;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 14px;
     line-height: 1.5;
     margin-bottom: 15px;
 }
 
 .listing-container .custom-error-msg.alert-success {
-    background-color: #d4edda;
-    border: 1px solid #c3e6cb;
-    color: #155724;
+    background-color: rgba(30, 122, 82, 0.12);
+    border: 1px solid var(--success, #1e7a52);
+    color: var(--success, #1e7a52);
 }
 
 .listing-container .custom-error-msg.alert-danger {
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-    color: #721c24;
+    background-color: rgba(168, 48, 32, 0.1);
+    border: 1px solid var(--danger, #a83020);
+    color: var(--danger, #a83020);
 }
 
 .listing-container .custom-error-msg.alert-warning {
-    background-color: #fff3cd;
-    border: 1px solid #ffeeba;
-    color: #856404;
+    background-color: rgba(200, 153, 42, 0.15);
+    border: 1px solid var(--accent-gold, #c8992a);
+    color: #7a5800;
 }
 
 .listing-container .custom-error-msg.alert-info {
-    background-color: #d1ecf1;
-    border: 1px solid #bee5eb;
-    color: #0c5460;
+    background-color: rgba(58, 111, 168, 0.1);
+    border: 1px solid var(--sidebar-active, #3a6fa8);
+    color: var(--sidebar-active, #3a6fa8);
 }
 
 /* Flash Message Styling */
@@ -318,33 +348,33 @@
     padding: 15px 20px;
     margin-bottom: 20px;
     border: 1px solid transparent;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 14px;
     line-height: 1.5;
 }
 
 .listing-container .alert-success {
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-    color: #155724;
+    background-color: rgba(30, 122, 82, 0.12);
+    border-color: rgba(30, 122, 82, 0.35);
+    color: var(--success, #1e7a52);
 }
 
 .listing-container .alert-danger {
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-    color: #721c24;
+    background-color: rgba(168, 48, 32, 0.1);
+    border-color: rgba(168, 48, 32, 0.35);
+    color: var(--danger, #a83020);
 }
 
 .listing-container .alert-warning {
-    background-color: #fff3cd;
-    border-color: #ffeeba;
-    color: #856404;
+    background-color: rgba(200, 153, 42, 0.15);
+    border-color: rgba(200, 153, 42, 0.4);
+    color: #7a5800;
 }
 
 .listing-container .alert-info {
-    background-color: #d1ecf1;
-    border-color: #bee5eb;
-    color: #0c5460;
+    background-color: rgba(58, 111, 168, 0.1);
+    border-color: rgba(58, 111, 168, 0.35);
+    color: var(--sidebar-active, #3a6fa8);
 }
 
 /* Close button for alerts */
@@ -353,9 +383,9 @@
     font-size: 20px;
     font-weight: bold;
     line-height: 1;
-    color: #000;
-    text-shadow: 0 1px 0 #fff;
-    opacity: 0.2;
+    color: var(--text-dark, #1a2c40);
+    text-shadow: none;
+    opacity: 0.35;
     background: transparent;
     border: 0;
     padding: 0;
@@ -363,31 +393,30 @@
 }
 
 .listing-container .alert .close:hover {
-    opacity: 0.5;
+    opacity: 0.6;
 }
-
-/* Removed animation for alerts - keeping it simple */
 
 .listing-container .strike-through {
     text-decoration: line-through;
-    color: #000;
+    color: var(--text-muted, #5e7a90);
 }
 
 /* Filter Panel Styling */
 .listing-container .filter_panel {
     margin-bottom: 30px;
     padding: 20px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    background: var(--card-bg, #ffffff);
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+    border: 1px solid var(--border, #c8dcef);
     display: none;
 }
 
 .listing-container .filter_panel h4 {
-    color: #4a5568 !important;
+    color: var(--navy, #1e3d60) !important;
     font-size: 1.1rem;
     margin-bottom: 20px;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 /* Filter Panel Button Container Styling */
@@ -408,7 +437,7 @@
 }
 
 .listing-container .filter-buttons-container .btn:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(30, 61, 96, 0.1);
 }
 
 /* Responsive Design */
@@ -430,30 +459,29 @@
     }
 }
 
-/* Additional responsive fixes */
 @media (max-width: 768px) {
     .listing-container {
-        margin-left: 0; /* Remove sidebar margin on mobile */
+        margin-left: 0;
         padding: 0 15px;
     }
-    
+
     .listing-container .card-header {
         padding: 15px 20px;
     }
-    
+
     .listing-container .card-header h4 {
         font-size: 1.1rem;
         min-width: auto;
     }
-    
+
     .listing-container .card-body {
         padding: 15px;
     }
-    
+
     .listing-container .table {
         min-width: 800px;
     }
-    
+
     .listing-container .table thead th,
     .listing-container .table tbody td {
         padding: 8px 6px;
