@@ -37,7 +37,7 @@
         /* Modern topbar layout */
         .main-topbar { 
             display: grid !important; 
-            grid-template-columns: 1fr minmax(400px, 640px) auto !important; 
+            grid-template-columns: 1fr minmax(400px, 560px) auto !important; 
             align-items: center !important; 
             gap: 16px !important; 
             position: sticky !important; 

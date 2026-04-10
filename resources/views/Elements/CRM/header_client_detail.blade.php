@@ -99,8 +99,10 @@
     </div>
     <div class="topbar-center">
         <form class="topbar-search">
-            <i class="fas fa-search"></i>
-            <select class="form-control js-data-example-ajaxccsearch" type="search" placeholder="Search" aria-label="Search" data-width="320"></select>
+            <div class="topbar-search__inner">
+                <span class="topbar-search__icon" aria-hidden="true"><i class="fas fa-search"></i></span>
+                <select class="form-control js-data-example-ajaxccsearch" type="search" placeholder="Search" aria-label="Search" data-width="320"></select>
+            </div>
         </form>
     </div>
     <div class="topbar-right">

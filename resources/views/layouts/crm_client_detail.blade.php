@@ -1468,7 +1468,7 @@
         /* Modern topbar layout */
         .main-topbar { 
             display: grid !important; 
-            grid-template-columns: 1fr minmax(400px, 640px) auto !important; 
+            grid-template-columns: 1fr minmax(400px, 560px) auto !important; 
             align-items: center !important; 
             gap: 16px !important; 
             position: sticky !important; 
@@ -1528,12 +1528,30 @@
             0% { background: rgba(13, 110, 253, 0.4) !important; transform: scale(1.05); }
             100% { background: transparent !important; transform: scale(1); }
         }
+        .topbar-center { min-width: 0 !important; width: 100% !important; }
         .topbar-center .topbar-search { 
-            display: flex !important; align-items: center !important; gap: 8px !important; 
-            padding: 8px 12px !important; border: 1px solid #e9ecef !important; border-radius: 10px !important; 
+            display: block !important;
+            padding: 6px 10px !important; border: 1px solid #e9ecef !important; border-radius: 8px !important; 
             background: #f8f9fb !important; 
         }
-        .topbar-center .topbar-search i { color: #868e96 !important; }
+        .topbar-center .topbar-search__inner { position: relative !important; width: 100% !important; max-width: 320px !important; }
+        .topbar-center .topbar-search__icon {
+            position: absolute !important; left: 12px !important; top: 50% !important; transform: translateY(-50%) !important;
+            z-index: 2 !important; pointer-events: none !important; color: #868e96 !important; line-height: 1 !important;
+        }
+        .topbar-center .topbar-search__icon i { font-size: 0.85rem !important; }
+        .topbar-center .topbar-search .select2-container { width: 100% !important; }
+        .topbar-center .topbar-search .select2-container--default .select2-selection--single {
+            background-color: #fff !important;
+            border: 1px solid #dee2e6 !important;
+            border-radius: 8px !important;
+            padding-left: 2rem !important; min-height: 40px !important; height: 40px !important;
+            display: flex !important; align-items: center !important;
+        }
+        .topbar-center .topbar-search .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px !important; font-size: 0.875rem !important;
+        }
+        .topbar-center .topbar-search .select2-container--default .select2-selection--single .select2-selection__arrow { height: 38px !important; }
         .topbar-center .topbar-search .form-control { border: 0 !important; background: transparent !important; width: 100% !important; }
         .topbar-right { display: flex !important; align-items: center !important; gap: 10px !important; }
         /* Dropdowns */
