@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Staff;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\DB;
 
@@ -36,8 +37,7 @@ Broadcast::channel('matter.{matterId}', function ($user, $matterId) {
         })
         ->exists();
 
-    // Allow superadmins (role=1) to join any matter channel
-    $isSuperAdmin = $user->role == 1;
+    $isSuperAdmin = $user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges();
 
     return $isAssociated || $isSuperAdmin;
 });
@@ -55,8 +55,7 @@ Broadcast::channel('private-matter.{matterId}', function ($user, $matterId) {
         })
         ->exists();
 
-    // Allow superadmins (role=1) to join any matter channel
-    $isSuperAdmin = $user->role == 1;
+    $isSuperAdmin = $user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges();
 
     return $isAssociated || $isSuperAdmin;
 });

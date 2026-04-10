@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\AdminConsole;
 
 use App\Http\Controllers\Controller;
+use App\Models\Staff;
 use App\Services\SignatureAnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -47,9 +48,9 @@ class ESignatureController extends Controller
         $trendData = $this->analyticsService->getSignatureTrend($startDate, $endDate, 'day');
         $overdueDocuments = $this->analyticsService->getOverdueAnalytics();
         
-        // Admin-only: User performance
+        // Admin-only: User performance (native or elevated Super Admin)
         $userPerformance = null;
-        if ($user->role === 1) {
+        if ($user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges()) {
             $userPerformance = $this->analyticsService->getUserPerformance();
         }
         

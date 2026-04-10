@@ -24,6 +24,10 @@ class CrmAccessService
      */
     public function hasPermanentSuperAdminCapability(Staff $user): bool
     {
+        if ($this->staffIsInactive($user)) {
+            return false;
+        }
+
         if ((int) ($user->role ?? 0) === 1) {
             return true;
         }
@@ -41,6 +45,10 @@ class CrmAccessService
 
     public function canToggleSuperAdminElevation(Staff $user): bool
     {
+        if ($this->staffIsInactive($user)) {
+            return false;
+        }
+
         return (bool) ($user->grant_super_admin_access ?? false)
             && (int) ($user->role ?? 0) !== 1;
     }
@@ -55,6 +63,10 @@ class CrmAccessService
      */
     public function hasEffectiveSuperAdminPrivileges(Staff $user): bool
     {
+        if ($this->staffIsInactive($user)) {
+            return false;
+        }
+
         if ((int) ($user->role ?? 0) === 1) {
             return true;
         }
@@ -64,6 +76,16 @@ class CrmAccessService
         }
 
         return $this->isSuperAdminElevationActive();
+    }
+
+    /**
+     * When `status` is present on the model, only active staff (status = 1) may use super-admin paths.
+     */
+    protected function staffIsInactive(Staff $user): bool
+    {
+        $attrs = $user->getAttributes();
+
+        return array_key_exists('status', $attrs) && (int) ($attrs['status'] ?? 0) !== 1;
     }
 
     public function hasAdminConsoleLikeSuperAdminAccess(Staff $user): bool

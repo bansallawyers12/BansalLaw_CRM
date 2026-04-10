@@ -316,8 +316,7 @@ class Document extends Model
             }
         }
 
-        // Admin viewing all
-        if ($user->role === 1) {
+        if ($user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges()) {
             return 'admin';
         }
 

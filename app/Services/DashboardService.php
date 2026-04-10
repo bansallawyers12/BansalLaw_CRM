@@ -3,6 +3,7 @@ namespace App\Services;
 
 use App\Models\ClientMatter;
 use App\Models\Note;
+use App\Models\Staff;
 use App\Models\Notification;
 use App\Models\CheckinLog;
 use App\Models\ClientVisaCountry;
@@ -19,6 +20,14 @@ use App\Support\StaffClientVisibility;
 
 class DashboardService
 {
+    /**
+     * Native Super Admin (role 1) or session-elevated grant — same matter/action visibility as role 1.
+     */
+    private function viewerSeesAllMattersAndActions($user): bool
+    {
+        return $user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges();
+    }
+
     /**
      * Get all dashboard data
      */
@@ -103,9 +112,8 @@ class DashboardService
             ->where('is_action', 1)
             ->where('status', '!=', 1);
 
-        // Admin sees ALL actions (no assigned_to filter) - matching action page behavior
-        // Other roles only see notes assigned to them
-        if ($user->role != 1) {
+        // Super Admin (or elevated) sees ALL actions — matching Action page behavior
+        if (! $this->viewerSeesAllMattersAndActions($user)) {
             $query->where('assigned_to', $user->id);
         }
 
@@ -130,7 +138,7 @@ class DashboardService
             ->where('matter_status', 1)
             ->where('updated_at', '>=', Carbon::now()->subDays(100));
 
-        if ((int) $user->role !== 1) {
+        if (! $this->viewerSeesAllMattersAndActions($user)) {
             $query->whereHas('client', function ($q) use ($user) {
                 StaffClientVisibility::excludeSuperAdminOnlyLockedClientsFromAdminQuery($q, $user);
             });
@@ -227,10 +235,11 @@ class DashboardService
      */
     private function applyRoleBasedFiltering($query, $user)
     {
-        $role = (int) $user->role;
-        if ($role === 1) {
+        if ($this->viewerSeesAllMattersAndActions($user)) {
             return;
         }
+
+        $role = (int) $user->role;
         // LP / PR / PA roles: any matter where they are assigned in any of the three roles
         if (in_array($role, [12, 13, 16], true)) {
             $uid = (int) $user->id;
@@ -262,8 +271,7 @@ class DashboardService
             ->where('is_action', 1)
             ->where('status', '!=', 1);
 
-        // Admin sees ALL actions (no assigned_to filter) - matching action page behavior
-        if ($user->role != 1) {
+        if (! $this->viewerSeesAllMattersAndActions($user)) {
             $query->where('assigned_to', $user->id);
         }
 
@@ -279,7 +287,7 @@ class DashboardService
             ->where('client_matters.matter_status', 1)
             ->where('client_matters.updated_at', '>=', Carbon::now()->subDays(100));
 
-        if ((int) $user->role !== 1) {
+        if (! $this->viewerSeesAllMattersAndActions($user)) {
             StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'clients', $user);
         }
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivitiesLog;
 use App\Models\Document;
 use App\Models\Admin;
+use App\Models\Staff;
 use App\Models\Lead;
 use App\Services\SignatureService;
 use App\Services\SignatureAnalyticsService;
@@ -747,7 +748,7 @@ class SignatureDashboardController extends Controller
         $this->authorize('update', $document);
 
         $staff = Auth::guard('admin')->user();
-        if ($staff->role !== 1) {
+        if (! ($staff instanceof Staff && $staff->hasEffectiveSuperAdminPrivileges())) {
             return back()->with('error', 'Only administrators can detach documents.');
         }
 

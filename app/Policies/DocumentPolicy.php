@@ -61,8 +61,7 @@ class DocumentPolicy
      */
     public function viewAll(Authenticatable $user): bool
     {
-        // Only super admins can view all documents
-        return $user->role === 1;
+        return $user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges();
     }
 
     /**

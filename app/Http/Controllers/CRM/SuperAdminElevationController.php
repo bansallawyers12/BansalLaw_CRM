@@ -22,6 +22,8 @@ class SuperAdminElevationController extends Controller
             abort(403);
         }
 
+        $user->refresh();
+
         $svc = app(CrmAccessService::class);
         if (! $svc->canToggleSuperAdminElevation($user)) {
             abort(403);
