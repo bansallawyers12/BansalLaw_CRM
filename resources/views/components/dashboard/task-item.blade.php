@@ -140,7 +140,7 @@
 }
 
 .todo-task-item:hover {
-    background: #ebf3ff;
+    background: var(--sidebar-hover, #c8dcef);
     border-color: var(--border-color, #c8dcef);
 }
 
@@ -215,12 +215,12 @@
 }
 
 .task-client-info i {
-    color: #999;
+    color: var(--text-muted-color, #5e7a90);
     font-size: 11px;
 }
 
 .task-client-code {
-    color: #999;
+    color: var(--text-muted-color, #5e7a90);
     font-size: 11px;
 }
 

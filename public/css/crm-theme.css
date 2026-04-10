@@ -103,16 +103,86 @@ body.sidebar-mini .card.card-primary .card-header {
   border-bottom: none !important;
 }
 
-/* Buttons */
+/* ---------- Buttons (all Bootstrap variants) — docs/theme.md ---------- */
+/* Overrides public/css/custom.css purple gradients on .btn-primary etc. */
+body.sidebar-mini .btn {
+  border-radius: 8px;
+  font-weight: 600;
+}
+
 body.sidebar-mini .btn-primary {
   background-color: var(--navy) !important;
-  border-color: var(--navy) !important;
+  background-image: none !important;
+  border: 1px solid var(--navy) !important;
   color: #fff !important;
 }
 
 body.sidebar-mini .btn-primary:hover,
 body.sidebar-mini .btn-primary:focus {
-  filter: brightness(1.08);
+  background-color: var(--sidebar-active) !important;
+  background-image: none !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+  filter: none !important;
+}
+
+body.sidebar-mini .btn-primary:active,
+body.sidebar-mini .btn-primary.active {
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
+}
+
+body.sidebar-mini .btn-secondary {
+  background-color: var(--text-muted) !important;
+  border: 1px solid var(--text-muted) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .btn-secondary:hover,
+body.sidebar-mini .btn-secondary:focus {
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .btn-success {
+  background-color: var(--success) !important;
+  background-image: none !important;
+  border: 1px solid var(--success) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .btn-success:hover,
+body.sidebar-mini .btn-success:focus {
+  background-color: #186846 !important;
+  border-color: #186846 !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .btn-danger {
+  background-color: var(--danger) !important;
+  background-image: none !important;
+  border: 1px solid var(--danger) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .btn-danger:hover,
+body.sidebar-mini .btn-danger:focus {
+  background-color: #8e2818 !important;
+  border-color: #8e2818 !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .btn-info {
+  background-color: var(--sidebar-active) !important;
+  background-image: none !important;
+  border: 1px solid var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .btn-info:hover,
+body.sidebar-mini .btn-info:focus {
+  background-color: var(--navy) !important;
   border-color: var(--navy) !important;
   color: #fff !important;
 }
@@ -120,25 +190,220 @@ body.sidebar-mini .btn-primary:focus {
 body.sidebar-mini .btn-warning,
 body.sidebar-mini .btn-gold {
   background-color: var(--accent-gold) !important;
-  border-color: var(--accent-gold) !important;
+  background-image: none !important;
+  border: 1px solid var(--accent-gold) !important;
   color: #fff !important;
+}
+
+body.sidebar-mini .btn-warning:hover,
+body.sidebar-mini .btn-warning:focus,
+body.sidebar-mini .btn-gold:hover,
+body.sidebar-mini .btn-gold:focus {
+  background-color: #a88424 !important;
+  border-color: #a88424 !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .btn-light {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .btn-light:hover,
+body.sidebar-mini .btn-light:focus {
+  background-color: var(--sidebar-hover) !important;
+  border-color: var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .btn-dark {
+  background-color: var(--navy) !important;
+  border: 1px solid var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .btn-dark:hover,
+body.sidebar-mini .btn-dark:focus {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .btn-link {
+  color: var(--sidebar-active) !important;
+  font-weight: 600;
+}
+
+body.sidebar-mini .btn-link:hover,
+body.sidebar-mini .btn-link:focus {
+  color: var(--navy) !important;
 }
 
 body.sidebar-mini .btn-outline-primary {
   color: var(--navy) !important;
-  border-color: var(--border) !important;
+  border: 1px solid var(--border) !important;
   background: transparent !important;
 }
 
-body.sidebar-mini .btn-outline-primary:hover {
-  background: var(--sidebar-bg) !important;
+body.sidebar-mini .btn-outline-primary:hover,
+body.sidebar-mini .btn-outline-primary:focus {
+  background: var(--sidebar-hover) !important;
   border-color: var(--border) !important;
   color: var(--navy) !important;
 }
 
-body.sidebar-mini .btn-secondary {
-  background-color: var(--text-muted) !important;
-  border-color: var(--text-muted) !important;
+body.sidebar-mini .btn-outline-secondary {
+  color: var(--navy) !important;
+  border: 1px solid var(--border) !important;
+  background: transparent !important;
+}
+
+body.sidebar-mini .btn-outline-secondary:hover,
+body.sidebar-mini .btn-outline-secondary:focus {
+  background: var(--sidebar-hover) !important;
+  border-color: var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .btn-outline-success {
+  color: var(--success) !important;
+  border: 1px solid var(--success) !important;
+  background: transparent !important;
+}
+
+body.sidebar-mini .btn-outline-success:hover,
+body.sidebar-mini .btn-outline-success:focus {
+  background-color: var(--success) !important;
+  border-color: var(--success) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .btn-outline-danger {
+  color: var(--danger) !important;
+  border: 1px solid var(--danger) !important;
+  background: transparent !important;
+}
+
+body.sidebar-mini .btn-outline-danger:hover,
+body.sidebar-mini .btn-outline-danger:focus {
+  background-color: var(--danger) !important;
+  border-color: var(--danger) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .btn-outline-info {
+  color: var(--sidebar-active) !important;
+  border: 1px solid var(--sidebar-active) !important;
+  background: transparent !important;
+}
+
+body.sidebar-mini .btn-outline-info:hover,
+body.sidebar-mini .btn-outline-info:focus {
+  background-color: var(--sidebar-hover) !important;
+  border-color: var(--sidebar-active) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .btn-outline-warning {
+  color: #7a5800 !important;
+  border: 1px solid var(--accent-gold) !important;
+  background: transparent !important;
+}
+
+body.sidebar-mini .btn-outline-warning:hover,
+body.sidebar-mini .btn-outline-warning:focus {
+  background-color: var(--accent-light) !important;
+  border-color: var(--accent-gold) !important;
+  color: #5c4300 !important;
+}
+
+body.sidebar-mini .card-header-action .btn-primary {
+  background-color: var(--navy) !important;
+  border: 1px solid var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .card-header-action .btn-primary:hover,
+body.sidebar-mini .card-header-action .btn-primary:focus {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .btn:disabled,
+body.sidebar-mini .btn.disabled {
+  opacity: 0.55;
+}
+
+/* Dashboard task detail slide-over — footer actions (docs/theme.md tokens) */
+body.sidebar-mini .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task {
+  background-color: var(--success) !important;
+  border: 1px solid var(--success) !important;
+  color: #fff !important;
+  background-image: none !important;
+}
+
+body.sidebar-mini .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task:hover,
+body.sidebar-mini .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task:focus {
+  background-color: #186846 !important;
+  border-color: #186846 !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task i {
+  color: #fff !important;
+}
+
+body.sidebar-mini .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-extend-task {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--navy) !important;
+  background-image: none !important;
+}
+
+body.sidebar-mini .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-extend-task:hover,
+body.sidebar-mini .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-extend-task:focus {
+  background-color: var(--sidebar-hover) !important;
+  border-color: var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-extend-task i {
+  color: var(--navy) !important;
+}
+
+/* Complete Task modal (dashboard) — beats global .btn-* on .btn-cancel-complete / .btn-complete-task-primary */
+body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-cancel-complete {
+  background-color: var(--card-bg) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+  border: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-cancel-complete:hover,
+body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-cancel-complete:focus {
+  background-color: var(--sidebar-hover) !important;
+  border-color: var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-complete-task-primary {
+  background-color: var(--success) !important;
+  background-image: none !important;
+  border: 1px solid var(--success) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-complete-task-primary:hover,
+body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-complete-task-primary:focus {
+  background-color: #186846 !important;
+  border-color: #186846 !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-complete-task-primary i {
+  color: #fff !important;
 }
 
 /* Tables */

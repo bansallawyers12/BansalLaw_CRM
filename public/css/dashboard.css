@@ -2,6 +2,7 @@
     /* Aligned with docs/theme.md (Powder Blue & Soft Gold) */
     --primary-color: #1e3d60;
     --secondary-color: #3a6fa8;
+    --sidebar-hover: #c8dcef;
     --background-color: #f0f6ff;
     --card-bg-color: #ffffff;
     --text-color: #1a2c40;
@@ -235,15 +236,16 @@
 
 .access-approvals-dashboard .access-approvals-header .btn-outline-secondary {
     color: var(--primary-color);
-    border-color: var(--primary-color);
+    border-color: var(--border-color);
+    background-color: transparent;
     font-weight: 600;
 }
 
 .access-approvals-dashboard .access-approvals-header .btn-outline-secondary:hover,
 .access-approvals-dashboard .access-approvals-header .btn-outline-secondary:focus {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-    color: #fff;
+    background-color: var(--sidebar-hover);
+    border-color: var(--border-color);
+    color: var(--primary-color);
 }
 
 .access-approvals-dashboard .badge-access-pending {

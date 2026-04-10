@@ -329,14 +329,206 @@
         font-size: 18px;
     }
 }
+
+/* Extend Notes Deadline — docs/theme.md (Powder Blue & Soft Gold) */
+#extend_note_popup .modal-dialog {
+    max-width: 520px;
+}
+#extend_note_popup .modal-content {
+    border-radius: 12px;
+    border: 1px solid #c8dcef;
+    box-shadow: 0 12px 40px rgba(30, 61, 96, 0.12);
+    padding: 0;
+    overflow: hidden;
+    background: #ffffff;
+}
+#extend_note_popup .modal-header {
+    background: #ffffff;
+    border-bottom: 1px solid #c8dcef;
+    padding: 1rem 1.25rem;
+    align-items: center;
+}
+#extend_note_popup .modal-title {
+    color: #1e3d60;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin: 0;
+}
+#extend_note_popup .modal-header .close {
+    color: #1e3d60;
+    opacity: 0.85;
+    text-shadow: none;
+    font-size: 1.5rem;
+    font-weight: 400;
+}
+#extend_note_popup .modal-header .close:hover,
+#extend_note_popup .modal-header .close:focus {
+    opacity: 1;
+    color: #1e3d60;
+}
+#extend_note_popup #popover-content {
+    padding: 1.25rem 1.25rem 1.5rem;
+    background: #f0f6ff;
+}
+#extend_note_popup .control-label {
+    color: #5e7a90 !important;
+    font-weight: 600;
+}
+#extend_note_popup .form-control {
+    border: 1px solid #c8dcef;
+    border-radius: 8px;
+    color: #1a2c40;
+}
+#extend_note_popup .form-control:focus {
+    border-color: #3a6fa8;
+    box-shadow: 0 0 0 2px rgba(58, 111, 168, 0.15);
+    outline: none;
+}
+#extend_note_popup .box-footer {
+    padding: 0.75rem 0 0 !important;
+    margin-top: 0.5rem;
+    border-top: 1px solid #c8dcef;
+}
+#extend_note_popup #extend_deadline {
+    background: #1e3d60;
+    border: 1px solid #1e3d60;
+    color: #fff;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0.5rem 1.5rem;
+    box-shadow: 0 2px 8px rgba(30, 61, 96, 0.2);
+}
+#extend_note_popup #extend_deadline:hover,
+#extend_note_popup #extend_deadline:focus {
+    background: #3a6fa8;
+    border-color: #3a6fa8;
+    color: #fff;
+}
+
+/* Complete Task / Completion Notes (dashboard) — docs/theme.md (tokens via :root) */
+#dashboardCompletionNotesModal .dashboard-completion-modal-content {
+    border-radius: 12px;
+    border: 1px solid var(--border, #c8dcef);
+    box-shadow: 0 12px 40px rgba(30, 61, 96, 0.12);
+    overflow: hidden;
+    background: var(--card-bg, #ffffff);
+}
+#dashboardCompletionNotesModal .dashboard-completion-modal-header {
+    background: var(--navy, #1e3d60);
+    color: #fff;
+    border-bottom: 1px solid var(--border, #c8dcef);
+    padding: 1rem 1.25rem;
+}
+#dashboardCompletionNotesModal .dashboard-completion-modal-header .modal-title {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+#dashboardCompletionNotesModal .dashboard-completion-modal-header .modal-title i {
+    color: var(--accent-gold, #c8992a);
+    margin-right: 0.35rem;
+}
+#dashboardCompletionNotesModal .dashboard-completion-modal-header .close {
+    color: #fff;
+    opacity: 0.9;
+    text-shadow: none;
+    font-size: 1.5rem;
+    font-weight: 400;
+}
+#dashboardCompletionNotesModal .dashboard-completion-modal-header .close:hover,
+#dashboardCompletionNotesModal .dashboard-completion-modal-header .close:focus {
+    opacity: 1;
+    color: #fff;
+}
+#dashboardCompletionNotesModal .modal-body {
+    background: var(--page-bg, #f0f6ff);
+    padding: 1.25rem 1.25rem 1rem;
+}
+#dashboardCompletionNotesModal .modal-body .form-group label {
+    color: var(--text-muted, #5e7a90);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+#dashboardCompletionNotesModal .modal-body .form-group label i {
+    color: var(--navy, #1e3d60);
+    margin-right: 0.35rem;
+}
+#dashboardCompletionNotesModal #dashboardCompletionNotes {
+    resize: vertical;
+    border: 1px solid var(--border, #c8dcef) !important;
+    border-radius: 8px;
+    padding: 12px;
+    background: var(--card-bg, #ffffff);
+    color: var(--text-dark, #1a2c40);
+    background-image: none !important;
+}
+#dashboardCompletionNotesModal #dashboardCompletionNotes:focus {
+    border-color: var(--sidebar-active, #3a6fa8) !important;
+    box-shadow: 0 0 0 2px rgba(58, 111, 168, 0.15);
+    outline: none;
+}
+#dashboardCompletionNotesModal .modal-body .form-text {
+    color: var(--text-muted, #5e7a90) !important;
+    font-size: 0.8125rem;
+    margin-top: 0.5rem;
+}
+#dashboardCompletionNotesModal .modal-body .form-text i {
+    color: var(--sidebar-active, #3a6fa8);
+}
+#dashboardCompletionNotesModal .dashboard-completion-modal-footer {
+    background: var(--page-bg, #f0f6ff);
+    border-top: 1px solid var(--border, #c8dcef);
+    padding: 1rem 1.25rem;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+/* Cancel: white card + border (theme.md); hover powder blue */
+#dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-cancel-complete {
+    background-color: var(--card-bg, #ffffff) !important;
+    background-image: none !important;
+    color: var(--navy, #1e3d60) !important;
+    border: 1px solid var(--border, #c8dcef) !important;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+}
+#dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-cancel-complete i {
+    color: var(--navy, #1e3d60) !important;
+}
+#dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-cancel-complete:hover,
+#dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-cancel-complete:focus {
+    background-color: var(--sidebar-hover, #c8dcef) !important;
+    border-color: var(--border, #c8dcef) !important;
+    color: var(--navy, #1e3d60) !important;
+}
+/* Primary action = --success */
+#dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-complete-task-primary {
+    background-color: var(--success, #1e7a52) !important;
+    background-image: none !important;
+    border: 1px solid var(--success, #1e7a52) !important;
+    color: #fff !important;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    box-shadow: 0 2px 6px rgba(30, 122, 82, 0.2);
+}
+#dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-complete-task-primary i {
+    color: #fff !important;
+}
+#dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-complete-task-primary:hover,
+#dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-complete-task-primary:focus {
+    background-color: #186846 !important;
+    border-color: #186846 !important;
+    color: #fff !important;
+}
 </style>
 
 {{-- Extend Note Deadline Modal --}}
 <div class="modal fade custom_modal" id="extend_note_popup" tabindex="-1" role="dialog" aria-labelledby="create_action_popupLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content" style="padding: 20px;">
-            <div class="modal-header" style="padding-bottom: 11px;">
-                <h5 class="modal-title assignnn" id="create_action_popupLabel" style="margin: 0 -24px;">Extend Notes Deadline</h5>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="create_action_popupLabel">Extend Notes Deadline</h5>
                 <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -345,17 +537,17 @@
             <input id="unique_group_id" type="hidden" value="">
             <div id="popover-content">
                 <div class="box-header with-border">
-                    <div class="form-group row" style="margin-bottom:12px;">
-                        <label for="inputEmail3" class="col-sm-3 control-label c6 f13" style="margin-top:8px;">Note</label>
+                    <div class="form-group row mb-3">
+                        <label for="assignnote" class="col-sm-3 control-label c6 f13 pt-2">Note</label>
                         <div class="col-sm-9">
-                            <textarea id="assignnote" class="form-control" placeholder="Enter a note..."></textarea>
+                            <textarea id="assignnote" class="form-control" placeholder="Enter a note..." rows="3"></textarea>
                         </div>
                         <div class="clearfix"></div>
                     </div>
                 </div>
 
-                <div class="form-group row note_deadline">
-                    <label for="inputSub3" class="col-sm-3 control-label c6 f13" style="margin-top:8px;">
+                <div class="form-group row note_deadline mb-0">
+                    <label for="note_deadline" class="col-sm-3 control-label c6 f13 pt-2">
                         Note Deadline
                     </label>
                     <div class="col-sm-9">
@@ -364,10 +556,10 @@
                     <div class="clearfix"></div>
                 </div>
 
-                <div class="box-footer" style="padding:10px 0;">
+                <div class="box-footer">
                     <div class="row text-center">
                         <div class="col-md-12 text-center">
-                            <button class="btn btn-danger" id="extend_deadline">Extend Deadline</button>
+                            <button type="button" class="btn" id="extend_deadline">Extend Deadline</button>
                         </div>
                     </div>
                 </div>
@@ -379,18 +571,18 @@
 {{-- Task Completion Notes Modal --}}
 <div class="modal fade" id="dashboardCompletionNotesModal" tabindex="-1" role="dialog" aria-labelledby="dashboardCompletionNotesModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header" style="background-color: #3498db; color: white;">
+        <div class="modal-content dashboard-completion-modal-content">
+            <div class="modal-header dashboard-completion-modal-header">
                 <h5 class="modal-title" id="dashboardCompletionNotesModalLabel">
                     <i class="fa fa-check-circle"></i> Complete Task
                 </h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label for="dashboardCompletionNotes" class="font-weight-bold">
+                <div class="form-group mb-0">
+                    <label for="dashboardCompletionNotes">
                         <i class="fa fa-comment"></i> Completion Notes (optional)
                     </label>
                     <textarea
@@ -398,18 +590,17 @@
                         id="dashboardCompletionNotes"
                         rows="5"
                         placeholder="Add any notes or feedback about completing this task..."
-                        style="resize: vertical; border: 2px solid #e9ecef; border-radius: 8px; padding: 12px;"
                     ></textarea>
-                    <small class="form-text text-muted">
+                    <small class="form-text">
                         <i class="fa fa-info-circle"></i> These notes will be saved in the activity log.
                     </small>
                 </div>
             </div>
-            <div class="modal-footer" style="background-color: #f8f9fa;">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <div class="modal-footer dashboard-completion-modal-footer">
+                <button type="button" class="btn btn-cancel-complete" data-bs-dismiss="modal">
                     <i class="fa fa-times"></i> Cancel
                 </button>
-                <button type="button" class="btn btn-success" id="dashboardConfirmTaskCompletion">
+                <button type="button" class="btn btn-complete-task-primary" id="dashboardConfirmTaskCompletion">
                     <i class="fa fa-check"></i> Complete Task
                 </button>
             </div>

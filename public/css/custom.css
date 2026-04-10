@@ -773,17 +773,21 @@ text-overflow: ellipsis;white-space: nowrap;}
     font-size: 14px;
 }
 
-/* Enhanced Button Styling */
+/* Enhanced Button Styling — docs/theme.md (navy primary; crm-theme.css refines in CRM) */
 .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
+    background: #1e3d60;
+    border: 1px solid #1e3d60;
     border-radius: 8px;
     padding: 10px 20px;
-    font-weight: 500;
+    font-weight: 600;
+    color: #fff;
 }
 
-.btn-primary:hover {
-    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+.btn-primary:hover,
+.btn-primary:focus {
+    background: #3a6fa8;
+    border-color: #3a6fa8;
+    color: #fff;
 }
 
 .dropdown-toggle::after {

@@ -72,11 +72,11 @@
         </div>
         
         <div class="task-detail-footer">
-            <button class="task-detail-action-btn btn-complete-task" onclick="completeTaskFromDetail()">
+            <button type="button" class="task-detail-action-btn btn-complete-task" onclick="completeTaskFromDetail()">
                 <i class="fas fa-check"></i>
                 Mark as Complete
             </button>
-            <button class="task-detail-action-btn btn-extend-task" onclick="extendTaskFromDetail()">
+            <button type="button" class="task-detail-action-btn btn-extend-task" onclick="extendTaskFromDetail()">
                 <i class="fas fa-calendar-plus"></i>
                 Extend Deadline
             </button>
@@ -123,8 +123,9 @@
     bottom: 0;
     width: 420px;
     max-width: 100%;
-    background: white;
-    box-shadow: -2px 0 16px rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    border-left: 1px solid #c8dcef;
+    box-shadow: -4px 0 24px rgba(30, 61, 96, 0.1);
     transform: translateX(100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
@@ -137,9 +138,10 @@
 
 .task-detail-header {
     padding: 16px 20px;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid #c8dcef;
     display: flex;
     justify-content: flex-end;
+    background: #ffffff;
 }
 
 .task-detail-close {
@@ -147,8 +149,8 @@
     height: 32px;
     border: none;
     background: transparent;
-    color: #666;
-    border-radius: 4px;
+    color: #1e3d60;
+    border-radius: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -156,15 +158,17 @@
     transition: all 0.2s ease;
 }
 
-.task-detail-close:hover {
-    background: #f5f5f5;
-    color: #333;
+.task-detail-close:hover,
+.task-detail-close:focus {
+    background: #c8dcef;
+    color: #1e3d60;
 }
 
 .task-detail-body {
     flex: 1;
     overflow-y: auto;
     padding: 24px 20px;
+    background: #f0f6ff;
 }
 
 .task-detail-section {
@@ -181,7 +185,7 @@
     appearance: none;
     width: 24px;
     height: 24px;
-    border: 2px solid #c0c0c0;
+    border: 2px solid #c8dcef;
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -191,12 +195,12 @@
 }
 
 .task-detail-checkbox:hover {
-    border-color: #2564cf;
+    border-color: #3a6fa8;
 }
 
 .task-detail-checkbox:checked {
-    background: #2564cf;
-    border-color: #2564cf;
+    background: #1e3d60;
+    border-color: #1e3d60;
 }
 
 .task-detail-checkbox:checked::after {
@@ -212,8 +216,8 @@
 
 .task-detail-title {
     font-size: 18px;
-    font-weight: 500;
-    color: #333;
+    font-weight: 600;
+    color: #1a2c40;
     line-height: 1.4;
     cursor: pointer;
     flex: 1;
@@ -227,7 +231,7 @@
 .detail-icon {
     width: 20px;
     text-align: center;
-    color: #666;
+    color: #5e7a90;
     margin-top: 2px;
     flex-shrink: 0;
 }
@@ -238,33 +242,37 @@
 
 .task-detail-label {
     font-size: 12px;
-    color: #999;
+    color: #5e7a90;
+    font-weight: 600;
     margin-bottom: 4px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.06em;
 }
 
 .task-detail-value {
     font-size: 14px;
-    color: #333;
+    color: #1a2c40;
     line-height: 1.5;
 }
 
 .task-client-link {
-    color: #2564cf;
+    color: #1e3d60;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    font-weight: 600;
 }
 
 .task-client-link:hover {
+    color: #3a6fa8;
     text-decoration: underline;
 }
 
 .task-detail-code {
-    color: #999;
+    color: #5e7a90;
     font-size: 13px;
+    font-weight: 500;
 }
 
 .task-detail-description {
@@ -274,43 +282,76 @@
 
 .task-detail-footer {
     padding: 16px 20px;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid #c8dcef;
+    background: #f0f6ff;
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.task-detail-action-btn {
+/* Footer actions — high specificity so global button / .btn-success rules never win */
+.task-detail-panel .task-detail-footer .task-detail-action-btn {
     width: 100%;
     padding: 12px 16px;
-    border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    background-image: none !important;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
-.btn-complete-task {
-    background: #28a745;
-    color: white;
+/* docs/theme.md — tokens from :root (crm-theme.css) */
+.task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task {
+    background-color: var(--success, #1e7a52) !important;
+    border: 1px solid var(--success, #1e7a52) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(30, 122, 82, 0.2);
 }
 
-.btn-complete-task:hover {
-    background: #218838;
+.task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task i {
+    color: #ffffff !important;
 }
 
-.btn-extend-task {
-    background: #f5f5f5;
-    color: #333;
+.task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task:hover,
+.task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task:focus {
+    background-color: #186846 !important;
+    border-color: #186846 !important;
+    color: #ffffff !important;
 }
 
-.btn-extend-task:hover {
-    background: #e0e0e0;
+.task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task:focus {
+    outline: none;
+    box-shadow: 0 2px 6px rgba(30, 122, 82, 0.2), 0 0 0 2px rgba(58, 111, 168, 0.25);
+}
+
+.task-detail-panel .task-detail-footer .task-detail-action-btn.btn-extend-task {
+    background-color: var(--card-bg, #ffffff) !important;
+    border: 1px solid var(--border, #c8dcef) !important;
+    color: var(--navy, #1e3d60) !important;
+    box-shadow: none;
+}
+
+.task-detail-panel .task-detail-footer .task-detail-action-btn.btn-extend-task i {
+    color: var(--navy, #1e3d60) !important;
+}
+
+.task-detail-panel .task-detail-footer .task-detail-action-btn.btn-extend-task:hover,
+.task-detail-panel .task-detail-footer .task-detail-action-btn.btn-extend-task:focus {
+    background-color: var(--sidebar-hover, #c8dcef) !important;
+    border-color: var(--border, #c8dcef) !important;
+    color: var(--navy, #1e3d60) !important;
+}
+
+.task-detail-panel .task-detail-footer .task-detail-action-btn.btn-extend-task:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(58, 111, 168, 0.2);
 }
 
 @media (max-width: 768px) {
