@@ -50,6 +50,7 @@ phases:
 
         # ========================================
         # PYTHON VENV SETUP (SAFE + OPTIMIZED)
+        # Inner echo messages must use single quotes — nested " closes bash -lc "..." early.
         # ========================================
         echo "Setting up Python virtual environment..."
 
@@ -61,7 +62,7 @@ phases:
             python3 -m venv venv
         fi
 
-        echo "Installing Python dependencies..."
+        echo 'Installing Python dependencies...'
         ./venv/bin/pip install --upgrade pip >/dev/null 2>&1
         ./venv/bin/pip install -r requirements.txt --quiet
         "

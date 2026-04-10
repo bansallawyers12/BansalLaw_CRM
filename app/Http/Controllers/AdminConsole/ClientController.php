@@ -137,7 +137,7 @@ class ClientController extends Controller
 				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			}
 		//check authorization end
-		$usertype = UserRole::all();
+		$usertype = UserRole::orderedForSelect();
 		
 		if(isset($id) && !empty($id))
 		{
