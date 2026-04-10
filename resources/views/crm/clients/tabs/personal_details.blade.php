@@ -21,6 +21,8 @@
                         && $__sch::hasColumn('client_experiences', 'job_title');
                     // Visa block hidden on client detail (Personal Details); visa data remains editable on client edit.
                     $hidePersonalDetailsVisaCard = true;
+                    $detailHasDobVerifiedCol = $__sch::hasTable('admins')
+                        && $__sch::hasColumn('admins', 'dob_verified_date');
                 @endphp
                 <div class="content-grid">
                     <div class="card">
@@ -32,11 +34,12 @@
                             <span class="field-value">
                                 <?php
                                 if ( isset($fetchedData->age) && $fetchedData->age != '') {
-                                    $verifiedDob = \App\Models\Admin::where('id',$fetchedData->id)->whereNotNull('dob_verified_date')->first();
-                                    if ( $verifiedDob) {
-                                        $verifiedDobTick = '<i class="fas fa-check-circle verified-icon fa-lg"></i>';
-                                    } else {
-                                        $verifiedDobTick = '<i class="far fa-circle unverified-icon fa-lg"></i>';
+                                    $verifiedDobTick = '<i class="far fa-circle unverified-icon fa-lg"></i>';
+                                    if ($detailHasDobVerifiedCol) {
+                                        $verifiedDob = \App\Models\Admin::where('id', $fetchedData->id)->whereNotNull('dob_verified_date')->first();
+                                        if ($verifiedDob) {
+                                            $verifiedDobTick = '<i class="fas fa-check-circle verified-icon fa-lg"></i>';
+                                        }
                                     }
                                     
                                     // Format DOB for display
