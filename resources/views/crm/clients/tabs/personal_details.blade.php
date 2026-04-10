@@ -5,7 +5,7 @@
                         && $__sch::hasColumn('client_matters', 'department_reference')
                         && $__sch::hasColumn('client_matters', 'other_reference');
                     $detailHasMatterTeam = $__sch::hasTable('client_matters')
-                        && $__sch::hasColumn('client_matters', 'sel_migration_agent');
+                        && $__sch::hasColumn('client_matters', 'sel_legal_practitioner');
                     $detailHasClientAddressCols = $__sch::hasTable('client_addresses')
                         && $__sch::hasColumn('client_addresses', 'client_id')
                         && $__sch::hasColumn('client_addresses', 'address');
@@ -781,7 +781,7 @@
                             $matter_dis_ref_info_arr = null;
                             $matterAssigneeCols = [];
                             if ($detailHasMatterTeam) {
-                                $matterAssigneeCols = array_merge($matterAssigneeCols, ['sel_migration_agent', 'sel_person_responsible', 'sel_person_assisting', 'office_id']);
+                                $matterAssigneeCols = array_merge($matterAssigneeCols, ['sel_legal_practitioner', 'sel_person_responsible', 'sel_person_assisting', 'office_id']);
                             }
                             if ($__sch::hasColumn('client_matters', 'incidence_type')) {
                                 $matterAssigneeCols[] = 'incidence_type';
@@ -815,8 +815,8 @@
                                 <span class="field-label">Legal Practitioner</span>
                                 <span class="field-value">
                                     <?php
-                                    if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_migration_agent != '') {
-                                        $mig_agent_info_arr = \App\Models\Staff::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_migration_agent)->first();
+                                    if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_legal_practitioner != '') {
+                                        $mig_agent_info_arr = \App\Models\Staff::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_legal_practitioner)->first();
                                         if($mig_agent_info_arr){
                                             echo $mig_agent_info_arr->first_name.' '.$mig_agent_info_arr->last_name;
                                         }

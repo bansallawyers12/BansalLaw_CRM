@@ -35,8 +35,8 @@
                         <input type="hidden" name="matter_id" id="convert_matter_id_final" value="">
                         <div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
-                                <label for="sel_migration_agent_id">Legal Practitioner <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="migration_agent" id="sel_migration_agent_id">
+                                <label for="sel_legal_practitioner_id">Legal Practitioner <span class="span_req">*</span></label>
+                                <select data-valid="required" class="form-control select2" name="legal_practitioner" id="sel_legal_practitioner_id">
                                     <option value="">Select responsible solicitor</option>
                                     @foreach(\App\Models\Staff::where('role',16)->select('id','first_name','last_name','email')->where('status',1)->get() as $migAgntlist)
                                         <option value="{{$migAgntlist->id}}">{{@$migAgntlist->first_name}} {{@$migAgntlist->last_name}} ({{@$migAgntlist->email}})</option>
@@ -830,8 +830,8 @@
                         <input type="hidden" name="selectedMatterLM" id="selectedMatterLM" value="">
                         <div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
-                                <label for="change_sel_migration_agent_id">Legal Practitioner <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="migration_agent" id="change_sel_migration_agent_id">
+                                <label for="change_sel_legal_practitioner_id">Legal Practitioner <span class="span_req">*</span></label>
+                                <select data-valid="required" class="form-control select2" name="legal_practitioner" id="change_sel_legal_practitioner_id">
                                     <option value="">Select responsible solicitor</option>
                                     @foreach(\App\Models\Staff::where('role',16)->select('id','first_name','last_name','email')->where('status',1)->get() as $migAgntlist)
                                         <option value="{{$migAgntlist->id}}">{{@$migAgntlist->first_name}} {{@$migAgntlist->last_name}} ({{@$migAgntlist->email}})</option>

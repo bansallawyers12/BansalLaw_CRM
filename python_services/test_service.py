@@ -85,8 +85,8 @@ def test_email_analysis():
         # Test data
         email_data = {
             'subject': 'Test Email Subject',
-            'text_content': 'This is a test email for migration purposes.',
-            'html_content': '<p>This is a test email for migration purposes.</p>',
+            'text_content': 'This is a test email for visa application follow-up.',
+            'html_content': '<p>This is a test email for visa application follow-up.</p>',
             'sender_email': 'test@example.com',
             'sender_name': 'Test User'
         }

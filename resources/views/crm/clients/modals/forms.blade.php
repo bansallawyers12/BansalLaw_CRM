@@ -88,8 +88,8 @@
                                     <div class="mt-2">
                                         <div class="form-group" style="margin-left: 20px;">
                                             <label class="inline-flex items-center">
-                                                <input type="checkbox" name="is_registered_migration_agent" value="1" checked class="form-check-input">
-                                                <span class="ml-2 text-sm text-gray-700">Registered Migration Agent</span>
+                                                <input type="checkbox" name="is_legal_practitioner" value="1" checked class="form-check-input">
+                                                <span class="ml-2 text-sm text-gray-700">Legal Practitioner</span>
                                             </label>
                                         </div>
                                         <div class="form-group" style="margin-left: 20px;">
@@ -149,7 +149,7 @@
                                     <div class="form-group" style="margin-left: 20px;">
                                         <label class="inline-flex items-center">
                                             <input type="checkbox" name="question_7" value="1" checked class="form-check-input">
-                                            <span class="ml-2 text-sm text-gray-700">Question 7 - Registered Migration Agent</span>
+                                            <span class="ml-2 text-sm text-gray-700">Question 7 - Legal Practitioner</span>
                                         </label>
                                     </div>
                                 </div>

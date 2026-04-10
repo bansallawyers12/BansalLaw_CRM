@@ -250,14 +250,14 @@
 							<div class="card-body">
 								<div class="form-group">
 									<label class="d-flex align-items-center">
-										<input type="checkbox" id="is_migration_agent" name="is_migration_agent" value="1" 
-											@if($fetchedData->is_migration_agent == 1) checked @endif class="mr-2">
+										<input type="checkbox" id="is_solicitor" name="is_solicitor" value="1" 
+											@if($fetchedData->is_solicitor == 1) checked @endif class="mr-2">
 										<h5 class="mb-0">Is this staff a Legal Practitioner?</h5>
 									</label>
 								</div>
 
 								<!-- Agent Details Fields -->
-								<div id="agent_details_section" style="display: {{ $fetchedData->is_migration_agent == 1 ? 'block' : 'none' }};">
+								<div id="agent_details_section" style="display: {{ $fetchedData->is_solicitor == 1 ? 'block' : 'none' }};">
 									<hr>
 									<h6 class="text-primary mb-3">Legal Practitioner registration details</h6>
 									
@@ -338,7 +338,7 @@
 <script>
 $(document).ready(function() {
 	// Toggle Legal Practitioner details section
-	$('#is_migration_agent').on('change', function() {
+	$('#is_solicitor').on('change', function() {
 		if ($(this).is(':checked')) {
 			$('#agent_details_section').slideDown();
 		} else {

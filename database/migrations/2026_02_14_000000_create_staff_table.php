@@ -46,7 +46,7 @@ return new class extends Migration
             $table->tinyInteger('show_dashboard_per')->default(0);
             $table->string('time_zone', 50)->nullable();
 
-            // Migration agent
+            // Solicitor (legacy column is_migration_agent; renamed to is_solicitor in a later migration)
             $table->tinyInteger('is_migration_agent')->default(0);
             $table->string('marn_number', 100)->nullable();
             $table->string('legal_practitioner_number', 100)->nullable();

@@ -117,19 +117,13 @@
             <div id="part-a" class="space-y-4">
                 <h3 class="text-lg font-medium text-gray-900">Part A: New Appointment</h3>
                 
-                <!-- Agent Type (Pre-selected as Registered Migration Agent) -->
+                <!-- Legal practitioner type -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Agent Type</label>
+                    <label class="block text-sm font-medium text-gray-700">Representative type</label>
                     <div class="mt-2 space-y-2">
                         <div>
                             <label class="inline-flex items-center">
                                 <input type="checkbox" name="is_legal_practitioner" value="1" checked class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                <span class="ml-2 text-sm text-gray-700">Legal Practitioner</span>
-                            </label>
-                        </div>
-                        <div>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="is_legal_practitioner" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                 <span class="ml-2 text-sm text-gray-700">Legal Practitioner</span>
                             </label>
                         </div>
@@ -190,7 +184,7 @@
                 <div>
                     <label class="inline-flex items-center">
                         <input type="checkbox" name="question_7" value="1" checked class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                        <span class="ml-2 text-sm text-gray-700">Question 7 - Registered Migration Agent</span>
+                        <span class="ml-2 text-sm text-gray-700">Question 7 - Legal Practitioner</span>
                     </label>
                 </div>
 
@@ -215,11 +209,11 @@
             <div class="space-y-4">
                 <h3 class="text-lg font-medium text-gray-900">Part C: Declarations</h3>
                 
-                <!-- Question 23 (Appointment of Registered Migration Agent) -->
+                <!-- Question 23 (Appointment of Legal Practitioner) -->
                 <div>
                     <label class="inline-flex items-center">
                         <input type="checkbox" name="agent_declared" value="1" checked class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                        <span class="ml-2 text-sm text-gray-700">Appointment of Registered Migration Agent (Question 23)</span>
+                        <span class="ml-2 text-sm text-gray-700">Appointment of Legal Practitioner (Question 23)</span>
                     </label>
                     <input type="date" name="agent_declaration_date" value="{{ date('Y-m-d') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                 </div>

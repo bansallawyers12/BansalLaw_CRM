@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Migration agents / sub-agents (distinct from staff). Required by receipt modals on client detail.
+ * External agent_details records (receipt modals; distinct from staff). Required by receipt modals on client detail.
  */
 return new class extends Migration
 {

@@ -16,7 +16,7 @@ return new class extends Migration
      * - verified: no staff-specific usage
      * - ABN_number: StaffController uses tax_number only; form maps to tax_number
      *
-     * Keeps: tax_number (used for migration agents), remember_token (Laravel auth)
+     * Keeps: tax_number (used for solicitor/practitioner records), remember_token (Laravel auth)
      */
     public function up(): void
     {

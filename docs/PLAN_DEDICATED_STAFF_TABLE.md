@@ -134,8 +134,8 @@ The `admins` table currently stores **staff** (internal users) and **clients/lea
 | `office_id` | FK to branches |
 | `role` | FK to user_roles (staff roles) |
 | `show_dashboard_per` | Dashboard permission |
-| `is_migration_agent` | Migration agent flag |
-| `marn_number`, `business_*`, etc. | Migration agent details (staff who are also agents) |
+| `is_solicitor` | Solicitor flag |
+| `marn_number`, `business_*`, etc. | Solicitor / practitioner business details (MARN, firm contact) |
 
 ---
 
@@ -166,8 +166,8 @@ CREATE TABLE staff (
     show_dashboard_per TINYINT DEFAULT 0,
     time_zone VARCHAR(50) NULL,
     
-    -- Migration agent (staff can be migration agents)
-    is_migration_agent TINYINT DEFAULT 0,
+    -- Solicitor flag and practitioner business details
+    is_solicitor TINYINT DEFAULT 0,
     marn_number VARCHAR(100) NULL,
     legal_practitioner_number VARCHAR(100) NULL,
     company_name VARCHAR(255) NULL,
@@ -224,7 +224,7 @@ class Staff extends Authenticatable
         'status', 'verified',
         'role', 'position', 'team', 'permission', 'office_id',
         'show_dashboard_per', 'time_zone',
-        'is_migration_agent', 'marn_number', 'legal_practitioner_number',
+        'is_solicitor', 'marn_number', 'legal_practitioner_number',
         'company_name', 'business_address', 'business_phone', 'business_mobile',
         'business_email', 'tax_number', 'ABN_number', 'company_website',
         'is_archived', 'archived_by', 'archived_on',
@@ -238,7 +238,7 @@ class Staff extends Authenticatable
         'status' => 'integer',
         'verified' => 'integer',
         'show_dashboard_per' => 'integer',
-        'is_migration_agent' => 'integer',
+        'is_solicitor' => 'integer',
         'is_archived' => 'integer',
         'archived_on' => 'datetime',
         'created_at' => 'datetime',
@@ -394,7 +394,7 @@ DB::transaction(function () {
             'office_id' => $row->office_id,
             'show_dashboard_per' => $row->show_dashboard_per,
             'time_zone' => $row->time_zone,
-            'is_migration_agent' => $row->is_migration_agent,
+            'is_solicitor' => $row->is_solicitor,
             'marn_number' => $row->marn_number,
             'legal_practitioner_number' => $row->legal_practitioner_number,
             'company_name' => $row->company_name,
@@ -511,7 +511,7 @@ echo "✓ Verification passed: {$staffCount} staff copied, mapping table complet
 | `client_eoi_references` | `checked_by` | admins | staff | Staff verification |
 | `client_eoi_references` | `created_by`, `updated_by` | admins | staff | Audit trail |
 | `client_art_references` | `verified_by`, `created_by`, `updated_by` | admins | staff | Staff actions |
-| `client_matters` | `sel_migration_agent`, `sel_person_responsible`, `sel_person_assisting` | admins | staff | Staff handling matter |
+| `client_matters` | `sel_legal_practitioner`, `sel_person_responsible`, `sel_person_assisting` | admins | staff | Staff handling matter |
 | `clientportal_details_audit` | `updated_by` | admins | staff | Staff making update |
 | `client_emails` | `verified_by` | admins | staff | Staff verification |
 | `client_contacts` | `verified_by` | admins | staff | Staff verification |
@@ -522,8 +522,8 @@ echo "✓ Verification passed: {$staffCount} staff copied, mapping table complet
 | `activities_log` | `created_by` | admins | staff | Staff action |
 | `sms_templates` | `created_by` | admins | staff | Staff template |
 | `tags` | `created_by`, `updated_by` | admins | staff | Staff actions |
-| `cost_assignment_forms` | `agent_id` | admins | staff | Migration agent |
-| `form956` | `agent_id` | admins | staff | Migration agent |
+| `cost_assignment_forms` | `agent_id` | admins | staff | Staff LP on form (FK) |
+| `form956` | `agent_id` | admins | staff | Staff on form (FK) |
 | `mail_reports` | `user_id` | admins | staff | Staff email sender |
 | `messages` | `sender_id` | admins | **POLYMORPHIC** | Staff OR client - see 4.1d |
 | `message_recipients` | `recipient_id` | admins | **POLYMORPHIC** | Staff OR client |
@@ -687,7 +687,7 @@ DB::transaction(function () {
 - `booking_appointments`: assigned_by_admin_id → assigned_by_staff_id
 - `client_eoi_references`: checked_by, created_by, updated_by
 - `client_art_references`: verified_by, created_by, updated_by
-- `client_matters`: sel_migration_agent, sel_person_responsible, sel_person_assisting
+- `client_matters`: sel_legal_practitioner, sel_person_responsible, sel_person_assisting
 - `clientportal_details_audit`: updated_by
 - `client_emails`, `client_contacts`: verified_by
 - `documents`: created_by, user_id, checklist_verified_by
@@ -1056,8 +1056,8 @@ Staff::query()...
 2. **Client Portal guard:** Separate `client` guard or reuse `admins` with role check?
    - ✅ **ANSWERED:** Keep `api` guard for clients (points to `admins` provider); staff use `admin` guard (session, points to `staff` provider)
    
-3. **Migration agents:** Some staff have `is_migration_agent=1`. Keep agent fields on Staff?
-   - ✅ **ANSWERED:** Yes. Staff table includes all migration agent fields (`marn_number`, `business_*`, etc.)
+3. **Solicitors:** Some staff have `is_solicitor=1`. Keep solicitor/MARN fields on Staff?
+   - ✅ **ANSWERED:** Yes. Staff table includes solicitor/practitioner fields (`marn_number`, `business_*`, etc.)
    
 4. **Companies `contact_person_id`:** Staff or client? 
    - ✅ **ANSWERED:** CLIENT ONLY. Contact persons are clients, not staff. Keep FK on `admins`.

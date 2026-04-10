@@ -2,7 +2,7 @@
 
 @php
     $client = $matter->client;
-    $migrationAgent = $matter->migrationAgent;
+    $legalPractitioner = $matter->legalPractitioner;
     $personResponsible = $matter->personResponsible;
     $personAssisting = $matter->personAssisting;
     
@@ -47,8 +47,8 @@
             {{ config('constants.empty') }}
         @endif
     </td>
-    <td class="col-migration_agent">
-        {{ $migrationAgent ? $migrationAgent->first_name . ' ' . $migrationAgent->last_name : config('constants.empty') }}
+    <td class="col-legal_practitioner">
+        {{ $legalPractitioner ? $legalPractitioner->first_name . ' ' . $legalPractitioner->last_name : config('constants.empty') }}
     </td>
     <td class="col-person_responsible">
         {{ $personResponsible ? $personResponsible->first_name . ' ' . $personResponsible->last_name : config('constants.empty') }}

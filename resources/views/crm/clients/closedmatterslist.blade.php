@@ -120,7 +120,7 @@
                             'sel_matter_id' => request('sel_matter_id'),
                             'client_id' => request('client_id'),
                             'name' => request('name'),
-                            'sel_migration_agent' => request('sel_migration_agent'),
+                            'sel_legal_practitioner' => request('sel_legal_practitioner'),
                             'sel_person_responsible' => request('sel_person_responsible'),
                             'sel_person_assisting' => request('sel_person_assisting'),
                             'quick_date_range' => request('quick_date_range'),
@@ -171,11 +171,11 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="sel_migration_agent" class="col-form-label" style="color:#4a5568 !important;">Legal Practitioner</label>
-                                        <select class="form-control" name="sel_migration_agent" id="sel_migration_agent">
+                                        <label for="sel_legal_practitioner" class="col-form-label" style="color:#4a5568 !important;">Legal Practitioner</label>
+                                        <select class="form-control" name="sel_legal_practitioner" id="sel_legal_practitioner">
                                             <option value="">All Agents</option>
                                             @foreach(($teamMembers ?? collect()) as $member)
-                                                <option value="{{ $member->id }}" {{ request('sel_migration_agent') == $member->id ? 'selected' : '' }}>{{ $member->first_name }} {{ $member->last_name }}</option>
+                                                <option value="{{ $member->id }}" {{ request('sel_legal_practitioner') == $member->id ? 'selected' : '' }}>{{ $member->first_name }} {{ $member->last_name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -283,7 +283,7 @@
                                     <?php $i=0; ?>
                                     @foreach (@$lists as $list)
                                         <?php
-                                        $mig_agent_info = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_migration_agent)->first();
+                                        $mig_agent_info = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_legal_practitioner)->first();
                                         $person_responsible = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_responsible)->first();
                                         $person_assisting = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_assisting)->first();
                                         $matter_office = $list->office_id ? \App\Models\Branch::find($list->office_id) : null;

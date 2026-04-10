@@ -10,13 +10,13 @@ return new class extends Migration
     /**
      * Run the migrations.
      * 
-     * Adds missing migration agent fields to the admins table
+     * Adds missing solicitor/practitioner (legacy column names) fields to the admins table
      * (only adds columns that don't already exist)
      */
     public function up(): void
     {
         // Check column existence OUTSIDE the Schema::table closure
-        $hasIsMigrationAgent = Schema::hasColumn('admins', 'is_migration_agent');
+        $hasLegacyIsAgentColumn = Schema::hasColumn('admins', 'is_migration_agent');
         $hasMarnNumber = Schema::hasColumn('admins', 'marn_number');
         $hasBusinessFax = Schema::hasColumn('admins', 'business_fax');
         $hasCompanyName = Schema::hasColumn('admins', 'company_name');
@@ -26,16 +26,16 @@ return new class extends Migration
         $hasBusinessEmail = Schema::hasColumn('admins', 'business_email');
         $hasTaxNumber = Schema::hasColumn('admins', 'tax_number');
         
-        Schema::table('admins', function (Blueprint $table) use ($hasBusinessFax, $hasIsMigrationAgent, $hasMarnNumber, $hasCompanyName, $hasBusinessAddress, $hasBusinessPhone, $hasBusinessMobile, $hasBusinessEmail, $hasTaxNumber) {
-            // Add core migration agent fields first
-            if (!$hasIsMigrationAgent) {
+        Schema::table('admins', function (Blueprint $table) use ($hasBusinessFax, $hasLegacyIsAgentColumn, $hasMarnNumber, $hasCompanyName, $hasBusinessAddress, $hasBusinessPhone, $hasBusinessMobile, $hasBusinessEmail, $hasTaxNumber) {
+            // Add core solicitor fields first (legacy column name is_migration_agent)
+            if (!$hasLegacyIsAgentColumn) {
                 $table->tinyInteger('is_migration_agent')->default(0)->nullable()
-                    ->comment('Flag to indicate if user is a migration agent');
+                    ->comment('Flag to indicate if user is a solicitor / legal practitioner');
             }
             
             if (!$hasMarnNumber) {
                 $table->string('marn_number')->nullable()
-                    ->comment('Migration Agent Registration Number');
+                    ->comment('MARN / practitioner registration number');
             }
             
             // Add business name (company name)
@@ -93,12 +93,12 @@ return new class extends Migration
         });
         
         // Re-check column existence after creation for index creation
-        $hasIsMigrationAgentAfter = Schema::hasColumn('admins', 'is_migration_agent');
+        $hasLegacyIsAgentColumnAfter = Schema::hasColumn('admins', 'is_migration_agent');
         $hasMarnNumberAfter = Schema::hasColumn('admins', 'marn_number');
         
         // Add indexes separately, outside the Schema::table closure
         // Only create indexes if the columns actually exist
-        if ($hasIsMigrationAgentAfter && !$this->indexExists('admins', 'admins_is_migration_agent_index')) {
+        if ($hasLegacyIsAgentColumnAfter && !$this->indexExists('admins', 'admins_is_migration_agent_index')) {
             Schema::table('admins', function (Blueprint $table) {
                 $table->index('is_migration_agent');
             });
@@ -111,9 +111,9 @@ return new class extends Migration
         }
         
         echo "\n✅ Migration completed successfully!\n";
-        echo "   - Added missing migration agent fields to admins table\n";
+        echo "   - Added missing solicitor / practitioner fields to admins table\n";
         $addedFields = [];
-        if (!$hasIsMigrationAgent) $addedFields[] = 'is_migration_agent';
+        if (!$hasLegacyIsAgentColumn) $addedFields[] = 'is_migration_agent';
         if (!$hasMarnNumber) $addedFields[] = 'marn_number';
         if (!$hasCompanyName) $addedFields[] = 'company_name';
         if (!$hasBusinessAddress) $addedFields[] = 'business_address';
@@ -128,7 +128,7 @@ return new class extends Migration
             echo "   - All columns already exist\n";
         }
         
-        if ($hasIsMigrationAgentAfter) {
+        if ($hasLegacyIsAgentColumnAfter) {
             if (!$this->indexExists('admins', 'admins_is_migration_agent_index')) {
                 echo "   - Index created on is_migration_agent\n";
             } else {
@@ -219,7 +219,7 @@ return new class extends Migration
             }
         });
         
-        echo "\n✅ Rollback completed - migration agent fields removed\n";
+        echo "\n✅ Rollback completed - solicitor / practitioner fields removed\n";
         echo "   - Dropped columns: is_migration_agent, marn_number, company_name, business_address, business_phone, business_mobile, business_email, tax_number\n";
         echo "   - Dropped indexes on is_migration_agent and marn_number\n\n";
     }

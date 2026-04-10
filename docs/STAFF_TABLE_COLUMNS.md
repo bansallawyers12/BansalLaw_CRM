@@ -26,17 +26,17 @@
 | 16 | `office_id` | bigint unsigned | admins | FK to branches |
 | 17 | `show_dashboard_per` | tinyint | admins | Dashboard permission |
 | 18 | `time_zone` | string(50) | admins | Optional (StaffController::savezone) |
-| 19 | `is_migration_agent` | tinyint | admins | Migration agent flag |
-| 20 | `marn_number` | string(100) | admins | Migration agent |
-| 21 | `legal_practitioner_number` | string(100) | admins | Migration agent |
-| 22 | `company_name` | string(255) | admins | Migration agent |
-| 23 | `company_website` | string(500) | admins | Migration agent |
-| 24 | `business_address` | text | admins | Migration agent |
-| 25 | `business_phone` | string(100) | admins | Migration agent |
-| 26 | `business_mobile` | string(100) | admins | Migration agent |
-| 27 | `business_email` | string(255) | admins | Migration agent |
-| 28 | `tax_number` | string(100) | admins | Migration agent |
-| 29 | `ABN_number` | string(100) | admins | Migration agent |
+| 19 | `is_solicitor` | tinyint | admins | Solicitor flag |
+| 20 | `marn_number` | string(100) | admins | Solicitor / practitioner |
+| 21 | `legal_practitioner_number` | string(100) | admins | Solicitor / practitioner |
+| 22 | `company_name` | string(255) | admins | Solicitor / practitioner |
+| 23 | `company_website` | string(500) | admins | Solicitor / practitioner |
+| 24 | `business_address` | text | admins | Solicitor / practitioner |
+| 25 | `business_phone` | string(100) | admins | Solicitor / practitioner |
+| 26 | `business_mobile` | string(100) | admins | Solicitor / practitioner |
+| 27 | `business_email` | string(255) | admins | Solicitor / practitioner |
+| 28 | `tax_number` | string(100) | admins | Solicitor / practitioner |
+| 29 | `ABN_number` | string(100) | admins | Solicitor / practitioner |
 | 30 | `is_archived` | tinyint | admins | Archive state |
 | 31 | `archived_by` | bigint unsigned | admins | FK to staff (self-referential) |
 | 32 | `archived_on` | timestamp | admins | Archive date |
@@ -80,10 +80,10 @@
 
 ## Verification
 
-**StaffController store (staff create)** saves: first_name, last_name, email, password, country_code, phone, position, role, office_id, team, permission, show_dashboard_per, is_migration_agent, marn_number, company_name, business_address, business_phone, business_mobile, business_email, tax_number, status
+**StaffController store (staff create)** saves: first_name, last_name, email, password, country_code, phone, position, role, office_id, team, permission, show_dashboard_per, is_solicitor, marn_number, company_name, business_address, business_phone, business_mobile, business_email, tax_number, status
 
 **StaffController savezone** saves: time_zone
 
-**StaffController update (staff edit)** saves: same as store + legal_practitioner_number (if present in form), company_website (migration agent)
+**StaffController update (staff edit)** saves: same as store + legal_practitioner_number (if present in form), company_website (solicitor / practitioner)
 
 All listed columns are covered. ✓

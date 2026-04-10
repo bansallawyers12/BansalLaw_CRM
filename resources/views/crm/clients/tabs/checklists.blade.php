@@ -16,8 +16,8 @@
                                             <!-- Legal Practitioner - same design as Convert Lead To Client -->
                                             <div class="col-12 col-md-12 col-lg-12">
                                                 <div class="form-group">
-                                                    <label for="checklist_migration_agent">Legal Practitioner <span class="span_req">*</span></label>
-                                                    <select data-valid="required" class="form-control select2 checklist-field" name="checklist_migration_agent" id="checklist_migration_agent">
+                                                    <label for="checklist_legal_practitioner">Legal Practitioner <span class="span_req">*</span></label>
+                                                    <select data-valid="required" class="form-control select2 checklist-field" name="checklist_legal_practitioner" id="checklist_legal_practitioner">
                                                         <option value="">Select responsible solicitor</option>
                                                         @foreach(\App\Models\Staff::where('role',16)->select('id','first_name','last_name','email')->where('status',1)->get() as $migAgntlist)
                                                             <option value="{{$migAgntlist->id}}">{{@$migAgntlist->first_name}} {{@$migAgntlist->last_name}} ({{@$migAgntlist->email}})</option>
@@ -133,7 +133,7 @@
                                             @php
                                                 $matterName = $form->clientMatter ? ($form->clientMatter->client_unique_matter_no . ($form->clientMatter->matter ? ' - ' . $form->clientMatter->matter->title : '')) : 'N/A';
                                                 $clientMatter = $form->clientMatter;
-                                                $migrationAgent = $clientMatter ? $clientMatter->migrationAgent : null;
+                                                $legalPractitioner = $clientMatter ? $clientMatter->legalPractitioner : null;
                                                 $personResponsible = $clientMatter ? $clientMatter->personResponsible : null;
                                                 $personAssisting = $clientMatter ? $clientMatter->personAssisting : null;
                                                 $office = $clientMatter ? $clientMatter->office : null;
@@ -198,7 +198,7 @@
                                                                 <div class="team-member mb-2">
                                                                     <label class="mb-1">Legal Practitioner:</label>
                                                                     <div class="font-weight-500">
-                                                                        {{ $migrationAgent ? $migrationAgent->first_name . ' ' . $migrationAgent->last_name : 'Not Assigned' }}
+                                                                        {{ $legalPractitioner ? $legalPractitioner->first_name . ' ' . $legalPractitioner->last_name : 'Not Assigned' }}
                                                                     </div>
                                                                 </div>
                                                                 <div class="team-member mb-2">
@@ -822,12 +822,12 @@
                 return;
             }
 
-            var migrationAgent = $('#checklist_migration_agent').val();
+            var legalPractitioner = $('#checklist_legal_practitioner').val();
             var personResponsible = $('#checklist_person_responsible').val();
             var personAssisting = $('#checklist_person_assisting').val();
             var officeId = $('#checklist_office').val();
 
-            if (!migrationAgent || !personResponsible || !personAssisting || !officeId) {
+            if (!legalPractitioner || !personResponsible || !personAssisting || !officeId) {
                 alert('Please fill Legal Practitioner, Person Responsible, Person Assisting, and Office.');
                 return;
             }
@@ -835,18 +835,18 @@
             // Open Lead cost assignment modal (creates ClientMatter + CostAssignmentForm)
             $('#cost_assignment_lead_id').val(clientId);
             $('#sel_matter_id_lead').val(matterId).trigger('change');
-            $('#sel_migration_agent_id_lead').val(migrationAgent).trigger('change');
+            $('#sel_legal_practitioner_id_lead').val(legalPractitioner).trigger('change');
             $('#sel_person_responsible_id_lead').val(personResponsible).trigger('change');
             $('#sel_person_assisting_id_lead').val(personAssisting).trigger('change');
             $('#sel_office_id_lead').val(officeId).trigger('change');
-            $('#sel_migration_agent_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').select2({ dropdownParent: $('#costAssignmentCreateFormModelLead') });
+            $('#sel_legal_practitioner_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').select2({ dropdownParent: $('#costAssignmentCreateFormModelLead') });
             $('#costAssignmentCreateFormModelLead').modal('show');
             $dropdown.hide();
         });
 
         function initChecklistSelect2() {
             if (typeof $.fn.select2 !== 'undefined') {
-                var $fields = $('#checklist_matter_select,#checklist_migration_agent,#checklist_person_responsible,#checklist_person_assisting,#checklist_office');
+                var $fields = $('#checklist_matter_select,#checklist_legal_practitioner,#checklist_person_responsible,#checklist_person_assisting,#checklist_office');
                 $fields.each(function() {
                     var $el = $(this);
                     if (!$el.hasClass('select2-hidden-accessible')) {
@@ -1081,12 +1081,12 @@
             $modal.find('#costAssignmentModalLabel').text('Amend Cost Assignment');
             
             // Load existing cost assignment data into the modal, then show it when loaded
-            if (typeof window.getCostAssignmentMigrationAgentDetail === 'function') {
-                window.getCostAssignmentMigrationAgentDetail(clientId, clientMatterId, '#costAssignmentCreateFormModel', function() {
+            if (typeof window.getCostAssignmentLegalPractitionerDetail === 'function') {
+                window.getCostAssignmentLegalPractitionerDetail(clientId, clientMatterId, '#costAssignmentCreateFormModel', function() {
                     $modal.modal('show');
                 });
-            } else if (typeof getCostAssignmentMigrationAgentDetail === 'function') {
-                getCostAssignmentMigrationAgentDetail(clientId, clientMatterId, '#costAssignmentCreateFormModel', function() {
+            } else if (typeof getCostAssignmentLegalPractitionerDetail === 'function') {
+                getCostAssignmentLegalPractitionerDetail(clientId, clientMatterId, '#costAssignmentCreateFormModel', function() {
                     $modal.modal('show');
                 });
             } else {

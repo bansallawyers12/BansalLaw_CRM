@@ -69,10 +69,10 @@ EMAIL_CATEGORIES = {
         'family', 'friend', 'personal', 'birthday', 'holiday', 'vacation',
         'weekend', 'party', 'celebration', 'home', 'personal', 'private'
     ],
-    'migration': [
+    'visa_immigration': [
         'visa', 'immigration', 'application', 'tribunal', 'appeal', 'aat',
-        'migration', 'permanent residence', 'citizenship', 'passport',
-        'immigration agent', 'migration lawyer', 'visa application'
+        'permanent residence', 'citizenship', 'passport',
+        'solicitor', 'legal practitioner', 'law firm', 'visa application',
     ],
     'legal': [
         'legal', 'court', 'lawyer', 'attorney', 'lawsuit', 'settlement',

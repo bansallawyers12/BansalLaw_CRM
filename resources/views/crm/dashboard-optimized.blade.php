@@ -195,7 +195,7 @@
                             <th class="col-client_id" role="columnheader">Client ID</th>
                             <th class="col-client_name" role="columnheader">Client Name</th>
                             <th class="col-dob" role="columnheader">DOB</th>
-                            <th class="col-migration_agent" role="columnheader">Legal Practitioner</th>
+                            <th class="col-legal_practitioner" role="columnheader">Legal Practitioner</th>
                             <th class="col-person_responsible" role="columnheader">Person Responsible</th>
                             <th class="col-person_assisting" role="columnheader">Person Assisting</th>
                             <th class="col-stage" role="columnheader">Stage</th>
@@ -269,13 +269,13 @@
                                         {{ config('constants.empty') }}
                                     @endif
                                 </td>
-                                <td class="col-migration_agent">
-                                    @if($matter->migrationAgent)
+                                <td class="col-legal_practitioner">
+                                    @if($matter->legalPractitioner)
                                         <div class="user-avatar-cell">
                                             <div class="avatar-sm">
-                                                {{ substr($matter->migrationAgent->first_name, 0, 1) }}{{ substr($matter->migrationAgent->last_name, 0, 1) }}
+                                                {{ substr($matter->legalPractitioner->first_name, 0, 1) }}{{ substr($matter->legalPractitioner->last_name, 0, 1) }}
                                             </div>
-                                            {{ $matter->migrationAgent->first_name }} {{ $matter->migrationAgent->last_name }}
+                                            {{ $matter->legalPractitioner->first_name }} {{ $matter->legalPractitioner->last_name }}
                                         </div>
                                     @else
                                         {{ config('constants.empty') }}

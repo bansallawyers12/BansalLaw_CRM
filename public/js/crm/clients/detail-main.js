@@ -718,9 +718,9 @@ $(document).ready(function() {
 
                 var m = info.matter_info || {};
 
-                if (m.sel_migration_agent) $('#change_sel_migration_agent_id').val(m.sel_migration_agent).trigger('change');
+                if (m.sel_legal_practitioner) $('#change_sel_legal_practitioner_id').val(m.sel_legal_practitioner).trigger('change');
 
-                else $('#change_sel_migration_agent_id').val('').trigger('change');
+                else $('#change_sel_legal_practitioner_id').val('').trigger('change');
 
                 if (m.sel_person_responsible) $('#change_sel_person_responsible_id').val(m.sel_person_responsible).trigger('change');
 
@@ -770,7 +770,7 @@ $(document).ready(function() {
 
         var $modal = $(this);
 
-        $('#change_sel_migration_agent_id, #change_sel_person_responsible_id, #change_sel_person_assisting_id, #change_office_id').each(function(){
+        $('#change_sel_legal_practitioner_id, #change_sel_person_responsible_id, #change_sel_person_assisting_id, #change_office_id').each(function(){
 
             var $el = $(this);
 
@@ -789,7 +789,7 @@ $(document).ready(function() {
 
         var $modal = $(this);
 
-        $('#sel_migration_agent_id, #sel_person_responsible_id, #sel_person_assisting_id, #sel_office_id, #sel_matter_id').each(function(){
+        $('#sel_legal_practitioner_id, #sel_person_responsible_id, #sel_person_assisting_id, #sel_office_id, #sel_matter_id').each(function(){
 
             var $el = $(this);
 
@@ -4115,20 +4115,20 @@ success: function(response) {
                 return;
             }
 
-            getMigrationAgentDetail(hidden_client_matter_id);
+            getLegalPractitionerDetail(hidden_client_matter_id);
 
             $('#form956CreateFormModel').modal('show');
 
         });
         // Get Legal Practitioner detail
 
-        function getMigrationAgentDetail(client_matter_id) {
+        function getLegalPractitionerDetail(client_matter_id) {
 
             $.ajax({
 
                 type:'post',
 
-                url: window.ClientDetailConfig.urls.getMigrationAgentDetail,
+                url: window.ClientDetailConfig.urls.getLegalPractitionerDetail,
 
                 sync:true,
 
@@ -4221,7 +4221,7 @@ success: function(response) {
 
                             type: 'post',
 
-                            url: window.ClientDetailConfig.urls.getVisaAgreementAgent,
+                            url: window.ClientDetailConfig.urls.getVisaAgreementLegalPractitioner,
 
                             data: {client_matter_id: client_matter_id},
 
@@ -4425,13 +4425,13 @@ success: function(response) {
 
          // Get visa agreement Legal Practitioner detail
 
-        function getVisaAggreementMigrationAgentDetail(client_matter_id) {
+        function getVisaAgreementLegalPractitionerDetail(client_matter_id) {
 
             $.ajax({
 
                 type:'post',
 
-                url: window.ClientDetailConfig.urls.getVisaAgreementAgent,
+                url: window.ClientDetailConfig.urls.getVisaAgreementLegalPractitioner,
 
                 sync:true,
 
@@ -4544,7 +4544,7 @@ success: function(response) {
          // Get cost assignment Legal Practitioner detail
         // modalContainer: optional selector (e.g. '#costAssignmentCreateFormModel') to scope field updates to a specific container (for modal edit)
         // onLoadedCallback: optional function called after data is loaded (e.g. to show modal)
-        function getCostAssignmentMigrationAgentDetail(client_id,client_matter_id, modalContainer, onLoadedCallback) {
+        function getCostAssignmentLegalPractitionerDetail(client_id,client_matter_id, modalContainer, onLoadedCallback) {
 
             var $scope = (modalContainer && $(modalContainer).length) ? $(modalContainer) : $(document);
 
@@ -4552,7 +4552,7 @@ success: function(response) {
 
                 type:'post',
 
-                url: window.ClientDetailConfig.urls.getCostAssignmentAgent,
+                url: window.ClientDetailConfig.urls.getCostAssignmentLegalPractitioner,
 
                 sync:true,
 
@@ -4736,7 +4736,7 @@ success: function(response) {
         }
 
         // Make function available globally for subtab handlers
-        window.getCostAssignmentMigrationAgentDetail = getCostAssignmentMigrationAgentDetail;
+        window.getCostAssignmentLegalPractitionerDetail = getCostAssignmentLegalPractitionerDetail;
 
 
 
@@ -4947,7 +4947,7 @@ success: function(response) {
 
                 $('#cost_assignment_lead_id').val(window.ClientDetailConfig.clientId);
 
-                $('#sel_migration_agent_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').select2({
+                $('#sel_legal_practitioner_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').select2({
 
                     dropdownParent: $('#costAssignmentCreateFormModelLead')
 
@@ -4967,7 +4967,7 @@ success: function(response) {
 
                 if (client_id && client_matter_id) {
 
-                    getCostAssignmentMigrationAgentDetailLead(client_id, client_matter_id);
+                    getCostAssignmentLegalPractitionerDetailLead(client_id, client_matter_id);
 
                 }
 
@@ -4977,13 +4977,13 @@ success: function(response) {
 
             // Get cost assignment Legal Practitioner detail
 
-            function getCostAssignmentMigrationAgentDetailLead(client_id,client_matter_id) {
+            function getCostAssignmentLegalPractitionerDetailLead(client_id,client_matter_id) {
 
                 $.ajax({
 
                     type:'post',
 
-                    url: window.ClientDetailConfig.urls.getCostAssignmentAgentLead,
+                    url: window.ClientDetailConfig.urls.getCostAssignmentLegalPractitionerLead,
 
                     sync:true,
 

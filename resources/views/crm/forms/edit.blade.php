@@ -96,14 +96,8 @@
             <div id="part-a" class="space-y-4">
                 <h3 class="text-lg font-medium text-gray-900">Part A: New Appointment</h3>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Agent Type</label>
+                    <label class="block text-sm font-medium text-gray-700">Representative type</label>
                     <div class="mt-2 space-y-2">
-                        <div>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="is_registered_migration_agent" value="1" {{ old('is_registered_migration_agent', $form->is_registered_migration_agent) ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                <span class="ml-2 text-sm text-gray-700">Registered Migration Agent</span>
-                            </label>
-                        </div>
                         <div>
                             <label class="inline-flex items-center">
                                 <input type="checkbox" name="is_legal_practitioner" value="1" {{ old('is_legal_practitioner', $form->is_legal_practitioner) ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">

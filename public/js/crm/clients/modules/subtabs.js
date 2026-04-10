@@ -1,7 +1,7 @@
 /**
  * Subtabs module - Document/Notes/Form subtab switching (inbox, sent, migrationdocuments, notes, personal, visa, form generation)
  * Extracted from detail-main.js - Phase 3i refactoring.
- * Requires: jQuery, ClientDetailConfig (for getCostAssignmentMigrationAgentDetail in subtab3)
+ * Requires: jQuery, ClientDetailConfig (for getCostAssignmentLegalPractitionerDetail in subtab3)
  */
 (function($) {
     'use strict';

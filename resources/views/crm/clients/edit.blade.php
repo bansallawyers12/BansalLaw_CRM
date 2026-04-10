@@ -1939,10 +1939,10 @@
                     </div>
                     <div class="col-md-6 add-matter-modal__field">
                         <div class="form-group">
-                            <label for="edit_add_matter_migration_agent">Legal practitioner <span class="text-danger">*</span></label>
-                            <select class="form-control" id="edit_add_matter_migration_agent">
+                            <label for="edit_add_matter_legal_practitioner">Legal practitioner <span class="text-danger">*</span></label>
+                            <select class="form-control" id="edit_add_matter_legal_practitioner">
                                 <option value="">Select</option>
-                                @foreach($matterFormForLead['migrationAgents'] as $st)
+                                @foreach($matterFormForLead['legalPractitioners'] as $st)
                                     <option value="{{ $st->id }}">{{ $st->first_name }} {{ $st->last_name }}</option>
                                 @endforeach
                             </select>
@@ -2087,7 +2087,7 @@
             if (!msgEl || !window.storeLeadMatterFromEditUrl || !window.editClientConfig) return;
             msgEl.innerHTML = '';
             var matterId = document.getElementById('edit_add_matter_matter_id');
-            var agentId = document.getElementById('edit_add_matter_migration_agent');
+            var agentId = document.getElementById('edit_add_matter_legal_practitioner');
             if (!matterId.value || !agentId.value) {
                 msgEl.innerHTML = '<div class="alert alert-warning">Select a matter type and legal practitioner.</div>';
                 return;
@@ -2099,7 +2099,7 @@
                 : String({{ (int) $fetchedData->id }});
             fd.append('client_id', matterClientPk);
             fd.append('matter_id', matterId.value);
-            fd.append('migration_agent', agentId.value);
+            fd.append('legal_practitioner', agentId.value);
             var office = document.getElementById('edit_add_matter_office_id');
             if (office && office.value) fd.append('office_id', office.value);
             var pr = document.getElementById('edit_add_matter_person_responsible');

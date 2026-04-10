@@ -32,7 +32,7 @@ This document turns agreed product rules into build phases for the Laravel CRM (
 | **13** | Person Assisting | Clients/leads where PA on matter or `user_id` match | Already restricted; grant flow adds temp extension |
 | **14** | Calling Team | All clients today | **Restrict**; **quick access only** (no supervisor path); `quick_access_enabled` defaults `true` for this role |
 | **15** | Accountant | All clients today | **Restrict**; standard grant flow |
-| **16** | Migration Agent | All clients today | **Restrict**; standard grant flow |
+| **16** | Solicitor | All clients today | **Restrict**; standard grant flow |
 | **17** | Admin | All | **Exempt** — no flow, logged as `exempt` |
 
 **Key decisions locked:**
@@ -510,7 +510,7 @@ Fields:
 | 13 | Person Assisting |
 | 14 | Calling Team |
 | 15 | Accountant |
-| 16 | Migration Agent |
+| 16 | Solicitor |
 | 17 | Admin |
 
 ### Key files (as-built)

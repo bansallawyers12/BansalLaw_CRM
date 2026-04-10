@@ -39,11 +39,16 @@ return new class extends Migration
             'password' => $password,
             'role' => 16,
             'status' => 1,
-            'is_migration_agent' => 1,
             'office_id' => null,
             'updated_at' => $now,
             'created_at' => $now,
         ];
+        if (Schema::hasColumn('staff', 'is_solicitor')) {
+            $staffRow['is_solicitor'] = 1;
+        }
+        if (Schema::hasColumn('staff', 'is_migration_agent')) {
+            $staffRow['is_migration_agent'] = 1;
+        }
         if (Schema::hasColumn('staff', 'verified')) {
             $staffRow['verified'] = 0;
         }

@@ -193,7 +193,7 @@
 							<div class="card-body">
 								<div class="form-group">
 									<label class="d-flex align-items-center">
-										<input type="checkbox" id="is_migration_agent" name="is_migration_agent" value="1" class="mr-2">
+										<input type="checkbox" id="is_solicitor" name="is_solicitor" value="1" class="mr-2">
 										<h5 class="mb-0">Is this staff a Legal Practitioner?</h5>
 									</label>
 								</div>
@@ -282,7 +282,7 @@
 <script>
 $(document).ready(function() {
 	// Toggle Legal Practitioner details section
-	$('#is_migration_agent').on('change', function() {
+	$('#is_solicitor').on('change', function() {
 		if ($(this).is(':checked')) {
 			$('#agent_details_section').slideDown();
 		} else {

@@ -12,13 +12,13 @@
                 ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
                 ->where('cm.client_id', $fetchedData->id)
                 ->where('cm.client_unique_matter_no', $id1)
-                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.workflow_id', 'cm.matter_status', 'cm.deadline', 'cm.sel_migration_agent')
+                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.workflow_id', 'cm.matter_status', 'cm.deadline', 'cm.sel_legal_practitioner')
                 ->first();
         } else {
             $workflowSelectedMatter = DB::table('client_matters as cm')
                 ->leftJoin('matters as m', 'cm.sel_matter_id', '=', 'm.id')
                 ->where('cm.client_id', $fetchedData->id)
-                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.workflow_id', 'cm.matter_status', 'cm.deadline', 'cm.sel_migration_agent')
+                ->select('cm.id', 'cm.client_unique_matter_no', 'm.title', 'cm.sel_matter_id', 'cm.workflow_stage_id', 'cm.workflow_id', 'cm.matter_status', 'cm.deadline', 'cm.sel_legal_practitioner')
                 ->orderBy('cm.id', 'desc')
                 ->first();
         }

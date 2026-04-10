@@ -24,7 +24,7 @@ These columns are essential for auth, soft delete, or core CRM behaviour. Removi
 | **cp_status**, **cp_code_verify** | Client portal access. |
 | **show_dashboard_per** | Dashboard permission. |
 | **australian_study**, **specialist_education**, **regional_study** | EOI defaults (columns exist and are read). |
-| **is_migration_agent**, **is_company** | Migration agent and company flags. |
+| **is_solicitor**, **is_company** | Solicitor and company flags (legacy `admins` may still mirror staff flags in some environments). |
 
 ### Recommended to keep
 
@@ -44,7 +44,7 @@ In active use; keep unless you are intentionally deprecating the feature.
 | **total_points** | EOI points. (**nati_language**, **py_field**, **regional_points** removed.) |
 | **dob_verified_***, **phone_verified_***, **visa_expiry_verified_*** | Verification audit. |
 | **dob_verify_document** | DOB verification. |
-| **marn_number**, **legal_practitioner_number**, **business_address**, **business_phone**, **business_email**, **tax_number** | Migration agent / Form956 / export. (**business_fax** is marked for deletion.) |
+| **marn_number**, **legal_practitioner_number**, **business_address**, **business_phone**, **business_email**, **tax_number** | Solicitor / Form956 / export. (**business_fax** is marked for deletion.) |
 | **ABN_number**, **business_mobile** | Company and agent. |
 | **company_name**, **smtp_*** (if ever used from admins), **service_token**, **token_generated_at** | Company and API. |
 | **email_verified_at** | Client portal. |
@@ -140,16 +140,16 @@ Remove or refactor the listed code before dropping the column.
 
 ---
 
-## Company / Business (Staff & Migration Agents)
+## Company / Business (Staff & solicitors)
 
 | Column | Usage |
 |--------|--------|
 | **company_name**, **company_website**, **primary_email** | Company info. |
 | **gst_no**, **gstin**, **gst_date**, **is_business_gst** | GST. |
 | **ABN_number**, **company_fax** | ABN and fax. |
-| **marn_number**, **legal_practitioner_number**, **exempt_person_reason** | Migration agent / legal. |
+| **marn_number**, **legal_practitioner_number**, **exempt_person_reason** | Solicitor / legal. |
 | **business_address**, **business_phone**, **business_mobile**, **business_email**, **tax_number** | Business contact and tax. (**business_fax** marked for deletion.) |
-| **is_migration_agent** | Migration agent flag. |
+| **is_solicitor** | Solicitor flag. |
 | **is_company** | Company lead/client flag; company details in `companies` table. |
 
 ---

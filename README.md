@@ -22,7 +22,7 @@ The following is implemented and usable in the current application (see **Featur
 - **Money**: Invoices, receipts, quotations; Stripe and PayU hooks; PDF generation (DomPDF); financial stats on dashboard.
 - **Documents**: Uploads, checklists, expiry tracking, e-signatures (templates and workflow), optional **DOCX→PDF** via `python_services/`.
 - **Scheduling**: Booking/appointments (FullCalendar), Flatpickr-based dates (**DD/MM/YYYY** already matches Australian date convention).
-- **Client portal**: Status, documents, invoices, bookings—with staff/legal-practitioner style flags (e.g. migration-agent-oriented naming in places).
+- **Client portal**: Status, documents, invoices, bookings—with staff and legal-practitioner assignee fields on matters.
 - **Governance**: Row-level visibility, allocation, and **cross-access grants** (quick/supervisor approval, dashboards, CSV export)—see `docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md`.
 - **Infrastructure**: Laravel 12, PostgreSQL-first, Vite frontend, optional S3, queue-ready, SMS (Twilio / Cellcast), Windows/XAMPP-friendly docs.
 
@@ -33,7 +33,7 @@ To meet a **general Australian law firm** (or a firm that mixes migration with o
 ### Terminology and user experience
 
 - Replace **immigration-specific** labels in views, emails, PDFs, and reports (e.g. “visa”, “sponsorship”, “application” where used as the default frame) with **neutral legal language** (“matter”, “stage”, “court/tribunal dates” as appropriate) or **practice-area-specific** labels driven by configuration.
-- Clarify **roles**: Australian distinctions (e.g. solicitor, paralegal, Legal Practitioner) may differ from current role names and flags such as `is_migration_agent`; align permissions and portal behaviour with your firm’s structure.
+- Clarify **roles**: Australian distinctions (e.g. solicitor, paralegal, Legal Practitioner) may differ from current role names and flags such as `is_solicitor` and `sel_legal_practitioner`; align permissions and portal behaviour with your firm’s structure.
 - Ensure **trust account vs general account** language on receipts/invoices if you separate client money (many AU firms require strict trust accounting; the current model may need extension or an external trust system).
 
 ### Practice areas and matter model
@@ -364,7 +364,7 @@ Add to `C:\Windows\System32\drivers\etc\hosts`:
 - Communication with case manager
 
 ### Legal Practitioner (staff role)
-Staff can be designated as Legal Practitioners (`is_migration_agent`) with role-based permissions (e.g. verifying workflow stages in the client portal). They use the main Admin/CRM interface. A separate external-agent portal is not implemented.
+Staff can be flagged as solicitors (`is_solicitor`) and assigned as matter legal practitioners (`sel_legal_practitioner` on `client_matters`) with role-based permissions (e.g. verifying workflow stages in the client portal). They use the main Admin/CRM interface. A separate external-agent portal is not implemented.
 
 ## Project Structure
 

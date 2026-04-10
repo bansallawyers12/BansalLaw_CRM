@@ -232,7 +232,7 @@ function saveColumnPreferences() {
 
 function applyInitialColumnVisibility() {
     const visibleColumns = window.dashboardData.visibleColumns || [];
-    const allColumns = ['matter', 'client_id', 'client_name', 'dob', 'migration_agent', 'person_responsible', 'person_assisting', 'stage'];
+    const allColumns = ['matter', 'client_id', 'client_name', 'dob', 'legal_practitioner', 'person_responsible', 'person_assisting', 'stage'];
     
     allColumns.forEach(function(column) {
         if (!visibleColumns.includes(column)) {

@@ -610,7 +610,7 @@ function customValidate(formName, savetype = '')
                             return;
                         }
                         // Sync Select2 dropdown values to underlying selects so FormData includes changed options
-                        var selectIds = ['change_sel_migration_agent_id', 'change_sel_person_responsible_id', 'change_sel_person_assisting_id', 'change_office_id'];
+                        var selectIds = ['change_sel_legal_practitioner_id', 'change_sel_person_responsible_id', 'change_sel_person_assisting_id', 'change_office_id'];
                         for (var s = 0; s < selectIds.length; s++) {
                             var selEl = document.getElementById(selectIds[s]);
                             if (selEl) {
@@ -621,7 +621,7 @@ function customValidate(formName, savetype = '')
                         }
                         var fd = new FormData(myform);
                         var postUrl = $("form[name=\"change_matter_assignee\"]").attr('action');
-                        console.log('[ChangeMatterAssignee] Submitting to URL=', postUrl, 'FormData keys: _token, client_id, user_id, selectedMatterLM, migration_agent, person_responsible, person_assisting, office_id');
+                        console.log('[ChangeMatterAssignee] Submitting to URL=', postUrl, 'FormData keys: _token, client_id, user_id, selectedMatterLM, legal_practitioner, person_responsible, person_assisting, office_id');
                         console.log('[ChangeMatterAssignee] selectedMatterLM=', document.getElementById('selectedMatterLM') ? document.getElementById('selectedMatterLM').value : 'N/A');
                         $.ajax({
                             type:'post',

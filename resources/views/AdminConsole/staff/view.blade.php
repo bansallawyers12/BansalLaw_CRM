@@ -158,12 +158,12 @@
 				</div>
 
 				<!-- Legal Practitioner details section -->
-				@if($fetchedData->is_migration_agent == 1)
+				@if($fetchedData->is_solicitor == 1)
 				<div class="col-12 col-md-12 col-lg-12">
 					<div class="card">
 						<div class="card-body">
 							<h4 class="text-primary">
-								<i class="fas fa-user-tie"></i> MIGRATION AGENT DETAILS
+								<i class="fas fa-user-tie"></i> SOLICITOR DETAILS
 							</h4>
 							<hr>
 
