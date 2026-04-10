@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Models\Admin;
 use App\Models\ActivitiesLog;
+use App\Models\Staff;
 // clientServiceTaken model removed - table client_service_takens does not exist
 use App\Models\AccountClientReceipt;
 use App\Models\AccountAllInvoiceReceipt;
@@ -4501,8 +4502,10 @@ class ClientAccountsController extends Controller
    */
   public function analyticsDashboard(Request $request)
   {
-      // Restrict to admin and super admin only (roles 1, 12)
-      if (!in_array(Auth::user()->role ?? 0, [1, 12])) {
+      $analyticsUser = Auth::user();
+      $analyticsOk = ($analyticsUser instanceof Staff && $analyticsUser->hasEffectiveSuperAdminPrivileges())
+          || in_array((int) ($analyticsUser->role ?? 0), [12], true);
+      if (! $analyticsOk) {
           return redirect()->back()->with('error', 'Only admin and super admin can view the analytics dashboard.');
       }
 

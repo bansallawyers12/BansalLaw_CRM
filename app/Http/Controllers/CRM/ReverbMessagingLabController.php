@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
+use App\Models\Staff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -106,7 +107,7 @@ class ReverbMessagingLabController extends Controller
      */
     private function staffCanAccessMatter($user, int $matterId): bool
     {
-        if ((int) ($user->role ?? 0) === 1) {
+        if ($user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges()) {
             return true;
         }
 

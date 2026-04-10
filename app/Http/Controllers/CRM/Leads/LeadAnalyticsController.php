@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\CRM\Leads;
 
 use App\Http\Controllers\Controller;
+use App\Models\Staff;
 use App\Services\LeadAnalyticsService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -17,6 +18,13 @@ class LeadAnalyticsController extends Controller
         $this->middleware('auth:admin');
         $this->analyticsService = $analyticsService;
     }
+
+    private function canAccessLeadAnalytics(): bool
+    {
+        $u = Auth::user();
+        return ($u instanceof Staff && $u->hasEffectiveSuperAdminPrivileges())
+            || in_array((int) ($u->role ?? 0), [12], true);
+    }
     
     /**
      * Display analytics dashboard
@@ -24,10 +32,10 @@ class LeadAnalyticsController extends Controller
      */
     public function index(Request $request)
     {
-        $user = Auth::user();
-        if (!in_array($user->role ?? 0, [1, 12])) {
+        if (! $this->canAccessLeadAnalytics()) {
             return redirect()->back()->with('error', 'Only admin and super admin can view analytics.');
         }
+        $user = Auth::user();
         
         // Get date range from request or default to last 30 days
         $startDate = $request->filled('start_date') ? Carbon::parse($request->get('start_date'))->startOfDay() : now()->subDays(30)->startOfDay();
@@ -57,7 +65,7 @@ class LeadAnalyticsController extends Controller
      */
     public function getTrends(Request $request)
     {
-        if (!in_array(Auth::user()->role ?? 0, [1, 12])) {
+        if (! $this->canAccessLeadAnalytics()) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
         
@@ -75,7 +83,7 @@ class LeadAnalyticsController extends Controller
      */
     public function export(Request $request)
     {
-        if (!in_array(Auth::user()->role ?? 0, [1, 12])) {
+        if (! $this->canAccessLeadAnalytics()) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
         
@@ -100,7 +108,7 @@ class LeadAnalyticsController extends Controller
      */
     public function compareAgents(Request $request)
     {
-        if (!in_array(Auth::user()->role ?? 0, [1, 12])) {
+        if (! $this->canAccessLeadAnalytics()) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
         
