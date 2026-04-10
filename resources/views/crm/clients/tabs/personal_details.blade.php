@@ -816,9 +816,9 @@
                                 <span class="field-value">
                                     <?php
                                     if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_legal_practitioner != '') {
-                                        $mig_agent_info_arr = \App\Models\Staff::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_legal_practitioner)->first();
-                                        if($mig_agent_info_arr){
-                                            echo $mig_agent_info_arr->first_name.' '.$mig_agent_info_arr->last_name;
+                                        $legal_practitioner_info = \App\Models\Staff::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_legal_practitioner)->first();
+                                        if($legal_practitioner_info){
+                                            echo $legal_practitioner_info->first_name.' '.$legal_practitioner_info->last_name;
                                         }
                                     } else {
                                         echo 'N/A';

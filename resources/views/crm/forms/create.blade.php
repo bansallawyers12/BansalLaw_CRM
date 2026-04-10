@@ -63,12 +63,12 @@
                 @enderror
             </div>
 
-            <!-- Agent Details (Read-only) -->
+            <!-- Practitioner row from agent_details (read-only); DB table unchanged -->
             <div>
-                <h3 class="text-lg font-medium text-gray-900">Agent Details</h3>
+                <h3 class="text-lg font-medium text-gray-900">Practitioner details</h3>
                 <div class="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Agent Name</label>
+                        <label class="block text-sm font-medium text-gray-700">Practitioner name</label>
                         <input type="text" value="{{ $agent->agent_name }}" disabled class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100">
                     </div>
                     <div>

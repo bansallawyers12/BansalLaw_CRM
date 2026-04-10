@@ -528,7 +528,7 @@
                                 <?php $i=0; ?>
                                     @foreach (@$lists as $list)
                                         <?php
-                                        $mig_agent_info = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_legal_practitioner)->first();
+                                        $legal_practitioner_info = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_legal_practitioner)->first();
                                         $person_responsible = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_responsible)->first();
                                         $person_assisting = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_assisting)->first();
                                         $matter_office = $list->office_id ? \App\Models\Branch::find($list->office_id) : null;
@@ -538,7 +538,7 @@
                                             <td class="tdCls">{{ @$list->client_unique_id == "" ? config('constants.empty') : Str::limit(@$list->client_unique_id, '50', '...') }}</td>
                                             <td class="tdCls"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)) )}}">{{ @$list->first_name == "" ? config('constants.empty') : Str::limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : Str::limit(@$list->last_name, '50', '...') }}</a></td>
                                             <td class="tdCls">{{ @$list->dob == "" ? config('constants.empty') : (strtotime(@$list->dob) ? date('d/m/Y', strtotime(@$list->dob)) : Str::limit(@$list->dob, '50', '...')) }}</td>
-                                            <td class="tdCls">{{ @$mig_agent_info->first_name == "" ? config('constants.empty') : Str::limit(@$mig_agent_info->first_name, '50', '...') }} {{ @$mig_agent_info->last_name == "" ? config('constants.empty') : Str::limit(@$mig_agent_info->last_name, '50', '...') }}</td>
+                                            <td class="tdCls">{{ @$legal_practitioner_info->first_name == "" ? config('constants.empty') : Str::limit(@$legal_practitioner_info->first_name, '50', '...') }} {{ @$legal_practitioner_info->last_name == "" ? config('constants.empty') : Str::limit(@$legal_practitioner_info->last_name, '50', '...') }}</td>
                                             <td class="tdCls">{{ @$person_responsible->first_name == "" ? config('constants.empty') : Str::limit(@$person_responsible->first_name, '50', '...') }} {{ @$person_responsible->last_name == "" ? config('constants.empty') : Str::limit(@$person_responsible->last_name, '50', '...') }}</td>
                                             <td class="tdCls">{{ @$person_assisting->first_name == "" ? config('constants.empty') : Str::limit(@$person_assisting->first_name, '50', '...') }} {{ @$person_assisting->last_name == "" ? config('constants.empty') : Str::limit(@$person_assisting->last_name, '50', '...') }}</td>
                                             <td class="tdCls">{{date('d/m/Y', strtotime($list->created_at))}}</td>

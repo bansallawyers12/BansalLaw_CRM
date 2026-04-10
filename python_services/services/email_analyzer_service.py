@@ -2,7 +2,7 @@
 Email Analyzer Service
 
 Provides AI-powered email content analysis including:
-- Content categorization (Business, Personal, Migration, Legal, etc.)
+- Content categorization (Business, Personal, visa/immigration matters, general legal, etc.)
 - Priority detection (High, Medium, Low)
 - Sentiment analysis (Positive, Negative, Neutral)
 - Security scanning (detect dangerous content)
