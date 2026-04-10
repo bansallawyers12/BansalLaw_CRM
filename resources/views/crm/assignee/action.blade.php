@@ -31,14 +31,14 @@
         overflow-x: hidden;
     }
     
-    /* Header styles */
+    /* Header styles — docs/theme.md (tokens from crm-theme.css :root) */
     .client-header { 
         display: flex; 
         justify-content: space-between; 
         align-items: center; 
         margin-bottom: 30px; 
         padding: 20px 0; 
-        border-bottom: 2px solid #e9ecef;
+        border-bottom: 2px solid var(--border, #c8dcef);
         flex-wrap: wrap;
         gap: 15px;
         max-width: 100%;
@@ -47,7 +47,7 @@
     .client-header h1 { 
         font-size: 2em; 
         font-weight: 700; 
-        color: #2c3e50; 
+        color: var(--navy, #1e3d60); 
         margin: 0; 
         word-wrap: break-word;
     }
@@ -87,14 +87,14 @@
     }
     
     .btn-primary { 
-        background-color: #3498db; 
-        color: white; 
-        box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
+        background-color: var(--navy, #1e3d60); 
+        color: #fff; 
+        box-shadow: 0 2px 4px rgba(30, 61, 96, 0.2);
     }
     
     .btn-primary:hover { 
-        background-color: #2980b9; 
-        box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        background-color: var(--sidebar-active, #3a6fa8); 
+        box-shadow: 0 4px 8px rgba(30, 61, 96, 0.15);
         transform: translateY(-1px);
     }
     
@@ -105,17 +105,18 @@
         margin-bottom: 25px; 
         flex-wrap: wrap;
         max-width: 100%;
-        background-color: #f8f9fa;
+        background-color: var(--sidebar-bg, #ddeaf8);
         padding: 8px;
         border-radius: 10px;
+        border: 1px solid var(--border, #c8dcef);
     }
     
     .tab-button { 
         padding: 12px 20px; 
         border: 2px solid transparent; 
         border-radius: 8px; 
-        background-color: #6c757d; 
-        color: white; 
+        background-color: var(--text-muted, #5e7a90); 
+        color: #fff; 
         font-size: 0.9em; 
         font-weight: 600; 
         cursor: pointer; 
@@ -126,16 +127,16 @@
     }
     
     .tab-button.active, .tab-button:hover { 
-        background-color: #3498db; 
-        color: white !important;
-        border-color: #2980b9;
+        background-color: var(--sidebar-active, #3a6fa8); 
+        color: #fff !important;
+        border-color: var(--navy, #1e3d60);
         transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        box-shadow: 0 4px 8px rgba(30, 61, 96, 0.12);
     }
     
     .tab-button .badge { 
-        background-color: #ffffff; 
-        color: #3498db; 
+        background-color: #fff; 
+        color: var(--navy, #1e3d60); 
         border-radius: 12px; 
         padding: 4px 8px; 
         margin-left: 8px; 
@@ -152,9 +153,10 @@
         flex-wrap: wrap;
         gap: 15px;
         max-width: 100%;
-        background-color: #f8f9fa;
+        background-color: var(--page-bg, #f0f6ff);
         padding: 15px 20px;
         border-radius: 10px;
+        border: 1px solid var(--border, #c8dcef);
     }
     
     .search-bar {
@@ -167,27 +169,28 @@
     
     .search-bar label { 
         font-size: 0.9em; 
-        color: #2c3e50; 
+        color: var(--text-muted, #5e7a90); 
         white-space: nowrap;
         font-weight: 600;
     }
     
     .search-bar input {
         padding: 12px 16px;
-        border: 2px solid #e9ecef;
+        border: 2px solid var(--border, #c8dcef);
         border-radius: 8px;
         font-size: 0.9em;
         width: 250px;
         max-width: 100%;
         flex-shrink: 0;
         transition: all 0.3s ease;
-        background-color: white;
+        background-color: var(--card-bg, #fff);
+        color: var(--text-dark, #1a2c40);
     }
     
     .search-bar input:focus {
         outline: none;
-        border-color: #3498db;
-        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        border-color: var(--sidebar-active, #3a6fa8);
+        box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
     }
     
     /* Table container */
@@ -203,16 +206,17 @@
         border-collapse: collapse; 
         margin-bottom: 20px; 
         min-width: 800px; /* Ensure minimum width for readability */
-        background-color: white;
+        background-color: var(--card-bg, #fff);
         border-radius: 10px;
         overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+        border: 1px solid var(--border, #c8dcef);
     }
     
     .table th, .table td { 
         padding: 15px 12px; 
         text-align: left; 
-        border-bottom: 1px solid #e9ecef; 
+        border-bottom: 1px solid var(--border, #c8dcef); 
         font-size: 0.9em; 
         word-wrap: break-word;
         overflow-wrap: break-word;
@@ -223,9 +227,9 @@
     }
     
     .table th { 
-        background-color: #2c3e50; 
+        background-color: var(--page-bg, #f0f6ff); 
         font-weight: 700; 
-        color: white; 
+        color: var(--navy, #1e3d60); 
         text-transform: uppercase; 
         cursor: pointer;
         letter-spacing: 0.5px;
@@ -237,19 +241,22 @@
     }
     
     .table tbody tr:hover { 
-        background-color: #f8f9fa; 
+        background-color: #ebf3ff; 
     }
     
     .table tbody tr:nth-child(even) {
-        background-color: #fafbfc;
+        background-color: var(--card-bg, #fff);
     }
     
     .table tbody tr:nth-child(even):hover {
-        background-color: #f1f3f4;
+        background-color: #ebf3ff;
     }
     
-    .table tbody td, .table thead th { 
-        color: #2c3e50 !important; 
+    .table tbody td {
+        color: var(--text-dark, #1a2c40) !important;
+    }
+    .table thead th {
+        color: var(--navy, #1e3d60) !important;
     }
     
     /* Column width constraints to prevent overflow */
@@ -298,21 +305,21 @@
     
     .pagination a, .pagination span { 
         padding: 8px 12px; 
-        border: 1px solid #dee2e6; 
+        border: 1px solid var(--border, #c8dcef); 
         border-radius: 6px; 
         font-size: 0.9em; 
         text-decoration: none; 
-        color: #343a40; 
+        color: var(--navy, #1e3d60); 
     }
     
     .pagination a:hover { 
-        background-color: #f8f9fa; 
+        background-color: var(--sidebar-bg, #ddeaf8); 
     }
     
     .pagination .active span { 
-        background-color: #0d6efd; 
-        color: white; 
-        border-color: #0d6efd; 
+        background-color: var(--sidebar-active, #3a6fa8); 
+        color: #fff; 
+        border-color: var(--sidebar-active, #3a6fa8); 
     }
     
     /* DataTables customization */
@@ -342,9 +349,10 @@
         flex-wrap: wrap;
         gap: 15px;
         max-width: 100%;
-        background-color: #f8f9fa;
+        background-color: var(--page-bg, #f0f6ff);
         padding: 15px 20px;
         border-radius: 10px;
+        border: 1px solid var(--border, #c8dcef);
     }
     
     .dataTables_length {
@@ -353,22 +361,23 @@
     
     .dataTables_length select {
         padding: 10px 15px;
-        border: 2px solid #e9ecef;
+        border: 2px solid var(--border, #c8dcef);
         border-radius: 8px;
         font-size: 0.9em;
-        background-color: white;
+        background-color: var(--card-bg, #fff);
+        color: var(--text-dark, #1a2c40);
         transition: all 0.3s ease;
     }
     
     .dataTables_length select:focus {
         outline: none;
-        border-color: #3498db;
-        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        border-color: var(--sidebar-active, #3a6fa8);
+        box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
     }
     
     .dataTables_length label {
         font-size: 0.9em;
-        color: #2c3e50;
+        color: var(--text-muted, #5e7a90);
         display: flex;
         align-items: center;
         gap: 8px;
@@ -380,14 +389,14 @@
         flex-grow: 1;
         text-align: center;
         font-size: 0.9em;
-        color: #2c3e50;
+        color: var(--text-muted, #5e7a90);
         word-wrap: break-word;
         font-weight: 500;
     }
     
     /* Error messages */
     .error-message {
-        color: red;
+        color: var(--danger, #a83020);
         font-size: 0.8em;
         margin-top: 5px;
     }
@@ -488,22 +497,248 @@
     }
     
     .table-responsive::-webkit-scrollbar-track {
-        background: #f1f1f1;
+        background: var(--sidebar-bg, #ddeaf8);
         border-radius: 4px;
     }
     
     .table-responsive::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
+        background: var(--border, #c8dcef);
         border-radius: 4px;
     }
     
     .table-responsive::-webkit-scrollbar-thumb:hover {
-        background: #a8a8a8;
+        background: var(--text-muted, #5e7a90);
+    }
+
+    /* Complete Task modal — same tokens as dashboard completion modal (docs/theme.md) */
+    #completionNotesModal .completion-notes-modal-content {
+        border-radius: 12px;
+        border: 1px solid var(--border, #c8dcef);
+        box-shadow: 0 12px 40px rgba(30, 61, 96, 0.12);
+        overflow: hidden;
+        background: var(--card-bg, #ffffff);
+    }
+    #completionNotesModal .completion-notes-modal-header {
+        background: var(--navy, #1e3d60);
+        color: #fff;
+        border-bottom: 1px solid var(--border, #c8dcef);
+        padding: 1rem 1.25rem;
+    }
+    #completionNotesModal .completion-notes-modal-header .modal-title {
+        color: #fff !important;
+        font-weight: 700;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+    }
+    /* Line check icon avoids solid “yellow circle” FA default on check-circle */
+    #completionNotesModal .completion-notes-modal-header .modal-title .completion-task-modal-header-icon {
+        color: var(--accent-gold, #c8992a) !important;
+        font-size: 1.15rem;
+    }
+    #completionNotesModal .completion-notes-modal-close {
+        color: #fff !important;
+        opacity: 0.9;
+        text-shadow: none;
+        font-size: 1.5rem;
+        font-weight: 400;
+        padding: 0;
+        margin: 0;
+        line-height: 1;
+    }
+    #completionNotesModal .completion-notes-modal-close:hover,
+    #completionNotesModal .completion-notes-modal-close:focus {
+        opacity: 1;
+        color: #fff !important;
+    }
+    #completionNotesModal .completion-notes-modal-body {
+        background: var(--page-bg, #f0f6ff);
+        padding: 1.25rem 1.25rem 1rem;
+    }
+    #completionNotesModal .completion-notes-label {
+        color: var(--text-muted, #5e7a90);
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    #completionNotesModal .completion-notes-label i {
+        color: var(--navy, #1e3d60);
+        margin-right: 0.35rem;
+    }
+    #completionNotesModal .completion-notes-textarea {
+        resize: vertical;
+        border: 1px solid var(--border, #c8dcef) !important;
+        border-radius: 8px;
+        padding: 12px;
+        background: var(--card-bg, #ffffff);
+        color: var(--text-dark, #1a2c40);
+        background-image: none !important;
+        min-height: 120px;
+    }
+    #completionNotesModal .completion-notes-textarea:focus {
+        border-color: var(--sidebar-active, #3a6fa8) !important;
+        box-shadow: 0 0 0 2px rgba(58, 111, 168, 0.15);
+        outline: none;
+    }
+    #completionNotesModal .completion-notes-modal-body .completion-notes-hint {
+        color: var(--text-muted, #5e7a90) !important;
+        font-size: 0.8125rem;
+        margin-top: 0.5rem;
+        display: block;
+    }
+    #completionNotesModal .completion-notes-modal-body .completion-notes-hint i {
+        color: var(--sidebar-active, #3a6fa8);
+        margin-right: 0.25rem;
+    }
+    #completionNotesModal .completion-notes-modal-footer {
+        background: var(--page-bg, #f0f6ff);
+        border-top: 1px solid var(--border, #c8dcef);
+        padding: 1rem 1.25rem;
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    #completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete {
+        background-color: var(--card-bg, #ffffff) !important;
+        background-image: none !important;
+        color: var(--navy, #1e3d60) !important;
+        border: 1px solid var(--border, #c8dcef) !important;
+        font-weight: 600;
+        border-radius: 8px;
+        padding: 0.45rem 1rem;
+    }
+    #completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete i {
+        color: var(--navy, #1e3d60) !important;
+    }
+    #completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete:hover,
+    #completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete:focus {
+        background-color: var(--sidebar-hover, #c8dcef) !important;
+        border-color: var(--border, #c8dcef) !important;
+        color: var(--navy, #1e3d60) !important;
+    }
+    #completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary {
+        background-color: var(--navy, #1e3d60) !important;
+        background-image: none !important;
+        border: 1px solid var(--navy, #1e3d60) !important;
+        color: #fff !important;
+        font-weight: 600;
+        border-radius: 8px;
+        padding: 0.45rem 1rem;
+        box-shadow: 0 2px 6px rgba(30, 61, 96, 0.2);
+    }
+    #completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary i {
+        color: #fff !important;
+    }
+    #completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary:hover,
+    #completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary:focus {
+        background-color: var(--sidebar-active, #3a6fa8) !important;
+        border-color: var(--sidebar-active, #3a6fa8) !important;
+        color: #fff !important;
+    }
+
+    /* Client column — Personal Action label (replaces Bootstrap badge-info) */
+    .action-badge-personal {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 8px;
+        background: rgba(30, 61, 96, 0.1);
+        color: var(--navy, #1e3d60);
+        font-weight: 600;
+        font-size: 0.8rem;
+        border: 1px solid var(--border, #c8dcef);
+    }
+
+    /* DataTables pagination — theme.md (hover/focus/active; beats Bootstrap link + #3490dc ring) */
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link {
+        color: var(--navy, #1e3d60) !important;
+        background-color: var(--card-bg, #ffffff) !important;
+        border-color: var(--border, #c8dcef) !important;
+        box-shadow: none !important;
+    }
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item:not(.active):not(.disabled) .page-link:hover {
+        color: var(--navy, #1e3d60) !important;
+        background-color: var(--sidebar-hover, #c8dcef) !important;
+        border-color: var(--border, #c8dcef) !important;
+    }
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link:focus,
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link:focus-visible {
+        color: var(--navy, #1e3d60) !important;
+        background-color: var(--card-bg, #ffffff) !important;
+        border-color: var(--sidebar-active, #3a6fa8) !important;
+        outline: none !important;
+        box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.22) !important;
+    }
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.active .page-link,
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .active > .page-link,
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link.active {
+        color: #fff !important;
+        background-color: var(--sidebar-active, #3a6fa8) !important;
+        border-color: var(--sidebar-active, #3a6fa8) !important;
+    }
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.active .page-link:hover,
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.active .page-link:focus,
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.active .page-link:focus-visible,
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .active > .page-link:hover,
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .active > .page-link:focus {
+        color: #fff !important;
+        background-color: var(--sidebar-active, #3a6fa8) !important;
+        border-color: var(--sidebar-active, #3a6fa8) !important;
+        box-shadow: none !important;
+    }
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.disabled .page-link,
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.disabled .page-link:hover {
+        color: var(--text-muted, #5e7a90) !important;
+        background-color: var(--card-bg, #ffffff) !important;
+        border-color: var(--border, #c8dcef) !important;
+        box-shadow: none !important;
+        opacity: 0.85;
+    }
+
+    /* Action column — compact square edit (global .btn padding no longer applies) */
+    .assignee-action-page .yajra-datatable .table th:nth-child(8),
+    .assignee-action-page .yajra-datatable .table td:nth-child(8) {
+        text-align: center !important;
+        vertical-align: middle !important;
+        padding: 10px 8px !important;
+    }
+    .assignee-action-page .yajra-datatable .btn.btn-primary.update_task {
+        background-color: var(--navy, #1e3d60) !important;
+        border: 1px solid var(--navy, #1e3d60) !important;
+        color: #fff !important;
+        background-image: none !important;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        max-width: 36px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 1 !important;
+        border-radius: 8px !important;
+        box-sizing: border-box !important;
+    }
+    .assignee-action-page .yajra-datatable .btn.btn-primary.update_task:hover,
+    .assignee-action-page .yajra-datatable .btn.btn-primary.update_task:focus {
+        background-color: var(--sidebar-active, #3a6fa8) !important;
+        border-color: var(--sidebar-active, #3a6fa8) !important;
+        color: #fff !important;
+        box-shadow: 0 2px 6px rgba(30, 61, 96, 0.18) !important;
+    }
+    .assignee-action-page .yajra-datatable .btn.btn-primary.update_task i {
+        color: #fff !important;
+        font-size: 14px !important;
+        line-height: 1 !important;
     }
 </style>
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content assignee-action-page">
     <section class="section" style="padding-top: 70px;">
         <div class="section-body">
             <div class="server-error">
@@ -531,11 +766,11 @@
                                         Select assignees <span class='selected-count'></span>
                                     </button>
                                     <div class='dropdown-menu' aria-labelledby='dropdownMenuButton' style='width: 100%;'>
-                                        <div class='dropdown-search-wrapper' style='padding: 8px; border-bottom: 1px solid #e2e8f0;'>
+                                        <div class='dropdown-search-wrapper' style='padding: 8px; border-bottom: 1px solid #c8dcef;'>
                                             <input type='text' class='form-control assignee-search-input' placeholder='Search assignees...' style='font-size: 13px; padding: 6px 10px;'>
                                         </div>
                                         <label class='dropdown-item'><input type='checkbox' id='select-all' /> <strong>Select All</strong></label>
-                                        <div style='border-top: 1px solid #e2e8f0; margin: 5px 0;'></div>
+                                        <div style='border-top: 1px solid #c8dcef; margin: 5px 0;'></div>
                                         <div class='assignee-list'>
                                             @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                                                 <?php 
@@ -632,37 +867,36 @@
 <!-- Task Completion Notes Modal -->
 <div class="modal fade" id="completionNotesModal" tabindex="-1" role="dialog" aria-labelledby="completionNotesModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header" style="background-color: #3498db; color: white;">
+        <div class="modal-content completion-notes-modal-content">
+            <div class="modal-header completion-notes-modal-header">
                 <h5 class="modal-title" id="completionNotesModalLabel">
-                    <i class="fa fa-check-circle"></i> Complete Task
+                    <i class="fa fa-check completion-task-modal-header-icon" aria-hidden="true"></i> Complete Task
                 </h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
+                <button type="button" class="close completion-notes-modal-close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="completionNotes" class="font-weight-bold">
+            <div class="modal-body completion-notes-modal-body">
+                <div class="form-group mb-0">
+                    <label for="completionNotes" class="completion-notes-label">
                         <i class="fa fa-comment"></i> Completion Notes/Feedback
                     </label>
                     <textarea 
-                        class="form-control" 
+                        class="form-control completion-notes-textarea" 
                         id="completionNotes" 
                         rows="5" 
                         placeholder="Enter any notes or feedback about completing this task..."
-                        style="resize: vertical; border: 2px solid #e9ecef; border-radius: 8px; padding: 12px;"
                     ></textarea>
-                    <small class="form-text text-muted">
+                    <small class="form-text completion-notes-hint">
                         <i class="fa fa-info-circle"></i> These notes will be saved in the activity log.
                     </small>
                 </div>
             </div>
-            <div class="modal-footer" style="background-color: #f8f9fa;">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <div class="modal-footer completion-notes-modal-footer">
+                <button type="button" class="btn btn-cancel-complete" data-bs-dismiss="modal">
                     <i class="fa fa-times"></i> Cancel
                 </button>
-                <button type="button" class="btn btn-success" id="confirmTaskCompletion">
+                <button type="button" class="btn btn-complete-task-primary" id="confirmTaskCompletion">
                     <i class="fa fa-check"></i> Complete Task
                 </button>
             </div>
@@ -679,7 +913,7 @@
 /* Ensure popovers display correctly */
 
 .btn_readmore {
-    color: #007bff !important;
+    color: var(--sidebar-active, #3a6fa8) !important;
     text-decoration: none !important;
     background: none !important;
     border: none !important;
@@ -689,7 +923,7 @@
 }
 
 .btn_readmore:hover {
-    color: #0056b3 !important;
+    color: var(--navy, #1e3d60) !important;
     text-decoration: underline !important;
 }
 
@@ -750,9 +984,9 @@
     }
 
 .popover .popover-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    color: white !important;
-    border-bottom: none !important;
+    background: var(--navy, #1e3d60) !important;
+    color: #fff !important;
+    border-bottom: 1px solid var(--border, #c8dcef) !important;
     border-radius: 8px 8px 0 0 !important;
     padding: 16px 20px !important;
     font-weight: 600 !important;
@@ -800,14 +1034,14 @@
 
 .popover .form-group label {
     font-weight: 600 !important;
-    color: #2c3e50 !important;
+    color: var(--text-muted, #5e7a90) !important;
     margin-bottom: 8px !important;
     display: block !important;
     font-size: 13px !important;
 }
 
 .popover .form-control {
-    border: 1px solid #ced4da !important;
+    border: 1px solid var(--border, #c8dcef) !important;
     border-radius: 6px !important;
     padding: 10px 12px !important;
     font-size: 14px !important;
@@ -816,11 +1050,13 @@
     max-width: 100% !important;
     box-sizing: border-box !important;
     display: block !important;
+    background: var(--card-bg, #fff) !important;
+    color: var(--text-dark, #1a2c40) !important;
 }
 
 .popover .form-control:focus {
-    border-color: #0d6efd !important;
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
+    border-color: var(--sidebar-active, #3a6fa8) !important;
+    box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
     outline: 0 !important;
 }
 
@@ -860,32 +1096,34 @@
 }
 
 .popover .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    border: none !important;
-    color: white !important;
+    background: var(--navy, #1e3d60) !important;
+    border: 1px solid var(--navy, #1e3d60) !important;
+    color: #fff !important;
 }
 
 .popover .btn-primary:hover {
-    background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%) !important;
+    background: var(--sidebar-active, #3a6fa8) !important;
+    border-color: var(--sidebar-active, #3a6fa8) !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+    box-shadow: 0 4px 12px rgba(30, 61, 96, 0.2) !important;
 }
 
 .popover .btn-info {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    border: none !important;
-    color: white !important;
+    background: var(--navy, #1e3d60) !important;
+    border: 1px solid var(--navy, #1e3d60) !important;
+    color: #fff !important;
 }
 
 .popover .btn-info:hover {
-    background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%) !important;
+    background: var(--sidebar-active, #3a6fa8) !important;
+    border-color: var(--sidebar-active, #3a6fa8) !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+    box-shadow: 0 4px 12px rgba(30, 61, 96, 0.2) !important;
 }
 
 /* Error message styling */
 .popover .error-message {
-    color: #dc3545 !important;
+    color: var(--danger, #a83020) !important;
     font-size: 11px !important;
     margin-top: 4px !important;
     font-weight: 500 !important;
@@ -895,7 +1133,7 @@
 
 /* Box header styling */
 .popover .box-header {
-    border-bottom: 1px solid #e9ecef !important;
+    border-bottom: 1px solid var(--border, #c8dcef) !important;
     padding-bottom: 15px !important;
     margin-bottom: 15px !important;
 }
@@ -908,7 +1146,7 @@
 
 /* Box footer styling */
 .popover .box-footer {
-    border-top: 1px solid #e9ecef !important;
+    border-top: 1px solid var(--border, #c8dcef) !important;
     padding-top: 15px !important;
     margin-top: 15px !important;
     text-align: center !important;
@@ -945,19 +1183,19 @@
 .popover .dropdown-multi-select .btn {
     width: 100%;
     text-align: left;
-    background-color: #fff;
-    border: 1px solid #ced4da;
+    background-color: var(--card-bg, #fff);
+    border: 1px solid var(--border, #c8dcef);
     border-radius: 6px;
     padding: 8px 12px;
     font-size: 14px;
-    color: #495057;
+    color: var(--text-dark, #1a2c40);
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
 .popover .dropdown-multi-select .btn:hover,
 .popover .dropdown-multi-select .btn:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    border-color: var(--sidebar-active, #3a6fa8);
+    box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2);
     outline: 0;
 }
 
@@ -965,9 +1203,9 @@
     width: 100%;
     max-height: 300px;
     overflow: hidden;
-    border: 1px solid #ced4da;
+    border: 1px solid var(--border, #c8dcef);
     border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(30, 61, 96, 0.1);
     padding: 0;
     margin-top: 2px;
 }
@@ -979,8 +1217,8 @@
 
 .popover .dropdown-multi-select .dropdown-search-wrapper {
     padding: 8px;
-    border-bottom: 1px solid #e2e8f0;
-    background: #f8f9fa;
+    border-bottom: 1px solid var(--border, #c8dcef);
+    background: var(--page-bg, #f0f6ff);
     position: sticky;
     top: 0;
     z-index: 10;
@@ -990,13 +1228,13 @@
     font-size: 13px;
     padding: 6px 10px;
     border-radius: 6px;
-    border: 1px solid #cbd5e0;
+    border: 1px solid var(--border, #c8dcef);
     width: 100%;
 }
 
 .popover .dropdown-multi-select .assignee-search-input:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
+    border-color: var(--sidebar-active, #3a6fa8);
+    box-shadow: 0 0 0 2px rgba(58, 111, 168, 0.15);
     outline: none;
 }
 
@@ -1022,7 +1260,7 @@
 }
 
 .popover .dropdown-multi-select .dropdown-item:hover {
-    background-color: #f8f9fa;
+    background-color: var(--sidebar-bg, #ddeaf8);
 }
 
 .popover .dropdown-multi-select .dropdown-item input[type="checkbox"] {
@@ -1032,7 +1270,7 @@
 
 .popover .form-label {
     font-weight: 500;
-    color: #495057;
+    color: var(--text-muted, #5e7a90);
     margin-bottom: 8px;
     display: block;
     font-size: 14px;
@@ -1049,17 +1287,18 @@
 /* Client search select styling */
 .popover .js-data-example-ajaxccsearch__addmytask {
     width: 100%;
-    border: 1px solid #ced4da;
+    border: 1px solid var(--border, #c8dcef);
     border-radius: 6px;
     padding: 8px 12px;
     font-size: 14px;
-    background-color: #fff;
+    background-color: var(--card-bg, #fff);
+    color: var(--text-dark, #1a2c40);
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
     .popover .js-data-example-ajaxccsearch__addmytask:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        border-color: var(--sidebar-active, #3a6fa8);
+        box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2);
         outline: 0;
     }
     

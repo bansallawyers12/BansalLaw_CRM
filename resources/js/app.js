@@ -23,7 +23,7 @@ window.updateNotificationBell = function (count, options = {}) {
     const prevCount = parseInt(String(el.textContent || '0'), 10) || 0;
     const newCount = typeof count === 'number' ? count : parseInt(String(count), 10) || 0;
     el.textContent = newCount > 0 ? String(newCount) : '';
-    el.style.display = newCount > 0 ? 'inline' : 'none';
+    el.style.removeProperty('display');
 
     const parent = el.closest('.notification-toggle') || el.parentElement;
     if (parent) {
@@ -133,7 +133,7 @@ if (import.meta.env.VITE_REVERB_APP_KEY) {
                     window.updateNotificationBell(count, { showToast: false });
                 } else if (badgeEl) {
                     badgeEl.textContent = count > 0 ? String(count) : '';
-                    badgeEl.style.display = count > 0 ? 'inline' : 'none';
+                    badgeEl.style.removeProperty('display');
                 }
             })
             .catch(() => {});

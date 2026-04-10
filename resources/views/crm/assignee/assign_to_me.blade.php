@@ -443,7 +443,7 @@
         <div class="modal-content">
             <div class="modal-header" style="background-color: #3498db; color: white;">
                 <h5 class="modal-title" id="completionNotesModalLabel">
-                    <i class="fa fa-check-circle"></i> Complete Task
+                    <i class="fa fa-check completion-task-modal-header-icon" aria-hidden="true"></i> Complete Task
                 </h5>
                 <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
                     <span aria-hidden="true">&times;</span>

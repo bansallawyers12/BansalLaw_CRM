@@ -332,13 +332,17 @@ window.openTaskDetail = function(taskId) {
     
     const panel = $('#taskDetailPanel');
     const data = taskItem.data();
-    const isPersonalAction = !data.clientId;
+    // Use attr so empty data-client-id is reliable (jQuery .data() can coerce types)
+    const rawClientId = (taskItem.attr('data-client-id') || '').trim();
+    const isPersonalAction = rawClientId === '';
+    const clientDetailUrl = taskItem.attr('data-client-detail-url') || data.clientDetailUrl || '';
+    const personalActionUrl = (window.dashboardRoutes && window.dashboardRoutes.assigneeAction) ? window.dashboardRoutes.assigneeAction : '/action';
     
     // Populate panel with task data
     $('#taskDetailTitle').text(stripHtml(data.description));
     $('#taskDetailClientName').text(data.clientName || 'Personal Action');
     $('#taskDetailClientCode').text(data.clientCode ? `(${data.clientCode})` : '');
-    $('#taskDetailClientLink').attr('href', isPersonalAction ? '/action' : (data.clientDetailUrl || '#'));
+    $('#taskDetailClientLink').attr('href', isPersonalAction ? personalActionUrl : (clientDetailUrl || '#'));
     
     // Handle deadline display
     if (data.deadline) {

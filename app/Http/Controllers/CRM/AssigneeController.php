@@ -482,8 +482,8 @@ class AssigneeController extends Controller
                                 $client_encoded_id = base64_encode(convert_uuencode(@$data->client_id));
                                 $client_name .= '<a href="'.url('/clients/detail/'.$client_encoded_id).'" target="_blank">'.$clientId.'</a>';
                             } else {
-                                // Personal Action - no client assigned
-                                $client_name = '<span class="badge badge-info">Personal Action</span>';
+                                // Personal Action - no client assigned (theme: theme.md navy / page-bg tint)
+                                $client_name = '<span class="action-badge-personal">Personal Action</span>';
                             }
                             return $client_name;
                         } catch (\Exception $e) {
@@ -540,7 +540,7 @@ class AssigneeController extends Controller
                             // For personal actions, client_id will be null, so use empty string for encoded value
                             $encoded_client_id = $list->client_id ? base64_encode(convert_uuencode($list->client_id)) : '';
                             
-                            $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-actiondate="'.$current_date1.'" data-clientid="'.$encoded_client_id.'" class="btn btn-primary btn-block update_task" data-role="popover" style="width: 40px;display: inline;margin-top:0px;"><i class="fa fa-edit" aria-hidden="true"></i></button>';
+                            $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-actiondate="'.$current_date1.'" data-clientid="'.$encoded_client_id.'" class="btn btn-primary update_task" data-role="popover"><i class="fa fa-edit" aria-hidden="true"></i></button>';
 
                             // Delete button removed from action tab
 

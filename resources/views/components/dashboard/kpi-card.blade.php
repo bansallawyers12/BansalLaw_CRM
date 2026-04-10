@@ -8,21 +8,16 @@
 ])
 
 @php
-    // Define gradient colors based on icon class
-    /* docs/theme.md — navy, accent-gold, success */
-    $gradients = [
-        'icon-active' => ['from' => '#1e3d60', 'to' => '#3a6fa8', 'icon-bg' => 'rgba(30, 61, 96, 0.1)'],
-        'icon-pending' => ['from' => '#c8992a', 'to' => '#9a7619', 'icon-bg' => 'rgba(200, 153, 42, 0.12)'],
-        'icon-success' => ['from' => '#1e7a52', 'to' => '#155a3c', 'icon-bg' => 'rgba(30, 122, 82, 0.12)'],
-    ];
-    
-    $gradient = $gradients[$iconClass] ?? $gradients['icon-active'];
+    /* docs/theme.md — Icon Dot Colours (KPI icons) */
+    $iconWrapperClass = in_array($iconClass, ['icon-active', 'icon-pending', 'icon-success'], true)
+        ? $iconClass
+        : 'icon-active';
 @endphp
 
-<div class="kpi-card-modern">
+<div class="kpi-card-modern kpi-card-modern--{{ str_replace('icon-', '', $iconWrapperClass) }}">
     <div class="kpi-card-inner">
-        <div class="kpi-icon-wrapper" style="background: {{ $gradient['icon-bg'] }};">
-            <i class="{{ $icon }}" style="color: {{ $gradient['from'] }};"></i>
+        <div class="kpi-icon-wrapper {{ $iconWrapperClass }}">
+            <i class="{{ $icon }}"></i>
         </div>
         <div class="kpi-content">
             <h3 class="kpi-title">{{ $title }}</h3>
@@ -64,9 +59,17 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, var(--from-color, #1e3d60), var(--to-color, #3a6fa8));
+    background: linear-gradient(90deg, var(--navy, #1e3d60), var(--sidebar-active, #3a6fa8));
     opacity: 0;
     transition: opacity 0.3s ease;
+}
+
+.kpi-card-modern--pending::before {
+    background: linear-gradient(90deg, var(--accent-gold, #c8992a), #9a7619);
+}
+
+.kpi-card-modern--success::before {
+    background: linear-gradient(90deg, var(--success, #1e7a52), #155a3c);
 }
 
 .kpi-card-modern:hover::before {
@@ -102,6 +105,28 @@
     transition: all 0.3s ease;
 }
 
+/* theme.md — Icon Dot Colours */
+.kpi-icon-wrapper.icon-active {
+    background: rgba(30, 61, 96, 0.1);
+}
+.kpi-icon-wrapper.icon-active i {
+    color: var(--navy, #1e3d60);
+}
+
+.kpi-icon-wrapper.icon-pending {
+    background: rgba(200, 153, 42, 0.12);
+}
+.kpi-icon-wrapper.icon-pending i {
+    color: var(--accent-gold, #c8992a);
+}
+
+.kpi-icon-wrapper.icon-success {
+    background: rgba(30, 122, 82, 0.12);
+}
+.kpi-icon-wrapper.icon-success i {
+    color: var(--success, #1e7a52);
+}
+
 .kpi-content {
     width: 100%;
 }
@@ -109,7 +134,7 @@
 .kpi-title {
     margin: 0 0 10px 0;
     font-size: 0.8em;
-    color: #5e7a90;
+    color: var(--text-muted, #5e7a90);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -123,7 +148,7 @@
 .kpi-count-link {
     font-size: 2.2em;
     font-weight: 800;
-    color: #1a2c40;
+    color: var(--text-dark, #1a2c40);
     line-height: 1;
     display: inline-block;
     transition: all 0.3s ease;
@@ -132,7 +157,7 @@
 
 .kpi-count-link:hover {
     transform: scale(1.05);
-    color: #3a6fa8;
+    color: var(--sidebar-active, #3a6fa8);
 }
 
 /* Shine effect on hover */
@@ -154,19 +179,6 @@
 
 .kpi-card-modern:hover .kpi-card-shine {
     transform: translateX(100%);
-}
-
-/* Specific icon styling — theme.md */
-.icon-active {
-    background: linear-gradient(135deg, #1e3d60 0%, #3a6fa8 100%);
-}
-
-.icon-pending {
-    background: linear-gradient(135deg, #c8992a 0%, #a87f19 100%);
-}
-
-.icon-success {
-    background: linear-gradient(135deg, #1e7a52 0%, #155a3c 100%);
 }
 
 @media (max-width: 768px) {

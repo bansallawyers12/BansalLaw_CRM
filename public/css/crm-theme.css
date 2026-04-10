@@ -373,10 +373,13 @@ body.sidebar-mini .task-detail-panel .task-detail-footer .task-detail-action-btn
   color: var(--navy) !important;
 }
 
-/* Complete Task modal — header: global h5 { color: navy !important } hid title on navy bar */
-body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-header .modal-title,
-body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-header .modal-title i {
+/* Complete Task modal — header title white; icon accent-gold (theme.md) */
+body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-header .modal-title {
   color: #fff !important;
+}
+
+body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-header .modal-title i {
+  color: var(--accent-gold) !important;
 }
 
 body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-header .close,
@@ -415,6 +418,48 @@ body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-foo
 }
 
 body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-complete-task-primary i {
+  color: #fff !important;
+}
+
+/* Complete Task modal (assignee /action page) — same footer + title rules as dashboard */
+body.sidebar-mini #completionNotesModal .completion-notes-modal-header .modal-title {
+  color: #fff !important;
+}
+
+body.sidebar-mini #completionNotesModal .completion-task-modal-header-icon,
+body.sidebar-mini #dashboardCompletionNotesModal .completion-task-modal-header-icon {
+  color: var(--accent-gold) !important;
+}
+
+body.sidebar-mini #completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete {
+  background-color: var(--card-bg) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+  border: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini #completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete:hover,
+body.sidebar-mini #completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete:focus {
+  background-color: var(--sidebar-hover) !important;
+  border-color: var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini #completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary {
+  background-color: var(--navy) !important;
+  background-image: none !important;
+  border: 1px solid var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary:hover,
+body.sidebar-mini #completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary:focus {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary i {
   color: #fff !important;
 }
 
@@ -586,9 +631,40 @@ body.sidebar-mini .control-label {
   color: var(--navy) !important;
 }
 
-.main-topbar .icon-btn .countbell {
+/* Bell icon + unread badge: badge overlays icon (avoids flex “tall bar” layout) */
+.main-topbar .notification-bell-inner {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.main-topbar .icon-btn.notification-toggle .countbell {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 999px;
   background: var(--navy) !important;
   color: #fff !important;
+  box-sizing: border-box;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.main-topbar .icon-btn.notification-toggle .countbell:not(:empty) {
+  display: inline-flex !important;
 }
 
 .main-topbar .text-primary {
@@ -694,6 +770,37 @@ body.sidebar-mini .kpi-cards .card .icon-pending {
 
 body.sidebar-mini .kpi-cards .card .icon-success {
   background-color: rgba(30, 122, 82, 0.12) !important;
+  color: var(--success) !important;
+}
+
+/* KPI cards (kpi-card-modern) — theme.md Icon Dot Colours; beat global FA / link color */
+body.sidebar-mini .kpi-cards .kpi-icon-wrapper.icon-active {
+  background-color: rgba(30, 61, 96, 0.1) !important;
+}
+
+body.sidebar-mini .kpi-cards .kpi-icon-wrapper.icon-active i,
+body.sidebar-mini .kpi-cards .kpi-icon-wrapper.icon-active .fas,
+body.sidebar-mini .kpi-cards .kpi-icon-wrapper.icon-active .fa {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .kpi-cards .kpi-icon-wrapper.icon-pending {
+  background-color: rgba(200, 153, 42, 0.12) !important;
+}
+
+body.sidebar-mini .kpi-cards .kpi-icon-wrapper.icon-pending i,
+body.sidebar-mini .kpi-cards .kpi-icon-wrapper.icon-pending .fas,
+body.sidebar-mini .kpi-cards .kpi-icon-wrapper.icon-pending .fa {
+  color: var(--accent-gold) !important;
+}
+
+body.sidebar-mini .kpi-cards .kpi-icon-wrapper.icon-success {
+  background-color: rgba(30, 122, 82, 0.12) !important;
+}
+
+body.sidebar-mini .kpi-cards .kpi-icon-wrapper.icon-success i,
+body.sidebar-mini .kpi-cards .kpi-icon-wrapper.icon-success .fas,
+body.sidebar-mini .kpi-cards .kpi-icon-wrapper.icon-success .fa {
   color: var(--success) !important;
 }
 

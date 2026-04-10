@@ -1220,7 +1220,8 @@
         columnPreferences: "{{ route('dashboard.column-preferences') }}",
         extendDeadline: "{{ route('dashboard.extend-deadline') }}",
         updateActionCompleted: "{{ route('dashboard.update-action-completed') }}",
-        updateTaskCompleted: "{{ route('dashboard.update-action-completed') }}"
+        updateTaskCompleted: "{{ route('dashboard.update-action-completed') }}",
+        assigneeAction: "{{ route('assignee.action') }}"
     };
     
     window.dashboardData = {

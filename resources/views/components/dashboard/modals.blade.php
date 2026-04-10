@@ -424,9 +424,11 @@
     font-weight: 700;
     font-size: 1.1rem;
 }
-#dashboardCompletionNotesModal .dashboard-completion-modal-header .modal-title i {
+#dashboardCompletionNotesModal .dashboard-completion-modal-header .modal-title i,
+#dashboardCompletionNotesModal .dashboard-completion-modal-header .completion-task-modal-header-icon {
     color: var(--accent-gold, #c8992a) !important;
     margin-right: 0.35rem;
+    font-size: 1.1em;
 }
 #dashboardCompletionNotesModal .dashboard-completion-modal-header .close {
     color: #fff;
@@ -574,7 +576,7 @@
         <div class="modal-content dashboard-completion-modal-content">
             <div class="modal-header dashboard-completion-modal-header">
                 <h5 class="modal-title" id="dashboardCompletionNotesModalLabel">
-                    <i class="fa fa-check-circle"></i> Complete Task
+                    <i class="fa fa-check completion-task-modal-header-icon" aria-hidden="true"></i> Complete Task
                 </h5>
                 <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>

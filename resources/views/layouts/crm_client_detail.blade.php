@@ -1521,7 +1521,7 @@
             transition: background-color .15s ease, color .15s ease !important; 
         }
         .icon-btn:hover { background: rgba(0,123,255,.1) !important; color: #0d6efd !important; }
-        .icon-btn .countbell { position: relative !important; top: -10px !important; left: -6px !important; background: #1f1655 !important; color:#fff !important; border-radius: 10px !important; padding: 0 5px !important; font-size: 11px !important; }
+        /* Notification badge: see crm-theme.css (.notification-bell-inner / .countbell) */
         /* Flash animation when notification count updates */
         .notification-bell-flash { animation: notificationBellFlash 0.6s ease-out !important; }
         @keyframes notificationBellFlash {
@@ -2437,15 +2437,7 @@
         });
 
         $(document).ready(function(){
-            (function () {
-                var bell = document.getElementById('countbell_notification');
-                if (!bell || bell.closest('#crm-access-notification-dropdown')) return;
-                var p = bell.parentNode;
-                if (!p) return;
-                p.addEventListener('click', function () {
-                    window.location = "/all-notifications";
-                });
-            })();
+            /* Notification bell navigates via href on .notification-toggle (route crm.all-notifications) */
 
         /*function load_unseen_notification(view = '')  {
             $.ajax({
@@ -2913,7 +2905,7 @@
             var prevCount = parseInt(String(el.textContent || '0'), 10) || 0;
             var newCount = (typeof count === 'number') ? count : (parseInt(String(count), 10) || 0);
             el.textContent = newCount > 0 ? String(newCount) : '';
-            el.style.display = newCount > 0 ? 'inline' : 'none';
+            el.style.removeProperty('display');
             var parent = el.closest('.notification-toggle') || el.parentElement;
             if (parent) {
                 parent.classList.add('notification-bell-flash');

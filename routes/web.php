@@ -271,7 +271,7 @@ Route::middleware(['auth:admin'])->group(function() {
 	Route::post('/mark-notification-seen', [CRMUtilityController::class, 'markNotificationSeen']);
 	Route::get('/check-checkin-status', [DashboardController::class, 'checkCheckinStatus']);
 	Route::post('/update-checkin-status', [DashboardController::class, 'updateCheckinStatus']);
-	Route::get('/all-notifications', [CRMUtilityController::class, 'allnotification']);
+	Route::get('/all-notifications', [CRMUtilityController::class, 'allnotification'])->name('crm.all-notifications');
 	Route::get('/fetch-InPersonWaitingCount', [CRMUtilityController::class, 'fetchInPersonWaitingCount']);
 	Route::get('/fetch-TotalActivityCount', [CRMUtilityController::class, 'fetchTotalActivityCount']);
 

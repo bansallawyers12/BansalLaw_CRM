@@ -124,8 +124,11 @@
             @php
                 $notifUnread = \App\Models\Notification::where('receiver_id', Auth::user()->id)->where('receiver_status', 0)->count();
             @endphp
-            <a href="#" class="icon-btn notification-toggle" title="Notifications">
-                <i class="fas fa-bell"></i><span class="countbell" id="countbell_notification">{{ $notifUnread > 0 ? $notifUnread : '' }}</span>
+            <a href="{{ route('crm.all-notifications') }}" class="icon-btn notification-toggle" title="Notifications">
+                <span class="notification-bell-inner">
+                    <i class="fas fa-bell" aria-hidden="true"></i>
+                    <span class="countbell" id="countbell_notification" aria-live="polite">{{ $notifUnread > 0 ? $notifUnread : '' }}</span>
+                </span>
             </a>
         @endif
         <div class="profile-dropdown js-dropdown-right">

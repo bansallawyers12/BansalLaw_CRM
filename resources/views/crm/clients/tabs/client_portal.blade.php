@@ -4485,8 +4485,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         const el = document.getElementById('countbell_notification');
                         if (el) {
-                            el.textContent = count > 0 ? count : '';
-                            el.style.display = count > 0 ? 'inline' : 'none';
+                            el.textContent = count > 0 ? String(count) : '';
+                            el.style.removeProperty('display');
                         }
                     }
                 } catch (err) {
