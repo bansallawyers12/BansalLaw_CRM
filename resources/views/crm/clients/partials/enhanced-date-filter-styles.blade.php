@@ -115,7 +115,8 @@
         margin-left: 8px;
     }
 
-    .clear-filter-btn {
+    button.clear-filter-btn,
+    a.clear-filter-btn {
         background: transparent;
         border: 2px solid var(--danger, #a83020);
         color: var(--danger, #a83020);
@@ -128,11 +129,37 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        text-decoration: none !important;
+        box-sizing: border-box;
     }
 
-    .clear-filter-btn:hover {
+    a.clear-filter-btn:hover,
+    a.clear-filter-btn:focus,
+    a.clear-filter-btn:active {
+        text-decoration: none !important;
+    }
+
+    .clear-filter-btn i,
+    .clear-filter-btn .fas,
+    .clear-filter-btn .fa {
+        color: inherit;
+    }
+
+    .clear-filter-btn:hover,
+    .clear-filter-btn:focus {
         background: var(--danger, #a83020);
-        color: #fff;
+        border-color: var(--danger, #a83020);
+        color: #fff !important;
+        text-decoration: none !important;
+    }
+
+    .clear-filter-btn:hover i,
+    .clear-filter-btn:focus i,
+    .clear-filter-btn:hover .fas,
+    .clear-filter-btn:focus .fas,
+    .clear-filter-btn:hover .fa,
+    .clear-filter-btn:focus .fa {
+        color: #fff !important;
     }
 
     .divider-text {

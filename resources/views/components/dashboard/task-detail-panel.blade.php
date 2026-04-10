@@ -307,12 +307,12 @@
     appearance: none;
 }
 
-/* docs/theme.md — tokens from :root (crm-theme.css) */
+/* docs/theme.md — primary button: --navy; hover: --sidebar-active */
 .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task {
-    background-color: var(--success, #1e7a52) !important;
-    border: 1px solid var(--success, #1e7a52) !important;
+    background-color: var(--navy, #1e3d60) !important;
+    border: 1px solid var(--navy, #1e3d60) !important;
     color: #ffffff !important;
-    box-shadow: 0 2px 6px rgba(30, 122, 82, 0.2);
+    box-shadow: 0 2px 6px rgba(30, 61, 96, 0.2);
 }
 
 .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task i {
@@ -321,14 +321,14 @@
 
 .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task:hover,
 .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task:focus {
-    background-color: #186846 !important;
-    border-color: #186846 !important;
+    background-color: var(--sidebar-active, #3a6fa8) !important;
+    border-color: var(--sidebar-active, #3a6fa8) !important;
     color: #ffffff !important;
 }
 
 .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task:focus {
     outline: none;
-    box-shadow: 0 2px 6px rgba(30, 122, 82, 0.2), 0 0 0 2px rgba(58, 111, 168, 0.25);
+    box-shadow: 0 2px 6px rgba(30, 61, 96, 0.2), 0 0 0 2px rgba(58, 111, 168, 0.25);
 }
 
 .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-extend-task {

@@ -61,17 +61,6 @@
         font-size: 12px;
         font-weight: 700;
     }
-    .clear-filter-btn {
-        background: transparent;
-        border: 2px solid #ef4444;
-        color: #ef4444;
-        padding: 6px 14px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-    }
-    .clear-filter-btn:hover { background: #ef4444; color: white; }
     .sortable-header a { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
     .thCls,.tdCls { white-space: initial !important; }
     .badge-closed { background: #6b7280; color: white; }

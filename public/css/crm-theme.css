@@ -336,18 +336,18 @@ body.sidebar-mini .btn.disabled {
   opacity: 0.55;
 }
 
-/* Dashboard task detail slide-over — footer actions (docs/theme.md tokens) */
+/* Dashboard task detail slide-over — primary action (theme.md: navy / sidebar-active hover) */
 body.sidebar-mini .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task {
-  background-color: var(--success) !important;
-  border: 1px solid var(--success) !important;
+  background-color: var(--navy) !important;
+  border: 1px solid var(--navy) !important;
   color: #fff !important;
   background-image: none !important;
 }
 
 body.sidebar-mini .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task:hover,
 body.sidebar-mini .task-detail-panel .task-detail-footer .task-detail-action-btn.btn-complete-task:focus {
-  background-color: #186846 !important;
-  border-color: #186846 !important;
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
   color: #fff !important;
 }
 
@@ -373,6 +373,18 @@ body.sidebar-mini .task-detail-panel .task-detail-footer .task-detail-action-btn
   color: var(--navy) !important;
 }
 
+/* Complete Task modal — header: global h5 { color: navy !important } hid title on navy bar */
+body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-header .modal-title,
+body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-header .modal-title i {
+  color: #fff !important;
+}
+
+body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-header .close,
+body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-header .close span {
+  color: #fff !important;
+  opacity: 0.9;
+}
+
 /* Complete Task modal (dashboard) — beats global .btn-* on .btn-cancel-complete / .btn-complete-task-primary */
 body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-cancel-complete {
   background-color: var(--card-bg) !important;
@@ -389,16 +401,16 @@ body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-foo
 }
 
 body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-complete-task-primary {
-  background-color: var(--success) !important;
+  background-color: var(--navy) !important;
   background-image: none !important;
-  border: 1px solid var(--success) !important;
+  border: 1px solid var(--navy) !important;
   color: #fff !important;
 }
 
 body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-complete-task-primary:hover,
 body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-complete-task-primary:focus {
-  background-color: #186846 !important;
-  border-color: #186846 !important;
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
   color: #fff !important;
 }
 
@@ -716,4 +728,46 @@ body.sidebar-mini .badge.badge-success {
 .badge-status-review {
   background: rgba(30, 61, 96, 0.1) !important;
   color: var(--navy) !important;
+}
+
+/* Clear Filters — theme.md --danger; beat link/FA hover (blue + underline) */
+body.sidebar-mini button.clear-filter-btn,
+body.sidebar-mini a.clear-filter-btn {
+  border-color: var(--danger) !important;
+  color: var(--danger) !important;
+  background: transparent !important;
+  text-decoration: none !important;
+}
+
+body.sidebar-mini a.clear-filter-btn:hover,
+body.sidebar-mini a.clear-filter-btn:focus,
+body.sidebar-mini a.clear-filter-btn:active {
+  text-decoration: none !important;
+}
+
+body.sidebar-mini .clear-filter-btn i,
+body.sidebar-mini .clear-filter-btn .fas,
+body.sidebar-mini .clear-filter-btn .fa {
+  color: inherit !important;
+}
+
+body.sidebar-mini .clear-filter-btn:hover,
+body.sidebar-mini .clear-filter-btn:focus {
+  background-color: var(--danger) !important;
+  border-color: var(--danger) !important;
+  color: #fff !important;
+  text-decoration: none !important;
+}
+
+body.sidebar-mini .clear-filter-btn:hover i,
+body.sidebar-mini .clear-filter-btn:focus i,
+body.sidebar-mini .clear-filter-btn:hover .fas,
+body.sidebar-mini .clear-filter-btn:focus .fas,
+body.sidebar-mini .clear-filter-btn:hover .fa,
+body.sidebar-mini .clear-filter-btn:focus .fa,
+body.sidebar-mini .clear-filter-btn:hover svg,
+body.sidebar-mini .clear-filter-btn:focus svg {
+  color: #fff !important;
+  fill: #fff !important;
+  text-decoration: none !important;
 }

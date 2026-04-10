@@ -246,28 +246,6 @@
         margin-left: 8px;
     }
 
-    /* Clear Filters Button */
-    .clear-filter-btn {
-        background: transparent;
-        border: 2px solid #ef4444;
-        color: #ef4444;
-        padding: 6px 14px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .clear-filter-btn:hover {
-        background: #ef4444;
-        color: white;
-        transform: translateY(-2px);
-    }
-
     .divider-text {
         color: #94a3b8;
         font-size: 12px;
@@ -829,6 +807,7 @@
         margin-top: 2px;
     }
 </style>
+@include('crm.clients.partials.enhanced-date-filter-styles')
 @endsection
 
 @section('content')

@@ -420,12 +420,12 @@
     padding: 1rem 1.25rem;
 }
 #dashboardCompletionNotesModal .dashboard-completion-modal-header .modal-title {
-    color: #fff;
+    color: #fff !important;
     font-weight: 700;
     font-size: 1.1rem;
 }
 #dashboardCompletionNotesModal .dashboard-completion-modal-header .modal-title i {
-    color: var(--accent-gold, #c8992a);
+    color: var(--accent-gold, #c8992a) !important;
     margin-right: 0.35rem;
 }
 #dashboardCompletionNotesModal .dashboard-completion-modal-header .close {
@@ -501,24 +501,24 @@
     border-color: var(--border, #c8dcef) !important;
     color: var(--navy, #1e3d60) !important;
 }
-/* Primary action = --success */
+/* Primary action — theme.md: primary button = --navy, hover = --sidebar-active */
 #dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-complete-task-primary {
-    background-color: var(--success, #1e7a52) !important;
+    background-color: var(--navy, #1e3d60) !important;
     background-image: none !important;
-    border: 1px solid var(--success, #1e7a52) !important;
+    border: 1px solid var(--navy, #1e3d60) !important;
     color: #fff !important;
     font-weight: 600;
     border-radius: 8px;
     padding: 0.45rem 1rem;
-    box-shadow: 0 2px 6px rgba(30, 122, 82, 0.2);
+    box-shadow: 0 2px 6px rgba(30, 61, 96, 0.2);
 }
 #dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-complete-task-primary i {
     color: #fff !important;
 }
 #dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-complete-task-primary:hover,
 #dashboardCompletionNotesModal .dashboard-completion-modal-footer .btn.btn-complete-task-primary:focus {
-    background-color: #186846 !important;
-    border-color: #186846 !important;
+    background-color: var(--sidebar-active, #3a6fa8) !important;
+    border-color: var(--sidebar-active, #3a6fa8) !important;
     color: #fff !important;
 }
 </style>

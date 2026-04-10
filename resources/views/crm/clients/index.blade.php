@@ -219,25 +219,6 @@
         gap: 6px;
     }
 
-    .clear-filter-btn {
-        background: transparent;
-        border: 2px solid #ef4444;
-        color: #ef4444;
-        padding: 6px 14px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .clear-filter-btn:hover {
-        background: #ef4444;
-        color: white;
-    }
-
     .listing-container .form-group label {
         color: #475569 !important;
         font-weight: 600;
