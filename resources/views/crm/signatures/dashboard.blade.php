@@ -3,155 +3,195 @@
 
 @section('styles')
 <style>
+    /* Signature dashboard — aligned with docs/theme.md (Powder Blue & Soft Gold) */
     .signature-dashboard {
         padding: 20px;
     }
-    
+
     .dashboard-header {
         margin-bottom: 30px;
     }
-    
+
     .dashboard-header h1 {
         font-size: 24px;
-        font-weight: 600;
-        color: #2c3e50;
+        font-weight: 700;
+        color: var(--navy);
         margin-bottom: 10px;
     }
-    
+
+    .dashboard-header .text-muted-theme {
+        color: var(--text-muted);
+        margin: 0;
+    }
+
     .stats-cards {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 20px;
         margin-bottom: 30px;
     }
-    
+
     .stat-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
         padding: 20px;
-        border-radius: 10px;
-        color: white;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        color: var(--text-dark);
     }
-    
+
     .stat-card.sent {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-left: 4px solid var(--sidebar-active);
     }
-    
+
     .stat-card.pending {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border-left: 4px solid var(--accent-gold);
     }
-    
+
     .stat-card.signed {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        border-left: 4px solid var(--success);
     }
-    
+
     .stat-card.overdue {
-        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        border-left: 4px solid var(--danger);
     }
-    
+
+    .stat-card.stat-card--visible {
+        border-left: 4px solid var(--sidebar-active);
+        background: linear-gradient(180deg, rgba(221, 234, 248, 0.5) 0%, var(--card-bg) 100%);
+    }
+
     .stat-card h3 {
-        font-size: 14px;
-        font-weight: 500;
+        font-size: 11.5px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
         margin-bottom: 10px;
-        opacity: 0.9;
+        color: var(--text-muted);
     }
-    
+
     .stat-card .number {
-        font-size: 32px;
+        font-size: 28px;
         font-weight: 700;
+        color: var(--navy);
     }
-    
+
     .tabs-container {
-        background: white;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
         border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
         overflow: hidden;
     }
-    
-    .nav-tabs {
-        border-bottom: 2px solid #e9ecef;
+
+    .signature-dashboard .nav-tabs {
+        border-bottom: 1px solid var(--border);
         padding: 0 20px;
-        background: #f8f9fa;
+        background: var(--page-bg);
     }
-    
-    .nav-tabs .nav-link {
+
+    .signature-dashboard .nav-tabs .nav-link {
         border: none;
-        color: #6c757d;
+        color: var(--text-muted);
         padding: 15px 20px;
-        font-weight: 500;
+        font-weight: 600;
         position: relative;
     }
-    
-    .nav-tabs .nav-link:hover {
-        color: #667eea;
+
+    .signature-dashboard .nav-tabs .nav-link:hover {
+        color: var(--sidebar-active);
         border-color: transparent;
     }
-    
-    .nav-tabs .nav-link.active {
-        color: #667eea;
+
+    .signature-dashboard .nav-tabs .nav-link.active {
+        color: var(--navy);
         background: transparent;
         border-color: transparent;
     }
-    
-    .nav-tabs .nav-link.active::after {
+
+    .signature-dashboard .nav-tabs .nav-link.active::after {
         content: '';
         position: absolute;
-        bottom: -2px;
+        bottom: -1px;
         left: 0;
         right: 0;
-        height: 2px;
-        background: #667eea;
+        height: 3px;
+        background: var(--sidebar-active);
+        border-radius: 2px 2px 0 0;
     }
-    
+
     .filter-bar {
         padding: 20px;
-        background: #f8f9fa;
-        border-bottom: 1px solid #e9ecef;
+        background: var(--page-bg);
+        border-bottom: 1px solid var(--border);
         display: flex;
         gap: 15px;
         flex-wrap: wrap;
         align-items: center;
     }
-    
+
     .filter-bar select,
-    .filter-bar input {
+    .filter-bar input.form-control {
         padding: 8px 12px;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
         font-size: 14px;
+        background: var(--card-bg);
+        color: var(--text-dark);
     }
-    
+
+    .filter-bar .scope-toggle {
+        display: flex;
+        gap: 5px;
+        padding: 4px;
+        background: var(--sidebar-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+    }
+
     .documents-table {
         width: 100%;
         padding: 20px;
     }
-    
+
     .documents-table table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0 10px;
     }
-    
+
     .documents-table th {
         text-align: left;
         padding: 12px;
-        color: #6c757d;
+        color: var(--text-muted);
         font-weight: 600;
         font-size: 13px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        background: var(--page-bg);
     }
-    
+
     .documents-table td {
         padding: 15px 12px;
-        background: #f8f9fa;
+        background: var(--card-bg);
+        border: none;
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
         vertical-align: middle;
         word-wrap: break-word;
         overflow-wrap: break-word;
     }
-    
+
+    .documents-table td:first-child {
+        border-left: 1px solid var(--border);
+    }
+
+    .documents-table td:last-child {
+        border-right: 1px solid var(--border);
+    }
+
     .document-link {
-        color: #2c3e50;
+        color: var(--text-dark);
         text-decoration: none;
         transition: color 0.2s ease;
         cursor: pointer;
@@ -159,70 +199,75 @@
         word-wrap: break-word;
         overflow-wrap: break-word;
     }
-    
+
     .document-link:hover {
-        color: #667eea;
+        color: var(--sidebar-active);
         text-decoration: none;
     }
-    
+
     .document-link strong {
         font-weight: 600;
     }
-    
+
     .documents-table tr {
-        transition: all 0.2s ease;
+        transition: background-color 0.2s ease;
     }
-    
+
     .documents-table tr:hover td {
-        background: #e9ecef;
+        background: #ebf3ff;
     }
-    
+
     .documents-table td:first-child {
         border-radius: 8px 0 0 8px;
     }
-    
+
     .documents-table td:last-child {
         border-radius: 0 8px 8px 0;
     }
-    
+
     .badge-status {
         padding: 5px 12px;
         border-radius: 20px;
         font-size: 12px;
-        font-weight: 500;
+        font-weight: 600;
     }
-    
+
     .badge-draft {
-        background: #6c757d;
-        color: white;
+        background: rgba(94, 122, 144, 0.12);
+        color: var(--text-muted);
     }
-    
+
     .badge-sent {
-        background: #ffc107;
-        color: #000;
+        background: rgba(200, 153, 42, 0.15);
+        color: #7a5800;
     }
-    
+
     .badge-signed {
-        background: #28a745;
-        color: white;
+        background: rgba(30, 122, 82, 0.12);
+        color: var(--success);
     }
-    
+
     .association-chip {
         display: inline-flex;
         align-items: center;
         gap: 5px;
         padding: 4px 10px;
-        background: #e7f3ff;
-        color: #0066cc;
+        background: rgba(30, 61, 96, 0.08);
+        color: var(--navy);
         border-radius: 15px;
         font-size: 12px;
         font-weight: 500;
     }
-    
+
+    .association-chip:hover {
+        background: rgba(30, 61, 96, 0.12);
+        color: var(--sidebar-active);
+    }
+
     .association-chip i {
         font-size: 10px;
     }
-    
+
     .visibility-badge {
         display: inline-flex;
         align-items: center;
@@ -230,70 +275,87 @@
         padding: 4px 10px;
         border-radius: 15px;
         font-size: 11px;
-        font-weight: 500;
+        font-weight: 600;
     }
-    
+
     .badge-owner {
-        background: #e3f2fd;
-        color: #1565c0;
+        background: rgba(58, 111, 168, 0.12);
+        color: var(--navy);
     }
-    
+
     .badge-signer {
-        background: #fff3e0;
-        color: #e65100;
+        background: rgba(200, 153, 42, 0.15);
+        color: #7a5800;
     }
-    
+
     .badge-associated {
-        background: #f3e5f5;
-        color: #6a1b9a;
+        background: rgba(30, 61, 96, 0.1);
+        color: var(--navy);
     }
-    
+
     .badge-admin {
-        background: #e8f5e9;
-        color: #2e7d32;
+        background: rgba(30, 122, 82, 0.12);
+        color: var(--success);
     }
-    
+
     .badge-visible {
-        background: #fce4ec;
-        color: #c2185b;
+        background: rgba(200, 153, 42, 0.12);
+        color: #7a5800;
     }
-    
+
     .btn-primary-custom {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: var(--navy);
+        color: #fff;
         padding: 10px 20px;
         border-radius: 8px;
         border: none;
-        font-weight: 500;
+        font-weight: 600;
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        transition: all 0.2s ease;
+        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.12);
+        transition: background-color 0.2s ease, box-shadow 0.2s ease;
     }
-    
+
     .btn-primary-custom:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        color: white;
+        background: var(--sidebar-active);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(30, 61, 96, 0.15);
     }
-    
+
     .overdue-indicator {
-        color: #dc3545;
+        color: var(--danger);
         font-weight: 600;
         font-size: 11px;
     }
-    
+
     .empty-state {
         text-align: center;
         padding: 60px 20px;
-        color: #6c757d;
+        color: var(--text-muted);
     }
-    
+
+    .empty-state h3 {
+        color: var(--navy);
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: var(--text-muted);
+    }
+
     .empty-state i {
         font-size: 48px;
         margin-bottom: 20px;
-        opacity: 0.5;
+        opacity: 0.45;
+        color: var(--sidebar-active);
+    }
+
+    .signature-dashboard #bulk-actions-bar {
+        background: var(--page-bg) !important;
+        border: 1px solid var(--border);
     }
 </style>
 @endsection
@@ -308,7 +370,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <h1>📝 Signature Dashboard</h1>
-                <p style="color: #6c757d;">Manage and track document signatures</p>
+                <p class="text-muted-theme">Manage and track document signatures</p>
             </div>
             <div style="display: flex; gap: 10px;">
                 <a href="{{ route('documents.create') }}" class="btn-primary-custom">
@@ -339,7 +401,7 @@
         </div>
         @endif
         @if(! $sigEffectiveSa)
-        <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+        <div class="stat-card stat-card--visible">
             <h3>Visible to Me</h3>
             <div class="number">{{ $counts['visible_to_me'] ?? 0 }}</div>
         </div>
@@ -402,7 +464,7 @@
                 <input type="hidden" name="tab" value="{{ request('tab') }}">
                 
                 <!-- Visibility Scope Filter -->
-                <div style="display: flex; gap: 5px; padding: 4px; background: #e9ecef; border-radius: 8px;">
+                <div class="scope-toggle">
                     <a href="{{ route('signatures.index', array_merge(request()->except('scope'), ['scope' => 'team'])) }}" 
                        class="btn btn-sm {{ !request('scope') || request('scope') == 'team' ? 'btn-primary' : 'btn-light' }}"
                        style="padding: 6px 15px; font-size: 13px;">
@@ -450,7 +512,7 @@
             @if($documents->count() > 0)
             
             <!-- Bulk Actions Bar -->
-            <div id="bulk-actions-bar" style="display: none; padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 15px;">
+            <div id="bulk-actions-bar" style="display: none; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                 <span id="selected-count" style="font-weight: 600; margin-right: 15px;">0 selected</span>
                 <button type="button" onclick="bulkResend()" class="btn btn-sm btn-warning">
                     <i class="fas fa-bell"></i> Send Reminders
@@ -528,12 +590,12 @@
                                 </a>
                                 @endif
                             @else
-                                <span style="color: #6c757d; font-size: 12px;">Ad-hoc</span>
+                                <span style="color: var(--text-muted); font-size: 12px;">Ad-hoc</span>
                             @endif
                         </td>
                         <td>
                             {{ $doc->created_at->format('M d, Y') }}<br>
-                            <small style="color: #6c757d;">{{ $doc->created_at->diffForHumans() }}</small>
+                            <small style="color: var(--text-muted);">{{ $doc->created_at->diffForHumans() }}</small>
                         </td>
                     </tr>
                     @endforeach
