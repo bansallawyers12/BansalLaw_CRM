@@ -379,6 +379,7 @@
 @push('styles')
 @once
 <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+<link rel="stylesheet" href="{{ asset('css/task-popover-modern.css') }}">
 <style>
 .dashboard-theme-icon-primary {
     color: var(--primary-color);
@@ -1018,18 +1019,19 @@
     }
 
     .popover .popover-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        color: white !important;
-        border-bottom: none !important;
+        background: #ffffff !important;
+        color: #1e3d60 !important;
+        border-bottom: 1px solid #c8dcef !important;
         border-radius: 8px 8px 0 0 !important;
         padding: 12px 18px !important;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
         font-size: 15px !important;
-        letter-spacing: 0.5px !important;
+        letter-spacing: 0.02em !important;
     }
 
     .popover .popover-body {
         padding: 15px !important;
+        background: #f0f6ff !important;
         word-wrap: break-word !important;
         white-space: normal !important;
     }
@@ -1142,6 +1144,17 @@
         border-radius: 6px;
         padding: 8px 12px;
         font-size: 14px;
+        color: #1a2c40 !important;
+    }
+
+    .popover .dropdown-multi-select .btn-default,
+    .popover .dropdown-multi-select .dropdown-toggle {
+        color: #1a2c40 !important;
+    }
+
+    .popover .dropdown-multi-select .selected-count {
+        color: #5e7a90;
+        font-weight: 600;
     }
 
     .popover .dropdown-multi-select .assignee-list {

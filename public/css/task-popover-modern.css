@@ -1,30 +1,29 @@
 /**
- * Modern Task Popup Styling
- * Matches the Add Notes modal design for consistency
+ * Modern Task Popup Styling — docs/theme.md (Powder Blue & Soft Gold)
  */
 
 /* Base Popover Styling */
 .popover {
     border-radius: 12px !important;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
-    border: none !important;
+    box-shadow: 0 20px 60px rgba(30, 61, 96, 0.12) !important;
+    border: 1px solid #c8dcef !important;
     max-width: 500px !important;
     z-index: 9999 !important;
 }
 
 .popover-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    color: white !important;
-    border-bottom: none !important;
+    background: #ffffff !important;
+    color: #1e3d60 !important;
+    border-bottom: 1px solid #c8dcef !important;
     padding: 15px 20px !important;
     border-radius: 12px 12px 0 0 !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     font-size: 1.1rem !important;
 }
 
 .popover-body {
     padding: 20px !important;
-    background: #fafbfc !important;
+    background: #f0f6ff !important;
     border-radius: 0 0 12px 12px !important;
 }
 
@@ -40,7 +39,7 @@
 /* Labels */
 .popover-body .control-label {
     font-weight: 600;
-    color: #2d3748;
+    color: #5e7a90;
     margin-bottom: 8px;
     font-size: 0.9rem;
     display: block;
@@ -49,6 +48,7 @@
 .popover-body .control-label i {
     font-size: 0.85rem;
     margin-right: 5px;
+    color: #1e3d60;
 }
 
 /* Form Controls */
@@ -68,8 +68,8 @@
 .popover-body select:focus,
 .popover-body textarea:focus,
 .popover-body input:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: #3a6fa8;
+    box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
     outline: none;
 }
 
@@ -82,8 +82,8 @@
 }
 
 .popover-body .select2-container--default.select2-container--focus .select2-selection--single {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: #3a6fa8;
+    box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
 }
 
 /* Buttons */
@@ -96,15 +96,19 @@
 
 .popover-body .btn-primary,
 .popover-body .btn-info {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    background: #1e3d60;
+    border: 1px solid #1e3d60;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(30, 61, 96, 0.2);
 }
 
 .popover-body .btn-primary:hover,
 .popover-body .btn-info:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    background: #3a6fa8;
+    border-color: #3a6fa8;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(58, 111, 168, 0.25);
 }
 
 .popover-body .btn-secondary,
@@ -142,17 +146,28 @@
     position: relative;
 }
 
-.popover-body .dropdown-multi-select .dropdown-toggle {
+.popover-body .dropdown-multi-select .dropdown-toggle,
+.popover-body .dropdown-multi-select .btn-default {
     width: 100%;
     text-align: left;
     padding: 10px 14px;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    background: white;
+    border: 1px solid #c8dcef;
+    background: #ffffff;
+    color: #1a2c40 !important;
 }
 
-.popover-body .dropdown-multi-select .dropdown-toggle:hover {
-    border-color: #667eea;
+.popover-body .dropdown-multi-select .dropdown-toggle:hover,
+.popover-body .dropdown-multi-select .dropdown-toggle:focus,
+.popover-body .dropdown-multi-select .btn-default:hover,
+.popover-body .dropdown-multi-select .btn-default:focus {
+    border-color: #3a6fa8;
+    color: #1e3d60 !important;
+}
+
+.popover-body .dropdown-multi-select .selected-count {
+    color: #5e7a90;
+    font-weight: 600;
 }
 
 .popover-body .dropdown-multi-select .dropdown-menu {
@@ -182,8 +197,8 @@
 }
 
 .popover-body .dropdown-multi-select .assignee-search-input:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    border-color: #3a6fa8;
+    box-shadow: 0 0 0 2px rgba(58, 111, 168, 0.15);
 }
 
 .popover-body .dropdown-multi-select .assignee-list {
@@ -197,45 +212,87 @@
     cursor: pointer;
 }
 
-.popover-body .dropdown-multi-select .assignee-item {
+/*
+ * custom.css applies a purple gradient to all .dropdown-item:hover — override inside
+ * assignee popovers so list rows match docs/theme.md (Powder Blue & Soft Gold).
+ */
+.popover-body .dropdown-multi-select .dropdown-item,
+.popover .dropdown-multi-select .dropdown-item {
+    color: #1a2c40 !important;
+    background-color: #ffffff !important;
+    background-image: none !important;
 }
 
-.popover-body .dropdown-multi-select .assignee-item:hover {
-    background-color: #f1f5f9;
+.popover-body .dropdown-multi-select .dropdown-item:hover,
+.popover-body .dropdown-multi-select .dropdown-item:focus,
+.popover .dropdown-multi-select .dropdown-item:hover,
+.popover .dropdown-multi-select .dropdown-item:focus {
+    background-color: #ddeaf8 !important;
+    background-image: none !important;
+    color: #1e3d60 !important;
+}
+
+.popover-body .dropdown-multi-select .dropdown-item.active,
+.popover-body .dropdown-multi-select .dropdown-item:active,
+.popover .dropdown-multi-select .dropdown-item.active,
+.popover .dropdown-multi-select .dropdown-item:active {
+    background-color: #c8dcef !important;
+    background-image: none !important;
+    color: #1e3d60 !important;
+}
+
+.popover-body .dropdown-multi-select .assignee-item:hover,
+.popover .dropdown-multi-select .assignee-item:hover {
+    background-color: #ddeaf8 !important;
+    background-image: none !important;
+    color: #1e3d60 !important;
+}
+
+.popover-body .dropdown-multi-select .assignee-item:has(.checkbox-item:checked),
+.popover .dropdown-multi-select .assignee-item:has(.checkbox-item:checked) {
+    background-color: rgba(58, 111, 168, 0.12) !important;
+    background-image: none !important;
+    color: #1e3d60 !important;
+}
+
+.popover-body .dropdown-multi-select .assignee-item:has(.checkbox-item:checked):hover,
+.popover .dropdown-multi-select .assignee-item:has(.checkbox-item:checked):hover {
+    background-color: rgba(58, 111, 168, 0.2) !important;
+    color: #1e3d60 !important;
 }
 
 /* Read More Button in Table */
 .btn_readmore {
-    color: #667eea !important;
+    color: #3a6fa8 !important;
     text-decoration: none !important;
     background: none !important;
     border: none !important;
     padding: 0 !important;
     font-size: inherit !important;
     cursor: pointer !important;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .btn_readmore:hover {
-    color: #764ba2 !important;
+    color: #1e3d60 !important;
     text-decoration: underline !important;
 }
 
 /* Popover Arrow */
 .popover .arrow::before {
-    border-top-color: #667eea !important;
+    border-top-color: #c8dcef !important;
 }
 
 .popover[x-placement^="bottom"] .arrow::before {
-    border-bottom-color: #667eea !important;
+    border-bottom-color: #c8dcef !important;
 }
 
 .popover[x-placement^="left"] .arrow::before {
-    border-left-color: #667eea !important;
+    border-left-color: #c8dcef !important;
 }
 
 .popover[x-placement^="right"] .arrow::before {
-    border-right-color: #667eea !important;
+    border-right-color: #c8dcef !important;
 }
 
 /* Date Picker Input */
@@ -302,7 +359,7 @@
 
 /* Task Group Icons */
 .popover-body .control-label i.fa {
-    color: #667eea;
+    color: #1e3d60;
 }
 
 /* Placeholder styling */
@@ -313,7 +370,7 @@
 
 /* Focus visible for accessibility */
 .popover-body .form-control:focus-visible {
-    outline: 2px solid #667eea;
+    outline: 2px solid #3a6fa8;
     outline-offset: 2px;
 }
 
