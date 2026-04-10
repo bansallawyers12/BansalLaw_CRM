@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 use App\Models\Admin;
+use App\Models\Staff;
 use App\Models\ActivitiesLog;
 use App\Models\Document;
 use App\Models\ClientMatter;
@@ -2732,8 +2733,8 @@ class ClientDocumentsController extends Controller
      */
     public function deletePersonalDocCategory(Request $request) {
         try {
-            // Check if user is superadmin (role = 1)
-            if (Auth::user()->role !== 1) {
+            $viewer = Auth::user();
+            if (! ($viewer instanceof Staff && $viewer->hasEffectiveSuperAdminPrivileges())) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Only superadmin can delete categories.'

@@ -267,6 +267,11 @@
 @endsection
 
 @section('content')
+@php
+    $_cmViewer = Auth::user();
+    $_cmEffectiveSa = $_cmViewer instanceof \App\Models\Staff && $_cmViewer->hasEffectiveSuperAdminPrivileges();
+    $_cmInsightsBtn = $_cmViewer && ($_cmEffectiveSa || in_array((int) ($_cmViewer->role ?? 0), [1, 12], true));
+@endphp
 <div class="listing-container">
     <section class="listing-section" style="padding-top: 40px;">
         <div class="listing-section-body">
@@ -278,7 +283,7 @@
                 <div class="card-header">
                     <h4>All Clients Matters</h4>
                     <div class="card-header-actions">
-                        @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
+                        @if($_cmInsightsBtn)
                         <a href="{{ route('clients.insights', ['section' => 'matters']) }}" class="btn btn-theme btn-theme-sm" title="Matter Insights">
                             <i class="fas fa-chart-line"></i> Insights
                         </a>
@@ -518,7 +523,7 @@
                                         </a>
                                     </th>
                                     <th class="thCls">Office</th>
-                                    @if(Auth::user()->role == 1)
+                                    @if($_cmEffectiveSa)
                                     <th class="thCls">Action</th>
                                     @endif
                                 </tr>
@@ -570,7 +575,7 @@
                                                     </a>
                                                 @endif
                                             </td>
-                                            @if(Auth::user()->role == 1)
+                                            @if($_cmEffectiveSa)
                                             <td class="tdCls">
                                                 <div class="dropdown d-inline">
                                                     <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
@@ -585,7 +590,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="{{ Auth::user()->role == 1 ? '10' : '9' }}" style="text-align: center; padding: 20px;">
+                                        <td colspan="{{ $_cmEffectiveSa ? '10' : '9' }}" style="text-align: center; padding: 20px;">
                                             No Record Found
                                         </td>
                                     </tr>

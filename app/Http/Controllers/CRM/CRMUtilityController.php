@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Redirect;
 
 use App\Models\Lead;
 use App\Models\Admin;
+use App\Models\Staff;
 use App\Models\Country;
 // use App\Models\WebsiteSetting; // removed website settings dependency
 // use App\Models\State; // REMOVED: State model has been deleted
@@ -1696,7 +1697,9 @@ public function getChapters(Request $request)
      */
     public function fetchTotalActivityCount(Request $request)
     {
-        if (Auth::user()->role == 1) {
+        $viewer = Auth::user();
+        $seeAll = $viewer instanceof Staff && $viewer->hasEffectiveSuperAdminPrivileges();
+        if ($seeAll) {
             $assigneesCount = \App\Models\Note::where('type', 'client')
                 ->whereNotNull('client_id')
                 ->where('is_action', 1)

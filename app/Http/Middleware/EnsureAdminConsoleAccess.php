@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Staff;
+use App\Services\CrmAccess\CrmAccessService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,7 +26,9 @@ class EnsureAdminConsoleAccess
         }
 
         $allowedRoles = [1, 12]; // Super Admin, Admin
-        if (!in_array((int) $user->role, $allowedRoles)) {
+        $staff = $user instanceof Staff ? $user : null;
+        $elevatedSuperAdmin = $staff && app(CrmAccessService::class)->hasEffectiveSuperAdminPrivileges($staff);
+        if (! in_array((int) $user->role, $allowedRoles, true) && ! $elevatedSuperAdmin) {
             return redirect()->route('dashboard')->with('error', 'Unauthorized: Only Admin and Super Admin can access Admin Console.');
         }
 

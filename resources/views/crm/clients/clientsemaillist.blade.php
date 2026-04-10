@@ -171,6 +171,10 @@
 @endsection
 
 @section('content')
+@php
+    $_emViewer = Auth::user();
+    $_emEffectiveSa = $_emViewer instanceof \App\Models\Staff && $_emViewer->hasEffectiveSuperAdminPrivileges();
+@endphp
 <div class="listing-container">
     <section class="listing-section" style="padding-top: 40px;">
         <div class="listing-section-body">
@@ -231,7 +235,7 @@
                                     <th class="thCls">Phone</th>
                                     <th class="thCls">Type</th>
                                     <th class="thCls">Created At</th>
-                                    @if(Auth::user()->role == 1)
+                                    @if($_emEffectiveSa)
                                     <th class="thCls">Action</th>
                                     @endif
                                 </tr>
@@ -249,7 +253,7 @@
                                             <td class="tdCls">{{ @$list->phone == "" ? config('constants.empty') : Str::limit(@$list->phone, '50', '...') }}</td>
                                             <td class="tdCls">{{ @$list->type == "" ? config('constants.empty') : Str::limit(@$list->type, '50', '...') }}</td>
                                             <td class="tdCls">{{date('d/m/Y', strtotime($list->created_at))}}</td>
-                                            @if(Auth::user()->role == 1)
+                                            @if($_emEffectiveSa)
                                             <td class="tdCls">
                                                 <div class="dropdown d-inline">
                                                     <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
@@ -265,7 +269,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="{{ Auth::user()->role == 1 ? '7' : '6' }}" style="text-align: center; padding: 20px;">
+                                        <td colspan="{{ $_emEffectiveSa ? '7' : '6' }}" style="text-align: center; padding: 20px;">
                                             No Record Found
                                         </td>
                                     </tr>

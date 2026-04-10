@@ -89,7 +89,10 @@ class CrmAccessServiceQuickOnlyTest extends TestCase
             $approverOnly = new Staff(['role' => 13, 'grant_super_admin_access' => true]);
             $approverOnly->id = 36718;
             $this->assertTrue((new CrmAccessService())->isApprover($approverOnly));
+            session([CrmAccessService::SESSION_SUPER_ADMIN_ELEVATED => true]);
             $this->assertTrue((new CrmAccessService())->isExemptRole($approverOnly));
+            session()->forget(CrmAccessService::SESSION_SUPER_ADMIN_ELEVATED);
+            $this->assertFalse((new CrmAccessService())->isExemptRole($approverOnly));
         } finally {
             config(['crm_access.exempt_staff_ids' => $prevExempt]);
         }

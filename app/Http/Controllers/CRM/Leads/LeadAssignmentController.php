@@ -59,8 +59,8 @@ class LeadAssignmentController extends Controller
      */
     public function bulkAssign(Request $request)
     {
-        // Check if staff is super admin (role = 1)
-        if (Auth::user()->role != 1) {
+        $actor = Auth::user();
+        if (! ($actor instanceof Staff && $actor->hasEffectiveSuperAdminPrivileges())) {
             return redirect()->back()->with('error', 'Only super admin can perform bulk assignments');
         }
         

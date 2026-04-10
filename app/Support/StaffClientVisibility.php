@@ -94,7 +94,7 @@ final class StaffClientVisibility
             return false;
         }
 
-        if ($user instanceof Staff && app(CrmAccessService::class)->hasGrantedSuperAdminLevelAccess($user)) {
+        if ($user instanceof Staff && app(CrmAccessService::class)->hasEffectiveSuperAdminPrivileges($user)) {
             return true;
         }
 

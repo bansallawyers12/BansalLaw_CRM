@@ -1,3 +1,8 @@
+@php
+    $_staffTop = Auth::user();
+    $_crmTopAdminish = $_staffTop instanceof \App\Models\Staff
+        && (in_array((int) $_staffTop->role, [1, 12], true) || $_staffTop->hasEffectiveSuperAdminPrivileges());
+@endphp
 <nav class="main-topbar">
     <button class="topbar-toggle" title="Show menu" aria-label="Toggle topbar">
         <i class="fas fa-ellipsis-h"></i>
@@ -33,7 +38,7 @@
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}">
                         <i class="fas fa-calendar-alt mr-2"></i> Michael
                     </a>
-                    @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
+                    @if($_crmTopAdminish)
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ route('booking.sync.dashboard') }}">
                         <i class="fas fa-sync mr-2"></i> Sync Status
@@ -62,7 +67,7 @@
             <div class="icon-dropdown js-dropdown">
                 <a href="{{route('clients.invoicelist')}}" class="icon-btn" title="Accounts"><i class="fas fa-briefcase"></i></a>
                 <div class="icon-dropdown-menu">
-                    @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
+                    @if($_crmTopAdminish)
                     <a class="dropdown-item" href="{{route('clients.analytics-dashboard')}}" style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); font-weight: 600;"><i class="fas fa-chart-line mr-2" style="color: #667eea;"></i> Analytics Dashboard</a>
                     <div class="dropdown-divider"></div>
                     @endif
@@ -99,6 +104,19 @@
         </form>
     </div>
     <div class="topbar-right">
+        @if($_staffTop instanceof \App\Models\Staff && $_staffTop->canToggleSuperAdminElevation())
+            @php
+                $_saElevated = $_staffTop->hasEffectiveSuperAdminPrivileges();
+            @endphp
+            <form action="{{ route('crm.session.super-admin-mode') }}" method="post" class="d-inline align-middle mr-1" style="vertical-align: middle;">
+                @csrf
+                <input type="hidden" name="elevated" value="{{ $_saElevated ? '0' : '1' }}">
+                <button type="submit" class="icon-btn {{ $_saElevated ? 'text-primary' : '' }}" title="{{ $_saElevated ? 'Using Super Admin access — click to return to normal role' : 'Switch to Super Admin access (full privileges)' }}" style="white-space: nowrap;">
+                    <i class="fas fa-user-shield"></i>
+                    <span class="d-none d-xl-inline ml-1" style="font-size: 12px; font-weight: 600;">{{ $_saElevated ? 'Super Admin' : 'Normal' }}</span>
+                </button>
+            </form>
+        @endif
         <a href="javascript:;" title="Add Office Check-In" class="icon-btn opencheckin"><i class="fas fa-person-booth"></i></a>
         @if(Auth::user())
             @php
@@ -117,7 +135,7 @@
                     <i class="far fa-user"></i> 
                     <span>Profile</span>
                 </a>
-                @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
+                @if($_crmTopAdminish)
                 <a href="{{route('adminconsole.features.matter.index')}}">
                     <i class="fas fa-cogs"></i> 
                     <span>Admin Console</span>

@@ -19,6 +19,7 @@ use App\Http\Controllers\CRM\BroadcastController;
 use App\Http\Controllers\CRM\AuditLogController;
 use App\Http\Controllers\Auth\AdminLoginController;
 use App\Http\Controllers\CRM\ReverbMessagingLabController;
+use App\Http\Controllers\CRM\SuperAdminElevationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -84,6 +85,8 @@ Route::get('/logout', function() {
 |--------------------------------------------------*/
 // Main CRM routes at root level with auth:admin middleware
 Route::middleware(['auth:admin'])->group(function() {
+
+    Route::post('/session/super-admin-mode', [SuperAdminElevationController::class, 'update'])->name('crm.session.super-admin-mode');
 
 	/*---------- Dashboard Routes ----------*/
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

@@ -3,7 +3,8 @@
                 <div class="card full-width documentalls-container">
                     <?php
                     $clientId = $fetchedData->id ?? null;
-                    $isSuperAdmin = \Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->role == 1;
+                    $_pdViewer = \Illuminate\Support\Facades\Auth::user();
+                    $isSuperAdmin = $_pdViewer instanceof \App\Models\Staff && $_pdViewer->hasEffectiveSuperAdminPrivileges();
                     $persDocCatList = \Illuminate\Support\Facades\Schema::hasTable('personal_document_types')
                         ? \App\Models\PersonalDocumentType::select('id', 'title', 'client_id')
                             ->where('status', 1)

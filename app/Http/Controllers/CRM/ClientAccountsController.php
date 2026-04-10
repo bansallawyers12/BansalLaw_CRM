@@ -4648,10 +4648,11 @@ class ClientAccountsController extends Controller
   {
       $response = array();
       if (isset($request->receiptId) && !empty($request->receiptId)) {
-          // Ensure the user is a Super Admin (role = 1)
-          // Optionally check for specific authorized email from config
+          // Super Admin (role 1) or elevated grant; optional authorized email from config
           $authorizedEmail = config('app.super_admin_email');
-          if (Auth::user()->role != '1' || (config('app.require_super_admin_email') && Auth::user()->email != $authorizedEmail)) {
+          $receiptActor = Auth::user();
+          $receiptOk = $receiptActor instanceof \App\Models\Staff && $receiptActor->hasEffectiveSuperAdminPrivileges();
+          if (! $receiptOk || (config('app.require_super_admin_email') && Auth::user()->email != $authorizedEmail)) {
            $response['status'] = false;
            $response['message'] = 'Unauthorized access.';
            return response()->json($response);

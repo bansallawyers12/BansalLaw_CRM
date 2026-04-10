@@ -16,7 +16,13 @@ use Illuminate\Support\Str;
 
 class CrmAccessService
 {
-    public function hasGrantedSuperAdminLevelAccess(Staff $user): bool
+    public const SESSION_SUPER_ADMIN_ELEVATED = 'crm_super_admin_elevated';
+
+    /**
+     * Role 1 or staff flagged with grant_super_admin_access (approvers, grant checkbox).
+     * Does not depend on session — used for access queue approval and similar.
+     */
+    public function hasPermanentSuperAdminCapability(Staff $user): bool
     {
         if ((int) ($user->role ?? 0) === 1) {
             return true;
@@ -25,14 +31,49 @@ class CrmAccessService
         return (bool) ($user->grant_super_admin_access ?? false);
     }
 
+    /**
+     * Same as {@see hasPermanentSuperAdminCapability} (legacy name).
+     */
+    public function hasGrantedSuperAdminLevelAccess(Staff $user): bool
+    {
+        return $this->hasPermanentSuperAdminCapability($user);
+    }
+
+    public function canToggleSuperAdminElevation(Staff $user): bool
+    {
+        return (bool) ($user->grant_super_admin_access ?? false)
+            && (int) ($user->role ?? 0) !== 1;
+    }
+
+    public function isSuperAdminElevationActive(): bool
+    {
+        return (bool) session(self::SESSION_SUPER_ADMIN_ELEVATED, false);
+    }
+
+    /**
+     * Super Admin (role 1) always; grant_super_admin_access staff only when session elevation is on.
+     */
+    public function hasEffectiveSuperAdminPrivileges(Staff $user): bool
+    {
+        if ((int) ($user->role ?? 0) === 1) {
+            return true;
+        }
+
+        if (! (bool) ($user->grant_super_admin_access ?? false)) {
+            return false;
+        }
+
+        return $this->isSuperAdminElevationActive();
+    }
+
     public function hasAdminConsoleLikeSuperAdminAccess(Staff $user): bool
     {
-        return $this->hasGrantedSuperAdminLevelAccess($user);
+        return $this->hasEffectiveSuperAdminPrivileges($user);
     }
 
     public function isExemptRole(Staff $user): bool
     {
-        if ($this->hasGrantedSuperAdminLevelAccess($user)) {
+        if ($this->hasEffectiveSuperAdminPrivileges($user)) {
             return true;
         }
 
@@ -51,12 +92,12 @@ class CrmAccessService
      */
     public function canManageStaffQuickAccess(Staff $actor): bool
     {
-        return $this->hasAdminConsoleLikeSuperAdminAccess($actor);
+        return $this->hasPermanentSuperAdminCapability($actor);
     }
 
     public function isApprover(Staff $user): bool
     {
-        return $this->hasAdminConsoleLikeSuperAdminAccess($user);
+        return $this->hasPermanentSuperAdminCapability($user);
     }
 
     /** @return list<int> */
