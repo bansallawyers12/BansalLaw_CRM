@@ -9,10 +9,11 @@
 
 @php
     // Define gradient colors based on icon class
+    /* docs/theme.md — navy, accent-gold, success */
     $gradients = [
-        'icon-active' => ['from' => '#4e73df', 'to' => '#224abe', 'icon-bg' => 'rgba(78, 115, 223, 0.1)'],
-        'icon-pending' => ['from' => '#f6c23e', 'to' => '#e0a800', 'icon-bg' => 'rgba(246, 194, 62, 0.1)'],
-        'icon-success' => ['from' => '#1cc88a', 'to' => '#13855c', 'icon-bg' => 'rgba(28, 200, 138, 0.1)'],
+        'icon-active' => ['from' => '#1e3d60', 'to' => '#3a6fa8', 'icon-bg' => 'rgba(30, 61, 96, 0.1)'],
+        'icon-pending' => ['from' => '#c8992a', 'to' => '#9a7619', 'icon-bg' => 'rgba(200, 153, 42, 0.12)'],
+        'icon-success' => ['from' => '#1e7a52', 'to' => '#155a3c', 'icon-bg' => 'rgba(30, 122, 82, 0.12)'],
     ];
     
     $gradient = $gradients[$iconClass] ?? $gradients['icon-active'];
@@ -63,7 +64,7 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, var(--from-color, #4e73df), var(--to-color, #224abe));
+    background: linear-gradient(90deg, var(--from-color, #1e3d60), var(--to-color, #3a6fa8));
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -108,10 +109,10 @@
 .kpi-title {
     margin: 0 0 10px 0;
     font-size: 0.8em;
-    color: #858796;
+    color: #5e7a90;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.06em;
 }
 
 .kpi-count {
@@ -122,10 +123,7 @@
 .kpi-count-link {
     font-size: 2.2em;
     font-weight: 800;
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #1a2c40;
     line-height: 1;
     display: inline-block;
     transition: all 0.3s ease;
@@ -134,10 +132,7 @@
 
 .kpi-count-link:hover {
     transform: scale(1.05);
-    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #3a6fa8;
 }
 
 /* Shine effect on hover */
@@ -161,17 +156,17 @@
     transform: translateX(100%);
 }
 
-/* Specific icon styling */
+/* Specific icon styling — theme.md */
 .icon-active {
-    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    background: linear-gradient(135deg, #1e3d60 0%, #3a6fa8 100%);
 }
 
 .icon-pending {
-    background: linear-gradient(135deg, #f6c23e 0%, #e0a800 100%);
+    background: linear-gradient(135deg, #c8992a 0%, #a87f19 100%);
 }
 
 .icon-success {
-    background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
+    background: linear-gradient(135deg, #1e7a52 0%, #155a3c 100%);
 }
 
 @media (max-width: 768px) {

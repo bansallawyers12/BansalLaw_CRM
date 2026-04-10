@@ -48,7 +48,7 @@
             'label' => 'Document Uploaded',
             'icon' => 'fa-upload',
             'class' => 'activity-upload',
-            'color' => '#007bff'
+            'color' => '#3a6fa8'
         ],
         'note_added' => [
             'label' => 'Note Added',
@@ -72,7 +72,7 @@
             'label' => 'Status Changed',
             'icon' => 'fa-exchange-alt',
             'class' => 'activity-status',
-            'color' => '#6f42c1'
+            'color' => '#1e3d60'
         ],
         'stage_updated' => [
             'label' => 'Stage Updated',
@@ -144,65 +144,65 @@
     font-size: 1em;
 }
 
-/* Activity Type Colors */
+/* Activity Type Colors — theme.md soft tints */
 .activity-signed {
-    background: #d4edda;
-    color: #155724;
-    border-color: #28a745;
+    background: rgba(30, 122, 82, 0.12);
+    color: #1e7a52;
+    border-color: rgba(30, 122, 82, 0.35);
 }
 
 .activity-upload {
-    background: #cce5ff;
-    color: #004085;
-    border-color: #007bff;
+    background: rgba(58, 111, 168, 0.12);
+    color: #1e3d60;
+    border-color: rgba(58, 111, 168, 0.35);
 }
 
 .activity-note {
-    background: #fff3cd;
-    color: #856404;
-    border-color: #ffc107;
+    background: rgba(200, 153, 42, 0.15);
+    color: #7a5800;
+    border-color: rgba(200, 153, 42, 0.4);
 }
 
 .activity-email {
-    background: #d1ecf1;
-    color: #0c5460;
-    border-color: #17a2b8;
+    background: rgba(58, 111, 168, 0.1);
+    color: #1e3d60;
+    border-color: #c8dcef;
 }
 
 .activity-status {
-    background: #e2d9f3;
-    color: #3d1d6b;
-    border-color: #6f42c1;
+    background: rgba(30, 61, 96, 0.08);
+    color: #1e3d60;
+    border-color: rgba(30, 61, 96, 0.25);
 }
 
 .activity-stage {
-    background: #ffe5d0;
-    color: #7a3d00;
-    border-color: #fd7e14;
+    background: rgba(200, 153, 42, 0.12);
+    color: #7a5800;
+    border-color: rgba(200, 153, 42, 0.35);
 }
 
 .activity-appointment {
-    background: #d4f4dd;
-    color: #0a4d1d;
-    border-color: #20c997;
+    background: rgba(30, 122, 82, 0.1);
+    color: #1e7a52;
+    border-color: rgba(30, 122, 82, 0.3);
 }
 
 .activity-payment {
-    background: #d4edda;
-    color: #155724;
-    border-color: #28a745;
+    background: rgba(30, 122, 82, 0.12);
+    color: #1e7a52;
+    border-color: rgba(30, 122, 82, 0.35);
 }
 
 .activity-sms {
-    background: #d0f4f7;
-    color: #006978;
-    border-color: #00bcd4;
+    background: rgba(58, 111, 168, 0.1);
+    color: #1e3d60;
+    border-color: #c8dcef;
 }
 
 .activity-default {
-    background: #e9ecef;
-    color: #495057;
-    border-color: #6c757d;
+    background: rgba(94, 122, 144, 0.12);
+    color: #1a2c40;
+    border-color: #c8dcef;
 }
 
 /* Hover effect */

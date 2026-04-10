@@ -4,65 +4,301 @@
 @section('content')
 
 <style>
-/* Force prevent horizontal scroll on this page */
-html, body {
+/* Website Bookings — Powder Blue & Soft Gold (docs/theme.md) */
+.booking-appointments-page {
     overflow-x: hidden !important;
-    overflow-y: auto !important;
     max-width: 100% !important;
 }
 
-/* Fix for white text color in tables */
-.card .card-body table.table {
-    --bs-table-color: #000 !important;
-    --bs-table-striped-color: #000 !important;
-    --bs-table-active-color: #000 !important;
-    --bs-table-hover-color: #000 !important;
+/* Main panel header — white card, navy title (overrides Stisla / legacy blue bars) */
+.booking-appointments-page > .row > .col-12 > .card > .card-header {
+    background: var(--card-bg) !important;
+    background-color: var(--card-bg) !important;
+    border-bottom: 1px solid var(--border) !important;
+    color: var(--navy) !important;
 }
 
-.card .card-body table.table th,
-.card .card-body table.table td {
-    color: #000 !important;
+.booking-appointments-page > .row > .col-12 > .card > .card-header h4 {
+    color: var(--navy) !important;
+    font-weight: 700;
 }
 
-/* Ensure badges are visible */
-.card .card-body table.table tbody td .badge {
-    color: #fff !important;
+.booking-appointments-page > .row > .col-12 > .card > .card-header h4 .text-muted {
+    color: var(--text-muted) !important;
+    font-weight: 600;
 }
 
-/* Status badges */
-.badge-pending { background-color: #ffc107; }
-.badge-paid { background-color: #007bff; }
-.badge-confirmed { background-color: #28a745; }
-.badge-completed { background-color: #17a2b8; }
-.badge-cancelled { background-color: #dc3545; }
-.badge-no-show { background-color: #6c757d; }
+.booking-appointments-page > .row > .col-12 > .card > .card-body {
+    background: var(--page-bg) !important;
+}
 
-/* Filter section styling */
-.filter-section {
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 5px;
+/* KPI stat cards — Stisla uses blue .card-header + white icons; reset to theme.md */
+.booking-appointments-page .card.card-statistic-1 {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+    overflow: hidden;
+    background: var(--card-bg) !important;
+}
+
+.booking-appointments-page .card.card-statistic-1 .card-icon {
+    border-radius: 0 !important;
+}
+
+.booking-appointments-page .card.card-statistic-1 .card-icon i {
+    color: inherit !important;
+    opacity: 1 !important;
+}
+
+.booking-appointments-page .card.card-statistic-1 .card-icon.bg-warning {
+    background: rgba(200, 153, 42, 0.2) !important;
+    background-color: rgba(200, 153, 42, 0.2) !important;
+    color: var(--accent-gold) !important;
+}
+
+.booking-appointments-page .card.card-statistic-1 .card-icon.bg-warning i {
+    color: var(--accent-gold) !important;
+}
+
+.booking-appointments-page .card.card-statistic-1 .card-icon.bg-primary {
+    background: rgba(30, 61, 96, 0.1) !important;
+    background-color: rgba(30, 61, 96, 0.1) !important;
+    color: var(--navy) !important;
+}
+
+.booking-appointments-page .card.card-statistic-1 .card-icon.bg-primary i {
+    color: var(--navy) !important;
+}
+
+.booking-appointments-page .card.card-statistic-1 .card-icon.bg-success {
+    background: rgba(30, 122, 82, 0.14) !important;
+    background-color: rgba(30, 122, 82, 0.14) !important;
+    color: var(--success) !important;
+}
+
+.booking-appointments-page .card.card-statistic-1 .card-icon.bg-success i {
+    color: var(--success) !important;
+}
+
+.booking-appointments-page .card.card-statistic-1 .card-icon.bg-info {
+    background: rgba(58, 111, 168, 0.14) !important;
+    background-color: rgba(58, 111, 168, 0.14) !important;
+    color: var(--sidebar-active) !important;
+}
+
+.booking-appointments-page .card.card-statistic-1 .card-icon.bg-info i {
+    color: var(--sidebar-active) !important;
+}
+
+/* Inner label row — must not use theme’s blue header strip */
+.booking-appointments-page .card.card-statistic-1 .card-wrap .card-header {
+    background: var(--card-bg) !important;
+    background-color: var(--card-bg) !important;
+    border-bottom: 1px solid var(--border) !important;
+    color: var(--text-muted) !important;
+    padding: 0.65rem 1rem !important;
+}
+
+.booking-appointments-page .card.card-statistic-1 .card-wrap .card-header h4 {
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted) !important;
+    margin: 0 !important;
+}
+
+.booking-appointments-page .card.card-statistic-1 .card-wrap .card-body {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--navy) !important;
+    background: var(--card-bg) !important;
+    background-color: var(--card-bg) !important;
+    padding: 0.75rem 1rem !important;
+    line-height: 1.2;
+}
+
+/* Filter strip */
+.booking-appointments-page .filter-section {
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    padding: 16px;
+    border-radius: 10px;
     margin-bottom: 20px;
 }
 
-/* Ensure Client Reference is visible */
-.card .card-body table.table tbody td .text-muted {
-    color: #6c757d !important;
+.booking-appointments-page .filter-section label {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
-.card .card-body table.table tbody td small.text-muted {
-    color: #6c757d !important;
+.booking-appointments-page .filter-section .form-control {
+    border-color: var(--border);
+    border-radius: 8px;
+    color: var(--text-dark);
 }
 
-/* Force Client Reference visibility */
-.card .card-body table.table tbody td small[style*="color"] {
-    color: #495057 !important;
+.booking-appointments-page .filter-section .form-control:focus {
+    border-color: var(--sidebar-active);
+    box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
+}
+
+/* Table — theme.md tables */
+.booking-appointments-page .table-responsive table.table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-dark);
+    --bs-table-striped-bg: rgba(221, 234, 248, 0.35);
+    --bs-table-hover-bg: #ebf3ff;
+    border-color: var(--border);
+}
+
+.booking-appointments-page .table-responsive table.table thead th {
+    background: var(--page-bg) !important;
+    color: var(--text-muted) !important;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-color: var(--border) !important;
+}
+
+.booking-appointments-page .table-responsive table.table tbody td {
+    color: var(--text-dark) !important;
+    border-color: var(--border) !important;
+    vertical-align: middle;
+}
+
+.booking-appointments-page .table-responsive table.table tbody td .text-muted {
+    color: var(--text-muted) !important;
+}
+
+.booking-appointments-page .table-responsive table.table tbody td small.text-muted {
+    color: var(--text-muted) !important;
+}
+
+.booking-appointments-page .table-responsive table.table tbody td small[style*="color"] {
+    color: var(--text-muted) !important;
     display: block !important;
     visibility: visible !important;
 }
+
+/* Status / payment badges — theme status colours */
+.booking-appointments-page .table .badge {
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 0.35em 0.65em;
+}
+
+.booking-appointments-page .table .badge.badge-warning {
+    background: rgba(200, 153, 42, 0.15) !important;
+    color: #7a5800 !important;
+}
+
+.booking-appointments-page .table .badge.badge-primary {
+    background: rgba(30, 61, 96, 0.12) !important;
+    color: var(--navy) !important;
+}
+
+.booking-appointments-page .table .badge.badge-success {
+    background: rgba(30, 122, 82, 0.12) !important;
+    color: var(--success) !important;
+}
+
+.booking-appointments-page .table .badge.badge-info {
+    background: rgba(58, 111, 168, 0.12) !important;
+    color: var(--sidebar-active) !important;
+}
+
+.booking-appointments-page .table .badge.badge-danger {
+    background: rgba(168, 48, 32, 0.12) !important;
+    color: var(--danger) !important;
+}
+
+.booking-appointments-page .table .badge.badge-secondary {
+    background: rgba(94, 122, 144, 0.12) !important;
+    color: var(--text-muted) !important;
+}
+
+.booking-appointments-page .table .badge.badge-dark {
+    background: rgba(94, 122, 144, 0.18) !important;
+    color: var(--text-dark) !important;
+}
+
+.booking-appointments-page .table tbody td .badge {
+    color: inherit !important;
+}
+
+/* Action buttons — keep icon contrast */
+.booking-appointments-page .btn-sm.btn-primary {
+    background: var(--navy);
+    border-color: var(--navy);
+}
+
+.booking-appointments-page .btn-sm.btn-primary:hover {
+    background: var(--sidebar-active);
+    border-color: var(--sidebar-active);
+}
+
+.booking-appointments-page .btn-sm.btn-warning {
+    background: var(--accent-gold);
+    border-color: var(--accent-gold);
+    color: #fff;
+}
+
+.booking-appointments-page .btn-sm.btn-info {
+    background: var(--sidebar-active);
+    border-color: var(--sidebar-active);
+    color: #fff;
+}
+
+/*
+ * custom.css targets .card-header-action .btn-primary for legacy purple gradient headers
+ * (rgba white fill + white text). On our light theme header that reads as invisible on hover.
+ */
+.booking-appointments-page .card-header-action .btn.btn-primary {
+    background: var(--navy) !important;
+    border: 1px solid var(--navy) !important;
+    color: #fff !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.booking-appointments-page .card-header-action .btn.btn-primary:hover,
+.booking-appointments-page .card-header-action .btn.btn-primary:focus {
+    background: var(--sidebar-active) !important;
+    border-color: var(--sidebar-active) !important;
+    color: #fff !important;
+    filter: none !important;
+}
+
+.booking-appointments-page .card-header-action .btn.btn-info {
+    background: var(--sidebar-active) !important;
+    border: 1px solid var(--sidebar-active) !important;
+    color: #fff !important;
+}
+
+.booking-appointments-page .card-header-action .btn.btn-info:hover,
+.booking-appointments-page .card-header-action .btn.btn-info:focus {
+    background: var(--navy) !important;
+    border-color: var(--navy) !important;
+    color: #fff !important;
+    filter: none !important;
+}
+
+.booking-appointments-page .table-responsive table.table tbody td a {
+    color: var(--sidebar-active);
+    font-weight: 600;
+}
+
+.booking-appointments-page .table-responsive table.table tbody td a:hover {
+    color: var(--navy);
+}
 </style>
 
-<div class="section-body">
+<div class="section-body booking-appointments-page">
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -270,7 +506,7 @@ html, body {
                                             <small>{{ $appointment->client_phone }}</small>
                                             @if($appointment->client && $appointment->client->client_id)
                                                 <div class="mt-1">
-                                                    <small style="color: #495057 !important;">{{ $appointment->client->client_id }}</small>
+                                                    <small class="text-muted">{{ $appointment->client->client_id }}</small>
                                                 </div>
                                             @endif
                                          @else
@@ -342,7 +578,7 @@ html, body {
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="8" class="text-center">
+                                    <td colspan="9" class="text-center">
                                         <p class="text-muted mt-3 mb-3">
                                             <i class="fas fa-info-circle"></i> No appointments found.
                                         </p>

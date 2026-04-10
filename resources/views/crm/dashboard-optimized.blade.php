@@ -47,7 +47,7 @@
                 <div class="todo-header">
                     <div class="todo-header-left">
                         <h3>
-                            <i class="fas fa-tasks" style="color: #2564cf;"></i> 
+                            <i class="fas fa-tasks dashboard-theme-icon-primary"></i> 
                             My Actions
                         </h3>
                         <span class="todo-count-badge">{{ $count_note_deadline }}</span>
@@ -380,13 +380,18 @@
 @once
 <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 <style>
-/* Microsoft To Do Style Task Widget */
+.dashboard-theme-icon-primary {
+    color: var(--primary-color);
+}
+
+/* Microsoft To Do Style Task Widget — theme.md */
 .todo-container {
-    background: #fafafa;
+    background: var(--background-color);
     border-radius: 12px;
     overflow: hidden;
     display: flex;
-    flex-direction: column; /* Use flexbox for internal layout */
+    flex-direction: column;
+    border: 1px solid var(--border-color);
 }
 
 .todo-header {
@@ -394,8 +399,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 20px;
-    background: white;
-    border-bottom: 1px solid #e0e0e0;
+    background: var(--card-bg-color);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .todo-header-left {
@@ -414,8 +419,8 @@
 }
 
 .todo-count-badge {
-    background: #2564cf;
-    color: white;
+    background: var(--primary-color);
+    color: #fff;
     padding: 4px 10px;
     border-radius: 12px;
     font-size: 13px;
@@ -428,25 +433,25 @@
     width: 40px;
     height: 40px;
     border: none;
-    background: #2564cf;
-    color: white;
+    background: var(--primary-color);
+    color: #fff;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(37, 100, 207, 0.3);
+    box-shadow: 0 2px 8px rgba(30, 61, 96, 0.2);
 }
 
 .todo-add-btn:hover {
-    background: #1e4fa0;
+    background: var(--secondary-color);
     transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(37, 100, 207, 0.4);
+    box-shadow: 0 4px 12px rgba(58, 111, 168, 0.35);
 }
 
 .todo-task-list-container {
-    background: white;
+    background: var(--card-bg-color);
     flex: 1; /* Allow container to grow and fill available space */
     min-height: 0; /* Important for flex children with overflow */
     max-height: 500px; /* Prevent containers from becoming extremely long */
@@ -462,10 +467,10 @@
 .todo-load-more {
     padding: 12px 16px;
     text-align: center;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid var(--border-color);
     font-size: 13px;
-    color: #666;
-    background: #fafafa;
+    color: var(--text-muted-color);
+    background: var(--background-color);
 }
 
 .todo-load-more p {
@@ -474,15 +479,15 @@
 
 .todo-view-all-link {
     display: inline-block;
-    color: #2564cf;
+    color: var(--secondary-color);
     text-decoration: none;
-    font-weight: 500;
+    font-weight: 600;
     font-size: 13px;
     transition: color 0.2s ease;
 }
 
 .todo-view-all-link:hover {
-    color: #1a4fa0;
+    color: var(--primary-color);
     text-decoration: underline;
 }
 
@@ -493,19 +498,19 @@
 
 .todo-empty-icon {
     font-size: 64px;
-    color: #d0d0d0;
+    color: rgba(94, 122, 144, 0.35);
     margin-bottom: 16px;
 }
 
 .todo-empty-state h4 {
-    color: #666;
+    color: var(--primary-color);
     margin: 0 0 8px 0;
     font-size: 18px;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .todo-empty-state p {
-    color: #999;
+    color: var(--text-muted-color);
     font-size: 14px;
     margin: 0 0 24px 0;
 }
@@ -513,11 +518,11 @@
 .todo-empty-add-btn {
     padding: 10px 20px;
     border: none;
-    background: #2564cf;
-    color: white;
-    border-radius: 6px;
+    background: var(--primary-color);
+    color: #fff;
+    border-radius: 8px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -526,7 +531,7 @@
 }
 
 .todo-empty-add-btn:hover {
-    background: #1e4fa0;
+    background: var(--secondary-color);
     transform: translateY(-1px);
 }
 
@@ -564,8 +569,12 @@
 .header-title-section h1 {
     margin: 0;
     font-size: 1.8em;
-    font-weight: 600;
-    color: #333;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.cases-overview-header h3 i {
+    color: var(--primary-color);
 }
 
 .header-actions {
@@ -590,35 +599,37 @@
 }
 
 .action-btn-primary {
-    background: linear-gradient(135deg, #005792 0%, #003d66 100%);
-    color: white;
+    background: var(--primary-color);
+    color: #fff;
 }
 
 .action-btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 87, 146, 0.4);
+    background: var(--secondary-color);
+    box-shadow: 0 4px 12px rgba(30, 61, 96, 0.2);
 }
 
 .action-btn-secondary {
-    background: white;
-    color: #005792;
-    border: 2px solid #005792;
+    background: var(--card-bg-color);
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
 }
 
 .action-btn-secondary:hover {
-    background: #005792;
-    color: white;
+    background: var(--primary-color);
+    color: #fff;
 }
 
 .action-btn-outline {
     background: transparent;
-    color: #005792;
-    border: 2px solid #005792;
+    color: var(--primary-color);
+    border: 2px solid var(--border-color);
 }
 
 .action-btn-outline:hover {
-    background: #005792;
-    color: white;
+    background: var(--background-color);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
 }
 
 /* Focus Container Enhancements */
@@ -629,9 +640,14 @@
     margin-bottom: 15px;
 }
 
+.focus-header h3 {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
 .badge-count {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: var(--primary-color);
+    color: #fff;
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 0.85em;
@@ -639,12 +655,12 @@
 }
 
 .section-info {
-    background: #e7f3ff;
-    border-left: 3px solid #2196f3;
+    background: rgba(221, 234, 248, 0.6);
+    border-left: 3px solid var(--secondary-color);
     padding: 10px 15px;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 0.85em;
-    color: #0d47a1;
+    color: var(--primary-color);
     margin-bottom: 15px;
     display: flex;
     align-items: center;
@@ -652,7 +668,7 @@
 }
 
 .section-info i {
-    color: #2196f3;
+    color: var(--secondary-color);
 }
 
 .task-list-modern {
@@ -669,19 +685,19 @@
 }
 
 .empty-state-modern i {
-    color: #cbd5e0;
+    color: rgba(94, 122, 144, 0.4);
     margin-bottom: 15px;
 }
 
 .empty-state-modern h4 {
-    color: #666;
+    color: var(--primary-color);
     margin: 10px 0 5px 0;
     font-size: 1.2em;
     font-weight: 600;
 }
 
 .empty-state-modern p {
-    color: #999;
+    color: var(--text-muted-color);
     font-size: 0.95em;
 }
 
@@ -692,10 +708,10 @@
 }
 
 .data-table-enhanced thead th {
-    background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
+    background: var(--background-color);
     font-weight: 600;
-    color: #495057;
-    border-bottom: 2px solid #dee2e6;
+    color: var(--text-muted-color);
+    border-bottom: 2px solid var(--border-color);
     padding: 12px 8px;
 }
 
@@ -704,24 +720,24 @@
 }
 
 .data-table-enhanced tbody tr:hover {
-    background-color: #f1f8ff;
+    background-color: #ebf3ff;
     transform: scale(1.001);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(30, 61, 96, 0.06);
 }
 
 .matter-link {
-    color: #005792;
-    font-weight: 500;
+    color: var(--secondary-color);
+    font-weight: 600;
     text-decoration: none;
 }
 
 .matter-link:hover {
-    color: #003d66;
+    color: var(--primary-color);
     text-decoration: underline;
 }
 
 .client-id-link {
-    color: #005792;
+    color: var(--secondary-color);
     font-weight: 600;
     text-decoration: none;
     font-family: 'Courier New', monospace;
@@ -732,8 +748,9 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: rgba(30, 61, 96, 0.12);
+    color: var(--primary-color);
+    border: 1px solid var(--border-color);
     padding: 3px 8px;
     border-radius: 12px;
     font-size: 0.75em;
@@ -752,8 +769,8 @@
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: var(--primary-color);
+    color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -776,8 +793,8 @@
 }
 
 .stage-select-enhanced:focus {
-    border-color: #005792;
-    box-shadow: 0 0 0 3px rgba(0, 87, 146, 0.1);
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
     outline: none;
     z-index: 10;
     position: relative;
@@ -1069,8 +1086,8 @@
     }
 
     .popover .form-control:focus {
-        border-color: #0d6efd !important;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
+        border-color: var(--secondary-color) !important;
+        box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
         outline: 0 !important;
     }
 
@@ -1090,15 +1107,16 @@
     }
 
     .popover .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        border: none !important;
-        color: white !important;
+        background: var(--primary-color) !important;
+        border: 1px solid var(--primary-color) !important;
+        color: #fff !important;
     }
 
     .popover .btn-primary:hover {
-        background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+        background: var(--secondary-color) !important;
+        border-color: var(--secondary-color) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(30, 61, 96, 0.2) !important;
     }
 
     .popover .error-message {
@@ -1161,8 +1179,8 @@
     }
 
     .popover .js-data-example-ajaxccsearch__addmytask:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        border-color: var(--secondary-color);
+        box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2);
         outline: 0;
     }
 

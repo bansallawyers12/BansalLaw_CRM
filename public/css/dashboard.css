@@ -412,7 +412,7 @@
 }
 
 .filter-button:hover {
-    background-color: #00416a;
+    background-color: var(--secondary-color);
 }
 
 .clear-filters {
@@ -462,7 +462,7 @@
 .data-table th {
     font-weight: 600;
     color: var(--text-muted-color);
-    background-color: #f8f9fa;
+    background-color: var(--background-color);
 }
 
 .data-table tbody tr:last-child td {
@@ -470,7 +470,7 @@
 }
 
 .data-table tbody tr:hover {
-    background-color: #f1f5f9;
+    background-color: #ebf3ff;
 }
 
 .action-button {
@@ -484,7 +484,7 @@
 }
 
 .action-button:hover {
-    background-color: #00416a;
+    background-color: var(--secondary-color);
 }
 
 /* Pagination */
@@ -560,7 +560,7 @@
 }
 
 .column-toggle-btn:hover {
-    background-color: #00416a;
+    background-color: var(--secondary-color);
 }
 
 .visible-count {

@@ -21,7 +21,21 @@ class BansalApiClient
         $this->baseUrl = rtrim($baseUrl ?: config('services.bansal_api.url'), '/');
         $this->apiToken = $apiToken ?: config('services.bansal_api.token');
         $this->timeout = $timeout ?: config('services.bansal_api.timeout', 30);
+    }
 
+    /**
+     * Whether the Bansal API token is set (local dev can load the app without it).
+     */
+    public function isConfigured(): bool
+    {
+        return ! empty($this->apiToken);
+    }
+
+    /**
+     * @throws Exception
+     */
+    protected function assertTokenConfigured(): void
+    {
         if (empty($this->apiToken)) {
             throw new Exception('Bansal API token not configured. Set BANSAL_API_TOKEN in .env');
         }
@@ -32,6 +46,8 @@ class BansalApiClient
      */
     protected function client(): PendingRequest
     {
+        $this->assertTokenConfigured();
+
         return Http::timeout($this->timeout)
             ->withToken($this->apiToken)
             ->acceptJson()
@@ -75,6 +91,8 @@ class BansalApiClient
     public function getAppointmentById(int $id): ?array
     {
         try {
+            $this->assertTokenConfigured();
+
             $response = Http::timeout($this->timeout)
                 ->withToken($this->apiToken)
                 ->get("{$this->baseUrl}/appointments/{$id}");
@@ -105,6 +123,8 @@ class BansalApiClient
     public function getAppointmentsByDateRange(string $startDate, string $endDate, int $page = 1): array
     {
         try {
+            $this->assertTokenConfigured();
+
             $response = Http::timeout($this->timeout)
                 ->withToken($this->apiToken)
                 ->get("{$this->baseUrl}/appointments", [
@@ -191,6 +211,8 @@ class BansalApiClient
     public function testConnection(): bool
     {
         try {
+            $this->assertTokenConfigured();
+
             $response = Http::timeout($this->timeout)
                 ->withToken($this->apiToken)
                 ->get("{$this->baseUrl}/appointments/recent", ['minutes' => 1]);

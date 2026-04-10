@@ -130,7 +130,7 @@
     display: flex;
     align-items: center;
     padding: 12px 16px;
-    background: white;
+    background: var(--card-bg-color, #fff);
     border-radius: 8px;
     margin-bottom: 2px;
     cursor: pointer;
@@ -140,8 +140,8 @@
 }
 
 .todo-task-item:hover {
-    background: #f5f5f5;
-    border-color: #e0e0e0;
+    background: #ebf3ff;
+    border-color: var(--border-color, #c8dcef);
 }
 
 .todo-task-item:hover .todo-task-hover-actions {
@@ -166,12 +166,12 @@
 }
 
 .task-complete-checkbox:hover {
-    border-color: #2564cf;
+    border-color: var(--primary-color, #1e3d60);
 }
 
 .task-complete-checkbox:checked {
-    background: #2564cf;
-    border-color: #2564cf;
+    background: var(--primary-color, #1e3d60);
+    border-color: var(--primary-color, #1e3d60);
 }
 
 .task-complete-checkbox:checked::after {
@@ -193,7 +193,7 @@
 
 .todo-task-title {
     font-size: 14px;
-    color: #333;
+    color: var(--text-color, #1a2c40);
     margin-bottom: 4px;
     white-space: nowrap;
     overflow: hidden;
@@ -205,7 +205,7 @@
     align-items: center;
     gap: 12px;
     font-size: 12px;
-    color: #666;
+    color: var(--text-muted-color, #5e7a90);
 }
 
 .task-client-info {
@@ -247,33 +247,33 @@
 }
 
 .todo-task-due.overdue {
-    color: #d32f2f;
-    background: #ffebee;
+    color: var(--danger-color, #a83020);
+    background: rgba(168, 48, 32, 0.1);
 }
 
 .todo-task-due.today {
-    color: #f57c00;
-    background: #fff3e0;
+    color: #7a5800;
+    background: rgba(200, 153, 42, 0.15);
 }
 
 .todo-task-due.tomorrow {
-    color: #f57c00;
-    background: #fff3e0;
+    color: #7a5800;
+    background: rgba(200, 153, 42, 0.12);
 }
 
 .todo-task-due.this-week {
-    color: #1976d2;
-    background: #e3f2fd;
+    color: var(--primary-color, #1e3d60);
+    background: rgba(58, 111, 168, 0.12);
 }
 
 .todo-task-due.upcoming {
-    color: #666;
-    background: #f5f5f5;
+    color: var(--text-muted-color, #5e7a90);
+    background: rgba(221, 234, 248, 0.5);
 }
 
 .todo-task-due.no-deadline {
-    color: #999;
-    background: #f9f9f9;
+    color: var(--text-muted-color, #5e7a90);
+    background: var(--background-color, #f0f6ff);
     font-style: italic;
 }
 
@@ -300,8 +300,8 @@
 }
 
 .todo-action-btn:hover {
-    background: #e0e0e0;
-    color: #333;
+    background: rgba(58, 111, 168, 0.15);
+    color: var(--primary-color, #1e3d60);
 }
 
 @media (max-width: 768px) {
