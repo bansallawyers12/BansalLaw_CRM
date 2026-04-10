@@ -725,7 +725,7 @@
                 </a>
                 @endif
             </div>
-            @if(auth('admin')->user()->role === 1)
+            @if(auth('admin')->user() instanceof \App\Models\Staff && auth('admin')->user()->hasEffectiveSuperAdminPrivileges())
             <button type="button" class="btn btn-sm btn-danger" onclick="confirmDetach()">
                 <i class="fas fa-unlink"></i> Detach
             </button>

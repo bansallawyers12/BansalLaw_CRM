@@ -433,8 +433,10 @@ class ClientsController extends Controller
 
     public function insights(Request $request)
     {
-        // Restrict to admin and super admin only (roles 1, 12)
-        if (!in_array(Auth::user()->role ?? 0, [1, 12])) {
+        $insightsUser = Auth::user();
+        $insightsOk = ($insightsUser instanceof Staff && $insightsUser->hasEffectiveSuperAdminPrivileges())
+            || in_array((int) ($insightsUser->role ?? 0), [12], true);
+        if (! $insightsOk) {
             return redirect()->back()->with('error', 'Only admin and super admin can view insights.');
         }
 

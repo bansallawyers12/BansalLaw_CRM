@@ -81,6 +81,11 @@
 @endsection
 
 @section('content')
+@php
+    $_cmViewer = Auth::user();
+    $_cmEffectiveSa = $_cmViewer instanceof \App\Models\Staff && $_cmViewer->hasEffectiveSuperAdminPrivileges();
+    $_cmInsightsBtn = $_cmViewer && ($_cmEffectiveSa || in_array((int) ($_cmViewer->role ?? 0), [1, 12], true));
+@endphp
 <div class="listing-container">
     <section class="listing-section" style="padding-top: 40px;">
         <div class="listing-section-body">
@@ -91,7 +96,7 @@
                 <div class="card-header">
                     <h4>All Clients Matters</h4>
                     <div class="card-header-actions">
-                        @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
+                        @if($_cmInsightsBtn)
                         <a href="{{ route('clients.insights', ['section' => 'matters']) }}" class="btn btn-theme btn-theme-sm" title="Matter Insights">
                             <i class="fas fa-chart-line"></i> Insights
                         </a>
@@ -273,7 +278,7 @@
                                     <th class="thCls">Status</th>
                                     <th class="thCls sortable-header"><a href="{{ $buildSortUrl('cm.created_at') }}">Created At {!! $sortIcon('cm.created_at') !!}</a></th>
                                     <th class="thCls">Office</th>
-                                    @if(Auth::user()->role == 1)
+                                    @if($_cmEffectiveSa)
                                     <th class="thCls">Reopen</th>
                                     @endif
                                 </tr>
@@ -283,7 +288,7 @@
                                     <?php $i=0; ?>
                                     @foreach (@$lists as $list)
                                         <?php
-                                        $mig_agent_info = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_legal_practitioner)->first();
+                                        $legal_practitioner_info = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_legal_practitioner)->first();
                                         $person_responsible = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_responsible)->first();
                                         $person_assisting = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_assisting)->first();
                                         $matter_office = $list->office_id ? \App\Models\Branch::find($list->office_id) : null;
@@ -295,7 +300,7 @@
                                             <td class="tdCls"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)).'/'.$list->client_unique_matter_no )}}">{{ @$list->title == "" ? config('constants.empty') : Str::limit(@$list->title, '50', '...') }} ({{ @$list->client_unique_matter_no == "" ? config('constants.empty') : Str::limit(@$list->client_unique_matter_no, '50', '...') }})</a></td>
                                             <td class="tdCls">{{ @$list->client_unique_id == "" ? config('constants.empty') : Str::limit(@$list->client_unique_id, '50', '...') }}</td>
                                             <td class="tdCls"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)) )}}">{{ @$list->first_name == "" ? config('constants.empty') : Str::limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : Str::limit(@$list->last_name, '50', '...') }}</a></td>
-                                            <td class="tdCls">{{ @$mig_agent_info->first_name ?? '' }} {{ @$mig_agent_info->last_name ?? '' }}</td>
+                                            <td class="tdCls">{{ @$legal_practitioner_info->first_name ?? '' }} {{ @$legal_practitioner_info->last_name ?? '' }}</td>
                                             <td class="tdCls">{{ @$person_responsible->first_name ?? '' }} {{ @$person_responsible->last_name ?? '' }}</td>
                                             <td class="tdCls">{{ @$person_assisting->first_name ?? '' }} {{ @$person_assisting->last_name ?? '' }}</td>
                                             <td class="tdCls"><span class="badge {{ $statusClass }}">{{ $statusLabel }}</span></td>
@@ -307,7 +312,7 @@
                                                     <span class="badge badge-warning" style="font-size: 11px;"><i class="fas fa-exclamation-triangle"></i> Not Assigned</span>
                                                 @endif
                                             </td>
-                                            @if(Auth::user()->role == 1)
+                                            @if($_cmEffectiveSa)
                                             <td class="tdCls">
                                                 @if($isDiscontinued)
                                                 <button class="btn btn-primary btn-sm closed-matter-reopen" type="button" data-matter-id="{{ $list->id }}"><i class="fas fa-redo"></i> Reopen</button>
@@ -321,7 +326,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="{{ Auth::user()->role == 1 ? '10' : '9' }}" style="text-align: center; padding: 20px;">No Record Found</td>
+                                        <td colspan="{{ $_cmEffectiveSa ? '10' : '9' }}" style="text-align: center; padding: 20px;">No Record Found</td>
                                     </tr>
                                 @endif
                             </tbody>

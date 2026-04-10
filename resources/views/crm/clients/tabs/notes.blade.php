@@ -266,7 +266,8 @@
                                         </button>
                                         <div class="dropdown-menu">
                                             <a class="dropdown-item opennoteform" data-id="{{$list->id}}" href="javascript:;">Edit</a>
-                                            @if(Auth::user()->role == 1 || Auth::user()->role == 16)
+                                            @php $_nActor = Auth::user(); @endphp
+                                            @if($_nActor instanceof \App\Models\Staff && ($_nActor->hasEffectiveSuperAdminPrivileges() || (int) $_nActor->role === 16))
                                                 <a class="dropdown-item editdatetime" data-id="{{$list->id}}" href="javascript:;">Edit Date Time</a>
                                             @endif
                                             <a data-id="{{$list->id}}" data-href="deletenote" class="dropdown-item deletenote" href="javascript:;">Delete</a>

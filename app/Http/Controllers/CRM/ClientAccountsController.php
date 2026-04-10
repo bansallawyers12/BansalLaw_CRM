@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Models\Admin;
 use App\Models\ActivitiesLog;
+use App\Models\Staff;
 // clientServiceTaken model removed - table client_service_takens does not exist
 use App\Models\AccountClientReceipt;
 use App\Models\AccountAllInvoiceReceipt;
@@ -4501,8 +4502,10 @@ class ClientAccountsController extends Controller
    */
   public function analyticsDashboard(Request $request)
   {
-      // Restrict to admin and super admin only (roles 1, 12)
-      if (!in_array(Auth::user()->role ?? 0, [1, 12])) {
+      $analyticsUser = Auth::user();
+      $analyticsOk = ($analyticsUser instanceof Staff && $analyticsUser->hasEffectiveSuperAdminPrivileges())
+          || in_array((int) ($analyticsUser->role ?? 0), [12], true);
+      if (! $analyticsOk) {
           return redirect()->back()->with('error', 'Only admin and super admin can view the analytics dashboard.');
       }
 
@@ -4648,10 +4651,11 @@ class ClientAccountsController extends Controller
   {
       $response = array();
       if (isset($request->receiptId) && !empty($request->receiptId)) {
-          // Ensure the user is a Super Admin (role = 1)
-          // Optionally check for specific authorized email from config
+          // Super Admin (role 1) or elevated grant; optional authorized email from config
           $authorizedEmail = config('app.super_admin_email');
-          if (Auth::user()->role != '1' || (config('app.require_super_admin_email') && Auth::user()->email != $authorizedEmail)) {
+          $receiptActor = Auth::user();
+          $receiptOk = $receiptActor instanceof \App\Models\Staff && $receiptActor->hasEffectiveSuperAdminPrivileges();
+          if (! $receiptOk || (config('app.require_super_admin_email') && Auth::user()->email != $authorizedEmail)) {
            $response['status'] = false;
            $response['message'] = 'Unauthorized access.';
            return response()->json($response);

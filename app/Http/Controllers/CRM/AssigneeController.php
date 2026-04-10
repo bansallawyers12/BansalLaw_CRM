@@ -39,6 +39,13 @@ class AssigneeController extends Controller
          $this->middleware('auth:admin');
      }
 
+    private function viewerSeesAllActions(): bool
+    {
+        $u = Auth::user();
+
+        return $u instanceof Staff && $u->hasEffectiveSuperAdminPrivileges();
+    }
+
     //All action lists except completed = Closed
     public function index(Request $request)
     {
@@ -49,10 +56,10 @@ class AssigneeController extends Controller
             ->where('is_action', 1)
             ->where('status','<>','1');
 
-        if(Auth::user()->role == 1){
+        if ($this->viewerSeesAllActions()) {
             $assignees = $query->whereNotNull('client_id')->paginate(20);
-        }else{
-            $assignees = $query->where('assigned_to',Auth::user()->id)->paginate(20);
+        } else {
+            $assignees = $query->where('assigned_to', Auth::user()->id)->paginate(20);
         }
 
         return view('crm.assignee.index',compact('assignees'))
@@ -62,9 +69,9 @@ class AssigneeController extends Controller
     //All completed action lists
     public function completed(Request $request)
     {
-        if(Auth::user()->role == 1){
+        if ($this->viewerSeesAllActions()) {
             $assignees = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->where('status','1')->orderBy('created_at', 'desc')->latest()->paginate(20); //where('status','like','Closed')
-        }else{
+        } else {
             $assignees = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->where('status','1')->orderBy('created_at', 'desc')->latest()->paginate(20);
         }  //dd( $assignees);
         return view('crm.assignee.completed',compact('assignees'))
@@ -208,7 +215,7 @@ class AssigneeController extends Controller
      //All assigned by me action list which r incomplete
      public function assigned_by_me(Request $request)
      {
-        if(Auth::user()->role == 1){
+        if ($this->viewerSeesAllActions()) {
              $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','assigned_staff'])->where('status','<>',1)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         } else {
              $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','assigned_staff'])->where('status','<>',1)->where('user_id',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
@@ -221,11 +228,11 @@ class AssigneeController extends Controller
     //All assigned to me action list
     public function assigned_to_me(Request $request)
     {
-        if(Auth::user()->role == 1){
+        if ($this->viewerSeesAllActions()) {
             $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);//where('status','not like','Closed')
 
             $assignees_completed = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
-        }else{
+        } else {
             $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
 
             $assignees_completed = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
@@ -253,7 +260,7 @@ class AssigneeController extends Controller
             ->where('type', 'client')
             ->whereNotNull('client_id')
             ->where('is_action', 1)
-            ->when($staff->role != 1, function ($query) use ($staff) {
+            ->when(! ($staff instanceof Staff && $staff->hasEffectiveSuperAdminPrivileges()), function ($query) use ($staff) {
                 return $query->where('assigned_to', $staff->id);
             })
             ->when($task_group !== 'All', function ($query) use ($task_group) {
@@ -289,12 +296,12 @@ class AssigneeController extends Controller
         $query = \App\Models\Note::where('status', 1)
             ->where('type', 'client')
             ->where('is_action', 1)
-            ->when($staff->role != 1, function ($query) use ($staff) {
+            ->when(! ($staff instanceof Staff && $staff->hasEffectiveSuperAdminPrivileges()), function ($query) use ($staff) {
                 return $query->where('assigned_to', $staff->id);
             });
 
         // For admin role, add client_id filter
-        if ($staff->role == 1) {
+        if ($staff instanceof Staff && $staff->hasEffectiveSuperAdminPrivileges()) {
             $query->whereNotNull('client_id');
         }
 
@@ -349,7 +356,7 @@ class AssigneeController extends Controller
                     ->where('notes.is_action', 1);
 
                 // Check if staff member is authenticated and has proper role
-                if (Auth::check() && Auth::user()->role != 1) {
+                if (Auth::check() && ! $this->viewerSeesAllActions()) {
                     $query->where('notes.assigned_to', Auth::user()->id);
                 }
 
@@ -376,7 +383,7 @@ class AssigneeController extends Controller
                         // Super Admin Client Portal tab should show one row per grouped action.
                         if (
                             Auth::check()
-                            && Auth::user()->role == 1
+                            && $this->viewerSeesAllActions()
                             && $request->filter == 'client_portal'
                         ) {
                             $query->whereRaw(
@@ -609,7 +616,7 @@ class AssigneeController extends Controller
             ->where('type', 'client')
             ->where('is_action', 1);
 
-        if (Auth::user()->role != 1) {
+        if (! $this->viewerSeesAllActions()) {
             $query->where('assigned_to', Auth::user()->id);
         }
 
@@ -620,7 +627,7 @@ class AssigneeController extends Controller
         $counts['query'] = (clone $query)->where('task_group', 'Query')->count();
         $counts['urgent'] = (clone $query)->where('task_group', 'Urgent')->count();
         $counts['personal_action'] = (clone $query)->where('task_group', 'Personal Action')->count();
-        $counts['client_portal'] = Auth::user()->role == 1
+        $counts['client_portal'] = $this->viewerSeesAllActions()
             ? (clone $query)
                 ->where('task_group', 'Client Portal')
                 ->distinct(DB::raw("COALESCE(NULLIF(unique_group_id, ''), CONCAT('note_', id))"))

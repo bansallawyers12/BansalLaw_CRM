@@ -205,7 +205,7 @@
 							<div class="row mt-2">
 								<div class="col-6">
 									<div class="form-group">
-										<label class="text-sm font-medium text-gray-700">Agent Name - <span id="costassign_agent_name_label"></span></label>
+										<label class="text-sm font-medium text-gray-700">Practitioner name - <span id="costassign_agent_name_label"></span></label>
                                     </div>
 								</div>
 								<div class="col-6">

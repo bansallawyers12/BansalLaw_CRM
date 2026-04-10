@@ -2,6 +2,7 @@
 
 namespace App\Broadcasting;
 
+use App\Models\Staff;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\DB;
 
@@ -36,8 +37,7 @@ class MatterChannel
             })
             ->exists();
 
-        // Allow superadmins (role=1) to join any matter channel
-        $isSuperAdmin = $user->role == 1;
+        $isSuperAdmin = $user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges();
 
         return $isAssociated || $isSuperAdmin;
     }

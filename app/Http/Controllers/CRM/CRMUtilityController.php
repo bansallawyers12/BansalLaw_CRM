@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Redirect;
 
 use App\Models\Lead;
 use App\Models\Admin;
+use App\Models\Staff;
 use App\Models\Country;
 // use App\Models\WebsiteSetting; // removed website settings dependency
 // use App\Models\State; // REMOVED: State model has been deleted
@@ -28,6 +29,16 @@ use App\Support\WorkflowStageFreeze;
 
 class CRMUtilityController extends Controller
 {
+    private function viewerCanMutateAnyRecord(): bool
+    {
+        $u = Auth::user();
+        if ($u instanceof Staff && $u->hasEffectiveSuperAdminPrivileges()) {
+            return true;
+        }
+        // Client-portal and lead users are allowed via their user type (unchanged legacy behaviour)
+        return in_array($u->type ?? '', ['client', 'lead'], true);
+    }
+
     use EnsuresCrmRecordAccess;
 
     protected $emailService;
@@ -290,9 +301,7 @@ class CRMUtilityController extends Controller
 			$requestData['table'] = trim($requestData['table']);
 			$requestData['col'] = trim($requestData['colname']);
 
-			$role = Auth::user()->role;
-			$userType = Auth::user()->type ?? '';
-			if($role == 1 || in_array($userType, ['client', 'lead']))
+			if($this->viewerCanMutateAnyRecord())
 			{
 				if(isset($requestData['id']) && !empty($requestData['id']) && isset($requestData['current_status']) && isset($requestData['table']) && !empty($requestData['table']))
 				{
@@ -424,9 +433,7 @@ class CRMUtilityController extends Controller
 
 			$requestData['table'] = trim($requestData['table']);
 
-			$role = Auth::user()->role;
-			$userType = Auth::user()->type ?? '';
-			if($role == 1 || in_array($userType, ['client', 'lead']))
+			if($this->viewerCanMutateAnyRecord())
 			{
 				if(isset($requestData['id']) && !empty($requestData['id'])  && isset($requestData['table']) && !empty($requestData['table']))
 				{
@@ -492,9 +499,7 @@ class CRMUtilityController extends Controller
 
 			$requestData['table'] = trim($requestData['table']);
 
-			$role = Auth::user()->role;
-			$userType = Auth::user()->type ?? '';
-			if($role == 1 || in_array($userType, ['client', 'lead']))
+			if($this->viewerCanMutateAnyRecord())
 			{
 				if(isset($requestData['id']) && !empty($requestData['id'])  && isset($requestData['table']) && !empty($requestData['table']))
 				{
@@ -560,9 +565,7 @@ class CRMUtilityController extends Controller
 
 			$requestData['table'] = trim($requestData['table']);
 
-			$role = Auth::user()->role;
-			$userType = Auth::user()->type ?? '';
-			if($role == 1 || in_array($userType, ['client', 'lead']))
+			if($this->viewerCanMutateAnyRecord())
 			{
 				if(isset($requestData['id']) && !empty($requestData['id'])  && isset($requestData['table']) && !empty($requestData['table']))
 				{
@@ -629,9 +632,7 @@ class CRMUtilityController extends Controller
 			$requestData['table'] = trim($requestData['table']);
 
 			$astatus = '';
-			$role = Auth::user()->role;
-			$userType = Auth::user()->type ?? '';
-			if($role == 1 || in_array($userType, ['client', 'lead']))
+			if($this->viewerCanMutateAnyRecord())
 			{
 				if(isset($requestData['id']) && !empty($requestData['id'])  && isset($requestData['table']) && !empty($requestData['table']))
 				{
@@ -702,7 +703,6 @@ class CRMUtilityController extends Controller
 			$requestData 	= 	$request->all(); //dd($requestData);
             $requestData['id'] = trim($requestData['id']);
 			$requestData['table'] = trim($requestData['table']);
-            $role = Auth::user()->role;
             if(isset($requestData['id']) && !empty($requestData['id']) && isset($requestData['table']) && !empty($requestData['table']))
 			{
 				$tableExist = Schema::hasTable(trim($requestData['table']));
@@ -1696,7 +1696,9 @@ public function getChapters(Request $request)
      */
     public function fetchTotalActivityCount(Request $request)
     {
-        if (Auth::user()->role == 1) {
+        $viewer = Auth::user();
+        $seeAll = $viewer instanceof Staff && $viewer->hasEffectiveSuperAdminPrivileges();
+        if ($seeAll) {
             $assigneesCount = \App\Models\Note::where('type', 'client')
                 ->whereNotNull('client_id')
                 ->where('is_action', 1)

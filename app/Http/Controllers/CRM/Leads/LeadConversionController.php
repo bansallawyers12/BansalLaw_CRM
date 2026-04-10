@@ -7,9 +7,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Admin;
-use App\Models\Lead;
 use App\Models\ClientMatter;
+use App\Models\Lead;
 use App\Models\Matter;
+use App\Models\Staff;
 use App\Support\StaffClientVisibility;
 
 class LeadConversionController extends Controller
@@ -30,8 +31,8 @@ class LeadConversionController extends Controller
      */
     public function convertToClient(Request $request)
     {
-        // Check if user is super admin (role = 1)
-        if (Auth::user()->role != 1) {
+        $actor = Auth::user();
+        if (! ($actor instanceof Staff && $actor->hasEffectiveSuperAdminPrivileges())) {
             return redirect()->back()->with('error', 'Only super admin can perform bulk conversions');
         }
         
@@ -143,8 +144,8 @@ class LeadConversionController extends Controller
      */
     public function bulkConvertToClient(Request $request)
     {
-        // Check if user is super admin (role = 1)
-        if (Auth::user()->role != 1) {
+        $actor = Auth::user();
+        if (! ($actor instanceof Staff && $actor->hasEffectiveSuperAdminPrivileges())) {
             return redirect()->back()->with('error', 'Only super admin can perform bulk conversions');
         }
         
@@ -184,8 +185,8 @@ class LeadConversionController extends Controller
      */
     public function getConversionStats()
     {
-        // Check if user is super admin (role = 1)
-        if (Auth::user()->role != 1) {
+        $actor = Auth::user();
+        if (! ($actor instanceof Staff && $actor->hasEffectiveSuperAdminPrivileges())) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
         

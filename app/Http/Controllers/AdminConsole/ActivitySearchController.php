@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use App\Models\ActivitiesLog;
 use App\Models\Admin;
+use App\Models\Staff;
 use Carbon\Carbon;
 
 class ActivitySearchController extends Controller
@@ -30,8 +31,8 @@ class ActivitySearchController extends Controller
      */
     public function index(Request $request)
     {
-        // Check if user is Super Admin (role = 1)
-        if (Auth::user()->role != 1) {
+        $actor = Auth::user();
+        if (! ($actor instanceof Staff && $actor->hasEffectiveSuperAdminPrivileges())) {
             return Redirect::to('/dashboard')->with('error', 'Unauthorized: Only Super Admins can access Activity Search.');
         }
 
@@ -170,8 +171,8 @@ class ActivitySearchController extends Controller
      */
     public function export(Request $request)
     {
-        // Check if user is Super Admin (role = 1)
-        if (Auth::user()->role != 1) {
+        $actor = Auth::user();
+        if (! ($actor instanceof Staff && $actor->hasEffectiveSuperAdminPrivileges())) {
             return Redirect::to('/dashboard')->with('error', 'Unauthorized: Only Super Admins can export activities.');
         }
 

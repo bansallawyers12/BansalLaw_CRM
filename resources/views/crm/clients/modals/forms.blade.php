@@ -26,7 +26,7 @@
                             <div class="row mt-2">
                                 <div class="col-6">
                                     <div class="form-group">
-                                        <label class="text-sm font-medium text-gray-700">Agent Name - <span id="agent_name_label"></span></label>
+                                        <label class="text-sm font-medium text-gray-700">Practitioner name - <span id="agent_name_label"></span></label>
                                         <input type="hidden" name="agent_id" id="agent_id">
                                         <input type="hidden" name="agent_name" id="agent_name">
                                     </div>
@@ -217,7 +217,7 @@
 							<div class="row mt-2">
 								<div class="col-6">
 									<div class="form-group">
-										<label class="text-sm font-medium text-gray-700">Agent Name - <span id="visaagree_agent_name_label"></span></label>
+										<label class="text-sm font-medium text-gray-700">Practitioner name - <span id="visaagree_agent_name_label"></span></label>
 										<input type="hidden" name="agent_id" id="visaagree_agent_id">
 										<input type="hidden" name="agent_name" id="visaagree_agent_name">
 									</div>

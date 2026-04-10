@@ -61,16 +61,15 @@
                 <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $form->form_type === 'appointment' ? 'New Appointment' : 'Withdrawal' }}</dd>
             </div>
             <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt class="text-sm font-medium text-gray-500">Agent</dt>
+                <dt class="text-sm font-medium text-gray-500">Legal practitioner</dt>
                 <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $form->agent->agent_name }} ({{ $form->agent->business_name }})</dd>
             </div>
             @if ($form->form_type === 'appointment')
                 <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt class="text-sm font-medium text-gray-500">Agent Type</dt>
+                    <dt class="text-sm font-medium text-gray-500">Practitioner type</dt>
                     <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                        @if ($form->is_legal_practitioner) Legal Practitioner @endif
-                        @if ($form->is_legal_practitioner) Legal Practitioner @endif
-                        @if ($form->is_exempt_person) Exempt Person @endif
+                        @if ($form->is_legal_practitioner) Legal practitioner @endif
+                        @if ($form->is_exempt_person) Exempt person @endif
                     </dd>
                 </div>
                 <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">

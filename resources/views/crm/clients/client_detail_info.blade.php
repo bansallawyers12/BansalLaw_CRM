@@ -3995,7 +3995,7 @@
                                     <select class="form-control select2" name="subagent">
                                         <option>-- Choose a sub agent --</option>
                                         @foreach($__agentListForSubagent as $agentlist)
-                                            <option <?php if(@$fetchedData->agent_id == $agentlist->id){ echo 'selected'; } ?> value="{{$agentlist->id}}">{{$agentlist->agent_name ?? $agentlist->business_name ?? 'Agent'}}</option>
+                                            <option <?php if(@$fetchedData->agent_id == $agentlist->id){ echo 'selected'; } ?> value="{{$agentlist->id}}">{{$agentlist->agent_name ?? $agentlist->business_name ?? 'Practitioner'}}</option>
                                         @endforeach
                                     </select>
                                     @if ($errors->has('subagent'))

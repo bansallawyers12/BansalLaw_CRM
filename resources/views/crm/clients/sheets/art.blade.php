@@ -377,7 +377,7 @@
                                         <th>Pending Payment</th>
                                         <th class="sortable {{ request('sort') == 'deadline' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="deadline">Deadline</th>
                                         <th class="sortable {{ request('sort') == 'submission_date' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="submission_date">Submission Last Date</th>
-                                        <th class="sortable {{ request('sort') == 'agent_name' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="agent_name">Agent Name</th>
+                                        <th class="sortable {{ request('sort') == 'agent_name' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="agent_name">Legal practitioner</th>
                                         <th class="sortable {{ request('sort') == 'status' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="status">Status of the File</th>
                                         <th>Time</th>
                                         <th>Member Name</th>

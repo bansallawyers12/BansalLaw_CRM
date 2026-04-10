@@ -81,7 +81,7 @@ final class StaffClientVisibility
             return false;
         }
 
-        if ((int) ($user->role ?? 0) === 1) {
+        if ($user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges()) {
             return false;
         }
 
@@ -94,7 +94,7 @@ final class StaffClientVisibility
             return false;
         }
 
-        if ($user instanceof Staff && app(CrmAccessService::class)->hasGrantedSuperAdminLevelAccess($user)) {
+        if ($user instanceof Staff && app(CrmAccessService::class)->hasEffectiveSuperAdminPrivileges($user)) {
             return true;
         }
 
@@ -238,7 +238,7 @@ final class StaffClientVisibility
     public static function excludeSuperAdminOnlyLockedClientsFromAdminQuery($query, ?Authenticatable $viewer = null): void
     {
         $viewer = $viewer ?? Auth::user();
-        if (! $viewer || (int) ($viewer->role ?? 0) === 1) {
+        if (! $viewer || ($viewer instanceof Staff && $viewer->hasEffectiveSuperAdminPrivileges())) {
             return;
         }
 
@@ -269,7 +269,7 @@ final class StaffClientVisibility
     public static function applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, string $adminsAlias, ?Authenticatable $viewer = null): void
     {
         $viewer = $viewer ?? Auth::user();
-        if (! $viewer || (int) ($viewer->role ?? 0) === 1) {
+        if (! $viewer || ($viewer instanceof Staff && $viewer->hasEffectiveSuperAdminPrivileges())) {
             return;
         }
 
@@ -416,7 +416,7 @@ final class StaffClientVisibility
         }
 
         if (self::isSuperAdminOnlyLockedClient($row->type ?? null, $row->client_id ?? null)) {
-            return (int) ($user->role ?? 0) === 1;
+            return $user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges();
         }
 
         if (self::isExemptFromAllocation($user)) {

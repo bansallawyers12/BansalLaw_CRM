@@ -442,7 +442,7 @@
 						@endif
 
 						<!-- User Performance (Admin Only) -->
-						@if($user->role === 1 && $userPerformance)
+						@if($user instanceof \App\Models\Staff && $user->hasEffectiveSuperAdminPrivileges() && $userPerformance)
 						<div class="data-table">
 							<h3>👥 User Performance Comparison</h3>
 							<div class="table-responsive">

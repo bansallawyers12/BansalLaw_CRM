@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
+use App\Models\Staff;
 use App\Services\StaffLoginAnalyticsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,7 +23,9 @@ class StaffLoginAnalyticsController extends Controller
      */
     protected function canAccessAnalytics(): bool
     {
-        return in_array(Auth::user()->role ?? 0, [1, 12]);
+        $u = Auth::user();
+        return ($u instanceof Staff && $u->hasEffectiveSuperAdminPrivileges())
+            || in_array((int) ($u->role ?? 0), [12], true);
     }
 
     /**

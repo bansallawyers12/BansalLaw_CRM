@@ -3,6 +3,7 @@ namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DashboardRequest;
+use App\Models\Staff;
 use App\Services\DashboardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -254,7 +255,9 @@ class DashboardController extends Controller
      */
     public function fetchTotalActivityCount(Request $request)
     {
-        if (Auth::user()->role == 1) {
+        $viewer = Auth::user();
+        $seeAll = $viewer instanceof Staff && $viewer->hasEffectiveSuperAdminPrivileges();
+        if ($seeAll) {
             $assigneesCount = \App\Models\Note::where('type', 'client')
                 ->whereNotNull('client_id')
                 ->where('is_action', 1)

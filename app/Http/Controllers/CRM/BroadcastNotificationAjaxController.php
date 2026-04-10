@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
+use App\Models\Staff;
 use App\Services\BroadcastNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -73,7 +74,8 @@ class BroadcastNotificationAjaxController extends Controller
         // CHANGED: Now returns ALL broadcasts globally, not just sender's broadcasts
         $history = $this->broadcasts->getAllBroadcastHistory();
         $currentUserId = (int) $this->sender($request)->id;
-        $isSuperAdmin = $this->sender($request)->role == 1;
+        $sender = $this->sender($request);
+        $isSuperAdmin = $sender instanceof Staff && $sender->hasEffectiveSuperAdminPrivileges();
 
         return response()->json([
             'data' => $history,
@@ -148,8 +150,7 @@ class BroadcastNotificationAjaxController extends Controller
     {
         $sender = $this->sender($request);
         
-        // Check if user is super admin (role == 1)
-        if ($sender->role != 1) {
+        if (! ($sender instanceof Staff && $sender->hasEffectiveSuperAdminPrivileges())) {
             \Log::warning('❌ Non-super admin attempted to delete broadcast', [
                 'user_id' => $sender->id,
                 'role' => $sender->role,

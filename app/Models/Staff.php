@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Document;
+use App\Services\CrmAccess\CrmAccessService;
 use App\Support\CrmSheets;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -244,6 +245,10 @@ class Staff extends Authenticatable
             return true;
         }
 
+        if ($this->hasEffectiveSuperAdminPrivileges()) {
+            return true;
+        }
+
         $raw = $this->attributes['sheet_access'] ?? null;
         if ($raw === null || $raw === '') {
             return true;
@@ -280,6 +285,16 @@ class Staff extends Authenticatable
         }
 
         return in_array((int) ($this->role ?? 0), self::frontDeskCheckInRoleIds(), true);
+    }
+
+    public function hasEffectiveSuperAdminPrivileges(): bool
+    {
+        return app(CrmAccessService::class)->hasEffectiveSuperAdminPrivileges($this);
+    }
+
+    public function canToggleSuperAdminElevation(): bool
+    {
+        return app(CrmAccessService::class)->canToggleSuperAdminElevation($this);
     }
 
 }

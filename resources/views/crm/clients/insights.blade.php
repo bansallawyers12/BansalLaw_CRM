@@ -522,7 +522,7 @@
                         <path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>
                     </svg>
                 </div>
-                <h3>Assigned to Agents</h3>
+                <h3>Assigned to legal practitioners</h3>
                 <div class="value">{{ number_format($matterStats['assigned']) }}</div>
                 <div class="subtext">Matters with clear ownership</div>
             </div>
@@ -545,7 +545,7 @@
                             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
                             <path d="M8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
                         </svg>
-                        <div>No agent assignments recorded</div>
+                        <div>No legal practitioner assignments recorded</div>
                     </div>
                 @endforelse
             </div>
@@ -568,7 +568,7 @@
                             <tr>
                                 <th>Matter #</th>
                                 <th>Client</th>
-                                <th>Agent</th>
+                                <th>Legal practitioner</th>
                                 <th>Created</th>
                             </tr>
                         </thead>

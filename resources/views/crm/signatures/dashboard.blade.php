@@ -299,6 +299,9 @@
 @endsection
 
 @section('content')
+@php
+    $sigEffectiveSa = $staff instanceof \App\Models\Staff && $staff->hasEffectiveSuperAdminPrivileges();
+@endphp
 <div class="signature-dashboard">
     <!-- Header -->
     <div class="dashboard-header">
@@ -335,7 +338,7 @@
             <div class="number">{{ $counts['overdue'] ?? 0 }}</div>
         </div>
         @endif
-        @if($staff->role !== 1)
+        @if(! $sigEffectiveSa)
         <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
             <h3>Visible to Me</h3>
             <div class="number">{{ $counts['visible_to_me'] ?? 0 }}</div>
@@ -371,7 +374,7 @@
                     Sent by Me
                 </a>
             </li>
-            @if($staff->role === 1)
+            @if($sigEffectiveSa)
             <li class="nav-item">
                 <a class="nav-link {{ request('tab') == 'all' ? 'active' : '' }}" 
                    href="{{ route('signatures.index', ['tab' => 'all']) }}">
@@ -405,7 +408,7 @@
                        style="padding: 6px 15px; font-size: 13px;">
                         👥 My Documents
                     </a>
-                    @if($staff->role === 1)
+                    @if($sigEffectiveSa)
                     <a href="{{ route('signatures.index', array_merge(request()->except('scope'), ['scope' => 'organization'])) }}" 
                        class="btn btn-sm {{ request('scope') == 'organization' ? 'btn-primary' : 'btn-light' }}"
                        style="padding: 6px 15px; font-size: 13px;">

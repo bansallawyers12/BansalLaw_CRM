@@ -399,7 +399,9 @@ class ClientNotesController extends Controller
                             </button>
                             <div class="dropdown-menu">
                                 <a class="dropdown-item opennoteform" data-id="<?php echo $list->id;?>" href="javascript:;">Edit</a>
-                                <?php if( Auth::user()->role == 1 || Auth::user()->role == 16 ) { ?>
+                                <?php
+                                    $noteActor = Auth::user();
+                                    if ($noteActor instanceof Staff && ($noteActor->hasEffectiveSuperAdminPrivileges() || (int) $noteActor->role === 16)) { ?>
                                     <a class="dropdown-item editdatetime" data-id="<?php echo $list->id;?>" href="javascript:;">Edit Date Time</a>
                                 <?php }?>
                                 <a data-id="<?php echo $list->id;?>" data-href="deletenote" class="dropdown-item deletenote" href="javascript:;">Delete</a>
