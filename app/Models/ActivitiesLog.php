@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Support\Facades\Schema;
 use Kyslik\ColumnSortable\Sortable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -24,6 +25,34 @@ class ActivitiesLog extends Authenticatable
 {
     use Notifiable;
 	use Sortable;
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function (ActivitiesLog $log) {
+            if (! Schema::hasTable($log->getTable())) {
+                return;
+            }
+
+            $columns = array_flip(Schema::getColumnListing($log->getTable()));
+
+            $subject = $log->subject;
+            if (($subject !== null && $subject !== '')
+                && ! isset($columns['subject'])
+                && isset($columns['description'])) {
+                $prefix = '<p><strong>'.htmlspecialchars((string) $subject, ENT_QUOTES, 'UTF-8').'</strong></p>';
+                $log->description = $prefix.((string) ($log->description ?? ''));
+                $log->offsetUnset('subject');
+            }
+
+            foreach (array_keys($log->getAttributes()) as $key) {
+                if (! isset($columns[$key])) {
+                    $log->offsetUnset($key);
+                }
+            }
+        });
+    }
 	
 	protected $fillable = [
 		'client_id',
