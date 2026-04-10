@@ -196,7 +196,7 @@ body.sidebar-mini .control-label {
 }
 
 .main-topbar {
-  background: var(--header-bg) !important;
+  background: #ddeaf8 !important; /* --sidebar-bg (Powder Blue) */
   border-bottom: 1px solid var(--border) !important;
   box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;
   font-family: "Segoe UI", sans-serif !important;
@@ -218,8 +218,8 @@ body.sidebar-mini .control-label {
 }
 
 .topbar-center .topbar-search {
-  border: 1px solid var(--border) !important;
-  background: var(--page-bg) !important;
+  background: transparent !important;
+  border: none !important;
 }
 
 .topbar-center .topbar-search i {
