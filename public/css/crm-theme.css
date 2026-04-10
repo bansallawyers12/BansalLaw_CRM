@@ -1,0 +1,393 @@
+/**
+ * Bansal Law CRM — Powder Blue & Soft Gold (docs/theme.md)
+ * Load last in <head> (after @stack / @yield styles) so tokens win.
+ */
+:root {
+  --sidebar-bg: #ddeaf8;
+  --sidebar-hover: #c8dcef;
+  --sidebar-active: #3a6fa8;
+  --navy: #1e3d60;
+  --accent-gold: #c8992a;
+  --accent-light: #fefae8;
+  --page-bg: #f0f6ff;
+  --card-bg: #ffffff;
+  --text-dark: #1a2c40;
+  --text-muted: #5e7a90;
+  --border: #c8dcef;
+  --success: #1e7a52;
+  --danger: #a83020;
+  --header-bg: #ffffff;
+}
+
+/* ---------- Global shell (CRM layouts use body.sidebar-mini) ---------- */
+body.sidebar-mini {
+  font-family: "Segoe UI", sans-serif !important;
+  font-size: 14px !important;
+  color: var(--text-dark) !important;
+  background-color: var(--page-bg) !important;
+}
+
+body.sidebar-mini h1,
+body.sidebar-mini h2,
+body.sidebar-mini h3,
+body.sidebar-mini h4,
+body.sidebar-mini h5,
+body.sidebar-mini .h1,
+body.sidebar-mini .h2,
+body.sidebar-mini .h3 {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+/* Main content & listing areas */
+body.sidebar-mini .main-content {
+  background-color: var(--page-bg) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini #app .main-wrapper {
+  background-color: var(--page-bg);
+}
+
+/* Stisla sidebar (when visible) */
+body.sidebar-mini .main-sidebar {
+  background: var(--sidebar-bg) !important;
+  border-right: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .main-sidebar .sidebar-menu li a {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .main-sidebar .sidebar-menu li a:hover {
+  background-color: var(--sidebar-hover) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .main-sidebar .sidebar-menu li.active > a,
+body.sidebar-mini .main-sidebar .sidebar-menu li .dropdown-menu li.active > a,
+body.sidebar-mini .main-sidebar .sidebar-menu li ul.dropdown-menu li.active > a {
+  background: var(--sidebar-active) !important;
+  color: #fff !important;
+  border-left: 3px solid var(--accent-gold) !important;
+}
+
+body.sidebar-mini .main-sidebar .sidebar-menu .menu-header {
+  color: var(--text-muted) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+/* Cards & panels */
+body.sidebar-mini .card,
+body.sidebar-mini .section .card {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;
+  border-radius: 10px !important;
+}
+
+body.sidebar-mini .card-header {
+  background-color: var(--card-bg) !important;
+  border-bottom: 1px solid var(--border) !important;
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini .card-primary .card-header,
+body.sidebar-mini .card.card-primary .card-header {
+  background-color: var(--navy) !important;
+  color: #fff !important;
+  border-bottom: none !important;
+}
+
+/* Buttons */
+body.sidebar-mini .btn-primary {
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .btn-primary:hover,
+body.sidebar-mini .btn-primary:focus {
+  filter: brightness(1.08);
+  border-color: var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .btn-warning,
+body.sidebar-mini .btn-gold {
+  background-color: var(--accent-gold) !important;
+  border-color: var(--accent-gold) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .btn-outline-primary {
+  color: var(--navy) !important;
+  border-color: var(--border) !important;
+  background: transparent !important;
+}
+
+body.sidebar-mini .btn-outline-primary:hover {
+  background: var(--sidebar-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .btn-secondary {
+  background-color: var(--text-muted) !important;
+  border-color: var(--text-muted) !important;
+}
+
+/* Tables */
+body.sidebar-mini .table {
+  border-color: var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .table thead th {
+  background-color: var(--page-bg) !important;
+  color: var(--navy) !important;
+  border-color: var(--border) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .table td,
+body.sidebar-mini .table th {
+  border-color: var(--border) !important;
+}
+
+body.sidebar-mini .table tbody tr:hover {
+  background-color: #ebf3ff !important;
+}
+
+/* Breadcrumb */
+body.sidebar-mini .breadcrumb-item a {
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini .breadcrumb-item.active,
+body.sidebar-mini .breadcrumb-item.active a {
+  color: var(--sidebar-active) !important;
+}
+
+/* Forms */
+body.sidebar-mini .form-control {
+  border-color: var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .form-control:focus {
+  border-color: var(--sidebar-active) !important;
+  box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
+}
+
+body.sidebar-mini label,
+body.sidebar-mini .control-label {
+  color: var(--text-muted) !important;
+}
+
+/* ---------- Top bar (theme.md) ---------- */
+.main-navbar {
+  background-color: var(--header-bg) !important;
+  border-bottom: 1px solid var(--border);
+}
+
+.main-topbar {
+  background: var(--header-bg) !important;
+  border-bottom: 1px solid var(--border) !important;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;
+  font-family: "Segoe UI", sans-serif !important;
+}
+
+.main-topbar .icon-btn {
+  color: var(--navy) !important;
+}
+
+.main-topbar .icon-btn:hover {
+  background: var(--sidebar-bg) !important;
+  color: var(--navy) !important;
+}
+
+.main-topbar .topbar-toggle {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--navy) !important;
+}
+
+.topbar-center .topbar-search {
+  border: 1px solid var(--border) !important;
+  background: var(--page-bg) !important;
+}
+
+.topbar-center .topbar-search i {
+  color: var(--text-muted) !important;
+}
+
+.topbar-center .topbar-search .form-control {
+  color: var(--text-dark) !important;
+}
+
+.icon-dropdown-menu,
+.profile-menu {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.08) !important;
+}
+
+.icon-dropdown-menu .dropdown-item,
+.profile-menu a {
+  color: var(--text-dark) !important;
+}
+
+.icon-dropdown-menu .dropdown-item:hover,
+.profile-menu a:hover {
+  background: var(--sidebar-bg) !important;
+  color: var(--navy) !important;
+}
+
+.main-topbar .icon-btn .countbell {
+  background: var(--navy) !important;
+  color: #fff !important;
+}
+
+.main-topbar .text-primary {
+  color: var(--sidebar-active) !important;
+}
+
+.top-quick-icons .nav-link {
+  color: var(--navy) !important;
+}
+
+.top-quick-icons .nav-link:hover {
+  background-color: var(--sidebar-bg) !important;
+  color: var(--navy) !important;
+}
+
+.top-quick-icons .nav-link.text-danger {
+  color: var(--danger) !important;
+}
+
+.top-quick-icons .nav-link.text-danger:hover {
+  background-color: rgba(168, 48, 32, 0.1) !important;
+  color: var(--danger) !important;
+}
+
+@keyframes crm-notification-bell-flash {
+  0% {
+    background: rgba(30, 61, 96, 0.2) !important;
+    transform: scale(1.05);
+  }
+  100% {
+    background: transparent !important;
+    transform: scale(1);
+  }
+}
+
+.notification-bell-flash {
+  animation: crm-notification-bell-flash 0.6s ease-out !important;
+}
+
+.main-content .header,
+.main-content .header-title-section {
+  border-bottom: 1px solid var(--border);
+}
+
+.main-content .header h1,
+.main-content .header-title-section h1 {
+  color: var(--navy);
+  font-size: 18px;
+  font-weight: 700;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.search-input {
+  border-color: var(--border) !important;
+  background: var(--page-bg) !important;
+  color: var(--text-dark) !important;
+}
+
+.search-input:focus {
+  border-color: var(--sidebar-active) !important;
+  background: var(--card-bg) !important;
+  box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15) !important;
+}
+
+.search-icon {
+  color: var(--text-muted) !important;
+}
+
+/* KPI dashboard cards (theme.md) */
+body.sidebar-mini .kpi-cards .card,
+body.sidebar-mini .main-content > .kpi-cards .card {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;
+}
+
+body.sidebar-mini .kpi-cards .card-content h3,
+body.sidebar-mini .main-content .kpi-cards .card-content h3 {
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini .kpi-cards .card-content p,
+body.sidebar-mini .main-content .kpi-cards .card-content p {
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .kpi-cards .card .icon-active {
+  background-color: rgba(30, 61, 96, 0.1) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .kpi-cards .card .icon-pending {
+  background-color: rgba(200, 153, 42, 0.12) !important;
+  color: var(--accent-gold) !important;
+}
+
+body.sidebar-mini .kpi-cards .card .icon-success {
+  background-color: rgba(30, 122, 82, 0.12) !important;
+  color: var(--success) !important;
+}
+
+body.sidebar-mini .focus-container {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;
+}
+
+body.sidebar-mini .focus-container h3 {
+  color: var(--navy) !important;
+}
+
+/* Status badges (theme.md) */
+.badge-status-active,
+body.sidebar-mini .badge.badge-success {
+  background: rgba(30, 122, 82, 0.12) !important;
+  color: var(--success) !important;
+}
+
+.badge-status-pending {
+  background: rgba(200, 153, 42, 0.15) !important;
+  color: #7a5800 !important;
+}
+
+.badge-status-closed {
+  background: rgba(94, 122, 144, 0.12) !important;
+  color: var(--text-muted) !important;
+}
+
+.badge-status-review {
+  background: rgba(30, 61, 96, 0.1) !important;
+  color: var(--navy) !important;
+}

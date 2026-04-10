@@ -1,15 +1,16 @@
 :root {
-    --primary-color: #005792;
-    --secondary-color: #00BBF0;
-    --background-color: #f4f7fc;
+    /* Aligned with docs/theme.md (Powder Blue & Soft Gold) */
+    --primary-color: #1e3d60;
+    --secondary-color: #3a6fa8;
+    --background-color: #f0f6ff;
     --card-bg-color: #ffffff;
-    --text-color: #333333;
-    --text-muted-color: #777777;
-    --border-color: #e0e0e0;
-    --success-color: #28a745;
-    --warning-color: #ffc107;
-    --danger-color: #dc3545;
-    --info-color: #17a2b8;
+    --text-color: #1a2c40;
+    --text-muted-color: #5e7a90;
+    --border-color: #c8dcef;
+    --success-color: #1e7a52;
+    --warning-color: #c8992a;
+    --danger-color: #a83020;
+    --info-color: #3a6fa8;
 }
 
 /* Main Content Styles */

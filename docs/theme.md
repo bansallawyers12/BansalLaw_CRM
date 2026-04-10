@@ -77,6 +77,7 @@
 - Bottom border: `1px solid --border`
 - Page title: `--navy`, `18px`, `700 weight`
 - Breadcrumb active: `--sidebar-active`
+- **CRM implementation:** `public/css/crm-theme.css` (linked **last** in `<head>` from `layouts/crm_client_detail.blade.php` and `layouts/crm_client_detail_dashboard.blade.php`, after `@yield('styles')` / `@stack('styles')`). Dashboard widgets also use matching tokens in `public/css/dashboard.css` `:root`.
 
 ### Buttons
 - **Primary button:** background `--navy`, text `#fff`

@@ -1626,6 +1626,7 @@
         }
     </style>
     @yield('styles')
+    <link rel="stylesheet" href="{{ asset('css/crm-theme.css') }}">
 </head>
 <body class="sidebar-mini">
     <div class="broadcast-banner" data-broadcast-banner>
