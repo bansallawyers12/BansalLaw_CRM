@@ -344,6 +344,8 @@ class DocumentController extends Controller
         ]);
 
         try {
+            $documentStoreDiskName = null;
+
             // Sanitize title to prevent XSS - used as file_name for display
             $sanitizedTitle = strip_tags(trim($request->title));
             $sanitizedTitle = htmlspecialchars($sanitizedTitle, ENT_QUOTES, 'UTF-8');
@@ -385,7 +387,7 @@ class DocumentController extends Controller
                 Log::warning('Ghostscript normalization failed, using original PDF', ['path' => $tempFullPath]);
             }
 
-            // Upload to S3
+            // Upload to S3 when fully configured; otherwise store on the public disk (local dev).
             $adminId = auth('admin')->id();
             $docType = 'ad_hoc_documents'; // Category for manually uploaded documents
             
@@ -393,13 +395,6 @@ class DocumentController extends Controller
             if (!file_exists($pdfToAdd)) {
                 throw new \Exception("PDF file not found at path: {$pdfToAdd}");
             }
-            
-            Log::info('Preparing S3 upload', [
-                'pdf_path' => $pdfToAdd,
-                'file_exists' => file_exists($pdfToAdd),
-                'file_size' => file_exists($pdfToAdd) ? filesize($pdfToAdd) : 0,
-                'admin_id' => $adminId
-            ]);
             
             // Sanitize filename to avoid issues with special characters
             $originalFileName = $uploadedFile->getClientOriginalName();
@@ -409,22 +404,25 @@ class DocumentController extends Controller
             
             $s3FilePath = $adminId . '/' . $docType . '/' . $fileName;
             
-            // Verify S3 configuration
-            $region = config('filesystems.disks.s3.region');
-            $bucket = config('filesystems.disks.s3.bucket');
-            $awsKey = config('filesystems.disks.s3.key');
-            $awsSecret = config('filesystems.disks.s3.secret');
+            $s3Cfg = config('filesystems.disks.s3');
+            $s3Ready = ! empty($s3Cfg['bucket'])
+                && ! empty($s3Cfg['region'])
+                && ! empty($s3Cfg['key'])
+                && ! empty($s3Cfg['secret']);
+            $documentStoreDiskName = $s3Ready ? 's3' : 'public';
             
-            Log::info('S3 configuration check', [
-                'region' => $region,
-                'bucket' => $bucket,
-                'has_key' => !empty($awsKey),
-                'has_secret' => !empty($awsSecret),
-                's3_path' => $s3FilePath
+            Log::info('Preparing document file upload', [
+                'disk' => $documentStoreDiskName,
+                'pdf_path' => $pdfToAdd,
+                'file_exists' => file_exists($pdfToAdd),
+                'file_size' => file_exists($pdfToAdd) ? filesize($pdfToAdd) : 0,
+                'admin_id' => $adminId,
+                'storage_path' => $s3FilePath,
+                's3_ready' => $s3Ready,
             ]);
             
-            if (empty($bucket) || empty($region)) {
-                throw new \Exception("S3 configuration incomplete. Bucket: " . ($bucket ?: 'missing') . ", Region: " . ($region ?: 'missing'));
+            if (! $s3Ready) {
+                Log::notice('S3 not fully configured; storing document on public disk (set AWS_BUCKET, AWS_DEFAULT_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY for S3).');
             }
             
             // Read file contents
@@ -435,54 +433,54 @@ class DocumentController extends Controller
             
             Log::info('File contents read', [
                 'content_size' => strlen($fileContents),
-                's3_path' => $s3FilePath
+                'storage_path' => $s3FilePath,
+                'disk' => $documentStoreDiskName,
             ]);
             
-            // Upload to S3 (matching pattern from working examples in codebase)
             try {
-                $uploadResult = Storage::disk('s3')->put($s3FilePath, $fileContents);
+                $uploadResult = Storage::disk($documentStoreDiskName)->put($s3FilePath, $fileContents);
                 
                 if ($uploadResult === false) {
-                    throw new \Exception("S3 upload returned false - upload may have failed");
+                    throw new \Exception('File storage returned false — upload may have failed');
                 }
                 
-                Log::info('S3 put command executed successfully', [
-                    's3_path' => $s3FilePath,
-                    'result' => $uploadResult
+                Log::info('Document file stored successfully', [
+                    'disk' => $documentStoreDiskName,
+                    'path' => $s3FilePath,
+                    'result' => $uploadResult,
                 ]);
-            } catch (\Exception $s3Exception) {
-                Log::error('S3 upload failed', [
-                    'error' => $s3Exception->getMessage(),
-                    'error_class' => get_class($s3Exception),
-                    'trace' => $s3Exception->getTraceAsString(),
-                    's3_path' => $s3FilePath,
-                    'bucket' => $bucket,
-                    'region' => $region
+            } catch (\Exception $storageException) {
+                Log::error('Document file upload failed', [
+                    'error' => $storageException->getMessage(),
+                    'error_class' => get_class($storageException),
+                    'trace' => $storageException->getTraceAsString(),
+                    'path' => $s3FilePath,
+                    'disk' => $documentStoreDiskName,
                 ]);
-                throw $s3Exception;
+                throw $storageException;
             }
             
-            // Get S3 URL using Laravel's url() method (matches working examples)
-            $s3Url = Storage::disk('s3')->url($s3FilePath);
+            $s3Url = Storage::disk($documentStoreDiskName)->url($s3FilePath);
             
-            // Update document with S3 file information.
+            // Update document with stored file URL (S3 or local public disk).
             // client_id is intentionally left null here — this is a staff-authored
             // ad-hoc document not yet linked to any client/lead. It will be linked
             // later if the user explicitly assigns it via the edit/signature flow.
             $document->update([
                 'file_name' => $originalFileName,
                 'filetype' => $uploadedFile->getMimeType(),
-                'myfile' => $s3Url,          // Full S3 URL
-                'myfile_key' => $fileName,   // S3 key for reference
-                'doc_type' => $docType,      // Document category
+                'myfile' => $s3Url,
+                'myfile_key' => $fileName,
+                'doc_type' => $docType,
                 'file_size' => $uploadedFile->getSize(),
             ]);
             
-            Log::info('Document file uploaded to S3 successfully', [
+            Log::info('Document file stored successfully', [
                 'document_id' => $document->id,
-                's3_url' => $s3Url,
-                's3_path' => $s3FilePath,
-                'file_size' => $uploadedFile->getSize()
+                'disk' => $documentStoreDiskName,
+                'url' => $s3Url,
+                'path' => $s3FilePath,
+                'file_size' => $uploadedFile->getSize(),
             ]);
 
             // Clean up temp files
@@ -503,14 +501,14 @@ class DocumentController extends Controller
         } catch (\Exception $e) {
             // Initialize variables for cleanup
             $s3FilePathForCleanup = $s3FilePath ?? null;
+            $cleanupDisk = $documentStoreDiskName ?? null;
             
-            // Clean up document record if it was created but S3 upload failed
+            // Clean up document record if it was created but file storage failed
             if (isset($document) && $document->id) {
                 try {
-                    // Check if document has S3 file that needs cleanup
-                    if (!empty($s3FilePathForCleanup) && Storage::disk('s3')->exists($s3FilePathForCleanup)) {
-                        Storage::disk('s3')->delete($s3FilePathForCleanup);
-                        Log::info('Deleted S3 file after failed upload', ['s3_path' => $s3FilePathForCleanup]);
+                    if (! empty($s3FilePathForCleanup) && $cleanupDisk && Storage::disk($cleanupDisk)->exists($s3FilePathForCleanup)) {
+                        Storage::disk($cleanupDisk)->delete($s3FilePathForCleanup);
+                        Log::info('Deleted stored file after failed upload', ['disk' => $cleanupDisk, 'path' => $s3FilePathForCleanup]);
                     }
                     // Delete the document record
                     $document->delete();
