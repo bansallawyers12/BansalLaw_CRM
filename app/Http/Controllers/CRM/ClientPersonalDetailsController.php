@@ -2661,10 +2661,12 @@ class ClientPersonalDetailsController extends Controller
                     $countryCode = $phoneData['country_code'] ?? '';
                     
                     // Check for duplicates across all clients and handle universal number (4444444444)
-                    // Check in admins table (excluding current client)
-                    $existingPhoneInAdmins = Admin::where('phone', $phone)
-                        ->where('id', '!=', $client->id)
-                        ->first();
+                    // Check in admins table (excluding current client) when column exists
+                    $existingPhoneInAdmins = Schema::hasColumn('admins', 'phone')
+                        ? Admin::where('phone', $phone)
+                            ->where('id', '!=', $client->id)
+                            ->first()
+                        : null;
                     
                     // Check in client_contacts table (excluding current client and current contact)
                     $existingPhoneInContacts = ClientContact::where('phone', $phone)
@@ -2763,10 +2765,18 @@ class ClientPersonalDetailsController extends Controller
             }
 
             if ($lastPhone) {
-                $client->phone = $lastPhone;
-                $client->contact_type = $lastContactType;
-                $client->country_code = $lastCountryCode;
-                $client->save();
+                if (Schema::hasColumn('admins', 'phone')) {
+                    $client->phone = $lastPhone;
+                }
+                if (Schema::hasColumn('admins', 'contact_type')) {
+                    $client->contact_type = $lastContactType;
+                }
+                if (Schema::hasColumn('admins', 'country_code')) {
+                    $client->country_code = $lastCountryCode;
+                }
+                if ($client->isDirty()) {
+                    $client->save();
+                }
             }
 
             // Get new phone numbers for change tracking
@@ -2851,10 +2861,12 @@ class ClientPersonalDetailsController extends Controller
                     $emailId = !empty($emailId) ? (int)$emailId : null;
                     
                     // Check for duplicates and handle universal number (demo@gmail.com)
-                    // Check in admins table (excluding current client)
-                    $existingEmailInAdmins = Admin::where('email', $email)
-                        ->where('id', '!=', $client->id)
-                        ->first();
+                    // Check in admins table (excluding current client) when column exists
+                    $existingEmailInAdmins = Schema::hasColumn('admins', 'email')
+                        ? Admin::where('email', $email)
+                            ->where('id', '!=', $client->id)
+                            ->first()
+                        : null;
                     
                     // Check in client_emails table (excluding current client and current email)
                     $existingEmailInClientEmails = ClientEmail::where('email', $email)
@@ -2937,11 +2949,17 @@ class ClientPersonalDetailsController extends Controller
                     ->delete();
             }
             
-            // Update admins table with primary email
+            // Update admins table with primary email (only columns that exist)
             if (!empty($primaryEmail)) {
-                $client->email = $primaryEmail;
-                $client->email_type = $primaryEmailType;
-                $client->save();
+                if (Schema::hasColumn('admins', 'email')) {
+                    $client->email = $primaryEmail;
+                }
+                if (Schema::hasColumn('admins', 'email_type')) {
+                    $client->email_type = $primaryEmailType;
+                }
+                if ($client->isDirty()) {
+                    $client->save();
+                }
             }
 
             // Get new emails for change tracking
