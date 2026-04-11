@@ -17,6 +17,7 @@ use App\Models\ClientTravelInformation;
 use App\Models\ClientCharacter;
 use App\Models\ClientRelationship;
 use App\Models\ClientMatter;
+use App\Models\ClientCourtHearing;
 use App\Models\Matter;
 use App\Models\Country;
 use App\Models\Staff;
@@ -70,42 +71,41 @@ class ClientEditService
             'clientCharacters' => $this->getCharacters($clientId),
             'clientPartners' => $this->getRelationships($clientId),
             'clientMatters' => $this->getClientMatters($clientId),
+            'courtHearings' => $this->getCourtHearings($clientId),
 
             // Dropdown data - loaded ONCE to prevent N+1 queries
             'visaTypes' => $this->getVisaTypes(),
             'countries' => $this->getCountries(),
+            'allMatters' => $this->getAllMatters(),
             'matterFormForLead' => $matterFormForLead,
         ];
     }
 
     /**
-     * Dropdown data for "add matter" on lead edit (matches lead cost-assignment staff roles).
+     * Dropdown data for "add matter" on lead/client edit.
+     * Loads ALL active real staff (excludes internal dummy/placeholder accounts).
      */
     protected function getMatterFormOptionsForLead(bool $isCompany): array
     {
-        EnsureDummyMatterStaff::ensure();
+        // All active non-dummy staff for flexible assignment
+        $allActiveStaff = Staff::query()
+            ->where('status', 1)
+            ->where(function ($q) {
+                $q->whereNull('email')
+                  ->orWhere('email', 'not like', '%.internal');
+            })
+            ->whereNotNull('first_name')
+            ->where('first_name', '!=', '')
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get(['id', 'first_name', 'last_name', 'email']);
 
         return [
-            'mattersForAdd' => $this->getMattersForSubject($isCompany),
-            'legalPractitioners' => Staff::query()
-                ->where('role', 16)
-                ->where('status', 1)
-                ->orderBy('first_name')
-                ->orderBy('last_name')
-                ->get(['id', 'first_name', 'last_name', 'email']),
-            'personResponsibleOptions' => Staff::query()
-                ->where('role', 12)
-                ->where('status', 1)
-                ->orderBy('first_name')
-                ->orderBy('last_name')
-                ->get(['id', 'first_name', 'last_name', 'email']),
-            'personAssistingOptions' => Staff::query()
-                ->where('role', 13)
-                ->where('status', 1)
-                ->orderBy('first_name')
-                ->orderBy('last_name')
-                ->get(['id', 'first_name', 'last_name', 'email']),
-            'branchOffices' => Branch::query()->orderBy('office_name')->get(['id', 'office_name']),
+            'mattersForAdd'          => $this->getMattersForSubject($isCompany),
+            'legalPractitioners'     => $allActiveStaff,
+            'personResponsibleOptions' => $allActiveStaff,
+            'personAssistingOptions' => $allActiveStaff,
+            'branchOffices'          => Branch::query()->orderBy('office_name')->get(['id', 'office_name']),
         ];
     }
 
@@ -297,6 +297,29 @@ class ClientEditService
                 'workflowStage:id,name',
             ])
             ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
+     * Get court hearings for client, ordered by hearing date descending
+     */
+    protected function getCourtHearings(int $clientId)
+    {
+        return ClientCourtHearing::where('client_id', $clientId)
+            ->with(['matter:id,client_unique_matter_no,sel_matter_id', 'matter.matter:id,title'])
+            ->orderByDesc('hearing_date')
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
+     * Get all matter types for the matter type selector
+     */
+    protected function getAllMatters()
+    {
+        return Matter::select('id', 'title', 'nick_name')
+            ->where('status', 1)
+            ->orderBy('title')
             ->get();
     }
 

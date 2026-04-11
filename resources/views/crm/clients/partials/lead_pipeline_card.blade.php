@@ -60,9 +60,24 @@
      data-initial-followup="{{ $followupYmd }}"
      data-initial-assign="{{ $fetchedData->user_id ?? '' }}">
 
+    @php
+        $lpMatter = \App\Models\ClientMatter::where('client_id', $fetchedData->id)
+            ->where('matter_status', 1)->orderByDesc('id')->first();
+        $lpMatterName = null;
+        if ($lpMatter && $lpMatter->sel_matter_id) {
+            $mRec = \App\Models\Matter::find($lpMatter->sel_matter_id);
+            $lpMatterName = $mRec ? $mRec->title : null;
+        }
+        $stageColors = [
+            'new'=>'#1a73e8','initial_consultation'=>'#8e24aa','conflict_check'=>'#e37400',
+            'engaged'=>'#00897b','retained'=>'#188038','follow_up'=>'#f9a825',
+            'not_proceeding'=>'#c5221f','declined'=>'#616161',
+        ];
+        $stageColor = $stageColors[$stageKey] ?? '#555';
+    @endphp
     <div id="leadPipelineView" class="lead-pipeline-view" role="region" aria-label="Lead pipeline summary">
         <div class="lead-pipeline-card-header">
-            <h3><i class="fas fa-route"></i> Lead pipeline</h3>
+            <h3><i class="fas fa-balance-scale"></i> Client Pipeline</h3>
             <button type="button"
                     class="btn btn-primary btn-sm lead-pipeline-open-edit lead-pipeline-open-edit--icon"
                     title="Edit pipeline"
@@ -74,22 +89,24 @@
         </div>
         <div class="field-group">
             <span class="field-label">Stage</span>
-            <span class="field-value" id="leadPipelineStageDisplay">{{ $stageLabel }}</span>
+            <span class="field-value" id="leadPipelineStageDisplay" style="color:{{ $stageColor }};font-weight:600;">{{ $stageLabel }}</span>
         </div>
         <div class="field-group">
             <span class="field-label">Record</span>
-            <span class="field-value" id="leadPipelineRecordDisplay">{{ (int) ($fetchedData->status ?? 0) === 1 ? 'Active' : 'Inactive' }}</span>
-        </div>
-        <div class="field-group" id="leadPipelineFollowupRow" style="{{ $stageKey === 'follow_up' ? '' : 'display:none;' }}">
-            <span class="field-label">Follow-up date</span>
-            <span class="field-value" id="leadPipelineFollowupDisplay">
-                @if($stageKey === 'follow_up' && $fetchedData->followup_date)
-                    {{ $fetchedData->followup_date->format('d M Y') }}
+            <span class="field-value" id="leadPipelineRecordDisplay">
+                @if((int) ($fetchedData->status ?? 0) === 1)
+                    <span style="color:#188038;font-weight:600;">Active</span>
                 @else
-                    Not set
+                    <span style="color:#c5221f;font-weight:600;">Inactive</span>
                 @endif
             </span>
         </div>
+        @if($lpMatterName)
+        <div class="field-group">
+            <span class="field-label">Practice Area</span>
+            <span class="field-value">{{ $lpMatterName }}</span>
+        </div>
+        @endif
         <div class="field-group">
             <span class="field-label">Assigned to</span>
             <span class="field-value" id="leadPipelineAssigneeDisplay">
@@ -99,6 +116,20 @@
                     Not assigned
                 @endif
             </span>
+        </div>
+        <div class="field-group" id="leadPipelineFollowupRow" style="{{ $stageKey === 'follow_up' ? '' : 'display:none;' }}">
+            <span class="field-label">Follow-up Date</span>
+            <span class="field-value" id="leadPipelineFollowupDisplay">
+                @if($stageKey === 'follow_up' && $fetchedData->followup_date)
+                    {{ $fetchedData->followup_date->format('d M Y') }}
+                @else
+                    Not set
+                @endif
+            </span>
+        </div>
+        <div class="field-group">
+            <span class="field-label">Enquiry Date</span>
+            <span class="field-value">{{ $fetchedData->created_at ? $fetchedData->created_at->format('d M Y') : 'N/A' }}</span>
         </div>
     </div>
 

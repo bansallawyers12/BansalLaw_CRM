@@ -728,6 +728,45 @@
                             </div>
                             
                         </section>
+
+                        <!-- Address -->
+                        <section class="form-section">
+                            <div class="section-header">
+                                <h3><i class="fas fa-map-marker-alt"></i> Address <small class="text-muted" style="font-weight:400;font-size:0.75em;">(optional)</small></h3>
+                            </div>
+
+                            <div class="repeatable-section">
+                                <div class="repeatable-item">
+                                    <div class="content-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                                        <div class="form-group" style="grid-column:1/-1;">
+                                            <label>Address Line 1</label>
+                                            <input type="text" name="address_line_1" class="form-control" placeholder="Street address, house no." value="{{ old('address_line_1') }}">
+                                        </div>
+                                        <div class="form-group" style="grid-column:1/-1;">
+                                            <label>Address Line 2 <small class="text-muted">(optional)</small></label>
+                                            <input type="text" name="address_line_2" class="form-control" placeholder="Apartment, suite, floor, etc." value="{{ old('address_line_2') }}">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>City / Suburb</label>
+                                            <input type="text" name="suburb" class="form-control" placeholder="e.g. Rohini, Gurgaon" value="{{ old('suburb') }}">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>State / Province</label>
+                                            <input type="text" name="state" class="form-control" placeholder="e.g. Delhi, Haryana" value="{{ old('state') }}">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>PIN / Postal Code</label>
+                                            <input type="text" name="zip" class="form-control" placeholder="e.g. 110085" value="{{ old('zip') }}" maxlength="20">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Country</label>
+                                            <input type="text" name="country" class="form-control" placeholder="e.g. India" value="{{ old('country', 'India') }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
                     </section>
 
                     <!-- Form Actions (Hidden for floating button) -->

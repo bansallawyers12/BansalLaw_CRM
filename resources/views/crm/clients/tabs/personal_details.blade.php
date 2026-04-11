@@ -812,47 +812,49 @@
                             ?>
 
                             <div class="field-group">
-                                <span class="field-label">Legal Practitioner</span>
+                                <span class="field-label">Principal Solicitor</span>
                                 <span class="field-value">
                                     <?php
+                                    $lpName = null;
                                     if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_legal_practitioner != '') {
                                         $legal_practitioner_info = \App\Models\Staff::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_legal_practitioner)->first();
                                         if($legal_practitioner_info){
-                                            echo $legal_practitioner_info->first_name.' '.$legal_practitioner_info->last_name;
+                                            $lpName = $legal_practitioner_info->first_name.' '.$legal_practitioner_info->last_name;
                                         }
-                                    } else {
-                                        echo 'N/A';
-                                    }?>
-
+                                    }
+                                    echo $lpName ?? 'Ajay Bansal';
+                                    ?>
                                 </span>
                             </div>
                             <div class="field-group">
-                                <span class="field-label">Person Responsible</span>
+                                <span class="field-label">Responsible Solicitor</span>
                                 <span class="field-value">
                                     <?php
+                                    $prName = null;
                                     if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_person_responsible != ''){
                                         $sel_person_responsible_info_arr = \App\Models\Staff::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_person_responsible)->first();
                                         if($sel_person_responsible_info_arr){
-                                            echo $sel_person_responsible_info_arr->first_name.' '.$sel_person_responsible_info_arr->last_name;
+                                            $prName = $sel_person_responsible_info_arr->first_name.' '.$sel_person_responsible_info_arr->last_name;
                                         }
-                                    } else {
-                                        echo 'N/A';
-                                    } ?>
+                                    }
+                                    echo $prName ?? 'Michael Saleh';
+                                    ?>
                                 </span>
                             </div>
 
                             <div class="field-group">
-                                <span class="field-label">Person Assisting</span>
+                                <span class="field-label">Paralegal</span>
                                 <span class="field-value">
                                     <?php
+                                    $paName = null;
                                     if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->sel_person_assisting != ''){
                                         $sel_person_assisting_info_arr = \App\Models\Staff::select('first_name','last_name')->where('id', $matter_dis_ref_info_arr->sel_person_assisting)->first();
                                         if($sel_person_assisting_info_arr){
-                                            echo $sel_person_assisting_info_arr->first_name.' '.$sel_person_assisting_info_arr->last_name;
+                                            $paName = $sel_person_assisting_info_arr->first_name.' '.$sel_person_assisting_info_arr->last_name;
                                         }
-                                    } else {
-                                        echo 'N/A';
-                                    } ?>
+                                    }
+                                    echo $paName ?? 'Khushi Sangroya';
+                                    ?>
                                 </span>
                             </div>
 
@@ -866,41 +868,45 @@
                                             echo $office_info->office_name;
                                         }
                                     } else {
-                                        echo 'No Office Assigned';
+                                        echo 'Melbourne';
                                     } ?>
                                 </span>
                             </div>
+                        </div>
 
-                            @if($__sch::hasColumn('client_matters', 'incidence_type'))
+                        <div class="card">
+                            <h3><i class="fas fa-briefcase"></i> Matter Details</h3>
+                            @php
+                                $mdRows = [];
+                                if ($__sch::hasColumn('client_matters', 'case_detail')) {
+                                    $rawCaseDetail = ($matter_dis_ref_info_arr && isset($matter_dis_ref_info_arr->case_detail)) ? trim((string) $matter_dis_ref_info_arr->case_detail) : '';
+                                    if ($rawCaseDetail !== '') {
+                                        foreach (preg_split('/\r?\n/', $rawCaseDetail) as $cdLine) {
+                                            $cdLine = trim($cdLine);
+                                            if ($cdLine === '') continue;
+                                            if (strpos($cdLine, ':') !== false) {
+                                                [$cdLabel, $cdVal] = explode(':', $cdLine, 2);
+                                                $mdRows[] = ['label' => trim($cdLabel), 'value' => trim($cdVal)];
+                                            } else {
+                                                $mdRows[] = ['label' => '', 'value' => $cdLine];
+                                            }
+                                        }
+                                    }
+                                }
+                            @endphp
+                            @foreach($mdRows as $mdRow)
                             <div class="field-group">
-                                <span class="field-label">Incidence type</span>
-                                <span class="field-value">
-                                    {{ ($matter_dis_ref_info_arr && isset($matter_dis_ref_info_arr->incidence_type) && trim((string) $matter_dis_ref_info_arr->incidence_type) !== '') ? $matter_dis_ref_info_arr->incidence_type : 'N/A' }}
-                                </span>
+                                @if($mdRow['label'] !== '')
+                                <span class="field-label">{{ $mdRow['label'] }}</span>
+                                <span class="field-value">{{ $mdRow['value'] }}</span>
+                                @else
+                                <span class="field-value">{{ $mdRow['value'] }}</span>
+                                @endif
                             </div>
-                            @endif
-                            @if($__sch::hasColumn('client_matters', 'date_of_incidence'))
-                            <div class="field-group">
-                                <span class="field-label">Date of incidence</span>
-                                <span class="field-value">
-                                    @if($matter_dis_ref_info_arr && !empty($matter_dis_ref_info_arr->date_of_incidence))
-                                        {{ \Carbon\Carbon::parse($matter_dis_ref_info_arr->date_of_incidence)->format('d/m/Y') }}
-                                    @else
-                                        N/A
-                                    @endif
-                                </span>
-                            </div>
-                            @endif
-                            @if($__sch::hasColumn('client_matters', 'case_detail'))
-                            <div class="field-group">
-                                <span class="field-label">Case detail</span>
-                                <span class="field-value" style="white-space: pre-wrap;">{{ ($matter_dis_ref_info_arr && isset($matter_dis_ref_info_arr->case_detail) && trim((string) $matter_dis_ref_info_arr->case_detail) !== '') ? $matter_dis_ref_info_arr->case_detail : 'N/A' }}</span>
-                            </div>
-                            @endif
+                            @endforeach
                         </div>
                     <?php
                     } ?>
-
 
                     <style>
                         .eoi-table{
@@ -1188,6 +1194,53 @@
                     </style>
 
                 </div>
+
+                {{-- Court Hearings – full-width below the card grid --}}
+                @php
+                    $clientHearings = \App\Models\ClientCourtHearing::where('client_id', $fetchedData->id)
+                        ->orderByDesc('hearing_date')
+                        ->get();
+                @endphp
+                @if($clientHearings->count() > 0)
+                <div class="card" style="margin-top:20px;">
+                    <h3><i class="fas fa-gavel"></i> Court Hearings</h3>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;margin-top:10px;">
+                            <thead>
+                                <tr style="background:#f8f9fa;border-bottom:2px solid #dee2e6;">
+                                    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#495057;">Date</th>
+                                    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#495057;">Time</th>
+                                    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#495057;">Hearing Type</th>
+                                    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#495057;">Court Name</th>
+                                    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#495057;">Case Number</th>
+                                    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#495057;">Judge</th>
+                                    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#495057;">Status</th>
+                                    <th style="padding:10px 14px;text-align:left;font-weight:600;color:#495057;">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($clientHearings as $ch)
+                                @php
+                                    $hStatusColors = ['Scheduled'=>'#1a73e8','Completed'=>'#188038','Adjourned'=>'#e37400','Cancelled'=>'#c5221f'];
+                                    $hsc = $hStatusColors[$ch->status] ?? '#555';
+                                @endphp
+                                <tr style="border-bottom:1px solid #eee;">
+                                    <td style="padding:10px 14px;white-space:nowrap;"><strong>{{ $ch->hearing_date->format('d/m/Y') }}</strong></td>
+                                    <td style="padding:10px 14px;white-space:nowrap;">{{ $ch->hearing_time ? \Carbon\Carbon::parse($ch->hearing_time)->format('g:i A') : '—' }}</td>
+                                    <td style="padding:10px 14px;">{{ $ch->hearing_type ?: '—' }}</td>
+                                    <td style="padding:10px 14px;">{{ $ch->court_name ?: '—' }}</td>
+                                    <td style="padding:10px 14px;">{{ $ch->case_number ?: '—' }}</td>
+                                    <td style="padding:10px 14px;">{{ $ch->judge_name ?: '—' }}</td>
+                                    <td style="padding:10px 14px;white-space:nowrap;"><span style="color:{{ $hsc }};font-weight:600;">{{ $ch->status }}</span></td>
+                                    <td style="padding:10px 14px;">{{ $ch->notes ?: '—' }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                @endif
+
             </div>
 
             <!-- Age/DOB Toggle JavaScript -->

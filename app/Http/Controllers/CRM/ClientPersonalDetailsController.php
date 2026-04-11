@@ -1813,6 +1813,8 @@ class ClientPersonalDetailsController extends Controller
                     return $this->saveLeadPipelineSection($request, $client);
                 case 'referBy':
                     return $this->saveReferBySection($request, $client);
+                case 'leadSource':
+                    return $this->saveLeadSourceSection($request, $client);
                 default:
                     return response()->json([
                         'success' => false,
@@ -4343,6 +4345,40 @@ class ClientPersonalDetailsController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Refer by saved successfully',
+        ]);
+    }
+
+    private function saveLeadSourceSection($request, $client)
+    {
+        $allowedSources = [
+            'Online Enquiry','Walk-in','Phone Call','Email',
+            'Referral','Word of Mouth','Social Media','Facebook',
+            'Instagram','LinkedIn','Google','Google Ads',
+            'Sub Agent','Legal Aid','Court Referral','Other','',
+        ];
+
+        $validated = $request->validate([
+            'lead_source' => ['nullable','string','max:100'],
+            'refer_by'    => 'nullable|string|max:500',
+        ]);
+
+        $source   = trim((string) ($validated['lead_source'] ?? ''));
+        $referBy  = trim((string) ($validated['refer_by'] ?? ''));
+
+        $updates = ['updated_at' => now()];
+
+        if (Schema::hasColumn('admins', 'source')) {
+            $updates['source'] = $source !== '' ? $source : null;
+        }
+        if (Schema::hasColumn('admins', 'refer_by')) {
+            $updates['refer_by'] = $referBy !== '' ? $referBy : null;
+        }
+
+        DB::table('admins')->where('id', (int) $client->id)->update($updates);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lead source saved successfully.',
         ]);
     }
 
