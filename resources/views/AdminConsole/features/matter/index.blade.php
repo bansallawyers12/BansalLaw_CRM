@@ -44,10 +44,10 @@
         max-width: 280px !important;
         width: auto !important;
         z-index: 1060 !important;
-        background-color: #fff !important;
-        border: 1px solid #e9ecef !important;
-        border-radius: 6px !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        background-color: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 16px rgba(30, 61, 96, 0.12) !important;
         max-height: min(85vh, 520px) !important;
         overflow-y: auto !important;
     }
@@ -146,8 +146,8 @@
 						<div class="card-header">
 							<h4>All Matters</h4>
                             <div class="card-header-action">
-                                <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn mr-2"><i class="fas fa-filter"></i> Filter</a>
-                                <a href="{{route('adminconsole.features.matter.create')}}" class="btn btn-primary">Create Matter</a>
+                                <a href="javascript:;" class="btn btn-outline-primary btn-sm filter_btn me-2"><i class="fas fa-filter"></i> Filter</a>
+                                <a href="{{route('adminconsole.features.matter.create')}}" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Create Matter</a>
 							</div>
 						</div>
 						<div class="card-body">
@@ -156,13 +156,13 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                <label for="title" class="col-form-label" style="color:#495057 !important; font-weight: 500 !important;">Matter Name</label>
+                                                <label for="title" class="col-form-label">Matter Name</label>
                                                 <input type="text" name="title" value="{{ old('title', Request::get('title')) }}" class="form-control" data-valid="" autocomplete="off" placeholder="Select Matter" id="title">
                                             </div>
                                         </div>
                                         <div class="col-md-6" style="margin-top:35px;">
-                                            <button type="submit" class="btn btn-primary btn-theme-lg">Search</button>
-                                            <a class="btn btn-info" href="{{route('adminconsole.features.matter.index')}}">Reset</a>
+                                            <button type="submit" class="btn btn-primary me-2">Search</button>
+                                            <a class="btn btn-outline-secondary" href="{{route('adminconsole.features.matter.index')}}">Reset</a>
                                         </div>
                                     </div>
                                 </form>
@@ -173,7 +173,7 @@
 								<thead>
 									<tr>
 										<th>Matter Name</th>
-										<th></th>
+										<th class="text-end">Action</th>
 									</tr>
 								</thead>
 								@if(@$totalData !== 0)
@@ -182,7 +182,7 @@
 								@foreach (@$lists as $list)
 									<tr id="id_{{@$list->id}}">
 										<td>{{ @$list->title == "" ? config('constants.empty') : Str::limit(@$list->title, '50', '...') }}</td>
-										<td class="text-nowrap">
+										<td class="text-nowrap text-end">
 											<div class="dropdown d-inline-block">
 												<button class="btn btn-primary dropdown-toggle matter-action-dropdown-toggle" type="button" id="matterAction_{{ $list->id }}"
 													data-bs-toggle="dropdown"
@@ -215,7 +215,7 @@
 								@else
 								<tbody>
 									<tr>
-										<td style="text-align:center;" colspan="7">
+										<td style="text-align:center;" colspan="2">
 											No Record found
 										</td>
 									</tr>

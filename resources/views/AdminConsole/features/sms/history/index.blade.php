@@ -23,7 +23,7 @@
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-striped">
+                                <table class="table table-striped text_wrap">
                                     <thead>
                                         <tr>
                                             <th>Date/Time</th>
@@ -58,9 +58,9 @@
                                                     {{ strtoupper($sms->provider) }}
                                                 </span>
                                             </td>
-                                            <td>
-                                                <a href="{{ route('adminconsole.features.sms.history.show', $sms->id) }}" class="btn btn-sm btn-info">
-                                                    <i class="fas fa-eye"></i> View
+                                            <td class="text-nowrap">
+                                                <a href="{{ route('adminconsole.features.sms.history.show', $sms->id) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye me-1"></i> View
                                                 </a>
                                             </td>
                                         </tr>

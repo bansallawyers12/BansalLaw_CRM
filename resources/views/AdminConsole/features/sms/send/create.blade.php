@@ -3,7 +3,7 @@
 
 @section('content')
 <!-- Main Content -->
-<div class="main-content adminconsole-features">
+<div class="main-content adminconsole-features adminconsole-sms-form">
     <section class="section">
         <div class="section-body">
             <div class="server-error">
@@ -26,7 +26,7 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="phone">Phone Number <span class="text-danger">*</span></label>
+                                            <label for="phone">Phone Number <span class="span_req">*</span></label>
                                             <input type="text" class="form-control" id="phone" name="phone" placeholder="+61412345678" required>
                                             <small class="form-text text-muted">Include country code (e.g., +61 for Australia)</small>
                                         </div>
@@ -43,19 +43,19 @@
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label for="message">Message <span class="text-danger">*</span></label>
+                                    <label for="message">Message <span class="span_req">*</span></label>
                                     <textarea class="form-control" id="message" name="message" rows="4" placeholder="Enter your message here..." required></textarea>
                                     <small class="form-text text-muted">
                                         <span id="charCount">0</span>/1600 characters
                                     </small>
                                 </div>
                                 
-                                <div class="form-group">
+                                <div class="roles-form-actions">
                                     <button type="submit" class="btn btn-primary" id="sendBtn">
-                                        <i class="fas fa-paper-plane"></i> Send SMS
+                                        <i class="fas fa-paper-plane me-1"></i> Send SMS
                                     </button>
-                                    <a href="{{ route('adminconsole.features.sms.dashboard') }}" class="btn btn-secondary">
-                                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                                    <a href="{{ route('adminconsole.features.sms.dashboard') }}" class="btn btn-outline-secondary ms-2">
+                                        <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
                                     </a>
                                 </div>
                             </form>
@@ -97,7 +97,7 @@ $(document).ready(function() {
             _token: $('input[name="_token"]').val()
         };
         
-        $('#sendBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+        $('#sendBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Sending...');
         
         $.ajax({
             url: '{{ route("adminconsole.features.sms.send") }}',
@@ -121,7 +121,7 @@ $(document).ready(function() {
                 }
             },
             complete: function() {
-                $('#sendBtn').prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Send SMS');
+                $('#sendBtn').prop('disabled', false).html('<i class="fas fa-paper-plane me-1"></i> Send SMS');
             }
         });
     });

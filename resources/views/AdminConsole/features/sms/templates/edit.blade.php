@@ -3,7 +3,7 @@
 
 @section('content')
 <!-- Main Content -->
-<div class="main-content adminconsole-features">
+<div class="main-content adminconsole-features adminconsole-sms-form">
     <section class="section">
         <div class="section-body">
             <div class="server-error">
@@ -20,7 +20,7 @@
                         <div class="card-header">
                             <h4><i class="fas fa-edit"></i> Edit SMS Template</h4>
                             <div class="card-header-action">
-                                <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-secondary">
+                                <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-outline-primary">
                                     <i class="fas fa-arrow-left"></i> Back to Templates
                                 </a>
                             </div>
@@ -32,7 +32,7 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="title">Template Title <span class="text-danger">*</span></label>
+                                            <label for="title">Template Title <span class="span_req">*</span></label>
                                             <input type="text" class="form-control" id="title" name="title" value="{{ $template->title }}" required>
                                         </div>
                                     </div>
@@ -57,7 +57,7 @@
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label for="message">Message Content <span class="text-danger">*</span></label>
+                                    <label for="message">Message Content <span class="span_req">*</span></label>
                                     <textarea class="form-control" id="message" name="message" rows="4" placeholder="Enter your template message here..." required>{{ $template->message }}</textarea>
                                     <small class="form-text text-muted">
                                         <span id="charCount">{{ strlen($template->message) }}</span>/1600 characters
@@ -80,12 +80,12 @@
                                     </div>
                                 </div>
                                 
-                                <div class="form-group">
+                                <div class="roles-form-actions">
                                     <button type="submit" class="btn btn-primary" id="saveBtn">
-                                        <i class="fas fa-save"></i> Update Template
+                                        <i class="fas fa-save me-1"></i> Update Template
                                     </button>
-                                    <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-secondary">
-                                        <i class="fas fa-times"></i> Cancel
+                                    <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-outline-secondary ms-2">
+                                        <i class="fas fa-times me-1"></i> Cancel
                                     </a>
                                 </div>
                             </form>
@@ -121,7 +121,7 @@ $(document).ready(function() {
             _method: 'PUT'
         };
         
-        $('#saveBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+        $('#saveBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Updating...');
         
         $.ajax({
             url: '{{ route("adminconsole.features.sms.templates.update", $template->id) }}',
@@ -144,7 +144,7 @@ $(document).ready(function() {
                 }
             },
             complete: function() {
-                $('#saveBtn').prop('disabled', false).html('<i class="fas fa-save"></i> Update Template');
+                $('#saveBtn').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Update Template');
             }
         });
     });

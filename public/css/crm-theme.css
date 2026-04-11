@@ -685,10 +685,60 @@ body.sidebar-mini .matter-index-layout .matter-index-page .dropdown-menu {
   box-shadow: 0 4px 16px rgba(30, 61, 96, 0.12) !important;
 }
 
+body.sidebar-mini .matter-index-layout .matter-index-page .dropdown-item {
+  color: var(--text-dark) !important;
+}
+
 body.sidebar-mini .matter-index-layout .matter-index-page .dropdown-item:hover,
 body.sidebar-mini .matter-index-layout .matter-index-page .dropdown-item:focus {
   background-color: var(--sidebar-bg) !important;
   color: var(--navy) !important;
+}
+
+/* SMS Management — dashboard stat tiles; docs/theme.md */
+body.sidebar-mini .adminconsole-sms-dashboard .card-statistic-1 .card-icon.bg-primary {
+  background: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-sms-dashboard .card-statistic-1 .card-icon.bg-danger {
+  background: var(--danger) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-sms-dashboard .card-statistic-1 .card-icon.bg-info {
+  background: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-sms-dashboard .card-statistic-1 .card-icon.bg-warning {
+  background: rgba(200, 153, 42, 0.95) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-sms-dashboard .card-statistic-1 .card-wrap .card-header h4 {
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini .adminconsole-sms-dashboard .card-statistic-1 .card-wrap .card-body {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-sms-form .form-group .form-check-label {
+  text-transform: none !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--text-dark) !important;
+  letter-spacing: normal !important;
+}
+
+body.sidebar-mini .adminconsole-sms-detail .sms-message-box {
+  background: var(--page-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  padding: 15px !important;
+  white-space: pre-wrap !important;
+  color: var(--text-dark) !important;
 }
 
 /* Read-only field values on detail pages */
@@ -1075,7 +1125,10 @@ body.sidebar-mini .adminconsole-teams-form .card .form-group label,
 body.sidebar-mini .adminconsole-roles-form .card .form-group label,
 body.sidebar-mini .adminconsole-personal-doc-type-form .card .form-group label,
 body.sidebar-mini .adminconsole-matter-document-type-form .card .form-group label,
-body.sidebar-mini .adminconsole-document-checklist-form .card .form-group label {
+body.sidebar-mini .adminconsole-document-checklist-form .card .form-group label,
+body.sidebar-mini .adminconsole-matter-form .card .form-group label,
+body.sidebar-mini .adminconsole-upload-checklist-form .card .form-group label,
+body.sidebar-mini .adminconsole-sms-form .card .form-group label {
   color: var(--text-muted) !important;
   font-weight: 600 !important;
   font-size: 12px !important;
@@ -1091,7 +1144,10 @@ body.sidebar-mini .adminconsole-teams-form .form-group label:has(> input[type="c
 body.sidebar-mini .adminconsole-roles-form .form-group label:has(> input[type="checkbox"]),
 body.sidebar-mini .adminconsole-personal-doc-type-form .form-group label:has(> input[type="checkbox"]),
 body.sidebar-mini .adminconsole-matter-document-type-form .form-group label:has(> input[type="checkbox"]),
-body.sidebar-mini .adminconsole-document-checklist-form .form-group label:has(> input[type="checkbox"]) {
+body.sidebar-mini .adminconsole-document-checklist-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-matter-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-upload-checklist-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-sms-form .form-group label:has(> input[type="checkbox"]) {
   text-transform: none !important;
   font-size: 14px !important;
   color: var(--text-dark) !important;
@@ -1105,7 +1161,10 @@ body.sidebar-mini .adminconsole-teams-form .card .card-body h4,
 body.sidebar-mini .adminconsole-roles-form .card .card-body h4,
 body.sidebar-mini .adminconsole-personal-doc-type-form .card .card-body h4,
 body.sidebar-mini .adminconsole-matter-document-type-form .card .card-body h4,
-body.sidebar-mini .adminconsole-document-checklist-form .card .card-body h4 {
+body.sidebar-mini .adminconsole-document-checklist-form .card .card-body h4,
+body.sidebar-mini .adminconsole-matter-form .card .card-body h4,
+body.sidebar-mini .adminconsole-upload-checklist-form .card .card-body h4,
+body.sidebar-mini .adminconsole-sms-form .card .card-body h4 {
   color: var(--navy) !important;
   font-weight: 700 !important;
   font-size: 1rem !important;
@@ -1130,7 +1189,13 @@ body.sidebar-mini .adminconsole-personal-doc-type-form small.form-text,
 body.sidebar-mini .adminconsole-matter-document-type-form .form-text,
 body.sidebar-mini .adminconsole-matter-document-type-form small.form-text,
 body.sidebar-mini .adminconsole-document-checklist-form .form-text,
-body.sidebar-mini .adminconsole-document-checklist-form small.form-text {
+body.sidebar-mini .adminconsole-document-checklist-form small.form-text,
+body.sidebar-mini .adminconsole-matter-form .form-text,
+body.sidebar-mini .adminconsole-matter-form small.form-text,
+body.sidebar-mini .adminconsole-upload-checklist-form .form-text,
+body.sidebar-mini .adminconsole-upload-checklist-form small.form-text,
+body.sidebar-mini .adminconsole-sms-form .form-text,
+body.sidebar-mini .adminconsole-sms-form small.form-text {
   color: var(--text-muted) !important;
 }
 
@@ -1142,7 +1207,10 @@ body.sidebar-mini .adminconsole-teams-form .card-header h4 small,
 body.sidebar-mini .adminconsole-roles-form .card-header h4 small,
 body.sidebar-mini .adminconsole-personal-doc-type-form .card-header h4 small,
 body.sidebar-mini .adminconsole-matter-document-type-form .card-header h4 small,
-body.sidebar-mini .adminconsole-document-checklist-form .card-header h4 small {
+body.sidebar-mini .adminconsole-document-checklist-form .card-header h4 small,
+body.sidebar-mini .adminconsole-matter-form .card-header h4 small,
+body.sidebar-mini .adminconsole-upload-checklist-form .card-header h4 small,
+body.sidebar-mini .adminconsole-sms-form .card-header h4 small {
   color: var(--text-muted) !important;
   font-weight: 500 !important;
   font-size: 0.85rem !important;
@@ -1158,7 +1226,10 @@ body.sidebar-mini .adminconsole-teams-form .alert-info,
 body.sidebar-mini .adminconsole-roles-form .alert-info,
 body.sidebar-mini .adminconsole-personal-doc-type-form .alert-info,
 body.sidebar-mini .adminconsole-matter-document-type-form .alert-info,
-body.sidebar-mini .adminconsole-document-checklist-form .alert-info {
+body.sidebar-mini .adminconsole-document-checklist-form .alert-info,
+body.sidebar-mini .adminconsole-matter-form .alert-info,
+body.sidebar-mini .adminconsole-upload-checklist-form .alert-info,
+body.sidebar-mini .adminconsole-sms-form .alert-info {
   background: rgba(58, 111, 168, 0.12) !important;
   border: 1px solid rgba(58, 111, 168, 0.28) !important;
   color: var(--navy) !important;
@@ -1182,7 +1253,13 @@ body.sidebar-mini .adminconsole-personal-doc-type-form .alert-info em,
 body.sidebar-mini .adminconsole-matter-document-type-form .alert-info strong,
 body.sidebar-mini .adminconsole-matter-document-type-form .alert-info em,
 body.sidebar-mini .adminconsole-document-checklist-form .alert-info strong,
-body.sidebar-mini .adminconsole-document-checklist-form .alert-info em {
+body.sidebar-mini .adminconsole-document-checklist-form .alert-info em,
+body.sidebar-mini .adminconsole-matter-form .alert-info strong,
+body.sidebar-mini .adminconsole-matter-form .alert-info em,
+body.sidebar-mini .adminconsole-upload-checklist-form .alert-info strong,
+body.sidebar-mini .adminconsole-upload-checklist-form .alert-info em,
+body.sidebar-mini .adminconsole-sms-form .alert-info strong,
+body.sidebar-mini .adminconsole-sms-form .alert-info em {
   color: var(--navy) !important;
 }
 
@@ -1203,7 +1280,13 @@ body.sidebar-mini .adminconsole-personal-doc-type-form .alert-info .fa,
 body.sidebar-mini .adminconsole-matter-document-type-form .alert-info .fas,
 body.sidebar-mini .adminconsole-matter-document-type-form .alert-info .fa,
 body.sidebar-mini .adminconsole-document-checklist-form .alert-info .fas,
-body.sidebar-mini .adminconsole-document-checklist-form .alert-info .fa {
+body.sidebar-mini .adminconsole-document-checklist-form .alert-info .fa,
+body.sidebar-mini .adminconsole-matter-form .alert-info .fas,
+body.sidebar-mini .adminconsole-matter-form .alert-info .fa,
+body.sidebar-mini .adminconsole-upload-checklist-form .alert-info .fas,
+body.sidebar-mini .adminconsole-upload-checklist-form .alert-info .fa,
+body.sidebar-mini .adminconsole-sms-form .alert-info .fas,
+body.sidebar-mini .adminconsole-sms-form .alert-info .fa {
   color: var(--sidebar-active) !important;
 }
 
@@ -1216,7 +1299,10 @@ body.sidebar-mini .adminconsole-teams-form .alert-warning,
 body.sidebar-mini .adminconsole-roles-form .alert-warning,
 body.sidebar-mini .adminconsole-personal-doc-type-form .alert-warning,
 body.sidebar-mini .adminconsole-matter-document-type-form .alert-warning,
-body.sidebar-mini .adminconsole-document-checklist-form .alert-warning {
+body.sidebar-mini .adminconsole-document-checklist-form .alert-warning,
+body.sidebar-mini .adminconsole-matter-form .alert-warning,
+body.sidebar-mini .adminconsole-upload-checklist-form .alert-warning,
+body.sidebar-mini .adminconsole-sms-form .alert-warning {
   background: rgba(200, 153, 42, 0.15) !important;
   border: 1px solid rgba(200, 153, 42, 0.35) !important;
   color: #7a5800 !important;
@@ -1231,7 +1317,10 @@ body.sidebar-mini .adminconsole-teams-form .alert-warning strong,
 body.sidebar-mini .adminconsole-roles-form .alert-warning strong,
 body.sidebar-mini .adminconsole-personal-doc-type-form .alert-warning strong,
 body.sidebar-mini .adminconsole-matter-document-type-form .alert-warning strong,
-body.sidebar-mini .adminconsole-document-checklist-form .alert-warning strong {
+body.sidebar-mini .adminconsole-document-checklist-form .alert-warning strong,
+body.sidebar-mini .adminconsole-matter-form .alert-warning strong,
+body.sidebar-mini .adminconsole-upload-checklist-form .alert-warning strong,
+body.sidebar-mini .adminconsole-sms-form .alert-warning strong {
   color: #5c4300 !important;
 }
 
@@ -1243,7 +1332,10 @@ body.sidebar-mini .adminconsole-teams-form input.form-control[readonly],
 body.sidebar-mini .adminconsole-roles-form input.form-control[readonly],
 body.sidebar-mini .adminconsole-personal-doc-type-form input.form-control[readonly],
 body.sidebar-mini .adminconsole-matter-document-type-form input.form-control[readonly],
-body.sidebar-mini .adminconsole-document-checklist-form input.form-control[readonly] {
+body.sidebar-mini .adminconsole-document-checklist-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-matter-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-upload-checklist-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-sms-form input.form-control[readonly] {
   background: var(--page-bg) !important;
   color: var(--text-dark) !important;
   border-color: var(--border) !important;
@@ -1267,7 +1359,13 @@ body.sidebar-mini .adminconsole-personal-doc-type-form .custom-error strong,
 body.sidebar-mini .adminconsole-matter-document-type-form .custom-error,
 body.sidebar-mini .adminconsole-matter-document-type-form .custom-error strong,
 body.sidebar-mini .adminconsole-document-checklist-form .custom-error,
-body.sidebar-mini .adminconsole-document-checklist-form .custom-error strong {
+body.sidebar-mini .adminconsole-document-checklist-form .custom-error strong,
+body.sidebar-mini .adminconsole-matter-form .custom-error,
+body.sidebar-mini .adminconsole-matter-form .custom-error strong,
+body.sidebar-mini .adminconsole-upload-checklist-form .custom-error,
+body.sidebar-mini .adminconsole-upload-checklist-form .custom-error strong,
+body.sidebar-mini .adminconsole-sms-form .custom-error,
+body.sidebar-mini .adminconsole-sms-form .custom-error strong {
   color: var(--danger) !important;
 }
 
@@ -1288,7 +1386,13 @@ body.sidebar-mini .adminconsole-personal-doc-type-form .span_req,
 body.sidebar-mini .adminconsole-matter-document-type-form label .span_req,
 body.sidebar-mini .adminconsole-matter-document-type-form .span_req,
 body.sidebar-mini .adminconsole-document-checklist-form label .span_req,
-body.sidebar-mini .adminconsole-document-checklist-form .span_req {
+body.sidebar-mini .adminconsole-document-checklist-form .span_req,
+body.sidebar-mini .adminconsole-matter-form label .span_req,
+body.sidebar-mini .adminconsole-matter-form .span_req,
+body.sidebar-mini .adminconsole-upload-checklist-form label .span_req,
+body.sidebar-mini .adminconsole-upload-checklist-form .span_req,
+body.sidebar-mini .adminconsole-sms-form label .span_req,
+body.sidebar-mini .adminconsole-sms-form .span_req {
   color: var(--danger) !important;
 }
 
@@ -1301,7 +1405,10 @@ body.sidebar-mini .main-content.adminconsole-teams-form .accordion,
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion,
 body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion,
 body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion,
-body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion {
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion,
+body.sidebar-mini .main-content.adminconsole-matter-form .accordion,
+body.sidebar-mini .main-content.adminconsole-upload-checklist-form .accordion,
+body.sidebar-mini .main-content.adminconsole-sms-form .accordion {
   border: 1px solid var(--border) !important;
   border-radius: 10px !important;
   overflow: hidden !important;
@@ -1322,7 +1429,10 @@ body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-he
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header,
 body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-header,
 body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-header,
-body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header {
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-matter-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-upload-checklist-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-sms-form .accordion .accordion-header {
   background: var(--navy) !important;
   background-image: none !important;
   color: #fff !important;
@@ -1341,7 +1451,10 @@ body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-he
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header:hover,
 body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-header:hover,
 body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-header:hover,
-body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header:hover {
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-matter-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-upload-checklist-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-sms-form .accordion .accordion-header:hover {
   filter: brightness(1.04) !important;
 }
 
@@ -1353,7 +1466,10 @@ body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-he
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header[aria-expanded="true"],
 body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-header[aria-expanded="true"],
 body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-header[aria-expanded="true"],
-body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header[aria-expanded="true"] {
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-matter-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-upload-checklist-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-sms-form .accordion .accordion-header[aria-expanded="true"] {
   background: var(--navy) !important;
   color: #fff !important;
   box-shadow: none !important;
@@ -1367,7 +1483,10 @@ body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-he
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header h4,
 body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-header h4,
 body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-header h4,
-body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header h4 {
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-matter-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-upload-checklist-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-sms-form .accordion .accordion-header h4 {
   color: #fff !important;
   margin: 0 !important;
   font-size: 1rem !important;
@@ -1382,7 +1501,10 @@ body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-bo
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-body,
 body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-body,
 body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-body,
-body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-body {
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-matter-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-upload-checklist-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-sms-form .accordion .accordion-body {
   background: var(--card-bg) !important;
   padding: 1.25rem !important;
   border: none !important;
@@ -1393,7 +1515,10 @@ body.sidebar-mini .adminconsole-teams-form .card-header h4,
 body.sidebar-mini .adminconsole-roles-form .card-header h4,
 body.sidebar-mini .adminconsole-personal-doc-type-form .card-header h4,
 body.sidebar-mini .adminconsole-matter-document-type-form .card-header h4,
-body.sidebar-mini .adminconsole-document-checklist-form .card-header h4 {
+body.sidebar-mini .adminconsole-document-checklist-form .card-header h4,
+body.sidebar-mini .adminconsole-matter-form .card-header h4,
+body.sidebar-mini .adminconsole-upload-checklist-form .card-header h4,
+body.sidebar-mini .adminconsole-sms-form .card-header h4 {
   color: var(--navy) !important;
   font-weight: 700 !important;
 }
@@ -1463,11 +1588,23 @@ body.sidebar-mini .adminconsole-roles-form .accordion-body > ul > li label input
 body.sidebar-mini .adminconsole-roles-form .roles-form-actions,
 body.sidebar-mini .adminconsole-personal-doc-type-form .roles-form-actions,
 body.sidebar-mini .adminconsole-matter-document-type-form .roles-form-actions,
-body.sidebar-mini .adminconsole-document-checklist-form .roles-form-actions {
+body.sidebar-mini .adminconsole-document-checklist-form .roles-form-actions,
+body.sidebar-mini .adminconsole-matter-form .roles-form-actions,
+body.sidebar-mini .adminconsole-upload-checklist-form .roles-form-actions,
+body.sidebar-mini .adminconsole-sms-form .roles-form-actions {
   margin-top: 1.25rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
   text-align: right;
+}
+
+body.sidebar-mini .adminconsole-upload-checklist-form select.form-control:disabled,
+body.sidebar-mini .adminconsole-upload-checklist-form select.form-control.uploadchecklist-matter-select:disabled {
+  background-color: var(--page-bg) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border) !important;
+  cursor: not-allowed !important;
+  opacity: 1 !important;
 }
 
 /* Offices branch form — Select2 (country / admin); docs/theme.md */

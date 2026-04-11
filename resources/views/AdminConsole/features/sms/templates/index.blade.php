@@ -21,13 +21,13 @@
                             <h4><i class="fas fa-file-alt"></i> SMS Templates</h4>
                             <div class="card-header-action">
                                 <a href="{{ route('adminconsole.features.sms.templates.create') }}" class="btn btn-primary">
-                                    <i class="fas fa-plus"></i> Create Template
+                                    <i class="fas fa-plus me-1"></i> Create Template
                                 </a>
                             </div>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-striped">
+                                <table class="table table-striped text_wrap">
                                     <thead>
                                         <tr>
                                             <th>Title</th>
@@ -71,11 +71,11 @@
                                             <td>
                                                 <small>{{ $template->created_at->format('M d, Y') }}</small>
                                             </td>
-                                            <td>
-                                                <a href="{{ route('adminconsole.features.sms.templates.edit', $template->id) }}" class="btn btn-sm btn-info">
+                                            <td class="text-nowrap">
+                                                <a href="{{ route('adminconsole.features.sms.templates.edit', $template->id) }}" class="btn btn-sm btn-outline-primary me-1">
                                                     <i class="fas fa-edit"></i> Edit
                                                 </a>
-                                                <button class="btn btn-sm btn-danger" onclick="deleteTemplate({{ $template->id }})">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteTemplate({{ $template->id }})">
                                                     <i class="fas fa-trash"></i> Delete
                                                 </button>
                                             </td>
@@ -86,7 +86,7 @@
                                                 <i class="fas fa-file-alt fa-2x text-muted mb-2"></i>
                                                 <p class="text-muted">No templates found</p>
                                                 <a href="{{ route('adminconsole.features.sms.templates.create') }}" class="btn btn-primary">
-                                                    <i class="fas fa-plus"></i> Create First Template
+                                                    <i class="fas fa-plus me-1"></i> Create First Template
                                                 </a>
                                             </td>
                                         </tr>

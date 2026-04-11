@@ -3,9 +3,12 @@
 
 @section('content')
 <!-- Main Content -->
-<div class="main-content adminconsole-features">
+<div class="main-content adminconsole-features adminconsole-matter-form">
 	<section class="section">
 		<div class="section-body">
+			<div class="server-error">
+				@include('../Elements/flash-message')
+			</div>
 			<form action="{{ route('adminconsole.features.matter.update', $fetchedData->id) }}" name="edit-matter" autocomplete="off" enctype="multipart/form-data" method="POST">
 				@csrf
 				@method('PUT')
@@ -15,7 +18,7 @@
 							<div class="card-header">
 								<h4>Edit Matter</h4>
 								<div class="card-header-action">
-									<a href="{{route('adminconsole.features.matter.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+									<a href="{{route('adminconsole.features.matter.index')}}" class="btn btn-outline-primary"><i class="fa fa-arrow-left"></i> Back</a>
 								</div>
 							</div>
 						</div>
@@ -26,12 +29,12 @@
 					<div class="col-9 col-md-9 col-lg-9">
 						<div class="card">
 							<div class="card-body">
-								<div id="accordion">
+								<div id="matter-form-accordion">
 									<div class="accordion">
 										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
 											<h4>Matter Information</h4>
 										</div>
-										<div class="accordion-body collapse show" id="primary_info" data-parent="#accordion">
+										<div class="accordion-body collapse show" id="primary_info" data-bs-parent="#matter-form-accordion">
 											<div class="row">
 												<div class="col-12 col-md-6 col-lg-6">
 													<div class="form-group">
@@ -315,8 +318,8 @@
 										</div>
 									</div>
 								</div>
-								<div class="form-group float-right">
-									<button type="submit" class="btn btn-primary">Update Matter</button>
+								<div class="roles-form-actions">
+									<button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Update Matter</button>
 								</div>
 							</div>
 						</div>
