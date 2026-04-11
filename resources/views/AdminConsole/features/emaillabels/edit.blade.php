@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-email-labels-form">
 	<section class="section">
 		<div class="section-body">
 		<form action="{{ route('adminconsole.features.emaillabels.update', $fetchedData->id) }}" name="edit-email-label" autocomplete="off" enctype="multipart/form-data" method="POST">
@@ -59,10 +59,10 @@
 													<div class="form-group"> 
 														<label for="color">Color <span class="span_req">*</span></label>
 														<div class="input-group">
-															<input type="color" name="color" class="form-control" id="colorPicker" value="{{ old('color', @$fetchedData->color ?: '#3B82F6') }}" style="height: 38px;" required>
-															<input type="text" name="color_hex" class="form-control" id="colorHex" value="{{ old('color', @$fetchedData->color ?: '#3B82F6') }}" placeholder="#3B82F6" pattern="^#[0-9A-Fa-f]{6}$" required>
+															<input type="color" name="color" class="form-control" id="colorPicker" value="{{ old('color', @$fetchedData->color ?: '#3A6FA8') }}" style="height: 38px;" required>
+															<input type="text" name="color_hex" class="form-control" id="colorHex" value="{{ old('color', @$fetchedData->color ?: '#3A6FA8') }}" placeholder="#3A6FA8" pattern="^#[0-9A-Fa-f]{6}$" required>
 														</div>
-														<small class="form-text text-muted">Select a color or enter hex code (e.g., #3B82F6)</small>
+														<small class="form-text text-muted">Select a color or enter hex (e.g. <code class="text-muted">#3A6FA8</code>)</small>
 														@if ($errors->has('color'))
 															<span class="custom-error" role="alert">
 																<strong>{{ @$errors->first('color') }}</strong>

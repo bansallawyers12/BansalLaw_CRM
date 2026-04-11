@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-staff-list">
 	<section class="section">
 		<div class="section-body">
 			<div class="server-error">
