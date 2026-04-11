@@ -145,9 +145,10 @@ class StaffController extends Controller
                     ? implode(',', $requestData['permission'])
                     : '';
                 $obj->sheet_access = $this->normalizeStaffSheetAccess($requestData['sheet_access'] ?? null);
-                $obj->is_solicitor = isset($requestData['is_solicitor']) ? 1 : 0;
+                $isSolicitor = $this->requestIndicatesSolicitor($requestData);
+                $obj->is_solicitor = $isSolicitor ? 1 : 0;
 
-                if (isset($requestData['is_solicitor'])) {
+                if ($isSolicitor) {
                     $obj->marn_number = @$requestData['marn_number'];
                     $obj->company_name = @$requestData['company_name'];
                     $obj->business_address = @$requestData['business_address'];
@@ -290,9 +291,10 @@ class StaffController extends Controller
                 : '';
             $obj->sheet_access = $this->normalizeStaffSheetAccess($requestData['sheet_access'] ?? null);
             $obj->show_dashboard_per = isset($requestData['show_dashboard_per']) ? 1 : 0;
-            $obj->is_solicitor = isset($requestData['is_solicitor']) ? 1 : 0;
+            $isSolicitor = $this->requestIndicatesSolicitor($requestData);
+            $obj->is_solicitor = $isSolicitor ? 1 : 0;
 
-            if (isset($requestData['is_solicitor'])) {
+            if ($isSolicitor) {
                 $obj->marn_number = @$requestData['marn_number'];
                 $obj->company_name = @$requestData['company_name'];
                 $obj->business_address = @$requestData['business_address'];
@@ -394,6 +396,15 @@ class StaffController extends Controller
         }
 
         return view('AdminConsole.staff.view', compact(['fetchedData']));
+    }
+
+    /**
+     * Whether the request marks the staff user as a solicitor.
+     * Accepts current field name `is_solicitor` and legacy `is_migration_agent` (same DB column: is_solicitor).
+     */
+    private function requestIndicatesSolicitor(array $requestData): bool
+    {
+        return isset($requestData['is_solicitor']) || isset($requestData['is_migration_agent']);
     }
 
     /**
