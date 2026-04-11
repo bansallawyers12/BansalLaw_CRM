@@ -179,7 +179,10 @@
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     text-align: center;
+    background-image: none !important;
+    font-family: inherit;
 }
+.front-desk-checkin-page .fd-choice-btn i { color: inherit !important; }
 .front-desk-checkin-page .fd-choice-btn:focus-visible {
     outline: 3px solid rgba(58, 111, 168, 0.4);
     outline-offset: 2px;
@@ -227,52 +230,66 @@
     color: #fff;
 }
 
-.front-desk-checkin-page .fd-wizard-wrapper .fd-btn-action {
-    background: var(--navy);
-    border: 2px solid var(--navy);
+/*
+ * Primary CTAs — theme.md "Buttons": primary = --navy, text #fff; hover uses --sidebar-active.
+ * Applies to Look Up / Continue / Submit Check-In / Details Correct / Start Over (not status green).
+ */
+body.sidebar-mini .front-desk-checkin-page .btn.fd-btn-action,
+body.sidebar-mini .front-desk-checkin-page .btn.fd-btn-confirm,
+.front-desk-checkin-page .btn.fd-btn-action,
+.front-desk-checkin-page .btn.fd-btn-confirm {
+    background-color: var(--navy) !important;
+    background-image: none !important;
+    border: 2px solid var(--navy) !important;
     color: #fff !important;
     font-weight: 600;
     border-radius: 8px;
+    box-shadow: none !important;
 }
-.front-desk-checkin-page .fd-wizard-wrapper .fd-btn-action:hover:not(:disabled) {
-    background: var(--sidebar-active);
-    border-color: var(--sidebar-active);
+body.sidebar-mini .front-desk-checkin-page .btn.fd-btn-action:hover:not(:disabled),
+body.sidebar-mini .front-desk-checkin-page .btn.fd-btn-action:focus:not(:disabled),
+body.sidebar-mini .front-desk-checkin-page .btn.fd-btn-confirm:hover:not(:disabled),
+body.sidebar-mini .front-desk-checkin-page .btn.fd-btn-confirm:focus:not(:disabled),
+.front-desk-checkin-page .btn.fd-btn-action:hover:not(:disabled),
+.front-desk-checkin-page .btn.fd-btn-action:focus:not(:disabled),
+.front-desk-checkin-page .btn.fd-btn-confirm:hover:not(:disabled),
+.front-desk-checkin-page .btn.fd-btn-confirm:focus:not(:disabled) {
+    background-color: var(--sidebar-active) !important;
+    border-color: var(--sidebar-active) !important;
     color: #fff !important;
+    filter: none !important;
 }
-.front-desk-checkin-page .fd-wizard-wrapper .fd-btn-action:disabled {
+.front-desk-checkin-page .btn.fd-btn-action i,
+.front-desk-checkin-page .btn.fd-btn-confirm i { color: #fff !important; }
+.front-desk-checkin-page .btn.fd-btn-action:disabled,
+.front-desk-checkin-page .btn.fd-btn-confirm:disabled {
     opacity: 0.55;
     cursor: not-allowed;
 }
-.front-desk-checkin-page .fd-wizard-wrapper .fd-btn-confirm {
-    background: var(--success);
-    border: 2px solid var(--success);
-    color: #fff !important;
-    font-weight: 600;
-    border-radius: 8px;
-}
-.front-desk-checkin-page .fd-wizard-wrapper .fd-btn-confirm:hover {
-    filter: brightness(0.95);
-    color: #fff !important;
-}
 
-.front-desk-checkin-page .fd-wizard-wrapper .fd-btn-walkin {
-    background: var(--card-bg);
-    border: 2px solid var(--border);
-    color: var(--navy);
+/* Walk-in — theme.md: outline + gold accent when active */
+body.sidebar-mini .front-desk-checkin-page .btn.fd-btn-walkin,
+.front-desk-checkin-page .btn.fd-btn-walkin {
+    background-color: var(--card-bg) !important;
+    background-image: none !important;
+    border: 2px solid var(--border) !important;
+    color: var(--navy) !important;
     font-weight: 600;
     border-radius: 8px;
 }
-.front-desk-checkin-page .fd-wizard-wrapper .fd-btn-walkin:hover {
-    background: var(--sidebar-bg);
-    border-color: var(--sidebar-active);
-    color: var(--navy);
+body.sidebar-mini .front-desk-checkin-page .btn.fd-btn-walkin:hover,
+.front-desk-checkin-page .btn.fd-btn-walkin:hover {
+    background-color: var(--sidebar-bg) !important;
+    border-color: var(--sidebar-active) !important;
+    color: var(--navy) !important;
 }
-.front-desk-checkin-page .fd-wizard-wrapper .fd-btn-walkin.active {
-    background: var(--accent-light);
-    border-color: var(--accent-gold);
-    color: #7a5800;
-    box-shadow: 0 0 0 2px rgba(200, 153, 42, 0.35);
+.front-desk-checkin-page .btn.fd-btn-walkin.active {
+    background-color: var(--accent-light) !important;
+    border-color: var(--accent-gold) !important;
+    color: #7a5800 !important;
+    box-shadow: 0 0 0 2px rgba(200, 153, 42, 0.35) !important;
 }
+.front-desk-checkin-page .btn.fd-btn-walkin i { color: inherit !important; }
 
 .front-desk-checkin-page .fd-appt-card {
     border: 2px solid var(--border);
@@ -320,26 +337,50 @@
     border-color: var(--sidebar-active);
     box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2);
 }
-.front-desk-checkin-page .btn-light {
-    background: var(--card-bg) !important;
+/* Back — theme.md: outline (neutral) */
+body.sidebar-mini .front-desk-checkin-page .btn.btn-light,
+.front-desk-checkin-page .btn.btn-light {
+    background-color: var(--card-bg) !important;
+    background-image: none !important;
     border: 1px solid var(--border) !important;
     color: var(--navy) !important;
 }
-.front-desk-checkin-page .btn-light:hover {
-    background: var(--sidebar-bg) !important;
+body.sidebar-mini .front-desk-checkin-page .btn.btn-light:hover,
+body.sidebar-mini .front-desk-checkin-page .btn.btn-light:focus,
+.front-desk-checkin-page .btn.btn-light:hover,
+.front-desk-checkin-page .btn.btn-light:focus {
+    background-color: var(--sidebar-bg) !important;
+    border-color: var(--border) !important;
     color: var(--navy) !important;
 }
-.front-desk-checkin-page .btn-outline-secondary {
+.front-desk-checkin-page .btn.btn-light i { color: var(--navy) !important; }
+
+/* Secondary outline — theme.md: border --border, text --navy, hover --sidebar-bg */
+body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary,
+.front-desk-checkin-page .btn.btn-outline-secondary {
+    --bs-btn-color: var(--navy);
+    --bs-btn-border-color: var(--border);
+    --bs-btn-hover-color: var(--navy);
+    --bs-btn-hover-bg: var(--sidebar-bg);
+    --bs-btn-hover-border-color: var(--navy);
+    --bs-btn-active-color: var(--navy);
+    --bs-btn-active-bg: var(--sidebar-bg);
+    --bs-btn-active-border-color: var(--navy);
     color: var(--navy) !important;
     border-color: var(--border) !important;
-    background: var(--card-bg) !important;
+    background-color: var(--card-bg) !important;
+    background-image: none !important;
     font-weight: 600;
 }
-.front-desk-checkin-page .btn-outline-secondary:hover {
-    background: var(--sidebar-bg) !important;
-    border-color: var(--navy) !important;
+body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:hover,
+body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
+.front-desk-checkin-page .btn.btn-outline-secondary:hover,
+.front-desk-checkin-page .btn.btn-outline-secondary:focus {
     color: var(--navy) !important;
+    background-color: var(--sidebar-bg) !important;
+    border-color: var(--navy) !important;
 }
+.front-desk-checkin-page .btn.btn-outline-secondary i { color: var(--navy) !important; }
 .front-desk-checkin-page .text-primary { color: var(--sidebar-active) !important; }
 .front-desk-checkin-page .text-info { color: var(--sidebar-active) !important; }
 .front-desk-checkin-page .text-success { color: var(--success) !important; }
