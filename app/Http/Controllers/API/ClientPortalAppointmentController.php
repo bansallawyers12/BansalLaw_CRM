@@ -1178,8 +1178,6 @@ class ClientPortalAppointmentController extends BaseController
             $admin->source = 'Public Appointment';
             $admin->password = Hash::make('LEAD_PLACEHOLDER');
             $admin->status = '1';
-            $admin->cp_status = 0;
-            $admin->cp_code_verify = 0;
             $admin->australian_study = 0;
             $admin->specialist_education = 0;
             $admin->regional_study = 0;

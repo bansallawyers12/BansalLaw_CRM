@@ -42,7 +42,6 @@ class Document extends Model
         'status',
         'signature_doc_link',
         'signed_doc_link',
-        'is_client_portal_verify',
         'created_by',
         'lead_id',
     ];

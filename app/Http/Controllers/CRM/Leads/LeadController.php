@@ -736,11 +736,7 @@ class LeadController extends Controller
                     'type' => 'lead', // Lead type
                     'is_archived' => 0, // Not archived
                     'is_deleted' => null, // Not deleted
-                    
-                    // Client Portal fields (required NOT NULL columns, default 0 for new leads)
-                    'cp_status' => 0, // Client portal status (NOT NULL, default 0 - inactive)
-                    'cp_code_verify' => 0, // Client portal code verification (NOT NULL, default 0)
-                    
+
                     // Study flags (required NOT NULL columns, default 0 for new leads)
                     'australian_study' => 0, // Australian study requirement (NOT NULL, default 0)
                     'specialist_education' => 0, // Specialist education qualification (NOT NULL, default 0)

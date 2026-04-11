@@ -4705,9 +4705,12 @@ success: function(response) {
         // ──────────────────────────────────────────────────────────────────
         //  Disbursement UI — Add / Remove row handlers (client modal)
         // ──────────────────────────────────────────────────────────────────
-        $(document).on('click', '.btn-add-disbursement-row', function() {
-            var $container = $(this).closest('form, .modal-body, [id^="costAssignment"]').find('#disbursement-rows');
-            if (!$container.length) $container = $('#disbursement-rows');
+        $(document).on('click', '.btn-add-disbursement-row, .btn-add-disbursement-row-lead', function() {
+            var isLead = $(this).hasClass('btn-add-disbursement-row-lead');
+            var rowContainerId = isLead ? '#disbursement-rows-lead' : '#disbursement-rows';
+            var $modal = $(this).closest('.modal');
+            var $container = $modal.length ? $modal.find(rowContainerId) : $(rowContainerId);
+            if (!$container.length) $container = $(rowContainerId);
             var idx = $container.find('.disbursement-row').length;
             $container.append(buildDisbursementRow(idx, 'other', '', ''));
             rebindDisbursementRowNames($container);
@@ -4753,7 +4756,14 @@ success: function(response) {
             $scope.find('.disbursement-amount-input').each(function() {
                 total += parseFloat($(this).val()) || 0;
             });
-            $scope.find('#TotalDisbursements, #TotalDisbursements_lead').val(total.toFixed(2));
+            // Update whichever total field exists within the scope
+            var $total = $scope.find('#TotalDisbursements, #TotalDisbursements_lead').first();
+            if ($total.length) {
+                $total.val(total.toFixed(2));
+            } else {
+                // Fall back to document-level if not scoped
+                $('#TotalDisbursements, #TotalDisbursements_lead').val(total.toFixed(2));
+            }
         }
 
         window.initializeCostAssignmentCalculations = initializeCostAssignmentCalculations;
@@ -4870,7 +4880,7 @@ success: function(response) {
         // ──────────────────────────────────────────────────────────────────
         //  Lead form submit handler
         // ──────────────────────────────────────────────────────────────────
-        $(document).on('submit', '#costAssignmentformLead', function(e) {
+        $(document).on('submit', '#costAssignmentformLead, #costAssignmentformlead', function(e) {
             e.preventDefault();
             $.ajax({
                 url: $(this).attr('action'),

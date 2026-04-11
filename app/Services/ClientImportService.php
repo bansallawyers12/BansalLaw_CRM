@@ -201,8 +201,6 @@ class ClientImportService
             $client->client_counter = $client_current_counter;
             $client->client_id = $client_id;
             $client->password = Hash::make('CLIENT_IMPORT_' . time()); // Temporary password
-            $client->cp_status = 0;
-            $client->cp_code_verify = 0;
             $client->australian_study = 0;
             $client->specialist_education = 0;
             $client->regional_study = 0;

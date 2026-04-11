@@ -49,8 +49,6 @@ class Admin extends Authenticatable
         'is_company',
         // API/Service Tokens
         'service_token', 'token_generated_at',
-        // Client Portal (for staff access)
-        'cp_status', 'cp_random_code', 'cp_code_verify', 'cp_token_generated_at',
         // Study / additional qualification flags (admins table)
         'australian_study', 'australian_study_date', 'specialist_education', 'specialist_education_date', 'regional_study', 'regional_study_date',
         // Verification (staff can verify documents)
@@ -77,7 +75,7 @@ class Admin extends Authenticatable
       * @var array
 	*/
     protected $hidden = [
-        'password', 'remember_token', 'cp_random_code'
+        'password', 'remember_token'
     ];
 
     protected $casts = [

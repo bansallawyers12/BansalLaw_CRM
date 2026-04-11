@@ -4236,14 +4236,13 @@ class ClientPortalController extends Controller
 				$source = $request->input('source', '');
 				$shouldNotify = false;
 
-				if (in_array($currentTab, ['application', 'client_portal'])) {
-					// Reopen from Client Portal tab on client detail page - always notify
-					$shouldNotify = true;
-				} elseif ($source === 'matter_list') {
-					// Reopen from Matter List - only notify if Client Portal is active for the client
-					$client = Admin::find($clientMatter->client_id);
-					$shouldNotify = $client && ((int) ($client->cp_status ?? 0) === 1);
-				}
+			if (in_array($currentTab, ['application', 'client_portal'])) {
+				// Reopen from Client Portal tab on client detail page - always notify
+				$shouldNotify = true;
+			} elseif ($source === 'matter_list') {
+				// Reopen from Matter List - always notify
+				$shouldNotify = true;
+			}
 
 				if ($shouldNotify) {
 					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
