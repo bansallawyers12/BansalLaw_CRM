@@ -68,15 +68,10 @@
                                                 </div>
                                             </div>
 
-                                            <!-- Select Matter - same design as Convert Lead To Client -->
+                                            <!-- Select Matter (General Matter = matter id 1, first in list) -->
                                             <div class="col-12 col-md-12 col-lg-12">
                                                 <div class="form-group">
                                                     <label for="checklist_matter_select">Select Matter <span class="span_req">*</span></label>
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" name="checklist_general_matter" id="checklist_general_matter_checkbox" value="1">
-                                                        <label class="form-check-label" for="checklist_general_matter_checkbox">General Matter</label>
-                                                    </div>
-                                                    <label class="form-check-label">Or Select any option</label>
                                                     <select data-valid="required" class="form-control select2 checklist-field" name="checklist_matter" id="checklist_matter_select">
                                                         <option value="">Select Matter</option>
                                                         @php
@@ -84,7 +79,8 @@
                                                                 ->forClientType((bool) (isset($fetchedData) && $fetchedData->is_company));
                                                             $matterList = $matterQuery->get();
                                                         @endphp
-                                                        @foreach($matterList as $matterlist)
+                                                        <option value="1" data-matter-id="1">General Matter</option>
+                                                        @foreach($matterList->reject(function ($m) { return (int) $m->id === 1; }) as $matterlist)
                                                             <option value="{{$matterlist->id}}" data-matter-id="{{$matterlist->id}}">{{@$matterlist->title}}</option>
                                                         @endforeach
                                                     </select>
@@ -797,19 +793,9 @@
             $dropdown.hide();
         });
 
-        // General Matter checkbox: when checked, use matter 1 (same as Convert Lead To Client)
-        $('#checklist_general_matter_checkbox').on('change', function() {
-            if ($(this).is(':checked')) {
-                $matterSelect.val('1').trigger('change');
-            } else {
-                $matterSelect.val('').trigger('change');
-            }
-        });
-
-        // Continue / Save - uses Lead flow (matter type from admin list)
+        // Continue / Save - uses Lead flow (matter type from admin list; General Matter = id 1 in dropdown)
         $dropdown.on('click', '.btn-continue-cost-assignment', function() {
-            var generalMatterChecked = $('#checklist_general_matter_checkbox').is(':checked');
-            var matterId = generalMatterChecked ? '1' : $matterSelect.val();
+            var matterId = $matterSelect.val();
             var clientId = window.ClientDetailConfig ? window.ClientDetailConfig.clientId : $('.crm-container').data('client-id');
 
             if (!clientId) {
@@ -818,7 +804,7 @@
             }
 
             if (!matterId) {
-                alert('Please select a Matter or check General Matter.');
+                alert('Please select a matter.');
                 return;
             }
 
@@ -834,13 +820,22 @@
 
             // Open Lead cost assignment modal (creates ClientMatter + CostAssignmentForm)
             $('#cost_assignment_lead_id').val(clientId);
+            var $leadModal = $('#costAssignmentCreateFormModelLead');
+            var $leadSelects = $('#sel_legal_practitioner_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead');
+            $leadSelects.each(function() {
+                var $el = $(this);
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    $el.select2('destroy');
+                }
+            });
+            $leadSelects.select2({ dropdownParent: $leadModal });
+            // Set values after Select2 so the UI reflects checklist choices (matter id 1 must exist on #sel_matter_id_lead)
             $('#sel_matter_id_lead').val(matterId).trigger('change');
             $('#sel_legal_practitioner_id_lead').val(legalPractitioner).trigger('change');
             $('#sel_person_responsible_id_lead').val(personResponsible).trigger('change');
             $('#sel_person_assisting_id_lead').val(personAssisting).trigger('change');
             $('#sel_office_id_lead').val(officeId).trigger('change');
-            $('#sel_legal_practitioner_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').select2({ dropdownParent: $('#costAssignmentCreateFormModelLead') });
-            $('#costAssignmentCreateFormModelLead').modal('show');
+            $leadModal.modal('show');
             $dropdown.hide();
         });
 
