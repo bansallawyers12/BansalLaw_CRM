@@ -603,19 +603,45 @@ body.sidebar-mini .esignature-analytics-layout .esignature-analytics-card .card-
   color: #fff !important;
 }
 
-body.sidebar-mini .esignature-analytics-layout .date-filter button {
-  background: var(--navy) !important;
-  background-image: none !important;
+body.sidebar-mini .esignature-analytics-layout .esignature-analytics-card .card-header .btn-outline-light {
   color: #fff !important;
-  border: 1px solid var(--navy) !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: transparent !important;
 }
 
-body.sidebar-mini .esignature-analytics-layout .date-filter button:hover {
+body.sidebar-mini .esignature-analytics-layout .esignature-analytics-card .card-header .btn-outline-light:hover,
+body.sidebar-mini .esignature-analytics-layout .esignature-analytics-card .card-header .btn-outline-light:focus {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.75) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .date-filter .btn.btn-primary {
+  background: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  padding: 8px 20px !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .date-filter .btn.btn-primary:hover,
+body.sidebar-mini .esignature-analytics-layout .date-filter .btn.btn-primary:focus {
   background: var(--sidebar-active) !important;
   border-color: var(--sidebar-active) !important;
-  opacity: 1 !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table .btn.btn-outline-primary {
+  border-color: var(--sidebar-active) !important;
+  color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table .btn.btn-outline-primary:hover,
+body.sidebar-mini .esignature-analytics-layout .data-table .btn.btn-outline-primary:focus {
+  background: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
 }
 
 body.sidebar-mini .esignature-analytics-layout .date-filter input {
@@ -665,6 +691,82 @@ body.sidebar-mini .esignature-analytics-layout .data-table h3 {
 
 body.sidebar-mini .esignature-analytics-layout .data-table .table-responsive {
   border-color: var(--border) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table table {
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table th {
+  background: var(--page-bg) !important;
+  color: var(--text-muted) !important;
+  border-bottom: 2px solid var(--border) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table td {
+  border-bottom: 1px solid var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table tbody tr:hover {
+  background: var(--sidebar-hover) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table a:not(.btn) {
+  color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table a:not(.btn):hover {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .date-filter label {
+  color: var(--text-muted) !important;
+  font-weight: 500 !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .esig-progress-track {
+  background: var(--border) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .badge-type {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .badge-type.type-agreement {
+  background: rgba(58, 111, 168, 0.15) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .badge-type.type-nda {
+  background: rgba(30, 61, 96, 0.1) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .badge-type.type-contract {
+  background: rgba(200, 153, 42, 0.18) !important;
+  color: #7a5800 !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .badge-type.type-general {
+  background: rgba(30, 122, 82, 0.12) !important;
+  color: var(--success) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .esignature-analytics-card {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .esignature-analytics-page {
+  background: transparent !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table .text-muted,
+body.sidebar-mini .esignature-analytics-layout .data-table td.text-center {
+  color: var(--text-muted) !important;
 }
 
 body.sidebar-mini .esignature-analytics-layout .esig-progress-fill {
@@ -1628,6 +1730,101 @@ body.sidebar-mini .adminconsole-offices-form .select2-container--default .select
 body.sidebar-mini .adminconsole-offices-form .select2-container--default.select2-container--focus .select2-selection--single {
   border-color: var(--sidebar-active) !important;
   box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
+}
+
+/* System — activity search (filters + Select2); docs/theme.md */
+body.sidebar-mini .adminconsole-activity-search .card .form-label {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .card .form-label i {
+  color: var(--sidebar-active) !important;
+  margin-right: 6px !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .select2-container--default .select2-selection--single {
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  min-height: 42px !important;
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: var(--text-dark) !important;
+  line-height: 40px !important;
+  padding-left: 12px !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 40px !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .select2-container--default.select2-container--focus .select2-selection--single {
+  border-color: var(--sidebar-active) !important;
+  box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .card-header .btn.btn-outline-primary {
+  border-color: var(--sidebar-active) !important;
+  color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .card-header .btn.btn-outline-primary:hover,
+body.sidebar-mini .adminconsole-activity-search .card-header .btn.btn-outline-primary:focus {
+  background: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .activity-search-empty-hint {
+  background: var(--page-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .activity-search-empty-hint h5 {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .card-body > hr {
+  border-top-color: var(--border) !important;
+  opacity: 1 !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .mt-4 > h5 {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini #activityDetailsModal.activity-details-modal .modal-header {
+  background: var(--navy) !important;
+  color: #fff !important;
+  border-bottom: none !important;
+}
+
+body.sidebar-mini #activityDetailsModal.activity-details-modal .modal-title {
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini #activityDetailsModal.activity-details-modal .modal-body {
+  background: var(--card-bg) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini #activityDetailsModal.activity-details-modal .modal-body .table th {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini #activityDetailsModal.activity-details-modal .modal-content {
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
 }
 
 /* System — office view / view-client (users & clients tabs); docs/theme.md */
