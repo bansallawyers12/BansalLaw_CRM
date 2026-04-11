@@ -4,7 +4,7 @@
     $crmAccessReasonLabels = config('crm_access.quick_reason_options', []);
 @endphp
 @section('content')
-<div class="main-content">
+<div class="main-content crm-access-queue-page">
     <section class="section">
         <div class="section-body">
             <div class="card">
@@ -12,7 +12,7 @@
                     <h4 class="mb-0">Pending supervisor access requests</h4>
                     <div class="d-flex gap-2">
                         <a href="{{ route('crm.access.dashboard') }}" class="btn btn-sm btn-outline-primary">Grants dashboard</a>
-                        <a href="{{ route('dashboard') }}" class="btn btn-sm btn-secondary">Main dashboard</a>
+                        <a href="{{ route('dashboard') }}" class="btn btn-sm btn-outline-secondary">Main dashboard</a>
                     </div>
                 </div>
                 <div class="card-body">
@@ -79,7 +79,7 @@
             '<td>' + rec + ' <span class="text-muted">(' + g.record_type + ' #' + g.admin_id + ')</span></td>' +
             '<td>' + reasonNote + '</td>' +
             '<td class="text-nowrap">' +
-            '<button type="button" class="btn btn-sm btn-success js-cag-approve" data-id="' + rid + '">Approve</button> ' +
+            '<button type="button" class="btn btn-sm btn-primary js-cag-approve" data-id="' + rid + '">Approve</button> ' +
             '<button type="button" class="btn btn-sm btn-outline-danger js-cag-reject" data-id="' + rid + '">Reject</button>' +
             '</td></tr>';
     }

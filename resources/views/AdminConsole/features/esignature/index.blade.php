@@ -3,7 +3,7 @@
 
 @section('styles')
 <style>
-    /* Same role as .crm-container in client-detail.css (that file is not loaded on this layout) */
+    /* Layout only — colours from public/css/crm-theme.css (docs/theme.md) */
     .esignature-analytics-layout {
         display: flex;
         flex-direction: column;
@@ -11,7 +11,6 @@
         max-width: 100%;
         box-sizing: border-box;
     }
-
     .esignature-analytics-layout > .main-content {
         flex: 1;
         width: 100%;
@@ -19,220 +18,112 @@
         min-width: 0;
         box-sizing: border-box;
     }
-
-    .esignature-analytics-card {
-        background: #fff;
-        border-radius: 12px;
-    }
-
     .esignature-analytics-page {
         max-width: 100%;
         min-width: 0;
     }
-
-    .analytics-dashboard {
-        padding: 0;
-    }
-    
-    
+    .analytics-dashboard { padding: 0; }
     .date-filter {
         display: flex;
         gap: 10px;
         align-items: center;
+        flex-wrap: wrap;
     }
-    
     .date-filter input {
         padding: 8px 12px;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
         font-size: 14px;
     }
-    
-    .date-filter button {
-        padding: 8px 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 500;
-    }
-    
-    .date-filter button:hover {
-        opacity: 0.9;
-    }
-    
     .kpi-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 16px;
         margin-bottom: 28px;
     }
-    
-    .kpi-card {
-        background: white;
-        padding: 25px;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        border-left: 4px solid #667eea;
-    }
-    
+    .kpi-card { padding: 25px; }
     .kpi-card h3 {
         font-size: 14px;
-        color: #6c757d;
         margin-bottom: 10px;
         font-weight: 500;
     }
-    
     .kpi-card .value {
         font-size: 32px;
         font-weight: 700;
-        color: #2c3e50;
     }
-    
     .kpi-card .trend {
         font-size: 12px;
         margin-top: 5px;
-        color: #6c757d;
     }
-    
     .charts-row {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
         gap: 20px;
         margin-bottom: 30px;
     }
-    
     .chart-container {
-        background: #f8f9fb;
         padding: 20px;
         border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        border: 1px solid #e9ecef;
         min-width: 0;
     }
-
-    /* Chart.js needs a sized box when maintainAspectRatio is false */
     .chart-canvas-wrap {
         position: relative;
         width: 100%;
         height: 280px;
         min-height: 240px;
     }
-    
     .chart-container h3 {
         font-size: 16px;
         font-weight: 600;
-        color: #2c3e50;
         margin-bottom: 20px;
     }
-    
     .data-table {
-        background: white;
         padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         margin-bottom: 30px;
     }
-    
     .data-table h3 {
         font-size: 18px;
         font-weight: 600;
-        color: #2c3e50;
         margin-bottom: 20px;
     }
-    
     .data-table .table-responsive {
         margin-top: 4px;
         border-radius: 8px;
-        border: 1px solid #e9ecef;
     }
-
     .data-table table {
         width: 100%;
         border-collapse: collapse;
         margin-bottom: 0;
     }
-    
-    .data-table th {
+    .data-table th,
+    .data-table td {
         text-align: left;
         padding: 12px;
-        background: #f8f9fa;
-        font-weight: 600;
-        font-size: 13px;
-        color: #6c757d;
-        border-bottom: 2px solid #dee2e6;
     }
-    
-    .data-table td {
-        padding: 12px;
-        border-bottom: 1px solid #e9ecef;
-        color: #2c3e50;
-    }
-    
-    .data-table tr:hover {
-        background: #f8f9fa;
-    }
-    
+    .data-table th { font-size: 13px; }
     .badge-type {
         padding: 4px 10px;
-        border-radius: 12px;
         font-size: 11px;
         font-weight: 500;
     }
-    
-    .type-agreement {
-        background: #e3f2fd;
-        color: #1565c0;
-    }
-    
-    .type-nda {
-        background: #f3e5f5;
-        color: #6a1b9a;
-    }
-    
-    .type-contract {
-        background: #fff3e0;
-        color: #e65100;
-    }
-    
-    .type-general {
-        background: #e8f5e9;
-        color: #2e7d32;
-    }
-    
     .esig-progress-track {
         height: 8px;
-        background: #e9ecef;
         border-radius: 4px;
         overflow: hidden;
         margin-top: 6px;
     }
-    
     .esig-progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
         transition: width 0.3s ease;
         border-radius: 4px;
     }
-    
     .overdue-badge {
         display: inline-block;
         padding: 3px 8px;
-        background: #fee;
-        color: #c00;
         border-radius: 12px;
         font-size: 11px;
         font-weight: 600;
     }
-    
     @media (max-width: 767.98px) {
-        .date-filter {
-            flex-wrap: wrap;
-        }
-        .kpi-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
+        .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     }
 </style>
 @endsection
@@ -252,15 +143,15 @@
 	        	@include('../Elements/CRM/setting')
 	        </div>
 			<div class="col-12 col-lg-9">
-				<div class="card esignature-analytics-card border-0 shadow-sm">
-					<div class="card-header d-flex justify-content-between align-items-center flex-wrap" style="gap: 1rem;">
+				<div class="card esignature-analytics-card">
+					<div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-3">
 						<div>
 							<h4 class="mb-0">Signature Analytics</h4>
 							<small class="text-white-50">Performance insights &amp; metrics</small>
 						</div>
 						<a href="{{ route('adminconsole.features.esignature.export', ['format' => 'csv', 'start_date' => $startDate, 'end_date' => $endDate]) }}"
-						   class="btn btn-sm" style="background: rgba(255,255,255,0.2); color:#fff; border: 1px solid rgba(255,255,255,0.35); font-weight:500;">
-							<i class="fas fa-download mr-1"></i> Export CSV
+						   class="btn btn-sm btn-outline-light">
+							<i class="fas fa-download me-1"></i> Export CSV
 						</a>
 					</div>
 					<div class="card-body esignature-analytics-page">
@@ -268,11 +159,11 @@
 						<!-- Date Filter -->
 						<div class="mb-4">
 							<form method="GET" action="{{ route('adminconsole.features.esignature.index') }}" class="date-filter">
-								<label style="font-size: 14px; color: #6c757d;">From:</label>
-								<input type="date" name="start_date" value="{{ $startDate }}">
-								<label style="font-size: 14px; color: #6c757d;">To:</label>
-								<input type="date" name="end_date" value="{{ $endDate }}">
-								<button type="submit">Update</button>
+								<label class="small mb-0">From:</label>
+								<input type="date" name="start_date" value="{{ $startDate }}" class="form-control" style="width: auto; max-width: 11rem;">
+								<label class="small mb-0">To:</label>
+								<input type="date" name="end_date" value="{{ $endDate }}" class="form-control" style="width: auto; max-width: 11rem;">
+								<button type="submit" class="btn btn-primary">Update</button>
 							</form>
 						</div>
 
@@ -355,7 +246,7 @@
 									</tr>
 									@empty
 									<tr>
-										<td colspan="6" style="text-align: center; color: #6c757d;">No data available</td>
+										<td colspan="6" class="text-center text-muted">No data available</td>
 									</tr>
 									@endforelse
 								</tbody>
@@ -390,7 +281,7 @@
 									</tr>
 									@empty
 									<tr>
-										<td colspan="6" style="text-align: center; color: #6c757d;">No signer data available</td>
+										<td colspan="6" class="text-center text-muted">No signer data available</td>
 									</tr>
 									@endforelse
 								</tbody>
@@ -429,7 +320,7 @@
 										</td>
 										<td>{{ $doc['reminder_count'] }}/3</td>
 										<td>
-											<a href="{{ route('signatures.show', $doc['id']) }}" class="btn btn-sm btn-primary">
+											<a href="{{ route('signatures.show', $doc['id']) }}" class="btn btn-sm btn-outline-primary">
 												View
 											</a>
 										</td>
@@ -462,7 +353,7 @@
 									<tr>
 										<td>
 											<strong>{{ $perf['name'] }}</strong><br>
-											<small style="color: #6c757d;">{{ $perf['email'] }}</small>
+											<small class="text-muted">{{ $perf['email'] }}</small>
 										</td>
 										<td>{{ $perf['total_sent'] }}</td>
 										<td>{{ $perf['signed'] }}</td>
@@ -495,6 +386,14 @@
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
+/* docs/theme.md — Powder Blue & Soft Gold */
+const esigTheme = {
+    primary: '#3a6fa8',
+    navy: '#1e3d60',
+    success: '#1e7a52',
+    gold: '#c8992a',
+    muted: 'rgba(94, 122, 144, 0.35)'
+};
 // Signature Trend Chart
 const trendData = @json($trendData);
 const trendCtx = document.getElementById('signatureTrendChart').getContext('2d');
@@ -506,16 +405,16 @@ new Chart(trendCtx, {
             {
                 label: 'Sent',
                 data: trendData.sent,
-                borderColor: '#667eea',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderColor: esigTheme.primary,
+                backgroundColor: 'rgba(58, 111, 168, 0.12)',
                 tension: 0.4,
                 fill: true
             },
             {
                 label: 'Signed',
                 data: trendData.signed,
-                borderColor: '#28a745',
-                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                borderColor: esigTheme.success,
+                backgroundColor: 'rgba(30, 122, 82, 0.12)',
                 tension: 0.4,
                 fill: true
             }
@@ -550,11 +449,11 @@ new Chart(typeCtx, {
         datasets: [{
             data: docTypeData.map(d => d.total),
             backgroundColor: [
-                '#667eea',
-                '#764ba2',
-                '#f093fb',
-                '#4facfe',
-                '#43e97b'
+                esigTheme.primary,
+                esigTheme.navy,
+                esigTheme.gold,
+                esigTheme.success,
+                esigTheme.muted
             ]
         }]
     },
