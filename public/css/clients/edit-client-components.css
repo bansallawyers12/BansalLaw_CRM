@@ -167,6 +167,29 @@
     color: var(--accent-gold, #c8992a);
 }
 
+/* custom.css forces .text-muted { color: #fff } — invisible on powder-blue panels */
+.main-content-area .text-muted {
+    color: var(--text-muted-color, #5e7a90) !important;
+}
+
+/* Reduce gap between top pills and tab body (client-forms .tab-content has20px padding) */
+.main-content-area > .tab-content {
+    padding-top: 4px;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+/* Court Dates tab: tighten lead block */
+.main-content-area #menu4.tab-pane > h3 {
+    margin-top: 0;
+    padding-top: 0.35rem;
+}
+
+.main-content-area #menu4 > p.text-muted {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
 /* ===== MATTER TAB (client edit) ===== */
 .matter-tab-pane.tab-pane {
     padding-top: 4px;

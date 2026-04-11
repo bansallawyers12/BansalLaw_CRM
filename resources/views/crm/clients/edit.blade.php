@@ -149,11 +149,12 @@
                 window.latestClientMatterRef = @json($latestMatterRefNo);
 
                function showTab(tabId){
-    // Hide all tab panes
-    $("#editClientForm > .tab-pane").hide().removeClass("in active");
-    // Show the selected pane
-    $("#" + tabId).show().addClass("in active");
-    // Update active pill
+    // Hide every tab pane in this layout (all are under .main-content-area; avoids stray visible panes / double-stacking)
+    $(".main-content-area .tab-pane").hide().removeClass("in active");
+    var $pane = $("#" + tabId);
+    if ($pane.length) {
+        $pane.css("display", "block").show().addClass("in active");
+    }
     $(".client-edit-top-pills li").removeClass("active");
     $(".client-edit-top-pills a[href='#" + tabId + "']").closest("li").addClass("active");
                }
@@ -164,9 +165,9 @@
             <div class="main-content-area">
 
             <ul class="nav nav-pills client-edit-top-pills">
-    <li class="active"><a data-toggle="pill" href="#home" onclick="showTab('home')"><i class="fas fa-user"></i> Client Info</a></li>
-    <li><a data-toggle="pill" href="#menu2" onclick="showTab('menu2')"><i class="fas fa-briefcase"></i> Matter Details</a></li>
-    <li><a data-toggle="pill" href="#menu4" onclick="showTab('menu4')"><i class="fas fa-gavel"></i> Court Dates &amp; Hearings</a></li>
+    <li class="active"><a href="#home" onclick="showTab('home'); return false;"><i class="fas fa-user"></i> Client Info</a></li>
+    <li><a href="#menu2" onclick="showTab('menu2'); return false;"><i class="fas fa-briefcase"></i> Matter Details</a></li>
+    <li><a href="#menu4" onclick="showTab('menu4'); return false;"><i class="fas fa-gavel"></i> Court Dates &amp; Hearings</a></li>
     </ul>
   
   <div class="tab-content">
@@ -2074,7 +2075,7 @@
     {{-- ====== TAB 4: Court Dates & Hearings ====== --}}
     <div id="menu4" class="tab-pane fade">
       <h3><i class="fas fa-gavel"></i> Court Dates &amp; Hearings</h3>
-      <p class="text-muted" style="margin-bottom:1.5rem;">Track important court appearances, hearings, and deadlines. All entries are optional.</p>
+      <p class="text-muted">Track important court appearances, hearings, and deadlines. All entries are optional.</p>
 
       {{-- Add Hearing Form --}}
       <section class="content-section">
@@ -2526,7 +2527,7 @@
                     if (!$link.length || !$pane.length) return;
                     $('.client-edit-top-pills li').removeClass('active');
                     $link.closest('li').addClass('active');
-                    $('#editClientForm > .tab-pane').removeClass('in active').hide();
+                    $('.main-content-area .tab-pane').removeClass('in active').hide();
                     $pane.addClass('in active').css('display', 'block').show();
                     // Highlight matter row if ref given
                     if (targetId === 'menu2') {
