@@ -1063,6 +1063,13 @@ public function getChapters(Request $request)
 			'client_reference' => $client->client_id ?? '',
 			'visa_apply' => '',
 			'Blocktotalfeesincltax' => '',
+			'Blocktotalfeesinclgst' => '',
+			'Block1feesincltax' => '',
+			'Block1feesinclgst' => '',
+			'Block2feesincltax' => '',
+			'Block2feesinclgst' => '',
+			'Block3feesincltax' => '',
+			'Block3feesinclgst' => '',
 			'TotalDoHASurcharges' => '',
 			'TotalEstimatedOthCosts' => '',
 			'GrandTotalFeesAndCosts' => '',
@@ -1112,7 +1119,18 @@ public function getChapters(Request $request)
 			}
 			$grandTotal = $blockTotal + $totalDepartmentCharges + $totalSurcharges + $totalOther;
 
-			$values['Blocktotalfeesincltax'] = number_format($blockTotal, 2, '.', '');
+			$formattedBlockTotal = number_format($blockTotal, 2, '.', '');
+			$b1 = number_format($block1, 2, '.', '');
+			$b2 = number_format($block2, 2, '.', '');
+			$b3 = number_format($block3, 2, '.', '');
+			$values['Blocktotalfeesincltax'] = $formattedBlockTotal;
+			$values['Blocktotalfeesinclgst'] = $formattedBlockTotal;
+			$values['Block1feesincltax'] = $b1;
+			$values['Block1feesinclgst'] = $b1;
+			$values['Block2feesincltax'] = $b2;
+			$values['Block2feesinclgst'] = $b2;
+			$values['Block3feesincltax'] = $b3;
+			$values['Block3feesinclgst'] = $b3;
 			// First email template: "Department fee, including the card Surcharge" row uses ${TotalDoHASurcharges} → send department total to match checklist
 			$values['TotalDoHASurcharges'] = number_format($totalDepartmentCharges, 2, '.', '');
 			// First email template: "Other Costs (estimated)" row uses ${TotalEstimatedOthCosts} → send surcharge to match checklist

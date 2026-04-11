@@ -111,8 +111,8 @@
                                                 </div>
                                                 <div class="col-12 col-md-6 col-lg-6">
                                                     <div class="form-group">
-                                                        <label for="Block_1_Ex_Tax">Block 1 Incl. Tax</label>
-                                                        <input type="text" name="Block_1_Ex_Tax" class="form-control" autocomplete="off" placeholder="Enter Block 1 Incl. Tax" value="{{ old('Block_1_Ex_Tax') }}">
+                                                        <label for="Block_1_Ex_Tax">Block 1 Incl. GST</label>
+                                                        <input type="text" name="Block_1_Ex_Tax" class="form-control" autocomplete="off" placeholder="Enter Block 1 Incl. GST" value="{{ old('Block_1_Ex_Tax') }}">
                                                         @if ($errors->has('Block_1_Ex_Tax'))
                                                             <span class="custom-error" role="alert">
                                                                 <strong>{{ $errors->first('Block_1_Ex_Tax') }}</strong>
@@ -136,8 +136,8 @@
                                                 </div>
                                                 <div class="col-12 col-md-6 col-lg-6">
                                                     <div class="form-group">
-                                                        <label for="Block_2_Ex_Tax">Block 2 Incl. Tax</label>
-                                                        <input type="text" name="Block_2_Ex_Tax" class="form-control" autocomplete="off" placeholder="Enter Block 2 Incl. Tax" value="{{ old('Block_2_Ex_Tax') }}">
+                                                        <label for="Block_2_Ex_Tax">Block 2 Incl. GST</label>
+                                                        <input type="text" name="Block_2_Ex_Tax" class="form-control" autocomplete="off" placeholder="Enter Block 2 Incl. GST" value="{{ old('Block_2_Ex_Tax') }}">
                                                         @if ($errors->has('Block_2_Ex_Tax'))
                                                             <span class="custom-error" role="alert">
                                                                 <strong>{{ $errors->first('Block_2_Ex_Tax') }}</strong>
@@ -161,8 +161,8 @@
                                                 </div>
                                                 <div class="col-12 col-md-6 col-lg-6">
                                                     <div class="form-group">
-                                                        <label for="Block_3_Ex_Tax">Block 3 Incl. Tax</label>
-                                                        <input type="text" name="Block_3_Ex_Tax" class="form-control" autocomplete="off" placeholder="Enter Block 3 Incl. Tax" value="{{ old('Block_3_Ex_Tax') }}">
+                                                        <label for="Block_3_Ex_Tax">Block 3 Incl. GST</label>
+                                                        <input type="text" name="Block_3_Ex_Tax" class="form-control" autocomplete="off" placeholder="Enter Block 3 Incl. GST" value="{{ old('Block_3_Ex_Tax') }}">
                                                         @if ($errors->has('Block_3_Ex_Tax'))
                                                             <span class="custom-error" role="alert">
                                                                 <strong>{{ $errors->first('Block_3_Ex_Tax') }}</strong>

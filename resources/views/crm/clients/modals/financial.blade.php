@@ -232,8 +232,8 @@
 						<div class="row">
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
-									<label for="Block_1_Ex_Tax">Block 1 Incl. Tax</label>
-									{!! html()->text('Block_1_Ex_Tax')->class('form-control')->id('Block_1_Ex_Tax')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 1 Incl. Tax' ) !!}
+									<label for="Block_1_Ex_Tax">Block 1 Incl. GST</label>
+									{!! html()->text('Block_1_Ex_Tax')->class('form-control')->id('Block_1_Ex_Tax')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 1 Incl. GST' ) !!}
 									@if ($errors->has('Block_1_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_1_Ex_Tax') }}</strong>
@@ -244,8 +244,8 @@
 
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
-									<label for="Block_2_Ex_Tax">Block 2 Incl. Tax</label>
-									{!! html()->text('Block_2_Ex_Tax')->class('form-control')->id('Block_2_Ex_Tax')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 2 Incl. Tax' ) !!}
+									<label for="Block_2_Ex_Tax">Block 2 Incl. GST</label>
+									{!! html()->text('Block_2_Ex_Tax')->class('form-control')->id('Block_2_Ex_Tax')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 2 Incl. GST' ) !!}
 									@if ($errors->has('Block_2_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_2_Ex_Tax') }}</strong>
@@ -258,8 +258,8 @@
 						<div class="row">
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
-									<label for="Block_3_Ex_Tax">Block 3 Incl. Tax</label>
-									{!! html()->text('Block_3_Ex_Tax')->class('form-control')->id('Block_3_Ex_Tax')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 3 Incl. Tax' ) !!}
+									<label for="Block_3_Ex_Tax">Block 3 Incl. GST</label>
+									{!! html()->text('Block_3_Ex_Tax')->class('form-control')->id('Block_3_Ex_Tax')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 3 Incl. GST' ) !!}
 									@if ($errors->has('Block_3_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_3_Ex_Tax') }}</strong>
@@ -612,8 +612,8 @@
 						<div class="row">
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
-									<label for="Block_1_Ex_Tax">Block 1 Incl. Tax</label>
-									{!! html()->text('Block_1_Ex_Tax')->class('form-control')->id('Block_1_Ex_Tax_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 1 Incl. Tax' ) !!}
+									<label for="Block_1_Ex_Tax">Block 1 Incl. GST</label>
+									{!! html()->text('Block_1_Ex_Tax')->class('form-control')->id('Block_1_Ex_Tax_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 1 Incl. GST' ) !!}
 									@if ($errors->has('Block_1_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_1_Ex_Tax') }}</strong>
@@ -624,8 +624,8 @@
 
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
-									<label for="Block_2_Ex_Tax">Block 2 Incl. Tax</label>
-									{!! html()->text('Block_2_Ex_Tax')->class('form-control')->id('Block_2_Ex_Tax_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 2 Incl. Tax' ) !!}
+									<label for="Block_2_Ex_Tax">Block 2 Incl. GST</label>
+									{!! html()->text('Block_2_Ex_Tax')->class('form-control')->id('Block_2_Ex_Tax_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 2 Incl. GST' ) !!}
 									@if ($errors->has('Block_2_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_2_Ex_Tax') }}</strong>
@@ -638,8 +638,8 @@
 						<div class="row">
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
-									<label for="Block_3_Ex_Tax">Block 3 Incl. Tax</label>
-									{!! html()->text('Block_3_Ex_Tax')->class('form-control')->id('Block_3_Ex_Tax_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 3 Incl. Tax' ) !!}
+									<label for="Block_3_Ex_Tax">Block 3 Incl. GST</label>
+									{!! html()->text('Block_3_Ex_Tax')->class('form-control')->id('Block_3_Ex_Tax_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 3 Incl. GST' ) !!}
 									@if ($errors->has('Block_3_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_3_Ex_Tax') }}</strong>

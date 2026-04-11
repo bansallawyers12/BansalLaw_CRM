@@ -4682,6 +4682,8 @@ class ClientsController extends Controller
             $TotalDoHAChargesInclSurcharge = '0.00';
             $TotalEstimatedOtherCosts = 0;
             $GrandTotalFeesAndCosts = 0;
+            $BlocktotalfeesincltaxFormated = '0.00';
+            $GrandTotalFeesAndCostsFormated = '0.00';
 
             if( isset($request->client_matter_id) && $request->client_matter_id != '' )
             {  //dd($request->client_matter_id);
@@ -4784,6 +4786,10 @@ class ClientsController extends Controller
                 }
             }
 
+            $blockFee1Fmt = number_format((float) $Block_1_Ex_Tax, 2, '.', '');
+            $blockFee2Fmt = number_format((float) $Block_2_Ex_Tax, 2, '.', '');
+            $blockFee3Fmt = number_format((float) $Block_3_Ex_Tax, 2, '.', '');
+
             // Replace placeholders
             $replacements = [
                 'ClientID' => $client->client_id,
@@ -4803,8 +4809,10 @@ class ClientsController extends Controller
                 'VisaApplyingForStream' => $visa_stream,
 
                 'Block1IncTax' => number_format($professional_fee, 2),
+                'Block1IncGST' => number_format($professional_fee, 2),
                 'TotalAgentFeeGST' => number_format($gst_fee ?? 0, 2),
                 'TotalAgentFeeIncTax' => number_format($professional_fee + ($gst_fee ?? 0), 2),
+                'TotalAgentFeeIncGST' => number_format($professional_fee + ($gst_fee ?? 0), 2),
                 'BaseApplicationCharge' => number_format($visa_application_charge, 2),
                 'DOHABaseApplicationChargeIncCCSurcharge' => number_format($visa_application_charge, 2),
 
@@ -4816,12 +4824,16 @@ class ClientsController extends Controller
                 'visa_apply'=>$visa_subclass,
 
                 'Block1description'=>$Block_1_Description,
-                'Block1feesincltax'=>$Block_1_Ex_Tax,
+                'Block1feesincltax'=>$blockFee1Fmt,
+                'Block1feesinclgst'=>$blockFee1Fmt,
                 'Block2description'=>$Block_2_Description,
-                'Block2feesincltax'=>$Block_2_Ex_Tax,
+                'Block2feesincltax'=>$blockFee2Fmt,
+                'Block2feesinclgst'=>$blockFee2Fmt,
                 'Block3description'=>$Block_3_Description,
-                'Block3feesincltax'=>$Block_3_Ex_Tax,
+                'Block3feesincltax'=>$blockFee3Fmt,
+                'Block3feesinclgst'=>$blockFee3Fmt,
                 'Blocktotalfeesincltax'=>$BlocktotalfeesincltaxFormated,
+                'Blocktotalfeesinclgst'=>$BlocktotalfeesincltaxFormated,
 
                 'DoHAMainApplicantChargePersonCount'=>$DoHAMainApplicantChargePersonCount,
                 'DoHAMainApplicantCharge'=>$DoHAMainApplicantCharge,
