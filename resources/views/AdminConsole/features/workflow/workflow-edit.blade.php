@@ -2,7 +2,7 @@
 @section('title', 'Edit Workflow')
 
 @section('content')
-<div class="main-content">
+<div class="main-content adminconsole-features adminconsole-workflow-form">
 	<section class="section">
 		<div class="section-body">
 			<form action="{{ route('adminconsole.features.workflow.updateWorkflow', base64_encode(convert_uuencode($workflow->id))) }}" method="POST" autocomplete="off">

@@ -7,42 +7,31 @@
     .matter-index-page .filter_panel {
         margin-bottom: 30px;
         padding: 20px;
-        background: #fff;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        background: var(--card-bg, #fff);
+        border: 1px solid var(--border, #c8dcef);
+        border-radius: 10px;
+        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
         display: none;
     }
 
     .matter-index-page .filter_panel h4 {
-        color: #4a5568 !important;
+        color: var(--navy, #1e3d60) !important;
         font-size: 1.1rem;
         margin-bottom: 20px;
         font-weight: 600;
     }
 
-    .matter-index-page .table thead th {
-        background-color: #f8f9fa !important;
-        color: #343a40 !important;
-        font-weight: 600 !important;
-        border-bottom: 2px solid #dee2e6 !important;
-        padding: 12px 15px !important;
-    }
-
-    .matter-index-page .table tbody td {
-        color: #495057 !important;
-        padding: 12px 15px !important;
-        border-bottom: 1px solid #dee2e6 !important;
-    }
+    /* Table colours: public/css/crm-theme.css (.adminconsole-features .table-responsive > table) */
 
     .matter-index-page .form-group label {
-        color: #495057 !important;
-        font-weight: 500 !important;
+        color: var(--text-muted, #5e7a90) !important;
+        font-weight: 600 !important;
         margin-bottom: 8px !important;
     }
 
     .matter-index-page .card-header h4 {
-        color: #343a40 !important;
-        font-weight: 600 !important;
+        color: var(--navy, #1e3d60) !important;
+        font-weight: 700 !important;
         margin: 0 !important;
     }
 
@@ -141,7 +130,7 @@
     }
 </style>
 <div class="crm-container matter-index-layout">
-	<div class="main-content">
+	<div class="main-content adminconsole-features">
 		<div class="server-error">
 			@include('../Elements/flash-message')
 		</div>
@@ -193,12 +182,16 @@
 								@foreach (@$lists as $list)
 									<tr id="id_{{@$list->id}}">
 										<td>{{ @$list->title == "" ? config('constants.empty') : Str::limit(@$list->title, '50', '...') }}</td>
-										<td>
-											<div class="dropdown d-inline">
-												<button class="btn btn-primary dropdown-toggle matter-action-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
-												<div class="dropdown-menu">
-													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.matter.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
-													<a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'matters')"><i class="fas fa-trash"></i> Delete</a>
+										<td class="text-nowrap">
+											<div class="dropdown d-inline-block">
+												<button class="btn btn-primary dropdown-toggle matter-action-dropdown-toggle" type="button" id="matterAction_{{ $list->id }}"
+													data-bs-toggle="dropdown"
+													data-bs-popper-config='{"strategy":"fixed"}'
+													aria-haspopup="true"
+													aria-expanded="false">Action</button>
+												<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="matterAction_{{ $list->id }}">
+													<li><a class="dropdown-item has-icon" href="{{route('adminconsole.features.matter.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a></li>
+													<li><a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'matters')"><i class="fas fa-trash"></i> Delete</a></li>
 													<?php
 													$hasTemplate = \App\Models\EmailTemplate::forMatter($list->id)->ofType(\App\Models\EmailTemplate::TYPE_MATTER_FIRST)->exists();
 													?>
@@ -206,14 +199,14 @@
 													<?php
 													$Template_info = \App\Models\EmailTemplate::forMatter($list->id)->ofType(\App\Models\EmailTemplate::TYPE_MATTER_FIRST)->first();
 													?>
-													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.matteremailtemplate.edit', [$Template_info->id, $list->id])}}"><i class="far fa-edit"></i> Edit First Email</a>
+													<li><a class="dropdown-item has-icon" href="{{route('adminconsole.features.matteremailtemplate.edit', [$Template_info->id, $list->id])}}"><i class="far fa-edit"></i> Edit First Email</a></li>
 													@else
-													<a class="dropdown-item has-icon" href="{{ route('adminconsole.features.matteremailtemplate.create', ['matter_id' => @$list->id]) }}"><i class="far fa-edit"></i> Create First Email</a>
+													<li><a class="dropdown-item has-icon" href="{{ route('adminconsole.features.matteremailtemplate.create', ['matter_id' => @$list->id]) }}"><i class="far fa-edit"></i> Create First Email</a></li>
 													@endif
 
-													<a class="dropdown-item has-icon" href="{{route('upload_checklists.matter', @$list->id)}}"><i class="fas fa-list"></i> Matter Checklist</a>
-													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.matterotheremailtemplate.index', @$list->id)}}"><i class="fas fa-envelope"></i> Email Templates</a>
-												</div>
+													<li><a class="dropdown-item has-icon" href="{{route('upload_checklists.matter', @$list->id)}}"><i class="fas fa-list"></i> Matter Checklist</a></li>
+													<li><a class="dropdown-item has-icon" href="{{route('adminconsole.features.matterotheremailtemplate.index', @$list->id)}}"><i class="fas fa-envelope"></i> Email Templates</a></li>
+												</ul>
 											</div>
 										</td>
 									</tr>
@@ -248,15 +241,6 @@ jQuery(document).ready(function($){
     $('.matter-index-page .filter_btn').on('click', function(){
 		$('.matter-index-page .filter_panel').toggle();
 	});
-
-    if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-        document.querySelectorAll('.matter-index-page .matter-action-dropdown-toggle').forEach(function (el) {
-            bootstrap.Dropdown.getOrCreateInstance(el, {
-                /* Escapes .main-content / card overflow so the full menu clears the footer */
-                popperConfig: { strategy: 'fixed' }
-            });
-        });
-    }
 
 	$('.cb-element').change(function () {
         if ($('.cb-element:checked').length == $('.cb-element').length){

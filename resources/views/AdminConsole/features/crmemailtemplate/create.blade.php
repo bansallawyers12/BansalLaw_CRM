@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features adminconsole-crm-email-template-form">
 	<section class="section">
 		<div class="section-body">
 			<form action="{{route('adminconsole.features.crmemailtemplate.store')}}" name="add-crmemailtemplate" autocomplete="off" enctype="multipart/form-data" method="POST">
@@ -28,6 +28,9 @@
 							<div class="card-body">
 								<div id="accordion"> 
 									<div class="accordion">
+										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
+											<h4>Primary Information</h4>
+										</div>
 										<div class="accordion-body collapse show" id="primary_info" data-parent="#accordion">
 											<div class="row"> 						
 												<div class="col-12 col-md-12 col-lg-12">

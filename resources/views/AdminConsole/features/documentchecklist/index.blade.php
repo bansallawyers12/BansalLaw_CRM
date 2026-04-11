@@ -63,7 +63,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features">
 	<section class="section">
 		<div class="section-body">
 			<div class="server-error">
@@ -123,13 +123,17 @@
                                                 }
                                             }?>
                                         </td>
-                                        <td>
-											<div class="dropdown d-inline">
-												<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
-												<div class="dropdown-menu">
-													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.documentchecklist.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
-													<a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'portal_document_checklists')"><i class="fas fa-trash"></i> Delete</a>
-												</div>
+                                        <td class="text-nowrap">
+											<div class="dropdown d-inline-block">
+												<button class="btn btn-primary dropdown-toggle" type="button" id="docChkAction_{{ $list->id }}"
+													data-bs-toggle="dropdown"
+													data-bs-popper-config='{"strategy":"fixed"}'
+													aria-haspopup="true"
+													aria-expanded="false">Action</button>
+												<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="docChkAction_{{ $list->id }}">
+													<li><a class="dropdown-item has-icon" href="{{route('adminconsole.features.documentchecklist.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a></li>
+													<li><a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'portal_document_checklists')"><i class="fas fa-trash"></i> Delete</a></li>
+												</ul>
 											</div>
 										</td>
 									</tr>

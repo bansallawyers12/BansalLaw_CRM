@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features">
 	<section class="section">
 		<div class="section-body">
 			<div class="server-error">
@@ -51,17 +51,21 @@
 											@if($legacyStageFrozen)
 											<span class="text-muted small">Locked</span>
 											@else
-											<div class="dropdown d-inline">
-												<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
-												<div class="dropdown-menu">
-													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.workflow.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
+											<div class="dropdown d-inline-block">
+												<button class="btn btn-primary dropdown-toggle" type="button" id="workflowStageAction_{{ $list->id }}"
+													data-bs-toggle="dropdown"
+													data-bs-popper-config='{"strategy":"fixed"}'
+													aria-haspopup="true"
+													aria-expanded="false">Action</button>
+												<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="workflowStageAction_{{ $list->id }}">
+													<li><a class="dropdown-item has-icon" href="{{route('adminconsole.features.workflow.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a></li>
 													{{--@if($list->status == 1)--}}
-														<!--<a class="dropdown-item has-icon " href="{{--URL::to('/admin/workflow/deactivate-workflow/'.base64_encode(convert_uuencode(@$list->id)))--}}" onClick=""><i class="fas fa-trash"></i> Deactivate</a>-->
+														<!--<li><a class="dropdown-item has-icon " href="{{--URL::to('/admin/workflow/deactivate-workflow/'.base64_encode(convert_uuencode(@$list->id)))--}}" onClick=""><i class="fas fa-trash"></i> Deactivate</a></li>-->
                                                     {{--@else--}}
-														<!--<a class="dropdown-item has-icon " href="{{--URL::to('/admin/workflow/activate-workflow/'.base64_encode(convert_uuencode(@$list->id)))--}}" onClick=""><i class="fas fa-trash"></i> Activate</a>-->
+														<!--<li><a class="dropdown-item has-icon " href="{{--URL::to('/admin/workflow/activate-workflow/'.base64_encode(convert_uuencode(@$list->id)))--}}" onClick=""><i class="fas fa-trash"></i> Activate</a></li>-->
                                                     {{--@endif--}}
-												<a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'workflow_stages')"><i class="fas fa-trash"></i> Delete</a>
-												</div>
+													<li><a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'workflow_stages')"><i class="fas fa-trash"></i> Delete</a></li>
+												</ul>
 											</div>
 											@endif
 										</td>

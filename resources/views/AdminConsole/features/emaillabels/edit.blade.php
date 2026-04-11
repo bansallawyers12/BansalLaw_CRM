@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content adminconsole-email-labels-form">
+<div class="main-content adminconsole-features adminconsole-email-labels-form">
 	<section class="section">
 		<div class="section-body">
 		<form action="{{ route('adminconsole.features.emaillabels.update', $fetchedData->id) }}" name="edit-email-label" autocomplete="off" enctype="multipart/form-data" method="POST">

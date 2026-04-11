@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features adminconsole-emails-form">
 	<section class="section">
 		<div class="section-body">
 			<form action="{{url('adminconsole/features/emails/store')}}" name="add-emails" autocomplete="off" enctype="multipart/form-data" method="POST">

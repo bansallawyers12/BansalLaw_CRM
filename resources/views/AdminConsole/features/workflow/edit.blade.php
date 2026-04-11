@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features adminconsole-workflow-form">
 	<section class="section">
 		<div class="section-body">
 			<form action="{{ route('adminconsole.features.workflow.update', base64_encode(convert_uuencode($fetchedData->id))) }}" name="add-visatype" autocomplete="off" enctype="multipart/form-data" method="POST">

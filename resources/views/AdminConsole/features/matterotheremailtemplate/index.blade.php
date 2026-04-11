@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features">
 	<section class="section">
 		<div class="section-body">
 			<div class="server-error">
@@ -43,14 +43,18 @@
 										<td>{{ @$list->name == "" ? config('constants.empty') : Str::limit(@$list->name, '50', '...') }}</td> 	
 										<td>{{ @$list->subject == "" ? config('constants.empty') : Str::limit(@$list->subject, '50', '...') }}</td> 	
 										<td>{{ @$list->created_at ? date('d M Y', strtotime(@$list->created_at)) : config('constants.empty') }}</td>
-										<td>
-											<div class="dropdown d-inline">
-												<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
-												<div class="dropdown-menu">
-													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.matterotheremailtemplate.edit', [$list->id, $matterId])}}"><i class="far fa-edit"></i> Edit</a>
-													<a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'email_templates')"><i class="fas fa-trash"></i> Delete</a>
-												</div>
-											</div>								  
+										<td class="text-nowrap">
+											<div class="dropdown d-inline-block">
+												<button class="btn btn-primary dropdown-toggle" type="button" id="matterOtherTplAction_{{ $list->id }}"
+													data-bs-toggle="dropdown"
+													data-bs-popper-config='{"strategy":"fixed"}'
+													aria-haspopup="true"
+													aria-expanded="false">Action</button>
+												<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="matterOtherTplAction_{{ $list->id }}">
+													<li><a class="dropdown-item has-icon" href="{{route('adminconsole.features.matterotheremailtemplate.edit', [$list->id, $matterId])}}"><i class="far fa-edit"></i> Edit</a></li>
+													<li><a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'email_templates')"><i class="fas fa-trash"></i> Delete</a></li>
+												</ul>
+											</div>
 										</td>
 									</tr>	
 								@endforeach	 

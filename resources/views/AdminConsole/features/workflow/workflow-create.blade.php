@@ -2,7 +2,7 @@
 @section('title', 'Create Workflow')
 
 @section('content')
-<div class="main-content">
+<div class="main-content adminconsole-features adminconsole-workflow-form">
 	<section class="section">
 		<div class="section-body">
 			<form action="{{ route('adminconsole.features.workflow.storeWorkflow') }}" method="POST" autocomplete="off" enctype="multipart/form-data">

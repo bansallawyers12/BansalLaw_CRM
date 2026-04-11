@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features adminconsole-crm-email-template-form">
 	<section class="section">
 		<div class="section-body">
 			<form action="{{ route('adminconsole.features.crmemailtemplate.update', $fetchedData->id) }}" method="POST" name="edit-crmemailtemplate" autocomplete="off" enctype="multipart/form-data">

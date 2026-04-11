@@ -1,33 +1,8 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'Workflow Stages: ' . ($workflow->name ?? ''))
 
-@section('styles')
-<style>
-	/* Stacked compact actions — avoids dropdown clipping / side-by-side overflow in narrow cells */
-	.workflow-stages-table td.workflow-stage-actions-col {
-		white-space: normal !important;
-		vertical-align: middle;
-		width: 1%;
-		min-width: 7rem;
-	}
-	.workflow-stage-cell-actions {
-		display: flex;
-		flex-direction: column;
-		align-items: stretch;
-		gap: 0.25rem;
-	}
-	.workflow-stage-cell-actions .btn {
-		font-size: 0.75rem;
-		padding: 0.2rem 0.45rem;
-		line-height: 1.25;
-		white-space: nowrap;
-		text-align: center;
-	}
-</style>
-@endsection
-
 @section('content')
-<div class="main-content">
+<div class="main-content adminconsole-features adminconsole-workflow-stages">
 	<section class="section">
 		<div class="section-body">
 			<div class="server-error">

@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features">
     <section class="section">
         <div class="section-body">
             <form method="POST" action="{{ route('adminconsole.features.documentchecklist.store') }}" name="add-checklist" autocomplete="off" enctype="multipart/form-data">

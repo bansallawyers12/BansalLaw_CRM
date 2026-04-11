@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content adminconsole-email-labels">
+<div class="main-content adminconsole-features adminconsole-email-labels">
 	<section class="section">
 		<div class="section-body">
 			<div class="server-error">
