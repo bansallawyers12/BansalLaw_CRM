@@ -222,7 +222,7 @@
 							<div class="followup_btn"> 
 								<ul class="navbar-nav" style="display: block;">
 									<li class="nav-item d-sm-inline-block">
-										<a style="background: #6777ef;border-radius: 4px;padding: 7px 10px;font-size: 14px;line-height: 18px;color: #fff;border: 0px;" class="nav-link" href="{{route('leads.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}">
+										<a style="background: var(--navy);border-radius: 4px;padding: 7px 10px;font-size: 14px;line-height: 18px;color: #fff;border: 0px;" class="nav-link" href="{{route('leads.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}">
 										  <i class="fa fa-edit"></i> Edit Lead
 										</a>
 									</li>

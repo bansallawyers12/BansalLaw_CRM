@@ -456,9 +456,9 @@
                         <div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
                                 <!-- Quick Actions Toolbar -->
-                                <div class="quick-actions-toolbar" style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+                                <div class="quick-actions-toolbar" style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--navy);">
                                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                                        <span style="font-weight: 600; color: #667eea;">
+                                        <span style="font-weight: 600; color: var(--navy);">
                                             <i class="fas fa-bolt"></i> Quick Actions:
                                         </span>
                                         <button type="button" class="btn btn-sm btn-outline-primary paste-clipboard-btn" 

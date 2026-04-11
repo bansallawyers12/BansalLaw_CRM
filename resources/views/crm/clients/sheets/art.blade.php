@@ -179,7 +179,7 @@
     .art-comments-cell { max-width: 280px; font-size: 12px; line-height: 1.4; word-wrap: break-word; white-space: normal; }
     .filter_panel { display: none; background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
     .filter_panel.show { display: block; }
-    .active-filters-badge { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-left: 10px; }
+    .active-filters-badge { background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-left: 10px; }
     .clear-filter-btn { background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 14px; cursor: pointer; }
     .clear-filter-btn:hover { background: #5a6268; }
     .per-page-select { width: auto; display: inline-block; margin-left: 10px; }

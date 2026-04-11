@@ -176,13 +176,13 @@ body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:l
 
 .client_info_tags{}
 .client_info_tags .client_info{margin-bottom:15px;}
-.client_info_tags .client_info .cl_logo{display: inline-block;width: 30px;height: 30px;border-radius: 50%;background: #6777ef;text-align: center;color: #fff;font-size: 14px;line-height: 30px;vertical-align: top;}
+.client_info_tags .client_info .cl_logo{display: inline-block;width: 30px;height: 30px;border-radius: 50%;background: var(--navy);text-align: center;color: #fff;font-size: 14px;line-height: 30px;vertical-align: top;}
 .client_info_tags .client_info .cl_name{display: inline-block;margin-left: 5px;width: calc(100% - 40px);}
 .client_info_tags .client_info .cl_name span{display:block;}
 .client_info_tags .client_info .cl_name span.email{font-size: 12px;}
 .document_layout_type{display: inline-block;float: left;margin-top: 6px;}
 .document_layout_type a{background:rgb(192, 199, 202);color:#fff;display: inline-block;padding: 6px 10px;font-size: 16px;line-height: 21px;border-radius: 4px;}
-.document_layout_type a.active{background:#6777ef;}
+.document_layout_type a.active{background:var(--navy);}
 .document_layout_type a i{color:#fff;margin:0px!important;}
 .upload_document, .migration_upload_document{position:relative;}
 
@@ -215,7 +215,7 @@ body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:l
 .interest_serv_list .interest_column .interest_serv_row{border-top: 1px solid #ddd;padding: 10px 0px 5px;display:flex;}
 .interest_serv_list .interest_column .serv_user_data{width: 65%;display: flex;}
 .interest_serv_list .interest_column .serv_user_action{width: 35%;display: flex;justify-content: space-between;}
-.interest_serv_list .interest_column .serv_user_data .serv_user_img{display: inline-block;width: 30px;height: 30px;border-radius: 50%;background: #6777ef;text-align: center;color: #fff;font-size: 14px;line-height: 30px;vertical-align: top;}
+.interest_serv_list .interest_column .serv_user_data .serv_user_img{display: inline-block;width: 30px;height: 30px;border-radius: 50%;background: var(--navy);text-align: center;color: #fff;font-size: 14px;line-height: 30px;vertical-align: top;}
 .interest_serv_list .interest_column .serv_user_data .serv_user_info{display: inline-block;margin-left: 5px;width: calc(100% - 40px);}
 .interest_serv_list .interest_column .serv_user_data span{display:block;}
 .interest_serv_list .interest_column .serv_user_data span.serv_name{font-size: 14px;line-height:18px;color: #4f5ece;}
@@ -242,7 +242,7 @@ body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:l
 .note_term_list .note_col .extra_content .left, .contact_term_list .note_col .extra_content .left, .branch_term_list .branch_col .extra_content .left{float:left;width: calc(100% - 15px);}
 .promotionlists .promotion_col .extra_content .left{float:left;width: 50%;}
 .note_term_list .note_col .extra_content .author, .contact_term_list .note_col .extra_content .author, .branch_term_list .branch_col .extra_content .author, .promotionlists .promotion_col .extra_content .author{float:left;}
-.note_term_list .note_col .extra_content .author a, .contact_term_list .note_col .extra_content .author a, .branch_term_list .branch_col .extra_content .author a, .promotionlists .promotion_col .extra_content .author a{display: inline-block;width: 30px;height: 30px;border-radius: 50%;/*background: #6777ef;*/ background:#FCCD02;text-align: center;color: #fff;font-size: 14px;line-height: 30px;vertical-align: top;}
+.note_term_list .note_col .extra_content .author a, .contact_term_list .note_col .extra_content .author a, .branch_term_list .branch_col .extra_content .author a, .promotionlists .promotion_col .extra_content .author a{display: inline-block;width: 30px;height: 30px;border-radius: 50%;/*background: var(--navy);*/ background:#FCCD02;text-align: center;color: #fff;font-size: 14px;line-height: 30px;vertical-align: top;}
 .branch_term_list .branch_col .extra_content p{margin:0px;}
 .note_term_list .note_col .extra_content .note_modify, .contact_term_list .note_col .extra_content .note_modify, .branch_term_list .branch_col .extra_content .note_modify{float: left;margin-left: 6px;}
 .note_term_list .note_col .extra_content .note_modify small, .contact_term_list .note_col .extra_content .note_modify small, .branch_term_list .branch_col .extra_content .note_modify small{display: block;line-height: 18px;color: #aeaeae;}
@@ -260,16 +260,16 @@ body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:l
 .conversation_list .conversa_item .conver_action .date{display:inline-block;margin-right:10px;}
 .conversation_list .conversa_item .conver_action .date span{font-size:13px;line-height:18px;/*color:#666;*/color:#FFFFFF;}
 .conversation_list .conversa_item .conver_action .conver_link{display:inline-block;}
-.conversation_list .conversa_item .conver_action .conver_link a{display:inline-block;margin-right:2px;background: #6777ef;color: #fff;border-radius: 50%;line-height: 21px;width: 30px;height: 30px;text-align: center;padding: 4px 0px;}
+.conversation_list .conversa_item .conver_action .conver_link a{display:inline-block;margin-right:2px;background: var(--navy);color: #fff;border-radius: 50%;line-height: 21px;width: 30px;height: 30px;text-align: center;padding: 4px 0px;}
 .conversation_list .conversa_item .conver_action .conver_link a:last-child{margin-right:0px;}
 .card .card-body .conversation_list .conversa_item .conver_action .conver_link a i{font-size: 13px;line-height: 18px;margin:0px;}
 .conversation_list .conversa_item .email_info{margin-top:10px;}
 .conversation_list .conversa_item .email_info .avatar_img{display: inline-block;}
-.conversation_list .conversa_item .email_info .avatar_img span{display: block;width: 30px;height: 30px;border-radius: 50%;/*background: #6777ef;*/background: #FCCD02;text-align: center;color: #fff;font-size: 14px;line-height: 30px;vertical-align: top;}
+.conversation_list .conversa_item .email_info .avatar_img span{display: block;width: 30px;height: 30px;border-radius: 50%;/*background: var(--navy);*/background: #FCCD02;text-align: center;color: #fff;font-size: 14px;line-height: 30px;vertical-align: top;}
 .conversation_list .conversa_item .email_info .email_content{display: inline-block;vertical-align: middle;}
 .conversation_list .conversa_item .email_info .email_content span.email_label{font-size:13px;line-height:18px;}
 .conversation_list .conversa_item .email_info .email_content span.email_sentby{font-size:12px;line-height:16px;}
-.conversation_list .conversa_item .email_info .email_content span.email_sentby strong{font-size:14px;line-height:18px;/*color:#6777ef;*/color:#FFFFFF;}
+.conversation_list .conversa_item .email_info .email_content span.email_sentby strong{font-size:14px;line-height:18px;/*color:var(--navy);*/color:#FFFFFF;}
 .conversation_list .conversa_item .email_info .email_content span.label{font-size:12px;line-height:16px;padding: 3px 8px;border-radius: 4px;}
 .conversation_list .conversa_item .email_info .email_content span.label.success{background:#21ba45;color:#fff;}
 .conversation_list .conversa_item .email_info .email_content .span_desc{display:block;}
@@ -286,7 +286,7 @@ body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:l
 .education_list .education_item .education_info .edu_date{display: inline-block;background: #ccc;padding: 5px 8px;border-radius: 4px;font-size: 12px;line-height: 16px;color: #333;}
 .education_list .education_item .education_info .edu_date span{margin:0px 5px;}
 .education_list .education_item .education_info .edu_score{margin: 5px 0px;}
-.education_list .education_item .education_info .edu_score span{font-size: 14px;line-height: 18px;color: #6777ef;font-weight: 600;}
+.education_list .education_item .education_info .edu_score span{font-size: 14px;line-height: 18px;color: var(--navy);font-weight: 600;}
 .education_list .education_item .education_info .edu_study_area span{font-size: 12px;line-height: 16px;}
 .education_list .education_item .education_info .edu_study_area span:before{content: ">>";display: inline-block;padding: 0 10px;}
 .education_list .education_item .education_info .edu_study_area span:first-child:before{display:none;}
@@ -327,7 +327,7 @@ body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:l
 .col_discount_field .inline_field .label_input .basic_label{padding: 10px;}
 .invoiceInformationDiv .inline_field .label_input .basic_label, .col_discount_field .inline_field .label_input .basic_label{border: 1px solid #ebebeb;border-radius:4px;border-top-left-radius: 0;border-bottom-left-radius: 0;font-size: 13px;line-height: 21px;}
 .cus_col_5 .payment_detail{padding: 15px 0px;}
-.payment_check h4, .add_notes h4, .attachment h4, .income_sharing h4{font-size:18px;line-height:21px;color:#6777ef;margin:0px 0px 10px;}
+.payment_check h4, .add_notes h4, .attachment h4, .income_sharing h4{font-size:18px;line-height:21px;color:var(--navy);margin:0px 0px 10px;}
 .payment_check .pay_checkbox{font-size: 12px;line-height: 21px;color:#333;}
 .payment_check .pay_checkbox label{margin:0px;}
 .payment_field{}
@@ -375,7 +375,7 @@ padding: 5px 10px;width:100%;background-color: #fdfdff;}
 .application_other_info .cus_accrodian .accordion-header:hover .accord_hover{display:inline-block;}
 .application_other_info .cus_accrodian .accord_hover a{margin-right:5px;}
 .application_other_info .cus_accrodian .accordion-header .accord_hover a{color:#fff;}
-.application_other_info .cus_accrodian .accordion-header.collapsed .accord_hover a{color:#6777ef;}
+.application_other_info .cus_accrodian .accordion-header.collapsed .accord_hover a{color:var(--navy);}
 .application_other_info .cus_accrodian .accord_hover a:last-child{margin-right:0px;}
 .application_other_info .cus_accrodian .accord_hover a i{font-size:16px;}
 .application_other_info .activity_list{}
@@ -385,7 +385,7 @@ padding: 5px 10px;width:100%;background-color: #fdfdff;}
 .application_other_info .activity_list .activity_col .app_description{box-shadow: 0 3px 8px 0 rgb(0 0 0 / 8%), 0 1px 2px 0 rgb(0 0 0 / 10%);padding: 10px 10px;margin: 6px 0px 6px 10px;border-radius: 4px;}
 .application_other_info .activity_list .activity_col .app_description p{margin:0px;}
 .application_other_info .activity_list .activity_col span.span_txt{font-size:13px;line-height:16px;position: relative;padding-left: 5px;}
-.application_other_info .activity_list .activity_col span.span_txt:before{content:"";border-radius:50%;width:10px;height:10px;display: inline-block;background: #6777ef;position: absolute;top: 3px;left: -12px;}
+.application_other_info .activity_list .activity_col span.span_txt:before{content:"";border-radius:50%;width:10px;height:10px;display: inline-block;background: var(--navy);position: absolute;top: 3px;left: -12px;}
 .application_other_info .activity_list .activity_col span.span_time{font-size:12px;line-height:16px;}
 .application_other_info .schedule_box{display: flex;justify-content: space-between;}
 .application_other_info .schedule_box .schedule_col{margin-right:10px;}
@@ -414,7 +414,7 @@ padding: 5px 10px;width:100%;background-color: #fdfdff;}
 .app_date_sec .common_apply_date .apply_val{}
 .app_date_sec .common_apply_date .apply_val span{display: block;}
 .app_date_sec .common_apply_date .apply_val span.month{font-size: 13px;line-height: 18px;}
-.app_date_sec .common_apply_date .apply_val span.day{font-size: 30px;line-height: 36px;color:#6777ef;}
+.app_date_sec .common_apply_date .apply_val span.day{font-size: 30px;line-height: 36px;color:var(--navy);}
 .app_date_sec .app_end_date .apply_val span.day{color:#ff0000;}
 .app_date_sec .common_apply_date .apply_val span.year{font-size: 14px;line-height: 18px;}
 .setup_payment_sche{}
@@ -424,7 +424,7 @@ padding: 5px 10px;width:100%;background-color: #fdfdff;}
 .serv_status_added{}
 .serv_status_added p{display:inline-block;margin-right:10px;}
 .serv_status_added p span{display: block;}
-.serv_status_added p span span.name{display: inline-block;width: 25px;height: 25px;border-radius: 50%;background: #6777ef;text-align: center;color: #fff;font-size: 12px;line-height: 25px;vertical-align: top;margin-right: 8px;}
+.serv_status_added p span span.name{display: inline-block;width: 25px;height: 25px;border-radius: 50%;background: var(--navy);text-align: center;color: #fff;font-size: 12px;line-height: 25px;vertical-align: top;margin-right: 8px;}
 .serv_detail{}
 .serv_detail h6{display:inline-block;}
 .serv_detail a.openeditservices{float:right;}
@@ -442,7 +442,7 @@ padding: 5px 10px;width:100%;background-color: #fdfdff;}
 .appointmentlist .appointmentdata .appointment_col .appointdate{display: inline-block;}
 .appointmentlist .appointmentdata .appointment_col .title_desc{display: inline-block;width: calc(100% - 75px);margin-left: 10px;vertical-align: top;}
 .appointmentlist .appointmentdata .appointment_col:hover{background: #f4f4f4;}
-.appointmentlist .appointmentdata.active .appointment_col{background: #6777ef;color:#fff;}
+.appointmentlist .appointmentdata.active .appointment_col{background: var(--navy);color:#fff;}
 .appointmentlist .appointmentdata .appointment_col h5{font-size:15px;line-height:21px;margin:0px 0px 5px;}
 .appointmentlist .appointmentdata .appointment_col p{font-size:13px;line-height:18px;margin:0px;}
 .appointmentlist .appointmentdata .appointment_col p span{font-size:12px;line-height:16px;display:block;font-style:italic;}
@@ -450,8 +450,8 @@ padding: 5px 10px;width:100%;background-color: #fdfdff;}
 .appointmentlist .appointmentdata .appointment_col:hover h5, .appointmentlist .appointmentdata .appointment_col:hover p{color:#333;}
 .appointmentlist .appointmentdata .appoint_created{text-align: right;}
 .appointmentlist .appointmentdata .appoint_created span.span_label{font-size: 12px;line-height: 16px;margin-right: 10px;}
-.appointmentlist .appointmentdata .appoint_created span.span_label span{display: inline-block;width: 25px;height: 25px;border-radius: 50%;background: #6777ef;text-align: center;color: #fff;font-size: 12px;line-height: 25px;vertical-align: top;}
-.appointmentlist .appointmentdata.active .appointment_col  .appoint_created span.span_label span{background: #fff;color: #6777ef;}
+.appointmentlist .appointmentdata .appoint_created span.span_label span{display: inline-block;width: 25px;height: 25px;border-radius: 50%;background: var(--navy);text-align: center;color: #fff;font-size: 12px;line-height: 25px;vertical-align: top;}
+.appointmentlist .appointmentdata.active .appointment_col  .appoint_created span.span_label span{background: #fff;color: var(--navy);}
 /* WARNING: .editappointment CSS removed - old appointment system deleted */
 .cus_invice_btn{width:auto;float:right;margin-bottom: 15px;}
 .cus_col_7 .col_full{width:100%;display:block;}
@@ -460,13 +460,13 @@ padding: 5px 10px;width:100%;background-color: #fdfdff;}
 
 .overall_progress{}
 .overall_progress .progress-circle{font-size: 20px;margin: 10px 0px 0px;position: relative;padding: 0;width: 60px;height: 60px;background-color: #f2e9e1;border-radius: 50%;line-height: 60px;}
-.overall_progress .progress-circle span {position: absolute;line-height: 60px;width: 60px;text-align: center;display: block;color: #6777ef;z-index: 2;}
+.overall_progress .progress-circle span {position: absolute;line-height: 60px;width: 60px;text-align: center;display: block;color: var(--navy);z-index: 2;}
 .overall_progress .progress-circle:after {border: none;position: absolute;top: 5px;left: 5px;text-align: center;display: block;border-radius: 50%;width: 50px;height: 50px;background-color: #fff;content: " ";}
 .overall_progress .left-half-clipper {border-radius: 50%;width: 60px;height: 60px;position: absolute;clip: rect(0,60px,60px,30px);}
 .overall_progress .progress-circle:not(.over_50) .first50-bar {display: none;}
 .overall_progress .progress-circle.over_50 .left-half-clipper {clip: rect(auto,auto,auto,auto);}
-.overall_progress .progress-circle.over_50 .first50-bar{position: absolute;clip: rect(0,60px,60px,30px);background-color: #6777ef;border-radius: 50%;width: 60px;height: 60px;}
-.overall_progress .value-bar {position: absolute;clip: rect(0,30px,60px,0);width: 60px;height: 60px;border-radius: 50%;border: 5px solid #6777ef;box-sizing: border-box;}
+.overall_progress .progress-circle.over_50 .first50-bar{position: absolute;clip: rect(0,60px,60px,30px);background-color: var(--navy);border-radius: 50%;width: 60px;height: 60px;}
+.overall_progress .value-bar {position: absolute;clip: rect(0,30px,60px,0);width: 60px;height: 60px;border-radius: 50%;border: 5px solid var(--navy);box-sizing: border-box;}
 .overall_progress .progress-circle.prgs_13 .value-bar {transform: rotate(40deg);}
 .overall_progress .progress-circle.prgs_25 .value-bar {transform: rotate(90deg);}
 .overall_progress .progress-circle.prgs_38 .value-bar {transform: rotate(140deg);}
@@ -490,8 +490,8 @@ padding: 5px 10px;width:100%;background-color: #fdfdff;}
 .fees_type_sec .fees_type_col .remove_field, .fees_type_sec .discount_col .remove_field{display:none;}
 .fees_type_sec .custom_type_col .remove_field a.remove_btn{margin-top:40px;}
 .paymentschedule .modal-body .total_fee{display:inline-block;}
-.paymentschedule .modal-body .total_fee h4{font-size:18px;line-height:21px;color:#6777ef;}
-.paymentschedule .modal-body .total_fee span{font-size:21px;line-height:24px;color:#6777ef;}
+.paymentschedule .modal-body .total_fee h4{font-size:18px;line-height:21px;color:var(--navy);}
+.paymentschedule .modal-body .total_fee span{font-size:21px;line-height:24px;color:var(--navy);}
 .paymentschedule .modal-body .net_fee{display:inline-block;vertical-align: top;margin-left: 15px;}
 .paymentschedule .modal-body .net_fee span.span_label{font-size:14px;line-height:24px;color:#9c9c9c;display: block;}
 .paymentschedule .modal-body .net_fee span.span_value{font-size:15px;line-height:24px;color:#333;display: block;}
@@ -521,7 +521,7 @@ padding: 5px 10px;width:100%;background-color: #fdfdff;}
 .totalfee_addbtn .feetype_btn{float:left;width:50%;}
 .totalfee_addbtn .total_fee{float:right;width:50%;text-align:right;}
 .totalfee_addbtn .total_fee .total{display:inline-block;margin-right: 10px;}
-.totalfee_addbtn .total_fee .total h4{font-size:18px;line-height:21px;color:#6777ef;}
+.totalfee_addbtn .total_fee .total h4{font-size:18px;line-height:21px;color:var(--navy);}
 .totalfee_addbtn .total_fee .total h4 span{display:block;font-size:21px;line-height:24px;}
 .totalfee_addbtn .total_fee .netfee{display:inline-block;}
 .totalfee_addbtn .total_fee .netfee h6{font-size:14px;line-height:18px;color:#333;}
@@ -533,9 +533,9 @@ padding: 5px 10px;width:100%;background-color: #fdfdff;}
 
 .logsdata{}
 .logsdata .logsitem{background:#f4f4f4;padding:8px;margin-bottom: 6px;border-radius: 4px;}
-.logsdata .logsitem span.ag-avatar{display: inline-block;width: 30px;height: 30px;border-radius: 50%;background: #6777ef;text-align: center;color: #fff;font-size: 14px;line-height: 30px;}
+.logsdata .logsitem span.ag-avatar{display: inline-block;width: 30px;height: 30px;border-radius: 50%;background: var(--navy);text-align: center;color: #fff;font-size: 14px;line-height: 30px;}
 .logsdata .logsitem span.text_info{font-size: 12px;line-height: 18px;color: #666;margin-left: 5px;}
-.logsdata .logsitem span.text_info span{font-size: 13px;line-height: 18px;color: #6777ef;margin-right: 5px;}
+.logsdata .logsitem span.text_info span{font-size: 13px;line-height: 18px;color: var(--navy);margin-right: 5px;}
 .logsdata .logsitem span.logs_date{font-size: 13px;line-height: 18px;color: #666;text-align:right;display: block;}
 .logsdata .logsitem .logs_comment{margin:8px 0px 0px;}
 .logsdata .logsitem .logs_comment p{font-size: 13px;line-height: 18px;color: #666;margin:0px;}
@@ -598,7 +598,7 @@ margin:0px 0px 5px;}
 .service_list .service_column .service_right .inner_serv_rgt{padding: 0px 15px;}
 .service_list .service_column .service_right .fee_btn select{font-size: 13px;line-height: 16px;padding: 6px 10px;height: auto;}
 .service_list .service_column .service_right .service_price, .service_list .service_column .service_right .fee_breakdown{margin:15px 0px 10px;}
-.service_list .service_column .service_right .service_price .price{font-size: 15px;line-height: 25px;color:#6777ef;font-weight: 700;}
+.service_list .service_column .service_right .service_price .price{font-size: 15px;line-height: 25px;color:var(--navy);font-weight: 700;}
 .service_list .service_column .service_right .service_price .price span{font-size: 18px;line-height: 21px;display:block;}
 .service_list .service_column .service_right .inner_serv_rgt .fee_breakdown{display:none;}
 .service_list .service_column .service_right .inner_serv_rgt.active .fee_breakdown{display:block;}
@@ -609,7 +609,7 @@ margin:0px 0px 5px;}
 .service_list .service_actions{padding: 15px 15px;border-top: 1px solid #dbdbdb;}
 .service_list .service_actions .serv_process{display:inline-block;}
 .service_list .service_actions .serv_process>span{font-size:13px;line-height:18px;color:#9c9c9c;}
-.service_list .service_actions .serv_process>span>span{background:#6777ef;padding:3px 8px;font-size:11px;line-height:15px;color:#fff;border-radius: 10px;}
+.service_list .service_actions .serv_process>span>span{background:var(--navy);padding:3px 8px;font-size:11px;line-height:15px;color:#fff;border-radius: 10px;}
 .service_list .service_actions .serv_action_btns{float:right;}
 .service_list .service_actions .serv_action_btns a{margin-right:5px;}
 .service_list .service_actions .serv_action_btns a:last-child{margin-right:0px;}
@@ -652,7 +652,7 @@ padding-top: 10px;margin-top: 10px;}
 .cus_card_content .appli_remind .appli_column .date{display: inline-block;text-align: center;font-size: 15px;line-height: 21px;color: #000;}
 .cus_card_content .appli_remind .appli_column .date span{display: block;color: rgba(0,0,0,.4);font-size: 13px;line-height: 18px;}
 .cus_card_content .appli_remind .appli_content{display: inline-block;width:calc(100% - 50px);margin-left:5px;padding-left:5px;border-left: 1px solid #f2f2f2;vertical-align: middle;}
-.cus_card_content .appli_remind .appli_content a{font-size: 12px;line-height: 16px;color: #6777ef;}
+.cus_card_content .appli_remind .appli_content a{font-size: 12px;line-height: 16px;color: var(--navy);}
 .cus_card_content .appli_remind .appli_content .event_end{font-size: 12px;line-height: 16px;color: #000;}
 .cus_card_content .appli_remind .appli_content .event_end span{color:#e46363;}
 .cus_card_content .appli_remind .appli_content .end_date{font-size: 10px;line-height: 15px;color: #9c9c9c;}
@@ -678,15 +678,15 @@ text-overflow: ellipsis;white-space: nowrap;}
 
 .responsibilty_list{}
 .responsibilty_list .respons_icon{text-align: center;line-height: 80px;}
-.responsibilty_list .respons_icon i{font-size: 30px;color:#6777ef;}
+.responsibilty_list .respons_icon i{font-size: 30px;color:var(--navy);}
 .card .card-body .role_accordion{}
 .card .card-body .role_accordion .accordion{}
 .card .card-body .role_accordion .accordion .accordion-body ul{list-style-type:none;padding:0px;margin:0px;}
 .card .card-body .role_accordion .accordion .accordion-body .select_toggle{margin-bottom:10px;}
 .cus_contact_field{}
 .cus_contact_field .new_item{margin-top:40px;}
-.add_service>a{background-color: #fff!important;color: #6777ef!important;}
-.lead_table_data table tr td i{font-size:14px;color:#6777ef;}
+.add_service>a{background-color: #fff!important;color: var(--navy)!important;}
+.lead_table_data table tr td i{font-size:14px;color:var(--navy);}
 .lead_table_data .lead_stars{position: relative;}
 .lead_table_data .lead_stars i{font-size: 28px;}
 .lead_table_data .lead_stars span{position: absolute;top: 7px;left: 12px;color: #fff;font-size: 13px;line-height: 16px;}
@@ -698,13 +698,13 @@ text-overflow: ellipsis;white-space: nowrap;}
 
 .note_term_list .note_col .note_content{position: relative;}
 .note_term_list .note_col .note_content .pined_note{position: absolute;top: 5px;right: 5px;}
-.note_term_list .note_col .note_content .pined_note i{font-size:12px;color:#6777ef;}
+.note_term_list .note_col .note_content .pined_note i{font-size:12px;color:var(--navy);}
 
 .custom_nav_setting{background: #fff;border-radius: 6px;overflow: hidden;box-shadow: 0 2px 8px rgba(0,0,0,0.08);max-width: 340px;min-width: 320px;}
 .custom_nav_setting ul{list-style-type:none;padding:0px;}
 .custom_nav_setting ul li{padding:0px;}
 .custom_nav_setting ul li a{ font-size: 14px;line-height: 22px;padding: 12px 20px;color:#495057;border-bottom:1px solid #f1f3f4;font-weight: 500;min-height: 48px;display: flex;align-items: center;}
-.custom_nav_setting ul li.active a, .custom_nav_setting ul li a:hover{background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);}
+.custom_nav_setting ul li.active a, .custom_nav_setting ul li a:hover{background:linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);color:#fff;box-shadow: 0 2px 8px rgba(30, 61, 96, 0.3);}
 
 /* Enhanced tab spacing and visual improvements */
 .custom_nav_setting ul li {
@@ -755,7 +755,7 @@ text-overflow: ellipsis;white-space: nowrap;}
 }
 
 .card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
     color: #ffffff;
     padding: 20px 25px;
     border-bottom: none;
@@ -864,7 +864,7 @@ text-overflow: ellipsis;white-space: nowrap;}
 }
 
 .dropdown-item:hover {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
     color: #ffffff;
 }
 

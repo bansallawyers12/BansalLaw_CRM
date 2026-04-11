@@ -226,14 +226,14 @@
                                                     <i class="fas fa-circle status-dot-online"></i>
                                                     <span class="count-text">1</span> online
                                                 </span>
-                                                <small class="text-muted ml-3">
+                                                <small class="active-staff-stats-hint ms-3">
                                                     <i class="fas fa-info-circle"></i> Presence calculated from active sessions within the last 5 minutes
                                                 </small>
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center gap-2 flex-shrink-0">
                                             @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
-                                            <a href="{{ route('staff-login-analytics.index') }}" class="btn btn-light btn-sm active-staff-action-btn">
+                                            <a href="{{ route('staff-login-analytics.index') }}" class="btn btn-sm active-staff-action-btn">
                                                 <i class="fas fa-chart-line"></i>
                                                 <span class="d-none d-md-inline">Analytics</span>
                                             </a>
@@ -278,8 +278,8 @@
                                                 </select>
                                             </div>
                                             <div class="col-md-1 col-lg-1">
-                                                <button type="button" 
-                                                        class="btn btn-outline-secondary btn-sm btn-block active-staff-clear-btn" 
+                                                <button type="button"
+                                                        class="btn btn-sm btn-block active-staff-clear-btn"
                                                         id="active-staff-clear-filters"
                                                         title="Clear filters">
                                                     <i class="fas fa-times"></i>
@@ -341,7 +341,7 @@
                                                 <tr>
                                                     <td colspan="6" class="text-center py-5">
                                                         <div class="active-staff-empty-state">
-                                                            <div class="spinner-border spinner-border-sm text-primary mb-3" role="status" id="active-staff-loading" style="display: none;">
+                                                            <div class="spinner-border spinner-border-sm active-staff-loading-spinner mb-3" role="status" id="active-staff-loading" style="display: none;">
                                                                 <span class="sr-only">Loading...</span>
                                                             </div>
                                                             <i class="fas fa-users mb-3 empty-state-icon"></i>
@@ -355,12 +355,12 @@
                                 </div>
                                 
                                 <!-- Modern Footer -->
-                                <div class="card-footer bg-white border-top active-staff-footer">
+                                <div class="card-footer border-top active-staff-footer">
                                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                                        <div class="text-muted small">
-                                            <i class="fas fa-info-circle text-primary"></i>
+                                        <div class="active-staff-footer-note small">
+                                            <i class="fas fa-info-circle active-staff-footer-note__icon"></i>
                                             <span id="active-staff-info">Refreshing manually will recalculate active sessions in real time.</span>
-                                            <span id="active-staff-last-refresh" class="ml-2"></span>
+                                            <span id="active-staff-last-refresh" class="ms-2"></span>
                                         </div>
                                         <nav aria-label="Active staff pagination" id="active-staff-pagination">
                                             <!-- Pagination will be inserted here by JavaScript -->
@@ -376,24 +376,24 @@
     </section>
 </div>
 
-<!-- Detail Modal -->
-<div class="modal fade" id="broadcastDetailModal" tabindex="-1" role="dialog" aria-labelledby="broadcastDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
+<!-- Detail Modal — tokens in public/css/broadcast-manage.css -->
+<div class="modal fade broadcast-detail-modal" id="broadcastDetailModal" tabindex="-1" role="dialog" aria-labelledby="broadcastDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content broadcast-detail-modal__content">
+            <div class="modal-header broadcast-detail-modal__header">
                 <h5 class="modal-title" id="broadcastDetailModalLabel">Broadcast Details</h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                <button type="button" class="close broadcast-detail-modal__close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="mb-3">
+            <div class="modal-body broadcast-detail-modal__body">
+                <div class="broadcast-detail-modal__summary mb-3">
                     <strong id="broadcast-detail-title" class="d-block"></strong>
                     <span id="broadcast-detail-message" class="d-block"></span>
                     <small class="text-muted" id="broadcast-detail-meta"></small>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-sm table-striped">
+                <div class="table-responsive broadcast-detail-modal__table-wrap">
+                    <table class="table table-sm table-striped broadcast-detail-modal__table mb-0">
                         <thead>
                             <tr>
                                 <th>Recipient</th>
@@ -409,8 +409,8 @@
                     </table>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <div class="modal-footer broadcast-detail-modal__footer">
+                <button type="button" class="btn broadcast-detail-modal__btn-close" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -628,7 +628,7 @@
             items.forEach((item) => {
                 const row = document.createElement('tr');
                 const deleteBtn = isSuperAdmin 
-                    ? `<button type="button" class="btn btn-outline-danger btn-sm ml-1" data-action="delete-broadcast" data-batch="${item.batch_uuid}" title="Delete broadcast">
+                    ? `<button type="button" class="btn btn-sm btn-broadcast-delete ms-1" data-action="delete-broadcast" data-batch="${item.batch_uuid}" title="Delete broadcast">
                            <i class="fas fa-trash"></i>
                        </button>`
                     : '';
@@ -649,8 +649,8 @@
                     <td class="text-center">
                         <span class="badge badge-warning">${item.unread_count}</span>
                     </td>
-                    <td class="text-right">
-                        <button type="button" class="btn btn-outline-primary btn-sm" data-action="view-broadcast" data-batch="${item.batch_uuid}">
+                    <td class="text-right text-nowrap">
+                        <button type="button" class="btn btn-sm btn-broadcast-detail" data-action="view-broadcast" data-batch="${item.batch_uuid}">
                             <i class="fas fa-eye"></i> Details
                         </button>
                         ${deleteBtn}
@@ -677,7 +677,7 @@
             items.forEach((item) => {
                 const row = document.createElement('tr');
                 const deleteBtn = isSuperAdmin 
-                    ? `<button type="button" class="btn btn-outline-danger btn-sm ml-1" data-action="delete-broadcast" data-batch="${item.batch_uuid}" title="Delete broadcast">
+                    ? `<button type="button" class="btn btn-sm btn-broadcast-delete ms-1" data-action="delete-broadcast" data-batch="${item.batch_uuid}" title="Delete broadcast">
                            <i class="fas fa-trash"></i>
                        </button>`
                     : '';
@@ -694,8 +694,8 @@
                     <td class="text-center">
                         <span class="badge badge-warning">${item.unread_count}</span>
                     </td>
-                    <td class="text-right">
-                        <button type="button" class="btn btn-outline-primary btn-sm" data-action="view-broadcast" data-batch="${item.batch_uuid}">
+                    <td class="text-right text-nowrap">
+                        <button type="button" class="btn btn-sm btn-broadcast-detail" data-action="view-broadcast" data-batch="${item.batch_uuid}">
                             <i class="fas fa-eye"></i> Details
                         </button>
                         ${deleteBtn}

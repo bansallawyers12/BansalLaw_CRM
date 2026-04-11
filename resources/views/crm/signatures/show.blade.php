@@ -69,7 +69,7 @@
     }
     
     .section-title i {
-        color: #667eea;
+        color: var(--navy);
     }
     
     .info-row {
@@ -194,7 +194,7 @@
         padding: 20px;
         border-radius: 8px;
         margin-bottom: 15px;
-        border-left: 4px solid #667eea;
+        border-left: 4px solid var(--navy);
     }
     
     .signer-item.signed {
@@ -265,7 +265,7 @@
     }
     
     .btn-primary {
-        background: #667eea;
+        background: var(--navy);
         color: white;
     }
     
@@ -537,12 +537,12 @@
     }
 
     .match-item:hover {
-        border-color: #667eea;
-        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
+        border-color: var(--navy);
+        box-shadow: 0 2px 4px rgba(30, 61, 96, 0.1);
     }
 
     .match-item.selected {
-        border-color: #667eea;
+        border-color: var(--navy);
         background: #e8ecff;
     }
 
@@ -617,14 +617,14 @@
     
     .matter-item.clickable:hover {
         background: #e9ecef;
-        border-color: #667eea;
-        color: #667eea;
+        border-color: var(--navy);
+        color: var(--navy);
     }
     
     .matter-item.selected {
-        background: #667eea;
+        background: var(--navy);
         color: white;
-        border-color: #667eea;
+        border-color: var(--navy);
     }
 
     .no-matches {
@@ -651,7 +651,7 @@
     }
 
     .step-dot.active {
-        background: #667eea;
+        background: var(--navy);
     }
 
     .step-dot.completed {

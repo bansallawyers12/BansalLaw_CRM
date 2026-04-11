@@ -19,6 +19,7 @@
 	<link href="{{asset('css/style.css')}}" rel="stylesheet">
 	<link href="{{asset('css/components.css')}}" rel="stylesheet">
 	<link href="{{asset('css/custom.css')}}" rel="stylesheet">
+	<link href="{{asset('css/crm-theme.css')}}" rel="stylesheet">
 
     <script async src="https://www.google.com/recaptcha/api.js"></script> <!-- Add recaptcha script -->
 </head>
@@ -31,7 +32,7 @@
     background-size: cover;
 }
 </style>
-<body class="bg">
+<body class="bg crm-login-page">
 	<div class="loader"></div>
 	<div id="app">
 		@yield('content')

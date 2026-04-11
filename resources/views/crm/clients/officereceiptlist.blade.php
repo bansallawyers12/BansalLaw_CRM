@@ -27,7 +27,7 @@
 
     /* Modern Header with Gradient */
     .listing-container .card-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
         padding: 24px 32px;
         border-bottom: none;
         display: flex;
@@ -59,7 +59,7 @@
     }
 
     .listing-container .per-page-select option {
-        background: #667eea;
+        background: var(--navy);
         color: white;
     }
 
@@ -98,23 +98,8 @@
     }
 
     .listing-container .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
         color: white;
-    }
-
-    .listing-container .Validate_Receipt {
-        background: white !important;
-        color: #667eea !important;
-        font-weight: 700;
-    }
-
-    .listing-container .Validate_Receipt[style*="background-color: #394eea"],
-    .Validate_Receipt[style*="background-color: #394eea"] {
-        color: white !important;
-    }
-
-    .listing-container .Validate_Receipt:hover {
-        background: rgba(255, 255, 255, 0.95) !important;
     }
 
     /* Modern Filter Panel */
@@ -133,7 +118,7 @@
         font-weight: 700;
         margin-bottom: 20px;
         padding-bottom: 12px;
-        border-bottom: 2px solid #667eea;
+        border-bottom: 2px solid var(--navy);
         display: inline-block;
     }
 
@@ -157,8 +142,8 @@
     }
 
     .listing-container .form-control:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        border-color: var(--navy);
+        box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.1);
         outline: none;
     }
 
@@ -170,7 +155,7 @@
     }
 
     .listing-container .select2-container--default .select2-selection--single:focus {
-        border-color: #667eea;
+        border-color: var(--navy);
     }
 
     .listing-container .filter-buttons-container {
@@ -265,8 +250,8 @@
 
     /* Modern Checkbox */
     .listing-container .custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-color: #667eea;
+        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
+        border-color: var(--navy);
     }
 
     /* Modern Error/Success Messages */
@@ -298,7 +283,7 @@
 
     .listing-container .pagination .page-link {
         border: 2px solid #e2e8f0;
-        color: #667eea;
+        color: var(--navy);
         margin: 0 4px;
         border-radius: 8px;
         font-weight: 600;
@@ -306,15 +291,15 @@
     }
 
     .listing-container .pagination .page-link:hover {
-        background: #667eea;
+        background: var(--navy);
         color: white;
-        border-color: #667eea;
+        border-color: var(--navy);
         transform: translateY(-2px);
     }
 
     .listing-container .pagination .page-item.active .page-link {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-color: #667eea;
+        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
+        border-color: var(--navy);
     }
 
     /* No Records State */
@@ -388,8 +373,8 @@
     }
 
     .listing-container .sortable-header:hover {
-        background: rgba(102, 126, 234, 0.1);
-        color: #667eea;
+        background: rgba(30, 61, 96, 0.1);
+        color: var(--navy);
     }
 
     .listing-container .sort-icon {
@@ -419,7 +404,7 @@
     }
 
     .listing-container .sortable-header.sort-asc .sort-icon .fa-caret-up {
-        color: #667eea;
+        color: var(--navy);
         font-size: 10px;
     }
 
@@ -428,7 +413,7 @@
     }
 
     .listing-container .sortable-header.sort-desc .sort-icon .fa-caret-down {
-        color: #667eea;
+        color: var(--navy);
         font-size: 10px;
     }
 
@@ -461,8 +446,8 @@
                                 <option value="200" {{ $perPage == 200 ? 'selected' : '' }}>200</option>
                                 <option value="500" {{ $perPage == 500 ? 'selected' : '' }}>500</option>
                             </select>
-                            <a href="javascript:;" style="background: #394eea;color: white;"  class="btn btn-theme btn-theme-sm filter_btn"><i class="fas fa-filter"></i> Filter</a>
-                            <button class="btn btn-primary Validate_Receipt" style="background-color: #394eea !important; color: white !important;">
+                            <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fas fa-filter"></i> Filter</a>
+                            <button type="button" class="btn btn-primary Validate_Receipt">
                                 <i class="fas fa-check-circle"></i>
                                 Validate Receipt
                             </button>

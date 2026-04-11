@@ -39,6 +39,12 @@ body.sidebar-mini .h3 {
   font-weight: 700 !important;
 }
 
+/* Client/lead edit sidebar — nav header is on navy gradient; headings must stay light */
+body.sidebar-mini .crm-container .sidebar-navigation .nav-header h3,
+body.sidebar-mini .sidebar-navigation .nav-header h3 {
+  color: #fff !important;
+}
+
 /* Main content & listing areas */
 body.sidebar-mini .main-content {
   background-color: var(--page-bg) !important;
@@ -3962,4 +3968,48 @@ body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.sorting_
 /* Loading dots — theme active blue */
 body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_processing > div:last-child > div {
   background: var(--sidebar-active) !important;
+}
+
+/* ---------- layouts/app.blade.php (minimal Laravel shell) ---------- */
+body.crm-app-minimal {
+  font-family: "Segoe UI", sans-serif;
+  font-size: 14px;
+  color: var(--text-dark);
+  background-color: var(--page-bg);
+}
+
+body.crm-app-minimal .navbar-laravel {
+  background: var(--header-bg) !important;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+}
+
+body.crm-app-minimal .navbar-light .navbar-brand,
+body.crm-app-minimal .navbar-light .nav-link {
+  color: var(--navy) !important;
+}
+
+/* ---------- Staff login (layouts/crm-login) ---------- */
+body.crm-login-page .card.card-primary > .card-header {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+  border: none !important;
+}
+
+body.crm-login-page .card.card-primary > .card-header h4 {
+  color: #fff !important;
+}
+
+body.crm-login-page .card.card-primary .btn-primary {
+  background: var(--navy) !important;
+  border-color: var(--navy) !important;
+}
+
+/* ---------- crm/documents/index (Tailwind + Vite) — align shell to theme.md ---------- */
+body.crm-esign-documents {
+  background-color: var(--page-bg) !important;
+  color: var(--text-dark);
+}
+
+body.crm-esign-documents .min-h-screen > .max-w-6xl > div:first-child h1 {
+  color: var(--navy) !important;
 }

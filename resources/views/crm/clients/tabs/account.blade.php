@@ -1733,7 +1733,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let modalHtml = '<div class="modal fade" id="quickAllocateModal" tabindex="-1" role="dialog">' +
             '<div class="modal-dialog modal-lg" role="document">' +
             '<div class="modal-content">' +
-            '<div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">' +
+            '<div class="modal-header" style="background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%); color: white;">' +
             '<h5 class="modal-title"><i class="fas fa-magic"></i> Smart Invoice Allocation</h5>' +
             '<button type="button" class="close" data-bs-dismiss="modal" style="color: white;">' +
             '<span>&times;</span>' +
@@ -2249,7 +2249,7 @@ tr.invoice-drop-zone {
 /* Active drop zones (when dragging) */
 tr.invoice-drop-zone.drag-active {
     background-color: #e8f4f8 !important;
-    border-left: 4px solid #667eea !important;
+    border-left: 4px solid var(--navy) !important;
 }
 
 tr.invoice-drop-zone.drag-active::before {
@@ -2258,7 +2258,7 @@ tr.invoice-drop-zone.drag-active::before {
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
-    background: #667eea;
+    background: var(--navy);
     color: white;
     padding: 4px 12px;
     border-radius: 20px;
