@@ -183,6 +183,11 @@ body.sidebar-mini .adminconsole-features .table-responsive > table tbody td {
   vertical-align: middle !important;
 }
 
+/* Action-column dropdowns: Popper uses position:fixed + transform; avoid clipping and don’t override with page-local absolute hacks */
+body.sidebar-mini .adminconsole-features .table-responsive > table tbody td:last-child {
+  overflow: visible !important;
+}
+
 body.sidebar-mini .adminconsole-features .table-responsive > table tbody tr:nth-child(odd) {
   background: var(--card-bg) !important;
 }
@@ -1065,7 +1070,12 @@ body.sidebar-mini .adminconsole-email-labels-form .span_req {
 body.sidebar-mini .adminconsole-workflow-form .card .form-group label,
 body.sidebar-mini .adminconsole-emails-form .card .form-group label,
 body.sidebar-mini .adminconsole-offices-form .card .form-group label,
-body.sidebar-mini .adminconsole-crm-email-template-form .card .form-group label {
+body.sidebar-mini .adminconsole-crm-email-template-form .card .form-group label,
+body.sidebar-mini .adminconsole-teams-form .card .form-group label,
+body.sidebar-mini .adminconsole-roles-form .card .form-group label,
+body.sidebar-mini .adminconsole-personal-doc-type-form .card .form-group label,
+body.sidebar-mini .adminconsole-matter-document-type-form .card .form-group label,
+body.sidebar-mini .adminconsole-document-checklist-form .card .form-group label {
   color: var(--text-muted) !important;
   font-weight: 600 !important;
   font-size: 12px !important;
@@ -1076,7 +1086,12 @@ body.sidebar-mini .adminconsole-crm-email-template-form .card .form-group label 
 /* Checkbox row: avoid shouting “ENABLE THIS FEATURE” */
 body.sidebar-mini .adminconsole-emails-form .form-group label:has(> input[type="checkbox"]),
 body.sidebar-mini .adminconsole-offices-form .form-group label:has(> input[type="checkbox"]),
-body.sidebar-mini .adminconsole-crm-email-template-form .form-group label:has(> input[type="checkbox"]) {
+body.sidebar-mini .adminconsole-crm-email-template-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-teams-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-roles-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-personal-doc-type-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-matter-document-type-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-document-checklist-form .form-group label:has(> input[type="checkbox"]) {
   text-transform: none !important;
   font-size: 14px !important;
   color: var(--text-dark) !important;
@@ -1085,7 +1100,12 @@ body.sidebar-mini .adminconsole-crm-email-template-form .form-group label:has(> 
 
 body.sidebar-mini .adminconsole-emails-form .card .card-body h4,
 body.sidebar-mini .adminconsole-offices-form .card .card-body h4,
-body.sidebar-mini .adminconsole-crm-email-template-form .card .card-body h4 {
+body.sidebar-mini .adminconsole-crm-email-template-form .card .card-body h4,
+body.sidebar-mini .adminconsole-teams-form .card .card-body h4,
+body.sidebar-mini .adminconsole-roles-form .card .card-body h4,
+body.sidebar-mini .adminconsole-personal-doc-type-form .card .card-body h4,
+body.sidebar-mini .adminconsole-matter-document-type-form .card .card-body h4,
+body.sidebar-mini .adminconsole-document-checklist-form .card .card-body h4 {
   color: var(--navy) !important;
   font-weight: 700 !important;
   font-size: 1rem !important;
@@ -1100,14 +1120,29 @@ body.sidebar-mini .adminconsole-emails-form small.form-text,
 body.sidebar-mini .adminconsole-offices-form .form-text,
 body.sidebar-mini .adminconsole-offices-form small.form-text,
 body.sidebar-mini .adminconsole-crm-email-template-form .form-text,
-body.sidebar-mini .adminconsole-crm-email-template-form small.form-text {
+body.sidebar-mini .adminconsole-crm-email-template-form small.form-text,
+body.sidebar-mini .adminconsole-teams-form .form-text,
+body.sidebar-mini .adminconsole-teams-form small.form-text,
+body.sidebar-mini .adminconsole-roles-form .form-text,
+body.sidebar-mini .adminconsole-roles-form small.form-text,
+body.sidebar-mini .adminconsole-personal-doc-type-form .form-text,
+body.sidebar-mini .adminconsole-personal-doc-type-form small.form-text,
+body.sidebar-mini .adminconsole-matter-document-type-form .form-text,
+body.sidebar-mini .adminconsole-matter-document-type-form small.form-text,
+body.sidebar-mini .adminconsole-document-checklist-form .form-text,
+body.sidebar-mini .adminconsole-document-checklist-form small.form-text {
   color: var(--text-muted) !important;
 }
 
 body.sidebar-mini .adminconsole-workflow-form .card-header h4 small,
 body.sidebar-mini .adminconsole-emails-form .card-header h4 small,
 body.sidebar-mini .adminconsole-offices-form .card-header h4 small,
-body.sidebar-mini .adminconsole-crm-email-template-form .card-header h4 small {
+body.sidebar-mini .adminconsole-crm-email-template-form .card-header h4 small,
+body.sidebar-mini .adminconsole-teams-form .card-header h4 small,
+body.sidebar-mini .adminconsole-roles-form .card-header h4 small,
+body.sidebar-mini .adminconsole-personal-doc-type-form .card-header h4 small,
+body.sidebar-mini .adminconsole-matter-document-type-form .card-header h4 small,
+body.sidebar-mini .adminconsole-document-checklist-form .card-header h4 small {
   color: var(--text-muted) !important;
   font-weight: 500 !important;
   font-size: 0.85rem !important;
@@ -1118,7 +1153,12 @@ body.sidebar-mini .adminconsole-crm-email-template-form .card-header h4 small {
 body.sidebar-mini .adminconsole-workflow-form .alert-info,
 body.sidebar-mini .adminconsole-emails-form .alert-info,
 body.sidebar-mini .adminconsole-offices-form .alert-info,
-body.sidebar-mini .adminconsole-crm-email-template-form .alert-info {
+body.sidebar-mini .adminconsole-crm-email-template-form .alert-info,
+body.sidebar-mini .adminconsole-teams-form .alert-info,
+body.sidebar-mini .adminconsole-roles-form .alert-info,
+body.sidebar-mini .adminconsole-personal-doc-type-form .alert-info,
+body.sidebar-mini .adminconsole-matter-document-type-form .alert-info,
+body.sidebar-mini .adminconsole-document-checklist-form .alert-info {
   background: rgba(58, 111, 168, 0.12) !important;
   border: 1px solid rgba(58, 111, 168, 0.28) !important;
   color: var(--navy) !important;
@@ -1132,7 +1172,17 @@ body.sidebar-mini .adminconsole-emails-form .alert-info em,
 body.sidebar-mini .adminconsole-offices-form .alert-info strong,
 body.sidebar-mini .adminconsole-offices-form .alert-info em,
 body.sidebar-mini .adminconsole-crm-email-template-form .alert-info strong,
-body.sidebar-mini .adminconsole-crm-email-template-form .alert-info em {
+body.sidebar-mini .adminconsole-crm-email-template-form .alert-info em,
+body.sidebar-mini .adminconsole-teams-form .alert-info strong,
+body.sidebar-mini .adminconsole-teams-form .alert-info em,
+body.sidebar-mini .adminconsole-roles-form .alert-info strong,
+body.sidebar-mini .adminconsole-roles-form .alert-info em,
+body.sidebar-mini .adminconsole-personal-doc-type-form .alert-info strong,
+body.sidebar-mini .adminconsole-personal-doc-type-form .alert-info em,
+body.sidebar-mini .adminconsole-matter-document-type-form .alert-info strong,
+body.sidebar-mini .adminconsole-matter-document-type-form .alert-info em,
+body.sidebar-mini .adminconsole-document-checklist-form .alert-info strong,
+body.sidebar-mini .adminconsole-document-checklist-form .alert-info em {
   color: var(--navy) !important;
 }
 
@@ -1143,7 +1193,17 @@ body.sidebar-mini .adminconsole-emails-form .alert-info .fa,
 body.sidebar-mini .adminconsole-offices-form .alert-info .fas,
 body.sidebar-mini .adminconsole-offices-form .alert-info .fa,
 body.sidebar-mini .adminconsole-crm-email-template-form .alert-info .fas,
-body.sidebar-mini .adminconsole-crm-email-template-form .alert-info .fa {
+body.sidebar-mini .adminconsole-crm-email-template-form .alert-info .fa,
+body.sidebar-mini .adminconsole-teams-form .alert-info .fas,
+body.sidebar-mini .adminconsole-teams-form .alert-info .fa,
+body.sidebar-mini .adminconsole-roles-form .alert-info .fas,
+body.sidebar-mini .adminconsole-roles-form .alert-info .fa,
+body.sidebar-mini .adminconsole-personal-doc-type-form .alert-info .fas,
+body.sidebar-mini .adminconsole-personal-doc-type-form .alert-info .fa,
+body.sidebar-mini .adminconsole-matter-document-type-form .alert-info .fas,
+body.sidebar-mini .adminconsole-matter-document-type-form .alert-info .fa,
+body.sidebar-mini .adminconsole-document-checklist-form .alert-info .fas,
+body.sidebar-mini .adminconsole-document-checklist-form .alert-info .fa {
   color: var(--sidebar-active) !important;
 }
 
@@ -1151,7 +1211,12 @@ body.sidebar-mini .adminconsole-crm-email-template-form .alert-info .fa {
 body.sidebar-mini .adminconsole-workflow-form .alert-warning,
 body.sidebar-mini .adminconsole-emails-form .alert-warning,
 body.sidebar-mini .adminconsole-offices-form .alert-warning,
-body.sidebar-mini .adminconsole-crm-email-template-form .alert-warning {
+body.sidebar-mini .adminconsole-crm-email-template-form .alert-warning,
+body.sidebar-mini .adminconsole-teams-form .alert-warning,
+body.sidebar-mini .adminconsole-roles-form .alert-warning,
+body.sidebar-mini .adminconsole-personal-doc-type-form .alert-warning,
+body.sidebar-mini .adminconsole-matter-document-type-form .alert-warning,
+body.sidebar-mini .adminconsole-document-checklist-form .alert-warning {
   background: rgba(200, 153, 42, 0.15) !important;
   border: 1px solid rgba(200, 153, 42, 0.35) !important;
   color: #7a5800 !important;
@@ -1161,14 +1226,24 @@ body.sidebar-mini .adminconsole-crm-email-template-form .alert-warning {
 body.sidebar-mini .adminconsole-workflow-form .alert-warning strong,
 body.sidebar-mini .adminconsole-emails-form .alert-warning strong,
 body.sidebar-mini .adminconsole-offices-form .alert-warning strong,
-body.sidebar-mini .adminconsole-crm-email-template-form .alert-warning strong {
+body.sidebar-mini .adminconsole-crm-email-template-form .alert-warning strong,
+body.sidebar-mini .adminconsole-teams-form .alert-warning strong,
+body.sidebar-mini .adminconsole-roles-form .alert-warning strong,
+body.sidebar-mini .adminconsole-personal-doc-type-form .alert-warning strong,
+body.sidebar-mini .adminconsole-matter-document-type-form .alert-warning strong,
+body.sidebar-mini .adminconsole-document-checklist-form .alert-warning strong {
   color: #5c4300 !important;
 }
 
 body.sidebar-mini .adminconsole-workflow-form input.form-control[readonly],
 body.sidebar-mini .adminconsole-emails-form input.form-control[readonly],
 body.sidebar-mini .adminconsole-offices-form input.form-control[readonly],
-body.sidebar-mini .adminconsole-crm-email-template-form input.form-control[readonly] {
+body.sidebar-mini .adminconsole-crm-email-template-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-teams-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-roles-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-personal-doc-type-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-matter-document-type-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-document-checklist-form input.form-control[readonly] {
   background: var(--page-bg) !important;
   color: var(--text-dark) !important;
   border-color: var(--border) !important;
@@ -1182,7 +1257,17 @@ body.sidebar-mini .adminconsole-emails-form .custom-error strong,
 body.sidebar-mini .adminconsole-offices-form .custom-error,
 body.sidebar-mini .adminconsole-offices-form .custom-error strong,
 body.sidebar-mini .adminconsole-crm-email-template-form .custom-error,
-body.sidebar-mini .adminconsole-crm-email-template-form .custom-error strong {
+body.sidebar-mini .adminconsole-crm-email-template-form .custom-error strong,
+body.sidebar-mini .adminconsole-teams-form .custom-error,
+body.sidebar-mini .adminconsole-teams-form .custom-error strong,
+body.sidebar-mini .adminconsole-roles-form .custom-error,
+body.sidebar-mini .adminconsole-roles-form .custom-error strong,
+body.sidebar-mini .adminconsole-personal-doc-type-form .custom-error,
+body.sidebar-mini .adminconsole-personal-doc-type-form .custom-error strong,
+body.sidebar-mini .adminconsole-matter-document-type-form .custom-error,
+body.sidebar-mini .adminconsole-matter-document-type-form .custom-error strong,
+body.sidebar-mini .adminconsole-document-checklist-form .custom-error,
+body.sidebar-mini .adminconsole-document-checklist-form .custom-error strong {
   color: var(--danger) !important;
 }
 
@@ -1193,7 +1278,17 @@ body.sidebar-mini .adminconsole-emails-form .span_req,
 body.sidebar-mini .adminconsole-offices-form label .span_req,
 body.sidebar-mini .adminconsole-offices-form .span_req,
 body.sidebar-mini .adminconsole-crm-email-template-form label .span_req,
-body.sidebar-mini .adminconsole-crm-email-template-form .span_req {
+body.sidebar-mini .adminconsole-crm-email-template-form .span_req,
+body.sidebar-mini .adminconsole-teams-form label .span_req,
+body.sidebar-mini .adminconsole-teams-form .span_req,
+body.sidebar-mini .adminconsole-roles-form label .span_req,
+body.sidebar-mini .adminconsole-roles-form .span_req,
+body.sidebar-mini .adminconsole-personal-doc-type-form label .span_req,
+body.sidebar-mini .adminconsole-personal-doc-type-form .span_req,
+body.sidebar-mini .adminconsole-matter-document-type-form label .span_req,
+body.sidebar-mini .adminconsole-matter-document-type-form .span_req,
+body.sidebar-mini .adminconsole-document-checklist-form label .span_req,
+body.sidebar-mini .adminconsole-document-checklist-form .span_req {
   color: var(--danger) !important;
 }
 
@@ -1201,7 +1296,12 @@ body.sidebar-mini .adminconsole-crm-email-template-form .span_req {
 body.sidebar-mini .main-content.adminconsole-workflow-form .accordion,
 body.sidebar-mini .main-content.adminconsole-emails-form .accordion,
 body.sidebar-mini .main-content.adminconsole-offices-form .accordion,
-body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion {
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion,
+body.sidebar-mini .main-content.adminconsole-teams-form .accordion,
+body.sidebar-mini .main-content.adminconsole-roles-form .accordion,
+body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion,
+body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion,
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion {
   border: 1px solid var(--border) !important;
   border-radius: 10px !important;
   overflow: hidden !important;
@@ -1217,7 +1317,12 @@ body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion 
 body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-header,
 body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-header,
 body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-header,
-body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header {
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header {
   background: var(--navy) !important;
   background-image: none !important;
   color: #fff !important;
@@ -1231,14 +1336,24 @@ body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion 
 body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-header:hover,
 body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-header:hover,
 body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-header:hover,
-body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header:hover {
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header:hover {
   filter: brightness(1.04) !important;
 }
 
 body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-header[aria-expanded="true"],
 body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-header[aria-expanded="true"],
 body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-header[aria-expanded="true"],
-body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header[aria-expanded="true"] {
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header[aria-expanded="true"] {
   background: var(--navy) !important;
   color: #fff !important;
   box-shadow: none !important;
@@ -1247,7 +1362,12 @@ body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion 
 body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-header h4,
 body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-header h4,
 body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-header h4,
-body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header h4 {
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header h4 {
   color: #fff !important;
   margin: 0 !important;
   font-size: 1rem !important;
@@ -1257,10 +1377,97 @@ body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion 
 body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-body,
 body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-body,
 body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-body,
-body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-body {
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-body {
   background: var(--card-bg) !important;
   padding: 1.25rem !important;
   border: none !important;
+}
+
+/* System — teams (department colours); docs/theme.md */
+body.sidebar-mini .adminconsole-teams-form .card-header h4,
+body.sidebar-mini .adminconsole-roles-form .card-header h4,
+body.sidebar-mini .adminconsole-personal-doc-type-form .card-header h4,
+body.sidebar-mini .adminconsole-matter-document-type-form .card-header h4,
+body.sidebar-mini .adminconsole-document-checklist-form .card-header h4 {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini .adminconsole-teams-form input[type="color"].form-control,
+body.sidebar-mini .adminconsole-teams-form input[type="color"].form-control-color {
+  max-width: 120px;
+  height: 42px;
+  padding: 4px 8px;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  background: var(--card-bg) !important;
+  cursor: pointer;
+}
+
+body.sidebar-mini .adminconsole-teams-form .teams-color-swatch {
+  display: inline-block;
+  width: 40px;
+  height: 24px;
+  vertical-align: middle;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background-color: var(--team-color, #c8dcef);
+  box-shadow: 0 1px 2px rgba(30, 61, 96, 0.08);
+}
+
+/* System — roles & permissions form; docs/theme.md */
+body.sidebar-mini .adminconsole-roles-form .select_toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+body.sidebar-mini .adminconsole-roles-form .select_toggle .btn {
+  border-radius: 8px;
+}
+
+body.sidebar-mini .adminconsole-roles-form .accordion-body > ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+body.sidebar-mini .adminconsole-roles-form .accordion-body > ul > li {
+  margin-bottom: 8px;
+}
+
+body.sidebar-mini .adminconsole-roles-form .accordion-body > ul > li label {
+  margin: 0 !important;
+  font-weight: 400 !important;
+  font-size: 14px !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  color: var(--text-dark) !important;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+body.sidebar-mini .adminconsole-roles-form .accordion-body > ul > li label input[type="checkbox"] {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+body.sidebar-mini .adminconsole-roles-form .roles-form-actions,
+body.sidebar-mini .adminconsole-personal-doc-type-form .roles-form-actions,
+body.sidebar-mini .adminconsole-matter-document-type-form .roles-form-actions,
+body.sidebar-mini .adminconsole-document-checklist-form .roles-form-actions {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  text-align: right;
 }
 
 /* Offices branch form — Select2 (country / admin); docs/theme.md */

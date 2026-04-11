@@ -2,23 +2,21 @@
 @section('title', 'Create Roles and Permissions')
 
 @section('content')
-<style>
-	.main-content .section-body .card .card-body .form-group{margin-bottom:10px;}
-	.main-content .section-body .card .card-body .form-group .inner_checkbox .custom-checkbox{ display: inline-block;margin-right: 10px;}
-</style>
-<!-- Main Content --> 
-<div class="main-content">
+<div class="main-content adminconsole-features adminconsole-roles-form">
 	<section class="section">
 		<div class="section-body">
+			<div class="server-error">
+				@include('../Elements/flash-message')
+			</div>
 			<form action="{{ route('adminconsole.system.roles.store') }}" method="POST" name="add-userrole" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				<div class="row">
 					<div class="col-12 col-md-12 col-lg-12">
 						<div class="card">
 							<div class="card-header">
-								<h4>Add Roles and Permissions</h4>
+								<h4>Add roles and permissions</h4>
 								<div class="card-header-action">
-									<a href="{{route('adminconsole.system.roles.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+									<a href="{{route('adminconsole.system.roles.index')}}" class="btn btn-outline-primary"><i class="fa fa-arrow-left"></i> Back</a>
 								</div>
 							</div>
 						</div>
@@ -36,7 +34,7 @@
 									<div class="col-12 col-md-6 col-lg-6">
 										<div class="form-group">
 											<label for="description">Description </label>
-											<textarea class="form-control" name="description"></textarea>
+											<textarea class="form-control" name="description" rows="3" placeholder="Description">{{ old('description') }}</textarea>
 										</div>
 									</div>
 								</div>
@@ -46,10 +44,10 @@
 										  data-bs-target="#panel-body-1" aria-expanded="true">
 											<h4>OFFICE & TEAMS</h4>
 										</div>
-										<div class="accordion-body collapse show" id="panel-body-1" data-parent="#accordion">
+										<div class="accordion-body collapse show" id="panel-body-1" data-bs-parent="#accordion">
 											<div class="select_toggle">
-												<a href="javascript:;" data-class="office_team" class="btn btn-primary select_all">Select All</a>
-												<a href="javascript:;" data-class="office_team" class="btn btn-secondary deselect_all">Deselect All</a>
+												<a href="javascript:;" data-class="office_team" class="btn btn-sm btn-primary select_all">Select All</a>
+												<a href="javascript:;" data-class="office_team" class="btn btn-sm btn-outline-secondary deselect_all">Deselect All</a>
 											</div>
 											<ul>
 												<li><label><input type="checkbox" name="module_access[1]" class="office_team"> Can create new offices, edit and archive all the associated offices.</label></li>
@@ -65,10 +63,10 @@
 										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#panel-body-2">
 											<h4>WORKFLOWS</h4>
 										</div>
-										<div class="accordion-body collapse" id="panel-body-2" data-parent="#accordion">
+										<div class="accordion-body collapse" id="panel-body-2" data-bs-parent="#accordion">
 											<div class="select_toggle">
-												<a href="javascript:;" data-class="workflows" class="btn btn-primary select_all">Select All</a>
-												<a href="javascript:;" data-class="workflows" class="btn btn-secondary deselect_all">Deselect All</a>
+												<a href="javascript:;" data-class="workflows" class="btn btn-sm btn-primary select_all">Select All</a>
+												<a href="javascript:;" data-class="workflows" class="btn btn-sm btn-outline-secondary deselect_all">Deselect All</a>
 											</div>
 										  <ul>
 												<li><label><input type="checkbox" name="module_access[81]" class="workflows"> Can add, edit and delete Workflow and its stages.</label></li>
@@ -79,10 +77,10 @@
 										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#panel-body-3">
 											<h4>PARTNERS</h4>
 										</div>
-										<div class="accordion-body collapse" id="panel-body-3" data-parent="#accordion">
+										<div class="accordion-body collapse" id="panel-body-3" data-bs-parent="#accordion">
 											<div class="select_toggle">
-												<a href="javascript:;" data-class="partners" class="btn btn-primary select_all">Select All</a>
-												<a href="javascript:;" data-class="partners" class="btn btn-secondary deselect_all">Deselect All</a>
+												<a href="javascript:;" data-class="partners" class="btn btn-sm btn-primary select_all">Select All</a>
+												<a href="javascript:;" data-class="partners" class="btn btn-sm btn-outline-secondary deselect_all">Deselect All</a>
 											</div>
 											 <ul>
 												<li><label><input type="checkbox" name="module_access[7]" class="partners"> Can add and edit partners.</label></li>
@@ -98,10 +96,10 @@
 										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#panel-body-4">
 											<h4>PRODUCTS</h4>
 										</div>
-										<div class="accordion-body collapse" id="panel-body-4" data-parent="#accordion">
+										<div class="accordion-body collapse" id="panel-body-4" data-bs-parent="#accordion">
 											<div class="select_toggle">
-												<a href="javascript:;" data-class="products" class="btn btn-primary select_all">Select All</a>
-												<a href="javascript:;" data-class="products" class="btn btn-secondary deselect_all">Deselect All</a>
+												<a href="javascript:;" data-class="products" class="btn btn-sm btn-primary select_all">Select All</a>
+												<a href="javascript:;" data-class="products" class="btn btn-sm btn-outline-secondary deselect_all">Deselect All</a>
 											</div>
 											<ul>
 												<li><label><input type="checkbox" name="module_access[12]" class="products"> Can add and edit products.</label></li>
@@ -115,10 +113,10 @@
 										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#panel-body-6">
 											<h4>CLIENTS</h4>
 										</div>
-										<div class="accordion-body collapse" id="panel-body-6" data-parent="#accordion">
+										<div class="accordion-body collapse" id="panel-body-6" data-bs-parent="#accordion">
 											<div class="select_toggle">
-												<a href="javascript:;" data-class="clients" class="btn btn-primary select_all">Select All</a>
-												<a href="javascript:;" data-class="clients" class="btn btn-secondary deselect_all">Deselect All</a>
+												<a href="javascript:;" data-class="clients" class="btn btn-sm btn-primary select_all">Select All</a>
+												<a href="javascript:;" data-class="clients" class="btn btn-sm btn-outline-secondary deselect_all">Deselect All</a>
 											</div>
 											<ul>
 												<li><label><input type="checkbox" name="module_access[20]" class="clients"> Can view all the clients of all the associated offices. Can assign clients to any users of the associated offices, respectively.</label></li>
@@ -136,10 +134,10 @@
 										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#panel-body-7">
 											<h4>INTERESTED SERVICES</h4>
 										</div>
-										<div class="accordion-body collapse" id="panel-body-7" data-parent="#accordion">
+										<div class="accordion-body collapse" id="panel-body-7" data-bs-parent="#accordion">
 											<div class="select_toggle">
-												<a href="javascript:;" data-class="interested_service" class="btn btn-primary select_all">Select All</a>
-												<a href="javascript:;" data-class="interested_service" class="btn btn-secondary deselect_all">Deselect All</a>
+												<a href="javascript:;" data-class="interested_service" class="btn btn-sm btn-primary select_all">Select All</a>
+												<a href="javascript:;" data-class="interested_service" class="btn btn-sm btn-outline-secondary deselect_all">Deselect All</a>
 											</div>
 											<ul>
 												<li><label><input type="checkbox" name="module_access[30]" class="interested_service"> Can view commission in product fees of Interested Services.</label></li>
@@ -153,10 +151,10 @@
 										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#panel-body-8">
 											<h4>MATTERS</h4>
 										</div>
-										<div class="accordion-body collapse" id="panel-body-8" data-parent="#accordion">
+										<div class="accordion-body collapse" id="panel-body-8" data-bs-parent="#accordion">
 											<div class="select_toggle">
-												<a href="javascript:;" data-class="applications" class="btn btn-primary select_all">Select All</a>
-												<a href="javascript:;" data-class="applications" class="btn btn-secondary deselect_all">Deselect All</a>
+												<a href="javascript:;" data-class="applications" class="btn btn-sm btn-primary select_all">Select All</a>
+												<a href="javascript:;" data-class="applications" class="btn btn-sm btn-outline-secondary deselect_all">Deselect All</a>
 											</div>
 											<ul>
 												<li><label><input type="checkbox" name="module_access[34]" class="applications"> Can create matters.</label></li>
@@ -174,10 +172,10 @@
 										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#panel-body-9">
 											<h4>ACCOUNTS</h4>
 										</div>
-										<div class="accordion-body collapse" id="panel-body-9" data-parent="#accordion">
+										<div class="accordion-body collapse" id="panel-body-9" data-bs-parent="#accordion">
 											<div class="select_toggle">
-												<a href="javascript:;" data-class="accounts" class="btn btn-primary select_all">Select All</a>
-												<a href="javascript:;" data-class="accounts" class="btn btn-secondary deselect_all">Deselect All</a>
+												<a href="javascript:;" data-class="accounts" class="btn btn-sm btn-primary select_all">Select All</a>
+												<a href="javascript:;" data-class="accounts" class="btn btn-sm btn-outline-secondary deselect_all">Deselect All</a>
 											</div>
 											<ul>
 												<li><label><input type="checkbox" name="module_access[46]" class="accounts"> Can create invoices of associated offices.</label></li>
@@ -195,10 +193,10 @@
 										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#panel-body-10">
 											<h4>QUOTATIONS</h4>
 										</div>
-										<div class="accordion-body collapse" id="panel-body-10" data-parent="#accordion">
+										<div class="accordion-body collapse" id="panel-body-10" data-bs-parent="#accordion">
 											<div class="select_toggle">
-												<a href="javascript:;" data-class="quotations" class="btn btn-primary select_all">Select All</a>
-												<a href="javascript:;" data-class="quotations" class="btn btn-secondary deselect_all">Deselect All</a>
+												<a href="javascript:;" data-class="quotations" class="btn btn-sm btn-primary select_all">Select All</a>
+												<a href="javascript:;" data-class="quotations" class="btn btn-sm btn-outline-secondary deselect_all">Deselect All</a>
 											</div>
 											<ul>
 												<li><label><input type="checkbox" name="module_access[54]" class="quotations"> Can create quotation templates.</label></li>
@@ -217,10 +215,10 @@
 										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#panel-body-11">
 											<h4>REPORTS</h4>
 										</div>
-										<div class="accordion-body collapse" id="panel-body-11" data-parent="#accordion">
+										<div class="accordion-body collapse" id="panel-body-11" data-bs-parent="#accordion">
 											<div class="select_toggle">
-												<a href="javascript:;" data-class="reports" class="btn btn-primary select_all">Select All</a>
-												<a href="javascript:;" data-class="reports" class="btn btn-secondary deselect_all">Deselect All</a>
+												<a href="javascript:;" data-class="reports" class="btn btn-sm btn-primary select_all">Select All</a>
+												<a href="javascript:;" data-class="reports" class="btn btn-sm btn-outline-secondary deselect_all">Deselect All</a>
 											</div>
 											<ul>
 												<li><label><input type="checkbox" name="module_access[62]" class="reports"> Can view Client and Matter Reports.</label></li>
@@ -238,10 +236,10 @@
 										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#panel-body-12">
 											<h4>APPOINTMENTS</h4>
 										</div>
-										<div class="accordion-body collapse" id="panel-body-12" data-parent="#accordion">
+										<div class="accordion-body collapse" id="panel-body-12" data-bs-parent="#accordion">
 											<div class="select_toggle">
-												<a href="javascript:;" data-class="appointments" class="btn btn-primary select_all">Select All</a>
-												<a href="javascript:;" data-class="appointments" class="btn btn-secondary deselect_all">Deselect All</a>
+												<a href="javascript:;" data-class="appointments" class="btn btn-sm btn-primary select_all">Select All</a>
+												<a href="javascript:;" data-class="appointments" class="btn btn-sm btn-outline-secondary deselect_all">Deselect All</a>
 											</div>
 											<ul>
 												<li><label><input type="checkbox" name="module_access[70]" class="appointments"> Can manage Partners appointments.</label></li>
@@ -253,10 +251,10 @@
 										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#panel-body-13">
 											<h4>TASKS</h4>
 										</div>
-										<div class="accordion-body collapse" id="panel-body-13" data-parent="#accordion">
+										<div class="accordion-body collapse" id="panel-body-13" data-bs-parent="#accordion">
 											<div class="select_toggle">
-												<a href="javascript:;" data-class="tasks" class="btn btn-primary select_all">Select All</a>
-												<a href="javascript:;" data-class="tasks" class="btn btn-secondary deselect_all">Deselect All</a>
+												<a href="javascript:;" data-class="tasks" class="btn btn-sm btn-primary select_all">Select All</a>
+												<a href="javascript:;" data-class="tasks" class="btn btn-sm btn-outline-secondary deselect_all">Deselect All</a>
 											</div>
 											<ul>
 												<li><label><input type="checkbox" name="module_access[82]" class="tasks"> Can create tasks.</label></li>
@@ -267,10 +265,10 @@
 										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#panel-body-14">
 											<h4>OFFICE CHECK-IN</h4>
 										</div>
-										<div class="accordion-body collapse" id="panel-body-14" data-parent="#accordion">
+										<div class="accordion-body collapse" id="panel-body-14" data-bs-parent="#accordion">
 											<div class="select_toggle">
-												<a href="javascript:;" data-class="office_checkin" class="btn btn-primary select_all">Select All</a>
-												<a href="javascript:;" data-class="office_checkin" class="btn btn-secondary deselect_all">Deselect All</a>
+												<a href="javascript:;" data-class="office_checkin" class="btn btn-sm btn-primary select_all">Select All</a>
+												<a href="javascript:;" data-class="office_checkin" class="btn btn-sm btn-outline-secondary deselect_all">Deselect All</a>
 											</div>
 											<ul>
 												<li><label><input type="checkbox" name="module_access[71]" class="office_checkin"> Can add office check-ins.</label></li>
@@ -286,10 +284,10 @@
 										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#panel-body-15">
 											<h4>DOCUMENT CHECKLIST</h4>
 										</div>
-										<div class="accordion-body collapse" id="panel-body-15" data-parent="#accordion">
+										<div class="accordion-body collapse" id="panel-body-15" data-bs-parent="#accordion">
 											<div class="select_toggle">
-												<a href="javascript:;" data-class="document_checklist" class="btn btn-primary select_all">Select All</a>
-												<a href="javascript:;" data-class="document_checklist" class="btn btn-secondary deselect_all">Deselect All</a>
+												<a href="javascript:;" data-class="document_checklist" class="btn btn-sm btn-primary select_all">Select All</a>
+												<a href="javascript:;" data-class="document_checklist" class="btn btn-sm btn-outline-secondary deselect_all">Deselect All</a>
 											</div>
 											<ul>
 												<li><label><input type="checkbox" name="module_access[77]" class="document_checklist"> Can add and rename document type.</label></li>
@@ -301,8 +299,8 @@
 									</div>
 								
 								</div>
-								<div class="form-group float-right">
-									<button type="submit" class="btn btn-primary">Save</button>
+								<div class="roles-form-actions">
+									<button type="submit" class="btn btn-primary"><i class="far fa-save me-1"></i> Save</button>
 								</div>
 							</div>
 						</div>
