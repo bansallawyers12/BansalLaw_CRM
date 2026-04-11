@@ -85,6 +85,30 @@
         font-size: 0.85em;
     }
 
+    /* Update-task popover: theme tokens (popover mounts under body; outside .listing-container) */
+    .popover .popover-body h4 {
+        color: var(--navy, #1e3d60);
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    .popover .popover-body .btn-info {
+        background: var(--navy, #1e3d60) !important;
+        border-color: var(--navy, #1e3d60) !important;
+        color: #fff !important;
+    }
+
+    .popover .popover-body .btn-info:hover {
+        background: var(--sidebar-active, #3a6fa8) !important;
+        border-color: var(--sidebar-active, #3a6fa8) !important;
+        color: #fff !important;
+    }
+
+    body > .select2-container--open {
+        z-index: 10700 !important;
+    }
+
     .listing-container .btn-link {
         color: var(--sidebar-active, #3a6fa8) !important;
     }
@@ -124,39 +148,9 @@
         padding: 20px;
     }
 
-    #completionNotesModal .modal-content {
-        border-radius: 10px;
-        border: 1px solid var(--border, #c8dcef);
-        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.08);
-    }
-
     .listing-container .select2-container {
         z-index: 100000;
         width: 100% !important;
-    }
-
-    /* Completion modal (outside .listing-container in DOM) */
-    #completionNotesModal .modal-header {
-        background: var(--navy, #1e3d60) !important;
-        color: #fff !important;
-        border-bottom: 1px solid var(--border, #c8dcef);
-    }
-
-    #completionNotesModal .modal-header .close {
-        color: #fff !important;
-        opacity: 0.9;
-    }
-
-    #completionNotesModal .modal-footer {
-        background: var(--page-bg, #f0f6ff) !important;
-        border-top: 1px solid var(--border, #c8dcef);
-    }
-
-    #completionNotesModal #completionNotes {
-        resize: vertical;
-        border: 1px solid var(--border, #c8dcef) !important;
-        border-radius: 8px;
-        padding: 12px;
     }
 
     @media (max-width: 768px) {
@@ -168,6 +162,11 @@
 
         .listing-container .btn-sm {
             padding: 4px 8px;
+        }
+
+        .listing-container .table .btn.btn-sm.btn-primary,
+        .listing-container .table .btn.btn-sm.btn-danger {
+            padding: 0 !important;
         }
     }
 </style>
@@ -348,39 +347,39 @@
     </div>
 </div>
 
-<!-- Task Completion Notes Modal -->
+<!-- Task Completion Notes Modal — markup + tokens match action page (public/css/crm-theme.css) -->
 <div class="modal fade" id="completionNotesModal" tabindex="-1" role="dialog" aria-labelledby="completionNotesModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content completion-notes-modal-content">
+            <div class="modal-header completion-notes-modal-header">
                 <h5 class="modal-title" id="completionNotesModalLabel">
                     <i class="fa fa-check completion-task-modal-header-icon" aria-hidden="true"></i> Complete Task
                 </h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                <button type="button" class="close completion-notes-modal-close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="completionNotes" class="font-weight-bold">
+            <div class="modal-body completion-notes-modal-body">
+                <div class="form-group mb-0">
+                    <label for="completionNotes" class="completion-notes-label">
                         <i class="fa fa-comment"></i> Completion Notes/Feedback
                     </label>
-                    <textarea 
-                        class="form-control" 
-                        id="completionNotes" 
-                        rows="5" 
+                    <textarea
+                        class="form-control completion-notes-textarea"
+                        id="completionNotes"
+                        rows="5"
                         placeholder="Enter any notes or feedback about completing this task..."
                     ></textarea>
-                    <small class="form-text text-muted">
+                    <small class="form-text completion-notes-hint">
                         <i class="fa fa-info-circle"></i> These notes will be saved in the activity log.
                     </small>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <div class="modal-footer completion-notes-modal-footer">
+                <button type="button" class="btn btn-cancel-complete" data-bs-dismiss="modal">
                     <i class="fa fa-times"></i> Cancel
                 </button>
-                <button type="button" class="btn btn-success" id="confirmTaskCompletion">
+                <button type="button" class="btn btn-complete-task-primary" id="confirmTaskCompletion">
                     <i class="fa fa-check"></i> Complete Task
                 </button>
             </div>
@@ -394,11 +393,6 @@
 <script src="{{ URL::to('/') }}/js/popover.js"></script>
 <script>
     jQuery(document).ready(function($) {
-        // Initialize Select2 for assignee dropdowns
-        $('.listing-container .assigneeselect2').select2({
-            dropdownParent: $('#openassigneview'),
-        });
-
         // Open assignee modal
         $(document).on('click', '.listing-container .openassignee', function() {
             $('.assignee').show();
@@ -416,17 +410,49 @@
             $('#assign_note_id').val(task_id);
         });
 
-        // Update task - set all fields when popover is shown (content must be in DOM first)
+        // Update task — populate fields + Select2 (content in DOM; dropdown parent must be popover, not hidden modal)
         $(document).on('shown.bs.popover', '.listing-container .update_task', function() {
-            var $popover = $('.popover.show .popover-body');
-            $popover.find('#assignnote').val($(this).attr('data-noteid') || '');
-            $popover.find('#assign_note_id').val($(this).attr('data-taskid') || '');
-            var taskgroup_id = $(this).attr('data-taskgroupid');
+            var $trigger = $(this);
+            var $shell = $('.popover.show').last();
+            var $popover = $shell.find('.popover-body');
+            if (!$popover.length) {
+                $popover = $shell;
+            }
+
+            $popover.find('#assignnote').val($trigger.attr('data-noteid') || '');
+            $popover.find('#assign_note_id').val($trigger.attr('data-taskid') || '');
+            var taskgroup_id = $trigger.attr('data-taskgroupid');
             $popover.find('#task_group').val(taskgroup_id || '').trigger('change');
-            var followupdate_id = $(this).attr('data-actiondate');
+            var followupdate_id = $trigger.attr('data-actiondate');
             if (followupdate_id) {
                 $popover.find('#popoverdatetime').val(followupdate_id.split(' ')[0]);
             }
+
+            $popover.find('.assigneeselect2').each(function() {
+                var $sel = $(this);
+                if ($sel.hasClass('select2-hidden-accessible')) {
+                    try {
+                        $sel.select2('destroy');
+                    } catch (e) { /* ignore */ }
+                }
+            });
+            if (typeof $.fn.select2 === 'function') {
+                $popover.find('.assigneeselect2').select2({
+                    width: '100%',
+                    dropdownParent: $shell.length ? $shell : $(document.body)
+                });
+            }
+        });
+
+        $(document).on('hide.bs.popover', '.listing-container .update_task', function() {
+            $('.popover .assigneeselect2').each(function() {
+                var $sel = $(this);
+                if ($sel.hasClass('select2-hidden-accessible')) {
+                    try {
+                        $sel.select2('destroy');
+                    } catch (e) { /* ignore */ }
+                }
+            });
         });
 
         // Mark task as not complete
@@ -513,29 +539,34 @@
             });
         });
 
-        // Update task
+        // Update task (scope to visible popover — IDs repeat per row in markup)
         $(document).on('click', '#updateTask', function() {
+            var $root = $(this).closest('.popover-body');
+            if (!$root.length) {
+                $root = $('.popover.show .popover-body');
+            }
+
             $(".popuploader").show();
             var flag = true;
             var error = "";
-            $(".custom-error").remove();
+            $root.find(".custom-error").remove();
 
-            if ($('#rem_cat').val() == '') {
+            if ($root.find('#rem_cat').val() == '') {
                 $('.popuploader').hide();
                 error = "Assignee field is required.";
-                $('#rem_cat').after("<span class='custom-error' role='alert'>" + error + "</span>");
+                $root.find('#rem_cat').after("<span class='custom-error' role='alert'>" + error + "</span>");
                 flag = false;
             }
-            if ($('#assignnote').val() == '') {
+            if ($root.find('#assignnote').val() == '') {
                 $('.popuploader').hide();
                 error = "Note field is required.";
-                $('#assignnote').after("<span class='custom-error' role='alert'>" + error + "</span>");
+                $root.find('#assignnote').after("<span class='custom-error' role='alert'>" + error + "</span>");
                 flag = false;
             }
-            if ($('#task_group').val() == '') {
+            if ($root.find('#task_group').val() == '') {
                 $('.popuploader').hide();
                 error = "Group field is required.";
-                $('#task_group').after("<span class='custom-error' role='alert'>" + error + "</span>");
+                $root.find('#task_group').after("<span class='custom-error' role='alert'>" + error + "</span>");
                 flag = false;
             }
             if (flag) {
@@ -544,14 +575,14 @@
                     url: "{{ URL::to('/') }}/clients/action/update",
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     data: {
-                        note_id: $('#assign_note_id').val(),
+                        note_id: $root.find('#assign_note_id').val(),
                         note_type: 'follow_up',
-                        description: $('#assignnote').val(),
-                        client_id: $('#assign_client_id').val(),
-                        followup_datetime: $('#popoverdatetime').val(),
-                        assignee_name: $('#rem_cat :selected').text(),
-                        rem_cat: $('#rem_cat option:selected').val(),
-                        task_group: $('#task_group option:selected').val()
+                        description: $root.find('#assignnote').val(),
+                        client_id: $root.find('#assign_client_id').val(),
+                        followup_datetime: $root.find('#popoverdatetime').val(),
+                        assignee_name: $root.find('#rem_cat :selected').text(),
+                        rem_cat: $root.find('#rem_cat option:selected').val(),
+                        task_group: $root.find('#task_group option:selected').val()
                     },
                     success: function(response) {
                         $('.popuploader').hide();

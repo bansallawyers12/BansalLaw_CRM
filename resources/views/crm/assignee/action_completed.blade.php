@@ -7,11 +7,15 @@
 <link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
 <style>
     /* Completed actions — docs/theme.md (tokens from crm-theme.css :root) */
+    .listing-container .action-completed-filter-form {
+        margin-bottom: 0;
+    }
+
     .listing-container .filter-buttons {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
-        margin-bottom: 20px;
+        margin-bottom: 0;
         max-width: 100%;
     }
 
@@ -89,16 +93,43 @@
     }
 
     .listing-container .action-buttons {
-        display: flex;
-        gap: 5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
         flex-wrap: wrap;
+        justify-content: center;
     }
 
-    .listing-container .action-buttons .btn {
+    .listing-container .action-buttons form {
+        display: inline-flex;
+        margin: 0;
+    }
+
+    .listing-container .action-buttons .btn:not(.btn-sm) {
         padding: 5px 10px;
         font-size: 0.9em;
         border-radius: 8px;
         white-space: nowrap;
+    }
+
+    .listing-container .btn-info {
+        background: var(--navy, #1e3d60) !important;
+        border-color: var(--navy, #1e3d60) !important;
+        color: #fff !important;
+    }
+
+    .listing-container .btn-info:hover {
+        filter: brightness(1.06);
+        color: #fff !important;
+    }
+
+    .listing-container .select2-container {
+        z-index: 100000;
+        width: 100% !important;
+    }
+
+    body > .select2-container--open {
+        z-index: 10700 !important;
     }
 
     .listing-container .btn-link {
@@ -259,8 +290,11 @@
                     <div class="d-flex justify-content-between align-items-center flex-wrap">
                         <h4>Completed Action</h4>
                         <ul class="nav nav-pills" id="client_tabs" role="tablist">
-                            <li class="nav-item is_checked_clientn11">
-                                <a class="nav-link active" id="archived-tab" href="{{URL::to('/action')}}">Incomplete</a>
+                            <li class="nav-item">
+                                <a class="nav-link" id="incomplete-tab" href="{{ URL::to('/action') }}">Incomplete</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link active" id="completed-tab" href="{{ URL::to('/action_completed') }}">Completed</a>
                             </li>
                         </ul>
                     </div>
@@ -268,8 +302,8 @@
                 
                 <div class="card-body">
                     <div class="tab-content" id="quotationContent">
-                        <form action="{{ route('assignee.action_completed') }}" method="get">
-                            <div class="row">
+                        <form action="{{ route('assignee.action_completed') }}" method="get" class="action-completed-filter-form">
+                            <div class="row mb-3">
                                 <div class="col-md-12 filter-buttons">
                                     <a href="{{URL::to('/action_completed?group_type=All')}}" id="All" class="group_type {{ $task_group == 'All' ? 'active' : '' }}">All <span class="countAction">{{ $taskGroupCounts['All'] }}</span></a>
                                     <button type="button">
@@ -292,6 +326,8 @@
                                     </button>
                                     <button type="button">
                                         <a href="{{URL::to('/action_completed?group_type=Client Portal')}}" id="Client Portal" class="group_type {{ $task_group == 'Client Portal' ? 'active' : '' }}"><i class="fa fa-globe" aria-hidden="true"></i> Client Portal <span class="countAction">{{ $taskGroupCounts['Client Portal'] }}</span></a>
+                                    </button>
+                                    <button type="button">
                                         <a href="{{URL::to('/action_completed?group_type=Follow Up')}}" id="Follow Up" class="group_type {{ $task_group == 'Follow Up' ? 'active' : '' }}"><i class="fa fa-calendar-check-o" aria-hidden="true"></i> Follow up <span class="countAction">{{ $taskGroupCounts['Follow Up'] ?? 0 }}</span></a>
                                     </button>
                                 </div>
@@ -353,7 +389,7 @@
                                                     <td>
                                                         <div class="action-buttons">
                                                             @if($list->task_group != 'Personal Action')
-                                                                <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-actiondate="{{ $list->action_date }}" data-bs-toggle="tooltip" title="Update Task" class="btn btn-primary update_task" data-bs-container="body" data-role="popover" data-bs-placement="bottom" data-bs-html="true" data-bs-content="<div id='popover-content'>
+                                                                <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-actiondate="{{ $list->action_date }}" data-bs-toggle="tooltip" title="Update Task" class="btn btn-primary btn-sm update_task" data-bs-container="body" data-role="popover" data-bs-placement="bottom" data-bs-html="true" data-bs-content="<div id='popover-content'>
                                                                     <h4 class='text-center'>Update Task</h4>
                                                                     <div class='clearfix'></div>
                                                                     <div class='box-header with-border'>
@@ -416,7 +452,7 @@
                                                             <form action="{{ route('assignee.destroy_complete_activity', $list->id) }}" method="POST">
                                                                 @csrf
                                                                 @method('DELETE')
-                                                                <button type="submit" class="btn btn-danger" data-bs-toggle="tooltip" title="Delete" onclick="return confirm('Are you sure want to delete?');">
+                                                                <button type="submit" class="btn btn-danger btn-sm" data-bs-toggle="tooltip" title="Delete" onclick="return confirm('Are you sure want to delete?');">
                                                                     <i class="fa fa-trash" aria-hidden="true"></i>
                                                                 </button>
                                                             </form>
@@ -478,17 +514,49 @@ jQuery(document).ready(function($){
         $('#assign_note_id').val(task_id);
     });
 
-    // Update task - set all fields when popover is shown (content must be in DOM first)
+    // Update task popover — populate fields + Select2 (dropdown parent = popover shell)
     $(document).on('shown.bs.popover', '.listing-container .update_task', function() {
-        var $popover = $('.popover.show .popover-body');
-        $popover.find('#assignnote').val($(this).attr('data-noteid') || '');
-        $popover.find('#assign_note_id').val($(this).attr('data-taskid') || '');
-        var taskgroup_id = $(this).attr('data-taskgroupid');
+        var $trigger = $(this);
+        var $shell = $('.popover.show').last();
+        var $popover = $shell.find('.popover-body');
+        if (!$popover.length) {
+            $popover = $shell;
+        }
+
+        $popover.find('#assignnote').val($trigger.attr('data-noteid') || '');
+        $popover.find('#assign_note_id').val($trigger.attr('data-taskid') || '');
+        var taskgroup_id = $trigger.attr('data-taskgroupid');
         $popover.find('#task_group').val(taskgroup_id || '').trigger('change');
-        var followupdate_id = $(this).attr('data-actiondate');
+        var followupdate_id = $trigger.attr('data-actiondate');
         if (followupdate_id) {
             $popover.find('#popoverdatetime').val(followupdate_id.split(' ')[0]);
         }
+
+        $popover.find('.assigneeselect2').each(function() {
+            var $sel = $(this);
+            if ($sel.hasClass('select2-hidden-accessible')) {
+                try {
+                    $sel.select2('destroy');
+                } catch (e) { /* ignore */ }
+            }
+        });
+        if (typeof $.fn.select2 === 'function') {
+            $popover.find('.assigneeselect2').select2({
+                width: '100%',
+                dropdownParent: $shell.length ? $shell : $(document.body)
+            });
+        }
+    });
+
+    $(document).on('hide.bs.popover', '.listing-container .update_task', function() {
+        $('.popover .assigneeselect2').each(function() {
+            var $sel = $(this);
+            if ($sel.hasClass('select2-hidden-accessible')) {
+                try {
+                    $sel.select2('destroy');
+                } catch (e) { /* ignore */ }
+            }
+        });
     });
 
     // Mark task as incomplete
@@ -509,57 +577,66 @@ jQuery(document).ready(function($){
         }
     });
 
-    // Assign staff
-    $(document).delegate('#assignStaff', 'click', function(){
+    // Reassign from completed (creates new action) — button id in popover is #updateTask
+    $(document).on('click', '#updateTask', function() {
+        var $root = $(this).closest('.popover-body');
+        if (!$root.length) {
+            $root = $('.popover.show .popover-body');
+        }
+
         $(".popuploader").show();
         var flag = true;
         var error = "";
-        $(".custom-error").remove();
+        $root.find(".custom-error").remove();
 
-        if($('#rem_cat').val() == ''){
+        if ($root.find('#rem_cat').val() == '') {
             $('.popuploader').hide();
             error = "Assignee field is required.";
-            $('#rem_cat').after("<span class='custom-error' role='alert'>" + error + "</span>");
+            $root.find('#rem_cat').after("<span class='custom-error' role='alert'>" + error + "</span>");
             flag = false;
         }
-        if($('#assignnote').val() == ''){
+        if ($root.find('#assignnote').val() == '') {
             $('.popuploader').hide();
             error = "Note field is required.";
-            $('#assignnote').after("<span class='custom-error' role='alert'>" + error + "</span>");
+            $root.find('#assignnote').after("<span class='custom-error' role='alert'>" + error + "</span>");
             flag = false;
         }
-        if($('#task_group').val() == ''){
+        if ($root.find('#task_group').val() == '') {
             $('.popuploader').hide();
             error = "Group field is required.";
-            $('#task_group').after("<span class='custom-error' role='alert'>" + error + "</span>");
+            $root.find('#task_group').after("<span class='custom-error' role='alert'>" + error + "</span>");
             flag = false;
         }
-        if(flag){
+        if (flag) {
             $.ajax({
                 type: 'post',
-                url: "{{URL::to('/')}}/clients/action/reassign",
+                url: "{{ URL::to('/') }}/clients/action/reassign",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 data: {
                     note_type: 'follow_up',
-                    description: $('#assignnote').val(),
-                    client_id: $('#assign_client_id').val(),
-                    followup_datetime: $('#popoverdatetime').val(),
-                    assignee_name: $('#rem_cat :selected').text(),
-                    rem_cat: $('#rem_cat option:selected').val(),
-                    task_group: $('#task_group option:selected').val()
+                    description: $root.find('#assignnote').val(),
+                    client_id: $root.find('#assign_client_id').val(),
+                    followup_datetime: $root.find('#popoverdatetime').val(),
+                    assignee_name: $root.find('#rem_cat :selected').text(),
+                    rem_cat: $root.find('#rem_cat option:selected').val(),
+                    task_group: $root.find('#task_group option:selected').val()
                 },
-                success: function(response){
+                success: function(response) {
                     $('.popuploader').hide();
-                    var obj = $.parseJSON(response);
-                    if(obj.success){
-                        $("[data-role=popover]").each(function(){
-                            (($(this).popover('hide').data('bs.popover')||{}).inState||{}).click = false
+                    var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
+                    if (obj.success) {
+                        $("[data-role=popover]").each(function() {
+                            (($(this).popover('hide').data('bs.popover') || {}).inState || {}).click = false;
                         });
                         location.reload();
                     } else {
                         alert(obj.message);
                         location.reload();
                     }
+                },
+                error: function() {
+                    $('.popuploader').hide();
+                    alert('An error occurred. Please try again.');
                 }
             });
         } else {

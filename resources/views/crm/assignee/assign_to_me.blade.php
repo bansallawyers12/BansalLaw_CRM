@@ -437,40 +437,39 @@
 	</div>
 </div>
 
-<!-- Task Completion Notes Modal -->
+<!-- Task Completion Notes Modal — docs/theme.md (public/css/crm-theme.css) -->
 <div class="modal fade" id="completionNotesModal" tabindex="-1" role="dialog" aria-labelledby="completionNotesModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header" style="background-color: #3498db; color: white;">
+        <div class="modal-content completion-notes-modal-content">
+            <div class="modal-header completion-notes-modal-header">
                 <h5 class="modal-title" id="completionNotesModalLabel">
                     <i class="fa fa-check completion-task-modal-header-icon" aria-hidden="true"></i> Complete Task
                 </h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
+                <button type="button" class="close completion-notes-modal-close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="completionNotes" class="font-weight-bold">
+            <div class="modal-body completion-notes-modal-body">
+                <div class="form-group mb-0">
+                    <label for="completionNotes" class="completion-notes-label">
                         <i class="fa fa-comment"></i> Completion Notes/Feedback
                     </label>
-                    <textarea 
-                        class="form-control" 
-                        id="completionNotes" 
-                        rows="5" 
+                    <textarea
+                        class="form-control completion-notes-textarea"
+                        id="completionNotes"
+                        rows="5"
                         placeholder="Enter any notes or feedback about completing this task..."
-                        style="resize: vertical; border: 2px solid #e9ecef; border-radius: 8px; padding: 12px;"
                     ></textarea>
-                    <small class="form-text text-muted">
+                    <small class="form-text completion-notes-hint">
                         <i class="fa fa-info-circle"></i> These notes will be saved in the activity log.
                     </small>
                 </div>
             </div>
-            <div class="modal-footer" style="background-color: #f8f9fa;">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <div class="modal-footer completion-notes-modal-footer">
+                <button type="button" class="btn btn-cancel-complete" data-bs-dismiss="modal">
                     <i class="fa fa-times"></i> Cancel
                 </button>
-                <button type="button" class="btn btn-success" id="confirmTaskCompletion">
+                <button type="button" class="btn btn-complete-task-primary" id="confirmTaskCompletion">
                     <i class="fa fa-check"></i> Complete Task
                 </button>
             </div>

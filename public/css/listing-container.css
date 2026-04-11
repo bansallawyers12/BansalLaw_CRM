@@ -107,7 +107,7 @@
 }
 
 .listing-container .table tbody tr:hover td {
-    background-color: #ebf3ff !important;
+    background-color: var(--sidebar-hover, #c8dcef) !important;
 }
 
 .listing-container .table tbody tr:last-child td {
@@ -135,6 +135,38 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    color: #fff !important;
+}
+
+/* Table action column: keep icon-only .btn-sm compact (avoid full-width flex from .btn-primary) */
+.listing-container .table .btn.btn-sm.btn-primary {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0 !important;
+    gap: 0 !important;
+    border-radius: 8px;
+}
+
+.listing-container .table .btn.btn-sm.btn-danger {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0 !important;
+    background: var(--danger, #a83020) !important;
+    border: 1px solid var(--danger, #a83020) !important;
+    color: #fff !important;
+    border-radius: 8px;
+}
+
+.listing-container .table .btn.btn-sm.btn-danger:hover {
+    filter: brightness(1.06);
     color: #fff !important;
 }
 

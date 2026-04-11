@@ -1743,3 +1743,277 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     }
 }
 
+/* =============================================================================
+   Activity Feed — docs/theme.md (powder blue / navy; fixes timeline + icons)
+   Scoped to .crm-container so layout .feed-icon width:25px and #0d6efd are overridden.
+   ============================================================================= */
+.crm-container .activity-feed {
+    background-color: var(--card-bg, #ffffff) !important;
+    border: 1px solid var(--border, #c8dcef) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;
+    padding: 16px 14px !important;
+}
+
+.crm-container .activity-feed::-webkit-scrollbar {
+    width: 6px;
+}
+
+.crm-container .activity-feed::-webkit-scrollbar-track {
+    background: var(--page-bg, #f0f6ff);
+    border-radius: 3px;
+}
+
+.crm-container .activity-feed::-webkit-scrollbar-thumb {
+    background: var(--border, #c8dcef);
+    border-radius: 3px;
+}
+
+.crm-container .activity-feed::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted, #5e7a90);
+}
+
+.crm-container .activity-feed .activity-feed-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 12px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 1px solid var(--border, #c8dcef) !important;
+}
+
+.crm-container .activity-feed .activity-feed-header h2 {
+    flex: 1 !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    color: var(--navy, #1e3d60) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-bottom: none !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.crm-container .activity-feed .activity-feed-header h2 i {
+    color: var(--sidebar-active, #3a6fa8) !important;
+    margin-right: 8px !important;
+}
+
+.crm-container .activity-feed .activity-feed-refresh {
+    color: var(--text-muted, #5e7a90) !important;
+}
+
+.crm-container .activity-feed .activity-feed-refresh:hover,
+.crm-container .activity-feed .activity-feed-refresh:focus {
+    color: var(--sidebar-active, #3a6fa8) !important;
+}
+
+.crm-container .activity-feed .activity-feed-header label:hover {
+    background-color: var(--page-bg, #f0f6ff) !important;
+}
+
+.crm-container .activity-feed #increase-activity-feed-width {
+    accent-color: var(--sidebar-active, #3a6fa8);
+}
+
+/* Filter chips */
+.crm-container .activity-feed .activity-filters {
+    gap: 6px !important;
+    margin-bottom: 12px !important;
+}
+
+.crm-container .activity-feed .activity-filter-btn {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border: 1px solid var(--border, #c8dcef) !important;
+    background: var(--card-bg, #ffffff) !important;
+    color: var(--text-dark, #1a2c40) !important;
+    border-radius: 8px !important;
+}
+
+.crm-container .activity-feed .activity-filter-btn:hover {
+    background: var(--page-bg, #f0f6ff) !important;
+    border-color: var(--sidebar-active, #3a6fa8) !important;
+    color: var(--navy, #1e3d60) !important;
+}
+
+.crm-container .activity-feed .activity-filter-btn.active {
+    background: var(--sidebar-active, #3a6fa8) !important;
+    color: #fff !important;
+    border-color: var(--sidebar-active, #3a6fa8) !important;
+}
+
+.crm-container .activity-feed .activity-filter-btn.active i {
+    color: #fff !important;
+}
+
+.crm-container .activity-feed .activity-filter-btn i {
+    font-size: 11px !important;
+    opacity: 0.95;
+}
+
+/* Timeline list */
+.crm-container .activity-feed .feed-list {
+    position: relative;
+    list-style: none !important;
+    margin: 0 !important;
+    padding: 4px 0 0 0 !important;
+}
+
+.crm-container .activity-feed .feed-list::before {
+    content: "";
+    position: absolute;
+    left: 17px;
+    top: 10px;
+    bottom: 10px;
+    width: 2px;
+    background: var(--border, #c8dcef);
+    border-radius: 2px;
+    z-index: 0;
+}
+
+.crm-container .activity-feed .feed-item {
+    display: grid !important;
+    grid-template-columns: 36px minmax(0, 1fr) !important;
+    gap: 10px 12px !important;
+    align-items: start !important;
+    padding: 10px 0 !important;
+    margin: 0 !important;
+    border-bottom: 1px solid var(--border, #c8dcef) !important;
+    position: relative;
+    z-index: 1;
+    border-left: none !important;
+}
+
+.crm-container .activity-feed .feed-item:last-child {
+    border-bottom: none !important;
+}
+
+/* Icon badge — layout’s 25px column broke FA circles */
+.crm-container .activity-feed .feed-icon {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    font-size: 0.8rem !important;
+    line-height: 1 !important;
+    flex-shrink: 0 !important;
+    position: relative;
+    z-index: 2;
+    box-sizing: border-box !important;
+    border: 2px solid var(--card-bg, #ffffff) !important;
+    box-shadow: 0 1px 3px rgba(30, 61, 96, 0.08);
+}
+
+.crm-container .activity-feed .feed-icon i {
+    line-height: 1 !important;
+    font-style: normal !important;
+    display: block !important;
+}
+
+.crm-container .activity-feed .feed-content {
+    min-width: 0 !important;
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
+    background: var(--page-bg, #f0f6ff) !important;
+    border: 1px solid var(--border, #c8dcef) !important;
+}
+
+.crm-container .activity-feed .feed-content p {
+    margin: 0 0 6px 0 !important;
+    font-size: 0.88rem !important;
+    line-height: 1.45 !important;
+    color: var(--text-dark, #1a2c40) !important;
+}
+
+.crm-container .activity-feed .feed-content strong {
+    color: var(--navy, #1e3d60) !important;
+    font-weight: 600 !important;
+}
+
+.crm-container .activity-feed .feed-timestamp {
+    font-size: 0.75rem !important;
+    color: var(--text-muted, #5e7a90) !important;
+}
+
+/* Stage card inner layout */
+.crm-container .activity-feed .feed-item--stage .feed-content {
+    background: var(--card-bg, #ffffff) !important;
+}
+
+.crm-container .activity-feed .feed-item-stage-header .feed-item-staff {
+    color: var(--navy, #1e3d60) !important;
+}
+
+.crm-container .activity-feed .feed-item-stage-body {
+    color: var(--text-dark, #1a2c40) !important;
+}
+
+/* Type accent: icon gradient uses theme navy / active (replace raw #007bff / #0d6efd) */
+.crm-container .activity-feed .feed-icon-activity,
+.crm-container .activity-feed .feed-icon-note-email {
+    background: linear-gradient(135deg, var(--navy, #1e3d60), var(--sidebar-active, #3a6fa8)) !important;
+    color: #fff !important;
+}
+
+.crm-container .activity-feed .feed-icon-signature {
+    background: linear-gradient(135deg, var(--sidebar-active, #3a6fa8), var(--navy, #1e3d60)) !important;
+}
+
+.crm-container .activity-feed .feed-icon-stage {
+    background: rgba(58, 111, 168, 0.12) !important;
+    color: var(--navy, #1e3d60) !important;
+    border-radius: 50% !important;
+}
+
+.crm-container .activity-feed .feed-item--stage .feed-icon-stage i {
+    color: var(--navy, #1e3d60) !important;
+}
+
+.crm-container .activity-feed .activity-type-activity .feed-content,
+.crm-container .activity-feed .activity-type-note-email .feed-content {
+    background: var(--page-bg, #f0f6ff) !important;
+    border-color: var(--border, #c8dcef) !important;
+}
+
+.crm-container .activity-feed .activity-type-sms .feed-content {
+    background: rgba(58, 111, 168, 0.08) !important;
+}
+
+.crm-container .activity-feed .activity-type-financial .feed-content,
+.crm-container .activity-feed .activity-type-note-call .feed-content {
+    background: rgba(30, 122, 82, 0.08) !important;
+}
+
+.crm-container .activity-feed .activity-type-note-attention .feed-content {
+    background: rgba(168, 48, 32, 0.08) !important;
+}
+
+.crm-container .activity-feed .activity-type-note-in-person .feed-content {
+    background: color-mix(in srgb, var(--accent-gold, #c8992a) 12%, var(--card-bg, #ffffff)) !important;
+}
+
+@supports not (color: color-mix(in srgb, red, blue)) {
+    .crm-container .activity-feed .activity-type-note-in-person .feed-content {
+        background: var(--accent-light, #fefae8) !important;
+    }
+}
+
+.crm-container .activity-feed .activity-feed-filter-actions .btn-primary {
+    background: var(--navy, #1e3d60) !important;
+    border-color: var(--navy, #1e3d60) !important;
+    color: #fff !important;
+}
+
+.crm-container .activity-feed .activity-feed-filter-actions .btn-primary:hover {
+    background: var(--sidebar-active, #3a6fa8) !important;
+    border-color: var(--sidebar-active, #3a6fa8) !important;
+}
+
