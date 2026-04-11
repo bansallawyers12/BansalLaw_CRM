@@ -3,147 +3,171 @@
 
 @section('content')
 <style>
-/* ── Wizard container ───────────────────────────────────── */
-.fd-wizard-wrapper {
+/* Front-desk check-in — Powder Blue & Soft Gold (docs/theme.md); vars from public/css/crm-theme.css */
+.front-desk-checkin-page .fd-wizard-wrapper {
     max-width: 700px;
     margin: 0 auto;
-    padding: 90px 15px 40px; /* 90px top clears the fixed 70px topbar */
+    padding: 90px 15px 40px;
 }
-.fd-card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,.08);
-    border: 1px solid #e8eaed;
+.front-desk-checkin-page .fd-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+    border: 1px solid var(--border);
     overflow: hidden;
 }
-.fd-card-header {
-    background: linear-gradient(135deg, #1e3a5f 0%, #2d6a9f 100%);
+.front-desk-checkin-page .fd-card-header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
     color: #fff;
     padding: 22px 28px;
+    border-bottom: 1px solid var(--border);
 }
-.fd-card-header h4 {
+.front-desk-checkin-page .fd-card-header h4 {
     margin: 0;
     font-size: 1.2rem;
     font-weight: 600;
+    color: #fff !important; /* beats body.sidebar-mini h4 { color: var(--navy) !important } in crm-theme.css */
 }
-.fd-card-header p {
+.front-desk-checkin-page .fd-card-header h4 i {
+    color: inherit !important;
+}
+.front-desk-checkin-page .fd-card-header p {
     margin: 4px 0 0;
     font-size: 0.85rem;
-    opacity: .85;
+    opacity: 0.9;
+    color: rgba(255, 255, 255, 0.92) !important;
 }
-.fd-card-body {
+.front-desk-checkin-page .fd-card-body {
     padding: 28px;
+    background: var(--card-bg);
 }
 
-/* ── Stepper ────────────────────────────────────────────── */
-.fd-stepper {
+.front-desk-checkin-page .fd-stepper {
     display: flex;
     align-items: center;
     margin-bottom: 28px;
     gap: 0;
 }
-.fd-step {
+.front-desk-checkin-page .fd-step {
     display: flex;
     flex-direction: column;
     align-items: center;
     flex: 1;
     position: relative;
 }
-.fd-step:not(:last-child)::after {
+.front-desk-checkin-page .fd-step:not(:last-child)::after {
     content: '';
     position: absolute;
     top: 14px;
     left: 55%;
     right: -45%;
     height: 2px;
-    background: #dee2e6;
+    background: var(--border);
     z-index: 0;
 }
-.fd-step.done:not(:last-child)::after {
-    background: #1e3a5f;
+.front-desk-checkin-page .fd-step.done:not(:last-child)::after {
+    background: var(--navy);
 }
-.fd-step-circle {
+.front-desk-checkin-page .fd-step-circle {
     width: 30px;
     height: 30px;
     border-radius: 50%;
-    background: #dee2e6;
-    color: #868e96;
+    background: var(--sidebar-bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: .8rem;
+    font-size: 0.8rem;
     position: relative;
     z-index: 1;
-    transition: background .2s, color .2s;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
-.fd-step.done .fd-step-circle {
-    background: #28a745;
+.front-desk-checkin-page .fd-step.done .fd-step-circle {
+    background: var(--success);
+    border-color: var(--success);
     color: #fff;
 }
-.fd-step.active .fd-step-circle {
-    background: #1e3a5f;
+.front-desk-checkin-page .fd-step.active .fd-step-circle {
+    background: var(--navy);
+    border-color: var(--navy);
     color: #fff;
 }
-.fd-step-label {
+.front-desk-checkin-page .fd-step-label {
     margin-top: 6px;
-    font-size: .72rem;
-    color: #868e96;
+    font-size: 0.72rem;
+    color: var(--text-muted);
     text-align: center;
     white-space: nowrap;
 }
-.fd-step.active .fd-step-label { color: #1e3a5f; font-weight: 600; }
-.fd-step.done  .fd-step-label { color: #28a745; }
+.front-desk-checkin-page .fd-step.active .fd-step-label {
+    color: var(--navy);
+    font-weight: 600;
+}
+.front-desk-checkin-page .fd-step.done .fd-step-label {
+    color: var(--success);
+}
 
-/* ── Steps ──────────────────────────────────────────────── */
-.fd-wizard-step { display: none; }
-.fd-wizard-step.active { display: block; }
+.front-desk-checkin-page .fd-wizard-step { display: none; }
+.front-desk-checkin-page .fd-wizard-step.active { display: block; }
 
-/* ── Match cards ────────────────────────────────────────── */
-.fd-match-card {
-    border: 2px solid #e8eaed;
+.front-desk-checkin-page .fd-match-card {
+    border: 2px solid var(--border);
     border-radius: 8px;
     padding: 14px 16px;
     cursor: pointer;
-    transition: border-color .15s, background .15s;
+    transition: border-color 0.15s, background 0.15s;
     margin-bottom: 10px;
+    background: var(--card-bg);
 }
-.fd-match-card:hover { border-color: #2d6a9f; background: #f0f6ff; }
-.fd-match-card.selected { border-color: #1e3a5f; background: #e8f0fb; }
-.fd-match-card .badge { font-size: .72rem; }
+.front-desk-checkin-page .fd-match-card:hover {
+    border-color: var(--sidebar-active);
+    background: var(--page-bg);
+}
+.front-desk-checkin-page .fd-match-card.selected {
+    border-color: var(--navy);
+    background: rgba(221, 234, 248, 0.55);
+    box-shadow: 0 0 0 1px var(--accent-gold);
+}
+.front-desk-checkin-page .fd-match-card .badge { font-size: 0.72rem; }
 
-/* ── Confirm summary ────────────────────────────────────── */
-.fd-summary-row {
+.front-desk-checkin-page .fd-summary-row {
     display: flex;
     gap: 8px;
     padding: 8px 0;
-    border-bottom: 1px solid #f0f0f0;
-    font-size: .9rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
 }
-.fd-summary-row:last-child { border-bottom: none; }
-.fd-summary-label { color: #6c757d; min-width: 130px; font-weight: 500; }
-.fd-summary-value { color: #212529; font-weight: 600; }
+.front-desk-checkin-page .fd-summary-row:last-child { border-bottom: none; }
+.front-desk-checkin-page .fd-summary-label {
+    color: var(--text-muted);
+    min-width: 130px;
+    font-weight: 500;
+}
+.front-desk-checkin-page .fd-summary-value {
+    color: var(--text-dark);
+    font-weight: 600;
+}
 
-/* ── Step titles & lead copy (WCAG-friendly contrast) ─────── */
-.fd-wizard-wrapper .fd-step-title {
-    color: #1a237e;
+.front-desk-checkin-page .fd-wizard-wrapper .fd-step-title {
+    color: var(--navy);
     font-weight: 700;
     letter-spacing: 0.03em;
 }
-.fd-wizard-wrapper .fd-lead-question {
-    color: #212529;
+.front-desk-checkin-page .fd-wizard-wrapper .fd-lead-question {
+    color: var(--text-dark);
     font-weight: 600;
     font-size: 1.05rem;
     line-height: 1.45;
 }
 
-/* ── Step 4: Yes / No — equal visual weight, always readable ─ */
-.fd-appt-choices {
+.front-desk-checkin-page .fd-appt-choices {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
 }
-.fd-choice-btn {
+.front-desk-checkin-page .fd-choice-btn {
     flex: 1 1 220px;
     min-width: min(100%, 200px);
     padding: 14px 18px;
@@ -153,123 +177,203 @@
     border-radius: 10px;
     border: 2px solid;
     cursor: pointer;
-    transition: background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     text-align: center;
 }
-.fd-choice-btn:focus {
-    outline: 3px solid rgba(25, 118, 210, 0.45);
+.front-desk-checkin-page .fd-choice-btn:focus-visible {
+    outline: 3px solid rgba(58, 111, 168, 0.4);
     outline-offset: 2px;
 }
-.fd-choice-yes {
-    background: #e3f2fd;
-    border-color: #1976d2;
-    color: #0d47a1;
+.front-desk-checkin-page .fd-choice-yes {
+    background: var(--page-bg);
+    border-color: var(--sidebar-active);
+    color: var(--navy);
 }
-.fd-choice-yes:hover {
-    background: #bbdefb;
-    border-color: #1565c0;
-    color: #082c5a;
+.front-desk-checkin-page .fd-choice-yes:hover {
+    background: var(--sidebar-bg);
+    border-color: var(--navy);
+    color: var(--navy);
 }
-.fd-choice-yes.fd-choice--selected {
-    background: #1565c0;
-    border-color: #0d47a1;
+.front-desk-checkin-page .fd-choice-yes.fd-choice--selected {
+    background: var(--navy);
+    border-color: var(--navy);
     color: #fff;
-    box-shadow: 0 3px 10px rgba(21, 101, 192, 0.35);
+    box-shadow: 0 3px 10px rgba(30, 61, 96, 0.2);
 }
-.fd-choice-yes.fd-choice--selected:hover {
-    background: #0d47a1;
+.front-desk-checkin-page .fd-choice-yes.fd-choice--selected:hover {
+    background: var(--sidebar-active);
+    border-color: var(--sidebar-active);
     color: #fff;
 }
-.fd-choice-no {
-    background: #eceff1;
-    border-color: #607d8b;
-    color: #263238;
+.front-desk-checkin-page .fd-choice-no {
+    background: var(--card-bg);
+    border-color: var(--border);
+    color: var(--text-dark);
 }
-.fd-choice-no:hover {
-    background: #cfd8dc;
-    border-color: #546e7a;
-    color: #1c2429;
+.front-desk-checkin-page .fd-choice-no:hover {
+    background: var(--sidebar-bg);
+    border-color: var(--text-muted);
+    color: var(--navy);
 }
-.fd-choice-no.fd-choice--selected {
-    background: #455a64;
-    border-color: #37474f;
+.front-desk-checkin-page .fd-choice-no.fd-choice--selected {
+    background: var(--text-muted);
+    border-color: var(--text-muted);
     color: #fff;
-    box-shadow: 0 3px 10px rgba(69, 90, 100, 0.35);
+    box-shadow: 0 3px 10px rgba(94, 122, 144, 0.25);
 }
-.fd-choice-no.fd-choice--selected:hover {
-    background: #37474f;
+.front-desk-checkin-page .fd-choice-no.fd-choice--selected:hover {
+    background: var(--navy);
+    border-color: var(--navy);
     color: #fff;
 }
 
-/* ── Primary actions in wizard (consistent, high contrast) ─ */
-.fd-wizard-wrapper .fd-btn-action {
-    background: #1565c0;
-    border: 2px solid #0d47a1;
+.front-desk-checkin-page .fd-wizard-wrapper .fd-btn-action {
+    background: var(--navy);
+    border: 2px solid var(--navy);
     color: #fff !important;
     font-weight: 600;
+    border-radius: 8px;
 }
-.fd-wizard-wrapper .fd-btn-action:hover:not(:disabled) {
-    background: #0d47a1;
-    border-color: #082c5a;
+.front-desk-checkin-page .fd-wizard-wrapper .fd-btn-action:hover:not(:disabled) {
+    background: var(--sidebar-active);
+    border-color: var(--sidebar-active);
     color: #fff !important;
 }
-.fd-wizard-wrapper .fd-btn-action:disabled {
+.front-desk-checkin-page .fd-wizard-wrapper .fd-btn-action:disabled {
     opacity: 0.55;
     cursor: not-allowed;
 }
-.fd-wizard-wrapper .fd-btn-confirm {
-    background: #2e7d32;
-    border: 2px solid #1b5e20;
+.front-desk-checkin-page .fd-wizard-wrapper .fd-btn-confirm {
+    background: var(--success);
+    border: 2px solid var(--success);
     color: #fff !important;
     font-weight: 600;
+    border-radius: 8px;
 }
-.fd-wizard-wrapper .fd-btn-confirm:hover {
-    background: #1b5e20;
-    border-color: #145214;
+.front-desk-checkin-page .fd-wizard-wrapper .fd-btn-confirm:hover {
+    filter: brightness(0.95);
     color: #fff !important;
 }
 
-.fd-wizard-wrapper .fd-btn-walkin {
-    background: #fff;
-    border: 2px solid #78909c;
-    color: #37474f;
+.front-desk-checkin-page .fd-wizard-wrapper .fd-btn-walkin {
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    color: var(--navy);
     font-weight: 600;
+    border-radius: 8px;
 }
-.fd-wizard-wrapper .fd-btn-walkin:hover {
-    background: #eceff1;
-    border-color: #546e7a;
-    color: #263238;
+.front-desk-checkin-page .fd-wizard-wrapper .fd-btn-walkin:hover {
+    background: var(--sidebar-bg);
+    border-color: var(--sidebar-active);
+    color: var(--navy);
 }
-.fd-wizard-wrapper .fd-btn-walkin.active {
-    background: #fff8e1;
-    border-color: #f9a825;
-    color: #e65100;
-    box-shadow: 0 0 0 2px rgba(249, 168, 37, 0.35);
+.front-desk-checkin-page .fd-wizard-wrapper .fd-btn-walkin.active {
+    background: var(--accent-light);
+    border-color: var(--accent-gold);
+    color: #7a5800;
+    box-shadow: 0 0 0 2px rgba(200, 153, 42, 0.35);
 }
 
-/* ── Appointment cards ──────────────────────────────────── */
-.fd-appt-card {
-    border: 2px solid #e8eaed;
+.front-desk-checkin-page .fd-appt-card {
+    border: 2px solid var(--border);
     border-radius: 8px;
     padding: 12px 16px;
     cursor: pointer;
-    transition: border-color .15s, background .15s;
+    transition: border-color 0.15s, background 0.15s;
+    margin-bottom: 8px;
+    background: var(--card-bg);
+}
+.front-desk-checkin-page .fd-appt-card:hover {
+    border-color: var(--sidebar-active);
+    background: var(--page-bg);
+}
+.front-desk-checkin-page .fd-appt-card.selected {
+    border-color: var(--navy);
+    background: rgba(221, 234, 248, 0.55);
+    box-shadow: 0 0 0 1px var(--accent-gold);
+}
+
+.front-desk-checkin-page .fd-success { text-align: center; padding: 40px 20px; }
+.front-desk-checkin-page .fd-success i { font-size: 3.5rem; color: var(--success); margin-bottom: 16px; }
+.front-desk-checkin-page .fd-success h5 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-dark);
     margin-bottom: 8px;
 }
-.fd-appt-card:hover { border-color: #17a2b8; background: #f0fbff; }
-.fd-appt-card.selected { border-color: #17a2b8; background: #d9f3fa; }
+.front-desk-checkin-page .fd-success p { color: var(--text-muted); }
+.front-desk-checkin-page #fdStepNotClient .fd-success { padding: 30px 20px; }
+.front-desk-checkin-page #fdStepNotClient .fd-success > i.fa-hand-paper {
+    font-size: 3rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+.front-desk-checkin-page #fdStepNotClient .fd-success h5 { color: var(--text-dark); }
 
-/* ── Success state ──────────────────────────────────────── */
-.fd-success { text-align: center; padding: 40px 20px; }
-.fd-success i { font-size: 3.5rem; color: #28a745; margin-bottom: 16px; }
-.fd-success h5 { font-size: 1.4rem; font-weight: 700; color: #212529; margin-bottom: 8px; }
-.fd-success p { color: #6c757d; }
+.front-desk-checkin-page .fd-spinner { display: none; text-align: center; padding: 20px; }
+.front-desk-checkin-page .fd-alert-box { display: none; }
 
-/* ── Utilities ──────────────────────────────────────────── */
-.fd-spinner { display: none; text-align: center; padding: 20px; }
-.fd-alert-box { display: none; }
+.front-desk-checkin-page .form-control {
+    border-color: var(--border);
+}
+.front-desk-checkin-page .form-control:focus {
+    border-color: var(--sidebar-active);
+    box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2);
+}
+.front-desk-checkin-page .btn-light {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--navy) !important;
+}
+.front-desk-checkin-page .btn-light:hover {
+    background: var(--sidebar-bg) !important;
+    color: var(--navy) !important;
+}
+.front-desk-checkin-page .btn-outline-secondary {
+    color: var(--navy) !important;
+    border-color: var(--border) !important;
+    background: var(--card-bg) !important;
+    font-weight: 600;
+}
+.front-desk-checkin-page .btn-outline-secondary:hover {
+    background: var(--sidebar-bg) !important;
+    border-color: var(--navy) !important;
+    color: var(--navy) !important;
+}
+.front-desk-checkin-page .text-primary { color: var(--sidebar-active) !important; }
+.front-desk-checkin-page .text-info { color: var(--sidebar-active) !important; }
+.front-desk-checkin-page .text-success { color: var(--success) !important; }
+.front-desk-checkin-page .border-top { border-color: var(--border) !important; }
+
+.front-desk-checkin-page .badge.badge-success {
+    background-color: rgba(30, 122, 82, 0.15) !important;
+    color: var(--success) !important;
+    border: 1px solid rgba(30, 122, 82, 0.35);
+}
+.front-desk-checkin-page .badge.badge-warning {
+    background-color: rgba(200, 153, 42, 0.15) !important;
+    color: #7a5800 !important;
+    border: 1px solid rgba(200, 153, 42, 0.4);
+}
+.front-desk-checkin-page .badge.badge-info {
+    background-color: rgba(58, 111, 168, 0.18) !important;
+    color: var(--sidebar-active) !important;
+    border: 1px solid rgba(58, 111, 168, 0.35);
+}
+.front-desk-checkin-page .badge.badge-secondary {
+    background-color: rgba(94, 122, 144, 0.12) !important;
+    color: var(--text-muted) !important;
+    border: 1px solid var(--border);
+}
+
+.front-desk-checkin-page .alert-danger {
+    background: rgba(168, 48, 32, 0.08);
+    border-color: var(--danger);
+    color: var(--danger);
+}
 </style>
 
+<div class="front-desk-checkin-page">
 <div class="fd-wizard-wrapper">
     <div class="fd-card">
         <div class="fd-card-header">
@@ -436,9 +540,9 @@
 
             {{-- ── STEP 2d: Not a client — dead end ─────────────── --}}
             <div class="fd-wizard-step" id="fdStepNotClient">
-                <div class="fd-success" style="padding: 30px 20px;">
-                    <i class="fas fa-hand-paper" style="font-size:3rem; color:#607d8b; margin-bottom:16px;"></i>
-                    <h5 style="color:#212529;">Please speak with our receptionist</h5>
+                <div class="fd-success">
+                    <i class="fas fa-hand-paper" aria-hidden="true"></i>
+                    <h5>Please speak with our receptionist</h5>
                     <p class="text-muted mb-4">Our front-desk team will be happy to help you locate your file.</p>
                     <button type="button" class="btn fd-btn-action" id="fdNotClientStartOver">
                         <i class="fas fa-redo mr-2"></i>Start Over
@@ -543,6 +647,7 @@
 
         </div>{{-- /fd-card-body --}}
     </div>{{-- /fd-card --}}
+</div>
 </div>
 
 <script>

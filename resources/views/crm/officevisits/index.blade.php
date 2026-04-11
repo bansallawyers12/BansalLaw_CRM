@@ -9,45 +9,177 @@
 @endphp
 
 <style>
-.countAction {background: #1f1655;padding: 0px 5px;border-radius: 50%;color: #fff;margin-left: 5px;}
-.card .card-body table.table { --bs-table-color: #000 !important; --bs-table-striped-color: #666 !important; --bs-table-active-color: #666 !important; --bs-table-hover-color: #666 !important; }
-body, html { overflow-x: hidden !important; max-width: 100% !important; }
-.main-content, .section, .section-body, .card, .card-body { overflow-x: hidden !important; max-width: 100% !important; }
-.table-responsive.common_table { overflow-x: hidden !important; max-width: 100% !important; width: 100% !important; }
-.table.text_wrap { width: 100% !important; max-width: 100% !important; font-size: 0.85em; table-layout: fixed; }
-.table.text_wrap th, .table.text_wrap td { padding: 8px 4px !important; white-space: normal !important; word-wrap: break-word !important; overflow: hidden !important; text-overflow: ellipsis !important; vertical-align: middle !important; }
-.table.text_wrap th:nth-child(1) { width: 5%; }
-.table.text_wrap th:nth-child(2) { width: 10%; }
-.table.text_wrap th:nth-child(3) { width: 8%; }
-.table.text_wrap th:nth-child(4) { width: 15%; }
-.table.text_wrap th:nth-child(5) { width: 10%; }
-.table.text_wrap th:nth-child(6) { width: 12%; }
-.table.text_wrap th:nth-child(7) { width: 15%; }
-.table.text_wrap th:nth-child(8) { width: 10%; }
-.table.text_wrap th:nth-child(9) { width: 15%; }
-.card .card-body table.table th, .card .card-body table.table td { color: #666 !important; }
-.card .card-body table.table thead th { color: #666 !important; font-weight: bold; }
-.card .card-body table.table tbody td { color: #666 !important; }
-.card .card-body table.table tbody td .badge { color: #666 !important; }
-.pagination { justify-content: center; margin-top: 20px; }
-.pagination .page-link { color: #007bff; }
-.pagination .page-item.active .page-link { background-color: #007bff; border-color: #007bff; }
-.dropdown-content { display: none; position: absolute; background-color: #fff; min-width: 160px; overflow: auto; box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2); z-index: 1; }
-.show { display: block; }
-.dropdown-content a { color: #666; padding: 12px 16px; text-decoration: none; display: block; }
-@media (max-width: 1200px) { .table.text_wrap { font-size: 0.8em; } .table.text_wrap th, .table.text_wrap td { padding: 6px 3px !important; } }
-@media (max-width: 768px) { .table.text_wrap { font-size: 0.75em; } .table.text_wrap th, .table.text_wrap td { padding: 4px 2px !important; } .nav-pills { flex-direction: column; gap: 5px; } .nav-pills .nav-item { width: 100%; } .nav-pills .nav-link { text-align: center; width: 100%; } }
-.btn { white-space: normal !important; word-wrap: break-word !important; max-width: 100% !important; }
-.nav-pills { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; max-width: 100%; }
-.nav-pills .nav-link { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
-.card-header-action { max-width: 100%; overflow-x: hidden; }
-.card-header-action .btn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.card .card-body table.table tbody tr td:last-child a:hover, .card .card-body table.table tbody tr td:last-child .btn:hover, .card .card-body table.table tbody tr td.last_td a:hover {
-	color: #ffffff !important;
+/* Office visits — Powder Blue & Soft Gold (docs/theme.md); vars from public/css/crm-theme.css */
+.office-visits-page .countAction {
+	background: var(--navy);
+	padding: 0 5px;
+	border-radius: 50%;
+	color: #fff;
+	margin-left: 5px;
+	font-size: 0.75em;
+	font-weight: 600;
+	min-width: 1.35em;
+	text-align: center;
+	display: inline-block;
 }
+.office-visits-page .card .card-body table.table {
+	--bs-table-color: var(--text-dark) !important;
+	--bs-table-striped-color: var(--text-dark) !important;
+	--bs-table-active-color: var(--text-dark) !important;
+	--bs-table-hover-color: var(--text-dark) !important;
+	--bs-table-hover-bg: #ebf3ff;
+}
+body, html { overflow-x: hidden !important; max-width: 100% !important; }
+.office-visits-page .main-content, .office-visits-page .section, .office-visits-page .section-body, .office-visits-page .card, .office-visits-page .card-body { overflow-x: hidden !important; max-width: 100% !important; }
+.office-visits-page .table-responsive.common_table { overflow-x: hidden !important; max-width: 100% !important; width: 100% !important; }
+.office-visits-page .table.text_wrap { width: 100% !important; max-width: 100% !important; font-size: 0.85em; table-layout: fixed; }
+.office-visits-page .table.text_wrap th, .office-visits-page .table.text_wrap td { padding: 8px 4px !important; white-space: normal !important; word-wrap: break-word !important; overflow: hidden !important; text-overflow: ellipsis !important; vertical-align: middle !important; }
+.office-visits-page .table.text_wrap th:nth-child(1) { width: 5%; }
+.office-visits-page .table.text_wrap th:nth-child(2) { width: 10%; }
+.office-visits-page .table.text_wrap th:nth-child(3) { width: 8%; }
+.office-visits-page .table.text_wrap th:nth-child(4) { width: 15%; }
+.office-visits-page .table.text_wrap th:nth-child(5) { width: 10%; }
+.office-visits-page .table.text_wrap th:nth-child(6) { width: 12%; }
+.office-visits-page .table.text_wrap th:nth-child(7) { width: 15%; }
+.office-visits-page .table.text_wrap th:nth-child(8) { width: 10%; }
+.office-visits-page .table.text_wrap th:nth-child(9) { width: 15%; }
+.office-visits-page .card .card-body table.table th, .office-visits-page .card .card-body table.table td { color: var(--text-dark) !important; }
+.office-visits-page .card .card-body table.table thead th {
+	color: var(--text-muted) !important;
+	font-weight: 600;
+	background-color: var(--page-bg) !important;
+	border-color: var(--border) !important;
+}
+.office-visits-page .card .card-body table.table tbody td { color: var(--text-dark) !important; }
+.office-visits-page .card .card-body table.table tbody td .badge { color: inherit !important; }
+.office-visits-page .card .card-body table.table a:not(.btn) { color: var(--sidebar-active) !important; }
+.office-visits-page .card .card-body table.table a:not(.btn):hover { color: var(--navy) !important; }
+.office-visits-page .pagination { justify-content: center; margin-top: 20px; }
+.office-visits-page .pagination .page-link { color: var(--navy); border-color: var(--border); }
+.office-visits-page .pagination .page-link:hover { background: var(--sidebar-bg); color: var(--navy); border-color: var(--border); }
+.office-visits-page .pagination .page-item.active .page-link {
+	background-color: var(--navy);
+	border-color: var(--navy);
+	color: #fff;
+}
+.office-visits-page .dropdown-content {
+	display: none;
+	position: absolute;
+	background-color: var(--card-bg);
+	min-width: 160px;
+	overflow: auto;
+	box-shadow: 0 4px 16px rgba(30, 61, 96, 0.12);
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	z-index: 20;
+}
+.office-visits-page .dropdown-content.show { display: block; }
+.office-visits-page .dropdown-content a {
+	color: var(--text-dark);
+	padding: 12px 16px;
+	text-decoration: none;
+	display: block;
+}
+.office-visits-page .dropdown-content a:hover { background: var(--sidebar-bg); color: var(--navy); }
+.office-visits-page .dropbtn {
+	border: 1px solid var(--border) !important;
+	background: var(--card-bg);
+	color: var(--navy);
+	border-radius: 8px;
+	font-weight: 600;
+	padding: 10px;
+}
+.office-visits-page .btn-success {
+	background-color: var(--success) !important;
+	border-color: var(--success) !important;
+	color: #fff !important;
+}
+.office-visits-page .btn-success:hover { filter: brightness(0.95); color: #fff !important; }
+.office-visits-page .btn-danger {
+	background-color: var(--danger) !important;
+	border-color: var(--danger) !important;
+	color: #fff !important;
+}
+.office-visits-page .btn-danger:hover { filter: brightness(0.95); color: #fff !important; }
+.office-visits-page .btn { white-space: normal !important; word-wrap: break-word !important; max-width: 100% !important; }
+.office-visits-page .nav-pills { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; max-width: 100%; }
+.office-visits-page .nav-pills .nav-link {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 200px;
+	color: var(--navy) !important;
+	background: var(--card-bg);
+	border: 1px solid var(--border) !important;
+	border-radius: 8px !important;
+	font-weight: 600;
+}
+.office-visits-page .nav-pills .nav-link:hover { background: var(--sidebar-bg); border-color: var(--border) !important; }
+.office-visits-page .nav-pills .nav-link.active {
+	background: var(--sidebar-active) !important;
+	color: #fff !important;
+	border-color: var(--sidebar-active) !important;
+	box-shadow: inset 3px 0 0 0 var(--accent-gold);
+}
+.office-visits-page .card-header-action { max-width: 100%; overflow-x: hidden; }
+.office-visits-page .card-header-action .btn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.office-visits-page .card .card-header .btn-primary {
+	background-color: var(--navy) !important;
+	border-color: var(--navy) !important;
+	color: #fff !important;
+}
+.office-visits-page .card .card-header .btn-primary:hover {
+	background-color: var(--sidebar-active) !important;
+	border-color: var(--sidebar-active) !important;
+}
+.office-visits-page .card .card-body table.table tbody tr td:last-child .btn:hover { color: #fff !important; }
+.office-visits-page .badge.badge-info {
+	background-color: rgba(58, 111, 168, 0.18) !important;
+	color: var(--sidebar-active) !important;
+	border: 1px solid rgba(58, 111, 168, 0.35);
+}
+.office-visits-page .badge.badge-secondary {
+	background-color: rgba(94, 122, 144, 0.12) !important;
+	color: var(--text-muted) !important;
+	border: 1px solid var(--border);
+}
+.office-visits-page .card {
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+}
+.office-visits-page .card .card-header {
+	background: var(--navy) !important;
+	color: #fff !important;
+	border-bottom: 1px solid var(--border);
+}
+.office-visits-page .card .card-header h4 { color: #fff !important; margin: 0; }
+.office-visits-page .card .card-footer { background: var(--page-bg); border-top: 1px solid var(--border); }
+/* Compose modal — class is unique to this view (works if modal is moved under body) */
+.modal.clientemail .modal-content { border: 1px solid var(--border); border-radius: 10px; }
+.modal.clientemail .modal-header { background: var(--navy); color: #fff; border-bottom: 1px solid var(--border); }
+.modal.clientemail .modal-header .modal-title { color: #fff; }
+.modal.clientemail .modal-header .close { color: #fff; opacity: 0.9; }
+.modal.clientemail .btn-primary {
+	background-color: var(--navy) !important;
+	border-color: var(--navy) !important;
+	color: #fff !important;
+}
+.modal.clientemail .btn-primary:hover {
+	background-color: var(--sidebar-active) !important;
+	border-color: var(--sidebar-active) !important;
+}
+.modal.clientemail .btn-secondary {
+	background: var(--card-bg) !important;
+	border: 1px solid var(--border) !important;
+	color: var(--navy) !important;
+}
+@media (max-width: 1200px) { .office-visits-page .table.text_wrap { font-size: 0.8em; } .office-visits-page .table.text_wrap th, .office-visits-page .table.text_wrap td { padding: 6px 3px !important; } }
+@media (max-width: 768px) { .office-visits-page .table.text_wrap { font-size: 0.75em; } .office-visits-page .table.text_wrap th, .office-visits-page .table.text_wrap td { padding: 4px 2px !important; } .office-visits-page .nav-pills { flex-direction: column; gap: 5px; } .office-visits-page .nav-pills .nav-item { width: 100%; } .office-visits-page .nav-pills .nav-link { text-align: center; width: 100%; } }
 </style>
 
 <!-- Main Content -->
+<div class="office-visits-page">
 <div class="main-content">
 	<section class="section" style="margin-top: 56px;">
 		<div class="section-body">
@@ -60,7 +192,7 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 				<div class="col-12 col-md-12 col-lg-12">
 					<div class="card">
 						<div class="card-header">
-							<h4 style="color:#666;">In Person</h4>
+							<h4>In Person</h4>
 							<div class="card-header-action">
 								<a href="{{ route('front-desk.checkin.index') }}" class="btn btn-primary">Create In Person</a>
 							</div>
@@ -79,7 +211,7 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 							</ul>
 							<div class="tab-content" id="checkinContent">
 								<div class="mydropdown" style="margin-top:10px;">
-								  <button style="border: 1px solid #FFFFFF;padding: 10px 10px 10px 10px;" onclick="myFunction()" class="dropbtn">
+								  <button type="button" onclick="myFunction()" class="dropbtn">
 								  <?php echo isset($_GET['office_name']) ? $_GET['office_name'] : 'All Branches'; ?>
 								   <i style="font-size: 10px;" class="fa fa-arrow-down"></i></button>
 								  <div id="myDropdown" class="dropdown-content">
@@ -233,6 +365,7 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 			</div>
 		</div>
 	</div>
+</div>
 </div>
 @endsection
 @push('scripts')
