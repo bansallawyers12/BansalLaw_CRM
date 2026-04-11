@@ -1,0 +1,202 @@
+/**
+ * Staff Login Analytics — docs/theme.md (Powder Blue & Soft Gold)
+ * Scope: .staff-login-analytics
+ */
+
+.staff-login-analytics .section,
+.staff-login-analytics .section-body {
+  background: transparent;
+}
+
+.staff-login-analytics .section-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid var(--accent-gold, #c8992a);
+}
+
+.staff-login-analytics .section-header h1 {
+  color: var(--navy, #1e3d60) !important;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.staff-login-analytics .section-header .staff-login-analytics__lead {
+  color: var(--text-muted, #5e7a90) !important;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* Filter card */
+.staff-login-analytics .card {
+  border: 1px solid var(--border, #c8dcef);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+  background: var(--card-bg, #fff);
+}
+
+.staff-login-analytics .card .card-body {
+  padding: 1.25rem 1.5rem;
+}
+
+.staff-login-analytics label.font-weight-semibold,
+.staff-login-analytics .font-weight-semibold.text-dark {
+  color: var(--navy, #1e3d60) !important;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.staff-login-analytics .form-control {
+  border: 1px solid var(--border, #c8dcef);
+  border-radius: 8px;
+  color: var(--text-dark, #1a2c40);
+}
+
+.staff-login-analytics .form-control:focus {
+  border-color: var(--sidebar-active, #3a6fa8);
+  box-shadow: 0 0 0 3px rgba(200, 153, 42, 0.2);
+}
+
+/* Apply — primary navy per theme.md */
+.staff-login-analytics #apply-filters.btn-primary {
+  background: var(--navy, #1e3d60) !important;
+  border: 1px solid var(--navy, #1e3d60) !important;
+  color: #fff !important;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.staff-login-analytics #apply-filters.btn-primary:hover {
+  background: var(--sidebar-active, #3a6fa8) !important;
+  border-color: var(--sidebar-active, #3a6fa8) !important;
+  color: #fff !important;
+}
+
+/* KPI / statistic cards */
+.staff-login-analytics .card-statistic-1 {
+  border: 1px solid var(--border, #c8dcef);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+  overflow: hidden;
+}
+
+.staff-login-analytics .card-statistic-1 .card-icon.bg-primary {
+  background: linear-gradient(135deg, var(--navy, #1e3d60), var(--sidebar-active, #3a6fa8)) !important;
+}
+
+.staff-login-analytics .card-statistic-1 .card-icon.bg-success {
+  background: rgba(30, 122, 82, 0.18) !important;
+  color: var(--success, #1e7a52) !important;
+}
+
+.staff-login-analytics .card-statistic-1 .card-icon.bg-success i {
+  color: var(--success, #1e7a52) !important;
+}
+
+.staff-login-analytics .card-statistic-1 .card-icon.bg-warning {
+  background: rgba(200, 153, 42, 0.15) !important;
+  color: #7a5800 !important;
+}
+
+.staff-login-analytics .card-statistic-1 .card-icon.bg-warning i {
+  color: var(--accent-gold, #c8992a) !important;
+}
+
+.staff-login-analytics .card-statistic-1 .card-icon.bg-info {
+  background: rgba(58, 111, 168, 0.12) !important;
+  color: var(--sidebar-active, #3a6fa8) !important;
+}
+
+.staff-login-analytics .card-statistic-1 .card-icon.bg-info i {
+  color: var(--sidebar-active, #3a6fa8) !important;
+}
+
+.staff-login-analytics .card-statistic-1 .card-wrap .card-header {
+  border-bottom: 1px solid var(--border, #c8dcef);
+  background: var(--page-bg, #f0f6ff);
+}
+
+.staff-login-analytics .card-statistic-1 .card-wrap .card-header h4 {
+  color: var(--navy, #1e3d60) !important;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.staff-login-analytics .card-statistic-1 .card-wrap .card-body {
+  color: var(--text-dark, #1a2c40) !important;
+  font-weight: 700;
+  font-size: 1.35rem;
+}
+
+/* Chart / table cards — beat crm-theme body.sidebar-mini .card-header (light bg + !important)
+   and custom.css .card-header h4 (#fff) so titles stay visible on the navy band */
+body.sidebar-mini .staff-login-analytics .card > .card-header,
+.staff-login-analytics .card > .card-header {
+  background: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%) !important;
+  border-bottom: 3px solid var(--accent-gold, #c8992a) !important;
+  padding: 1rem 1.25rem !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .staff-login-analytics .card > .card-header h4,
+.staff-login-analytics .card > .card-header h4 {
+  color: #fff !important;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.staff-login-analytics .card > .card-body {
+  background: var(--card-bg, #fff);
+}
+
+/* Table */
+.staff-login-analytics .table-responsive {
+  border-radius: 8px;
+  border: 1px solid var(--border, #c8dcef);
+}
+
+.staff-login-analytics #top-staff-table thead th {
+  background: var(--page-bg, #f0f6ff) !important;
+  color: var(--navy, #1e3d60) !important;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--border, #c8dcef);
+  padding: 12px 14px;
+}
+
+.staff-login-analytics #top-staff-table tbody td {
+  padding: 12px 14px;
+  border-color: var(--border, #c8dcef);
+  color: var(--text-dark, #1a2c40);
+  vertical-align: middle;
+}
+
+.staff-login-analytics #top-staff-table tbody tr:hover td {
+  background: #ebf3ff !important;
+}
+
+.staff-login-analytics #top-staff-table.table-striped tbody tr:nth-of-type(odd) {
+  background-color: transparent;
+}
+
+.staff-login-analytics #top-staff-table.table-striped tbody tr:nth-of-type(even) {
+  background-color: rgba(240, 246, 255, 0.5);
+}
+
+.staff-login-analytics__count {
+  display: inline-block;
+  background: rgba(30, 61, 96, 0.1);
+  color: var(--navy, #1e3d60);
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #c8dcef);
+  font-size: 0.875rem;
+}

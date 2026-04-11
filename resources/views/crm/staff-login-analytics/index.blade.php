@@ -1,13 +1,17 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'Staff Login Analytics')
 
+@section('styles')
+<link rel="stylesheet" href="{{ asset('css/staff-login-analytics.css') }}">
+@endsection
+
 @section('content')
-<div class="main-content">
+<div class="main-content staff-login-analytics">
     <section class="section">
         <div class="section-header">
             <div>
                 <h1 class="mb-0">Staff Login Analytics</h1>
-                <p class="mb-0 text-secondary" style="font-size: 0.95rem;">Track and analyze staff login patterns over time</p>
+                <p class="mb-0 staff-login-analytics__lead">Track and analyze staff login patterns over time</p>
             </div>
         </div>
 
@@ -216,6 +220,7 @@
 <script>
 (function() {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const apiBase = @json(url('/api/staff-login-analytics'));
     let trendsChart, hourlyChart, topStaffChart, successFailedChart;
 
     // Filter elements
@@ -248,7 +253,7 @@
 
     async function loadSummary() {
         try {
-            const response = await fetch(`/api/staff-login-analytics/summary?${getQueryParams()}`, {
+            const response = await fetch(`${apiBase}/summary?${getQueryParams()}`, {
                 headers: { 'Accept': 'application/json' },
                 credentials: 'include'
             });
@@ -269,7 +274,7 @@
         try {
             const period = periodFilter.value;
             const endpoint = period === 'daily' ? 'daily' : (period === 'weekly' ? 'weekly' : 'monthly');
-            const response = await fetch(`/api/staff-login-analytics/${endpoint}?${getQueryParams()}`, {
+            const response = await fetch(`${apiBase}/${endpoint}?${getQueryParams()}`, {
                 headers: { 'Accept': 'application/json' },
                 credentials: 'include'
             });
@@ -300,8 +305,8 @@
                         }, {
                             label: 'Unique Staff',
                             data: uniqueStaff,
-                            borderColor: 'rgb(17, 153, 142)',
-                            backgroundColor: 'rgba(17, 153, 142, 0.1)',
+                            borderColor: 'rgb(30, 122, 82)',
+                            backgroundColor: 'rgba(30, 122, 82, 0.12)',
                             tension: 0.4,
                             fill: true
                         }]
@@ -333,7 +338,7 @@
 
     async function loadHourly() {
         try {
-            const response = await fetch(`/api/staff-login-analytics/hourly?${getQueryParams()}`, {
+            const response = await fetch(`${apiBase}/hourly?${getQueryParams()}`, {
                 headers: { 'Accept': 'application/json' },
                 credentials: 'include'
             });
@@ -390,7 +395,7 @@
 
     async function loadTopStaff() {
         try {
-            const response = await fetch(`/api/staff-login-analytics/top-staff?${getQueryParams()}`, {
+            const response = await fetch(`${apiBase}/top-staff?${getQueryParams()}`, {
                 headers: { 'Accept': 'application/json' },
                 credentials: 'include'
             });
@@ -407,7 +412,7 @@
                             <td>${index + 1}</td>
                             <td>${staff.staff_name}</td>
                             <td>${staff.staff_email ?? staff.user_email ?? '—'}</td>
-                            <td><span class="badge badge-primary">${staff.login_count}</span></td>
+                            <td><span class="staff-login-analytics__count">${staff.login_count}</span></td>
                             <td>${new Date(staff.last_login).toLocaleDateString()}</td>
                         </tr>
                     `).join('');
@@ -456,7 +461,7 @@
 
     async function loadSuccessFailed() {
         try {
-            const response = await fetch(`/api/staff-login-analytics/summary?${getQueryParams()}`, {
+            const response = await fetch(`${apiBase}/summary?${getQueryParams()}`, {
                 headers: { 'Accept': 'application/json' },
                 credentials: 'include'
             });
@@ -476,12 +481,12 @@
                         datasets: [{
                             data: [successful, failed],
                             backgroundColor: [
-                                'rgba(17, 153, 142, 0.8)',
-                                'rgba(252, 84, 75, 0.8)'
+                                'rgba(30, 122, 82, 0.85)',
+                                'rgba(168, 48, 32, 0.85)'
                             ],
                             borderColor: [
-                                'rgb(17, 153, 142)',
-                                'rgb(252, 84, 75)'
+                                'rgb(30, 122, 82)',
+                                'rgb(168, 48, 32)'
                             ],
                             borderWidth: 2
                         }]
