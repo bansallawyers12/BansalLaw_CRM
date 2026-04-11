@@ -62,7 +62,7 @@ Route::post('/exception', [\App\Http\Controllers\ExceptionController::class, 'in
 /*--------------------------------------------------
 | SECTION: Authentication Routes
 |--------------------------------------------------*/
-// Auth::routes(); // Disabled - Using custom admin login at /admin and API login at /api/login instead
+// Auth::routes(); // Disabled - Using custom admin login at /admin and optional staff API at /api/admin-login
 
 /*--------------------------------------------------
 | SECTION: Admin Console Routes

@@ -1,6 +1,8 @@
 /**
- * Real-time chat via Laravel Reverb (Pusher protocol).
- * Auth: /api/broadcasting/auth with Bearer token (VITE_REVERB_* in .env).
+ * Legacy Echo helper (Bearer + /api). Not wired into the CRM bundle.
+ *
+ * POST /api/broadcasting/auth was removed with the client app. Staff CRM uses
+ * /broadcasting/auth with session cookies (resources/js/app.js).
  */
 
 import Echo from 'laravel-echo';

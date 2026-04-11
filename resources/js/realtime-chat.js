@@ -1,7 +1,9 @@
 /**
- * Real-time chat via Laravel Reverb (Pusher protocol).
+ * Legacy Echo helper (Bearer + /api). Not wired into the CRM bundle.
  *
- * Uses VITE_REVERB_* from .env; auth is signed at /api/broadcasting/auth (Sanctum Bearer).
+ * The client mobile app and POST /api/broadcasting/auth were removed. Staff CRM uses
+ * session CSRF auth at /broadcasting/auth (see resources/js/app.js).
+ * Update this module before reusing it, or delete it if unused.
  */
 
 import Echo from 'laravel-echo';

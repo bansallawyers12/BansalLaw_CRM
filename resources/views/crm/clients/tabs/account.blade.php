@@ -468,35 +468,6 @@
                                                         <i class="fas fa-paper-plane"></i> Send to Hubdoc
                                                     </a>
                                                 <?php } ?>
-                                                <?php 
-                                                // Send to Client Portal: show only when Status = Pending (Unpaid = 0)
-                                                if($inc_val->invoice_status == 0) { 
-                                                    $client_app_sent = DB::table('account_client_receipts')
-                                                        ->where('receipt_type', 3)
-                                                        ->where('receipt_id', $inc_val->receipt_id)
-                                                        ->value('client_portal_sent');
-                                                    $client_app_sent = isset($client_app_sent) ? (int)$client_app_sent : 0;
-                                                    $client_app_sent_at = DB::table('account_client_receipts')
-                                                        ->where('receipt_type', 3)
-                                                        ->where('receipt_id', $inc_val->receipt_id)
-                                                        ->value('client_portal_sent_at');
-                                                ?>
-                                                <div class="dropdown-divider"></div>
-                                                <?php if($client_app_sent) { ?>
-                                                    <span class="dropdown-item" style="color: #28a745;">
-                                                        <i class="fas fa-check"></i> Already Sent to Client Portal
-                                                    </span>
-                                                    <?php if(!empty($client_app_sent_at)) { ?>
-                                                    <div class="dropdown-item-text" style="font-size: 11px; color: #666; padding: 0.25rem 1rem;">
-                                                        Sent: <?php echo date('d/m/Y H:i', strtotime($client_app_sent_at)); ?>
-                                                    </div>
-                                                    <?php } ?>
-                                                <?php } else { ?>
-                                                    <a class="dropdown-item send-to-client-portal-btn" href="javascript:;" data-invoice-id="<?php echo $inc_val->receipt_id; ?>" data-invoice-no="<?php echo $inc_val->trans_no; ?>">
-                                                        <i class="fas fa-mobile-alt"></i> Send to Client Portal
-                                                    </a>
-                                                <?php } ?>
-                                                <?php } ?>
                                                 <?php } ?>
                                             </div>
                                         </div>

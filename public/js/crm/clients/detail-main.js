@@ -4614,23 +4614,154 @@ success: function(response) {
                             $scope.find('#TotalBLOCKFEE').val(obj.matterInfo.TotalBLOCKFEE);
                             populateDisbursementRows([], $scope.find('#disbursement-rows'));
 
-                        } else {
-                            localStorage.setItem('activeTab', 'checklists');
-                            setTimeout(function() { location.reload(); }, 1000);
                         }
-                    } else {
-                        $('#agreementUploadError').text(response.message || 'Upload failed.').show();
+
+                        // Initialize calculation handlers after data is loaded
+                        setTimeout(function() {
+                            initializeCostAssignmentCalculations(modalContainer);
+                            calculateTotalBlockFee(modalContainer);
+                            calculateTotalDisbursements(modalContainer);
+                            if (typeof onLoadedCallback === 'function') {
+                                onLoadedCallback();
+                            }
+                        }, 100);
+
                     }
                 },
                 error: function(xhr, status, error) {
-                    $('.popuploader').hide();
-                    var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'An error occurred while uploading the agreement.';
-                    $('#agreementUploadError').text(msg).show();
+                    // error handled silently
                 }
             });
         }
 
-        // Agreement modal: drag-and-drop and click-to-browse; auto-upload on file set
+        // ──────────────────────────────────────────────────────────────────
+        //  Disbursement row helpers
+        // ──────────────────────────────────────────────────────────────────
+        var disbursementNatures = {
+            court_fees:      'Court Fees',
+            barrister_fees:  'Barrister Fees',
+            expert_report:   'Expert Report',
+            travel:          'Travel',
+            postage:         'Postage / Courier',
+            filing_registry: 'Filing / Registry',
+            search_fees:     'Search Fees',
+            other:           'Other'
+        };
+
+        function buildNatureOptions(selected) {
+            var html = '';
+            $.each(disbursementNatures, function(val, label) {
+                html += '<option value="' + val + '"' + (val === selected ? ' selected' : '') + '>' + label + '</option>';
+            });
+            return html;
+        }
+
+        function buildDisbursementRow(idx, nature, description, amount) {
+            nature      = nature      || 'other';
+            description = description || '';
+            amount      = amount      !== undefined ? amount : '';
+            return (
+                '<div class="disbursement-row row mb-2 align-items-center">' +
+                    '<div class="col-md-4 col-12 mb-1 mb-md-0">' +
+                        '<select name="disbursements[' + idx + '][nature]" class="form-control form-control-sm disbursement-nature-select">' +
+                            buildNatureOptions(nature) +
+                        '</select>' +
+                    '</div>' +
+                    '<div class="col-md-4 col-12 mb-1 mb-md-0">' +
+                        '<input type="text" name="disbursements[' + idx + '][description]" class="form-control form-control-sm" placeholder="Description (optional)" value="' + description + '">' +
+                    '</div>' +
+                    '<div class="col-md-3 col-10 mb-1 mb-md-0">' +
+                        '<input type="number" name="disbursements[' + idx + '][amount]" class="form-control form-control-sm disbursement-amount-input" placeholder="0.00" step="0.01" min="0" value="' + amount + '">' +
+                    '</div>' +
+                    '<div class="col-md-1 col-2 text-right">' +
+                        '<button type="button" class="btn btn-outline-danger btn-sm btn-remove-disbursement-row"><i class="fas fa-times"></i></button>' +
+                    '</div>' +
+                '</div>'
+            );
+        }
+
+        function populateDisbursementRows(lines, $container) {
+            $container.empty();
+            if (lines && lines.length > 0) {
+                $.each(lines, function(idx, line) {
+                    $container.append(buildDisbursementRow(idx, line.nature, line.description, line.amount));
+                });
+            } else {
+                $container.append(buildDisbursementRow(0, 'other', '', ''));
+            }
+            rebindDisbursementRowNames($container);
+        }
+
+        function rebindDisbursementRowNames($container) {
+            $container.find('.disbursement-row').each(function(idx) {
+                $(this).find('[name^="disbursements"]').each(function() {
+                    var oldName = $(this).attr('name');
+                    var newName = oldName.replace(/disbursements\[\d+\]/, 'disbursements[' + idx + ']');
+                    $(this).attr('name', newName);
+                });
+            });
+        }
+
+        // ──────────────────────────────────────────────────────────────────
+        //  Disbursement UI — Add / Remove row handlers (client modal)
+        // ──────────────────────────────────────────────────────────────────
+        $(document).on('click', '.btn-add-disbursement-row', function() {
+            var $container = $(this).closest('form, .modal-body, [id^="costAssignment"]').find('#disbursement-rows');
+            if (!$container.length) $container = $('#disbursement-rows');
+            var idx = $container.find('.disbursement-row').length;
+            $container.append(buildDisbursementRow(idx, 'other', '', ''));
+            rebindDisbursementRowNames($container);
+        });
+
+        $(document).on('click', '.btn-remove-disbursement-row', function() {
+            var $container = $(this).closest('#disbursement-rows, #disbursement-rows-lead');
+            $(this).closest('.disbursement-row').remove();
+            rebindDisbursementRowNames($container);
+            calculateTotalDisbursements($(this).closest('.modal').length ? '#' + $(this).closest('.modal').attr('id') : null);
+        });
+
+        $(document).on('input change keyup', '.disbursement-amount-input', function() {
+            var modalId = $(this).closest('.modal').attr('id');
+            calculateTotalDisbursements(modalId ? '#' + modalId : null);
+        });
+
+        // ──────────────────────────────────────────────────────────────────
+        //  Cost assignment calculation functions
+        // ──────────────────────────────────────────────────────────────────
+        function initializeCostAssignmentCalculations(containerScope) {
+            var $scope = (containerScope && $(containerScope).length) ? $(containerScope) : $(document);
+
+            $scope.find('#Block_1_Ex_Tax, #Block_2_Ex_Tax, #Block_3_Ex_Tax').off('input change keyup').on('input change keyup', function() {
+                calculateTotalBlockFee(containerScope);
+            });
+
+            calculateTotalBlockFee(containerScope);
+            calculateTotalDisbursements(containerScope);
+        }
+
+        function calculateTotalBlockFee(containerScope) {
+            var $scope = (containerScope && $(containerScope).length) ? $(containerScope) : $(document);
+            var block1 = parseFloat($scope.find('#Block_1_Ex_Tax').val()) || 0;
+            var block2 = parseFloat($scope.find('#Block_2_Ex_Tax').val()) || 0;
+            var block3 = parseFloat($scope.find('#Block_3_Ex_Tax').val()) || 0;
+            $scope.find('#TotalBLOCKFEE').val((block1 + block2 + block3).toFixed(2));
+        }
+
+        function calculateTotalDisbursements(containerScope) {
+            var $scope = (containerScope && $(containerScope).length) ? $(containerScope) : $(document);
+            var total = 0;
+            $scope.find('.disbursement-amount-input').each(function() {
+                total += parseFloat($(this).val()) || 0;
+            });
+            $scope.find('#TotalDisbursements, #TotalDisbursements_lead').val(total.toFixed(2));
+        }
+
+        window.initializeCostAssignmentCalculations = initializeCostAssignmentCalculations;
+        window.calculateTotalBlockFee               = calculateTotalBlockFee;
+        window.calculateTotalDisbursements          = calculateTotalDisbursements;
+        window.populateDisbursementRows             = populateDisbursementRows;
+
+
         (function() {
             var $form = $('#agreementUploadForm');
             var $input = $form.find('input[name="agreement_doc"]');

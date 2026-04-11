@@ -215,7 +215,6 @@ Route::post('/clients/getInfoByReceiptId', [ClientAccountsController::class, 'ge
 Route::get('/clients/genInvoice/{id}/{client_id?}', [ClientAccountsController::class, 'genInvoice']);
 Route::post('/clients/sendToHubdoc/{id}', [ClientAccountsController::class, 'sendToHubdoc'])->name('clients.sendToHubdoc');
 Route::get('/clients/checkHubdocStatus/{id}', [ClientAccountsController::class, 'checkHubdocStatus'])->name('clients.checkHubdocStatus');
-Route::post('/clients/send-invoice-to-client-application/{id}', [ClientAccountsController::class, 'sendInvoiceToClientApplication'])->name('clients.sendInvoiceToClientApplication');
 Route::get('/clients/printPreview/{id}', [ClientAccountsController::class, 'printPreview']);
 Route::post('/clients/getTopInvoiceNoFromDB', [ClientAccountsController::class, 'getTopInvoiceNoFromDB'])->name('clients.getTopInvoiceNoFromDB');
 Route::post('/clients/clientLedgerBalanceAmount', [ClientAccountsController::class, 'clientLedgerBalanceAmount'])->name('clients.clientLedgerBalanceAmount');
@@ -335,8 +334,7 @@ Route::post('/add-appointment', [ClientsController::class, 'addAppointment']);
 Route::post('/add-appointment-book', [ClientsController::class, 'addAppointmentBook']);
 Route::get('/get-appointments', [ClientsController::class, 'getAppointments']);
 
-/*---------- Client Portal ----------*/
-Route::post('/clients/toggle-client-portal', [ClientPortalController::class, 'toggleClientPortal'])->name('clients.toggleClientPortal');
+/*---------- Matter / case workflow (legacy route names reference client_portal) ----------*/
 Route::post('/api/client-portal-details/approve-audit', [ClientPortalController::class, 'approveAuditValue'])->name('clients.approveAuditValue');
 Route::post('/api/client-portal-details/reject-audit', [ClientPortalController::class, 'rejectAuditValue'])->name('clients.rejectAuditValue');
 Route::post('/api/client-portal-details/approve-visa-audit', [ClientPortalController::class, 'approveVisaAudit'])->name('clients.approveVisaAudit');

@@ -67,7 +67,7 @@ use App\Http\Controllers\Controller;
                     </div>
                 @endif
                 
-                <!-- Action Icons (left) and Client Portal Toggle (right) -->
+                <!-- Action icons -->
                 <div class="sidebar-actions-row">
                     <!-- Action Icons -->
                     <div class="client-actions">
@@ -376,8 +376,8 @@ use App\Http\Controllers\Controller;
                     <span>Workflow</span>
                 </button>
                 <button class="client-nav-button" data-tab="client_portal">
-                    <i class="fas fa-globe"></i>
-                    <span>Client Portal</span>
+                    <i class="fas fa-briefcase"></i>
+                    <span>Matter</span>
                 </button>
                 <?php
                 // Get last updated date for the client record
@@ -1333,7 +1333,6 @@ $(document).ready(function() {
             updateClientFundsLedger: '{{ route("clients.update-client-funds-ledger") }}',
             getLegalPractitionerDetail: '{{ URL::to("/clients/getLegalPractitionerDetail") }}',
             createIntakeUrl: '{{ url("/clients/store-application-doc-via-form") }}',
-            toggleClientPortal: '{{ route("clients.toggleClientPortal") }}',
             enhanceMail: '{{ route("mail.enhance") }}',
             composeEmail: '{{ URL::to("/sendmail") }}',
             createNote: '{{ URL::to("/create-note") }}',
@@ -1377,7 +1376,6 @@ $(document).ready(function() {
             getMatterNotes: '{{ URL::to("/client-portal/notes") }}',
             sendToHubdoc: '{{ url("/clients/sendToHubdoc") }}',
             checkHubdocStatus: '{{ url("/clients/checkHubdocStatus") }}',
-            sendToClientApplication: '{{ url("/clients/send-invoice-to-client-application") }}',
             updateMailReadBit: '{{ URL::to("/clients/updatemailreadbit") }}',
             listAllMatters: '{{ URL::to("/clients/listAllMattersWRTSelClient") }}',
             getActivities: '{{ route("clients.activities") }}',

@@ -14,7 +14,7 @@ Alpine.start();
 
 /*
 |--------------------------------------------------------------------------
-| Notification Bell Update (always available - used by Echo and client_portal)
+| Notification Bell Update (always available - used by Echo / matter tab)
 |--------------------------------------------------------------------------
 */
 window.updateNotificationBell = function (count, options = {}) {

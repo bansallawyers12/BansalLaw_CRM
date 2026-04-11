@@ -40,7 +40,7 @@
 <div class="wrap">
     <h1>Reverb messaging lab</h1>
     <p class="sub">
-        Staff-only. If <code>REVERB_ACCESS_LOGIN</code> / <code>REVERB_ACCESS_PASSWORD</code> are set in <code>.env</code>, you are signed in automatically for this page; otherwise use <a href="{{ route('crm.login') }}">CRM login</a> first. Uses the same Reverb WebSocket setup as Client Portal messages
+        Staff-only. If <code>REVERB_ACCESS_LOGIN</code> / <code>REVERB_ACCESS_PASSWORD</code> are set in <code>.env</code>, you are signed in automatically for this page; otherwise use <a href="{{ route('crm.login') }}">CRM login</a> first. Uses the same Reverb WebSocket setup as matter messaging in the CRM.
         (<code>private-user.{staffId}</code> + event <code>message.sent</code>). Ensure <code>php artisan reverb:start</code> is running and
         <code>BROADCAST_DRIVER=reverb</code> in <code>.env</code>.
     </p>

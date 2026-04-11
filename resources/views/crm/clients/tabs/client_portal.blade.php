@@ -1,46 +1,11 @@
-<!-- Client Portal Tab -->
+<!-- Matter / case workflow tab (legacy id: client_portal-tab) -->
 <div class="tab-pane" id="client_portal-tab">
     <div class="card full-width client-portal-container">
         <div class="portal-header">
-            <h3><i class="fas fa-globe"></i> Client Portal Access</h3>
-            <div class="portal-header-controls">
-                <div class="portal-status-badge">
-                    @if(isset($fetchedData->cp_status) && in_array($fetchedData->cp_status, [1, 2]))
-                        <span class="badge badge-success"><i class="fas fa-check-circle"></i> Active</span>
-                    @else
-                        <span class="badge badge-secondary"><i class="fas fa-times-circle"></i> Inactive</span>
-                    @endif
-                </div>
-                
-                <!-- Portal Toggle Switch -->
-                <?php
-                // Check if client has any records in client_matters table
-                $client_matters_exist = DB::table('client_matters')
-                    ->where('client_id', $fetchedData->id)
-                    ->exists();
-                ?>
-                @if($client_matters_exist)
-                <div class="portal-toggle-container">
-                    <label class="portal-toggle-label">
-                        <span class="toggle-text">Portal Access:</span>
-                        <div class="toggle-switch">
-                            <input type="checkbox" id="client-portal-toggle-tab" 
-                                   data-client-id="{{ $fetchedData->id}}" 
-                                   {{ isset($fetchedData->cp_status) && in_array($fetchedData->cp_status, [1, 2]) ? 'checked' : '' }}>
-                            <span class="toggle-slider"></span>
-                        </div>
-                        <span class="portal-toggle-loader" id="portal-toggle-loader-tab" style="display: none;">
-                            <i class="fas fa-spinner fa-spin"></i>
-                        </span>
-                    </label>
-                </div>
-                @endif
-            </div>
+            <h3><i class="fas fa-briefcase"></i> Matter</h3>
         </div>
 
         <div class="portal-content">
-            @if(isset($fetchedData->cp_status) && in_array($fetchedData->cp_status, [1, 2]))
-                <!-- Portal is Active -->
                 <?php
                 // Get the selected matter based on URL parameter or latest active matter
                 $selectedMatter = null;
@@ -83,10 +48,12 @@
                 }
                 
                 // Get all workflow stages
-                $allWorkflowStages = DB::table('workflow_stages')
-                    ->where('workflow_id', $selectedMatter->workflow_id)
-                    ->orderByRaw('COALESCE(sort_order, id) ASC')
-                    ->get(); //dd($allWorkflowStages);
+                $allWorkflowStages = $selectedMatter
+                    ? DB::table('workflow_stages')
+                        ->where('workflow_id', $selectedMatter->workflow_id)
+                        ->orderByRaw('COALESCE(sort_order, id) ASC')
+                        ->get()
+                    : collect();
 
                 $currentStageName = null;
                 $isVerificationStage = false;
@@ -1340,54 +1307,6 @@
                     </div>
                 </div>
 
-            @else
-                <!-- Portal is Inactive -->
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle"></i> Client portal is currently inactive. Use the toggle in the sidebar to activate it.
-                </div>
-
-                <div class="info-card">
-                    <h5><i class="fas fa-info-circle"></i> About Client Portal</h5>
-                    <p>The client portal allows clients to:</p>
-                    <ul class="feature-list">
-                        <li><i class="fas fa-check text-success"></i> View their case status and progress</li>
-                        <li><i class="fas fa-check text-success"></i> Access and download documents</li>
-                        <li><i class="fas fa-check text-success"></i> Upload required documents</li>
-                        <li><i class="fas fa-check text-success"></i> View appointments and deadlines</li>
-                        <li><i class="fas fa-check text-success"></i> Communicate via secure messaging</li>
-                        <li><i class="fas fa-check text-success"></i> View invoices and payment history</li>
-                        <li><i class="fas fa-check text-success"></i> Update their profile information</li>
-                    </ul>
-
-                    <?php
-                    // Check if client has required information for portal activation
-                    $hasEmail = !empty($fetchedData->email);
-                    $hasMatters = DB::table('client_matters')
-                        ->where('client_id', $fetchedData->id)
-                        ->where('matter_status', 1)
-                        ->exists();
-                    ?>
-
-                    @if(!$hasEmail || !$hasMatters)
-                        <div class="alert alert-danger mt-3">
-                            <h6><i class="fas fa-exclamation-circle"></i> Portal Activation Requirements:</h6>
-                            <ul class="mb-0">
-                                @if(!$hasEmail)
-                                    <li><i class="fas fa-times text-danger"></i> Client email address is required</li>
-                                @endif
-                                @if(!$hasMatters)
-                                    <li><i class="fas fa-times text-danger"></i> At least one active matter is required</li>
-                                @endif
-                            </ul>
-                            <p class="mt-2 mb-0"><strong>Please complete these requirements before activating the portal.</strong></p>
-                        </div>
-                    @else
-                        <div class="alert alert-success mt-3">
-                            <i class="fas fa-check-circle"></i> All requirements met. You can activate the portal using the toggle in the sidebar.
-                        </div>
-                    @endif
-                </div>
-            @endif
         </div>
     </div>
 </div>
@@ -3726,100 +3645,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
-    // Portal toggle functionality (both sidebar and tab toggles)
-    function handlePortalToggle(toggleElement) {
-        const clientId = toggleElement.getAttribute('data-client-id');
-        const isChecked = toggleElement.checked;
-        const statusValue = isChecked ? 1 : 0;
-        
-        // Show loading state
-        toggleElement.disabled = true;
-        
-        // Show loader based on which toggle was clicked
-        const toggleId = toggleElement.id;
-        let loaderElement = null;
-        
-        if (toggleId === 'client-portal-toggle-tab') {
-            loaderElement = document.getElementById('portal-toggle-loader-tab');
-        } else if (toggleId === 'client-portal-toggle') {
-            loaderElement = document.getElementById('portal-toggle-loader-sidebar');
-        }
-        
-        if (loaderElement) {
-            loaderElement.style.display = 'inline-block';
-        }
-        
-        fetch('{{ route("clients.toggleClientPortal") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({
-                client_id: clientId,
-                status: statusValue
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            toggleElement.disabled = false;
-            
-            // Hide loader
-            if (loaderElement) {
-                loaderElement.style.display = 'none';
-            }
-            
-            if (data.success) {
-                // Update both toggles to stay in sync
-                const sidebarToggle = document.getElementById('client-portal-toggle');
-                const tabToggle = document.getElementById('client-portal-toggle-tab');
-                
-                if (sidebarToggle) sidebarToggle.checked = !!statusValue;
-                if (tabToggle) tabToggle.checked = !!statusValue;
-                
-                // Show success message
-                alert(data.message);
-                
-                // Reload the page to update the tab content
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            } else {
-                // Revert toggle state on error
-                toggleElement.checked = !isChecked;
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            toggleElement.disabled = false;
-            toggleElement.checked = !isChecked;
-            
-            // Hide loader on error
-            if (loaderElement) {
-                loaderElement.style.display = 'none';
-            }
-            
-            alert('Error updating portal status. Please try again.');
-        });
-    }
-
-    // Handle sidebar toggle
-    const sidebarToggle = document.getElementById('client-portal-toggle');
-    if (sidebarToggle) {
-        sidebarToggle.addEventListener('change', function() {
-            handlePortalToggle(this);
-        });
-    }
-
-    // Handle tab toggle
-    const tabToggle = document.getElementById('client-portal-toggle-tab');
-    if (tabToggle) {
-        tabToggle.addEventListener('change', function() {
-            handlePortalToggle(this);
-        });
-    }
-    
     // Back to Previous Stage button handler
     function ensureBackButtonVisible() {
         const backStageBtn = document.getElementById('back-to-previous-stage');
@@ -6294,7 +6119,7 @@ $(document).on('click', '.cp-move-doc-btn', function () {
 $('#moveDestination').on('change', function () {
     var type     = $(this).val();
     var matterId = $('#moveDocumentMatterId').val();
-    var clientId = $('#client-portal-toggle-tab').data('client-id') || '';
+    var clientId = document.querySelector('.crm-container')?.getAttribute('data-client-id') || '';
 
     $('#moveCategory').html('<option value="">-- Select Category --</option>');
     $('#moveCategoryGroup').hide();

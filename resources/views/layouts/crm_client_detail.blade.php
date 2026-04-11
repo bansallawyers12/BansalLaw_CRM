@@ -336,7 +336,7 @@
             color: #6366f1;
         }
         
-        /* Sidebar Portal Toggle */
+        /* Legacy sidebar classes (portal toggle removed; kept for CSS compatibility) */
         .sidebar-portal-toggle {
             display: flex;
             align-items: center;
@@ -346,7 +346,7 @@
         
         /* Tooltip on hover */
         .sidebar-portal-toggle::before {
-            content: 'Client Portal';
+            content: 'Matter';
             position: absolute;
             right: 0;
             top: -30px;

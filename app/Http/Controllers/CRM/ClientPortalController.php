@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
 use App\Models\Admin;
@@ -42,15 +41,10 @@ use Illuminate\Support\Facades\URL;
 use App\Services\FCMService;
 
 /**
- * ClientPortalController
- * 
- * Handles all client portal functionality including:
- * - Portal user management (activating/deactivating access, sending credentials)
- * - Application operations (stages, documents, notes, messaging)
- * - Client portal tab functionality
- * 
- * Previously split between ApplicationsController and ClientPortalController,
- * now consolidated into a single controller for all client portal operations.
+ * Staff CRM controller for matter/case workflow (legacy name: ClientPortalController).
+ *
+ * Routes still use /client-portal/* URLs; the Matter tab uses this controller.
+ * External client mobile app APIs were removed — this is admin-session only.
  */
 class ClientPortalController extends Controller
 {
@@ -62,157 +56,6 @@ class ClientPortalController extends Controller
     public function __construct()
     {
         $this->middleware('auth:admin');
-    }
-
-    /**
-     * Toggle Client Portal Status and Send Email
-     */
-    public function toggleClientPortal(Request $request)
-    {
-        try {
-            $request->validate([
-                'client_id' => 'required|integer',
-                'status' => 'required|in:true,false,1,0'
-            ]);
-
-            $clientId = $request->client_id;
-            $status = ($request->status === true || $request->status === 'true' || $request->status === '1' || $request->status === 1) ? 1 : 0;
-
-            // Update the client's cp_status
-            $client = \App\Models\Admin::where('id', $clientId)->whereIn('type', ['client', 'lead'])->first();
-
-            if (!$client) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Client not found'
-                ], 404);
-            }
-
-            $client->cp_status = $status;
-            
-            // Handle password based on status
-            if ($status == 1) {
-                // Generate and save password when activating client portal
-                $randomPassword = Str::random(12);
-                $hashedPassword = Hash::make($randomPassword);
-                $client->password = $hashedPassword;
-            } else {
-                // Clear password when deactivating client portal for security
-                $client->password = null;
-            }
-            
-            $client->save();
-
-            // Send appropriate email based on status change
-            if ($status == 1) {
-                // Status is being turned ON - send activation email with password
-                $this->sendClientPortalActivationEmail($client, $randomPassword);
-            } else {
-                // Status is being turned OFF - send deactivation email
-                $this->sendClientPortalDeactivationEmail($client);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => $status ? 'Client Portal activated and email sent successfully' : 'Client Portal deactivated and email sent successfully',
-                'status' => $status
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error updating client portal status: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Send Client Portal activation email
-     */
-    private function sendClientPortalActivationEmail($client, $password)
-    {
-        try {
-            // Get client's email directly from admins table
-            $emailAddress = $client->email;
-
-            if (!$emailAddress) {
-                throw new \Exception('No email address found for client');
-            }
-
-            $playStoreUrl = config('app.brand.client_portal_play_store_url');
-
-            // Email content
-            $subject = 'Client Portal Access Activated - ' . config('app.name');
-            $message = "
-                <html>
-                <body>
-                    <h2>Client Portal Access Activated</h2>
-                    <p>Dear {$client->first_name} {$client->last_name},</p>
-                    <p>Your client portal has been activated successfully. Below are your login credentials:</p>
-                    <p><strong>Email:</strong> {$client->email}</p>
-                    <p><strong>Password:</strong> {$password}</p>
-                    <p>You can now access your client portal using the mobile app with these credentials to view your case details.</p>
-                    <p>Download the mobile app from the following link: <a href='" . e($playStoreUrl) . "'>" . e($playStoreUrl) . "</a></p>
-                    <p><strong>Important:</strong> Please keep your login credentials secure and do not share them with anyone. After Login in mboile App you can chnage your password.</p>
-                    <p>Please contact us if you have any questions.</p>
-                    <br>
-                    <p>Best regards,<br>" . htmlspecialchars(config('app.name'), ENT_QUOTES, 'UTF-8') . " Team</p>
-                </body>
-                </html>
-            ";
-
-            // Send email using Mail facade
-            Mail::mailer('sendgrid')->send('emails.client_portal_active_email', ['content' => $message], function($message) use ($emailAddress, $subject) {
-                $message->to($emailAddress)
-                       ->subject($subject)
-                       ->from(config('mail.from.address'), config('mail.from.name'));
-            });
-
-        } catch (\Exception $e) {
-            Log::error('Failed to send client portal activation email: ' . $e->getMessage());
-            throw $e;
-        }
-    }
-
-    /**
-     * Send Client Portal deactivation email
-     */
-    private function sendClientPortalDeactivationEmail($client)
-    {
-        try {
-            // Get client's email directly from admins table
-            $emailAddress = $client->email;
-
-            if (!$emailAddress) {
-                throw new \Exception('No email address found for client');
-            }
-
-            // Email content for deactivation
-            $subject = 'Client Portal Access Deactivated - ' . config('app.name');
-            $message = "
-                <html>
-                <body>
-                    <h2>Client Portal Access Deactivated</h2>
-                    <p>Dear {$client->first_name} {$client->last_name},</p>
-                    <p>Your client portal access has been deactivated. Now you cannot access the client portal from mobile app.</p>
-                    <p>Please contact the administrator for further assistance.</p>
-                    <br>
-                    <p>Best regards,<br>" . htmlspecialchars(config('app.name'), ENT_QUOTES, 'UTF-8') . " Team</p>
-                </body>
-                </html>
-            ";
-
-            // Send email using Mail facade
-            Mail::mailer('sendgrid')->send('emails.client_portal_active_email', ['content' => $message], function($message) use ($emailAddress, $subject) {
-                $message->to($emailAddress)
-                       ->subject($subject)
-                       ->from(config('mail.from.address'), config('mail.from.name'));
-            });
-
-        } catch (\Exception $e) {
-            Log::error('Failed to send client portal deactivation email: ' . $e->getMessage());
-            throw $e;
-        }
     }
 
     /**
