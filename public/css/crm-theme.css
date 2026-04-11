@@ -90,7 +90,8 @@ body.sidebar-mini .section .card {
 }
 
 body.sidebar-mini .card-header {
-  background-color: var(--card-bg) !important;
+  background: var(--card-bg) !important;
+  background-image: none !important;
   border-bottom: 1px solid var(--border) !important;
   color: var(--navy) !important;
   font-weight: 700 !important;

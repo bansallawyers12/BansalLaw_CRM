@@ -6,94 +6,166 @@
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
 <style>
-    /* Page-specific styles for assign_by_me page */
+    /* Assigned by me — docs/theme.md (tokens from crm-theme.css :root; shared listing-*.css for table/cards) */
     .listing-container .client-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 25px;
         padding-bottom: 20px;
+        border-bottom: 1px solid var(--border, #c8dcef);
         flex-wrap: wrap;
         gap: 15px;
     }
-    
-    .listing-container .client-header h1 {
-        font-size: 1.8em;
-        font-weight: 600;
-        color: #212529;
+
+    .listing-container .client-header h1,
+    .listing-container .client-header h4 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--navy, #1e3d60) !important;
         margin: 0;
         word-wrap: break-word;
     }
-    
+
     .listing-container .client-status {
         display: flex;
         align-items: center;
         gap: 10px;
         flex-wrap: wrap;
     }
-    
+
     .listing-container .nav-pills .nav-item .nav-link {
-        margin-left: 10px;
+        margin-left: 8px;
     }
-    
+
+    .listing-container .nav-pills .status-badge.nav-link {
+        color: var(--text-dark, #1a2c40);
+        border: 1px solid var(--border, #c8dcef);
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    .listing-container .nav-pills .status-badge.nav-link:hover {
+        background: var(--sidebar-hover, #c8dcef);
+        color: var(--navy, #1e3d60);
+    }
+
+    .listing-container .nav-pills .status-badge.nav-link.active {
+        background: var(--navy, #1e3d60) !important;
+        color: #fff !important;
+        border-color: var(--navy, #1e3d60);
+    }
+
     .listing-container .sort_col a {
-        color: #0d6efd !important;
+        color: var(--sidebar-active, #3a6fa8) !important;
         text-decoration: none;
+        font-weight: 600;
     }
-    
+
     .listing-container .sort_col a:hover {
+        color: var(--navy, #1e3d60) !important;
         text-decoration: underline;
     }
-    
+
     .listing-container .countAction {
-        background: #1f1655;
+        background: var(--navy, #1e3d60);
         padding: 2px 8px;
-        border-radius: 50%;
+        border-radius: 999px;
         color: #fff;
         font-size: 0.8em;
         margin-left: 5px;
     }
-    
+
     .listing-container .complete_task {
         cursor: pointer;
     }
-    
+
     .listing-container .btn-sm {
         padding: 5px 10px;
         font-size: 0.85em;
     }
-    
-    .listing-container .modal-content {
-        border-radius: 8px;
+
+    .listing-container .btn-link {
+        color: var(--sidebar-active, #3a6fa8) !important;
     }
-    
-    .listing-container .modal-header {
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
+
+    .listing-container .btn-link:hover {
+        color: var(--navy, #1e3d60) !important;
     }
-    
-    .listing-container .modal-body {
+
+    .listing-container .btn-info {
+        background: var(--sidebar-active, #3a6fa8) !important;
+        border-color: var(--sidebar-active, #3a6fa8) !important;
+        color: #fff !important;
+    }
+
+    .listing-container .btn-info:hover {
+        filter: brightness(1.06);
+        color: #fff !important;
+    }
+
+    /* Assign / task modals render outside .listing-container */
+    #openassigneview .modal-content,
+    .custom_modal .modal-content {
+        border-radius: 10px;
+        border: 1px solid var(--border, #c8dcef);
+        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.08);
+    }
+
+    #openassigneview .modal-header,
+    .custom_modal .modal-header {
+        background: var(--page-bg, #f0f6ff) !important;
+        border-bottom: 1px solid var(--border, #c8dcef) !important;
+        color: var(--navy, #1e3d60) !important;
+    }
+
+    #openassigneview .modal-body,
+    .custom_modal .modal-body {
         padding: 20px;
     }
-    
+
+    #completionNotesModal .modal-content {
+        border-radius: 10px;
+        border: 1px solid var(--border, #c8dcef);
+        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.08);
+    }
+
     .listing-container .select2-container {
         z-index: 100000;
         width: 100% !important;
     }
 
-    /* Page-specific margin fix for action page */
-    .listing-container {
-        margin-left: 80px !important; /* Add margin to prevent overlap with left sidebar */
+    /* Completion modal (outside .listing-container in DOM) */
+    #completionNotesModal .modal-header {
+        background: var(--navy, #1e3d60) !important;
+        color: #fff !important;
+        border-bottom: 1px solid var(--border, #c8dcef);
     }
-    
-    /* Responsive adjustments */
+
+    #completionNotesModal .modal-header .close {
+        color: #fff !important;
+        opacity: 0.9;
+    }
+
+    #completionNotesModal .modal-footer {
+        background: var(--page-bg, #f0f6ff) !important;
+        border-top: 1px solid var(--border, #c8dcef);
+    }
+
+    #completionNotesModal #completionNotes {
+        resize: vertical;
+        border: 1px solid var(--border, #c8dcef) !important;
+        border-radius: 8px;
+        padding: 12px;
+    }
+
     @media (max-width: 768px) {
         .listing-container .table th,
         .listing-container .table td {
             font-size: 0.85em;
             padding: 8px;
         }
-        
+
         .listing-container .btn-sm {
             padding: 4px 8px;
         }
@@ -280,11 +352,11 @@
 <div class="modal fade" id="completionNotesModal" tabindex="-1" role="dialog" aria-labelledby="completionNotesModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
-            <div class="modal-header" style="background-color: #3498db; color: white;">
+            <div class="modal-header">
                 <h5 class="modal-title" id="completionNotesModalLabel">
                     <i class="fa fa-check completion-task-modal-header-icon" aria-hidden="true"></i> Complete Task
                 </h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -298,14 +370,13 @@
                         id="completionNotes" 
                         rows="5" 
                         placeholder="Enter any notes or feedback about completing this task..."
-                        style="resize: vertical; border: 2px solid #e9ecef; border-radius: 8px; padding: 12px;"
                     ></textarea>
                     <small class="form-text text-muted">
                         <i class="fa fa-info-circle"></i> These notes will be saved in the activity log.
                     </small>
                 </div>
             </div>
-            <div class="modal-footer" style="background-color: #f8f9fa;">
+            <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="fa fa-times"></i> Cancel
                 </button>

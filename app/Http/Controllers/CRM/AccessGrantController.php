@@ -120,8 +120,12 @@ class AccessGrantController extends Controller
             abort(403, 'Not authorized.');
         }
 
+        $grantPlaceholder = 999999999;
+
         return view('crm.access.queue', [
             'dataUrl' => route('crm.access.queue.data'),
+            'approveUrlTpl' => str_replace((string) $grantPlaceholder, '__ID__', route('crm.access.approve', ['grant' => $grantPlaceholder])),
+            'rejectUrlTpl' => str_replace((string) $grantPlaceholder, '__ID__', route('crm.access.reject', ['grant' => $grantPlaceholder])),
         ]);
     }
 

@@ -2,83 +2,159 @@
 @section('title', 'Access grants dashboard')
 @section('styles')
 <style>
-    /* Stronger contrast on this page only (tables, filters, badges, headers). */
+    /* Access grants dashboard — docs/theme.md (CSS variables from crm-theme.css :root) */
+    #crm-access-pending-card {
+        border: 1px solid var(--border, #c8dcef);
+        border-left: 4px solid var(--accent-gold, #c8992a);
+        border-radius: 10px;
+        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+    }
+
+    #crm-access-grants-card {
+        border: 1px solid var(--border, #c8dcef);
+        border-radius: 10px;
+        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+    }
+
     #crm-access-pending-card > .card-header,
     #crm-access-grants-card > .card-header {
-        background: linear-gradient(135deg, #1a5f8f 0%, #134567 100%) !important;
-        color: #fff !important;
+        background: var(--card-bg, #ffffff) !important;
+        background-image: none !important;
+        color: var(--navy, #1e3d60) !important;
+        border-bottom: 1px solid var(--border, #c8dcef) !important;
     }
 
     #crm-access-pending-card .card-header h5,
     #crm-access-grants-card .card-header h4 {
-        color: #fff !important;
+        color: var(--navy, #1e3d60) !important;
+        font-weight: 700 !important;
+    }
+
+    #crm-access-pending-card .card-header .btn-light {
+        background: var(--page-bg, #f0f6ff) !important;
+        border: 1px solid var(--border, #c8dcef) !important;
+        color: var(--navy, #1e3d60) !important;
+    }
+
+    #crm-access-pending-card .card-header .btn-light:hover,
+    #crm-access-pending-card .card-header .btn-light:focus {
+        background: var(--sidebar-hover, #c8dcef) !important;
+        color: var(--navy, #1e3d60) !important;
+    }
+
+    #crm-pending-badge {
+        background: rgba(200, 153, 42, 0.15) !important;
+        color: #7a5800 !important;
+        border: 1px solid rgba(200, 153, 42, 0.35) !important;
+        font-weight: 700;
     }
 
     #crm-access-grants-card .card-header .btn-secondary {
-        background-color: #0d3d5c !important;
-        border: 1px solid rgba(255, 255, 255, 0.95) !important;
+        background: var(--navy, #1e3d60) !important;
+        border: 1px solid var(--navy, #1e3d60) !important;
         color: #fff !important;
     }
 
     #crm-access-grants-card .card-header .btn-secondary:hover,
     #crm-access-grants-card .card-header .btn-secondary:focus {
-        background-color: #0a3048 !important;
-        border-color: #fff !important;
+        background: var(--sidebar-active, #3a6fa8) !important;
+        border-color: var(--sidebar-active, #3a6fa8) !important;
         color: #fff !important;
     }
 
     #crm-pending-table thead th,
     #crm-access-dash-table thead th {
-        background-color: #e9ecef !important;
-        color: #212529 !important;
-        border-color: #ced4da !important;
+        background-color: var(--page-bg, #f0f6ff) !important;
+        color: var(--navy, #1e3d60) !important;
+        border-color: var(--border, #c8dcef) !important;
         font-weight: 600 !important;
         font-size: 0.8125rem !important;
         letter-spacing: 0.02em;
     }
 
+    #crm-access-dash-table tbody tr:hover td,
+    #crm-pending-table tbody tr:hover td {
+        background-color: #ebf3ff !important;
+    }
+
     #crm-access-dash-filters label.small {
-        color: #343a40 !important;
+        color: var(--text-muted, #5e7a90) !important;
         font-weight: 600 !important;
     }
 
     #crm-access-dash-filters .form-control::placeholder {
-        color: #5c636a !important;
+        color: var(--text-muted, #5e7a90) !important;
         opacity: 1;
     }
 
     #crm-access-dash-summary .text-muted.small {
-        color: #495057 !important;
+        color: var(--text-muted, #5e7a90) !important;
     }
 
     #crm-access-dash-summary [data-field] {
-        color: #212529 !important;
+        color: var(--text-dark, #1a2c40) !important;
         font-weight: 600;
     }
 
     #crm-access-dash-table .badge-success,
     #crm-pending-table .badge-success {
-        background-color: #146c43 !important;
-        color: #fff !important;
+        background-color: rgba(30, 122, 82, 0.12) !important;
+        color: var(--success, #1e7a52) !important;
+        border: 1px solid rgba(30, 122, 82, 0.35);
     }
 
     #crm-access-dash-table .badge-warning {
-        background-color: #b45309 !important;
-        color: #fff !important;
+        background-color: rgba(200, 153, 42, 0.15) !important;
+        color: #7a5800 !important;
+        border: 1px solid rgba(200, 153, 42, 0.35);
+    }
+
+    #crm-access-dash-table .badge-secondary {
+        background-color: rgba(94, 122, 144, 0.12) !important;
+        color: var(--text-muted, #5e7a90) !important;
+        border: 1px solid var(--border, #c8dcef);
+    }
+
+    #crm-access-dash-table .badge-dark {
+        background-color: rgba(30, 61, 96, 0.1) !important;
+        color: var(--navy, #1e3d60) !important;
+        border: 1px solid rgba(30, 61, 96, 0.2);
+    }
+
+    #crm-access-dash-table .badge-danger {
+        background-color: rgba(168, 48, 32, 0.1) !important;
+        color: var(--danger, #a83020) !important;
+        border: 1px solid rgba(168, 48, 32, 0.25);
     }
 
     #crm-access-pending-card tbody .text-muted,
     #crm-access-dash-table tbody .text-muted {
-        color: #495057 !important;
+        color: var(--text-muted, #5e7a90) !important;
     }
 
     #crm-access-pending-card a.small.text-muted {
-        color: #0b5ed7 !important;
+        color: var(--sidebar-active, #3a6fa8) !important;
         text-decoration: underline;
     }
 
     #crm-access-pending-card a.small.text-muted:hover {
-        color: #084298 !important;
+        color: var(--navy, #1e3d60) !important;
+    }
+
+    #crm-pending-table.table-bordered,
+    #crm-access-dash-table.table-bordered {
+        border-color: var(--border, #c8dcef);
+    }
+
+    #crm-pending-table.table-bordered th,
+    #crm-pending-table.table-bordered td,
+    #crm-access-dash-table.table-bordered th,
+    #crm-access-dash-table.table-bordered td {
+        border-color: var(--border, #c8dcef) !important;
+    }
+
+    #crm-access-pending-card .text-success {
+        color: var(--success, #1e7a52) !important;
     }
 </style>
 @endsection
@@ -88,12 +164,12 @@
         <div class="section-body">
 
             {{-- ── Pending approvals section (always visible at the top for approvers) ──────── --}}
-            <div class="card border-warning mb-4" id="crm-access-pending-card">
-                <div class="card-header d-flex justify-content-between align-items-center bg-warning text-white py-2">
+            <div class="card mb-4" id="crm-access-pending-card">
+                <div class="card-header d-flex justify-content-between align-items-center py-2">
                     <h5 class="mb-0">
-                        <i class="fas fa-clock mr-2"></i>
+                        <i class="fas fa-clock mr-2" aria-hidden="true"></i>
                         Pending approvals
-                        <span class="badge badge-light text-warning ml-2" id="crm-pending-badge">—</span>
+                        <span class="badge ml-2" id="crm-pending-badge">—</span>
                     </h5>
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-sm btn-light" id="crm-pending-refresh" title="Refresh">

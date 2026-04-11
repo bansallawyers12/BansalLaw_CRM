@@ -45,9 +45,9 @@
             z-index: 1000 !important; 
             height: 70px !important; 
             padding: 10px 16px !important; 
-            background: #ffffff !important; 
-            border-bottom: 1px solid #dfe3e6 !important; 
-            box-shadow: 0 2px 8px rgba(0,0,0,.06) !important;
+            background: #ddeaf8 !important; /* theme Powder Blue; matches crm-theme.css */
+            border-bottom: 1px solid #c8dcef !important; 
+            box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;
             transition: transform .2s ease-in-out !important;
         }
         /* Hide on scroll (keep a small top gap visible) */

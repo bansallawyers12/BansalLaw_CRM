@@ -42,8 +42,8 @@
 (function () {
     var dataUrl = @json($dataUrl);
     var reasonLabels = @json($crmAccessReasonLabels);
-    var approveTpl = @json(str_replace('999999999', '__ID__', route('crm.access.approve', ['grant' => 999999999])));
-    var rejectTpl = @json(str_replace('999999999', '__ID__', route('crm.access.reject', ['grant' => 999999999])));
+    var approveTpl = @json($approveUrlTpl);
+    var rejectTpl = @json($rejectUrlTpl);
     var token = document.querySelector('meta[name="csrf-token"]');
     token = token ? token.getAttribute('content') : '';
     var fmtWhen = typeof window.formatGrantWhen === 'function'

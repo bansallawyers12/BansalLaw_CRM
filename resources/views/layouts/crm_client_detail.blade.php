@@ -1194,29 +1194,32 @@
             color: #1a202c !important;
         }
         
-        /* Card header improvements */
+        /* Card header — docs/theme.md (Powder Blue & Soft Gold; replaces legacy blue gradient) */
         .card-header {
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
-            color: #ffffff !important;
-            border-bottom: none !important;
+            background: #ffffff !important;
+            background-image: none !important;
+            color: #1e3d60 !important; /* --navy */
+            border-bottom: 1px solid #c8dcef !important; /* --border */
             padding: 15px 20px !important;
         }
         
         .card-header h4 {
-            color: #ffffff !important;
-            font-weight: 600 !important;
+            color: #1e3d60 !important;
+            font-weight: 700 !important;
             margin: 0 !important;
         }
         
         .card-header-action .btn-primary {
-            background-color: rgba(255, 255, 255, 0.2) !important;
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            background-color: #1e3d60 !important;
+            background-image: none !important;
+            border: 1px solid #1e3d60 !important;
             color: #ffffff !important;
         }
         
         .card-header-action .btn-primary:hover {
-            background-color: rgba(255, 255, 255, 0.3) !important;
-            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+            background-color: #3a6fa8 !important;
+            border-color: #3a6fa8 !important;
+            color: #ffffff !important;
         }
         
         /* Dropdown menu improvements */
@@ -1476,9 +1479,9 @@
             z-index: 1000 !important; 
             height: 70px !important; 
             padding: 10px 16px !important; 
-            background: #ffffff !important; 
-            border-bottom: 1px solid #dfe3e6 !important; 
-            box-shadow: 0 2px 8px rgba(0,0,0,.06) !important;
+            background: #ddeaf8 !important; /* theme Powder Blue; matches crm-theme.css */
+            border-bottom: 1px solid #c8dcef !important; 
+            box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;
             transition: transform .2s ease-in-out !important;
         }
         /* Remove blank space: topbar is sticky so navbar-bg spacer is not needed */
@@ -1531,8 +1534,11 @@
         .topbar-center { min-width: 0 !important; width: 100% !important; }
         .topbar-center .topbar-search { 
             display: block !important;
-            padding: 6px 10px !important; border: 1px solid #e9ecef !important; border-radius: 8px !important; 
-            background: #f8f9fb !important; 
+            padding: 0 !important;
+            border: none !important;
+            border-radius: 0 !important; 
+            background: transparent !important; 
+            box-shadow: none !important;
         }
         .topbar-center .topbar-search__inner { position: relative !important; width: 100% !important; max-width: 320px !important; }
         .topbar-center .topbar-search__icon {
