@@ -240,7 +240,7 @@
 @section('content')
 
 <div class="crm-container esignature-analytics-layout">
-	<div class="main-content">
+	<div class="main-content adminconsole-features">
 		<section class="section">
 		<div class="section-body">
 		<div class="server-error">

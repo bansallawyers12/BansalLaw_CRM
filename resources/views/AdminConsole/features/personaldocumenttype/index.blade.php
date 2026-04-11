@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features">
 	<section class="section">
 		<div class="section-body">
 			<div class="server-error">
@@ -19,9 +19,9 @@
 				<div class="col-9 col-md-9 col-lg-9">
 					<div class="card">
 						<div class="card-header">
-							<h4>Personal Document Category</h4>
+							<h4>Personal document category</h4>
 							<div class="card-header-action">
-								<a href="{{route('adminconsole.features.personaldocumenttype.create')}}" class="btn btn-primary">Add New</a>
+								<a href="{{route('adminconsole.features.personaldocumenttype.create')}}" class="btn btn-primary"><i class="fa fa-plus"></i> Add</a>
 							</div>
 						</div>
 						<div class="card-body">
@@ -29,9 +29,9 @@
 								<table class="table text_wrap">
 								<thead>
 									<tr>
-                                        <th>Title</th>
-                                        <th>Client Name</th>
-                                        <th></th>
+                                       										<th>Title</th>
+										<th>Client name</th>
+										<th class="text-nowrap">Action</th>
 									</tr>
 								</thead>
 								@if(@$totalData !== 0)
@@ -52,12 +52,16 @@
                                                 echo 'Common For All Clients';
                                             }?>
                                         </td>
-										<td>
-											<div class="dropdown d-inline">
-												<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
-												<div class="dropdown-menu">
-													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.personaldocumenttype.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
-												</div>
+										<td class="text-nowrap">
+											<div class="dropdown d-inline-block">
+												<button class="btn btn-primary dropdown-toggle" type="button" id="personalDocTypeAction_{{ $list->id }}"
+													data-bs-toggle="dropdown"
+													data-bs-popper-config='{"strategy":"fixed"}'
+													aria-haspopup="true"
+													aria-expanded="false">Action</button>
+												<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="personalDocTypeAction_{{ $list->id }}">
+													<li><a class="dropdown-item has-icon" href="{{route('adminconsole.features.personaldocumenttype.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a></li>
+												</ul>
 											</div>
 										</td>
 									</tr>
@@ -66,8 +70,8 @@
 								@else
 								<tbody>
 									<tr>
-										<td style="text-align:center;" colspan="7">
-											No Record found
+										<td class="text-center" colspan="3">
+											No records found
 										</td>
 									</tr>
 								</tbody>

@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features adminconsole-offices-view">
 	<section class="section">
 		<div class="section-body">
 			<div class="server-error">
@@ -21,7 +21,7 @@
 						<div class="card-header">
 							<h4>Offices</h4>
 							<div class="card-header-action">
-								<a href="{{route('adminconsole.system.offices.index')}}" class="btn btn-primary">Office List</a>
+								<a href="{{route('adminconsole.system.offices.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Office List</a>
 							</div>
 						</div>
 						<div class="card-body">
@@ -30,13 +30,13 @@
 									<div class="row">
 										<div class="col-md-4"></div>
 										<div class="col-md-2">
-											<h5>Overview</h5>
+											<h5 class="office-view-overview-heading">Overview</h5>
 										</div>
 										<div class="col-md-3">
-											<h5>TOTAL USERS : {{\App\Models\Staff::where('role', 1)->where('office_id',$fetchedData->id)->count()}}</h5>
+											<h5 class="office-view-kpi"><span class="office-view-kpi-label">Total users</span> <span class="office-view-kpi-value">{{\App\Models\Staff::where('role', 1)->where('office_id',$fetchedData->id)->count()}}</span></h5>
 										</div>
 										<div class="col-md-3">
-											<h5>TOTAL CLIENTS : {{\App\Models\Admin::whereIn('type', ['client', 'lead'])->whereHas('clientMatters', fn($q) => $q->where('office_id', $fetchedData->id))->count()}}</h5>
+											<h5 class="office-view-kpi"><span class="office-view-kpi-label">Total clients</span> <span class="office-view-kpi-value">{{\App\Models\Admin::whereIn('type', ['client', 'lead'])->whereHas('clientMatters', fn($q) => $q->where('office_id', $fetchedData->id))->count()}}</span></h5>
 										</div>
 									</div>
 									
@@ -49,18 +49,18 @@
 						<div class="card-header">
 							<h4>Office Information</h4>
 							<div class="card-header-action">
-								<a href="{{route('adminconsole.system.offices.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" class="btn btn-primary">Edit</a>
+								<a href="{{route('adminconsole.system.offices.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" class="btn btn-primary"><i class="far fa-edit"></i> Edit office</a>
 							</div>
 						</div>
 						<div class="card-body">
 							<div class="row">
 								<div class="col-md-6">
-									<h4>{{$fetchedData->office_name}} <span class="btn btn-warning">Active</span></h4>
+									<h4 class="office-view-title mb-0">{{ $fetchedData->office_name }} <span class="badge badge-success align-middle">Active</span></h4>
 								</div>
 							</div>
 							<div class="row">
 								<div class="col-md-6">
-									<table class="table">
+									<table class="table office-view-detail-table">
 										<tr>
 											<td><b>Email:</b></td>
 											<td>{{$fetchedData->email}}</td>
@@ -80,7 +80,7 @@
 									</table>
 								</div>
 								<div class="col-md-6">
-									<table class="table">
+									<table class="table office-view-detail-table">
 										<tr>
 											<td><b>Street:</b></td>
 											<td>{{$fetchedData->address}}</td>
@@ -109,7 +109,7 @@
 					<div class="card">
 						
 						<div class="card-body">
-							<ul class="nav nav-pills" id="client_tabs" role="tablist">
+							<ul class="nav nav-pills office-view-tabs" id="client_tabs" role="tablist">
 								<li class="nav-item">
 									<a class="nav-link active" id="clients-tab" href="{{route('adminconsole.system.offices.view', $fetchedData->id)}}" role="tab" >User List</a>
 								</li>
@@ -120,8 +120,10 @@
 							</ul> 
 							<div class="tab-content" id="clientContent" style="padding-top:15px;">
 								<div class="tab-pane fade show active" id="clients" role="tabpanel" aria-labelledby="clients-tab">
-															
-									<div class="table-responsive"> 
+									<div class="office-view-table-toolbar">
+										<a href="{{ route('adminconsole.staff.create') }}" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i> Add staff</a>
+									</div>
+									<div class="table-responsive common_table">
 										<table class="table text_wrap table-2">
 											<thead>
 												<tr>
@@ -143,7 +145,7 @@
 													
 													<td>{{ @$alist->usertype->name == "" ? config('constants.empty') : Str::limit(@$alist->usertype->name, '50', '...') }}</td>
 													
-													<td>@if($alist->status == 1) Active @else Inactive @endif</td> 
+													<td>@if($alist->status == 1)<span class="badge badge-success">Active</span>@else<span class="badge badge-secondary">Inactive</span>@endif</td> 
 													
 												</tr>
 												<?php

@@ -736,7 +736,6 @@ class LeadController extends Controller
                     'type' => 'lead', // Lead type
                     'is_archived' => 0, // Not archived
                     'is_deleted' => null, // Not deleted
-                    'verified' => 0, // Not verified (required NOT NULL column)
                     
                     // Client Portal fields (required NOT NULL columns, default 0 for new leads)
                     'cp_status' => 0, // Client portal status (NOT NULL, default 0 - inactive)

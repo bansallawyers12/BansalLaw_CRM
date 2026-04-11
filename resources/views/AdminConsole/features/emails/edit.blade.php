@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features adminconsole-emails-form">
 	<section class="section">
 		<div class="section-body">
 			<form action="{{route('adminconsole.features.emails.update', $fetchedData->id)}}" name="add-emails" autocomplete="off" enctype="multipart/form-data" method="POST">

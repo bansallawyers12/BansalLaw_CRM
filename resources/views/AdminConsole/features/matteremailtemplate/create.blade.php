@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features">
 	<section class="section">
 		<div class="section-body">
 			<form action="{{route('adminconsole.features.matteremailtemplate.store')}}" name="add-matteremailtemplate" autocomplete="off" enctype="multipart/form-data" method="POST">

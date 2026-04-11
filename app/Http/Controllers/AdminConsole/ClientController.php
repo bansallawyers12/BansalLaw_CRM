@@ -94,7 +94,6 @@ class ClientController extends Controller
 			$obj->phone	=	@$requestData['phone'];
 			$obj->country	=	@$requestData['country'];
 			$obj->city	=	@$requestData['city'];
-			$obj->verified	=	1;
 			$obj->type	=	'client';
 			
 			// Set required NOT NULL fields with default values (PostgreSQL doesn't apply DB defaults on explicit INSERT)

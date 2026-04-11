@@ -8,6 +8,9 @@ class CheckinHistory extends Model
 {
 	use Sortable;
 
+	/** Legacy singular table name (not Laravel's default checkin_histories). */
+	protected $table = 'checkin_history';
+
 	protected $fillable = [
         'id', 'subject', 'created_by', 'checkin_id', 'description', 'created_at', 'updated_at'
     ];

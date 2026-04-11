@@ -104,6 +104,1876 @@ body.sidebar-mini .card.card-primary .card-header {
   border-bottom: none !important;
 }
 
+/*
+ * custom.css sets .text-muted { color: #fff } — unreadable on theme cards.
+ * Restore theme.md --text-muted anywhere content sits on --page-bg / --card-bg.
+ */
+body.sidebar-mini .main-content .text-muted,
+body.sidebar-mini .card .text-muted,
+body.sidebar-mini .modal .text-muted {
+  color: var(--text-muted) !important;
+}
+
+/* Headings using .text-primary (e.g. admin staff solicitor block) → theme navy */
+body.sidebar-mini .main-content .text-primary,
+body.sidebar-mini .card .text-primary {
+  color: var(--navy) !important;
+}
+
+/*
+ * Admin Console — all Features pages (/adminconsole/features/*); docs/theme.md
+ * Views add .adminconsole-features on .main-content. List tables live in .table-responsive
+ * (excludes workflow_stges inline tables). Beats custom.css ACTION column on td:last-child.
+ */
+body.sidebar-mini .adminconsole-features .table-responsive {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  border-radius: 10px !important;
+}
+
+/* Features settings column — active/hover per theme.md (not custom.css purple gradient) */
+body.sidebar-mini .adminconsole-features .custom_nav_setting ul li:not(.active) a {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-features .custom_nav_setting ul li:not(.active) a:hover {
+  background: var(--sidebar-hover) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+  box-shadow: none !important;
+}
+
+body.sidebar-mini .adminconsole-features .custom_nav_setting ul li.active a {
+  background: var(--sidebar-active) !important;
+  background-image: none !important;
+  color: #fff !important;
+  box-shadow: none !important;
+  border-left: 3px solid var(--accent-gold) !important;
+}
+
+body.sidebar-mini .adminconsole-features .custom_nav_setting ul li.active a:hover {
+  background: var(--sidebar-active) !important;
+  background-image: none !important;
+  color: #fff !important;
+  filter: brightness(1.04) !important;
+}
+
+body.sidebar-mini .adminconsole-features .table-responsive > table {
+  border-color: var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .adminconsole-features .table-responsive > table thead th {
+  background: var(--page-bg) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--border) !important;
+  vertical-align: middle !important;
+}
+
+body.sidebar-mini .adminconsole-features .table-responsive > table tbody td {
+  color: var(--text-dark) !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--border) !important;
+  vertical-align: middle !important;
+}
+
+/* Action-column dropdowns: Popper uses position:fixed + transform; avoid clipping and don’t override with page-local absolute hacks */
+body.sidebar-mini .adminconsole-features .table-responsive > table tbody td:last-child {
+  overflow: visible !important;
+}
+
+body.sidebar-mini .adminconsole-features .table-responsive > table tbody tr:nth-child(odd) {
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-features .table-responsive > table tbody tr:nth-child(even) {
+  background: var(--page-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-features .table-responsive > table tbody tr:hover {
+  background: #ebf3ff !important;
+}
+
+body.sidebar-mini .adminconsole-features .table-responsive > table tbody tr td[colspan] {
+  background: var(--page-bg) !important;
+  color: var(--text-muted) !important;
+  font-style: italic !important;
+}
+
+body.sidebar-mini .adminconsole-features .table-responsive > table tbody td a:not(.btn) {
+  color: var(--sidebar-active) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .adminconsole-features .table-responsive > table tbody td a:not(.btn):hover {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-features .card-footer {
+  background: var(--page-bg) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-features .pagination .page-link {
+  color: var(--navy) !important;
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-features .pagination .page-item.active .page-link {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .pagination .page-link:hover {
+  background-color: var(--sidebar-bg) !important;
+  color: var(--navy) !important;
+}
+
+/* custom.css forces td:last-child links/buttons to legacy blue + broken hover contrast */
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child a:not(.btn) {
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--sidebar-active) !important;
+  min-height: unset !important;
+  display: inline !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child a:not(.btn):hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child a:not(.btn):focus {
+  background-color: transparent !important;
+  color: var(--navy) !important;
+  text-decoration: underline !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td a:not(.btn) {
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--sidebar-active) !important;
+  min-height: unset !important;
+  display: inline !important;
+  padding: 0 !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td a:not(.btn):hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td a:not(.btn):focus {
+  background-color: transparent !important;
+  color: var(--navy) !important;
+  text-decoration: underline !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn {
+  margin-left: 0 !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-primary,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-primary {
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-primary:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-primary:focus,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-primary:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-primary:focus {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-secondary,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-secondary {
+  background-color: var(--text-muted) !important;
+  border-color: var(--text-muted) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-secondary:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-secondary:focus,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-secondary:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-secondary:focus {
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-success,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-success {
+  background-color: var(--success) !important;
+  border-color: var(--success) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-success:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-success:focus,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-success:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-success:focus {
+  background-color: #186846 !important;
+  border-color: #186846 !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-danger,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-danger {
+  background-color: var(--danger) !important;
+  border-color: var(--danger) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-danger:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-danger:focus,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-danger:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-danger:focus {
+  background-color: #8e2818 !important;
+  border-color: #8e2818 !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-info,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-info {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-info:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-info:focus,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-info:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-info:focus {
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-warning,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-warning {
+  background-color: var(--accent-gold) !important;
+  border-color: var(--accent-gold) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-warning:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-warning:focus,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-warning:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-warning:focus {
+  background-color: #a88424 !important;
+  border-color: #a88424 !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-light,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-light {
+  background-color: var(--card-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-light:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-light:focus,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-light:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-light:focus {
+  background-color: var(--sidebar-hover) !important;
+  border-color: var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-dark,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-dark {
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-dark:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-dark:focus,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-dark:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-dark:focus {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-link,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-link {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-link:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-link:focus,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-link:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-link:focus {
+  background-color: transparent !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-outline-primary,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-outline-primary {
+  color: var(--navy) !important;
+  border: 1px solid var(--border) !important;
+  background: transparent !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-outline-primary:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-outline-primary:focus,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-outline-primary:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-outline-primary:focus {
+  background: var(--sidebar-hover) !important;
+  border-color: var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-outline-secondary,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-outline-secondary {
+  color: var(--navy) !important;
+  border: 1px solid var(--border) !important;
+  background: transparent !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-outline-secondary:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-outline-secondary:focus,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-outline-secondary:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-outline-secondary:focus {
+  background: var(--sidebar-hover) !important;
+  border-color: var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-outline-success,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-outline-success {
+  color: var(--success) !important;
+  border: 1px solid var(--success) !important;
+  background: transparent !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-outline-success:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-outline-success:focus,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-outline-success:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-outline-success:focus {
+  background-color: var(--success) !important;
+  border-color: var(--success) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-outline-danger,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-outline-danger {
+  color: var(--danger) !important;
+  border: 1px solid var(--danger) !important;
+  background: transparent !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-outline-danger:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-outline-danger:focus,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-outline-danger:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-outline-danger:focus {
+  background-color: var(--danger) !important;
+  border-color: var(--danger) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .dropdown-menu,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .dropdown-menu {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(30, 61, 96, 0.12) !important;
+  min-width: 200px !important;
+  z-index: 1060 !important;
+  padding: 8px 0 !important;
+}
+
+/*
+ * custom.css forces td:last-child a { display: inline-flex } — dropdown items sit on one row.
+ * Restore full-width vertical menu rows + transparent default (theme.md).
+ */
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child a.dropdown-item,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td a.dropdown-item {
+  display: flex !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  box-sizing: border-box !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--text-dark) !important;
+  border-radius: 0 !important;
+  min-height: 0 !important;
+  margin-left: 0 !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .dropdown-item,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .dropdown-item {
+  color: var(--text-dark) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .dropdown-item:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .dropdown-item:focus,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .dropdown-item:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .dropdown-item:focus {
+  background-color: var(--sidebar-bg) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .dropdown-item.has-icon i,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .dropdown-item.has-icon i {
+  color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .dropdown-item:hover.has-icon i,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .dropdown-item:focus.has-icon i,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .dropdown-item:hover.has-icon i,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .dropdown-item:focus.has-icon i {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-primary.dropdown-toggle {
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle.show,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-primary.dropdown-toggle:hover,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-primary.dropdown-toggle.show {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle:focus,
+body.sidebar-mini .adminconsole-features .card .card-body table.table tbody tr td.last_td .btn.btn-primary.dropdown-toggle:focus {
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.35) !important;
+}
+
+body.sidebar-mini .adminconsole-features .form-control {
+  border-color: var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .adminconsole-features .form-control:focus {
+  border-color: var(--sidebar-active) !important;
+  box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
+}
+
+/* E-Signature analytics — replace legacy purple gradients with theme.md tokens */
+body.sidebar-mini .esignature-analytics-layout .esignature-analytics-card .card-header {
+  background: var(--navy) !important;
+  color: #fff !important;
+  border-bottom: none !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .esignature-analytics-card .card-header h4 {
+  color: #fff !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .esignature-analytics-card .card-header .text-white-50 {
+  color: rgba(255, 255, 255, 0.78) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .esignature-analytics-card .card-header .btn {
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .esignature-analytics-card .card-header .btn:hover,
+body.sidebar-mini .esignature-analytics-layout .esignature-analytics-card .card-header .btn:focus {
+  background: rgba(255, 255, 255, 0.26) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .date-filter button {
+  background: var(--navy) !important;
+  background-image: none !important;
+  color: #fff !important;
+  border: 1px solid var(--navy) !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .date-filter button:hover {
+  background: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  opacity: 1 !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .date-filter input {
+  border-color: var(--border) !important;
+  border-radius: 8px !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .kpi-card {
+  background: var(--card-bg) !important;
+  border-left: 4px solid var(--sidebar-active) !important;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;
+  border-radius: 10px !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .kpi-card h3 {
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .kpi-card .value {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .kpi-card .trend {
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .chart-container {
+  background: var(--page-bg) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .chart-container h3 {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;
+  border-radius: 10px !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table h3 {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table .table-responsive {
+  border-color: var(--border) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .esig-progress-fill {
+  background: var(--sidebar-active) !important;
+  background-image: none !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .overdue-badge {
+  background: rgba(168, 48, 32, 0.12) !important;
+  color: var(--danger) !important;
+}
+
+/* Matter index — dropdown theming (layout rules stay in Blade); docs/theme.md */
+body.sidebar-mini .matter-index-layout .matter-index-page .dropdown-menu {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(30, 61, 96, 0.12) !important;
+}
+
+body.sidebar-mini .matter-index-layout .matter-index-page .dropdown-item:hover,
+body.sidebar-mini .matter-index-layout .matter-index-page .dropdown-item:focus {
+  background-color: var(--sidebar-bg) !important;
+  color: var(--navy) !important;
+}
+
+/* Read-only field values on detail pages */
+body.sidebar-mini .form-control-plaintext {
+  color: var(--text-dark) !important;
+}
+
+/* Admin Console — staff view & edit (theme.md labels); excludes inline checkbox labels & Bootstrap custom-control */
+body.sidebar-mini .adminconsole-staff-page .card .form-group label[for],
+body.sidebar-mini .adminconsole-staff-page .card .form-group label:has(> strong:only-child),
+body.sidebar-mini .adminconsole-staff-page .card .form-group > label:not([for]):not(.custom-control-label):not(.d-flex):not(:has(input)) {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+body.sidebar-mini .adminconsole-staff-page .card .form-group label[for] strong,
+body.sidebar-mini .adminconsole-staff-page .card .form-group label:has(> strong:only-child) strong {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .adminconsole-staff-page .card .form-group b {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini .adminconsole-staff-page .card hr {
+  border-top-color: var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-staff-page .border {
+  border-color: var(--border) !important;
+}
+
+/* Admin Console — staff listing (active / inactive / invited); docs/theme.md */
+body.sidebar-mini .adminconsole-staff-list .staff-list-tabs-toolbar {
+  gap: 10px;
+}
+
+body.sidebar-mini .adminconsole-staff-list .nav-pills {
+  row-gap: 10px;
+}
+
+body.sidebar-mini .adminconsole-staff-list .nav-pills .nav-item {
+  margin: 0;
+}
+
+body.sidebar-mini .adminconsole-staff-list .nav-pills .nav-link {
+  color: var(--navy) !important;
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  padding: 10px 18px !important;
+  text-decoration: none !important;
+  box-shadow: none !important;
+}
+
+body.sidebar-mini .adminconsole-staff-list .nav-pills .nav-link:hover {
+  background-color: var(--sidebar-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-staff-list .nav-pills .nav-link.active {
+  background-color: var(--sidebar-active) !important;
+  background-image: none !important;
+  color: #fff !important;
+  border-color: var(--sidebar-active) !important;
+  box-shadow: inset 0 -3px 0 0 var(--accent-gold) !important;
+}
+
+body.sidebar-mini .adminconsole-staff-list .staff-list-toolbar .form-control {
+  min-width: 160px;
+  max-width: 280px;
+  border-radius: 8px 0 0 8px !important;
+}
+
+body.sidebar-mini .adminconsole-staff-list .staff-list-toolbar .btn {
+  border-radius: 0 8px 8px 0 !important;
+}
+
+body.sidebar-mini .adminconsole-staff-list .card-footer {
+  background: var(--page-bg) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-staff-list .table tbody a:not(.btn) {
+  color: var(--sidebar-active) !important;
+  font-weight: 600;
+}
+
+body.sidebar-mini .adminconsole-staff-list .table tbody a:not(.btn):hover {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-staff-list .pagination .page-link {
+  color: var(--navy) !important;
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-staff-list .pagination .page-item.active .page-link {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-staff-list .pagination .page-link:hover {
+  background-color: var(--sidebar-bg) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-staff-list .custom-switch-indicator {
+  background: rgba(94, 122, 144, 0.35) !important;
+  border: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-staff-list .custom-switch-input:checked ~ .custom-switch-indicator {
+  background: var(--success) !important;
+  border-color: var(--success) !important;
+}
+
+body.sidebar-mini .adminconsole-staff-list .custom-switch-input:focus ~ .custom-switch-indicator {
+  box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
+}
+
+/* Admin Console — Email Labels (features/email-labels); docs/theme.md */
+body.sidebar-mini .adminconsole-email-labels .table-responsive {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  border-radius: 10px !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .table {
+  border-color: var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .table thead th {
+  background: var(--page-bg) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--border) !important;
+  vertical-align: middle !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .table tbody td {
+  color: var(--text-dark) !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--border) !important;
+  vertical-align: middle !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .table tbody tr:nth-child(odd) {
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .table tbody tr:nth-child(even) {
+  background: var(--page-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .table tbody tr:hover {
+  background: #ebf3ff !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .table tbody tr td[colspan] {
+  background: var(--page-bg) !important;
+  color: var(--text-muted) !important;
+  font-style: italic !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .email-label-badge {
+  padding: 5px 10px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .email-labels-action-menu {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(30, 61, 96, 0.12) !important;
+  padding: 8px 0 !important;
+  min-width: 200px !important;
+  z-index: 1060 !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .dropdown-item {
+  color: var(--text-dark) !important;
+  font-weight: 600 !important;
+  padding: 10px 16px !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .dropdown-item:hover,
+body.sidebar-mini .adminconsole-email-labels .dropdown-item:focus {
+  background-color: var(--sidebar-bg) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .dropdown-item.has-icon i {
+  margin-right: 8px !important;
+  width: 1.1em !important;
+  text-align: center !important;
+  color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .dropdown-item:hover.has-icon i,
+body.sidebar-mini .adminconsole-email-labels .dropdown-item:focus.has-icon i {
+  color: var(--navy) !important;
+}
+
+/* System-label notices (no purple gradient from custom.css .dropdown-item:hover) */
+body.sidebar-mini .adminconsole-email-labels .email-labels-action-menu .dropdown-item-text {
+  color: var(--text-muted) !important;
+  font-weight: 500 !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .email-labels-action-menu .dropdown-item-text i {
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .card-footer {
+  background: var(--page-bg) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .pagination .page-link {
+  color: var(--navy) !important;
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .pagination .page-item.active .page-link {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .pagination .page-link:hover {
+  background-color: var(--sidebar-bg) !important;
+  color: var(--navy) !important;
+}
+
+/* Beat custom.css ACTION-column hover (legacy blue) for Email Labels */
+body.sidebar-mini .adminconsole-email-labels .card .card-body table.table tbody tr td:last-child .dropdown-item:hover,
+body.sidebar-mini .adminconsole-email-labels .card .card-body table.table tbody tr td:last-child .dropdown-item:focus {
+  background-color: var(--sidebar-bg) !important;
+  color: var(--navy) !important;
+}
+
+/* Action column: consistent navy + theme hover; focus ring without random “light blue” fill */
+body.sidebar-mini .adminconsole-email-labels .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle {
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle:hover,
+body.sidebar-mini .adminconsole-email-labels .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle.show {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle:focus {
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.35) !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle.show:focus,
+body.sidebar-mini .adminconsole-email-labels .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle:active {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+/* Email Labels — create / edit form (features/email-labels/create, …/edit); docs/theme.md */
+body.sidebar-mini .main-content.adminconsole-email-labels-form .accordion {
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;
+  background: var(--card-bg) !important;
+  margin-bottom: 0 !important;
+}
+
+body.sidebar-mini .main-content.adminconsole-email-labels-form .accordion .accordion-header {
+  background: var(--navy) !important;
+  background-image: none !important;
+  color: #fff !important;
+  padding: 14px 18px !important;
+  cursor: pointer !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+body.sidebar-mini .main-content.adminconsole-email-labels-form .accordion .accordion-header:hover {
+  filter: brightness(1.04) !important;
+}
+
+body.sidebar-mini .main-content.adminconsole-email-labels-form .accordion .accordion-header[aria-expanded="true"] {
+  background: var(--navy) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+body.sidebar-mini .main-content.adminconsole-email-labels-form .accordion .accordion-header h4 {
+  color: #fff !important;
+  margin: 0 !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini .main-content.adminconsole-email-labels-form .accordion .accordion-body {
+  background: var(--card-bg) !important;
+  padding: 1.25rem !important;
+  border: none !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels-form .card .form-group label {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels-form .form-text,
+body.sidebar-mini .adminconsole-email-labels-form small.form-text {
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels-form .input-group .form-control {
+  border-color: var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels-form .input-group .form-control:focus {
+  border-color: var(--sidebar-active) !important;
+  z-index: 2 !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels-form input[type="color"].form-control {
+  padding: 4px 6px !important;
+  min-height: 38px !important;
+  cursor: pointer !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels-form input.form-control:disabled {
+  background: var(--page-bg) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border) !important;
+  opacity: 1 !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels-form .custom-error,
+body.sidebar-mini .adminconsole-email-labels-form .custom-error strong {
+  color: var(--danger) !important;
+}
+
+body.sidebar-mini .adminconsole-email-labels-form label .span_req,
+body.sidebar-mini .adminconsole-email-labels-form .span_req {
+  color: var(--danger) !important;
+}
+
+/* Workflow / emails / CRM email template / offices — shared accordion form shell; docs/theme.md */
+body.sidebar-mini .adminconsole-workflow-form .card .form-group label,
+body.sidebar-mini .adminconsole-emails-form .card .form-group label,
+body.sidebar-mini .adminconsole-offices-form .card .form-group label,
+body.sidebar-mini .adminconsole-crm-email-template-form .card .form-group label,
+body.sidebar-mini .adminconsole-teams-form .card .form-group label,
+body.sidebar-mini .adminconsole-roles-form .card .form-group label,
+body.sidebar-mini .adminconsole-personal-doc-type-form .card .form-group label,
+body.sidebar-mini .adminconsole-matter-document-type-form .card .form-group label,
+body.sidebar-mini .adminconsole-document-checklist-form .card .form-group label {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+/* Checkbox row: avoid shouting “ENABLE THIS FEATURE” */
+body.sidebar-mini .adminconsole-emails-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-offices-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-crm-email-template-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-teams-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-roles-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-personal-doc-type-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-matter-document-type-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-document-checklist-form .form-group label:has(> input[type="checkbox"]) {
+  text-transform: none !important;
+  font-size: 14px !important;
+  color: var(--text-dark) !important;
+  font-weight: 500 !important;
+}
+
+body.sidebar-mini .adminconsole-emails-form .card .card-body h4,
+body.sidebar-mini .adminconsole-offices-form .card .card-body h4,
+body.sidebar-mini .adminconsole-crm-email-template-form .card .card-body h4,
+body.sidebar-mini .adminconsole-teams-form .card .card-body h4,
+body.sidebar-mini .adminconsole-roles-form .card .card-body h4,
+body.sidebar-mini .adminconsole-personal-doc-type-form .card .card-body h4,
+body.sidebar-mini .adminconsole-matter-document-type-form .card .card-body h4,
+body.sidebar-mini .adminconsole-document-checklist-form .card .card-body h4 {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  margin-top: 1rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-form .form-text,
+body.sidebar-mini .adminconsole-workflow-form small.form-text,
+body.sidebar-mini .adminconsole-emails-form .form-text,
+body.sidebar-mini .adminconsole-emails-form small.form-text,
+body.sidebar-mini .adminconsole-offices-form .form-text,
+body.sidebar-mini .adminconsole-offices-form small.form-text,
+body.sidebar-mini .adminconsole-crm-email-template-form .form-text,
+body.sidebar-mini .adminconsole-crm-email-template-form small.form-text,
+body.sidebar-mini .adminconsole-teams-form .form-text,
+body.sidebar-mini .adminconsole-teams-form small.form-text,
+body.sidebar-mini .adminconsole-roles-form .form-text,
+body.sidebar-mini .adminconsole-roles-form small.form-text,
+body.sidebar-mini .adminconsole-personal-doc-type-form .form-text,
+body.sidebar-mini .adminconsole-personal-doc-type-form small.form-text,
+body.sidebar-mini .adminconsole-matter-document-type-form .form-text,
+body.sidebar-mini .adminconsole-matter-document-type-form small.form-text,
+body.sidebar-mini .adminconsole-document-checklist-form .form-text,
+body.sidebar-mini .adminconsole-document-checklist-form small.form-text {
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-form .card-header h4 small,
+body.sidebar-mini .adminconsole-emails-form .card-header h4 small,
+body.sidebar-mini .adminconsole-offices-form .card-header h4 small,
+body.sidebar-mini .adminconsole-crm-email-template-form .card-header h4 small,
+body.sidebar-mini .adminconsole-teams-form .card-header h4 small,
+body.sidebar-mini .adminconsole-roles-form .card-header h4 small,
+body.sidebar-mini .adminconsole-personal-doc-type-form .card-header h4 small,
+body.sidebar-mini .adminconsole-matter-document-type-form .card-header h4 small,
+body.sidebar-mini .adminconsole-document-checklist-form .card-header h4 small {
+  color: var(--text-muted) !important;
+  font-weight: 500 !important;
+  font-size: 0.85rem !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-form .alert-info,
+body.sidebar-mini .adminconsole-emails-form .alert-info,
+body.sidebar-mini .adminconsole-offices-form .alert-info,
+body.sidebar-mini .adminconsole-crm-email-template-form .alert-info,
+body.sidebar-mini .adminconsole-teams-form .alert-info,
+body.sidebar-mini .adminconsole-roles-form .alert-info,
+body.sidebar-mini .adminconsole-personal-doc-type-form .alert-info,
+body.sidebar-mini .adminconsole-matter-document-type-form .alert-info,
+body.sidebar-mini .adminconsole-document-checklist-form .alert-info {
+  background: rgba(58, 111, 168, 0.12) !important;
+  border: 1px solid rgba(58, 111, 168, 0.28) !important;
+  color: var(--navy) !important;
+  border-radius: 10px !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-form .alert-info strong,
+body.sidebar-mini .adminconsole-workflow-form .alert-info em,
+body.sidebar-mini .adminconsole-emails-form .alert-info strong,
+body.sidebar-mini .adminconsole-emails-form .alert-info em,
+body.sidebar-mini .adminconsole-offices-form .alert-info strong,
+body.sidebar-mini .adminconsole-offices-form .alert-info em,
+body.sidebar-mini .adminconsole-crm-email-template-form .alert-info strong,
+body.sidebar-mini .adminconsole-crm-email-template-form .alert-info em,
+body.sidebar-mini .adminconsole-teams-form .alert-info strong,
+body.sidebar-mini .adminconsole-teams-form .alert-info em,
+body.sidebar-mini .adminconsole-roles-form .alert-info strong,
+body.sidebar-mini .adminconsole-roles-form .alert-info em,
+body.sidebar-mini .adminconsole-personal-doc-type-form .alert-info strong,
+body.sidebar-mini .adminconsole-personal-doc-type-form .alert-info em,
+body.sidebar-mini .adminconsole-matter-document-type-form .alert-info strong,
+body.sidebar-mini .adminconsole-matter-document-type-form .alert-info em,
+body.sidebar-mini .adminconsole-document-checklist-form .alert-info strong,
+body.sidebar-mini .adminconsole-document-checklist-form .alert-info em {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-form .alert-info .fas,
+body.sidebar-mini .adminconsole-workflow-form .alert-info .fa,
+body.sidebar-mini .adminconsole-emails-form .alert-info .fas,
+body.sidebar-mini .adminconsole-emails-form .alert-info .fa,
+body.sidebar-mini .adminconsole-offices-form .alert-info .fas,
+body.sidebar-mini .adminconsole-offices-form .alert-info .fa,
+body.sidebar-mini .adminconsole-crm-email-template-form .alert-info .fas,
+body.sidebar-mini .adminconsole-crm-email-template-form .alert-info .fa,
+body.sidebar-mini .adminconsole-teams-form .alert-info .fas,
+body.sidebar-mini .adminconsole-teams-form .alert-info .fa,
+body.sidebar-mini .adminconsole-roles-form .alert-info .fas,
+body.sidebar-mini .adminconsole-roles-form .alert-info .fa,
+body.sidebar-mini .adminconsole-personal-doc-type-form .alert-info .fas,
+body.sidebar-mini .adminconsole-personal-doc-type-form .alert-info .fa,
+body.sidebar-mini .adminconsole-matter-document-type-form .alert-info .fas,
+body.sidebar-mini .adminconsole-matter-document-type-form .alert-info .fa,
+body.sidebar-mini .adminconsole-document-checklist-form .alert-info .fas,
+body.sidebar-mini .adminconsole-document-checklist-form .alert-info .fa {
+  color: var(--sidebar-active) !important;
+}
+
+/* Protected stage notice — theme.md “Pending” / gold tint */
+body.sidebar-mini .adminconsole-workflow-form .alert-warning,
+body.sidebar-mini .adminconsole-emails-form .alert-warning,
+body.sidebar-mini .adminconsole-offices-form .alert-warning,
+body.sidebar-mini .adminconsole-crm-email-template-form .alert-warning,
+body.sidebar-mini .adminconsole-teams-form .alert-warning,
+body.sidebar-mini .adminconsole-roles-form .alert-warning,
+body.sidebar-mini .adminconsole-personal-doc-type-form .alert-warning,
+body.sidebar-mini .adminconsole-matter-document-type-form .alert-warning,
+body.sidebar-mini .adminconsole-document-checklist-form .alert-warning {
+  background: rgba(200, 153, 42, 0.15) !important;
+  border: 1px solid rgba(200, 153, 42, 0.35) !important;
+  color: #7a5800 !important;
+  border-radius: 10px !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-form .alert-warning strong,
+body.sidebar-mini .adminconsole-emails-form .alert-warning strong,
+body.sidebar-mini .adminconsole-offices-form .alert-warning strong,
+body.sidebar-mini .adminconsole-crm-email-template-form .alert-warning strong,
+body.sidebar-mini .adminconsole-teams-form .alert-warning strong,
+body.sidebar-mini .adminconsole-roles-form .alert-warning strong,
+body.sidebar-mini .adminconsole-personal-doc-type-form .alert-warning strong,
+body.sidebar-mini .adminconsole-matter-document-type-form .alert-warning strong,
+body.sidebar-mini .adminconsole-document-checklist-form .alert-warning strong {
+  color: #5c4300 !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-emails-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-offices-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-crm-email-template-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-teams-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-roles-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-personal-doc-type-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-matter-document-type-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-document-checklist-form input.form-control[readonly] {
+  background: var(--page-bg) !important;
+  color: var(--text-dark) !important;
+  border-color: var(--border) !important;
+  cursor: default !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-form .custom-error,
+body.sidebar-mini .adminconsole-workflow-form .custom-error strong,
+body.sidebar-mini .adminconsole-emails-form .custom-error,
+body.sidebar-mini .adminconsole-emails-form .custom-error strong,
+body.sidebar-mini .adminconsole-offices-form .custom-error,
+body.sidebar-mini .adminconsole-offices-form .custom-error strong,
+body.sidebar-mini .adminconsole-crm-email-template-form .custom-error,
+body.sidebar-mini .adminconsole-crm-email-template-form .custom-error strong,
+body.sidebar-mini .adminconsole-teams-form .custom-error,
+body.sidebar-mini .adminconsole-teams-form .custom-error strong,
+body.sidebar-mini .adminconsole-roles-form .custom-error,
+body.sidebar-mini .adminconsole-roles-form .custom-error strong,
+body.sidebar-mini .adminconsole-personal-doc-type-form .custom-error,
+body.sidebar-mini .adminconsole-personal-doc-type-form .custom-error strong,
+body.sidebar-mini .adminconsole-matter-document-type-form .custom-error,
+body.sidebar-mini .adminconsole-matter-document-type-form .custom-error strong,
+body.sidebar-mini .adminconsole-document-checklist-form .custom-error,
+body.sidebar-mini .adminconsole-document-checklist-form .custom-error strong {
+  color: var(--danger) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-form label .span_req,
+body.sidebar-mini .adminconsole-workflow-form .span_req,
+body.sidebar-mini .adminconsole-emails-form label .span_req,
+body.sidebar-mini .adminconsole-emails-form .span_req,
+body.sidebar-mini .adminconsole-offices-form label .span_req,
+body.sidebar-mini .adminconsole-offices-form .span_req,
+body.sidebar-mini .adminconsole-crm-email-template-form label .span_req,
+body.sidebar-mini .adminconsole-crm-email-template-form .span_req,
+body.sidebar-mini .adminconsole-teams-form label .span_req,
+body.sidebar-mini .adminconsole-teams-form .span_req,
+body.sidebar-mini .adminconsole-roles-form label .span_req,
+body.sidebar-mini .adminconsole-roles-form .span_req,
+body.sidebar-mini .adminconsole-personal-doc-type-form label .span_req,
+body.sidebar-mini .adminconsole-personal-doc-type-form .span_req,
+body.sidebar-mini .adminconsole-matter-document-type-form label .span_req,
+body.sidebar-mini .adminconsole-matter-document-type-form .span_req,
+body.sidebar-mini .adminconsole-document-checklist-form label .span_req,
+body.sidebar-mini .adminconsole-document-checklist-form .span_req {
+  color: var(--danger) !important;
+}
+
+/* Add Workflow Stage form (…/workflow/{id}/stage/create); accordion + inline stage table; docs/theme.md */
+body.sidebar-mini .main-content.adminconsole-workflow-form .accordion,
+body.sidebar-mini .main-content.adminconsole-emails-form .accordion,
+body.sidebar-mini .main-content.adminconsole-offices-form .accordion,
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion,
+body.sidebar-mini .main-content.adminconsole-teams-form .accordion,
+body.sidebar-mini .main-content.adminconsole-roles-form .accordion,
+body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion,
+body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion,
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion {
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;
+  background: var(--card-bg) !important;
+  margin-bottom: 0 !important;
+}
+
+/*
+ * Stisla style.css: .accordion .accordion-header[aria-expanded="true"] uses purple #6777ef.
+ * Global body.sidebar-mini h4 { navy !important } can beat parent color — force white on dark bar.
+ */
+body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header {
+  background: var(--navy) !important;
+  background-image: none !important;
+  color: #fff !important;
+  padding: 14px 18px !important;
+  cursor: pointer !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header:hover {
+  filter: brightness(1.04) !important;
+}
+
+body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header[aria-expanded="true"] {
+  background: var(--navy) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header h4 {
+  color: #fff !important;
+  margin: 0 !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-body {
+  background: var(--card-bg) !important;
+  padding: 1.25rem !important;
+  border: none !important;
+}
+
+/* System — teams (department colours); docs/theme.md */
+body.sidebar-mini .adminconsole-teams-form .card-header h4,
+body.sidebar-mini .adminconsole-roles-form .card-header h4,
+body.sidebar-mini .adminconsole-personal-doc-type-form .card-header h4,
+body.sidebar-mini .adminconsole-matter-document-type-form .card-header h4,
+body.sidebar-mini .adminconsole-document-checklist-form .card-header h4 {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini .adminconsole-teams-form input[type="color"].form-control,
+body.sidebar-mini .adminconsole-teams-form input[type="color"].form-control-color {
+  max-width: 120px;
+  height: 42px;
+  padding: 4px 8px;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  background: var(--card-bg) !important;
+  cursor: pointer;
+}
+
+body.sidebar-mini .adminconsole-teams-form .teams-color-swatch {
+  display: inline-block;
+  width: 40px;
+  height: 24px;
+  vertical-align: middle;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background-color: var(--team-color, #c8dcef);
+  box-shadow: 0 1px 2px rgba(30, 61, 96, 0.08);
+}
+
+/* System — roles & permissions form; docs/theme.md */
+body.sidebar-mini .adminconsole-roles-form .select_toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+body.sidebar-mini .adminconsole-roles-form .select_toggle .btn {
+  border-radius: 8px;
+}
+
+body.sidebar-mini .adminconsole-roles-form .accordion-body > ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+body.sidebar-mini .adminconsole-roles-form .accordion-body > ul > li {
+  margin-bottom: 8px;
+}
+
+body.sidebar-mini .adminconsole-roles-form .accordion-body > ul > li label {
+  margin: 0 !important;
+  font-weight: 400 !important;
+  font-size: 14px !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  color: var(--text-dark) !important;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+body.sidebar-mini .adminconsole-roles-form .accordion-body > ul > li label input[type="checkbox"] {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+body.sidebar-mini .adminconsole-roles-form .roles-form-actions,
+body.sidebar-mini .adminconsole-personal-doc-type-form .roles-form-actions,
+body.sidebar-mini .adminconsole-matter-document-type-form .roles-form-actions,
+body.sidebar-mini .adminconsole-document-checklist-form .roles-form-actions {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  text-align: right;
+}
+
+/* Offices branch form — Select2 (country / admin); docs/theme.md */
+body.sidebar-mini .adminconsole-offices-form .select2-container--default .select2-selection--single {
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  min-height: 42px !important;
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-form .select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: var(--text-dark) !important;
+  line-height: 40px !important;
+  padding-left: 12px !important;
+}
+
+body.sidebar-mini .adminconsole-offices-form .select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 40px !important;
+}
+
+body.sidebar-mini .adminconsole-offices-form .select2-container--default.select2-container--focus .select2-selection--single {
+  border-color: var(--sidebar-active) !important;
+  box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
+}
+
+/* System — office view / view-client (users & clients tabs); docs/theme.md */
+body.sidebar-mini .adminconsole-offices-view .office-view-overview-heading {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  margin: 0 !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-kpi {
+  margin: 0 !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-kpi-label {
+  display: block !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  color: var(--text-muted) !important;
+  margin-bottom: 4px !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-kpi-value {
+  font-size: 1.35rem !important;
+  font-weight: 700 !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-title {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-detail-table {
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  background: var(--card-bg) !important;
+  margin-bottom: 0 !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-detail-table td {
+  border-color: var(--border) !important;
+  padding: 12px 16px !important;
+  vertical-align: top !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-detail-table td b {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-detail-table tr:nth-child(even) td {
+  background: var(--page-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-detail-table tr:nth-child(odd) td {
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-tabs {
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  margin-bottom: 0 !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-tabs .nav-link {
+  color: var(--navy) !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  padding: 10px 18px !important;
+  background: var(--page-bg) !important;
+  border: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-tabs .nav-link:hover {
+  background: var(--sidebar-hover) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-tabs .nav-link.active {
+  background: var(--sidebar-active) !important;
+  color: #fff !important;
+  border-color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-table-toolbar {
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin-bottom: 12px !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-table-toolbar--split {
+  justify-content: space-between !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-table-toolbar .btn {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-table-toolbar .btn-outline-primary {
+  color: var(--navy) !important;
+  border: 1px solid var(--border) !important;
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-table-toolbar .btn-outline-primary:hover {
+  background: var(--sidebar-hover) !important;
+  color: var(--navy) !important;
+  border-color: var(--border) !important;
+}
+
+/* Summernote (crm-email-template description, etc.) — docs/theme.md */
+body.sidebar-mini .adminconsole-crm-email-template-form .note-editor.note-frame {
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+body.sidebar-mini .adminconsole-crm-email-template-form .note-editor.note-frame .note-toolbar {
+  background: var(--page-bg) !important;
+  border-bottom: 1px solid var(--border) !important;
+  padding: 6px 10px !important;
+}
+
+body.sidebar-mini .adminconsole-crm-email-template-form .note-editor.note-frame .note-statusbar {
+  background: var(--page-bg) !important;
+  border-top: 1px solid var(--border) !important;
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini .adminconsole-crm-email-template-form .note-editor.note-frame .note-editing-area .note-editable {
+  background: var(--card-bg) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-form .workflow_stges .table {
+  margin-bottom: 0.75rem !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  background: var(--card-bg) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-form .workflow_stges .table tr td {
+  border-color: var(--border) !important;
+  padding: 12px 14px !important;
+  vertical-align: middle !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-form .workflow_stges .table tbody tr:nth-child(even) td,
+body.sidebar-mini .adminconsole-workflow-form .workflow_stges .table tr:nth-child(even) td {
+  background: var(--page-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-form .workflow_stges .remove_stage {
+  color: var(--danger) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  border-radius: 8px !important;
+  text-decoration: none !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-form .workflow_stges .remove_stage:hover,
+body.sidebar-mini .adminconsole-workflow-form .workflow_stges .remove_stage:focus {
+  background: var(--danger) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-form .add_stage.btn-info {
+  margin-top: 0.25rem !important;
+}
+
+/* Workflow stages list (…/workflow/{id}/stages); table + action buttons; beat custom.css last-col hover */
+body.sidebar-mini .adminconsole-workflow-stages .workflow-stages-table td.workflow-stage-actions-col {
+  white-space: normal !important;
+  vertical-align: middle !important;
+  width: 1% !important;
+  min-width: 7.5rem !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-stages .workflow-stage-cell-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 0.35rem !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-stages .workflow-stage-cell-actions .btn {
+  font-size: 0.75rem !important;
+  padding: 0.35rem 0.5rem !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-stages .table-responsive {
+  overflow-x: auto !important;
+  border-radius: 10px !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-stages .table {
+  border-color: var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-stages .table thead th {
+  background: var(--page-bg) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-stages .table tbody td {
+  color: var(--text-dark) !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--border) !important;
+  vertical-align: middle !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-stages .table tbody tr:nth-child(odd) {
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-stages .table tbody tr:nth-child(even) {
+  background: var(--page-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-stages .table tbody tr:hover {
+  background: #ebf3ff !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-stages .table tbody a:not(.btn) {
+  color: var(--sidebar-active) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-stages .table tbody a:not(.btn):hover {
+  color: var(--navy) !important;
+}
+
+/* custom.css sets td:last-child a/.btn:hover to blue bg + blue text — restore readable hovers */
+body.sidebar-mini .adminconsole-workflow-stages .card .card-body table.table tbody tr td:last-child .btn.btn-sm.btn-primary:hover,
+body.sidebar-mini .adminconsole-workflow-stages .card .card-body table.table tbody tr td:last-child .btn.btn-sm.btn-primary:focus {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+  background-image: none !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-stages .card .card-body table.table tbody tr td:last-child .btn.btn-sm.btn-info:hover,
+body.sidebar-mini .adminconsole-workflow-stages .card .card-body table.table tbody tr td:last-child .btn.btn-sm.btn-info:focus {
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+  background-image: none !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-stages .card .card-body table.table tbody tr td:last-child .btn.btn-outline-danger:hover,
+body.sidebar-mini .adminconsole-workflow-stages .card .card-body table.table tbody tr td:last-child .btn.btn-outline-danger:focus {
+  background-color: var(--danger) !important;
+  border-color: var(--danger) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-stages .card .card-body table.table tbody tr td:last-child .btn.btn-outline-secondary:disabled {
+  opacity: 0.72 !important;
+  cursor: not-allowed !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border) !important;
+  background: var(--page-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-stages .card .card-body > p.small.text-muted strong {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-stages .table tbody td.text-center a:hover,
+body.sidebar-mini .adminconsole-workflow-stages .table tbody td.text-center a:focus {
+  background-color: transparent !important;
+  color: var(--navy) !important;
+  text-decoration: underline !important;
+}
+
+/* Workflow index (/adminconsole/features/workflow); table + stacked actions; beat custom.css last-col hover */
+body.sidebar-mini .adminconsole-workflow-index .workflows-index-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 0.35rem !important;
+  min-width: 7.5rem !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-index .workflows-index-actions .btn {
+  font-size: 0.75rem !important;
+  padding: 0.35rem 0.5rem !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-index .table-responsive {
+  overflow-x: auto !important;
+  border-radius: 10px !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-index .table {
+  border-color: var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-index .table thead th {
+  background: var(--page-bg) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-index .table tbody td {
+  color: var(--text-dark) !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--border) !important;
+  vertical-align: middle !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-index .table tbody tr:nth-child(odd) {
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-index .table tbody tr:nth-child(even) {
+  background: var(--page-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-index .table tbody tr:hover {
+  background: #ebf3ff !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-index .table tbody a:not(.btn) {
+  color: var(--sidebar-active) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-index .table tbody a:not(.btn):hover {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-index .card .card-body table.table tbody tr td:last-child .btn.btn-sm.btn-primary:hover,
+body.sidebar-mini .adminconsole-workflow-index .card .card-body table.table tbody tr td:last-child .btn.btn-sm.btn-primary:focus {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+  background-image: none !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-index .card .card-body table.table tbody tr td:last-child .btn.btn-sm.btn-secondary:hover,
+body.sidebar-mini .adminconsole-workflow-index .card .card-body table.table tbody tr td:last-child .btn.btn-sm.btn-secondary:focus {
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+  background-image: none !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-index .table tbody td.text-center a:hover,
+body.sidebar-mini .adminconsole-workflow-index .table tbody td.text-center a:focus {
+  background-color: transparent !important;
+  color: var(--navy) !important;
+  text-decoration: underline !important;
+}
+
+/* Admin Console — emails list (features/emails); docs/theme.md */
+body.sidebar-mini .adminconsole-emails-index .card {
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-emails-index .card-header {
+  background: var(--card-bg) !important;
+  border-bottom: 1px solid var(--border) !important;
+  padding: 16px 20px !important;
+}
+
+body.sidebar-mini .adminconsole-emails-index .card-header h4 {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+  font-size: 1.1rem !important;
+}
+
+body.sidebar-mini .adminconsole-emails-index .card-body {
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-emails-index .table-responsive {
+  overflow-x: auto !important;
+  border-radius: 10px !important;
+}
+
+body.sidebar-mini .adminconsole-emails-index .table {
+  border-color: var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .adminconsole-emails-index .table thead th {
+  background: var(--page-bg) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-emails-index .table tbody td {
+  color: var(--text-dark) !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--border) !important;
+  vertical-align: middle !important;
+}
+
+body.sidebar-mini .adminconsole-emails-index .table tbody tr:nth-child(odd) {
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-emails-index .table tbody tr:nth-child(even) {
+  background: var(--page-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-emails-index .table tbody tr:hover {
+  background: #ebf3ff !important;
+}
+
+body.sidebar-mini .adminconsole-emails-index .text-success {
+  color: var(--success) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .adminconsole-emails-index .text-danger {
+  color: var(--danger) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .adminconsole-emails-index .table tbody td.text-center {
+  color: var(--text-muted) !important;
+  font-style: italic !important;
+}
+
+body.sidebar-mini .adminconsole-emails-index .table tbody tr td[colspan] {
+  background: var(--page-bg) !important;
+  color: var(--text-muted) !important;
+  font-style: italic !important;
+}
+
 /* ---------- Buttons (all Bootstrap variants) — docs/theme.md ---------- */
 /* Overrides public/css/custom.css purple gradients on .btn-primary etc. */
 body.sidebar-mini .btn {
@@ -823,6 +2693,35 @@ body.sidebar-mini .badge.badge-success {
   color: var(--success) !important;
 }
 
+/* Other Bootstrap badges — match theme.md status / accents (staff view, lists, etc.) */
+body.sidebar-mini .badge.badge-info {
+  background: rgba(58, 111, 168, 0.18) !important;
+  color: var(--sidebar-active) !important;
+  border: 1px solid rgba(58, 111, 168, 0.35) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .badge.badge-primary {
+  background: rgba(30, 61, 96, 0.1) !important;
+  color: var(--navy) !important;
+  border: 1px solid rgba(30, 61, 96, 0.22) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .badge.badge-secondary {
+  background: rgba(94, 122, 144, 0.12) !important;
+  color: var(--text-muted) !important;
+  border: 1px solid var(--border) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .badge.badge-danger {
+  background: rgba(168, 48, 32, 0.12) !important;
+  color: var(--danger) !important;
+  border: 1px solid rgba(168, 48, 32, 0.28) !important;
+  font-weight: 600 !important;
+}
+
 .badge-status-pending {
   background: rgba(200, 153, 42, 0.15) !important;
   color: #7a5800 !important;
@@ -878,4 +2777,210 @@ body.sidebar-mini .clear-filter-btn:focus svg {
   color: #fff !important;
   fill: #fff !important;
   text-decoration: none !important;
+}
+
+/* ---------- In Person Details modal (#checkindetailmodal) — docs/theme.md ---------- */
+body.sidebar-mini #checkindetailmodal .modal-content {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 24px rgba(30, 61, 96, 0.12) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-header {
+  background: var(--card-bg) !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-radius: 10px 10px 0 0 !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-title {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-header .close {
+  color: var(--text-muted) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-header .close:hover,
+body.sidebar-mini #checkindetailmodal .modal-header .close:focus {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-body {
+  background: var(--card-bg) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-body a:not(.btn) {
+  color: var(--sidebar-active) !important;
+  font-weight: 600;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-body a:not(.btn):hover,
+body.sidebar-mini #checkindetailmodal .modal-body a:not(.btn):focus {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-body label {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-body b {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-body h4 {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+  margin-top: 1rem !important;
+}
+
+body.sidebar-mini #checkindetailmodal h5.text-warning {
+  color: #7a5800 !important;
+}
+
+body.sidebar-mini #checkindetailmodal h5.text-info {
+  color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini #checkindetailmodal h5.text-success {
+  color: var(--success) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .form-control {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .form-control:focus {
+  border-color: var(--sidebar-active) !important;
+  box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .table {
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .table thead th {
+  background: var(--page-bg) !important;
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  border: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .table td {
+  border-color: var(--border) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .table tbody tr:hover {
+  background-color: #ebf3ff !important;
+}
+
+/* Wait / attend strip — theme success tones (replaces inline rgb green) */
+body.sidebar-mini #checkindetailmodal .checkin-session-time-bar {
+  margin-top: 14px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.08);
+}
+
+body.sidebar-mini #checkindetailmodal .checkin-session-time-inner {
+  padding: 6px 8px;
+}
+
+/* Strictly theme.md greens: --success #1E7A52; darker segment = blended (not ad-hoc RGB) */
+body.sidebar-mini #checkindetailmodal .checkin-session-time-wait {
+  background-color: color-mix(in srgb, var(--success) 72%, #000 28%);
+}
+
+body.sidebar-mini #checkindetailmodal .checkin-session-time-attend {
+  background-color: color-mix(in srgb, var(--success) 88%, #fff 12%);
+}
+
+@supports not (background-color: color-mix(in srgb, red, blue)) {
+  body.sidebar-mini #checkindetailmodal .checkin-session-time-wait {
+    background-color: #155a3d;
+  }
+
+  body.sidebar-mini #checkindetailmodal .checkin-session-time-attend {
+    background-color: var(--success);
+  }
+}
+
+/* Bar copy must stay white (modal body sets --text-dark; some builds lack strong .text-white) */
+body.sidebar-mini #checkindetailmodal .checkin-session-time-bar,
+body.sidebar-mini #checkindetailmodal .checkin-session-time-bar p,
+body.sidebar-mini #checkindetailmodal .checkin-session-time-bar span {
+  color: #fff !important;
+}
+
+/* Solid success actions in this modal (anchor buttons; beat Bootstrap --bs-btn-* / legacy greens) */
+body.sidebar-mini #checkindetailmodal .modal-body a.btn.btn-success,
+body.sidebar-mini #checkindetailmodal .modal-body button.btn.btn-success {
+  --bs-btn-color: #fff !important;
+  --bs-btn-bg: var(--success) !important;
+  --bs-btn-border-color: var(--success) !important;
+  --bs-btn-hover-color: #fff !important;
+  --bs-btn-hover-bg: #186846 !important;
+  --bs-btn-hover-border-color: #186846 !important;
+  --bs-btn-active-color: #fff !important;
+  --bs-btn-active-bg: #186846 !important;
+  --bs-btn-active-border-color: #186846 !important;
+  background-color: var(--success) !important;
+  background-image: none !important;
+  border: 1px solid var(--success) !important;
+  color: #fff !important;
+  text-decoration: none !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-body a.btn.btn-success:hover,
+body.sidebar-mini #checkindetailmodal .modal-body a.btn.btn-success:focus,
+body.sidebar-mini #checkindetailmodal .modal-body button.btn.btn-success:hover,
+body.sidebar-mini #checkindetailmodal .modal-body button.btn.btn-success:focus {
+  background-color: #186846 !important;
+  border-color: #186846 !important;
+  color: #fff !important;
+  filter: none !important;
+}
+
+/* Activity logs — beat custom.css #6777ef */
+body.sidebar-mini #checkindetailmodal .logsdata .logsitem {
+  background: var(--page-bg) !important;
+  border: 1px solid var(--border) !important;
+  padding: 8px !important;
+  margin-bottom: 6px !important;
+  border-radius: 8px !important;
+}
+
+body.sidebar-mini #checkindetailmodal .logsdata .logsitem span.ag-avatar {
+  background: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #checkindetailmodal .logsdata .logsitem span.text_info {
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .logsdata .logsitem span.text_info span {
+  color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .logsdata .logsitem span.logs_date {
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .logsdata .logsitem .logs_comment p {
+  color: var(--text-dark) !important;
 }

@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features">
 	<section class="section">
 		<div class="section-body">
 			<form action="{{ url('adminconsole/features/tags/store') }}" name="add-visatype" autocomplete="off" enctype="multipart/form-data" method="POST">

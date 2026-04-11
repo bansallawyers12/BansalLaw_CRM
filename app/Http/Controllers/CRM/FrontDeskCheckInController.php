@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class FrontDeskCheckInController extends Controller
@@ -315,28 +316,50 @@ class FrontDeskCheckInController extends Controller
             // Generate a unique CRM reference for the new lead
             $ref = $this->refService->generateClientReference($validated['first_name']);
 
-            $lead = Admin::create([
-                'first_name'          => $validated['first_name'],
-                'last_name'           => $validated['last_name'] ?? null,
-                'phone'               => $validated['phone'],
-                'email'               => $validated['email'] ?? null,
-                'type'                => 'lead',
-                'client_id'           => $ref['client_id'],
-                'client_counter'      => $ref['client_counter'],
-                'user_id'             => $staff->id,
-                'password'            => Hash::make('LEAD_PLACEHOLDER'),
-                'status'              => 1,
-                'lead_status'         => 'new',
-                'is_archived'         => 0,
-                'is_deleted'          => null,
-                'verified'            => 0,
-                'cp_status'           => 0,
-                'cp_code_verify'      => 0,
-                'australian_study'    => 0,
-                'specialist_education'=> 0,
-                'regional_study'      => 0,
-                'is_company'          => 0,
-            ]);
+            // admins columns vary by migration; mirror LeadController insert + prune.
+            $adminEmail = $this->allocateUniqueLeadEmailForWizard(
+                (string) ($validated['email'] ?? ''),
+                $validated['phone']
+            );
+
+            $adminData = [
+                'first_name'           => $validated['first_name'],
+                'last_name'            => $validated['last_name'] ?? null,
+                'phone'                => $validated['phone'],
+                'email'                => $adminEmail,
+                'type'                 => 'lead',
+                'client_id'            => $ref['client_id'],
+                'client_counter'       => $ref['client_counter'],
+                'password'             => Hash::make('LEAD_PLACEHOLDER'),
+                'status'               => 1,
+                'lead_status'          => 'new',
+                'is_archived'          => 0,
+                'is_deleted'           => null,
+                'cp_status'            => 0,
+                'cp_code_verify'       => 0,
+                'australian_study'     => 0,
+                'specialist_education' => 0,
+                'regional_study'       => 0,
+                'is_company'           => 0,
+            ];
+
+            if (Schema::hasColumn('admins', 'contact_type')) {
+                $adminData['contact_type'] = 'Personal';
+            }
+            if (Schema::hasColumn('admins', 'country_code')) {
+                $adminData['country_code'] = '+61';
+            }
+            if (Schema::hasColumn('admins', 'email_type')) {
+                $adminData['email_type'] = 'Personal';
+            }
+
+            $this->applyStaffAssigneeToAdminInsertRow($adminData, (int) $staff->id);
+            $this->pruneAdminInsertColumns($adminData);
+            $adminData['created_at'] = now();
+            $adminData['updated_at'] = now();
+
+            $leadId = DB::table('admins')->insertGetId($adminData);
+            $lead    = Admin::query()->findOrFail($leadId);
 
             $checkIn = FrontDeskCheckIn::create([
                 'admin_id'            => $staff->id,
@@ -412,5 +435,47 @@ class FrontDeskCheckInController extends Controller
         $user = Auth::guard('admin')->user();
 
         return $user instanceof Staff && $user->canAccessFrontDeskCheckIn();
+    }
+
+    /**
+     * Unique admins.email for the wizard (NOT NULL + unique). Preserves visitor email when unused.
+     */
+    private function allocateUniqueLeadEmailForWizard(string $emailRaw, string $phone): string
+    {
+        $trimmed = trim($emailRaw);
+        if ($trimmed !== '' && filter_var($trimmed, FILTER_VALIDATE_EMAIL)) {
+            $lower = strtolower($trimmed);
+            if (! Admin::query()->whereRaw('LOWER(email) = ?', [$lower])->exists()) {
+                return $trimmed;
+            }
+        }
+
+        $digits = preg_replace('/\D+/', '', $phone) ?: '0';
+
+        return 'fd_walkin_' . $digits . '_' . time() . '_' . bin2hex(random_bytes(3)) . '@lead.internal';
+    }
+
+    /**
+     * Match {@see LeadController::applyLeadAssigneeToAdminRow()} — staff id column name differs by DB age.
+     */
+    private function applyStaffAssigneeToAdminInsertRow(array &$adminData, int $assignUserId): void
+    {
+        if (Schema::hasColumn('admins', 'user_id')) {
+            $adminData['user_id'] = $assignUserId;
+        } elseif (Schema::hasColumn('admins', 'agent_id')) {
+            $adminData['agent_id'] = $assignUserId;
+        }
+    }
+
+    /**
+     * Drop keys whose columns are missing on admins (PostgreSQL phased column drops).
+     */
+    private function pruneAdminInsertColumns(array &$adminData): void
+    {
+        foreach (array_keys($adminData) as $col) {
+            if (! Schema::hasColumn('admins', $col)) {
+                unset($adminData[$col]);
+            }
+        }
     }
 }

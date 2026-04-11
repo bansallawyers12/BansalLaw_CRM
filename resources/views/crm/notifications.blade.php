@@ -3,109 +3,173 @@
 
 @section('styles')
 <style>
-    /* All notifications — docs/theme.md (tokens from crm-theme.css :root) */
-    #crm-all-notifications.card {
-        border: 1px solid var(--border, #c8dcef);
-        border-radius: 10px;
-        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+    /*
+     * All notifications — docs/theme.md (Powder Blue & Soft Gold).
+     * body.sidebar-mini prefix beats layout inline .table rules; #crm beats generic .badge.
+     */
+    body.sidebar-mini #crm-all-notifications.card {
+        border: 1px solid var(--border) !important;
+        border-radius: 10px !important;
+        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06) !important;
+        background: var(--card-bg) !important;
     }
 
-    #crm-all-notifications .card-header-action .badge-primary {
-        background: rgba(30, 61, 96, 0.1) !important;
-        color: var(--navy, #1e3d60) !important;
-        border: 1px solid rgba(30, 61, 96, 0.25);
-        font-weight: 700;
-        font-size: 0.8125rem;
-        padding: 0.35em 0.65em;
+    body.sidebar-mini #crm-all-notifications .card-header {
+        background: var(--navy) !important;
+        color: #fff !important;
+        border-bottom: 1px solid var(--border) !important;
     }
 
-    #crm-all-notifications .table thead th {
-        background: var(--page-bg, #f0f6ff) !important;
-        color: var(--navy, #1e3d60) !important;
-        border-color: var(--border, #c8dcef) !important;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.04em;
+    body.sidebar-mini #crm-all-notifications .card-header h4 {
+        color: #fff !important;
     }
 
-    #crm-all-notifications .table td {
-        border-color: var(--border, #c8dcef) !important;
-        color: var(--text-dark, #1a2c40);
+    /* Total count — KPI-style pill (theme.md status / labels) */
+    body.sidebar-mini #crm-all-notifications .card-header-action .badge,
+    body.sidebar-mini #crm-all-notifications .card-header-action .badge.badge-primary,
+    body.sidebar-mini #crm-all-notifications .card-header-action .badge.bg-primary {
+        background: rgba(255, 255, 255, 0.22) !important;
+        color: #fff !important;
+        border: 1px solid rgba(255, 255, 255, 0.45) !important;
+        font-weight: 700 !important;
+        font-size: 0.8125rem !important;
+        padding: 0.35em 0.75em !important;
+        border-radius: 8px !important;
     }
 
-    #crm-all-notifications .table tbody tr:hover td {
+    /* Table — theme.md Tables */
+    body.sidebar-mini #crm-all-notifications .table {
+        border-color: var(--border) !important;
+        color: var(--text-dark) !important;
+    }
+
+    body.sidebar-mini #crm-all-notifications .table thead th {
+        background-color: var(--page-bg) !important;
+        color: var(--text-muted) !important;
+        border-color: var(--border) !important;
+        border-bottom: 1px solid var(--border) !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        font-size: 0.72rem !important;
+        letter-spacing: 0.06em !important;
+        padding: 12px 10px !important;
+    }
+
+    body.sidebar-mini #crm-all-notifications .table tbody td {
+        color: var(--text-dark) !important;
+        font-weight: 500 !important;
+        border-color: var(--border) !important;
+        border-bottom: 1px solid var(--border) !important;
+        padding: 12px 10px !important;
+        vertical-align: middle !important;
+    }
+
+    body.sidebar-mini #crm-all-notifications .table tbody tr:nth-child(even) td {
+        background-color: rgba(221, 234, 248, 0.35) !important;
+    }
+
+    body.sidebar-mini #crm-all-notifications .table tbody tr:hover td {
         background-color: #ebf3ff !important;
+        color: var(--text-dark) !important;
     }
 
-    #crm-all-notifications .table tbody tr.crm-notification-row-unread td {
-        background-color: var(--page-bg, #f0f6ff) !important;
-        font-weight: 600;
+    body.sidebar-mini #crm-all-notifications .table tbody tr.crm-notification-row-unread td {
+        background-color: rgba(254, 250, 232, 0.65) !important;
+        font-weight: 600 !important;
     }
 
-    #crm-all-notifications .table a {
-        color: var(--sidebar-active, #3a6fa8);
-        font-weight: 500;
+    body.sidebar-mini #crm-all-notifications .table tbody tr.crm-notification-row-unread td:first-child {
+        border-left: 3px solid var(--accent-gold) !important;
     }
 
-    #crm-all-notifications .table a:hover {
-        color: var(--navy, #1e3d60);
+    body.sidebar-mini #crm-all-notifications .table tbody tr.crm-notification-row-unread:hover td {
+        background-color: rgba(254, 250, 232, 0.85) !important;
     }
 
-    .notification-status-read,
-    .notification-status-unread {
+    body.sidebar-mini #crm-all-notifications .table a {
+        color: var(--sidebar-active) !important;
+        font-weight: 600 !important;
+    }
+
+    body.sidebar-mini #crm-all-notifications .table a:hover {
+        color: var(--navy) !important;
+    }
+
+    /* Status dots — theme.md icon/status accents */
+    #crm-all-notifications .notification-status-read,
+    #crm-all-notifications .notification-status-unread {
         display: inline-block;
-        width: 12px;
-        height: 12px;
+        width: 11px;
+        height: 11px;
         border-radius: 50%;
         vertical-align: middle;
+        box-sizing: border-box;
     }
 
-    .notification-status-read {
-        background-color: var(--success, #1e7a52);
+    #crm-all-notifications .notification-status-read {
+        background-color: rgba(94, 122, 144, 0.35) !important;
+        border: 2px solid var(--text-muted) !important;
     }
 
-    .notification-status-unread {
-        background-color: var(--sidebar-active, #3a6fa8);
+    #crm-all-notifications .notification-status-unread {
+        background-color: var(--accent-gold) !important;
+        border: 2px solid rgba(200, 153, 42, 0.55) !important;
+        box-shadow: 0 0 0 2px rgba(200, 153, 42, 0.2);
     }
 
-    #crm-all-notifications .crm-notifications-empty {
+    body.sidebar-mini #crm-all-notifications .table td.text-center {
+        color: var(--text-muted) !important;
+    }
+
+    body.sidebar-mini #crm-all-notifications .table td:last-child {
+        color: var(--text-muted) !important;
+        font-weight: 500 !important;
+        text-align: right !important;
+        white-space: nowrap;
+    }
+
+    body.sidebar-mini #crm-all-notifications .crm-notifications-empty {
         padding: 40px;
     }
 
-    #crm-all-notifications .crm-notifications-empty i {
+    body.sidebar-mini #crm-all-notifications .crm-notifications-empty i {
         font-size: 48px;
-        color: var(--border, #c8dcef);
+        color: var(--sidebar-bg) !important;
     }
 
-    #crm-all-notifications .crm-notifications-empty h5 {
-        color: var(--navy, #1e3d60);
-        font-weight: 700;
+    body.sidebar-mini #crm-all-notifications .crm-notifications-empty h5 {
+        color: var(--navy) !important;
+        font-weight: 700 !important;
     }
 
-    #crm-all-notifications .crm-notifications-empty .text-muted {
-        color: var(--text-muted, #5e7a90) !important;
+    body.sidebar-mini #crm-all-notifications .crm-notifications-empty .text-muted {
+        color: var(--text-muted) !important;
     }
 
-    /* Pagination in card footer (listing-pagination.css targets .listing-container) */
-    #crm-all-notifications .card-footer .pagination li a,
-    #crm-all-notifications .card-footer .pagination li span {
-        color: var(--text-muted, #5e7a90);
-        background: var(--card-bg, #ffffff);
-        border: 1px solid var(--border, #c8dcef);
-        border-radius: 6px;
+    body.sidebar-mini #crm-all-notifications .card-footer {
+        background: var(--page-bg) !important;
+        border-top: 1px solid var(--border) !important;
     }
 
-    #crm-all-notifications .card-footer .pagination li.active span {
-        background: var(--navy, #1e3d60);
-        border-color: var(--navy, #1e3d60);
-        color: #fff;
-        font-weight: 600;
+    body.sidebar-mini #crm-all-notifications .card-footer .pagination li a,
+    body.sidebar-mini #crm-all-notifications .card-footer .pagination li span {
+        color: var(--navy) !important;
+        background: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
     }
 
-    #crm-all-notifications .card-footer .pagination li a:hover {
-        background: var(--sidebar-hover, #c8dcef);
-        color: var(--navy, #1e3d60);
+    body.sidebar-mini #crm-all-notifications .card-footer .pagination li.active span {
+        background: var(--navy) !important;
+        border-color: var(--navy) !important;
+        color: #fff !important;
+        font-weight: 600 !important;
+    }
+
+    body.sidebar-mini #crm-all-notifications .card-footer .pagination li a:hover {
+        background: var(--sidebar-bg) !important;
+        color: var(--navy) !important;
+        border-color: var(--border) !important;
     }
 </style>
 @endsection

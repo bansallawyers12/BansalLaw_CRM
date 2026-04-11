@@ -105,7 +105,6 @@ class SignupController extends BaseController
                 'type' => 'lead',
                 'is_archived' => 0,
                 'is_deleted' => null,
-                'verified' => 0,
                 'cp_status' => 2,
                 'cp_code_verify' => 0,
                 'australian_study' => 0,

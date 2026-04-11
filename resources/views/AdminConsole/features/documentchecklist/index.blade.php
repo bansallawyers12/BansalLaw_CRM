@@ -1,69 +1,10 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'Document Checklist')
 
-@section('styles')
-<style>
-    /* Ensure dropdown menu is visible and not clipped */
-    .table-responsive.common_table {
-        overflow: visible !important;
-    }
-    
-    .table-responsive.common_table .table td {
-        overflow: visible !important;
-    }
-    
-    .table-responsive.common_table .dropdown {
-        position: relative;
-        overflow: visible !important;
-    }
-    
-    /* Ensure dropdown menu is fully visible */
-    .table-responsive.common_table .dropdown-menu {
-        position: absolute !important;
-        top: 100% !important;
-        right: 0 !important;
-        left: auto !important;
-        z-index: 9999 !important;
-        display: none !important;
-        min-width: 180px !important;
-    }
-    
-    .table-responsive.common_table .dropdown-menu.show {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-    
-    /* Ensure all dropdown items are visible */
-    .table-responsive.common_table .dropdown-menu .dropdown-item {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        white-space: nowrap !important;
-        padding: 0.5rem 1rem !important;
-        height: auto !important;
-        min-height: 2.25rem !important;
-        line-height: 1.5 !important;
-        width: 100% !important;
-    }
-    
-    .table-responsive.common_table .dropdown-item.has-icon {
-        display: flex !important;
-        align-items: center !important;
-    }
-    
-    .table-responsive.common_table .dropdown-item.has-icon i {
-        margin-right: 8px !important;
-        width: 16px !important;
-        text-align: center !important;
-    }
-</style>
-@endsection
-
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features">
 	<section class="section">
 		<div class="section-body">
 			<div class="server-error">
@@ -78,9 +19,9 @@
 				<div class="col-9 col-md-9 col-lg-9">
 					<div class="card">
 						<div class="card-header">
-							<h4>Document Checklist</h4>
+							<h4>Document checklist</h4>
 							<div class="card-header-action">
-								<a href="{{route('adminconsole.features.documentchecklist.create')}}" class="btn btn-primary">Create Checklist</a>
+								<a href="{{route('adminconsole.features.documentchecklist.create')}}" class="btn btn-primary"><i class="fa fa-plus"></i> Add</a>
 							</div>
 						</div>
 						<div class="card-body">
@@ -95,8 +36,8 @@
 											</div>
 										</th>-->
 										<th>Name</th>
-                                        <th>Document Type</th>
-										<th></th>
+										<th>Document type</th>
+										<th class="text-nowrap">Action</th>
 									</tr>
 								</thead>
 								@if(@$totalData !== 0)
@@ -123,13 +64,17 @@
                                                 }
                                             }?>
                                         </td>
-                                        <td>
-											<div class="dropdown d-inline">
-												<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
-												<div class="dropdown-menu">
-													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.documentchecklist.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
-													<a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'portal_document_checklists')"><i class="fas fa-trash"></i> Delete</a>
-												</div>
+                                        <td class="text-nowrap">
+											<div class="dropdown d-inline-block">
+												<button class="btn btn-primary dropdown-toggle" type="button" id="docChkAction_{{ $list->id }}"
+													data-bs-toggle="dropdown"
+													data-bs-popper-config='{"strategy":"fixed"}'
+													aria-haspopup="true"
+													aria-expanded="false">Action</button>
+												<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="docChkAction_{{ $list->id }}">
+													<li><a class="dropdown-item has-icon" href="{{route('adminconsole.features.documentchecklist.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a></li>
+													<li><a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'portal_document_checklists')"><i class="fas fa-trash"></i> Delete</a></li>
+												</ul>
 											</div>
 										</td>
 									</tr>
@@ -138,8 +83,8 @@
 								@else
 								<tbody>
 									<tr>
-										<td style="text-align:center;" colspan="7">
-											No Record found
+										<td class="text-center" colspan="3">
+											No records found
 										</td>
 									</tr>
 								</tbody>

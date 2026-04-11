@@ -1,66 +1,8 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'Workflows')
 
-@section('styles')
-<style>
-    /* Fix dropdown menu positioning for action buttons */
-    .table-responsive {
-        overflow: visible !important;
-    }
-    
-    .common_table .table td {
-        overflow: visible !important;
-    }
-    
-    .common_table .table td .dropdown {
-        position: relative;
-        display: inline-block;
-        overflow: visible !important;
-    }
-    
-    .common_table .dropdown-menu {
-        position: absolute !important;
-        top: 100% !important;
-        right: 0 !important;
-        left: auto !important;
-        float: none !important;
-        min-width: 180px;
-        padding: 8px 0;
-        margin: 4px 0 0;
-        font-size: 14px;
-        background: #ffffff;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        z-index: 9999 !important;
-        overflow: visible !important;
-    }
-    
-    .common_table .dropdown-menu.show {
-        display: block !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-    }
-
-    /* Always-visible workflow row actions (no hidden dropdown-only menu) */
-    .workflows-index-actions {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.25rem;
-        min-width: 7.5rem;
-    }
-    .workflows-index-actions .btn {
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-        text-align: center;
-        white-space: nowrap;
-    }
-</style>
-@endsection
-
 @section('content')
-<div class="main-content">
+<div class="main-content adminconsole-features adminconsole-workflow-index">
 	<section class="section">
 		<div class="section-body">
 			<div class="server-error">
@@ -96,7 +38,7 @@
 										<td>{{ $wf->name }}</td>
 										<td>{{ $wf->matter ? $wf->matter->title : '—' }}</td>
 										<td>{{ $wf->stages->count() }}</td>
-										<td>
+										<td class="text-nowrap">
 											<div class="workflows-index-actions">
 												<a class="btn btn-sm btn-primary" href="{{ route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($wf->id))) }}"><i class="fas fa-list"></i> Manage Stages</a>
 												<a class="btn btn-sm btn-secondary" href="{{ route('adminconsole.features.workflow.editWorkflow', base64_encode(convert_uuencode($wf->id))) }}"><i class="far fa-edit"></i> Edit Workflow</a>

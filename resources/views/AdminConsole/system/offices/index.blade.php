@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features">
 	<section class="section">
 		<div class="section-body">
 			<div class="server-error">
@@ -25,7 +25,7 @@
 							</div>
 						</div>
 						<div class="card-body">
-							<div class="table-responsive"> 
+							<div class="table-responsive common_table">
 								<table class="table text_wrap">
 									<thead>
 										<tr>
@@ -48,14 +48,18 @@
 											<td>{{ @$list->mobile == "" ? config('constants.empty') : Str::limit(@$list->mobile, '50', '...') }}</td> 
 											<td>{{ @$list->phone == "" ? config('constants.empty') : Str::limit(@$list->phone, '50', '...') }}</td> 
 											<td>{{ @$list->contact_person == "" ? config('constants.empty') : Str::limit(@$list->contact_person, '50', '...') }}</td> 	
-											<td>
-												<div class="dropdown d-inline">
-													<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
-													<div class="dropdown-menu">
-														<a class="dropdown-item has-icon" href="{{route('adminconsole.system.offices.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
-														<a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'branches')"><i class="fas fa-trash"></i> Delete</a>
-													</div>
-												</div>								  
+											<td class="text-nowrap">
+												<div class="dropdown d-inline-block">
+													<button class="btn btn-primary dropdown-toggle" type="button" id="officeAction_{{ $list->id }}"
+														data-bs-toggle="dropdown"
+														data-bs-popper-config='{"strategy":"fixed"}'
+														aria-haspopup="true"
+														aria-expanded="false">Action</button>
+													<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="officeAction_{{ $list->id }}">
+														<li><a class="dropdown-item has-icon" href="{{route('adminconsole.system.offices.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a></li>
+														<li><a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'branches')"><i class="fas fa-trash"></i> Delete</a></li>
+													</ul>
+												</div>
 											</td>
 										</tr>	
 									@endforeach	

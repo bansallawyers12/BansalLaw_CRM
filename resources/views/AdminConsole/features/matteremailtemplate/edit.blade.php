@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features">
 	<section class="section">
 		<div class="section-body">
 			<?php $effectiveMatterId = isset($matterId) && $matterId != '' ? $matterId : ($fetchedData->matter_id ?? null); ?>

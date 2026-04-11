@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-staff-list">
 	<section class="section">
 		<div class="section-body">
 			<div class="server-error">
@@ -25,26 +25,27 @@
 							</div>
 						</div>
 						<div class="card-body">
-							<ul class="nav nav-pills" id="staff_tabs" role="tablist">
-								<li class="nav-item">
-									<a class="nav-link active" id="active-tab" href="{{ route('adminconsole.staff.active') }}">Active</a>
-								</li>
-								<li class="nav-item">
-									<a class="nav-link" id="inactive-tab" href="{{ route('adminconsole.staff.inactive') }}">Inactive</a>
-								</li>
-								<li class="nav-item">
-									<a class="nav-link" id="invited-tab" href="{{ route('adminconsole.staff.invited') }}">Invited</a>
-								</li>
-
-								<form action="{{ route('adminconsole.staff.active') }}" method="get">
-									<div class="" style="display: inline-flex;float: right;margin-left:680px;">
-										<input id="search-input" type="search" name="search_by" class="form-control" value="{{ request('search_by', '') }}" />
-										<button id="search-button" type="submit" class="btn btn-primary">
+							<div class="staff-list-tabs-toolbar d-flex flex-wrap align-items-center justify-content-between mb-3">
+								<ul class="nav nav-pills mb-0 flex-wrap" id="staff_tabs" role="tablist">
+									<li class="nav-item">
+										<a class="nav-link active" id="active-tab" href="{{ route('adminconsole.staff.active') }}">Active</a>
+									</li>
+									<li class="nav-item">
+										<a class="nav-link" id="inactive-tab" href="{{ route('adminconsole.staff.inactive') }}">Inactive</a>
+									</li>
+									<li class="nav-item">
+										<a class="nav-link" id="invited-tab" href="{{ route('adminconsole.staff.invited') }}">Invited</a>
+									</li>
+								</ul>
+								<form action="{{ route('adminconsole.staff.active') }}" method="get" class="staff-list-search-form">
+									<div class="staff-list-toolbar d-flex align-items-stretch">
+										<input id="search-input" type="search" name="search_by" class="form-control" value="{{ request('search_by', '') }}" placeholder="Search name or email" aria-label="Search staff" />
+										<button id="search-button" type="submit" class="btn btn-primary" aria-label="Search">
 											<i class="fas fa-search"></i>
 										</button>
 									</div>
 								</form>
-							</ul>
+							</div>
 							<div class="tab-content" id="checkinContent">
 								<div class="tab-pane fade show active" id="active" role="tabpanel" aria-labelledby="active-tab">
 									<div class="table-responsive common_table">
