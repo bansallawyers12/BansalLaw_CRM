@@ -4682,6 +4682,8 @@ class ClientsController extends Controller
             $TotalDoHAChargesInclSurcharge = '0.00';
             $TotalEstimatedOtherCosts = 0;
             $GrandTotalFeesAndCosts = 0;
+            $BlocktotalfeesincltaxFormated = '0.00';
+            $GrandTotalFeesAndCostsFormated = '0.00';
 
             if( isset($request->client_matter_id) && $request->client_matter_id != '' )
             {  //dd($request->client_matter_id);
@@ -4784,6 +4786,10 @@ class ClientsController extends Controller
                 }
             }
 
+            $blockFee1Fmt = number_format((float) $Block_1_Ex_Tax, 2, '.', '');
+            $blockFee2Fmt = number_format((float) $Block_2_Ex_Tax, 2, '.', '');
+            $blockFee3Fmt = number_format((float) $Block_3_Ex_Tax, 2, '.', '');
+
             // Replace placeholders
             $replacements = [
                 'ClientID' => $client->client_id,
@@ -4803,8 +4809,10 @@ class ClientsController extends Controller
                 'VisaApplyingForStream' => $visa_stream,
 
                 'Block1IncTax' => number_format($professional_fee, 2),
+                'Block1IncGST' => number_format($professional_fee, 2),
                 'TotalAgentFeeGST' => number_format($gst_fee ?? 0, 2),
                 'TotalAgentFeeIncTax' => number_format($professional_fee + ($gst_fee ?? 0), 2),
+                'TotalAgentFeeIncGST' => number_format($professional_fee + ($gst_fee ?? 0), 2),
                 'BaseApplicationCharge' => number_format($visa_application_charge, 2),
                 'DOHABaseApplicationChargeIncCCSurcharge' => number_format($visa_application_charge, 2),
 
@@ -4816,12 +4824,16 @@ class ClientsController extends Controller
                 'visa_apply'=>$visa_subclass,
 
                 'Block1description'=>$Block_1_Description,
-                'Block1feesincltax'=>$Block_1_Ex_Tax,
+                'Block1feesincltax'=>$blockFee1Fmt,
+                'Block1feesinclgst'=>$blockFee1Fmt,
                 'Block2description'=>$Block_2_Description,
-                'Block2feesincltax'=>$Block_2_Ex_Tax,
+                'Block2feesincltax'=>$blockFee2Fmt,
+                'Block2feesinclgst'=>$blockFee2Fmt,
                 'Block3description'=>$Block_3_Description,
-                'Block3feesincltax'=>$Block_3_Ex_Tax,
+                'Block3feesincltax'=>$blockFee3Fmt,
+                'Block3feesinclgst'=>$blockFee3Fmt,
                 'Blocktotalfeesincltax'=>$BlocktotalfeesincltaxFormated,
+                'Blocktotalfeesinclgst'=>$BlocktotalfeesincltaxFormated,
 
                 'DoHAMainApplicantChargePersonCount'=>$DoHAMainApplicantChargePersonCount,
                 'DoHAMainApplicantCharge'=>$DoHAMainApplicantCharge,
@@ -5181,254 +5193,67 @@ class ClientsController extends Controller
 
     //Store Cost Assignment Form Values
     public function savecostassignment(Request $request)
-    {   //dd( $request->all());
+    {
         if ($request->isMethod('post'))
         {
-            $requestData = $request->all(); //dd($requestData);
+            $requestData = $request->all();
 
-            if( isset($requestData['surcharge']) && $requestData['surcharge'] != '') {
-                $surcharge = $requestData['surcharge'];
-            } else {
-                $surcharge = 'Yes';
-            }
+            $disbursements = array_values(array_filter($requestData['disbursements'] ?? [], fn($d) => isset($d['amount']) && floatval($d['amount']) > 0));
+            $TotalDisbursements = array_sum(array_column($disbursements, 'amount'));
+            $TotalBLOCKFEE = floatval($requestData['Block_1_Ex_Tax'] ?? 0)
+                           + floatval($requestData['Block_2_Ex_Tax'] ?? 0)
+                           + floatval($requestData['Block_3_Ex_Tax'] ?? 0);
 
-            $Dept_Base_Application_Charge = floatval($requestData['Dept_Base_Application_Charge'] ?? 0); //dd($Dept_Base_Application_Charge);
-            $Dept_Base_Application_Charge_no_of_person = intval($requestData['Dept_Base_Application_Charge_no_of_person'] ?? 1); //dd($Dept_Base_Application_Charge_no_of_person);
-            $Dept_Base_Application_Charge_after_person = $Dept_Base_Application_Charge * $Dept_Base_Application_Charge_no_of_person;
-            $Dept_Base_Application_Charge_after_person = floatval($Dept_Base_Application_Charge_after_person); //dd($Dept_Base_Application_Charge_after_person);
+            $cost_assignment_cnt = \App\Models\CostAssignmentForm::where('client_id', $requestData['client_id'])->where('client_matter_id', $requestData['client_matter_id'])->count();
 
-            if( $surcharge == 'Yes'){
-                // Step 2: Calculate 1.4% surcharge
-                $Dept_Base_Application_Surcharge = round($Dept_Base_Application_Charge_after_person * 0.014, 2);
-            } else {
-                $Dept_Base_Application_Surcharge = 0;
-            }
-            
-            // Step 3: Final total after surcharge
-            $Dept_Base_Application_Charge_after_person_surcharge = $Dept_Base_Application_Charge_after_person + $Dept_Base_Application_Surcharge; //dd($Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge);
-
-            $Dept_Non_Internet_Application_Charge = floatval($requestData['Dept_Non_Internet_Application_Charge'] ?? 0); //dd($Dept_Non_Internet_Application_Charge);
-            $Dept_Non_Internet_Application_Charge_no_of_person = intval($requestData['Dept_Non_Internet_Application_Charge_no_of_person'] ?? 1); //dd($Dept_Non_Internet_Application_Charge_no_of_person);
-            $Dept_Non_Internet_Application_Charge_after_person = $Dept_Non_Internet_Application_Charge * $Dept_Non_Internet_Application_Charge_no_of_person;
-            $Dept_Non_Internet_Application_Charge_after_person = floatval($Dept_Non_Internet_Application_Charge_after_person); //dd($Dept_Non_Internet_Application_Charge_after_person);
-
-            if( $surcharge == 'Yes'){
-                // Step 2: Calculate 1.4% surcharge
-                $Dept_Non_Internet_Application_Surcharge = round($Dept_Non_Internet_Application_Charge_after_person * 0.014, 2);
-            } else {
-                $Dept_Non_Internet_Application_Surcharge = 0;
-            }
-            // Step 3: Final total after surcharge
-            $Dept_Non_Internet_Application_Charge_after_person_surcharge = $Dept_Non_Internet_Application_Surcharge + $Dept_Non_Internet_Application_Charge_after_person; //dd($Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge);
-
-            $Dept_Additional_Applicant_Charge_18_Plus = floatval($requestData['Dept_Additional_Applicant_Charge_18_Plus'] ?? 0);
-            $Dept_Additional_Applicant_Charge_18_Plus_no_of_person = intval($requestData['Dept_Additional_Applicant_Charge_18_Plus_no_of_person'] ?? 1);
-            $Dept_Additional_Applicant_Charge_18_Plus_after_person = $Dept_Additional_Applicant_Charge_18_Plus * $Dept_Additional_Applicant_Charge_18_Plus_no_of_person;
-            $Dept_Additional_Applicant_Charge_18_Plus_after_person = floatval($Dept_Additional_Applicant_Charge_18_Plus_after_person);
-
-            if( $surcharge == 'Yes'){
-                // Step 2: Calculate 1.4% surcharge
-                $Dept_Additional_Applicant_Charge_18_Surcharge = round($Dept_Additional_Applicant_Charge_18_Plus_after_person * 0.014, 2);
-            } else {
-                $Dept_Additional_Applicant_Charge_18_Surcharge = 0;
-            }
-            // Step 3: Final total after surcharge
-            $Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge = $Dept_Additional_Applicant_Charge_18_Surcharge + $Dept_Additional_Applicant_Charge_18_Plus_after_person;
-
-            $Dept_Additional_Applicant_Charge_Under_18 = floatval($requestData['Dept_Additional_Applicant_Charge_Under_18'] ?? 0);
-            $Dept_Additional_Applicant_Charge_Under_18_no_of_person = intval($requestData['Dept_Additional_Applicant_Charge_Under_18_no_of_person'] ?? 1);
-            $Dept_Additional_Applicant_Charge_Under_18_after_person = $Dept_Additional_Applicant_Charge_Under_18 * $Dept_Additional_Applicant_Charge_Under_18_no_of_person;
-            $Dept_Additional_Applicant_Charge_Under_18_after_person = floatval($Dept_Additional_Applicant_Charge_Under_18_after_person);
-
-            if( $surcharge == 'Yes'){
-                // Step 2: Calculate 1.4% surcharge
-                $Dept_Additional_Applicant_Charge_Under_18_Surcharge = round($Dept_Additional_Applicant_Charge_Under_18_after_person * 0.014, 2);
-            } else {
-                $Dept_Additional_Applicant_Charge_Under_18_Surcharge = 0;
-            }
-            // Step 3: Final total after surcharge
-            $Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge = $Dept_Additional_Applicant_Charge_Under_18_Surcharge + $Dept_Additional_Applicant_Charge_Under_18_after_person;
-
-            $Dept_Subsequent_Temp_Application_Charge = floatval($requestData['Dept_Subsequent_Temp_Application_Charge'] ?? 0);
-            $Dept_Subsequent_Temp_Application_Charge_no_of_person = intval($requestData['Dept_Subsequent_Temp_Application_Charge_no_of_person'] ?? 1);
-            $Dept_Subsequent_Temp_Application_Charge_after_person = $Dept_Subsequent_Temp_Application_Charge * $Dept_Subsequent_Temp_Application_Charge_no_of_person;
-            $Dept_Subsequent_Temp_Application_Charge_after_person = floatval($Dept_Subsequent_Temp_Application_Charge_after_person);
-
-            if( $surcharge == 'Yes'){
-                // Step 2: Calculate 1.4% surcharge
-                $Dept_Subsequent_Temp_Application_Surcharge = round($Dept_Subsequent_Temp_Application_Charge_after_person * 0.014, 2);
-            } else {
-                $Dept_Subsequent_Temp_Application_Surcharge = 0;
-            }
-            // Step 3: Final total after surcharge
-            $Dept_Subsequent_Temp_Application_Charge_after_person_surcharge = $Dept_Subsequent_Temp_Application_Surcharge + $Dept_Subsequent_Temp_Application_Charge_after_person;
-
-            $Dept_Second_VAC_Instalment_Charge_18_Plus = floatval($requestData['Dept_Second_VAC_Instalment_Charge_18_Plus'] ?? 0);
-            $Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person = intval($requestData['Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person'] ?? 1);
-            $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person = $Dept_Second_VAC_Instalment_Charge_18_Plus * $Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person;
-            $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person = floatval($Dept_Second_VAC_Instalment_Charge_18_Plus_after_person);
-
-            if( $surcharge == 'Yes'){
-                // Step 2: Calculate 1.4% surcharge
-                $Dept_Second_VAC_Instalment_18_Plus_Surcharge = round($Dept_Second_VAC_Instalment_Charge_18_Plus_after_person * 0.014, 2);
-            } else {
-                $Dept_Second_VAC_Instalment_18_Plus_Surcharge = 0;
-            }
-            // Step 3: Final total after surcharge
-            $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge = $Dept_Second_VAC_Instalment_18_Plus_Surcharge + $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person;
-
-            $Dept_Second_VAC_Instalment_Under_18 = floatval($requestData['Dept_Second_VAC_Instalment_Under_18'] ?? 0);
-            $Dept_Second_VAC_Instalment_Under_18_no_of_person = intval($requestData['Dept_Second_VAC_Instalment_Under_18_no_of_person'] ?? 1);
-            $Dept_Second_VAC_Instalment_Under_18_after_person = $Dept_Second_VAC_Instalment_Under_18 * $Dept_Second_VAC_Instalment_Under_18_no_of_person;
-            $Dept_Second_VAC_Instalment_Under_18_after_person = floatval($Dept_Second_VAC_Instalment_Under_18_after_person);
-
-            if( $surcharge == 'Yes'){
-                // Step 2: Calculate 1.4% surcharge
-                $Dept_Second_VAC_Instalment_Under_18_Surcharge = round($Dept_Second_VAC_Instalment_Under_18_after_person * 0.014, 2);
-            } else {
-                $Dept_Second_VAC_Instalment_Under_18_Surcharge = 0;
-            }
-            // Step 3: Final total after surcharge
-            $Dept_Second_VAC_Instalment_Under_18_after_person_surcharge = $Dept_Second_VAC_Instalment_Under_18_Surcharge + $Dept_Second_VAC_Instalment_Under_18_after_person;
-
-            // Get Nomination and Sponsorship charges (no person multiplier for these)
-            $Dept_Nomination_Application_Charge = floatval($requestData['Dept_Nomination_Application_Charge'] ?? 0);
-            $Dept_Sponsorship_Application_Charge = floatval($requestData['Dept_Sponsorship_Application_Charge'] ?? 0);
-
-            $TotalDoHACharges = $Dept_Base_Application_Charge_after_person
-                                + $Dept_Additional_Applicant_Charge_18_Plus_after_person
-                                + $Dept_Additional_Applicant_Charge_Under_18_after_person
-                                + $Dept_Subsequent_Temp_Application_Charge_after_person
-                                + $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person
-                                + $Dept_Second_VAC_Instalment_Under_18_after_person
-                                + $Dept_Non_Internet_Application_Charge_after_person
-                                + $Dept_Nomination_Application_Charge
-                                + $Dept_Sponsorship_Application_Charge;
-
-            // Calculate surcharge as 1.4% of total DoHA charges (matching frontend calculation)
-            if( $surcharge == 'Yes'){
-                $TotalDoHASurcharges = round($TotalDoHACharges * 0.014, 2);
-            } else {
-                $TotalDoHASurcharges = 0;
-            }
-
-            $TotalBLOCKFEE = $requestData['Block_1_Ex_Tax'] + $requestData['Block_2_Ex_Tax'] +  $requestData['Block_3_Ex_Tax'];
-
-            $cost_assignment_cnt = \App\Models\CostAssignmentForm::where('client_id',$requestData['client_id'])->where('client_matter_id',$requestData['client_matter_id'])->count();
-            //dd($surcharge);
-            if($cost_assignment_cnt >0){
-                //update
+            if ($cost_assignment_cnt > 0) {
                 $costAssignment = \App\Models\CostAssignmentForm::where('client_id', $requestData['client_id'])
-                ->where('client_matter_id', $requestData['client_matter_id'])
-                ->first();
+                    ->where('client_matter_id', $requestData['client_matter_id'])
+                    ->first();
                 if ($costAssignment) {
                     $saved = $costAssignment->update([
-                        'agent_id' => $requestData['agent_id'],
-                        'surcharge' => $surcharge,
-                        
-                        'Dept_Base_Application_Charge' => $requestData['Dept_Base_Application_Charge'],
-                        'Dept_Base_Application_Charge_no_of_person' => $requestData['Dept_Base_Application_Charge_no_of_person'],
-                        'Dept_Base_Application_Charge_after_person' => $Dept_Base_Application_Charge_after_person,
-                        'Dept_Base_Application_Charge_after_person_surcharge' => $Dept_Base_Application_Charge_after_person_surcharge,
-
-                        'Dept_Non_Internet_Application_Charge' => $requestData['Dept_Non_Internet_Application_Charge'],
-                        'Dept_Non_Internet_Application_Charge_no_of_person' => $requestData['Dept_Non_Internet_Application_Charge_no_of_person'],
-                        'Dept_Non_Internet_Application_Charge_after_person' => $Dept_Non_Internet_Application_Charge_after_person,
-                        'Dept_Non_Internet_Application_Charge_after_person_surcharge' => $Dept_Non_Internet_Application_Charge_after_person_surcharge,
-
-                        'Dept_Additional_Applicant_Charge_18_Plus' => $requestData['Dept_Additional_Applicant_Charge_18_Plus'],
-                        'Dept_Additional_Applicant_Charge_18_Plus_no_of_person' => $requestData['Dept_Additional_Applicant_Charge_18_Plus_no_of_person'],
-                        'Dept_Additional_Applicant_Charge_18_Plus_after_person' => $Dept_Additional_Applicant_Charge_18_Plus_after_person,
-                        'Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge' => $Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge,
-
-                        'Dept_Additional_Applicant_Charge_Under_18' => $requestData['Dept_Additional_Applicant_Charge_Under_18'],
-                        'Dept_Additional_Applicant_Charge_Under_18_no_of_person' => $requestData['Dept_Additional_Applicant_Charge_Under_18_no_of_person'],
-                        'Dept_Additional_Applicant_Charge_Under_18_after_person' => $Dept_Additional_Applicant_Charge_Under_18_after_person,
-                        'Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge' => $Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge,
-
-                        'Dept_Subsequent_Temp_Application_Charge' => $requestData['Dept_Subsequent_Temp_Application_Charge'],
-                        'Dept_Subsequent_Temp_Application_Charge_no_of_person' => $requestData['Dept_Subsequent_Temp_Application_Charge_no_of_person'],
-                        'Dept_Subsequent_Temp_Application_Charge_after_person' => $Dept_Subsequent_Temp_Application_Charge_after_person,
-                        'Dept_Subsequent_Temp_Application_Charge_after_person_surcharge' => $Dept_Subsequent_Temp_Application_Charge_after_person_surcharge,
-
-                        'Dept_Second_VAC_Instalment_Charge_18_Plus' => $requestData['Dept_Second_VAC_Instalment_Charge_18_Plus'],
-                        'Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person' => $requestData['Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person'],
-                        'Dept_Second_VAC_Instalment_Charge_18_Plus_after_person' => $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person,
-                        'Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge' => $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge,
-
-                        'Dept_Second_VAC_Instalment_Under_18' => $requestData['Dept_Second_VAC_Instalment_Under_18'],
-                        'Dept_Second_VAC_Instalment_Under_18_no_of_person' => $requestData['Dept_Second_VAC_Instalment_Under_18_no_of_person'],
-                        'Dept_Second_VAC_Instalment_Under_18_after_person' => $Dept_Second_VAC_Instalment_Under_18_after_person,
-                        'Dept_Second_VAC_Instalment_Under_18_after_person_surcharge' => $Dept_Second_VAC_Instalment_Under_18_after_person_surcharge,
-
-                        'Dept_Nomination_Application_Charge' => $requestData['Dept_Nomination_Application_Charge'],
-                        'Dept_Sponsorship_Application_Charge' => $requestData['Dept_Sponsorship_Application_Charge'],
-                        'Block_1_Ex_Tax' => $requestData['Block_1_Ex_Tax'],
-                        'Block_2_Ex_Tax' => $requestData['Block_2_Ex_Tax'],
-                        'Block_3_Ex_Tax' => $requestData['Block_3_Ex_Tax'],
-                        'additional_fee_1' => $requestData['additional_fee_1'],
-                        'TotalDoHACharges' => $TotalDoHACharges,
-                        'TotalDoHASurcharges' => $TotalDoHASurcharges,
-                        'TotalBLOCKFEE' => $TotalBLOCKFEE
+                        'agent_id'           => $requestData['agent_id'],
+                        'Block_1_Ex_Tax'     => $requestData['Block_1_Ex_Tax'] ?? 0,
+                        'Block_2_Ex_Tax'     => $requestData['Block_2_Ex_Tax'] ?? 0,
+                        'Block_3_Ex_Tax'     => $requestData['Block_3_Ex_Tax'] ?? 0,
+                        'additional_fee_1'   => $requestData['additional_fee_1'] ?? 0,
+                        'TotalBLOCKFEE'      => $TotalBLOCKFEE,
+                        'TotalDisbursements' => $TotalDisbursements,
                     ]);
+                    if ($saved) {
+                        $costAssignment->disbursementLines()->delete();
+                        foreach ($disbursements as $i => $d) {
+                            $costAssignment->disbursementLines()->create([
+                                'nature'      => $d['nature'] ?? 'other',
+                                'description' => $d['description'] ?? null,
+                                'amount'      => floatval($d['amount']),
+                                'sort_order'  => $i,
+                            ]);
+                        }
+                    }
                 }
-            }
-            else
-            {
-                //insert
+            } else {
                 $obj = new CostAssignmentForm;
-
-                $obj->client_id = $requestData['client_id'];
-                $obj->client_matter_id = $requestData['client_matter_id'];
-                $obj->agent_id = $requestData['agent_id'];
-                $obj->surcharge = $surcharge;
-                
-                $obj->Dept_Base_Application_Charge = $requestData['Dept_Base_Application_Charge'];
-                $obj->Dept_Base_Application_Charge_no_of_person = $requestData['Dept_Base_Application_Charge_no_of_person'];
-                $obj->Dept_Base_Application_Charge_after_person = $Dept_Base_Application_Charge_after_person;
-                $obj->Dept_Base_Application_Charge_after_person_surcharge = $Dept_Base_Application_Charge_after_person_surcharge;
-
-                $obj->Dept_Non_Internet_Application_Charge = $requestData['Dept_Non_Internet_Application_Charge'];
-                 $obj->Dept_Non_Internet_Application_Charge_no_of_person = $requestData['Dept_Non_Internet_Application_Charge_no_of_person'];
-                $obj->Dept_Non_Internet_Application_Charge_after_person = $Dept_Non_Internet_Application_Charge_after_person;
-                $obj->Dept_Non_Internet_Application_Charge_after_person_surcharge = $Dept_Non_Internet_Application_Charge_after_person_surcharge;
-
-                $obj->Dept_Additional_Applicant_Charge_18_Plus = $requestData['Dept_Additional_Applicant_Charge_18_Plus'];
-                $obj->Dept_Additional_Applicant_Charge_18_Plus_no_of_person = $requestData['Dept_Additional_Applicant_Charge_18_Plus_no_of_person'];
-                $obj->Dept_Additional_Applicant_Charge_18_Plus_after_person = $Dept_Additional_Applicant_Charge_18_Plus_after_person;
-                $obj->Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge = $Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge;
-
-                $obj->Dept_Additional_Applicant_Charge_Under_18 = $requestData['Dept_Additional_Applicant_Charge_Under_18'];
-                $obj->Dept_Additional_Applicant_Charge_Under_18_no_of_person = $requestData['Dept_Additional_Applicant_Charge_Under_18_no_of_person'];
-                $obj->Dept_Additional_Applicant_Charge_Under_18_after_person = $Dept_Additional_Applicant_Charge_Under_18_after_person;
-                $obj->Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge = $Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge;
-
-                $obj->Dept_Subsequent_Temp_Application_Charge = $requestData['Dept_Subsequent_Temp_Application_Charge'];
-                $obj->Dept_Subsequent_Temp_Application_Charge_no_of_person = $requestData['Dept_Subsequent_Temp_Application_Charge_no_of_person'];
-                $obj->Dept_Subsequent_Temp_Application_Charge_after_person = $Dept_Subsequent_Temp_Application_Charge_after_person;
-                $obj->Dept_Subsequent_Temp_Application_Charge_after_person_surcharge = $Dept_Subsequent_Temp_Application_Charge_after_person_surcharge;
-
-                $obj->Dept_Second_VAC_Instalment_Charge_18_Plus = $requestData['Dept_Second_VAC_Instalment_Charge_18_Plus'];
-                $obj->Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person = $requestData['Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person'];
-                $obj->Dept_Second_VAC_Instalment_Charge_18_Plus_after_person = $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person;
-                $obj->Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge = $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge;
-
-                $obj->Dept_Second_VAC_Instalment_Under_18 = $requestData['Dept_Second_VAC_Instalment_Under_18'];
-                $obj->Dept_Second_VAC_Instalment_Under_18_no_of_person = $requestData['Dept_Second_VAC_Instalment_Under_18_no_of_person'];
-                $obj->Dept_Second_VAC_Instalment_Under_18_after_person = $Dept_Second_VAC_Instalment_Under_18_after_person;
-                $obj->Dept_Second_VAC_Instalment_Under_18_after_person_surcharge = $Dept_Second_VAC_Instalment_Under_18_after_person_surcharge;
-
-                $obj->Dept_Nomination_Application_Charge = $requestData['Dept_Nomination_Application_Charge'];
-                $obj->Dept_Sponsorship_Application_Charge = $requestData['Dept_Sponsorship_Application_Charge'];
-
-                $obj->Block_1_Ex_Tax = $requestData['Block_1_Ex_Tax'];
-                $obj->Block_2_Ex_Tax = $requestData['Block_2_Ex_Tax'];
-                $obj->Block_3_Ex_Tax = $requestData['Block_3_Ex_Tax'];
-                $obj->additional_fee_1 = $requestData['additional_fee_1'];
-                $obj->TotalDoHACharges = $TotalDoHACharges;
-                $obj->TotalDoHASurcharges = $TotalDoHASurcharges;
-                $obj->TotalBLOCKFEE = $TotalBLOCKFEE;
+                $obj->client_id          = $requestData['client_id'];
+                $obj->client_matter_id   = $requestData['client_matter_id'];
+                $obj->agent_id           = $requestData['agent_id'];
+                $obj->Block_1_Ex_Tax     = $requestData['Block_1_Ex_Tax'] ?? 0;
+                $obj->Block_2_Ex_Tax     = $requestData['Block_2_Ex_Tax'] ?? 0;
+                $obj->Block_3_Ex_Tax     = $requestData['Block_3_Ex_Tax'] ?? 0;
+                $obj->additional_fee_1   = $requestData['additional_fee_1'] ?? 0;
+                $obj->TotalBLOCKFEE      = $TotalBLOCKFEE;
+                $obj->TotalDisbursements = $TotalDisbursements;
                 $saved = $obj->save();
+                if ($saved) {
+                    foreach ($disbursements as $i => $d) {
+                        $obj->disbursementLines()->create([
+                            'nature'      => $d['nature'] ?? 'other',
+                            'description' => $d['description'] ?? null,
+                            'amount'      => floatval($d['amount']),
+                            'sort_order'  => $i,
+                        ]);
+                    }
+                }
             }
             if (!$saved) {
                 $response['status'] 	= 	false;
@@ -5909,250 +5734,32 @@ class ClientsController extends Controller
                 // Lead conversion is now explicit: user must click "Convert to Client" button
                 // (Convert Lead to Client modal in sidebar - no auto-conversion here)
 
-                if( isset($requestData['surcharge']) && $requestData['surcharge'] != '') {
-                    $surcharge = $requestData['surcharge'];
-                } else {
-                    $surcharge = 'Yes';
-                }
+                $disbursements = array_values(array_filter($requestData['disbursements'] ?? [], fn($d) => isset($d['amount']) && floatval($d['amount']) > 0));
+                $TotalDisbursements = array_sum(array_column($disbursements, 'amount'));
+                $TotalBLOCKFEE = floatval($requestData['Block_1_Ex_Tax'] ?? 0)
+                               + floatval($requestData['Block_2_Ex_Tax'] ?? 0)
+                               + floatval($requestData['Block_3_Ex_Tax'] ?? 0);
 
-                $Dept_Base_Application_Charge = floatval($requestData['Dept_Base_Application_Charge'] ?? 0); //dd($Dept_Base_Application_Charge);
-                $Dept_Base_Application_Charge_no_of_person = intval($requestData['Dept_Base_Application_Charge_no_of_person'] ?? 1); //dd($Dept_Base_Application_Charge_no_of_person);
-                $Dept_Base_Application_Charge_after_person = $Dept_Base_Application_Charge * $Dept_Base_Application_Charge_no_of_person;
-                $Dept_Base_Application_Charge_after_person = floatval($Dept_Base_Application_Charge_after_person); //dd($Dept_Base_Application_Charge_after_person);
-
-                if( $surcharge == 'Yes'){
-                    // Step 2: Calculate 1.4% surcharge
-                    $Dept_Base_Application_Surcharge = round($Dept_Base_Application_Charge_after_person * 0.014, 2);
-                } else {
-                    $Dept_Base_Application_Surcharge = 0;
-                }
-            
-                // Step 3: Final total after surcharge
-                $Dept_Base_Application_Charge_after_person_surcharge = $Dept_Base_Application_Charge_after_person + $Dept_Base_Application_Surcharge; //dd($Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge);
-
-                $Dept_Non_Internet_Application_Charge = floatval($requestData['Dept_Non_Internet_Application_Charge'] ?? 0); //dd($Dept_Non_Internet_Application_Charge);
-                $Dept_Non_Internet_Application_Charge_no_of_person = intval($requestData['Dept_Non_Internet_Application_Charge_no_of_person'] ?? 1); //dd($Dept_Non_Internet_Application_Charge_no_of_person);
-                $Dept_Non_Internet_Application_Charge_after_person = $Dept_Non_Internet_Application_Charge * $Dept_Non_Internet_Application_Charge_no_of_person;
-                $Dept_Non_Internet_Application_Charge_after_person = floatval($Dept_Non_Internet_Application_Charge_after_person); //dd($Dept_Non_Internet_Application_Charge_after_person);
-
-                if( $surcharge == 'Yes'){
-                    // Step 2: Calculate 1.4% surcharge
-                    $Dept_Non_Internet_Application_Surcharge = round($Dept_Non_Internet_Application_Charge_after_person * 0.014, 2);
-                } else {
-                    $Dept_Non_Internet_Application_Surcharge = 0;
-                }
-                // Step 3: Final total after surcharge
-                $Dept_Non_Internet_Application_Charge_after_person_surcharge = $Dept_Non_Internet_Application_Surcharge + $Dept_Non_Internet_Application_Charge_after_person; //dd($Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge);
-
-                $Dept_Additional_Applicant_Charge_18_Plus = floatval($requestData['Dept_Additional_Applicant_Charge_18_Plus'] ?? 0);
-                $Dept_Additional_Applicant_Charge_18_Plus_no_of_person = intval($requestData['Dept_Additional_Applicant_Charge_18_Plus_no_of_person'] ?? 1);
-                $Dept_Additional_Applicant_Charge_18_Plus_after_person = $Dept_Additional_Applicant_Charge_18_Plus * $Dept_Additional_Applicant_Charge_18_Plus_no_of_person;
-                $Dept_Additional_Applicant_Charge_18_Plus_after_person = floatval($Dept_Additional_Applicant_Charge_18_Plus_after_person);
-
-                if( $surcharge == 'Yes'){
-                    // Step 2: Calculate 1.4% surcharge
-                    $Dept_Additional_Applicant_Charge_18_Surcharge = round($Dept_Additional_Applicant_Charge_18_Plus_after_person * 0.014, 2);
-                } else {
-                    $Dept_Additional_Applicant_Charge_18_Surcharge = 0;
-                }
-                // Step 3: Final total after surcharge
-                $Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge = $Dept_Additional_Applicant_Charge_18_Surcharge + $Dept_Additional_Applicant_Charge_18_Plus_after_person;
-
-                $Dept_Additional_Applicant_Charge_Under_18 = floatval($requestData['Dept_Additional_Applicant_Charge_Under_18'] ?? 0);
-                $Dept_Additional_Applicant_Charge_Under_18_no_of_person = intval($requestData['Dept_Additional_Applicant_Charge_Under_18_no_of_person'] ?? 1);
-                $Dept_Additional_Applicant_Charge_Under_18_after_person = $Dept_Additional_Applicant_Charge_Under_18 * $Dept_Additional_Applicant_Charge_Under_18_no_of_person;
-                $Dept_Additional_Applicant_Charge_Under_18_after_person = floatval($Dept_Additional_Applicant_Charge_Under_18_after_person);
-
-                if( $surcharge == 'Yes'){
-                    // Step 2: Calculate 1.4% surcharge
-                    $Dept_Additional_Applicant_Charge_Under_18_Surcharge = round($Dept_Additional_Applicant_Charge_Under_18_after_person * 0.014, 2);
-                } else {
-                    $Dept_Additional_Applicant_Charge_Under_18_Surcharge = 0;
-                }
-                // Step 3: Final total after surcharge
-                $Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge = $Dept_Additional_Applicant_Charge_Under_18_Surcharge + $Dept_Additional_Applicant_Charge_Under_18_after_person;
-
-                $Dept_Subsequent_Temp_Application_Charge = floatval($requestData['Dept_Subsequent_Temp_Application_Charge'] ?? 0);
-                $Dept_Subsequent_Temp_Application_Charge_no_of_person = intval($requestData['Dept_Subsequent_Temp_Application_Charge_no_of_person'] ?? 1);
-                $Dept_Subsequent_Temp_Application_Charge_after_person = $Dept_Subsequent_Temp_Application_Charge * $Dept_Subsequent_Temp_Application_Charge_no_of_person;
-                $Dept_Subsequent_Temp_Application_Charge_after_person = floatval($Dept_Subsequent_Temp_Application_Charge_after_person);
-
-                if( $surcharge == 'Yes'){
-                    // Step 2: Calculate 1.4% surcharge
-                    $Dept_Subsequent_Temp_Application_Surcharge = round($Dept_Subsequent_Temp_Application_Charge_after_person * 0.014, 2);
-                } else {
-                    $Dept_Subsequent_Temp_Application_Surcharge = 0;
-                }
-                // Step 3: Final total after surcharge
-                $Dept_Subsequent_Temp_Application_Charge_after_person_surcharge = $Dept_Subsequent_Temp_Application_Surcharge + $Dept_Subsequent_Temp_Application_Charge_after_person;
-
-                $Dept_Second_VAC_Instalment_Charge_18_Plus = floatval($requestData['Dept_Second_VAC_Instalment_Charge_18_Plus'] ?? 0);
-                $Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person = intval($requestData['Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person'] ?? 1);
-                $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person = $Dept_Second_VAC_Instalment_Charge_18_Plus * $Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person;
-                $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person = floatval($Dept_Second_VAC_Instalment_Charge_18_Plus_after_person);
-
-                if( $surcharge == 'Yes'){
-                    // Step 2: Calculate 1.4% surcharge
-                    $Dept_Second_VAC_Instalment_18_Plus_Surcharge = round($Dept_Second_VAC_Instalment_Charge_18_Plus_after_person * 0.014, 2);
-                } else {
-                    $Dept_Second_VAC_Instalment_18_Plus_Surcharge = 0;
-                }
-                // Step 3: Final total after surcharge
-                $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge = $Dept_Second_VAC_Instalment_18_Plus_Surcharge + $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person;
-
-                $Dept_Second_VAC_Instalment_Under_18 = floatval($requestData['Dept_Second_VAC_Instalment_Under_18'] ?? 0);
-                $Dept_Second_VAC_Instalment_Under_18_no_of_person = intval($requestData['Dept_Second_VAC_Instalment_Under_18_no_of_person'] ?? 1);
-                $Dept_Second_VAC_Instalment_Under_18_after_person = $Dept_Second_VAC_Instalment_Under_18 * $Dept_Second_VAC_Instalment_Under_18_no_of_person;
-                $Dept_Second_VAC_Instalment_Under_18_after_person = floatval($Dept_Second_VAC_Instalment_Under_18_after_person);
-
-                if( $surcharge == 'Yes'){
-                    // Step 2: Calculate 1.4% surcharge
-                    $Dept_Second_VAC_Instalment_Under_18_Surcharge = round($Dept_Second_VAC_Instalment_Under_18_after_person * 0.014, 2);
-                } else {
-                    $Dept_Second_VAC_Instalment_Under_18_Surcharge = 0;
-                }
-                // Step 3: Final total after surcharge
-                $Dept_Second_VAC_Instalment_Under_18_after_person_surcharge = $Dept_Second_VAC_Instalment_Under_18_Surcharge + $Dept_Second_VAC_Instalment_Under_18_after_person;
-
-                // Get Nomination and Sponsorship charges (no person multiplier for these)
-                $Dept_Nomination_Application_Charge = floatval($requestData['Dept_Nomination_Application_Charge'] ?? 0);
-                $Dept_Sponsorship_Application_Charge = floatval($requestData['Dept_Sponsorship_Application_Charge'] ?? 0);
-
-                $TotalDoHACharges = $Dept_Base_Application_Charge_after_person
-                                    + $Dept_Additional_Applicant_Charge_18_Plus_after_person
-                                    + $Dept_Additional_Applicant_Charge_Under_18_after_person
-                                    + $Dept_Subsequent_Temp_Application_Charge_after_person
-                                    + $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person
-                                    + $Dept_Second_VAC_Instalment_Under_18_after_person
-                                    + $Dept_Non_Internet_Application_Charge_after_person
-                                    + $Dept_Nomination_Application_Charge
-                                    + $Dept_Sponsorship_Application_Charge;
-
-                // Calculate surcharge as 1.4% of total DoHA charges (matching frontend calculation)
-                if( $surcharge == 'Yes'){
-                    $TotalDoHASurcharges = round($TotalDoHACharges * 0.014, 2);
-                } else {
-                    $TotalDoHASurcharges = 0;
-                }
-
-                $TotalBLOCKFEE = $requestData['Block_1_Ex_Tax'] + $requestData['Block_2_Ex_Tax'] +  $requestData['Block_3_Ex_Tax'];
-
-                $cost_assignment_cnt = \App\Models\CostAssignmentForm::where('client_id',$requestData['client_id'])->where('client_matter_id',$lastInsertedId)->count();
-                //dd($surcharge);
-                if($cost_assignment_cnt >0)
-                {
-                    //update
-                    $costAssignment = \App\Models\CostAssignmentForm::where('client_id', $requestData['client_id'])
-                    ->where('client_matter_id', $lastInsertedId)
-                    ->first();
-                    if ($costAssignment) 
-                    {
-                        $saved = $costAssignment->update([
-                            'agent_id' => $requestData['agent_id'],
-                            'surcharge' => $surcharge,
-                            
-                            'Dept_Base_Application_Charge' => $requestData['Dept_Base_Application_Charge'],
-                            'Dept_Base_Application_Charge_no_of_person' => $requestData['Dept_Base_Application_Charge_no_of_person'],
-                            'Dept_Base_Application_Charge_after_person' => $Dept_Base_Application_Charge_after_person,
-                            'Dept_Base_Application_Charge_after_person_surcharge' => $Dept_Base_Application_Charge_after_person_surcharge,
-
-                            'Dept_Non_Internet_Application_Charge' => $requestData['Dept_Non_Internet_Application_Charge'],
-                            'Dept_Non_Internet_Application_Charge_no_of_person' => $requestData['Dept_Non_Internet_Application_Charge_no_of_person'],
-                            'Dept_Non_Internet_Application_Charge_after_person' => $Dept_Non_Internet_Application_Charge_after_person,
-                            'Dept_Non_Internet_Application_Charge_after_person_surcharge' => $Dept_Non_Internet_Application_Charge_after_person_surcharge,
-
-                            'Dept_Additional_Applicant_Charge_18_Plus' => $requestData['Dept_Additional_Applicant_Charge_18_Plus'],
-                            'Dept_Additional_Applicant_Charge_18_Plus_no_of_person' => $requestData['Dept_Additional_Applicant_Charge_18_Plus_no_of_person'],
-                            'Dept_Additional_Applicant_Charge_18_Plus_after_person' => $Dept_Additional_Applicant_Charge_18_Plus_after_person,
-                            'Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge' => $Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge,
-
-                            'Dept_Additional_Applicant_Charge_Under_18' => $requestData['Dept_Additional_Applicant_Charge_Under_18'],
-                            'Dept_Additional_Applicant_Charge_Under_18_no_of_person' => $requestData['Dept_Additional_Applicant_Charge_Under_18_no_of_person'],
-                            'Dept_Additional_Applicant_Charge_Under_18_after_person' => $Dept_Additional_Applicant_Charge_Under_18_after_person,
-                            'Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge' => $Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge,
-
-                            'Dept_Subsequent_Temp_Application_Charge' => $requestData['Dept_Subsequent_Temp_Application_Charge'],
-                            'Dept_Subsequent_Temp_Application_Charge_no_of_person' => $requestData['Dept_Subsequent_Temp_Application_Charge_no_of_person'],
-                            'Dept_Subsequent_Temp_Application_Charge_after_person' => $Dept_Subsequent_Temp_Application_Charge_after_person,
-                            'Dept_Subsequent_Temp_Application_Charge_after_person_surcharge' => $Dept_Subsequent_Temp_Application_Charge_after_person_surcharge,
-
-                            'Dept_Second_VAC_Instalment_Charge_18_Plus' => $requestData['Dept_Second_VAC_Instalment_Charge_18_Plus'],
-                            'Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person' => $requestData['Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person'],
-                            'Dept_Second_VAC_Instalment_Charge_18_Plus_after_person' => $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person,
-                            'Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge' => $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge,
-
-                            'Dept_Second_VAC_Instalment_Under_18' => $requestData['Dept_Second_VAC_Instalment_Under_18'],
-                            'Dept_Second_VAC_Instalment_Under_18_no_of_person' => $requestData['Dept_Second_VAC_Instalment_Under_18_no_of_person'],
-                            'Dept_Second_VAC_Instalment_Under_18_after_person' => $Dept_Second_VAC_Instalment_Under_18_after_person,
-                            'Dept_Second_VAC_Instalment_Under_18_after_person_surcharge' => $Dept_Second_VAC_Instalment_Under_18_after_person_surcharge,
-
-                            'Dept_Nomination_Application_Charge' => $requestData['Dept_Nomination_Application_Charge'],
-                            'Dept_Sponsorship_Application_Charge' => $requestData['Dept_Sponsorship_Application_Charge'],
-                            'Block_1_Ex_Tax' => $requestData['Block_1_Ex_Tax'],
-                            'Block_2_Ex_Tax' => $requestData['Block_2_Ex_Tax'],
-                            'Block_3_Ex_Tax' => $requestData['Block_3_Ex_Tax'],
-                            'additional_fee_1' => $requestData['additional_fee_1'],
-                            'TotalDoHACharges' => $TotalDoHACharges,
-                            'TotalDoHASurcharges' => $TotalDoHASurcharges,
-                            'TotalBLOCKFEE' => $TotalBLOCKFEE
+                $obj = new CostAssignmentForm;
+                $obj->client_id          = $requestData['client_id'];
+                $obj->client_matter_id   = $lastInsertedId;
+                $obj->agent_id           = $requestData['legal_practitioner'];
+                $obj->Block_1_Ex_Tax     = $requestData['Block_1_Ex_Tax'] ?? 0;
+                $obj->Block_2_Ex_Tax     = $requestData['Block_2_Ex_Tax'] ?? 0;
+                $obj->Block_3_Ex_Tax     = $requestData['Block_3_Ex_Tax'] ?? 0;
+                $obj->additional_fee_1   = $requestData['additional_fee_1'] ?? 0;
+                $obj->TotalBLOCKFEE      = $TotalBLOCKFEE;
+                $obj->TotalDisbursements = $TotalDisbursements;
+                $saved = $obj->save();
+                if ($saved) {
+                    foreach ($disbursements as $i => $d) {
+                        $obj->disbursementLines()->create([
+                            'nature'      => $d['nature'] ?? 'other',
+                            'description' => $d['description'] ?? null,
+                            'amount'      => floatval($d['amount']),
+                            'sort_order'  => $i,
                         ]);
                     }
-                }
-                else
-                {
-                    //insert
-                    $obj = new CostAssignmentForm;
-                    $obj->client_id = $requestData['client_id'];
-                    $obj->client_matter_id = $lastInsertedId;
-                    $obj->agent_id = $requestData['legal_practitioner'];
-                    $obj->surcharge = $surcharge;
-                    
-                    $obj->Dept_Base_Application_Charge = $requestData['Dept_Base_Application_Charge'];
-                    $obj->Dept_Base_Application_Charge_no_of_person = $requestData['Dept_Base_Application_Charge_no_of_person'];
-                    $obj->Dept_Base_Application_Charge_after_person = $Dept_Base_Application_Charge_after_person;
-                    $obj->Dept_Base_Application_Charge_after_person_surcharge = $Dept_Base_Application_Charge_after_person_surcharge;
-
-                    $obj->Dept_Non_Internet_Application_Charge = $requestData['Dept_Non_Internet_Application_Charge'];
-                    $obj->Dept_Non_Internet_Application_Charge_no_of_person = $requestData['Dept_Non_Internet_Application_Charge_no_of_person'];
-                    $obj->Dept_Non_Internet_Application_Charge_after_person = $Dept_Non_Internet_Application_Charge_after_person;
-                    $obj->Dept_Non_Internet_Application_Charge_after_person_surcharge = $Dept_Non_Internet_Application_Charge_after_person_surcharge;
-
-                    $obj->Dept_Additional_Applicant_Charge_18_Plus = $requestData['Dept_Additional_Applicant_Charge_18_Plus'];
-                    $obj->Dept_Additional_Applicant_Charge_18_Plus_no_of_person = $requestData['Dept_Additional_Applicant_Charge_18_Plus_no_of_person'];
-                    $obj->Dept_Additional_Applicant_Charge_18_Plus_after_person = $Dept_Additional_Applicant_Charge_18_Plus_after_person;
-                    $obj->Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge = $Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge;
-
-                    $obj->Dept_Additional_Applicant_Charge_Under_18 = $requestData['Dept_Additional_Applicant_Charge_Under_18'];
-                    $obj->Dept_Additional_Applicant_Charge_Under_18_no_of_person = $requestData['Dept_Additional_Applicant_Charge_Under_18_no_of_person'];
-                    $obj->Dept_Additional_Applicant_Charge_Under_18_after_person = $Dept_Additional_Applicant_Charge_Under_18_after_person;
-                    $obj->Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge = $Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge;
-
-                    $obj->Dept_Subsequent_Temp_Application_Charge = $requestData['Dept_Subsequent_Temp_Application_Charge'];
-                    $obj->Dept_Subsequent_Temp_Application_Charge_no_of_person = $requestData['Dept_Subsequent_Temp_Application_Charge_no_of_person'];
-                    $obj->Dept_Subsequent_Temp_Application_Charge_after_person = $Dept_Subsequent_Temp_Application_Charge_after_person;
-                    $obj->Dept_Subsequent_Temp_Application_Charge_after_person_surcharge = $Dept_Subsequent_Temp_Application_Charge_after_person_surcharge;
-
-                    $obj->Dept_Second_VAC_Instalment_Charge_18_Plus = $requestData['Dept_Second_VAC_Instalment_Charge_18_Plus'];
-                    $obj->Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person = $requestData['Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person'];
-                    $obj->Dept_Second_VAC_Instalment_Charge_18_Plus_after_person = $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person;
-                    $obj->Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge = $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge;
-
-                    $obj->Dept_Second_VAC_Instalment_Under_18 = $requestData['Dept_Second_VAC_Instalment_Under_18'];
-                    $obj->Dept_Second_VAC_Instalment_Under_18_no_of_person = $requestData['Dept_Second_VAC_Instalment_Under_18_no_of_person'];
-                    $obj->Dept_Second_VAC_Instalment_Under_18_after_person = $Dept_Second_VAC_Instalment_Under_18_after_person;
-                    $obj->Dept_Second_VAC_Instalment_Under_18_after_person_surcharge = $Dept_Second_VAC_Instalment_Under_18_after_person_surcharge;
-
-                    $obj->Dept_Nomination_Application_Charge = $requestData['Dept_Nomination_Application_Charge'];
-                    $obj->Dept_Sponsorship_Application_Charge = $requestData['Dept_Sponsorship_Application_Charge'];
-
-                    $obj->Block_1_Ex_Tax = $requestData['Block_1_Ex_Tax'];
-                    $obj->Block_2_Ex_Tax = $requestData['Block_2_Ex_Tax'];
-                    $obj->Block_3_Ex_Tax = $requestData['Block_3_Ex_Tax'];
-                    $obj->additional_fee_1 = $requestData['additional_fee_1'];
-                    $obj->TotalDoHACharges = $TotalDoHACharges;
-                    $obj->TotalDoHASurcharges = $TotalDoHASurcharges;
-                    $obj->TotalBLOCKFEE = $TotalBLOCKFEE;
-                    $saved = $obj->save();
                 }
                 if (!$saved) 
                 {

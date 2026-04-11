@@ -39,6 +39,12 @@ body.sidebar-mini .h3 {
   font-weight: 700 !important;
 }
 
+/* Client/lead edit sidebar — nav header is on navy gradient; headings must stay light */
+body.sidebar-mini .crm-container .sidebar-navigation .nav-header h3,
+body.sidebar-mini .sidebar-navigation .nav-header h3 {
+  color: #fff !important;
+}
+
 /* Main content & listing areas */
 body.sidebar-mini .main-content {
   background-color: var(--page-bg) !important;
@@ -603,19 +609,45 @@ body.sidebar-mini .esignature-analytics-layout .esignature-analytics-card .card-
   color: #fff !important;
 }
 
-body.sidebar-mini .esignature-analytics-layout .date-filter button {
-  background: var(--navy) !important;
-  background-image: none !important;
+body.sidebar-mini .esignature-analytics-layout .esignature-analytics-card .card-header .btn-outline-light {
   color: #fff !important;
-  border: 1px solid var(--navy) !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: transparent !important;
 }
 
-body.sidebar-mini .esignature-analytics-layout .date-filter button:hover {
+body.sidebar-mini .esignature-analytics-layout .esignature-analytics-card .card-header .btn-outline-light:hover,
+body.sidebar-mini .esignature-analytics-layout .esignature-analytics-card .card-header .btn-outline-light:focus {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.75) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .date-filter .btn.btn-primary {
+  background: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  padding: 8px 20px !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .date-filter .btn.btn-primary:hover,
+body.sidebar-mini .esignature-analytics-layout .date-filter .btn.btn-primary:focus {
   background: var(--sidebar-active) !important;
   border-color: var(--sidebar-active) !important;
-  opacity: 1 !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table .btn.btn-outline-primary {
+  border-color: var(--sidebar-active) !important;
+  color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table .btn.btn-outline-primary:hover,
+body.sidebar-mini .esignature-analytics-layout .data-table .btn.btn-outline-primary:focus {
+  background: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
 }
 
 body.sidebar-mini .esignature-analytics-layout .date-filter input {
@@ -667,6 +699,82 @@ body.sidebar-mini .esignature-analytics-layout .data-table .table-responsive {
   border-color: var(--border) !important;
 }
 
+body.sidebar-mini .esignature-analytics-layout .data-table table {
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table th {
+  background: var(--page-bg) !important;
+  color: var(--text-muted) !important;
+  border-bottom: 2px solid var(--border) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table td {
+  border-bottom: 1px solid var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table tbody tr:hover {
+  background: var(--sidebar-hover) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table a:not(.btn) {
+  color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table a:not(.btn):hover {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .date-filter label {
+  color: var(--text-muted) !important;
+  font-weight: 500 !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .esig-progress-track {
+  background: var(--border) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .badge-type {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .badge-type.type-agreement {
+  background: rgba(58, 111, 168, 0.15) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .badge-type.type-nda {
+  background: rgba(30, 61, 96, 0.1) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .badge-type.type-contract {
+  background: rgba(200, 153, 42, 0.18) !important;
+  color: #7a5800 !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .badge-type.type-general {
+  background: rgba(30, 122, 82, 0.12) !important;
+  color: var(--success) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .esignature-analytics-card {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .esignature-analytics-page {
+  background: transparent !important;
+}
+
+body.sidebar-mini .esignature-analytics-layout .data-table .text-muted,
+body.sidebar-mini .esignature-analytics-layout .data-table td.text-center {
+  color: var(--text-muted) !important;
+}
+
 body.sidebar-mini .esignature-analytics-layout .esig-progress-fill {
   background: var(--sidebar-active) !important;
   background-image: none !important;
@@ -685,10 +793,60 @@ body.sidebar-mini .matter-index-layout .matter-index-page .dropdown-menu {
   box-shadow: 0 4px 16px rgba(30, 61, 96, 0.12) !important;
 }
 
+body.sidebar-mini .matter-index-layout .matter-index-page .dropdown-item {
+  color: var(--text-dark) !important;
+}
+
 body.sidebar-mini .matter-index-layout .matter-index-page .dropdown-item:hover,
 body.sidebar-mini .matter-index-layout .matter-index-page .dropdown-item:focus {
   background-color: var(--sidebar-bg) !important;
   color: var(--navy) !important;
+}
+
+/* SMS Management — dashboard stat tiles; docs/theme.md */
+body.sidebar-mini .adminconsole-sms-dashboard .card-statistic-1 .card-icon.bg-primary {
+  background: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-sms-dashboard .card-statistic-1 .card-icon.bg-danger {
+  background: var(--danger) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-sms-dashboard .card-statistic-1 .card-icon.bg-info {
+  background: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-sms-dashboard .card-statistic-1 .card-icon.bg-warning {
+  background: rgba(200, 153, 42, 0.95) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-sms-dashboard .card-statistic-1 .card-wrap .card-header h4 {
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini .adminconsole-sms-dashboard .card-statistic-1 .card-wrap .card-body {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-sms-form .form-group .form-check-label {
+  text-transform: none !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--text-dark) !important;
+  letter-spacing: normal !important;
+}
+
+body.sidebar-mini .adminconsole-sms-detail .sms-message-box {
+  background: var(--page-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  padding: 15px !important;
+  white-space: pre-wrap !important;
+  color: var(--text-dark) !important;
 }
 
 /* Read-only field values on detail pages */
@@ -1075,7 +1233,10 @@ body.sidebar-mini .adminconsole-teams-form .card .form-group label,
 body.sidebar-mini .adminconsole-roles-form .card .form-group label,
 body.sidebar-mini .adminconsole-personal-doc-type-form .card .form-group label,
 body.sidebar-mini .adminconsole-matter-document-type-form .card .form-group label,
-body.sidebar-mini .adminconsole-document-checklist-form .card .form-group label {
+body.sidebar-mini .adminconsole-document-checklist-form .card .form-group label,
+body.sidebar-mini .adminconsole-matter-form .card .form-group label,
+body.sidebar-mini .adminconsole-upload-checklist-form .card .form-group label,
+body.sidebar-mini .adminconsole-sms-form .card .form-group label {
   color: var(--text-muted) !important;
   font-weight: 600 !important;
   font-size: 12px !important;
@@ -1091,7 +1252,10 @@ body.sidebar-mini .adminconsole-teams-form .form-group label:has(> input[type="c
 body.sidebar-mini .adminconsole-roles-form .form-group label:has(> input[type="checkbox"]),
 body.sidebar-mini .adminconsole-personal-doc-type-form .form-group label:has(> input[type="checkbox"]),
 body.sidebar-mini .adminconsole-matter-document-type-form .form-group label:has(> input[type="checkbox"]),
-body.sidebar-mini .adminconsole-document-checklist-form .form-group label:has(> input[type="checkbox"]) {
+body.sidebar-mini .adminconsole-document-checklist-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-matter-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-upload-checklist-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-sms-form .form-group label:has(> input[type="checkbox"]) {
   text-transform: none !important;
   font-size: 14px !important;
   color: var(--text-dark) !important;
@@ -1105,7 +1269,10 @@ body.sidebar-mini .adminconsole-teams-form .card .card-body h4,
 body.sidebar-mini .adminconsole-roles-form .card .card-body h4,
 body.sidebar-mini .adminconsole-personal-doc-type-form .card .card-body h4,
 body.sidebar-mini .adminconsole-matter-document-type-form .card .card-body h4,
-body.sidebar-mini .adminconsole-document-checklist-form .card .card-body h4 {
+body.sidebar-mini .adminconsole-document-checklist-form .card .card-body h4,
+body.sidebar-mini .adminconsole-matter-form .card .card-body h4,
+body.sidebar-mini .adminconsole-upload-checklist-form .card .card-body h4,
+body.sidebar-mini .adminconsole-sms-form .card .card-body h4 {
   color: var(--navy) !important;
   font-weight: 700 !important;
   font-size: 1rem !important;
@@ -1130,7 +1297,13 @@ body.sidebar-mini .adminconsole-personal-doc-type-form small.form-text,
 body.sidebar-mini .adminconsole-matter-document-type-form .form-text,
 body.sidebar-mini .adminconsole-matter-document-type-form small.form-text,
 body.sidebar-mini .adminconsole-document-checklist-form .form-text,
-body.sidebar-mini .adminconsole-document-checklist-form small.form-text {
+body.sidebar-mini .adminconsole-document-checklist-form small.form-text,
+body.sidebar-mini .adminconsole-matter-form .form-text,
+body.sidebar-mini .adminconsole-matter-form small.form-text,
+body.sidebar-mini .adminconsole-upload-checklist-form .form-text,
+body.sidebar-mini .adminconsole-upload-checklist-form small.form-text,
+body.sidebar-mini .adminconsole-sms-form .form-text,
+body.sidebar-mini .adminconsole-sms-form small.form-text {
   color: var(--text-muted) !important;
 }
 
@@ -1142,7 +1315,10 @@ body.sidebar-mini .adminconsole-teams-form .card-header h4 small,
 body.sidebar-mini .adminconsole-roles-form .card-header h4 small,
 body.sidebar-mini .adminconsole-personal-doc-type-form .card-header h4 small,
 body.sidebar-mini .adminconsole-matter-document-type-form .card-header h4 small,
-body.sidebar-mini .adminconsole-document-checklist-form .card-header h4 small {
+body.sidebar-mini .adminconsole-document-checklist-form .card-header h4 small,
+body.sidebar-mini .adminconsole-matter-form .card-header h4 small,
+body.sidebar-mini .adminconsole-upload-checklist-form .card-header h4 small,
+body.sidebar-mini .adminconsole-sms-form .card-header h4 small {
   color: var(--text-muted) !important;
   font-weight: 500 !important;
   font-size: 0.85rem !important;
@@ -1158,7 +1334,10 @@ body.sidebar-mini .adminconsole-teams-form .alert-info,
 body.sidebar-mini .adminconsole-roles-form .alert-info,
 body.sidebar-mini .adminconsole-personal-doc-type-form .alert-info,
 body.sidebar-mini .adminconsole-matter-document-type-form .alert-info,
-body.sidebar-mini .adminconsole-document-checklist-form .alert-info {
+body.sidebar-mini .adminconsole-document-checklist-form .alert-info,
+body.sidebar-mini .adminconsole-matter-form .alert-info,
+body.sidebar-mini .adminconsole-upload-checklist-form .alert-info,
+body.sidebar-mini .adminconsole-sms-form .alert-info {
   background: rgba(58, 111, 168, 0.12) !important;
   border: 1px solid rgba(58, 111, 168, 0.28) !important;
   color: var(--navy) !important;
@@ -1182,7 +1361,13 @@ body.sidebar-mini .adminconsole-personal-doc-type-form .alert-info em,
 body.sidebar-mini .adminconsole-matter-document-type-form .alert-info strong,
 body.sidebar-mini .adminconsole-matter-document-type-form .alert-info em,
 body.sidebar-mini .adminconsole-document-checklist-form .alert-info strong,
-body.sidebar-mini .adminconsole-document-checklist-form .alert-info em {
+body.sidebar-mini .adminconsole-document-checklist-form .alert-info em,
+body.sidebar-mini .adminconsole-matter-form .alert-info strong,
+body.sidebar-mini .adminconsole-matter-form .alert-info em,
+body.sidebar-mini .adminconsole-upload-checklist-form .alert-info strong,
+body.sidebar-mini .adminconsole-upload-checklist-form .alert-info em,
+body.sidebar-mini .adminconsole-sms-form .alert-info strong,
+body.sidebar-mini .adminconsole-sms-form .alert-info em {
   color: var(--navy) !important;
 }
 
@@ -1203,7 +1388,13 @@ body.sidebar-mini .adminconsole-personal-doc-type-form .alert-info .fa,
 body.sidebar-mini .adminconsole-matter-document-type-form .alert-info .fas,
 body.sidebar-mini .adminconsole-matter-document-type-form .alert-info .fa,
 body.sidebar-mini .adminconsole-document-checklist-form .alert-info .fas,
-body.sidebar-mini .adminconsole-document-checklist-form .alert-info .fa {
+body.sidebar-mini .adminconsole-document-checklist-form .alert-info .fa,
+body.sidebar-mini .adminconsole-matter-form .alert-info .fas,
+body.sidebar-mini .adminconsole-matter-form .alert-info .fa,
+body.sidebar-mini .adminconsole-upload-checklist-form .alert-info .fas,
+body.sidebar-mini .adminconsole-upload-checklist-form .alert-info .fa,
+body.sidebar-mini .adminconsole-sms-form .alert-info .fas,
+body.sidebar-mini .adminconsole-sms-form .alert-info .fa {
   color: var(--sidebar-active) !important;
 }
 
@@ -1216,7 +1407,10 @@ body.sidebar-mini .adminconsole-teams-form .alert-warning,
 body.sidebar-mini .adminconsole-roles-form .alert-warning,
 body.sidebar-mini .adminconsole-personal-doc-type-form .alert-warning,
 body.sidebar-mini .adminconsole-matter-document-type-form .alert-warning,
-body.sidebar-mini .adminconsole-document-checklist-form .alert-warning {
+body.sidebar-mini .adminconsole-document-checklist-form .alert-warning,
+body.sidebar-mini .adminconsole-matter-form .alert-warning,
+body.sidebar-mini .adminconsole-upload-checklist-form .alert-warning,
+body.sidebar-mini .adminconsole-sms-form .alert-warning {
   background: rgba(200, 153, 42, 0.15) !important;
   border: 1px solid rgba(200, 153, 42, 0.35) !important;
   color: #7a5800 !important;
@@ -1231,7 +1425,10 @@ body.sidebar-mini .adminconsole-teams-form .alert-warning strong,
 body.sidebar-mini .adminconsole-roles-form .alert-warning strong,
 body.sidebar-mini .adminconsole-personal-doc-type-form .alert-warning strong,
 body.sidebar-mini .adminconsole-matter-document-type-form .alert-warning strong,
-body.sidebar-mini .adminconsole-document-checklist-form .alert-warning strong {
+body.sidebar-mini .adminconsole-document-checklist-form .alert-warning strong,
+body.sidebar-mini .adminconsole-matter-form .alert-warning strong,
+body.sidebar-mini .adminconsole-upload-checklist-form .alert-warning strong,
+body.sidebar-mini .adminconsole-sms-form .alert-warning strong {
   color: #5c4300 !important;
 }
 
@@ -1243,7 +1440,10 @@ body.sidebar-mini .adminconsole-teams-form input.form-control[readonly],
 body.sidebar-mini .adminconsole-roles-form input.form-control[readonly],
 body.sidebar-mini .adminconsole-personal-doc-type-form input.form-control[readonly],
 body.sidebar-mini .adminconsole-matter-document-type-form input.form-control[readonly],
-body.sidebar-mini .adminconsole-document-checklist-form input.form-control[readonly] {
+body.sidebar-mini .adminconsole-document-checklist-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-matter-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-upload-checklist-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-sms-form input.form-control[readonly] {
   background: var(--page-bg) !important;
   color: var(--text-dark) !important;
   border-color: var(--border) !important;
@@ -1267,7 +1467,13 @@ body.sidebar-mini .adminconsole-personal-doc-type-form .custom-error strong,
 body.sidebar-mini .adminconsole-matter-document-type-form .custom-error,
 body.sidebar-mini .adminconsole-matter-document-type-form .custom-error strong,
 body.sidebar-mini .adminconsole-document-checklist-form .custom-error,
-body.sidebar-mini .adminconsole-document-checklist-form .custom-error strong {
+body.sidebar-mini .adminconsole-document-checklist-form .custom-error strong,
+body.sidebar-mini .adminconsole-matter-form .custom-error,
+body.sidebar-mini .adminconsole-matter-form .custom-error strong,
+body.sidebar-mini .adminconsole-upload-checklist-form .custom-error,
+body.sidebar-mini .adminconsole-upload-checklist-form .custom-error strong,
+body.sidebar-mini .adminconsole-sms-form .custom-error,
+body.sidebar-mini .adminconsole-sms-form .custom-error strong {
   color: var(--danger) !important;
 }
 
@@ -1288,7 +1494,13 @@ body.sidebar-mini .adminconsole-personal-doc-type-form .span_req,
 body.sidebar-mini .adminconsole-matter-document-type-form label .span_req,
 body.sidebar-mini .adminconsole-matter-document-type-form .span_req,
 body.sidebar-mini .adminconsole-document-checklist-form label .span_req,
-body.sidebar-mini .adminconsole-document-checklist-form .span_req {
+body.sidebar-mini .adminconsole-document-checklist-form .span_req,
+body.sidebar-mini .adminconsole-matter-form label .span_req,
+body.sidebar-mini .adminconsole-matter-form .span_req,
+body.sidebar-mini .adminconsole-upload-checklist-form label .span_req,
+body.sidebar-mini .adminconsole-upload-checklist-form .span_req,
+body.sidebar-mini .adminconsole-sms-form label .span_req,
+body.sidebar-mini .adminconsole-sms-form .span_req {
   color: var(--danger) !important;
 }
 
@@ -1301,7 +1513,10 @@ body.sidebar-mini .main-content.adminconsole-teams-form .accordion,
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion,
 body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion,
 body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion,
-body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion {
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion,
+body.sidebar-mini .main-content.adminconsole-matter-form .accordion,
+body.sidebar-mini .main-content.adminconsole-upload-checklist-form .accordion,
+body.sidebar-mini .main-content.adminconsole-sms-form .accordion {
   border: 1px solid var(--border) !important;
   border-radius: 10px !important;
   overflow: hidden !important;
@@ -1322,7 +1537,10 @@ body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-he
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header,
 body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-header,
 body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-header,
-body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header {
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-matter-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-upload-checklist-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-sms-form .accordion .accordion-header {
   background: var(--navy) !important;
   background-image: none !important;
   color: #fff !important;
@@ -1341,7 +1559,10 @@ body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-he
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header:hover,
 body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-header:hover,
 body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-header:hover,
-body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header:hover {
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-matter-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-upload-checklist-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-sms-form .accordion .accordion-header:hover {
   filter: brightness(1.04) !important;
 }
 
@@ -1353,7 +1574,10 @@ body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-he
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header[aria-expanded="true"],
 body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-header[aria-expanded="true"],
 body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-header[aria-expanded="true"],
-body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header[aria-expanded="true"] {
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-matter-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-upload-checklist-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-sms-form .accordion .accordion-header[aria-expanded="true"] {
   background: var(--navy) !important;
   color: #fff !important;
   box-shadow: none !important;
@@ -1367,7 +1591,10 @@ body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-he
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header h4,
 body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-header h4,
 body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-header h4,
-body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header h4 {
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-matter-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-upload-checklist-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-sms-form .accordion .accordion-header h4 {
   color: #fff !important;
   margin: 0 !important;
   font-size: 1rem !important;
@@ -1382,7 +1609,10 @@ body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-bo
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-body,
 body.sidebar-mini .main-content.adminconsole-personal-doc-type-form .accordion .accordion-body,
 body.sidebar-mini .main-content.adminconsole-matter-document-type-form .accordion .accordion-body,
-body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-body {
+body.sidebar-mini .main-content.adminconsole-document-checklist-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-matter-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-upload-checklist-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-sms-form .accordion .accordion-body {
   background: var(--card-bg) !important;
   padding: 1.25rem !important;
   border: none !important;
@@ -1393,7 +1623,10 @@ body.sidebar-mini .adminconsole-teams-form .card-header h4,
 body.sidebar-mini .adminconsole-roles-form .card-header h4,
 body.sidebar-mini .adminconsole-personal-doc-type-form .card-header h4,
 body.sidebar-mini .adminconsole-matter-document-type-form .card-header h4,
-body.sidebar-mini .adminconsole-document-checklist-form .card-header h4 {
+body.sidebar-mini .adminconsole-document-checklist-form .card-header h4,
+body.sidebar-mini .adminconsole-matter-form .card-header h4,
+body.sidebar-mini .adminconsole-upload-checklist-form .card-header h4,
+body.sidebar-mini .adminconsole-sms-form .card-header h4 {
   color: var(--navy) !important;
   font-weight: 700 !important;
 }
@@ -1463,11 +1696,23 @@ body.sidebar-mini .adminconsole-roles-form .accordion-body > ul > li label input
 body.sidebar-mini .adminconsole-roles-form .roles-form-actions,
 body.sidebar-mini .adminconsole-personal-doc-type-form .roles-form-actions,
 body.sidebar-mini .adminconsole-matter-document-type-form .roles-form-actions,
-body.sidebar-mini .adminconsole-document-checklist-form .roles-form-actions {
+body.sidebar-mini .adminconsole-document-checklist-form .roles-form-actions,
+body.sidebar-mini .adminconsole-matter-form .roles-form-actions,
+body.sidebar-mini .adminconsole-upload-checklist-form .roles-form-actions,
+body.sidebar-mini .adminconsole-sms-form .roles-form-actions {
   margin-top: 1.25rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
   text-align: right;
+}
+
+body.sidebar-mini .adminconsole-upload-checklist-form select.form-control:disabled,
+body.sidebar-mini .adminconsole-upload-checklist-form select.form-control.uploadchecklist-matter-select:disabled {
+  background-color: var(--page-bg) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border) !important;
+  cursor: not-allowed !important;
+  opacity: 1 !important;
 }
 
 /* Offices branch form — Select2 (country / admin); docs/theme.md */
@@ -1491,6 +1736,101 @@ body.sidebar-mini .adminconsole-offices-form .select2-container--default .select
 body.sidebar-mini .adminconsole-offices-form .select2-container--default.select2-container--focus .select2-selection--single {
   border-color: var(--sidebar-active) !important;
   box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
+}
+
+/* System — activity search (filters + Select2); docs/theme.md */
+body.sidebar-mini .adminconsole-activity-search .card .form-label {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .card .form-label i {
+  color: var(--sidebar-active) !important;
+  margin-right: 6px !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .select2-container--default .select2-selection--single {
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  min-height: 42px !important;
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: var(--text-dark) !important;
+  line-height: 40px !important;
+  padding-left: 12px !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 40px !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .select2-container--default.select2-container--focus .select2-selection--single {
+  border-color: var(--sidebar-active) !important;
+  box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .card-header .btn.btn-outline-primary {
+  border-color: var(--sidebar-active) !important;
+  color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .card-header .btn.btn-outline-primary:hover,
+body.sidebar-mini .adminconsole-activity-search .card-header .btn.btn-outline-primary:focus {
+  background: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .activity-search-empty-hint {
+  background: var(--page-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .activity-search-empty-hint h5 {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .card-body > hr {
+  border-top-color: var(--border) !important;
+  opacity: 1 !important;
+}
+
+body.sidebar-mini .adminconsole-activity-search .mt-4 > h5 {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini #activityDetailsModal.activity-details-modal .modal-header {
+  background: var(--navy) !important;
+  color: #fff !important;
+  border-bottom: none !important;
+}
+
+body.sidebar-mini #activityDetailsModal.activity-details-modal .modal-title {
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini #activityDetailsModal.activity-details-modal .modal-body {
+  background: var(--card-bg) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini #activityDetailsModal.activity-details-modal .modal-body .table th {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini #activityDetailsModal.activity-details-modal .modal-content {
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
 }
 
 /* System — office view / view-client (users & clients tabs); docs/theme.md */
@@ -2292,46 +2632,170 @@ body.sidebar-mini #dashboardCompletionNotesModal .dashboard-completion-modal-foo
   color: #fff !important;
 }
 
-/* Complete Task modal (assignee /action page) — same footer + title rules as dashboard */
-body.sidebar-mini #completionNotesModal .completion-notes-modal-header .modal-title {
+/*
+ * Complete Task modal (#completionNotesModal) — beats body.sidebar-mini h5 { color: navy }
+ * and matches docs/theme.md (navy header, gold icon, outline cancel, primary complete).
+ */
+#completionNotesModal .completion-notes-modal-content {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 40px rgba(30, 61, 96, 0.12);
+  overflow: hidden;
+  background: var(--card-bg);
+}
+
+#completionNotesModal .completion-notes-modal-header {
+  background: var(--navy);
+  color: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.25rem;
+}
+
+#completionNotesModal .modal-header .modal-title,
+#completionNotesModal .completion-notes-modal-header .modal-title {
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+#completionNotesModal .completion-notes-modal-header .modal-title .completion-task-modal-header-icon {
+  color: var(--accent-gold) !important;
+  font-size: 1.15rem;
+}
+
+#completionNotesModal .completion-notes-modal-close {
+  color: #fff !important;
+  opacity: 0.9;
+  text-shadow: none;
+  font-size: 1.5rem;
+  font-weight: 400;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+}
+
+#completionNotesModal .completion-notes-modal-close:hover,
+#completionNotesModal .completion-notes-modal-close:focus {
+  opacity: 1;
+  color: #fff !important;
+}
+
+#completionNotesModal .completion-notes-modal-body {
+  background: var(--page-bg);
+  padding: 1.25rem 1.25rem 1rem;
+}
+
+#completionNotesModal .completion-notes-label {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+#completionNotesModal .completion-notes-label i {
+  color: var(--navy);
+  margin-right: 0.35rem;
+}
+
+#completionNotesModal .completion-notes-textarea {
+  resize: vertical;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--card-bg);
+  color: var(--text-dark);
+  background-image: none !important;
+  min-height: 120px;
+}
+
+#completionNotesModal .completion-notes-textarea:focus {
+  border-color: var(--sidebar-active) !important;
+  box-shadow: 0 0 0 2px rgba(58, 111, 168, 0.15);
+  outline: none;
+}
+
+#completionNotesModal .completion-notes-modal-body .completion-notes-hint {
+  color: var(--text-muted) !important;
+  font-size: 0.8125rem;
+  margin-top: 0.5rem;
+  display: block;
+}
+
+#completionNotesModal .completion-notes-modal-body .completion-notes-hint i {
+  color: var(--sidebar-active);
+  margin-right: 0.25rem;
+}
+
+#completionNotesModal .modal-footer.completion-notes-modal-footer,
+#completionNotesModal .completion-notes-modal-footer {
+  background: var(--page-bg);
+  border-top: 1px solid var(--border);
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+#completionNotesModal .modal-footer .btn.btn-cancel-complete,
+#completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete {
+  background-color: var(--card-bg) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+  border: 1px solid var(--border) !important;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.45rem 1rem;
+}
+
+#completionNotesModal .modal-footer .btn.btn-cancel-complete i,
+#completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete i {
+  color: var(--navy) !important;
+}
+
+#completionNotesModal .modal-footer .btn.btn-cancel-complete:hover,
+#completionNotesModal .modal-footer .btn.btn-cancel-complete:focus,
+#completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete:hover,
+#completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete:focus {
+  background-color: var(--sidebar-hover) !important;
+  border-color: var(--border) !important;
+  color: var(--navy) !important;
+}
+
+#completionNotesModal .modal-footer .btn.btn-complete-task-primary,
+#completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary {
+  background-color: var(--navy) !important;
+  background-image: none !important;
+  border: 1px solid var(--navy) !important;
+  color: #fff !important;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.45rem 1rem;
+  box-shadow: 0 2px 6px rgba(30, 61, 96, 0.2);
+}
+
+#completionNotesModal .modal-footer .btn.btn-complete-task-primary i,
+#completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary i {
+  color: #fff !important;
+}
+
+#completionNotesModal .modal-footer .btn.btn-complete-task-primary:hover,
+#completionNotesModal .modal-footer .btn.btn-complete-task-primary:focus,
+#completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary:hover,
+#completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary:focus {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
   color: #fff !important;
 }
 
 body.sidebar-mini #completionNotesModal .completion-task-modal-header-icon,
 body.sidebar-mini #dashboardCompletionNotesModal .completion-task-modal-header-icon {
   color: var(--accent-gold) !important;
-}
-
-body.sidebar-mini #completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete {
-  background-color: var(--card-bg) !important;
-  background-image: none !important;
-  color: var(--navy) !important;
-  border: 1px solid var(--border) !important;
-}
-
-body.sidebar-mini #completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete:hover,
-body.sidebar-mini #completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete:focus {
-  background-color: var(--sidebar-hover) !important;
-  border-color: var(--border) !important;
-  color: var(--navy) !important;
-}
-
-body.sidebar-mini #completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary {
-  background-color: var(--navy) !important;
-  background-image: none !important;
-  border: 1px solid var(--navy) !important;
-  color: #fff !important;
-}
-
-body.sidebar-mini #completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary:hover,
-body.sidebar-mini #completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary:focus {
-  background-color: var(--sidebar-active) !important;
-  border-color: var(--sidebar-active) !important;
-  color: #fff !important;
-}
-
-body.sidebar-mini #completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary i {
-  color: #fff !important;
 }
 
 /* Tables */
@@ -2983,4 +3447,569 @@ body.sidebar-mini #checkindetailmodal .logsdata .logsitem span.logs_date {
 
 body.sidebar-mini #checkindetailmodal .logsdata .logsitem .logs_comment p {
   color: var(--text-dark) !important;
+}
+
+/* ---------- CRM access grants (dashboard, queue, my grants) — docs/theme.md ---------- */
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent-gold);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-grants-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card > .card-header,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-grants-card > .card-header {
+  background: var(--card-bg) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card .card-header h5,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-grants-card .card-header h4 {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card .card-header .btn-light {
+  background: var(--page-bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card .card-header .btn-light:hover,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card .card-header .btn-light:focus {
+  background: var(--sidebar-hover) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-grants-card .card-header .btn-outline-secondary {
+  color: var(--navy) !important;
+  border-color: var(--border) !important;
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-grants-card .card-header .btn-outline-secondary:hover,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-grants-card .card-header .btn-outline-secondary:focus {
+  background: var(--page-bg) !important;
+  border-color: var(--sidebar-active) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-pending-badge {
+  background: rgba(200, 153, 42, 0.15) !important;
+  color: #7a5800 !important;
+  border: 1px solid rgba(200, 153, 42, 0.35) !important;
+  font-weight: 700;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-pending-table thead th,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table thead th,
+body.sidebar-mini .crm-access-queue-page #crm-access-queue-table thead th,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table thead th {
+  background-color: var(--page-bg) !important;
+  color: var(--navy) !important;
+  border-color: var(--border) !important;
+  font-weight: 600 !important;
+  font-size: 0.8125rem !important;
+  letter-spacing: 0.02em;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table tbody tr:hover td,
+body.sidebar-mini .crm-access-dashboard-layout #crm-pending-table tbody tr:hover td,
+body.sidebar-mini .crm-access-queue-page #crm-access-queue-table tbody tr:hover td,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table tbody tr:hover td {
+  background-color: var(--sidebar-hover) !important;
+}
+
+body.sidebar-mini .crm-access-queue-page .table-striped tbody tr:nth-of-type(odd),
+body.sidebar-mini .crm-access-my-grants-page .table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(240, 246, 255, 0.45) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-filters label.small {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-filters .form-control,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-filters .form-control-sm {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-filters .form-control:focus {
+  border-color: var(--sidebar-active) !important;
+  box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-filters .form-control::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 1;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-summary .text-muted.small {
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-summary [data-field] {
+  color: var(--text-dark) !important;
+  font-weight: 600;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table .badge-success,
+body.sidebar-mini .crm-access-dashboard-layout #crm-pending-table .badge-success,
+body.sidebar-mini .crm-access-queue-page #crm-access-queue-table .badge-success,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table .badge-success {
+  background-color: rgba(30, 122, 82, 0.12) !important;
+  color: var(--success) !important;
+  border: 1px solid rgba(30, 122, 82, 0.35);
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table .badge-warning,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table .badge-warning {
+  background-color: rgba(200, 153, 42, 0.15) !important;
+  color: #7a5800 !important;
+  border: 1px solid rgba(200, 153, 42, 0.35);
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table .badge-secondary,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table .badge-secondary {
+  background-color: rgba(94, 122, 144, 0.12) !important;
+  color: var(--text-muted) !important;
+  border: 1px solid var(--border);
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table .badge-dark {
+  background-color: rgba(30, 61, 96, 0.1) !important;
+  color: var(--navy) !important;
+  border: 1px solid rgba(30, 61, 96, 0.2);
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table .badge-danger,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table .badge-danger {
+  background-color: rgba(168, 48, 32, 0.1) !important;
+  color: var(--danger) !important;
+  border: 1px solid rgba(168, 48, 32, 0.25);
+}
+
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table .badge-light {
+  background-color: rgba(94, 122, 144, 0.08) !important;
+  color: var(--text-muted) !important;
+  border: 1px solid var(--border);
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card tbody .text-muted,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table tbody .text-muted,
+body.sidebar-mini .crm-access-queue-page #crm-access-queue-table tbody .text-muted,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table tbody .text-muted {
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card a.small.text-muted {
+  color: var(--sidebar-active) !important;
+  text-decoration: underline;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card a.small.text-muted:hover {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-pending-table.table-bordered,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table.table-bordered {
+  border-color: var(--border);
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-pending-table.table-bordered th,
+body.sidebar-mini .crm-access-dashboard-layout #crm-pending-table.table-bordered td,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table.table-bordered th,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table.table-bordered td {
+  border-color: var(--border) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card .text-success {
+  color: var(--success) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout .alert-info {
+  background: rgba(58, 111, 168, 0.12) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .crm-access-queue-page .alert-success {
+  background: rgba(30, 122, 82, 0.12) !important;
+  border: 1px solid rgba(30, 122, 82, 0.35) !important;
+  color: var(--success) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout .alert-danger,
+body.sidebar-mini .crm-access-queue-page .alert-danger {
+  background: rgba(168, 48, 32, 0.1) !important;
+  border: 1px solid rgba(168, 48, 32, 0.25) !important;
+  color: var(--danger) !important;
+}
+
+body.sidebar-mini .crm-access-queue-page .card,
+body.sidebar-mini .crm-access-my-grants-page .card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+}
+
+body.sidebar-mini .crm-access-queue-page .card-header,
+body.sidebar-mini .crm-access-my-grants-page .card-header {
+  background: var(--card-bg) !important;
+  color: var(--navy) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .crm-access-queue-page .card-header h4,
+body.sidebar-mini .crm-access-my-grants-page .card-header h4 {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini .crm-access-queue-page #crm-access-queue-table td,
+body.sidebar-mini .crm-access-queue-page #crm-access-queue-table th,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table td,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table th {
+  border-color: var(--border) !important;
+}
+
+/* Request access modal — docs/theme.md (replaces hard-coded bootstrap blues) */
+body.sidebar-mini #crmCrossAccessModal .modal-content {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 24px rgba(30, 61, 96, 0.12) !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-header {
+  background: var(--navy) !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-radius: 10px 10px 0 0 !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-title {
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-body {
+  background: var(--card-bg) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-body label {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-body .form-control {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-body .form-control:focus {
+  border-color: var(--sidebar-active) !important;
+  box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-footer {
+  background: var(--card-bg) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+/* Layout may zero btn borders; keep footer actions visible */
+body.sidebar-mini #crmCrossAccessModal .modal-footer .btn {
+  border-width: 1px !important;
+  border-style: solid !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-footer .btn-primary {
+  background: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-footer .btn-primary:hover,
+body.sidebar-mini #crmCrossAccessModal .modal-footer .btn-primary:focus {
+  background: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-footer .btn-outline-secondary {
+  color: var(--navy) !important;
+  border-color: var(--border) !important;
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-footer .btn-outline-secondary:hover,
+body.sidebar-mini #crmCrossAccessModal .modal-footer .btn-outline-secondary:focus {
+  background: var(--page-bg) !important;
+  border-color: var(--sidebar-active) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal #crmCrossAccessMsg.alert-success {
+  background: rgba(30, 122, 82, 0.12) !important;
+  border: 1px solid rgba(30, 122, 82, 0.35) !important;
+  color: var(--success) !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal #crmCrossAccessMsg.alert-danger {
+  background: rgba(168, 48, 32, 0.1) !important;
+  border: 1px solid rgba(168, 48, 32, 0.25) !important;
+  color: var(--danger) !important;
+}
+
+/* ---------- Assignee Action (/action) — DataTables pagination (docs/theme.md) ----------
+   dataTables_min_latest.css paints .paginate_button:hover black/white; reset li + theme .page-link */
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button {
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button .page-link {
+  color: var(--navy) !important;
+  background-color: var(--card-bg) !important;
+  background-image: none !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  margin: 0 2px;
+}
+
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button:not(.disabled):not(.active):hover {
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button:not(.disabled):not(.active):hover .page-link {
+  color: var(--navy) !important;
+  background-color: var(--sidebar-hover) !important;
+  background-image: none !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+}
+
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button:active {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button:active .page-link {
+  color: var(--navy) !important;
+  background-color: var(--sidebar-hover) !important;
+  background-image: none !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+}
+
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button.active .page-link,
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button.current .page-link {
+  color: #fff !important;
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button.active:hover .page-link,
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover .page-link {
+  color: #fff !important;
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button.disabled .page-link,
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover .page-link {
+  color: var(--text-muted) !important;
+  background-color: var(--card-bg) !important;
+  border-color: var(--border) !important;
+  opacity: 0.75;
+  cursor: not-allowed !important;
+}
+
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link:focus,
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link:focus-visible {
+  outline: none !important;
+  border-color: var(--sidebar-active) !important;
+  box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.22) !important;
+}
+
+/* ---------- Assignee Action (/action) — DataTables table layout (docs/theme.md) ---------- */
+body.sidebar-mini .assignee-action-page .table-responsive {
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+}
+
+body.sidebar-mini .assignee-action-page table.dataTable.yajra-datatable {
+  margin-bottom: 0 !important;
+}
+
+body.sidebar-mini .assignee-action-page table.dataTable > thead > tr > th,
+body.sidebar-mini .assignee-action-page table.dataTable > thead > tr > td {
+  border-bottom: 1px solid var(--border) !important;
+  background-color: var(--page-bg) !important;
+  color: var(--navy) !important;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 12px 12px !important;
+  vertical-align: middle !important;
+}
+
+body.sidebar-mini .assignee-action-page table.dataTable > tbody > tr > th,
+body.sidebar-mini .assignee-action-page table.dataTable > tbody > tr > td {
+  color: var(--text-dark) !important;
+  padding: 12px 12px !important;
+  vertical-align: middle !important;
+}
+
+body.sidebar-mini .assignee-action-page table.dataTable.row-border > tbody > tr > th,
+body.sidebar-mini .assignee-action-page table.dataTable.row-border > tbody > tr > td,
+body.sidebar-mini .assignee-action-page table.dataTable.display > tbody > tr > th,
+body.sidebar-mini .assignee-action-page table.dataTable.display > tbody > tr > td {
+  border-top: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .assignee-action-page table.dataTable.row-border > tbody > tr:first-child > th,
+body.sidebar-mini .assignee-action-page table.dataTable.row-border > tbody > tr:first-child > td,
+body.sidebar-mini .assignee-action-page table.dataTable.display > tbody > tr:first-child > th,
+body.sidebar-mini .assignee-action-page table.dataTable.display > tbody > tr:first-child > td {
+  border-top: none !important;
+}
+
+/* Odd-row stripe — powder blue (replaces DataTables grey / blue selection tint) */
+body.sidebar-mini .assignee-action-page table.dataTable.display > tbody > tr.odd > *,
+body.sidebar-mini .assignee-action-page table.dataTable.stripe > tbody > tr.odd > * {
+  box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--page-bg) 50%, var(--card-bg) 50%) !important;
+}
+
+@supports not (color: color-mix(in srgb, red, blue)) {
+  body.sidebar-mini .assignee-action-page table.dataTable.display > tbody > tr.odd > *,
+  body.sidebar-mini .assignee-action-page table.dataTable.stripe > tbody > tr.odd > * {
+    box-shadow: inset 0 0 0 9999px rgba(240, 246, 255, 0.92) !important;
+  }
+}
+
+/* Row hover — sidebar-hover (replaces default DataTables blue hover) */
+body.sidebar-mini .assignee-action-page table.dataTable.display > tbody > tr:hover > *,
+body.sidebar-mini .assignee-action-page table.dataTable.hover > tbody > tr:hover > * {
+  box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--sidebar-hover) 42%, var(--card-bg) 58%) !important;
+}
+
+@supports not (color: color-mix(in srgb, red, blue)) {
+  body.sidebar-mini .assignee-action-page table.dataTable.display > tbody > tr:hover > *,
+  body.sidebar-mini .assignee-action-page table.dataTable.hover > tbody > tr:hover > * {
+    box-shadow: inset 0 0 0 9999px rgba(200, 220, 239, 0.5) !important;
+  }
+}
+
+/* Sorted column background — subtle navy tint, not Bootstrap primary blue */
+body.sidebar-mini .assignee-action-page table.dataTable.display > tbody tr > .sorting_1,
+body.sidebar-mini .assignee-action-page table.dataTable.order-column > tbody tr > .sorting_1 {
+  box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--page-bg) 65%, var(--border) 35%) !important;
+}
+
+@supports not (color: color-mix(in srgb, red, blue)) {
+  body.sidebar-mini .assignee-action-page table.dataTable.display > tbody tr > .sorting_1,
+  body.sidebar-mini .assignee-action-page table.dataTable.order-column > tbody tr > .sorting_1 {
+    box-shadow: inset 0 0 0 9999px rgba(240, 246, 255, 0.95) !important;
+  }
+}
+
+body.sidebar-mini .assignee-action-page table.dataTable.display > tbody > tr:hover > .sorting_1,
+body.sidebar-mini .assignee-action-page table.dataTable.order-column.hover > tbody > tr:hover > .sorting_1 {
+  box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--sidebar-hover) 38%, var(--page-bg) 62%) !important;
+}
+
+@supports not (color: color-mix(in srgb, red, blue)) {
+  body.sidebar-mini .assignee-action-page table.dataTable.display > tbody > tr:hover > .sorting_1,
+  body.sidebar-mini .assignee-action-page table.dataTable.order-column.hover > tbody > tr:hover > .sorting_1 {
+    box-shadow: inset 0 0 0 9999px rgba(200, 220, 239, 0.55) !important;
+  }
+}
+
+/* Sort arrows */
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.sorting:before,
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.sorting:after,
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.sorting_asc:before,
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.sorting_asc:after,
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.sorting_desc:before,
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.sorting_desc:after {
+  color: var(--text-muted) !important;
+  opacity: 0.4 !important;
+}
+
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.sorting_asc:before,
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.sorting_desc:after {
+  opacity: 0.85 !important;
+  color: var(--navy) !important;
+}
+
+/* Loading dots — theme active blue */
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_processing > div:last-child > div {
+  background: var(--sidebar-active) !important;
+}
+
+/* ---------- layouts/app.blade.php (minimal Laravel shell) ---------- */
+body.crm-app-minimal {
+  font-family: "Segoe UI", sans-serif;
+  font-size: 14px;
+  color: var(--text-dark);
+  background-color: var(--page-bg);
+}
+
+body.crm-app-minimal .navbar-laravel {
+  background: var(--header-bg) !important;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+}
+
+body.crm-app-minimal .navbar-light .navbar-brand,
+body.crm-app-minimal .navbar-light .nav-link {
+  color: var(--navy) !important;
+}
+
+/* ---------- Staff login (layouts/crm-login) ---------- */
+body.crm-login-page .card.card-primary > .card-header {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+  border: none !important;
+}
+
+body.crm-login-page .card.card-primary > .card-header h4 {
+  color: #fff !important;
+}
+
+body.crm-login-page .card.card-primary .btn-primary {
+  background: var(--navy) !important;
+  border-color: var(--navy) !important;
+}
+
+/* ---------- crm/documents/index (Tailwind + Vite) — align shell to theme.md ---------- */
+body.crm-esign-documents {
+  background-color: var(--page-bg) !important;
+  color: var(--text-dark);
+}
+
+body.crm-esign-documents .min-h-screen > .max-w-6xl > div:first-child h1 {
+  color: var(--navy) !important;
 }

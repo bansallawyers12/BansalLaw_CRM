@@ -232,8 +232,8 @@
 						<div class="row">
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
-									<label for="Block_1_Ex_Tax">Block 1 Incl. Tax</label>
-									{!! html()->text('Block_1_Ex_Tax')->class('form-control')->id('Block_1_Ex_Tax')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 1 Incl. Tax' ) !!}
+									<label for="Block_1_Ex_Tax">Block 1 Incl. GST</label>
+									{!! html()->text('Block_1_Ex_Tax')->class('form-control')->id('Block_1_Ex_Tax')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 1 Incl. GST' ) !!}
 									@if ($errors->has('Block_1_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_1_Ex_Tax') }}</strong>
@@ -244,8 +244,8 @@
 
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
-									<label for="Block_2_Ex_Tax">Block 2 Incl. Tax</label>
-									{!! html()->text('Block_2_Ex_Tax')->class('form-control')->id('Block_2_Ex_Tax')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 2 Incl. Tax' ) !!}
+									<label for="Block_2_Ex_Tax">Block 2 Incl. GST</label>
+									{!! html()->text('Block_2_Ex_Tax')->class('form-control')->id('Block_2_Ex_Tax')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 2 Incl. GST' ) !!}
 									@if ($errors->has('Block_2_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_2_Ex_Tax') }}</strong>
@@ -258,8 +258,8 @@
 						<div class="row">
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
-									<label for="Block_3_Ex_Tax">Block 3 Incl. Tax</label>
-									{!! html()->text('Block_3_Ex_Tax')->class('form-control')->id('Block_3_Ex_Tax')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 3 Incl. Tax' ) !!}
+									<label for="Block_3_Ex_Tax">Block 3 Incl. GST</label>
+									{!! html()->text('Block_3_Ex_Tax')->class('form-control')->id('Block_3_Ex_Tax')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 3 Incl. GST' ) !!}
 									@if ($errors->has('Block_3_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_3_Ex_Tax') }}</strong>
@@ -277,213 +277,38 @@
 						</div>
 
                         <div style="margin-bottom: 15px;" class="accordion-header">
-                            <h4>Department Fee</h4>
-							<div class="col-3">
-								<label for="surcharge">Surcharge</label>
-								<select class="form-control" name="surcharge" id="surcharge">
-									<option value="">Select</option>
-									<option value="Yes">Yes</option>
-									<option value="No">No</option>
-								</select>
-							</div>
+                            <h4>Disbursements</h4>
                         </div>
 
-                        <div class="row">
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <div class="row">
-                                        <div class="col-9">
-                                            <label for="Dept_Base_Application_Charge">Dept Base Application Charge</label>
-                                            {!! html()->text('Dept_Base_Application_Charge')->class('form-control')->id('Dept_Base_Application_Charge')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Base Application Charge' ) !!}
-                                        </div>
-                                        <div class="col-3">
-                                            <label for="Dept_Base_Application_Charge_no_of_person">Person</label>
-                                            <input type="number" name="Dept_Base_Application_Charge_no_of_person" id="Dept_Base_Application_Charge_no_of_person"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
-                                        </div>
-                                    </div>
-
-                                    @if ($errors->has('Dept_Base_Application_Charge'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Base_Application_Charge') }}</strong>
-                                        </span>
-                                    @endif
-                                </div>
+                        <div id="disbursement-lines-container">
+                            <div class="disbursement-lines-header row mb-1 d-none d-md-flex">
+                                <div class="col-md-4"><small class="text-muted font-weight-bold">Nature</small></div>
+                                <div class="col-md-4"><small class="text-muted font-weight-bold">Description</small></div>
+                                <div class="col-md-3"><small class="text-muted font-weight-bold">Amount ($)</small></div>
                             </div>
+                            <div id="disbursement-rows">
+                                {{-- rows injected by JS --}}
+                            </div>
+                        </div>
 
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <div class="row">
-				                        <div class="col-9">
-                                            <label for="Dept_Non_Internet_Application_Charge">Dept Non Internet Application Charge</label>
-                                            {!! html()->text('Dept_Non_Internet_Application_Charge')->class('form-control')->id('Dept_Non_Internet_Application_Charge')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Non Internet Application Charge' ) !!}
-                                        </div>
-				                        <div class="col-3">
-                                            <label for="Dept_Non_Internet_Application_Charge_no_of_person">Person</label>
-                                            <input type="number" name="Dept_Non_Internet_Application_Charge_no_of_person" id="Dept_Non_Internet_Application_Charge_no_of_person"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
-                                        </div>
-                                    </div>
-                                    @if ($errors->has('Dept_Non_Internet_Application_Charge'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Non_Internet_Application_Charge') }}</strong>
-                                        </span>
-                                    @endif
-                                </div>
+                        <div class="row mt-2 mb-3">
+                            <div class="col-12">
+                                <button type="button" class="btn btn-outline-secondary btn-sm btn-add-disbursement-row">
+                                    <i class="fas fa-plus mr-1"></i> Add Disbursement
+                                </button>
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-12 col-md-6 col-lg-6">
                                 <div class="form-group">
-                                    <div class="row">
-                                        <div class="col-9">
-                                            <label for="Dept_Additional_Applicant_Charge_18_Plus">Dept Additional Applicant Charge 18 +</label>
-                                            {!! html()->text('Dept_Additional_Applicant_Charge_18_Plus')->class('form-control')->id('Dept_Additional_Applicant_Charge_18_Plus')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Additional Applicant Charge 18 Plus' ) !!}
-                                        </div>
-                                        <div class="col-3">
-                                            <label for="Dept_Additional_Applicant_Charge_18_Plus_no_of_person">Person</label>
-                                            <input type="number" name="Dept_Additional_Applicant_Charge_18_Plus_no_of_person" id="Dept_Additional_Applicant_Charge_18_Plus_no_of_person"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
-                                        </div>
-                                    </div>
-                                    @if ($errors->has('Dept_Additional_Applicant_Charge_18_Plus'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Additional_Applicant_Charge_18_Plus') }}</strong>
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <div class="row">
-			                            <div class="col-9">
-                                            <label for="Dept_Additional_Applicant_Charge_Under_18">Dept Add. Applicant Charge Under 18</label>
-                                            {!! html()->text('Dept_Additional_Applicant_Charge_Under_18')->class('form-control')->id('Dept_Additional_Applicant_Charge_Under_18')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Additional Applicant Charge Under 18' ) !!}
-                                        </div>
-                                        <div class="col-3">
-                                            <label for="Dept_Additional_Applicant_Charge_Under_18_no_of_person">Person</label>
-                                            <input type="number" name="Dept_Additional_Applicant_Charge_Under_18_no_of_person" id="Dept_Additional_Applicant_Charge_Under_18_no_of_person"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
-                                        </div>
-                                    </div>
-                                    @if ($errors->has('Dept_Additional_Applicant_Charge_Under_18'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Additional_Applicant_Charge_Under_18') }}</strong>
-                                        </span>
-                                    @endif
+                                    <label for="TotalDisbursements">Total Disbursements</label>
+                                    <input type="text" name="TotalDisbursements" id="TotalDisbursements" class="form-control" readonly placeholder="0.00">
                                 </div>
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <div class="row">
-			                            <div class="col-9">
-                                            <label for="Dept_Subsequent_Temp_Application_Charge">Dept Subsequent Temp App Charge</label>
-                                            {!! html()->text('Dept_Subsequent_Temp_Application_Charge')->class('form-control')->id('Dept_Subsequent_Temp_Application_Charge')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Subsequent Temp Application Charge' ) !!}
-                                        </div>
-                                        <div class="col-3">
-                                            <label for="Dept_Subsequent_Temp_Application_Charge_no_of_person">Person</label>
-                                            <input type="number" name="Dept_Subsequent_Temp_Application_Charge_no_of_person" id="Dept_Subsequent_Temp_Application_Charge_no_of_person"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
-                                        </div>
-                                    </div>
-                                    @if ($errors->has('Dept_Subsequent_Temp_Application_Charge'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Subsequent_Temp_Application_Charge') }}</strong>
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <div class="row">
-			                            <div class="col-9">
-                                            <label for="Dept_Second_VAC_Instalment_Charge_18_Plus">Dept Second VAC Instalment 18+</label>
-                                            {!! html()->text('Dept_Second_VAC_Instalment_Charge_18_Plus')->class('form-control')->id('Dept_Second_VAC_Instalment_Charge_18_Plus')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Second VAC Instalment Charge 18 Plus' ) !!}
-                                        </div>
-                                        <div class="col-3">
-                                            <label for="Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person">Person</label>
-                                            <input type="number" name="Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person" id="Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
-                                        </div>
-                                    </div>
-                                    @if ($errors->has('Dept_Second_VAC_Instalment_Charge_18_Plus'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Second_VAC_Instalment_Charge_18_Plus') }}</strong>
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <div class="row">
-			                            <div class="col-9">
-                                            <label for="Dept_Second_VAC_Instalment_Under_18">Dept Second VAC Instalment Under 18</label>
-                                            {!! html()->text('Dept_Second_VAC_Instalment_Under_18')->class('form-control')->id('Dept_Second_VAC_Instalment_Under_18')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Second VAC Instalment Under 18' ) !!}
-                                        </div>
-                                        <div class="col-3">
-                                            <label for="Dept_Second_VAC_Instalment_Under_18_no_of_person">Person</label>
-                                            <input type="number" name="Dept_Second_VAC_Instalment_Under_18_no_of_person" id="Dept_Second_VAC_Instalment_Under_18_no_of_person"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
-                                        </div>
-                                    </div>
-                                    @if ($errors->has('Dept_Second_VAC_Instalment_Under_18'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Second_VAC_Instalment_Under_18') }}</strong>
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <label for="Dept_Nomination_Application_Charge">Dept Nomination Application Charge</label>
-                                    {!! html()->text('Dept_Nomination_Application_Charge')->class('form-control')->id('Dept_Nomination_Application_Charge')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Nomination Application Charge' ) !!}
-                                    @if ($errors->has('Dept_Nomination_Application_Charge'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Nomination_Application_Charge') }}</strong>
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <label for="Dept_Sponsorship_Application_Charge">Dept Sponsorship Application Charge</label>
-                                    {!! html()->text('Dept_Sponsorship_Application_Charge')->class('form-control')->id('Dept_Sponsorship_Application_Charge')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Sponsorship Application Charge' ) !!}
-                                    @if ($errors->has('Dept_Sponsorship_Application_Charge'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Sponsorship_Application_Charge') }}</strong>
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <label for="TotalDoHACharges">Total DoHA Charges</label>
-                                    {!! html()->text('TotalDoHACharges')->class('form-control')->id('TotalDoHACharges')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Total DoHA Charges')->attribute('readonly', 'readonly' ) !!}
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <label for="TotalDoHASurcharges">Total DoHA Surcharges</label>
-                                    {!! html()->text('TotalDoHASurcharges')->class('form-control')->id('TotalDoHASurcharges')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Total DoHA Surcharges' )->attribute('readonly', 'readonly') !!}
-                                </div>
-                            </div>
-                        </div>
-
-						<div style="margin-bottom: 15px;" class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
+					<div style="margin-bottom: 15px;" class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
                             <h4>Additional Fee</h4>
                         </div>
 
@@ -594,7 +419,9 @@
                                             ->forClientType((bool) (isset($fetchedData) && $fetchedData->is_company));
                                         $leadCostMatterList = $leadCostMatterQuery->get();
                                     @endphp
-                                    @foreach($leadCostMatterList as $matterlist)
+                                    {{-- General Matter (id 1): always available; matches checklist dropdown and savecostassignmentlead --}}
+                                    <option value="1">General Matter</option>
+                                    @foreach($leadCostMatterList->reject(function ($m) { return (int) $m->id === 1; }) as $matterlist)
                                         <option value="{{$matterlist->id}}">{{@$matterlist->title}}</option>
                                     @endforeach
                                 </select>
@@ -610,8 +437,8 @@
 						<div class="row">
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
-									<label for="Block_1_Ex_Tax">Block 1 Incl. Tax</label>
-									{!! html()->text('Block_1_Ex_Tax')->class('form-control')->id('Block_1_Ex_Tax_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 1 Incl. Tax' ) !!}
+									<label for="Block_1_Ex_Tax">Block 1 Incl. GST</label>
+									{!! html()->text('Block_1_Ex_Tax')->class('form-control')->id('Block_1_Ex_Tax_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 1 Incl. GST' ) !!}
 									@if ($errors->has('Block_1_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_1_Ex_Tax') }}</strong>
@@ -622,8 +449,8 @@
 
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
-									<label for="Block_2_Ex_Tax">Block 2 Incl. Tax</label>
-									{!! html()->text('Block_2_Ex_Tax')->class('form-control')->id('Block_2_Ex_Tax_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 2 Incl. Tax' ) !!}
+									<label for="Block_2_Ex_Tax">Block 2 Incl. GST</label>
+									{!! html()->text('Block_2_Ex_Tax')->class('form-control')->id('Block_2_Ex_Tax_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 2 Incl. GST' ) !!}
 									@if ($errors->has('Block_2_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_2_Ex_Tax') }}</strong>
@@ -636,8 +463,8 @@
 						<div class="row">
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
-									<label for="Block_3_Ex_Tax">Block 3 Incl. Tax</label>
-									{!! html()->text('Block_3_Ex_Tax')->class('form-control')->id('Block_3_Ex_Tax_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 3 Incl. Tax' ) !!}
+									<label for="Block_3_Ex_Tax">Block 3 Incl. GST</label>
+									{!! html()->text('Block_3_Ex_Tax')->class('form-control')->id('Block_3_Ex_Tax_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 3 Incl. GST' ) !!}
 									@if ($errors->has('Block_3_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_3_Ex_Tax') }}</strong>
@@ -655,213 +482,38 @@
 						</div>
 
                         <div style="margin-bottom: 15px;" class="accordion-header">
-                            <h4>Department Fee</h4>
-							<div class="col-3">
-								<label for="surcharge">Surcharge</label>
-								<select class="form-control" name="surcharge" id="surcharge_lead">
-									<option value="">Select</option>
-									<option value="Yes">Yes</option>
-									<option value="No">No</option>
-								</select>
-							</div>
+                            <h4>Disbursements</h4>
                         </div>
 
-                        <div class="row">
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <div class="row">
-                                        <div class="col-9">
-                                            <label for="Dept_Base_Application_Charge">Dept Base Application Charge</label>
-                                            {!! html()->text('Dept_Base_Application_Charge')->class('form-control')->id('Dept_Base_Application_Charge_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Base Application Charge' ) !!}
-                                        </div>
-                                        <div class="col-3">
-                                            <label for="Dept_Base_Application_Charge_no_of_person">Person</label>
-                                            <input type="number" name="Dept_Base_Application_Charge_no_of_person" id="Dept_Base_Application_Charge_no_of_person_lead"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
-                                        </div>
-                                    </div>
-
-                                    @if ($errors->has('Dept_Base_Application_Charge'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Base_Application_Charge') }}</strong>
-                                        </span>
-                                    @endif
-                                </div>
+                        <div id="disbursement-lines-container-lead">
+                            <div class="disbursement-lines-header row mb-1 d-none d-md-flex">
+                                <div class="col-md-4"><small class="text-muted font-weight-bold">Nature</small></div>
+                                <div class="col-md-4"><small class="text-muted font-weight-bold">Description</small></div>
+                                <div class="col-md-3"><small class="text-muted font-weight-bold">Amount ($)</small></div>
                             </div>
+                            <div id="disbursement-rows-lead">
+                                {{-- rows injected by JS --}}
+                            </div>
+                        </div>
 
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <div class="row">
-				                        <div class="col-9">
-                                            <label for="Dept_Non_Internet_Application_Charge">Dept Non Internet Application Charge</label>
-                                            {!! html()->text('Dept_Non_Internet_Application_Charge')->class('form-control')->id('Dept_Non_Internet_Application_Charge_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Non Internet Application Charge' ) !!}
-                                        </div>
-				                        <div class="col-3">
-                                            <label for="Dept_Non_Internet_Application_Charge_no_of_person">Person</label>
-                                            <input type="number" name="Dept_Non_Internet_Application_Charge_no_of_person" id="Dept_Non_Internet_Application_Charge_no_of_person_lead"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
-                                        </div>
-                                    </div>
-                                    @if ($errors->has('Dept_Non_Internet_Application_Charge'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Non_Internet_Application_Charge') }}</strong>
-                                        </span>
-                                    @endif
-                                </div>
+                        <div class="row mt-2 mb-3">
+                            <div class="col-12">
+                                <button type="button" class="btn btn-outline-secondary btn-sm btn-add-disbursement-row-lead">
+                                    <i class="fas fa-plus mr-1"></i> Add Disbursement
+                                </button>
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-12 col-md-6 col-lg-6">
                                 <div class="form-group">
-                                    <div class="row">
-                                        <div class="col-9">
-                                            <label for="Dept_Additional_Applicant_Charge_18_Plus">Dept Additional Applicant Charge 18 +</label>
-                                            {!! html()->text('Dept_Additional_Applicant_Charge_18_Plus')->class('form-control')->id('Dept_Additional_Applicant_Charge_18_Plus_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Additional Applicant Charge 18 Plus' ) !!}
-                                        </div>
-                                        <div class="col-3">
-                                            <label for="Dept_Additional_Applicant_Charge_18_Plus_no_of_person">Person</label>
-                                            <input type="number" name="Dept_Additional_Applicant_Charge_18_Plus_no_of_person" id="Dept_Additional_Applicant_Charge_18_Plus_no_of_person_lead"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
-                                        </div>
-                                    </div>
-                                    @if ($errors->has('Dept_Additional_Applicant_Charge_18_Plus'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Additional_Applicant_Charge_18_Plus') }}</strong>
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <div class="row">
-			                            <div class="col-9">
-                                            <label for="Dept_Additional_Applicant_Charge_Under_18">Dept Add. Applicant Charge Under 18</label>
-                                            {!! html()->text('Dept_Additional_Applicant_Charge_Under_18')->class('form-control')->id('Dept_Additional_Applicant_Charge_Under_18_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Additional Applicant Charge Under 18' ) !!}
-                                        </div>
-                                        <div class="col-3">
-                                            <label for="Dept_Additional_Applicant_Charge_Under_18_no_of_person">Person</label>
-                                            <input type="number" name="Dept_Additional_Applicant_Charge_Under_18_no_of_person" id="Dept_Additional_Applicant_Charge_Under_18_no_of_person_lead"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
-                                        </div>
-                                    </div>
-                                    @if ($errors->has('Dept_Additional_Applicant_Charge_Under_18'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Additional_Applicant_Charge_Under_18') }}</strong>
-                                        </span>
-                                    @endif
+                                    <label for="TotalDisbursements_lead">Total Disbursements</label>
+                                    <input type="text" name="TotalDisbursements" id="TotalDisbursements_lead" class="form-control" readonly placeholder="0.00">
                                 </div>
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <div class="row">
-			                            <div class="col-9">
-                                            <label for="Dept_Subsequent_Temp_Application_Charge">Dept Subsequent Temp App Charge</label>
-                                            {!! html()->text('Dept_Subsequent_Temp_Application_Charge')->class('form-control')->id('Dept_Subsequent_Temp_Application_Charge_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Subsequent Temp Application Charge' ) !!}
-                                        </div>
-                                        <div class="col-3">
-                                            <label for="Dept_Subsequent_Temp_Application_Charge_no_of_person">Person</label>
-                                            <input type="number" name="Dept_Subsequent_Temp_Application_Charge_no_of_person" id="Dept_Subsequent_Temp_Application_Charge_no_of_person_lead"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
-                                        </div>
-                                    </div>
-                                    @if ($errors->has('Dept_Subsequent_Temp_Application_Charge'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Subsequent_Temp_Application_Charge') }}</strong>
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <div class="row">
-			                            <div class="col-9">
-                                            <label for="Dept_Second_VAC_Instalment_Charge_18_Plus">Dept Second VAC Instalment 18+</label>
-                                            {!! html()->text('Dept_Second_VAC_Instalment_Charge_18_Plus')->class('form-control')->id('Dept_Second_VAC_Instalment_Charge_18_Plus_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Second VAC Instalment Charge 18 Plus' ) !!}
-                                        </div>
-                                        <div class="col-3">
-                                            <label for="Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person">Person</label>
-                                            <input type="number" name="Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person" id="Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person_lead"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
-                                        </div>
-                                    </div>
-                                    @if ($errors->has('Dept_Second_VAC_Instalment_Charge_18_Plus'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Second_VAC_Instalment_Charge_18_Plus') }}</strong>
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <div class="row">
-			                            <div class="col-9">
-                                            <label for="Dept_Second_VAC_Instalment_Under_18">Dept Second VAC Instalment Under 18</label>
-                                            {!! html()->text('Dept_Second_VAC_Instalment_Under_18')->class('form-control')->id('Dept_Second_VAC_Instalment_Under_18_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Second VAC Instalment Under 18' ) !!}
-                                        </div>
-                                        <div class="col-3">
-                                            <label for="Dept_Second_VAC_Instalment_Under_18_no_of_person">Person</label>
-                                            <input type="number" name="Dept_Second_VAC_Instalment_Under_18_no_of_person" id="Dept_Second_VAC_Instalment_Under_18_no_of_person_lead"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
-                                        </div>
-                                    </div>
-                                    @if ($errors->has('Dept_Second_VAC_Instalment_Under_18'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Second_VAC_Instalment_Under_18') }}</strong>
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <label for="Dept_Nomination_Application_Charge">Dept Nomination Application Charge</label>
-                                    {!! html()->text('Dept_Nomination_Application_Charge')->class('form-control')->id('Dept_Nomination_Application_Charge_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Nomination Application Charge' ) !!}
-                                    @if ($errors->has('Dept_Nomination_Application_Charge'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Nomination_Application_Charge') }}</strong>
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <label for="Dept_Sponsorship_Application_Charge">Dept Sponsorship Application Charge</label>
-                                    {!! html()->text('Dept_Sponsorship_Application_Charge')->class('form-control')->id('Dept_Sponsorship_Application_Charge_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Dept Sponsorship Application Charge' ) !!}
-                                    @if ($errors->has('Dept_Sponsorship_Application_Charge'))
-                                        <span class="custom-error" role="alert">
-                                            <strong>{{ @$errors->first('Dept_Sponsorship_Application_Charge') }}</strong>
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <label for="TotalDoHACharges">Total DoHA Charges</label>
-                                    {!! html()->text('TotalDoHACharges')->class('form-control')->id('TotalDoHACharges_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Total DoHA Charges')->attribute('readonly', 'readonly' ) !!}
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6 col-lg-6">
-                                <div class="form-group">
-                                    <label for="TotalDoHASurcharges">Total DoHA Surcharges</label>
-                                    {!! html()->text('TotalDoHASurcharges')->class('form-control')->id('TotalDoHASurcharges_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Total DoHA Surcharges' )->attribute('readonly', 'readonly') !!}
-                                </div>
-                            </div>
-                        </div>
-
-						<div style="margin-bottom: 15px;" class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
+					<div style="margin-bottom: 15px;" class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
                             <h4>Additional Fee</h4>
                         </div>
 

@@ -3,9 +3,12 @@
 
 @section('content')
 <!-- Main Content -->
-<div class="main-content adminconsole-features">
+<div class="main-content adminconsole-features adminconsole-matter-form">
 	<section class="section">
 		<div class="section-body">
+			<div class="server-error">
+				@include('../Elements/flash-message')
+			</div>
 			<form action="{{ route('adminconsole.features.matter.update', $fetchedData->id) }}" name="edit-matter" autocomplete="off" enctype="multipart/form-data" method="POST">
 				@csrf
 				@method('PUT')
@@ -15,7 +18,7 @@
 							<div class="card-header">
 								<h4>Edit Matter</h4>
 								<div class="card-header-action">
-									<a href="{{route('adminconsole.features.matter.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+									<a href="{{route('adminconsole.features.matter.index')}}" class="btn btn-outline-primary"><i class="fa fa-arrow-left"></i> Back</a>
 								</div>
 							</div>
 						</div>
@@ -26,12 +29,12 @@
 					<div class="col-9 col-md-9 col-lg-9">
 						<div class="card">
 							<div class="card-body">
-								<div id="accordion">
+								<div id="matter-form-accordion">
 									<div class="accordion">
 										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
 											<h4>Matter Information</h4>
 										</div>
-										<div class="accordion-body collapse show" id="primary_info" data-parent="#accordion">
+										<div class="accordion-body collapse show" id="primary_info" data-bs-parent="#matter-form-accordion">
 											<div class="row">
 												<div class="col-12 col-md-6 col-lg-6">
 													<div class="form-group">
@@ -108,8 +111,8 @@
 												</div>
 												<div class="col-12 col-md-6 col-lg-6">
 													<div class="form-group">
-														<label for="Block_1_Ex_Tax">Block 1 Incl. Tax</label>
-														<input type="text" name="Block_1_Ex_Tax" class="form-control" autocomplete="off" placeholder="Enter Block 1 Incl. Tax" value="{{ old('Block_1_Ex_Tax', @$fetchedData->Block_1_Ex_Tax) }}">
+														<label for="Block_1_Ex_Tax">Block 1 Incl. GST</label>
+														<input type="text" name="Block_1_Ex_Tax" class="form-control" autocomplete="off" placeholder="Enter Block 1 Incl. GST" value="{{ old('Block_1_Ex_Tax', @$fetchedData->Block_1_Ex_Tax) }}">
 														@if ($errors->has('Block_1_Ex_Tax'))
 															<span class="custom-error" role="alert">
 																<strong>{{ $errors->first('Block_1_Ex_Tax') }}</strong>
@@ -133,8 +136,8 @@
 												</div>
 												<div class="col-12 col-md-6 col-lg-6">
 													<div class="form-group">
-														<label for="Block_2_Ex_Tax">Block 2 Incl. Tax</label>
-														<input type="text" name="Block_2_Ex_Tax" class="form-control" autocomplete="off" placeholder="Enter Block 2 Incl. Tax" value="{{ old('Block_2_Ex_Tax', @$fetchedData->Block_2_Ex_Tax) }}">
+														<label for="Block_2_Ex_Tax">Block 2 Incl. GST</label>
+														<input type="text" name="Block_2_Ex_Tax" class="form-control" autocomplete="off" placeholder="Enter Block 2 Incl. GST" value="{{ old('Block_2_Ex_Tax', @$fetchedData->Block_2_Ex_Tax) }}">
 														@if ($errors->has('Block_2_Ex_Tax'))
 															<span class="custom-error" role="alert">
 																<strong>{{ $errors->first('Block_2_Ex_Tax') }}</strong>
@@ -158,8 +161,8 @@
 												</div>
 												<div class="col-12 col-md-6 col-lg-6">
 													<div class="form-group">
-														<label for="Block_3_Ex_Tax">Block 3 Incl. Tax</label>
-														<input type="text" name="Block_3_Ex_Tax" class="form-control" autocomplete="off" placeholder="Enter Block 3 Incl. Tax" value="{{ old('Block_3_Ex_Tax', @$fetchedData->Block_3_Ex_Tax) }}">
+														<label for="Block_3_Ex_Tax">Block 3 Incl. GST</label>
+														<input type="text" name="Block_3_Ex_Tax" class="form-control" autocomplete="off" placeholder="Enter Block 3 Incl. GST" value="{{ old('Block_3_Ex_Tax', @$fetchedData->Block_3_Ex_Tax) }}">
 														@if ($errors->has('Block_3_Ex_Tax'))
 															<span class="custom-error" role="alert">
 																<strong>{{ $errors->first('Block_3_Ex_Tax') }}</strong>
@@ -169,133 +172,7 @@
 												</div>
 											</div>
 											
-											<div style="margin-bottom: 15px;" class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
-												<h4>Department Fee</h4>
-											</div>
-
-											<div class="row">
-												<div class="col-12 col-md-6 col-lg-6">
-													<div class="form-group">
-														<label for="surcharge">Surcharge</label>
-														<select class="form-control" name="surcharge" id="surcharge">
-															<option value="">Select</option>
-															<option value="Yes" {{ old('surcharge', $fetchedData->surcharge ?? '') == 'Yes' ? 'selected' : '' }}>Yes</option>
-															<option value="No" {{ old('surcharge', $fetchedData->surcharge ?? '') == 'No' ? 'selected' : '' }}>No</option>
-														</select>
-													</div>
-												</div>
-											</div>
-											<div class="row">
-												<div class="col-12 col-md-6 col-lg-6">
-													<div class="form-group">
-														<label for="Dept_Base_Application_Charge">Dept Base Application Charge</label>
-														<input type="text" name="Dept_Base_Application_Charge" class="form-control" autocomplete="off" placeholder="Enter Dept Base Application Charge" value="{{ old('Dept_Base_Application_Charge', @$fetchedData->Dept_Base_Application_Charge) }}">
-														@if ($errors->has('Dept_Base_Application_Charge'))
-															<span class="custom-error" role="alert">
-																<strong>{{ $errors->first('Dept_Base_Application_Charge') }}</strong>
-															</span>
-														@endif
-													</div>
-												</div>
-												<div class="col-12 col-md-6 col-lg-6">
-													<div class="form-group">
-														<label for="Dept_Non_Internet_Application_Charge">Dept Non Internet Application Charge</label>
-														<input type="text" name="Dept_Non_Internet_Application_Charge" class="form-control" autocomplete="off" placeholder="Enter Dept Non Internet Application Charge" value="{{ old('Dept_Non_Internet_Application_Charge', @$fetchedData->Dept_Non_Internet_Application_Charge) }}">
-														@if ($errors->has('Dept_Non_Internet_Application_Charge'))
-															<span class="custom-error" role="alert">
-																<strong>{{ $errors->first('Dept_Non_Internet_Application_Charge') }}</strong>
-															</span>
-														@endif
-													</div>
-												</div>
-											</div>
-											<div class="row">
-												<div class="col-12 col-md-6 col-lg-6">
-													<div class="form-group">
-														<label for="Dept_Additional_Applicant_Charge_18_Plus">Dept Additional Applicant Charge 18 +</label>
-														<input type="text" name="Dept_Additional_Applicant_Charge_18_Plus" class="form-control" autocomplete="off" placeholder="Enter Dept Additional Applicant Charge 18 Plus" value="{{ old('Dept_Additional_Applicant_Charge_18_Plus', @$fetchedData->Dept_Additional_Applicant_Charge_18_Plus) }}">
-														@if ($errors->has('Dept_Additional_Applicant_Charge_18_Plus'))
-															<span class="custom-error" role="alert">
-																<strong>{{ $errors->first('Dept_Additional_Applicant_Charge_18_Plus') }}</strong>
-															</span>
-														@endif
-													</div>
-												</div>
-												<div class="col-12 col-md-6 col-lg-6">
-													<div class="form-group">
-														<label for="Dept_Additional_Applicant_Charge_Under_18">Dept Additional Applicant Charge Under 18</label>
-														<input type="text" name="Dept_Additional_Applicant_Charge_Under_18" class="form-control" autocomplete="off" placeholder="Enter Dept Additional Applicant Charge Under 18" value="{{ old('Dept_Additional_Applicant_Charge_Under_18', @$fetchedData->Dept_Additional_Applicant_Charge_Under_18) }}">
-														@if ($errors->has('Dept_Additional_Applicant_Charge_Under_18'))
-															<span class="custom-error" role="alert">
-																<strong>{{ $errors->first('Dept_Additional_Applicant_Charge_Under_18') }}</strong>
-															</span>
-														@endif
-													</div>
-												</div>
-											</div>
-											<div class="row">
-												<div class="col-12 col-md-6 col-lg-6">
-													<div class="form-group">
-														<label for="Dept_Subsequent_Temp_Application_Charge">Dept Subsequent Temp Application Charge</label>
-														<input type="text" name="Dept_Subsequent_Temp_Application_Charge" class="form-control" autocomplete="off" placeholder="Enter Dept Subsequent Temp Application Charge" value="{{ old('Dept_Subsequent_Temp_Application_Charge', @$fetchedData->Dept_Subsequent_Temp_Application_Charge) }}">
-														@if ($errors->has('Dept_Subsequent_Temp_Application_Charge'))
-															<span class="custom-error" role="alert">
-																<strong>{{ $errors->first('Dept_Subsequent_Temp_Application_Charge') }}</strong>
-															</span>
-														@endif
-													</div>
-												</div>
-												<div class="col-12 col-md-6 col-lg-6">
-													<div class="form-group">
-														<label for="Dept_Second_VAC_Instalment_Charge_18_Plus">Dept Second VAC Instalment Charge 18 +</label>
-														<input type="text" name="Dept_Second_VAC_Instalment_Charge_18_Plus" class="form-control" autocomplete="off" placeholder="Enter Dept Second VAC Instalment Charge 18 Plus" value="{{ old('Dept_Second_VAC_Instalment_Charge_18_Plus', @$fetchedData->Dept_Second_VAC_Instalment_Charge_18_Plus) }}">
-														@if ($errors->has('Dept_Second_VAC_Instalment_Charge_18_Plus'))
-															<span class="custom-error" role="alert">
-																<strong>{{ $errors->first('Dept_Second_VAC_Instalment_Charge_18_Plus') }}</strong>
-															</span>
-														@endif
-													</div>
-												</div>
-											</div>
-											<div class="row">
-												<div class="col-12 col-md-6 col-lg-6">
-													<div class="form-group">
-														<label for="Dept_Second_VAC_Instalment_Under_18">Dept Second VAC Instalment Under 18</label>
-														<input type="text" name="Dept_Second_VAC_Instalment_Under_18" class="form-control" autocomplete="off" placeholder="Enter Dept Second VAC Instalment Under 18" value="{{ old('Dept_Second_VAC_Instalment_Under_18', @$fetchedData->Dept_Second_VAC_Instalment_Under_18) }}">
-														@if ($errors->has('Dept_Second_VAC_Instalment_Under_18'))
-															<span class="custom-error" role="alert">
-																<strong>{{ $errors->first('Dept_Second_VAC_Instalment_Under_18') }}</strong>
-															</span>
-														@endif
-													</div>
-												</div>
-												<div class="col-12 col-md-6 col-lg-6">
-													<div class="form-group">
-														<label for="Dept_Nomination_Application_Charge">Dept Nomination Application Charge</label>
-														<input type="text" name="Dept_Nomination_Application_Charge" class="form-control" autocomplete="off" placeholder="Enter Dept Nomination Application Charge" value="{{ old('Dept_Nomination_Application_Charge', @$fetchedData->Dept_Nomination_Application_Charge) }}">
-														@if ($errors->has('Dept_Nomination_Application_Charge'))
-															<span class="custom-error" role="alert">
-																<strong>{{ $errors->first('Dept_Nomination_Application_Charge') }}</strong>
-															</span>
-														@endif
-													</div>
-												</div>
-											</div>
-											<div class="row">
-												<div class="col-12 col-md-6 col-lg-6">
-													<div class="form-group">
-														<label for="Dept_Sponsorship_Application_Charge">Dept Sponsorship Application Charge</label>
-														<input type="text" name="Dept_Sponsorship_Application_Charge" class="form-control" autocomplete="off" placeholder="Enter Dept Sponsorship Application Charge" value="{{ old('Dept_Sponsorship_Application_Charge', @$fetchedData->Dept_Sponsorship_Application_Charge) }}">
-														@if ($errors->has('Dept_Sponsorship_Application_Charge'))
-															<span class="custom-error" role="alert">
-																<strong>{{ $errors->first('Dept_Sponsorship_Application_Charge') }}</strong>
-															</span>
-														@endif
-													</div>
-												</div>
-											</div>
 											
-
 											<div style="margin-bottom: 15px;" class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
 												<h4>Additional Fee</h4>
 											</div>
@@ -315,8 +192,8 @@
 										</div>
 									</div>
 								</div>
-								<div class="form-group float-right">
-									<button type="submit" class="btn btn-primary">Update Matter</button>
+								<div class="roles-form-actions">
+									<button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Update Matter</button>
 								</div>
 							</div>
 						</div>

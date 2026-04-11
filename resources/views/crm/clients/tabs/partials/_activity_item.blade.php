@@ -37,7 +37,7 @@
         @elseif($activity->activity_type === 'activity')
             <i class="fas fa-bolt"></i>
         @elseif($activity->activity_type === 'stage')
-            <i class="fas fa-route"></i>
+            <i class="fas fa-tasks" aria-hidden="true"></i>
         @elseif($activity->activity_type === 'financial')
             <i class="fas fa-dollar-sign"></i>
         @elseif(str_contains(strtolower($activity->subject ?? ''), "invoice") || 

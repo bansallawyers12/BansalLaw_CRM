@@ -3,31 +3,12 @@
     $crossAccessAutoOpen = $crossAccessAutoOpen ?? session('crm_access_modal_payload');
 @endphp
 
-<style>
-    /* Layout sets .btn { border: none }, which breaks outline-style CTAs; keep footer actions readable */
-    #crmCrossAccessModal .modal-footer .btn-primary {
-        background-color: #3498db;
-        color: #fff;
-        border: 1px solid #2980b9;
-    }
-    #crmCrossAccessModal .modal-footer .btn-primary:hover {
-        background-color: #2980b9;
-        color: #fff;
-        border-color: #21618c;
-    }
-    #crmCrossAccessModal .modal-footer .btn-secondary {
-        color: #fff;
-        background-color: #6c757d;
-        border: 1px solid #5a6268;
-    }
-</style>
-
 <div class="modal fade" id="crmCrossAccessModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Request access</h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p class="text-muted mb-2" id="crmCrossAccessRecordLabel"></p>
@@ -50,7 +31,7 @@
                 <div class="alert d-none" id="crmCrossAccessMsg" role="alert"></div>
             </div>
             <div class="modal-footer d-flex flex-wrap gap-2 justify-content-end" id="crmCrossAccessModalFooter">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary d-none" id="crmCrossAccessBtnQuick">Quick access ({{ config('crm_access.quick_grant_minutes', 15) }} min)</button>
                 <button type="button" class="btn btn-primary d-none" id="crmCrossAccessBtnSupervisor">Request supervisor access</button>
             </div>

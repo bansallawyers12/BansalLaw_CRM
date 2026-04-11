@@ -3,7 +3,7 @@
 
 @section('content')
 <!-- Main Content -->
-<div class="main-content adminconsole-features">
+<div class="main-content adminconsole-features adminconsole-sms-form">
     <section class="section">
         <div class="section-body">
             <div class="server-error">
@@ -20,7 +20,7 @@
                         <div class="card-header">
                             <h4><i class="fas fa-plus"></i> Create SMS Template</h4>
                             <div class="card-header-action">
-                                <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-secondary">
+                                <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-outline-primary">
                                     <i class="fas fa-arrow-left"></i> Back to Templates
                                 </a>
                             </div>
@@ -56,7 +56,7 @@
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label for="message">Message Content <span class="text-danger">*</span></label>
+                                    <label for="message">Message Content <span class="span_req">*</span></label>
                                     <textarea class="form-control" id="message" name="message" rows="4" placeholder="Enter your template message here..." required></textarea>
                                     <small class="form-text text-muted">
                                         <span id="charCount">0</span>/1600 characters
@@ -79,12 +79,12 @@
                                     </div>
                                 </div>
                                 
-                                <div class="form-group">
+                                <div class="roles-form-actions">
                                     <button type="submit" class="btn btn-primary" id="saveBtn">
-                                        <i class="fas fa-save"></i> Create Template
+                                        <i class="fas fa-save me-1"></i> Create Template
                                     </button>
-                                    <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-secondary">
-                                        <i class="fas fa-times"></i> Cancel
+                                    <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-outline-secondary ms-2">
+                                        <i class="fas fa-times me-1"></i> Cancel
                                     </a>
                                 </div>
                             </form>
@@ -142,7 +142,7 @@ $(document).ready(function() {
                 }
             },
             complete: function() {
-                $('#saveBtn').prop('disabled', false).html('<i class="fas fa-save"></i> Create Template');
+                $('#saveBtn').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Create Template');
             }
         });
     });

@@ -21,7 +21,8 @@
 }
 
 .listing-container .pagination li a,
-.listing-container .pagination li span {
+.listing-container .pagination li span,
+.listing-container .pagination .page-link {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -32,19 +33,23 @@
     color: var(--text-muted, #5e7a90);
     background: var(--card-bg, #ffffff);
     border: 1px solid var(--border, #c8dcef);
-    border-radius: 6px;
+    border-radius: 8px;
     text-decoration: none;
     white-space: nowrap;
 }
 
-.listing-container .pagination li.active span {
-    background-color: var(--navy, #1e3d60);
-    border-color: var(--navy, #1e3d60);
-    color: #fff;
+.listing-container .pagination li.active span,
+.listing-container .pagination li.active .page-link,
+.listing-container .pagination .page-item.active .page-link {
+    background-color: var(--sidebar-active, #3a6fa8) !important;
+    border-color: var(--sidebar-active, #3a6fa8) !important;
+    color: #fff !important;
     font-weight: 600;
 }
 
-.listing-container .pagination li.disabled span {
+.listing-container .pagination li.disabled span,
+.listing-container .pagination li.disabled .page-link,
+.listing-container .pagination .page-item.disabled .page-link {
     color: var(--text-muted, #5e7a90);
     background-color: var(--page-bg, #f0f6ff);
     border-color: var(--border, #c8dcef);
@@ -52,7 +57,8 @@
     opacity: 0.55;
 }
 
-.listing-container .pagination li a:hover:not(.disabled) {
+.listing-container .pagination li a:hover:not(.disabled),
+.listing-container .pagination .page-link:hover:not(.disabled) {
     background-color: var(--sidebar-hover, #c8dcef);
     border-color: var(--border, #c8dcef);
     color: var(--navy, #1e3d60);

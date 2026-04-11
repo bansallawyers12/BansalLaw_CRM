@@ -30,7 +30,7 @@ class Admin extends Authenticatable
 	protected $fillable = [
         'id',
         // Core Identity
-        'first_name', 'last_name', 'email', 'password',
+        'first_name', 'last_name', 'email', 'email_type', 'password',
         // Role: deprecated for clients/leads (use type). Column kept for backward compat.
         'role',
         // Type: 'client' or 'lead' for CRM (replaces role=7 for clients/leads)
@@ -38,7 +38,7 @@ class Admin extends Authenticatable
         // CRM reference (unique per client/lead — format: PREFIX+YEAR+COUNTER)
         'client_id', 'client_counter',
         // Contact Information
-        'phone', 'country_code',
+        'phone', 'country_code', 'contact_type',
         // Address
         'country', 'state', 'city', 'address', 'zip',
         // Profile (profile_img removed - use avatar.png)

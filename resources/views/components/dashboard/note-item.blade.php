@@ -210,7 +210,7 @@
 }
 
 .client-link i {
-    color: #667eea;
+    color: var(--navy);
 }
 
 .client-id-small {

@@ -1,165 +1,7 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'Access grants dashboard')
-@section('styles')
-<style>
-    /* Access grants dashboard — docs/theme.md (CSS variables from crm-theme.css :root) */
-    #crm-access-pending-card {
-        border: 1px solid var(--border, #c8dcef);
-        border-left: 4px solid var(--accent-gold, #c8992a);
-        border-radius: 10px;
-        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
-    }
-
-    #crm-access-grants-card {
-        border: 1px solid var(--border, #c8dcef);
-        border-radius: 10px;
-        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
-    }
-
-    #crm-access-pending-card > .card-header,
-    #crm-access-grants-card > .card-header {
-        background: var(--card-bg, #ffffff) !important;
-        background-image: none !important;
-        color: var(--navy, #1e3d60) !important;
-        border-bottom: 1px solid var(--border, #c8dcef) !important;
-    }
-
-    #crm-access-pending-card .card-header h5,
-    #crm-access-grants-card .card-header h4 {
-        color: var(--navy, #1e3d60) !important;
-        font-weight: 700 !important;
-    }
-
-    #crm-access-pending-card .card-header .btn-light {
-        background: var(--page-bg, #f0f6ff) !important;
-        border: 1px solid var(--border, #c8dcef) !important;
-        color: var(--navy, #1e3d60) !important;
-    }
-
-    #crm-access-pending-card .card-header .btn-light:hover,
-    #crm-access-pending-card .card-header .btn-light:focus {
-        background: var(--sidebar-hover, #c8dcef) !important;
-        color: var(--navy, #1e3d60) !important;
-    }
-
-    #crm-pending-badge {
-        background: rgba(200, 153, 42, 0.15) !important;
-        color: #7a5800 !important;
-        border: 1px solid rgba(200, 153, 42, 0.35) !important;
-        font-weight: 700;
-    }
-
-    #crm-access-grants-card .card-header .btn-secondary {
-        background: var(--navy, #1e3d60) !important;
-        border: 1px solid var(--navy, #1e3d60) !important;
-        color: #fff !important;
-    }
-
-    #crm-access-grants-card .card-header .btn-secondary:hover,
-    #crm-access-grants-card .card-header .btn-secondary:focus {
-        background: var(--sidebar-active, #3a6fa8) !important;
-        border-color: var(--sidebar-active, #3a6fa8) !important;
-        color: #fff !important;
-    }
-
-    #crm-pending-table thead th,
-    #crm-access-dash-table thead th {
-        background-color: var(--page-bg, #f0f6ff) !important;
-        color: var(--navy, #1e3d60) !important;
-        border-color: var(--border, #c8dcef) !important;
-        font-weight: 600 !important;
-        font-size: 0.8125rem !important;
-        letter-spacing: 0.02em;
-    }
-
-    #crm-access-dash-table tbody tr:hover td,
-    #crm-pending-table tbody tr:hover td {
-        background-color: #ebf3ff !important;
-    }
-
-    #crm-access-dash-filters label.small {
-        color: var(--text-muted, #5e7a90) !important;
-        font-weight: 600 !important;
-    }
-
-    #crm-access-dash-filters .form-control::placeholder {
-        color: var(--text-muted, #5e7a90) !important;
-        opacity: 1;
-    }
-
-    #crm-access-dash-summary .text-muted.small {
-        color: var(--text-muted, #5e7a90) !important;
-    }
-
-    #crm-access-dash-summary [data-field] {
-        color: var(--text-dark, #1a2c40) !important;
-        font-weight: 600;
-    }
-
-    #crm-access-dash-table .badge-success,
-    #crm-pending-table .badge-success {
-        background-color: rgba(30, 122, 82, 0.12) !important;
-        color: var(--success, #1e7a52) !important;
-        border: 1px solid rgba(30, 122, 82, 0.35);
-    }
-
-    #crm-access-dash-table .badge-warning {
-        background-color: rgba(200, 153, 42, 0.15) !important;
-        color: #7a5800 !important;
-        border: 1px solid rgba(200, 153, 42, 0.35);
-    }
-
-    #crm-access-dash-table .badge-secondary {
-        background-color: rgba(94, 122, 144, 0.12) !important;
-        color: var(--text-muted, #5e7a90) !important;
-        border: 1px solid var(--border, #c8dcef);
-    }
-
-    #crm-access-dash-table .badge-dark {
-        background-color: rgba(30, 61, 96, 0.1) !important;
-        color: var(--navy, #1e3d60) !important;
-        border: 1px solid rgba(30, 61, 96, 0.2);
-    }
-
-    #crm-access-dash-table .badge-danger {
-        background-color: rgba(168, 48, 32, 0.1) !important;
-        color: var(--danger, #a83020) !important;
-        border: 1px solid rgba(168, 48, 32, 0.25);
-    }
-
-    #crm-access-pending-card tbody .text-muted,
-    #crm-access-dash-table tbody .text-muted {
-        color: var(--text-muted, #5e7a90) !important;
-    }
-
-    #crm-access-pending-card a.small.text-muted {
-        color: var(--sidebar-active, #3a6fa8) !important;
-        text-decoration: underline;
-    }
-
-    #crm-access-pending-card a.small.text-muted:hover {
-        color: var(--navy, #1e3d60) !important;
-    }
-
-    #crm-pending-table.table-bordered,
-    #crm-access-dash-table.table-bordered {
-        border-color: var(--border, #c8dcef);
-    }
-
-    #crm-pending-table.table-bordered th,
-    #crm-pending-table.table-bordered td,
-    #crm-access-dash-table.table-bordered th,
-    #crm-access-dash-table.table-bordered td {
-        border-color: var(--border, #c8dcef) !important;
-    }
-
-    #crm-access-pending-card .text-success {
-        color: var(--success, #1e7a52) !important;
-    }
-</style>
-@endsection
 @section('content')
-<div class="main-content">
+<div class="main-content crm-access-dashboard-layout">
     <section class="section">
         <div class="section-body">
 
@@ -167,9 +9,9 @@
             <div class="card mb-4" id="crm-access-pending-card">
                 <div class="card-header d-flex justify-content-between align-items-center py-2">
                     <h5 class="mb-0">
-                        <i class="fas fa-clock mr-2" aria-hidden="true"></i>
+                        <i class="fas fa-clock me-2" aria-hidden="true"></i>
                         Pending approvals
-                        <span class="badge ml-2" id="crm-pending-badge">—</span>
+                        <span class="badge ms-2" id="crm-pending-badge">—</span>
                     </h5>
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-sm btn-light" id="crm-pending-refresh" title="Refresh">
@@ -198,7 +40,7 @@
                                 <tbody><tr><td colspan="6" class="text-center text-muted py-3">Loading…</td></tr></tbody>
                             </table>
                         </div>
-                        <div class="mt-2 text-right">
+                        <div class="mt-2 text-end">
                             <a href="{{ route('crm.access.queue') }}" class="small text-muted">View full queue page →</a>
                         </div>
                     </div>
@@ -209,7 +51,7 @@
             <div class="card" id="crm-access-grants-card">
                 <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <h4 class="mb-0">All grants (filterable)</h4>
-                    <a href="{{ route('dashboard') }}" class="btn btn-sm btn-secondary">Main dashboard</a>
+                    <a href="{{ route('dashboard') }}" class="btn btn-sm btn-outline-secondary">Main dashboard</a>
                 </div>
                 <div class="card-body">
                     <form id="crm-access-dash-filters" class="form-row align-items-end mb-3">
@@ -269,15 +111,15 @@
                         </div>
                         <div class="form-group col-12 mb-1">
                             <span class="small text-muted d-block mb-1">Quick date range</span>
-                            <button type="button" class="btn btn-sm btn-outline-primary mr-1 mb-1 js-dash-preset" data-preset="today">Today</button>
-                            <button type="button" class="btn btn-sm btn-outline-primary mr-1 mb-1 js-dash-preset" data-preset="yesterday">Yesterday</button>
-                            <button type="button" class="btn btn-sm btn-outline-primary mr-1 mb-1 js-dash-preset" data-preset="this_week">This week</button>
-                            <button type="button" class="btn btn-sm btn-outline-primary mr-1 mb-1 js-dash-preset" data-preset="this_month">This month</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary me-1 mb-1 js-dash-preset" data-preset="today">Today</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary me-1 mb-1 js-dash-preset" data-preset="yesterday">Yesterday</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary me-1 mb-1 js-dash-preset" data-preset="this_week">This week</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary me-1 mb-1 js-dash-preset" data-preset="this_month">This month</button>
                         </div>
                         <div class="form-group col-md-12">
                             <button type="submit" class="btn btn-sm btn-primary">Apply</button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" id="crm-access-dash-reset">Reset</button>
-                            <a class="btn btn-sm btn-outline-success" id="crm-access-dash-export" href="{{ $exportUrl }}">Export CSV</a>
+                            <a class="btn btn-sm btn-outline-primary" id="crm-access-dash-export" href="{{ $exportUrl }}">Export CSV</a>
                         </div>
                     </form>
 
@@ -638,7 +480,7 @@
                 var items = data.items || [];
 
                 if (items.length === 0) {
-                    tb.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3"><i class="fas fa-check-circle text-success mr-1"></i>No pending requests.</td></tr>';
+                    tb.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3"><i class="fas fa-check-circle text-success me-1"></i>No pending requests.</td></tr>';
                     return;
                 }
 
@@ -661,7 +503,7 @@
                         '<td class="small">' + (ot || '—') + '</td>' +
                         '<td class="small">' + note + '</td>' +
                         '<td class="text-nowrap">' +
-                            '<button type="button" class="btn btn-sm btn-success py-0 px-2 js-pending-approve" data-id="' + g.id + '">Approve</button> ' +
+                            '<button type="button" class="btn btn-sm btn-primary py-0 px-2 js-pending-approve" data-id="' + g.id + '">Approve</button> ' +
                             '<button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 js-pending-reject" data-id="' + g.id + '">Reject</button>' +
                         '</td>';
                     tb.appendChild(tr);

@@ -62,7 +62,7 @@
 }
 
 .sidebar-nav-link.active {
-    background: #6777ef;
+    background: var(--navy);
     color: white;
 }
 
@@ -95,7 +95,7 @@
 
 .progress-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #6777ef, #47c363);
+    background: linear-gradient(90deg, var(--navy), var(--success));
     border-radius: 4px;
 }
 
@@ -141,7 +141,7 @@
 }
 
 .section-header h2 i {
-    color: #6777ef;
+    color: var(--navy);
 }
 
 /* Form Navigation Buttons */
@@ -174,7 +174,7 @@
 }
 
 .btn-next {
-    background: #6777ef;
+    background: var(--navy);
     color: white;
     margin-left: auto;
 }
@@ -209,7 +209,7 @@
 }
 
 .subsection-header i {
-    color: #6777ef;
+    color: var(--navy);
 }
 
 /* Repeatable sections styling */
@@ -223,7 +223,7 @@
 }
 
 .repeatable-section:hover {
-    border-color: #6777ef;
+    border-color: var(--navy);
     box-shadow: 0 2px 8px rgba(103, 119, 239, 0.15);
 }
 
@@ -249,7 +249,7 @@
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    background: #6777ef;
+    background: var(--navy);
     color: white;
     border: none;
     border-radius: 6px;
@@ -424,7 +424,7 @@
 }
 
 .btn-save {
-    background: linear-gradient(135deg, #6777ef 0%, #47c363 100%);
+    background: linear-gradient(135deg, var(--navy) 0%, var(--success) 100%);
     color: white;
 }
 

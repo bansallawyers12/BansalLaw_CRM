@@ -3,7 +3,7 @@
 
 @section('content')
 <!-- Main Content -->
-<div class="main-content adminconsole-features">
+<div class="main-content adminconsole-features adminconsole-sms-dashboard">
     <section class="section">
         <div class="section-body">
             <div class="server-error">
@@ -94,25 +94,25 @@
                                             <h4>Quick Actions</h4>
                                         </div>
                                         <div class="card-body">
-                                            <div class="row">
+                                            <div class="row g-3">
                                                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
-                                                    <a href="{{ route('adminconsole.features.sms.send.create') }}" class="btn btn-primary btn-block">
-                                                        <i class="fas fa-plus"></i> Send SMS
+                                                    <a href="{{ route('adminconsole.features.sms.send.create') }}" class="btn btn-primary w-100">
+                                                        <i class="fas fa-plus me-1"></i> Send SMS
                                                     </a>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
-                                                    <a href="{{ route('adminconsole.features.sms.history') }}" class="btn btn-info btn-block">
-                                                        <i class="fas fa-history"></i> View History
+                                                    <a href="{{ route('adminconsole.features.sms.history') }}" class="btn btn-outline-primary w-100">
+                                                        <i class="fas fa-history me-1"></i> View History
                                                     </a>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
-                                                    <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-success btn-block">
-                                                        <i class="fas fa-file-alt"></i> Manage Templates
+                                                    <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-outline-primary w-100">
+                                                        <i class="fas fa-file-alt me-1"></i> Manage Templates
                                                     </a>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
-                                                    <a href="{{ route('adminconsole.features.sms.statistics') }}" class="btn btn-warning btn-block">
-                                                        <i class="fas fa-chart-bar"></i> View Statistics
+                                                    <a href="{{ route('adminconsole.features.sms.statistics') }}" class="btn btn-outline-secondary w-100">
+                                                        <i class="fas fa-chart-bar me-1"></i> View Statistics
                                                     </a>
                                                 </div>
                                             </div>
@@ -128,7 +128,7 @@
                                         <div class="card-header">
                                             <h4>
                                                 <i class="fas fa-clock"></i> Recent SMS Activity
-                                                <small class="float-right">
+                                                <small class="float-end">
                                                     <span class="badge badge-success">
                                                         <i class="fas fa-circle"></i> Services Online
                                                     </span>
@@ -138,7 +138,7 @@
                                         <div class="card-body">
                                             @if($recentSms->count() > 0)
                                             <div class="table-responsive">
-                                                <table class="table table-striped">
+                                                <table class="table table-striped text_wrap">
                                                     <thead>
                                                         <tr>
                                                             <th>Time</th>
@@ -183,7 +183,7 @@
                                                 <h5>No SMS Activity Yet</h5>
                                                 <p class="text-muted">Send your first SMS message to see activity here!</p>
                                                 <a href="{{ route('adminconsole.features.sms.send.create') }}" class="btn btn-primary">
-                                                    <i class="fas fa-paper-plane"></i> Send First SMS
+                                                    <i class="fas fa-paper-plane me-1"></i> Send First SMS
                                                 </a>
                                             </div>
                                             @endif

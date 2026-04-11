@@ -2,33 +2,31 @@
 @section('title', 'Journal Receipt List')
 
 @section('styles')
+<link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
+<link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
+<link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
 <style>
-    /* Modern Page Styling */
-    .main-content {
-        background: #f8fafc;
+    .listing-container {
+        background: var(--page-bg, #f0f6ff);
         min-height: 100vh;
     }
 
-    .section {
+    .listing-section {
         padding-top: 24px !important;
     }
 
-    /* Modern Card Styling */
-    .card {
+    .listing-container .card {
         border: none;
         border-radius: 16px;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.08);
         overflow: hidden;
-        background: white;
-        margin: 0;
-        width: 100%;
+        background: var(--card-bg, #fff);
     }
 
-    /* Modern Header with Gradient */
-    .card-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    .listing-container .card-header {
+        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
         padding: 24px 32px;
-        border-bottom: none;
+        border-bottom: 3px solid var(--accent-gold, #c8992a);
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -36,120 +34,166 @@
         gap: 16px;
     }
 
-    .card-header h4 {
-        color: white !important;
-        font-size: 24px !important;
+    .listing-container .card-header h4 {
+        color: #fff !important;
+        font-size: 1.5rem;
         font-weight: 700;
         margin: 0;
-        letter-spacing: -0.5px;
+        letter-spacing: -0.02em;
         flex: 1;
     }
 
-    .card-body {
-        padding: 32px;
-        background: white;
-        border-radius: 0 0 16px 16px;
-    }
-
-    /* Modern Table Styling */
-    .table-responsive {
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 0 0 1px #e2e8f0;
-    }
-
-    .table {
-        margin-bottom: 0;
-        font-size: 14px;
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-    }
-
-    .table thead {
-        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-    }
-
-    .table thead th {
-        border: none;
-        padding: 16px 20px;
-        font-weight: 700;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #475569 !important;
-        white-space: nowrap;
-    }
-
-    .table tbody tr {
-        border-bottom: 1px solid #f1f5f9;
-        transition: all 0.2s ease;
-    }
-
-    .table tbody tr:hover {
-        background: #f8fafc;
-        transform: scale(1.001);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    }
-
-    .table tbody td {
-        padding: 16px 20px;
-        vertical-align: middle;
-        border: none;
-        color: #334155 !important;
-    }
-
-    .table tbody tr:last-child {
-        border-bottom: none;
-    }
-
-    /* Modern Checkbox */
-    .custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-color: #667eea;
-    }
-
-    .custom-control-label::before {
-        border-radius: 4px;
-        border: 2px solid #e2e8f0;
-    }
-
-    /* Modern Button Styling */
-    .btn-primary.Validate_Receipt {
-        background: white !important;
-        color: #667eea !important;
-        border: none;
-        padding: 10px 20px;
+    .listing-container .btn {
         border-radius: 10px;
-        font-weight: 700;
+        font-weight: 600;
+        font-size: 14px;
+        transition: filter 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .listing-container .btn-theme {
+        background: rgba(255, 255, 255, 0.2) !important;
+        color: #fff !important;
+        backdrop-filter: blur(10px);
+        border: none !important;
+    }
+
+    .listing-container .btn-theme:hover {
+        filter: brightness(1.08);
+        color: #fff !important;
+    }
+
+    .listing-container .card-header .btn-primary {
+        background: var(--accent-gold, #c8992a) !important;
+        border: 1px solid var(--accent-gold, #c8992a) !important;
+        color: #fff !important;
+    }
+
+    .listing-container .card-header .btn-primary:hover {
+        filter: brightness(1.06);
+        box-shadow: 0 4px 12px rgba(200, 153, 42, 0.35);
+    }
+
+    .listing-container .Validate_Receipt {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
-    .btn-primary.Validate_Receipt[style*="background-color: #394eea"],
-    .Validate_Receipt[style*="background-color: #394eea"] {
-        color: white !important;
+    .listing-container .filter_panel {
+        background: var(--page-bg, #f0f6ff);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        display: none;
+        border: 1px solid var(--border, #c8dcef);
     }
 
-    .btn-primary.Validate_Receipt:hover {
-        background: rgba(255, 255, 255, 0.95) !important;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    .listing-container .filter_panel h4 {
+        color: var(--navy, #1e3d60) !important;
+        font-size: 1.125rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--accent-gold, #c8992a);
+        display: inline-block;
     }
 
-    .btn-primary.Validate_Receipt:active {
-        transform: translateY(0);
+    .listing-container .form-group label {
+        color: var(--text-muted, #5e7a90) !important;
+        font-weight: 600;
+        font-size: 0.8125rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
     }
 
-    .btn-primary.Validate_Receipt i {
+    .listing-container .form-control {
+        border: 1px solid var(--border, #c8dcef);
+        border-radius: 10px;
+        padding: 10px 16px;
         font-size: 14px;
+        background: var(--card-bg, #fff);
     }
 
-    /* Modern Status Badges */
-    .modern-badge {
+    .listing-container .form-control:focus {
+        border-color: var(--sidebar-active, #3a6fa8);
+        box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
+        outline: none;
+    }
+
+    .listing-container .filter-buttons-container {
+        margin-top: 20px;
+    }
+
+    .listing-container .filter-buttons-container .btn-primary {
+        background: var(--navy, #1e3d60) !important;
+        border: 1px solid var(--navy, #1e3d60) !important;
+        color: #fff !important;
+    }
+
+    .listing-container .filter-buttons-container .btn-primary:hover {
+        filter: brightness(1.08);
+    }
+
+    .listing-container .btn-info {
+        background: var(--card-bg, #fff) !important;
+        color: var(--navy, #1e3d60) !important;
+        border: 1px solid var(--border, #c8dcef) !important;
+        box-shadow: none;
+    }
+
+    .listing-container .btn-info:hover {
+        background: var(--sidebar-hover, #c8dcef) !important;
+        color: var(--navy, #1e3d60) !important;
+    }
+
+    .listing-container .card-body {
+        padding: 32px;
+    }
+
+    .listing-container .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 0 0 1px var(--border, #c8dcef);
+    }
+
+    .listing-container .table thead {
+        background: var(--page-bg, #f0f6ff) !important;
+    }
+
+    .listing-container .table thead th {
+        border: none;
+        padding: 14px 16px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--navy, #1e3d60) !important;
+        white-space: nowrap;
+        border-bottom: 2px solid var(--border, #c8dcef);
+    }
+
+    .listing-container .table tbody tr {
+        border-bottom: 1px solid var(--border, #c8dcef);
+        transition: background 0.15s ease;
+    }
+
+    .listing-container .table tbody tr:hover td {
+        background: #ebf3ff !important;
+    }
+
+    .listing-container .table tbody td {
+        padding: 14px 16px;
+        vertical-align: middle;
+        border: none;
+        color: var(--text-dark, #1a2c40) !important;
+    }
+
+    .listing-container .table tbody td.journal-check-cell {
+        white-space: normal !important;
+    }
+
+    .listing-container .modern-badge {
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -159,172 +203,32 @@
         font-size: 12px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        border: 1px solid transparent;
     }
 
-    .modern-badge.badge-success {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    .listing-container .modern-badge.badge-success {
+        background: rgba(30, 122, 82, 0.12);
+        color: var(--success, #1e7a52);
+        border-color: rgba(30, 122, 82, 0.2);
     }
 
-    .modern-badge.badge-danger {
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        color: white;
-        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    .listing-container .modern-badge.badge-danger {
+        background: rgba(168, 48, 32, 0.1);
+        color: var(--danger, #a83020);
+        border-color: rgba(168, 48, 32, 0.2);
     }
 
-    /* Modern Icons */
-    .fas.fa-check-circle {
-        color: #10b981;
-        font-size: 16px;
-        margin-right: 6px;
+    .listing-container .card-header .fas.fa-check-circle,
+    .listing-container .fas.fa-check-circle {
+        color: var(--success, #1e7a52);
     }
 
-    /* Amount Styling */
-    .table tbody td[id^="deposit_"] {
-        font-weight: 700;
-        color: #dc2626;
-        font-family: 'Courier New', monospace;
+    .listing-container .custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
+        background: var(--sidebar-active, #3a6fa8);
+        border-color: var(--sidebar-active, #3a6fa8);
     }
 
-    /* Modern Pagination */
-    .card-footer {
-        background: #f8fafc;
-        border-top: 1px solid #e2e8f0;
-        padding: 20px 32px;
-        border-radius: 0 0 16px 16px;
-    }
-
-    .pagination {
-        margin: 0;
-        display: flex;
-        list-style: none;
-        padding: 0;
-        justify-content: center;
-    }
-
-    .pagination .page-link {
-        border: 2px solid #e2e8f0;
-        color: #667eea;
-        margin: 0 4px;
-        border-radius: 8px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-
-    .pagination .page-link:hover {
-        background: #667eea;
-        color: white;
-        border-color: #667eea;
-        transform: translateY(-2px);
-    }
-
-    .pagination .page-item.active .page-link {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-color: #667eea;
-    }
-
-    /* Sortable Column Headers */
-    .sortable-header {
-        cursor: pointer;
-        user-select: none;
-        position: relative;
-        padding-right: 30px !important;
-        transition: all 0.2s ease;
-    }
-
-    .sortable-header:hover {
-        background: rgba(102, 126, 234, 0.1);
-        color: #667eea !important;
-    }
-
-    .sort-icon {
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        display: inline-flex;
-        flex-direction: column;
-        gap: 2px;
-        opacity: 0.3;
-        transition: all 0.2s ease;
-    }
-
-    .sortable-header:hover .sort-icon {
-        opacity: 0.6;
-    }
-
-    .sort-icon i {
-        font-size: 8px;
-        line-height: 1;
-        color: #475569;
-    }
-
-    .sortable-header.sort-asc .sort-icon {
-        opacity: 1;
-    }
-
-    .sortable-header.sort-asc .sort-icon .fa-caret-up {
-        color: #667eea;
-        font-size: 10px;
-    }
-
-    .sortable-header.sort-desc .sort-icon {
-        opacity: 1;
-    }
-
-    .sortable-header.sort-desc .sort-icon .fa-caret-down {
-        color: #667eea;
-        font-size: 10px;
-    }
-
-    /* No Records State */
-    .table tbody td[colspan] {
-        padding: 60px 20px !important;
-        text-align: center;
-        color: #94a3b8;
-        font-size: 16px;
-        font-weight: 600;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 40px 20px;
-        color: #94a3b8;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .card-header {
-            padding: 20px;
-        }
-
-        .card-header h4 {
-            font-size: 20px !important;
-            width: 100%;
-        }
-
-        .card-body {
-            padding: 20px;
-        }
-
-        .table {
-            font-size: 12px;
-        }
-
-        .table thead th,
-        .table tbody td {
-            padding: 12px 10px;
-        }
-
-        .btn-primary.Validate_Receipt {
-            width: 100%;
-            justify-content: center;
-        }
-    }
-
-    /* Modern Error/Success Messages */
-    .custom-error-msg {
+    .listing-container .custom-error-msg {
         border-radius: 12px;
         margin: 0 32px 20px;
         padding: 16px 20px;
@@ -332,19 +236,93 @@
         display: none;
     }
 
-    .custom-error-msg.alert-success {
-        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-        color: #065f46;
-        border: 2px solid #10b981;
+    .listing-container .custom-error-msg.alert-success {
+        background: rgba(30, 122, 82, 0.1);
+        color: var(--success, #1e7a52);
+        border: 1px solid rgba(30, 122, 82, 0.35);
     }
 
-    .custom-error-msg.alert-danger {
-        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-        color: #991b1b;
-        border: 2px solid #ef4444;
+    .listing-container .custom-error-msg.alert-danger {
+        background: rgba(168, 48, 32, 0.08);
+        color: var(--danger, #a83020);
+        border: 1px solid var(--danger, #a83020);
     }
 
-    /* Animation for filter panel */
+    .listing-container .card-footer {
+        background: var(--page-bg, #f0f6ff);
+        border-top: 1px solid var(--border, #c8dcef);
+        padding: 20px 32px;
+        border-radius: 0 0 16px 16px;
+    }
+
+    .listing-container .table tbody td[colspan] {
+        padding: 48px 20px !important;
+        text-align: center;
+    }
+
+    .listing-container .listing-empty-inner {
+        color: var(--text-muted, #5e7a90);
+    }
+
+    .listing-container .listing-empty-inner > i {
+        font-size: 3rem;
+        opacity: 0.35;
+        color: var(--sidebar-active, #3a6fa8);
+        margin-bottom: 16px;
+        display: block;
+    }
+
+    .listing-container .listing-empty-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--text-dark, #1a2c40);
+    }
+
+    .listing-container .listing-empty-hint {
+        font-size: 0.875rem;
+        margin-top: 8px;
+        color: var(--text-muted, #5e7a90);
+    }
+
+    .listing-container .table tbody td[id^="deposit_"] {
+        font-weight: 700;
+        color: var(--success, #1e7a52) !important;
+        font-family: 'Courier New', monospace;
+    }
+
+    @media (max-width: 768px) {
+        .listing-container .card-header {
+            padding: 20px;
+        }
+
+        .listing-container .card-header h4 {
+            font-size: 1.25rem;
+            width: 100%;
+        }
+
+        .listing-container .card-body {
+            padding: 20px;
+        }
+
+        .listing-container .filter_panel {
+            padding: 20px;
+        }
+
+        .listing-container .table {
+            font-size: 12px;
+        }
+
+        .listing-container .table thead th,
+        .listing-container .table tbody td {
+            padding: 12px 10px;
+        }
+
+        .listing-container .Validate_Receipt {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
     @keyframes slideDown {
         from {
             opacity: 0;
@@ -356,92 +334,61 @@
         }
     }
 
-    /* Filter Panel Styles */
-    .filter_panel {
-        background: #f8fafc;
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 24px;
-        display: none;
-        border: 1px solid #e2e8f0;
-    }
-
-    .filter_panel h4 {
-        color: #1e293b;
-        font-size: 18px;
-        font-weight: 700;
-        margin-bottom: 20px;
-        padding-bottom: 12px;
-        border-bottom: 2px solid #667eea;
-        display: inline-block;
-    }
-
-    .filter_panel {
+    .listing-container .filter_panel {
         animation: slideDown 0.3s ease;
     }
 
-    /* Modern Form Inputs */
-    .form-group label {
-        color: #475569 !important;
-        font-weight: 600;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 8px;
+    .listing-container .sortable-header {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        padding-right: 30px !important;
+        transition: background 0.15s ease;
     }
 
-    .form-control {
-        border: 2px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 10px 16px;
-        font-size: 14px;
-        transition: all 0.3s ease;
-        background: white;
+    .listing-container .sortable-header:hover {
+        background: rgba(30, 61, 96, 0.06);
+        color: var(--navy, #1e3d60) !important;
     }
 
-    .form-control:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        outline: none;
-    }
-
-    /* Modern Button Styling */
-    .btn {
-        border-radius: 10px;
-        padding: 10px 20px;
-        font-weight: 600;
-        font-size: 14px;
-        transition: all 0.3s ease;
-        border: none;
+    .listing-container .sort-icon {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
         display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        flex-direction: column;
+        gap: 2px;
+        opacity: 0.3;
+        transition: opacity 0.15s ease;
     }
 
-    .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    .listing-container .sortable-header:hover .sort-icon {
+        opacity: 0.65;
     }
 
-    .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+    .listing-container .sort-icon i {
+        font-size: 8px;
+        line-height: 1;
+        color: var(--text-muted, #5e7a90);
     }
 
-    .btn-info {
-        background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
-        color: white;
+    .listing-container .sortable-header.sort-asc .sort-icon {
+        opacity: 1;
     }
 
-    .btn-theme {
-        background: rgba(255, 255, 255, 0.2);
-        color: white;
-        backdrop-filter: blur(10px);
+    .listing-container .sortable-header.sort-asc .sort-icon .fa-caret-up {
+        color: var(--navy, #1e3d60);
+        font-size: 10px;
     }
 
-    .filter-buttons-container {
-        margin-top: 20px;
+    .listing-container .sortable-header.sort-desc .sort-icon {
+        opacity: 1;
+    }
+
+    .listing-container .sortable-header.sort-desc .sort-icon .fa-caret-down {
+        color: var(--navy, #1e3d60);
+        font-size: 10px;
     }
 
     @include('crm.clients.partials.enhanced-date-filter-styles')
@@ -449,25 +396,27 @@
 @endsection
 
 @section('content')
-<div class="main-content">
-    <section class="section" style="padding-top: 40px;">
-        <div class="section-body">
+<div class="listing-container">
+    <section class="listing-section" style="padding-top: 40px;">
+        <div class="listing-section-body">
             @include('../Elements/flash-message')
             
             <div class="card">
                 <div class="custom-error-msg">
                 </div>
                 <div class="card-header">
-                    <h4 style="color: #4a5568 !important;">All Journal Receipt List</h4>
-                    <div class="d-flex align-items-center">
-                        @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
-                        <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm mr-2" title="View Financial Analytics Dashboard"><i class="fas fa-chart-line"></i> Analytics</a>
-                        @endif
-                        <a href="javascript:;" style="background: #394eea;color: white;" class="btn btn-theme btn-theme-sm filter_btn mr-2"><i class="fas fa-filter"></i> Filter</a>
-                        <button class="btn btn-primary Validate_Receipt" style="background-color: #394eea !important; color: white !important;">
-                            <i class="fas fa-check-circle"></i>
-                            Validate Receipt
-                        </button>
+                    <div class="d-flex justify-content-between align-items-center w-100 flex-wrap" style="gap: 12px;">
+                        <h4 class="mb-0" style="flex: 1 1 auto;">All Journal Receipt List</h4>
+                        <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
+                            @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
+                            <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm" title="View Financial Analytics Dashboard"><i class="fas fa-chart-line"></i> Analytics</a>
+                            @endif
+                            <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fas fa-filter"></i> Filter</a>
+                            <button type="button" class="btn btn-primary Validate_Receipt">
+                                <i class="fas fa-check-circle"></i>
+                                Validate Receipt
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
@@ -606,7 +555,7 @@
                                         $receipt_validate = ($list->validate_receipt == 1) ? 'Yes' : 'No';
                                         ?>
                                         <tr id="id_{{@$list->id}}">
-                                            <td style="white-space: initial;" class="text-center">
+                                            <td class="text-center journal-check-cell">
                                                 <div class="custom-checkbox custom-control">
                                                     <input data-id="{{@$list->id}}" data-receiptid="{{@$list->receipt_id}}" data-email="{{@$list->email}}" data-name="{{@$list->first_name}} {{@$list->last_name}}" data-clientid="{{@$list->client_id}}" type="checkbox" data-checkboxes="mygroup" class="cb-element custom-control-input  your-checkbox" id="checkbox-{{$i}}">
                                                     <label for="checkbox-{{$i}}" class="custom-control-label">&nbsp;</label>
@@ -635,11 +584,11 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="11" style="text-align: center; padding: 60px 20px;">
-                                            <div style="opacity: 0.5;">
-                                                <i class="fas fa-inbox" style="font-size: 48px; color: #cbd5e1; margin-bottom: 16px;"></i>
-                                                <div style="font-size: 18px; font-weight: 600; color: #64748b;">No Records Found</div>
-                                                <div style="font-size: 14px; color: #94a3b8; margin-top: 8px;">Try adjusting your filters to find what you're looking for</div>
+                                        <td colspan="11">
+                                            <div class="listing-empty-inner">
+                                                <i class="fas fa-inbox" aria-hidden="true"></i>
+                                                <div class="listing-empty-title">No records found</div>
+                                                <div class="listing-empty-hint">Try adjusting your filters to find what you are looking for</div>
                                             </div>
                                         </td>
                                     </tr>
@@ -662,23 +611,22 @@
 {{-- Bootstrap datepicker removed - using Flatpickr via enhanced-date-filter-scripts --}}
 <script>
 jQuery(document).ready(function($){
-    // Filter button toggle
-    $('.filter_btn').on('click', function(){
-        $('.filter_panel').toggle();
+    $('.listing-container .filter_btn').on('click', function(){
+        $('.listing-container .filter_panel').toggle();
     });
 
     // Enhanced Date Filter Scripts
     @include('crm.clients.partials.enhanced-date-filter-scripts')
 
-    $("[data-checkboxes]").each(function () {
+    $('.listing-container [data-checkboxes]').each(function () {
         var me = $(this),
         group = me.data('checkboxes'),
         role = me.data('checkbox-role');
 
         me.change(function () {
-            var all = $('[data-checkboxes="' + group + '"]:not([data-checkbox-role="dad"])'),
-            checked = $('[data-checkboxes="' + group + '"]:not([data-checkbox-role="dad"]):checked'),
-            dad = $('[data-checkboxes="' + group + '"][data-checkbox-role="dad"]'),
+            var all = $('.listing-container [data-checkboxes="' + group + '"]:not([data-checkbox-role="dad"])'),
+            checked = $('.listing-container [data-checkboxes="' + group + '"]:not([data-checkbox-role="dad"]):checked'),
+            dad = $('.listing-container [data-checkboxes="' + group + '"][data-checkbox-role="dad"]'),
             total = all.length,
             checked_length = checked.length;
             if (role == 'dad') {
@@ -692,12 +640,12 @@ jQuery(document).ready(function($){
             } else {
                 if (checked_length >= total) {
                     dad.prop('checked', true);
-                    $('.is_checked_client').show();
-                    $('.is_checked_clientn').hide();
+                    $('.listing-container .is_checked_client').show();
+                    $('.listing-container .is_checked_clientn').hide();
                 } else {
                     dad.prop('checked', false);
-                    $('.is_checked_client').hide();
-                    $('.is_checked_clientn').show();
+                    $('.listing-container .is_checked_client').hide();
+                    $('.listing-container .is_checked_clientn').show();
                 }
             }
 
@@ -705,7 +653,7 @@ jQuery(document).ready(function($){
     });
 
     var clickedReceiptIds = [];
-    $(document).delegate('.your-checkbox', 'click', function(){
+    $(document).delegate('.listing-container .your-checkbox', 'click', function(){
         var clicked_receipt_id = $(this).data('receiptid');
         if ($(this).is(':checked')) {
             clickedReceiptIds.push(clicked_receipt_id);
@@ -718,7 +666,7 @@ jQuery(document).ready(function($){
     });
 
     //validate receipt
-    $(document).delegate('.Validate_Receipt', 'click', function(){
+    $(document).delegate('.listing-container .Validate_Receipt', 'click', function(){
         console.log('Validate Receipt clicked');
         console.log('clickedReceiptIds:', clickedReceiptIds);
 
@@ -761,7 +709,7 @@ jQuery(document).ready(function($){
                             console.log('Processing record:', subArray);
                             //console.log('index=='+index);
                             //console.log('subArray=='+subArray.id);
-                            $('#validate_' + subArray.id +' span')
+                            $('.listing-container #validate_' + subArray.id +' span')
                                 .removeClass('badge-danger')
                                 .addClass('modern-badge badge-success')
                                 .html('<i class="fas fa-check"></i> Yes');
@@ -770,16 +718,16 @@ jQuery(document).ready(function($){
                             } else {
                                 var validateby_full_name = "-";
                             }
-                            $('#validateby_'+subArray.id).text(validateby_full_name);
+                            $('.listing-container #validateby_'+subArray.id).text(validateby_full_name);
                         });
-                        $('.custom-error-msg').text(obj.message);
-                        $('.custom-error-msg').show();
-                        $('.custom-error-msg').addClass('alert alert-success');
+                        $('.listing-container .custom-error-msg').text(obj.message);
+                        $('.listing-container .custom-error-msg').show();
+                        $('.listing-container .custom-error-msg').addClass('alert alert-success');
                         
                         // Clear checkboxes after successful validation
                         clickedReceiptIds = [];
-                        $('.cb-element').prop('checked', false);
-                        $('#checkbox-all').prop('checked', false);
+                        $('.listing-container .cb-element').prop('checked', false);
+                        $('.listing-container #checkbox-all').prop('checked', false);
                     },
                     error: function(xhr, status, error) {
                         console.error('=== AJAX ERROR ===');
@@ -821,16 +769,16 @@ jQuery(document).ready(function($){
     });
 
 
-    $('.cb-element').change(function () {
-        if ($('.cb-element:checked').length == $('.cb-element').length){
-            $('#checkbox-all').prop('checked',true);
+    $('.listing-container .cb-element').change(function () {
+        if ($('.listing-container .cb-element:checked').length == $('.listing-container .cb-element').length){
+            $('.listing-container #checkbox-all').prop('checked',true);
         } else {
-            $('#checkbox-all').prop('checked',false);
+            $('.listing-container #checkbox-all').prop('checked',false);
         }
     });
 
     // Sortable column headers
-    $('.sortable-header').on('click', function() {
+    $('.listing-container .sortable-header').on('click', function() {
         var sortBy = $(this).data('sort');
         var currentUrl = new URL(window.location.href);
         var currentSortBy = currentUrl.searchParams.get('sort_by');

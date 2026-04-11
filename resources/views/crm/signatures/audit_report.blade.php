@@ -15,11 +15,11 @@
             text-align: center;
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 2px solid #667eea;
+            border-bottom: 2px solid var(--navy);
         }
         
         .header h1 {
-            color: #667eea;
+            color: var(--navy);
             margin: 0 0 10px 0;
             font-size: 24px;
         }
@@ -57,7 +57,7 @@
         .summary-item strong {
             display: block;
             font-size: 20px;
-            color: #667eea;
+            color: var(--navy);
         }
         
         .summary-item span {
@@ -72,7 +72,7 @@
         }
         
         th {
-            background: #667eea;
+            background: var(--navy);
             color: white;
             padding: 8px;
             text-align: left;
@@ -218,7 +218,7 @@
     @if($documents->count() <= 50)
     <div class="page-break"></div>
     
-    <h2 style="color: #667eea; margin-top: 30px; margin-bottom: 20px;">Document Details</h2>
+    <h2 style="color: var(--navy); margin-top: 30px; margin-bottom: 20px;">Document Details</h2>
     
     @foreach($documents as $doc)
     <div style="margin-bottom: 25px; padding: 15px; border: 1px solid #dee2e6; border-radius: 5px;">

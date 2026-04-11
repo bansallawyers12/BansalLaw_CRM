@@ -33,7 +33,7 @@
 .listing-container .card-header {
     background: var(--card-bg, #ffffff);
     padding: 20px 30px;
-    border-bottom: 1px solid var(--border, #c8dcef);
+    border-bottom: 3px solid var(--accent-gold, #c8992a);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -107,7 +107,7 @@
 }
 
 .listing-container .table tbody tr:hover td {
-    background-color: #ebf3ff !important;
+    background-color: var(--sidebar-hover, #c8dcef) !important;
 }
 
 .listing-container .table tbody tr:last-child td {
@@ -135,6 +135,38 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    color: #fff !important;
+}
+
+/* Table action column: keep icon-only .btn-sm compact (avoid full-width flex from .btn-primary) */
+.listing-container .table .btn.btn-sm.btn-primary {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0 !important;
+    gap: 0 !important;
+    border-radius: 8px;
+}
+
+.listing-container .table .btn.btn-sm.btn-danger {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0 !important;
+    background: var(--danger, #a83020) !important;
+    border: 1px solid var(--danger, #a83020) !important;
+    color: #fff !important;
+    border-radius: 8px;
+}
+
+.listing-container .table .btn.btn-sm.btn-danger:hover {
+    filter: brightness(1.06);
     color: #fff !important;
 }
 
@@ -493,4 +525,106 @@
     .listing-container {
         padding: 0 10px;
     }
+}
+
+/*
+ * ACTION column dropdowns — docs/theme.md
+ * custom.css forces .card .card-body table td:last-child a { color:#fff !important; background:#1e3a8a }
+ * which also matches .dropdown-menu .dropdown-item (white text on light menu = unreadable).
+ * These selectors intentionally beat that rule.
+ */
+.listing-container .card .card-body table.table tbody tr td:last-child {
+    overflow: visible !important;
+    vertical-align: middle !important;
+}
+
+.listing-container .card .card-body table.table tbody tr td:last-child .dropdown-menu,
+body.sidebar-mini .listing-container .card .card-body table.table tbody tr td:last-child .dropdown-menu {
+    background: var(--card-bg, #ffffff) !important;
+    background-image: none !important;
+    border: 1px solid var(--border, #c8dcef) !important;
+    border-top: 3px solid var(--accent-gold, #c8992a) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 24px rgba(30, 61, 96, 0.12) !important;
+    padding: 6px 0 !important;
+    min-width: 200px !important;
+    z-index: 1085 !important;
+}
+
+.listing-container .card .card-body table.table tbody tr td:last-child .dropdown-menu a.dropdown-item,
+body.sidebar-mini .listing-container .card .card-body table.table tbody tr td:last-child .dropdown-menu a.dropdown-item {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 2px 8px !important;
+    width: calc(100% - 16px) !important;
+    padding: 10px 16px !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    color: var(--text-dark, #1a2c40) !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    line-height: 1.4 !important;
+    border-radius: 8px !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    gap: 8px !important;
+}
+
+.listing-container .card .card-body table.table tbody tr td:last-child .dropdown-menu a.dropdown-item:hover,
+.listing-container .card .card-body table.table tbody tr td:last-child .dropdown-menu a.dropdown-item:focus,
+body.sidebar-mini .listing-container .card .card-body table.table tbody tr td:last-child .dropdown-menu a.dropdown-item:hover,
+body.sidebar-mini .listing-container .card .card-body table.table tbody tr td:last-child .dropdown-menu a.dropdown-item:focus {
+    background-color: var(--sidebar-hover, #c8dcef) !important;
+    background-image: none !important;
+    color: var(--navy, #1e3d60) !important;
+    text-decoration: none !important;
+}
+
+.listing-container .card .card-body table.table tbody tr td:last-child .dropdown-menu a.dropdown-item:active,
+body.sidebar-mini .listing-container .card .card-body table.table tbody tr td:last-child .dropdown-menu a.dropdown-item:active {
+    background-color: rgba(200, 153, 42, 0.12) !important;
+    color: var(--navy, #1e3d60) !important;
+}
+
+.listing-container .card .card-body table.table tbody tr td:last-child .dropdown-menu .dropdown-item.has-icon i,
+body.sidebar-mini .listing-container .card .card-body table.table tbody tr td:last-child .dropdown-menu .dropdown-item.has-icon i {
+    color: var(--sidebar-active, #3a6fa8) !important;
+}
+
+.listing-container .card .card-body table.table tbody tr td:last-child .dropdown-menu .dropdown-item.has-icon:hover i,
+.listing-container .card .card-body table.table tbody tr td:last-child .dropdown-menu .dropdown-item.has-icon:focus i,
+body.sidebar-mini .listing-container .card .card-body table.table tbody tr td:last-child .dropdown-menu .dropdown-item.has-icon:hover i,
+body.sidebar-mini .listing-container .card .card-body table.table tbody tr td:last-child .dropdown-menu .dropdown-item.has-icon:focus i {
+    color: var(--navy, #1e3d60) !important;
+}
+
+.listing-container .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle,
+body.sidebar-mini .listing-container .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle {
+    background: var(--navy, #1e3d60) !important;
+    background-image: none !important;
+    border: 1px solid var(--navy, #1e3d60) !important;
+    color: #fff !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    min-height: 36px !important;
+    padding: 6px 14px !important;
+}
+
+.listing-container .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle:hover,
+.listing-container .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle.show,
+body.sidebar-mini .listing-container .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle:hover,
+body.sidebar-mini .listing-container .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle.show {
+    background: var(--sidebar-active, #3a6fa8) !important;
+    border-color: var(--sidebar-active, #3a6fa8) !important;
+    color: #fff !important;
+    filter: none !important;
+}
+
+.listing-container .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle:focus,
+body.sidebar-mini .listing-container .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle:focus {
+    box-shadow: 0 0 0 3px rgba(200, 153, 42, 0.35) !important;
 }

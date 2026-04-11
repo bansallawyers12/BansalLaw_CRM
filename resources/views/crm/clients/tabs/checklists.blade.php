@@ -68,15 +68,10 @@
                                                 </div>
                                             </div>
 
-                                            <!-- Select Matter - same design as Convert Lead To Client -->
+                                            <!-- Select Matter (General Matter = matter id 1, first in list) -->
                                             <div class="col-12 col-md-12 col-lg-12">
                                                 <div class="form-group">
                                                     <label for="checklist_matter_select">Select Matter <span class="span_req">*</span></label>
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" name="checklist_general_matter" id="checklist_general_matter_checkbox" value="1">
-                                                        <label class="form-check-label" for="checklist_general_matter_checkbox">General Matter</label>
-                                                    </div>
-                                                    <label class="form-check-label">Or Select any option</label>
                                                     <select data-valid="required" class="form-control select2 checklist-field" name="checklist_matter" id="checklist_matter_select">
                                                         <option value="">Select Matter</option>
                                                         @php
@@ -84,7 +79,8 @@
                                                                 ->forClientType((bool) (isset($fetchedData) && $fetchedData->is_company));
                                                             $matterList = $matterQuery->get();
                                                         @endphp
-                                                        @foreach($matterList as $matterlist)
+                                                        <option value="1" data-matter-id="1">General Matter</option>
+                                                        @foreach($matterList->reject(function ($m) { return (int) $m->id === 1; }) as $matterlist)
                                                             <option value="{{$matterlist->id}}" data-matter-id="{{$matterlist->id}}">{{@$matterlist->title}}</option>
                                                         @endforeach
                                                     </select>
@@ -139,18 +135,8 @@
                                                 $office = $clientMatter ? $clientMatter->office : null;
                                                 
                                                 // Calculate costs
-                                                $totalDeptCost = 
-                                                    ($form->Dept_Base_Application_Charge ?? 0) +
-                                                    ($form->Dept_Non_Internet_Application_Charge ?? 0) +
-                                                    ($form->Dept_Additional_Applicant_Charge_18_Plus ?? 0) +
-                                                    ($form->Dept_Additional_Applicant_Charge_Under_18 ?? 0) +
-                                                    ($form->Dept_Subsequent_Temp_Application_Charge ?? 0) +
-                                                    ($form->Dept_Second_VAC_Instalment_Charge_18_Plus ?? 0) +
-                                                    ($form->Dept_Second_VAC_Instalment_Under_18 ?? 0) +
-                                                    ($form->Dept_Nomination_Application_Charge ?? 0) +
-                                                    ($form->Dept_Sponsorship_Application_Charge ?? 0);
+                                                $totalDisbursements = floatval($form->TotalDisbursements ?? 0);
                                                     
-                                                $totalSurcharge = $form->TotalDoHASurcharges ?? 0;
                                                 $totalOurCost = $form->TotalBLOCKFEE ?? 0;
                                                 
                                                 $agreementDoc = null;
@@ -183,7 +169,7 @@
                                                                 <i class="fas fa-users"></i> {{ $office ? $office->office_name : 'No Office' }}
                                                             </span>
                                                             <span class="badge badge-success">
-                                                                <i class="fas fa-dollar-sign"></i> ${{ number_format($totalOurCost + $totalDeptCost + $totalSurcharge, 2) }}
+                                                                <i class="fas fa-dollar-sign"></i> ${{ number_format($totalOurCost + $totalDisbursements, 2) }}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -232,23 +218,15 @@
                                                                 </div>
                                                                 <div class="cost-item cost-breakdown-item">
                                                                     <div class="d-flex justify-content-between align-items-center">
-                                                                        <span>Dept. Charges:</span>
-                                                                        <strong class="text-info" style="font-size: 1.05rem;">${{ number_format($totalDeptCost, 2) }}</strong>
+                                                                        <span>Disbursements:</span>
+                                                                        <strong class="text-info" style="font-size: 1.05rem;">${{ number_format($totalDisbursements, 2) }}</strong>
                                                                     </div>
                                                                 </div>
-                                                                @if($totalSurcharge > 0)
-                                                                <div class="cost-item cost-breakdown-item">
-                                                                    <div class="d-flex justify-content-between align-items-center">
-                                                                        <span>Surcharges:</span>
-                                                                        <strong class="text-danger" style="font-size: 1.05rem;">${{ number_format($totalSurcharge, 2) }}</strong>
-                                                                    </div>
-                                                                </div>
-                                                                @endif
                                                                 <hr class="cost-breakdown-hr">
                                                                 <div class="cost-item cost-breakdown-total">
                                                                     <div class="d-flex justify-content-between align-items-center">
                                                                         <span class="font-weight-bold" style="color: #1b5e20; font-size: 1rem;">Total Cost:</span>
-                                                                        <strong class="text-success" style="font-size: 1.1rem; font-weight: 700;">${{ number_format($totalOurCost + $totalDeptCost + $totalSurcharge, 2) }}</strong>
+                                                                        <strong class="text-success" style="font-size: 1.1rem; font-weight: 700;">${{ number_format($totalOurCost + $totalDisbursements, 2) }}</strong>
                                                                     </div>
                                                                 </div>
                                                                 <div class="cost-breakdown-edit mt-2">
@@ -797,19 +775,9 @@
             $dropdown.hide();
         });
 
-        // General Matter checkbox: when checked, use matter 1 (same as Convert Lead To Client)
-        $('#checklist_general_matter_checkbox').on('change', function() {
-            if ($(this).is(':checked')) {
-                $matterSelect.val('1').trigger('change');
-            } else {
-                $matterSelect.val('').trigger('change');
-            }
-        });
-
-        // Continue / Save - uses Lead flow (matter type from admin list)
+        // Continue / Save - uses Lead flow (matter type from admin list; General Matter = id 1 in dropdown)
         $dropdown.on('click', '.btn-continue-cost-assignment', function() {
-            var generalMatterChecked = $('#checklist_general_matter_checkbox').is(':checked');
-            var matterId = generalMatterChecked ? '1' : $matterSelect.val();
+            var matterId = $matterSelect.val();
             var clientId = window.ClientDetailConfig ? window.ClientDetailConfig.clientId : $('.crm-container').data('client-id');
 
             if (!clientId) {
@@ -818,7 +786,7 @@
             }
 
             if (!matterId) {
-                alert('Please select a Matter or check General Matter.');
+                alert('Please select a matter.');
                 return;
             }
 
@@ -834,13 +802,22 @@
 
             // Open Lead cost assignment modal (creates ClientMatter + CostAssignmentForm)
             $('#cost_assignment_lead_id').val(clientId);
+            var $leadModal = $('#costAssignmentCreateFormModelLead');
+            var $leadSelects = $('#sel_legal_practitioner_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead');
+            $leadSelects.each(function() {
+                var $el = $(this);
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    $el.select2('destroy');
+                }
+            });
+            $leadSelects.select2({ dropdownParent: $leadModal });
+            // Set values after Select2 so the UI reflects checklist choices (matter id 1 must exist on #sel_matter_id_lead)
             $('#sel_matter_id_lead').val(matterId).trigger('change');
             $('#sel_legal_practitioner_id_lead').val(legalPractitioner).trigger('change');
             $('#sel_person_responsible_id_lead').val(personResponsible).trigger('change');
             $('#sel_person_assisting_id_lead').val(personAssisting).trigger('change');
             $('#sel_office_id_lead').val(officeId).trigger('change');
-            $('#sel_legal_practitioner_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').select2({ dropdownParent: $('#costAssignmentCreateFormModelLead') });
-            $('#costAssignmentCreateFormModelLead').modal('show');
+            $leadModal.modal('show');
             $dropdown.hide();
         });
 

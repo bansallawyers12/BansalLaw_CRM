@@ -70,7 +70,7 @@ var myChart = new Chart(ctx, {
 				'#63ed7a',
 				'#ffa426',
 				//'#fc544b',
-				'#6777ef',
+				'#1e3d60',
 			],
 			label: 'Dataset 1'
 		}], 
@@ -129,8 +129,8 @@ var myChart = new Chart(ctx, {
 			label: 'Statistics',
 			data: [460, 458, 330, 502, 430, 610, 488],
 			borderWidth: 2,
-			backgroundColor: '#6777ef',
-			borderColor: '#6777ef',
+			backgroundColor: '#1e3d60',
+			borderColor: '#1e3d60',
 			borderWidth: 2.5,
 			pointBackgroundColor: '#ffffff',
 			pointRadius: 4

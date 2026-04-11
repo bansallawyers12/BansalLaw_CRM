@@ -59,28 +59,9 @@ class MatterController extends Controller
             $obj->title = $requestData['title'];
             $obj->nick_name = $requestData['nick_name'];
             $obj->workflow_id = $requestData['workflow_id'] ?? null;
-            $obj->surcharge = $requestData['surcharge'];
-            $obj->status = $requestData['status'] ?? 1; // Set default status to 1 (active)
-            $obj->is_for_company = $requestData['is_for_company'] ?? 0; // Default to 0 (for personal clients)
+            $obj->status = $requestData['status'] ?? 1;
+            $obj->is_for_company = $requestData['is_for_company'] ?? 0;
 
-            $obj->Dept_Base_Application_Charge = $requestData['Dept_Base_Application_Charge'] ?? '0.00';
-            $obj->Dept_Non_Internet_Application_Charge = $requestData['Dept_Non_Internet_Application_Charge'] ?? '0.00';
-            $obj->Dept_Additional_Applicant_Charge_18_Plus = $requestData['Dept_Additional_Applicant_Charge_18_Plus'] ?? '0.00';
-            $obj->Dept_Additional_Applicant_Charge_Under_18 = $requestData['Dept_Additional_Applicant_Charge_Under_18'] ?? '0.00';
-            $obj->Dept_Subsequent_Temp_Application_Charge = $requestData['Dept_Subsequent_Temp_Application_Charge'] ?? '0.00';
-            $obj->Dept_Second_VAC_Instalment_Charge_18_Plus = $requestData['Dept_Second_VAC_Instalment_Charge_18_Plus'] ?? '0.00';
-            $obj->Dept_Second_VAC_Instalment_Under_18 = $requestData['Dept_Second_VAC_Instalment_Under_18'] ?? '0.00';
-            $obj->Dept_Nomination_Application_Charge = $requestData['Dept_Nomination_Application_Charge'] ?? '0.00';
-            $obj->Dept_Sponsorship_Application_Charge = $requestData['Dept_Sponsorship_Application_Charge'] ?? '0.00';
-
-            $obj->Block_1_Description = $requestData['Block_1_Description'] ?? null;
-            $obj->Block_1_Ex_Tax = $requestData['Block_1_Ex_Tax'] ?? '0.00';
-            $obj->Block_2_Description = $requestData['Block_2_Description'] ?? null;
-            $obj->Block_2_Ex_Tax = $requestData['Block_2_Ex_Tax'] ?? '0.00';
-            $obj->Block_3_Description = $requestData['Block_3_Description'] ?? null;
-            $obj->Block_3_Ex_Tax = $requestData['Block_3_Ex_Tax'] ?? '0.00';
-
-            $obj->additional_fee_1 = $requestData['additional_fee_1'] ?? '0.00';
             $saved = $obj->save();
             if (!$saved)
             {
@@ -139,26 +120,6 @@ class MatterController extends Controller
         $obj->workflow_id = $requestData['workflow_id'] ?: null;
         $obj->is_for_company = $requestData['is_for_company'] ?? $obj->is_for_company ?? 0;
 
-        $obj->surcharge = $requestData['surcharge']?? $obj->surcharge;
-
-        $obj->Dept_Base_Application_Charge = $requestData['Dept_Base_Application_Charge'] ?? $obj->Dept_Base_Application_Charge;
-        $obj->Dept_Non_Internet_Application_Charge = $requestData['Dept_Non_Internet_Application_Charge'] ?? $obj->Dept_Non_Internet_Application_Charge;
-        $obj->Dept_Additional_Applicant_Charge_18_Plus = $requestData['Dept_Additional_Applicant_Charge_18_Plus'] ?? $obj->Dept_Additional_Applicant_Charge_18_Plus;
-        $obj->Dept_Additional_Applicant_Charge_Under_18 = $requestData['Dept_Additional_Applicant_Charge_Under_18'] ?? $obj->Dept_Additional_Applicant_Charge_Under_18;
-        $obj->Dept_Subsequent_Temp_Application_Charge = $requestData['Dept_Subsequent_Temp_Application_Charge'] ?? $obj->Dept_Subsequent_Temp_Application_Charge;
-        $obj->Dept_Second_VAC_Instalment_Charge_18_Plus = $requestData['Dept_Second_VAC_Instalment_Charge_18_Plus'] ?? $obj->Dept_Second_VAC_Instalment_Charge_18_Plus;
-        $obj->Dept_Second_VAC_Instalment_Under_18 = $requestData['Dept_Second_VAC_Instalment_Under_18'] ?? $obj->Dept_Second_VAC_Instalment_Under_18;
-        $obj->Dept_Nomination_Application_Charge = $requestData['Dept_Nomination_Application_Charge'] ?? $obj->Dept_Nomination_Application_Charge;
-        $obj->Dept_Sponsorship_Application_Charge = $requestData['Dept_Sponsorship_Application_Charge'] ?? $obj->Dept_Sponsorship_Application_Charge;
-
-        $obj->Block_1_Description = $requestData['Block_1_Description'] ?? $obj->Block_1_Description;
-        $obj->Block_1_Ex_Tax = $requestData['Block_1_Ex_Tax'] ?? $obj->Block_1_Ex_Tax;
-        $obj->Block_2_Description = $requestData['Block_2_Description'] ?? $obj->Block_2_Description;
-        $obj->Block_2_Ex_Tax = $requestData['Block_2_Ex_Tax'] ?? $obj->Block_2_Ex_Tax;
-        $obj->Block_3_Description = $requestData['Block_3_Description'] ?? $obj->Block_3_Description;
-        $obj->Block_3_Ex_Tax = $requestData['Block_3_Ex_Tax'] ?? $obj->Block_3_Ex_Tax;
-
-        $obj->additional_fee_1 = $requestData['additional_fee_1'] ?? $obj->additional_fee_1;
         $saved = $obj->save();
         if (!$saved)
         {

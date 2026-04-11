@@ -16,8 +16,9 @@
 
     <!-- Styles -->
     <link href="{{ asset('public/css/app.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/crm-theme.css') }}" rel="stylesheet">
 </head>
-<body>
+<body class="crm-app-minimal">
     <div id="app">
         <nav class="navbar navbar-expand-md navbar-light navbar-laravel">
             <div class="container">

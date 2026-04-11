@@ -246,7 +246,7 @@
     }
     
     .table tbody tr:hover { 
-        background-color: #ebf3ff; 
+        background-color: var(--sidebar-hover, #c8dcef); 
     }
     
     .table tbody tr:nth-child(even) {
@@ -254,7 +254,7 @@
     }
     
     .table tbody tr:nth-child(even):hover {
-        background-color: #ebf3ff;
+        background-color: var(--sidebar-hover, #c8dcef);
     }
     
     .table tbody td {
@@ -515,135 +515,7 @@
         background: var(--text-muted, #5e7a90);
     }
 
-    /* Complete Task modal — same tokens as dashboard completion modal (docs/theme.md) */
-    #completionNotesModal .completion-notes-modal-content {
-        border-radius: 12px;
-        border: 1px solid var(--border, #c8dcef);
-        box-shadow: 0 12px 40px rgba(30, 61, 96, 0.12);
-        overflow: hidden;
-        background: var(--card-bg, #ffffff);
-    }
-    #completionNotesModal .completion-notes-modal-header {
-        background: var(--navy, #1e3d60);
-        color: #fff;
-        border-bottom: 1px solid var(--border, #c8dcef);
-        padding: 1rem 1.25rem;
-    }
-    #completionNotesModal .completion-notes-modal-header .modal-title {
-        color: #fff !important;
-        font-weight: 700;
-        font-size: 1.1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin: 0;
-    }
-    /* Line check icon avoids solid “yellow circle” FA default on check-circle */
-    #completionNotesModal .completion-notes-modal-header .modal-title .completion-task-modal-header-icon {
-        color: var(--accent-gold, #c8992a) !important;
-        font-size: 1.15rem;
-    }
-    #completionNotesModal .completion-notes-modal-close {
-        color: #fff !important;
-        opacity: 0.9;
-        text-shadow: none;
-        font-size: 1.5rem;
-        font-weight: 400;
-        padding: 0;
-        margin: 0;
-        line-height: 1;
-    }
-    #completionNotesModal .completion-notes-modal-close:hover,
-    #completionNotesModal .completion-notes-modal-close:focus {
-        opacity: 1;
-        color: #fff !important;
-    }
-    #completionNotesModal .completion-notes-modal-body {
-        background: var(--page-bg, #f0f6ff);
-        padding: 1.25rem 1.25rem 1rem;
-    }
-    #completionNotesModal .completion-notes-label {
-        color: var(--text-muted, #5e7a90);
-        font-weight: 600;
-        font-size: 0.95rem;
-        margin-bottom: 0.5rem;
-        display: block;
-    }
-    #completionNotesModal .completion-notes-label i {
-        color: var(--navy, #1e3d60);
-        margin-right: 0.35rem;
-    }
-    #completionNotesModal .completion-notes-textarea {
-        resize: vertical;
-        border: 1px solid var(--border, #c8dcef) !important;
-        border-radius: 8px;
-        padding: 12px;
-        background: var(--card-bg, #ffffff);
-        color: var(--text-dark, #1a2c40);
-        background-image: none !important;
-        min-height: 120px;
-    }
-    #completionNotesModal .completion-notes-textarea:focus {
-        border-color: var(--sidebar-active, #3a6fa8) !important;
-        box-shadow: 0 0 0 2px rgba(58, 111, 168, 0.15);
-        outline: none;
-    }
-    #completionNotesModal .completion-notes-modal-body .completion-notes-hint {
-        color: var(--text-muted, #5e7a90) !important;
-        font-size: 0.8125rem;
-        margin-top: 0.5rem;
-        display: block;
-    }
-    #completionNotesModal .completion-notes-modal-body .completion-notes-hint i {
-        color: var(--sidebar-active, #3a6fa8);
-        margin-right: 0.25rem;
-    }
-    #completionNotesModal .completion-notes-modal-footer {
-        background: var(--page-bg, #f0f6ff);
-        border-top: 1px solid var(--border, #c8dcef);
-        padding: 1rem 1.25rem;
-        display: flex;
-        justify-content: flex-end;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-    #completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete {
-        background-color: var(--card-bg, #ffffff) !important;
-        background-image: none !important;
-        color: var(--navy, #1e3d60) !important;
-        border: 1px solid var(--border, #c8dcef) !important;
-        font-weight: 600;
-        border-radius: 8px;
-        padding: 0.45rem 1rem;
-    }
-    #completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete i {
-        color: var(--navy, #1e3d60) !important;
-    }
-    #completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete:hover,
-    #completionNotesModal .completion-notes-modal-footer .btn.btn-cancel-complete:focus {
-        background-color: var(--sidebar-hover, #c8dcef) !important;
-        border-color: var(--border, #c8dcef) !important;
-        color: var(--navy, #1e3d60) !important;
-    }
-    #completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary {
-        background-color: var(--navy, #1e3d60) !important;
-        background-image: none !important;
-        border: 1px solid var(--navy, #1e3d60) !important;
-        color: #fff !important;
-        font-weight: 600;
-        border-radius: 8px;
-        padding: 0.45rem 1rem;
-        box-shadow: 0 2px 6px rgba(30, 61, 96, 0.2);
-    }
-    #completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary i {
-        color: #fff !important;
-    }
-    #completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary:hover,
-    #completionNotesModal .completion-notes-modal-footer .btn.btn-complete-task-primary:focus {
-        background-color: var(--sidebar-active, #3a6fa8) !important;
-        border-color: var(--sidebar-active, #3a6fa8) !important;
-        color: #fff !important;
-    }
+    /* Complete Task modal: #completionNotesModal — see public/css/crm-theme.css */
 
     /* Client column — Personal Action label (replaces Bootstrap badge-info) */
     .action-badge-personal {
@@ -805,14 +677,15 @@
                             </div>
                             <input id="add_task_task_group" name="task_group" type="hidden" value="Personal Action">
                             <div class="text-center">
-                                <button type="button" class="btn btn-primary" id="add_my_task">
+                                <button type="button" class="btn btn-primary" id="add_my_task_submit">
                                     <i class="fa fa-plus-circle"></i> Add My Task
                                 </button>
                             </div>
                         </div>
                     </template>
                     {{-- Do not use class "tab-button" here: global tab handler calls table.ajax.reload() on every .tab-button click and breaks this popover/Select2. --}}
-                    <button type="button" class="btn btn-primary add_my_task add-my-task-header-btn" data-container="body" data-role="popover" data-placement="bottom-start" data-html="true">
+                    {{-- Do not use data-role="popover": legacy public/js/popover.js conflicts with BS5 (re-inits empty popover + Select2 without dropdownParent). --}}
+                    <button type="button" class="btn btn-primary add_my_task add-my-task-header-btn" data-bs-toggle="popover" data-container="body" data-placement="bottom-start" data-html="true">
                         <i class="fas fa-plus"></i> Add My Task
                     </button>
                 </div>
@@ -912,7 +785,6 @@
 
 @push('scripts')
 <link rel="stylesheet" href="{{URL::to('/')}}/css/task-popover-modern.css">
-<script src="{{URL::to('/')}}/js/popover.js"></script>
 <script src="{{URL::to('/')}}/js/components/dropdown-multi-select.js"></script>
 <style>
 /* Ensure popovers display correctly */
@@ -1324,6 +1196,11 @@
     .flatpickr-calendar {
         z-index: 99999 !important;
     }
+
+    /* Select2 dropdown above Add My Task popover when parent is body */
+    body > .select2-container--open {
+        z-index: 10050 !important;
+    }
 </style>
 <script type="text/javascript">
 $(function () {
@@ -1333,17 +1210,41 @@ $(function () {
         console.error('Action Add My Task: #action-add-task-popover-template is missing or empty.');
     }
 
-    /** Bootstrap 5 does not expose a public .tip on the instance; use aria-describedby on the trigger. */
+    /**
+     * Resolve the live Add My Task popover tip (Bootstrap 5 + jQuery compat).
+     * Prefer Popover.getInstance(el).getTipElement(); aria-describedby alone can lag behind shown.bs.
+     */
     function getAddTaskPopoverTip(triggerEl) {
         if (!triggerEl || !triggerEl.getAttribute) {
             return $();
         }
-        var tid = triggerEl.getAttribute('aria-describedby');
-        if (tid) {
-            var byId = document.getElementById(tid);
+        if (typeof bootstrap !== 'undefined' && bootstrap.Popover) {
+            try {
+                var inst = bootstrap.Popover.getInstance(triggerEl);
+                if (inst) {
+                    var tipEl = null;
+                    if (typeof inst.getTipElement === 'function') {
+                        tipEl = inst.getTipElement();
+                    } else if (inst.tip) {
+                        tipEl = inst.tip;
+                    }
+                    if (tipEl) {
+                        return $(tipEl);
+                    }
+                }
+            } catch (err) { /* fall through */ }
+        }
+        var raw = triggerEl.getAttribute('aria-describedby') || '';
+        var ids = raw.trim().split(/\s+/).filter(Boolean);
+        for (var i = 0; i < ids.length; i++) {
+            var byId = document.getElementById(ids[i]);
             if (byId) {
                 return $(byId);
             }
+        }
+        var $marked = $('.popover.add-my-task-popover').filter(':visible').last();
+        if ($marked.length && $marked.find('#add_task_client_select').length) {
+            return $marked;
         }
         return $('.popover').filter(function() {
             return $(this).find('#add_task_client_select').length > 0;
@@ -1498,33 +1399,52 @@ $(function () {
 
     $(document).on('shown.bs.popover', '.add_my_task', function() {
         var triggerEl = this;
-        var $popover = getAddTaskPopoverTip(triggerEl);
-        if (!$popover.length) {
+
+        function finishShown($popover) {
+            if (!$popover || !$popover.length) {
+                return;
+            }
+            $popover.addClass('add-my-task-popover');
+
+            $popover.css({
+                'position': 'fixed',
+                'left': '50%',
+                'top': '50%',
+                'transform': 'translate(-50%, -50%)',
+                'margin': '0',
+                'z-index': '9999'
+            });
+
+            if (!$('.popover-backdrop').length) {
+                $('body').append('<div class="popover-backdrop"></div>');
+            }
+            $('.popover-backdrop').addClass('show');
+
+            $('.popover-backdrop').off('click').on('click', function() {
+                $('.add_my_task').popover('hide');
+            });
+
+            setTimeout(function() {
+                initializeClientSelect2($popover, triggerEl, getAddTaskPopoverTip);
+            }, 120);
+        }
+
+        var $tip = getAddTaskPopoverTip(triggerEl);
+        if ($tip.length) {
+            finishShown($tip);
             return;
         }
-        $popover.addClass('add-my-task-popover');
-
-        $popover.css({
-            'position': 'fixed',
-            'left': '50%',
-            'top': '50%',
-            'transform': 'translate(-50%, -50%)',
-            'margin': '0',
-            'z-index': '9999'
-        });
-
-        if (!$('.popover-backdrop').length) {
-            $('body').append('<div class="popover-backdrop"></div>');
-        }
-        $('.popover-backdrop').addClass('show');
-
-        $('.popover-backdrop').off('click').on('click', function() {
-            $('.add_my_task').popover('hide');
-        });
-
-        setTimeout(function() {
-            initializeClientSelect2($popover, triggerEl, getAddTaskPopoverTip);
-        }, 120);
+        var retries = 0;
+        (function waitForTip() {
+            $tip = getAddTaskPopoverTip(triggerEl);
+            if ($tip.length) {
+                finishShown($tip);
+                return;
+            }
+            if (retries++ < 25) {
+                setTimeout(waitForTip, 40);
+            }
+        })();
     });
 
     $(document).on('hide.bs.popover', '.add_my_task', function() {
@@ -1557,7 +1477,7 @@ $(function () {
             if (!$popover.length && $rootPopover && $rootPopover.length) {
                 $popover = $rootPopover;
             }
-            var $clientSelect = $popover.find('#add_task_client_select').first();
+            var $clientSelect = $popover.find('#add_task_client_select').addBack('#add_task_client_select').first();
 
             if ($clientSelect.length && $popover.length) {
                 if (typeof $.fn.select2 !== 'function') {
@@ -1576,7 +1496,7 @@ $(function () {
                         placeholder: 'Search client...',
                         allowClear: true,
                         width: '100%',
-                        dropdownParent: $popover,
+                        dropdownParent: $(document.body),
                         ajax: {
                             url: '{{URL::to('/clients/get-allclients')}}',
                             dataType: 'json',
@@ -1668,14 +1588,6 @@ $(function () {
     function formatRepoSelectionmainMYTask (repo) {
         return (repo && repo.name) || (repo && repo.text) || '';
     }
-    
-    $(document).on('click', '.add_my_task', function(e) {
-        var triggerEl = this;
-        setTimeout(function() {
-            var $tip = getAddTaskPopoverTip(triggerEl);
-            initializeClientSelect2($tip, triggerEl, getAddTaskPopoverTip);
-        }, 200);
-    });
 
     // Initialize Update Task popover
     $(document).on('shown.bs.popover', '.update_task', function() {
@@ -1950,7 +1862,7 @@ $(function () {
     });
 
     // Add My Task submission
-    $(document).on('click', '#add_my_task', function() {
+    $(document).on('click', '#add_my_task_submit', function() {
         $(".popuploader").show();
         var flag = true;
         var error = "";
@@ -1997,8 +1909,10 @@ $(function () {
                     $('.popuploader').hide();
                     // Response is already parsed as JSON due to dataType: 'json'
                     if (response && response.success) {
-                        $("[data-role=popover]").each(function() {
-                            (($(this).popover('hide').data('bs.popover')||{}).inState||{}).click = false
+                        $('.add_my_task').each(function() {
+                            try {
+                                $(this).popover('hide');
+                            } catch (e) { /* ignore */ }
                         });
                         $('.popover-backdrop').removeClass('show');
                         table.draw(false);

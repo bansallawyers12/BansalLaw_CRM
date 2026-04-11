@@ -597,17 +597,17 @@
         }
         
         .client-nav-button:hover {
-            background: rgba(102, 126, 234, 0.08);
-            color: #667eea;
+            background: rgba(30, 61, 96, 0.08);
+            color: var(--navy);
             transform: translateX(1px);
         }
         
         .client-nav-button.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
             color: white;
             font-weight: 600;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
-            border-left: 3px solid #764ba2;
+            box-shadow: 0 2px 8px rgba(30, 61, 96, 0.4);
+            border-left: 3px solid var(--sidebar-active);
         }
         
         .client-nav-button i {

@@ -49,9 +49,9 @@
     }
 
     .insight-tabs .nav-link.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
         color: white;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 12px rgba(30, 61, 96, 0.3);
     }
 
     .insight-tabs .nav-link:hover:not(.active) {
@@ -76,9 +76,9 @@
     }
 
     .stat-card:hover {
-        border-color: #667eea;
+        border-color: var(--navy);
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        box-shadow: 0 4px 12px rgba(30, 61, 96, 0.15);
     }
 
     .stat-card::before {
@@ -88,7 +88,7 @@
         left: 0;
         right: 0;
         height: 3px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
     }
 
     .stat-card h3 {
@@ -194,7 +194,7 @@
     .progress-bar span {
         display: block;
         height: 100%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
         transition: width 0.6s ease;
     }
 
@@ -229,14 +229,14 @@
     }
 
     .recent-table a {
-        color: #667eea;
+        color: var(--navy);
         text-decoration: none;
         font-weight: 500;
         transition: color 0.2s;
     }
 
     .recent-table a:hover {
-        color: #764ba2;
+        color: var(--sidebar-active);
         text-decoration: underline;
     }
 
@@ -306,7 +306,7 @@
     }
 
     .icon-wrapper.clients {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
         color: white;
     }
 
@@ -731,9 +731,9 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const gradientPurple = {
-        start: 'rgba(102, 126, 234, 0.8)',
+        start: 'rgba(30, 61, 96, 0.8)',
         end: 'rgba(118, 75, 162, 0.8)',
-        border: 'rgba(102, 126, 234, 1)'
+        border: 'rgba(30, 61, 96, 1)'
     };
 
     const gradientPink = {
@@ -791,7 +791,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             padding: 12,
                             titleColor: '#fff',
                             bodyColor: '#fff',
-                            borderColor: 'rgba(102, 126, 234, 0.5)',
+                            borderColor: 'rgba(30, 61, 96, 0.5)',
                             borderWidth: 1,
                             displayColors: false,
                             callbacks: {

@@ -3,7 +3,7 @@
 
 @section('content')
 <!-- Main Content -->
-<div class="main-content adminconsole-features">
+<div class="main-content adminconsole-features adminconsole-sms-detail">
     <section class="section">
         <div class="section-body">
             <div class="server-error">
@@ -20,8 +20,8 @@
                         <div class="card-header">
                             <h4><i class="fas fa-sms"></i> SMS Details</h4>
                             <div class="card-header-action">
-                                <a href="{{ route('adminconsole.features.sms.history') }}" class="btn btn-secondary">
-                                    <i class="fas fa-arrow-left"></i> Back to History
+                                <a href="{{ route('adminconsole.features.sms.history') }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-arrow-left me-1"></i> Back to History
                                 </a>
                             </div>
                         </div>
@@ -79,7 +79,7 @@
                             
                             <div class="form-group">
                                 <label><strong>Message Content:</strong></label>
-                                <div class="form-control-plaintext" style="background: #f8f9fa; padding: 15px; border-radius: 5px; white-space: pre-wrap;">{{ $smsLog->message_content }}</div>
+                                <div class="sms-message-box">{{ $smsLog->message_content }}</div>
                             </div>
                             
                             @if($smsLog->error_message)

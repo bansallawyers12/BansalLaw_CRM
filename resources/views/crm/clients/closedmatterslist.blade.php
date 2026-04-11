@@ -14,14 +14,14 @@
     }
     .listing-container .table th:first-child { width: 25%; }
     .listing-container .table td .closed-matter-reopen {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        border: 1px solid #667eea !important;
+        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+        border: 1px solid var(--navy) !important;
         padding: 6px 12px;
         font-size: 13px;
         font-weight: 500;
         color: white !important;
         border-radius: 6px;
-        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+        box-shadow: 0 2px 4px rgba(30, 61, 96, 0.2);
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -30,7 +30,7 @@
     .listing-container .table td .closed-matter-reopen:hover {
         background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
         border-color: #5a6fd8 !important;
-        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 8px rgba(30, 61, 96, 0.3);
         color: white !important;
     }
     .listing-container .card-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
@@ -39,7 +39,7 @@
         border: 1px solid white !important;
         border-radius: 8px !important;
         background: white !important;
-        color: #667eea !important;
+        color: var(--navy) !important;
         font-weight: 600 !important;
         padding: 8px 16px !important;
         min-width: 110px;

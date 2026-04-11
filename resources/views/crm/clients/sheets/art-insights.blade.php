@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <style>
     .sheet-tabs {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
         padding: 0;
         margin: 0 -20px 20px -20px;
         display: flex;
@@ -25,27 +25,27 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         transition: all 0.3s ease;
     }
-    .insight-card:hover { box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15); transform: translateY(-2px); }
+    .insight-card:hover { box-shadow: 0 4px 16px rgba(30, 61, 96, 0.15); transform: translateY(-2px); }
     .insight-card-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 12px; }
-    .insight-card-icon.primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .insight-card-icon.primary { background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%); color: white; }
     .insight-card-icon.success { background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%); color: white; }
     .insight-card-icon.info { background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%); color: white; }
     .insight-card-icon.warning { background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%); color: white; }
     .insight-card-title { font-size: 13px; color: #6c757d; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
     .insight-card-value { font-size: 32px; font-weight: 700; color: #495057; line-height: 1; }
     .breakdown-section { background: white; border: 1px solid #e9ecef; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
-    .breakdown-section h5 { font-weight: 700; color: #495057; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #667eea; }
+    .breakdown-section h5 { font-weight: 700; color: #495057; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--navy); }
     .breakdown-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; background: #f8f9fa; border-radius: 8px; }
     .breakdown-label { font-weight: 600; color: #495057; display: flex; align-items: center; gap: 8px; }
-    .breakdown-value { font-size: 18px; font-weight: 700; color: #667eea; }
+    .breakdown-value { font-size: 18px; font-weight: 700; color: var(--navy); }
     .breakdown-bar { height: 8px; background: #e9ecef; border-radius: 4px; margin-top: 8px; overflow: hidden; }
-    .breakdown-bar-fill { height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); transition: width 0.5s ease; }
+    .breakdown-bar-fill { height: 100%; background: linear-gradient(90deg, var(--navy) 0%, var(--sidebar-active) 100%); transition: width 0.5s ease; }
     .chart-section { background: white; border: 1px solid #e9ecef; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
     .chart-section h5 { font-weight: 700; color: #495057; margin-bottom: 20px; }
     .monthly-chart { display: flex; align-items: flex-end; gap: 12px; height: 200px; padding: 20px 0; }
     .monthly-bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-    .monthly-bar-column { width: 100%; background: linear-gradient(180deg, #667eea 0%, #764ba2 100%); border-radius: 4px 4px 0 0; position: relative; transition: all 0.3s; min-height: 10px; }
-    .monthly-bar-value { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 700; color: #667eea; }
+    .monthly-bar-column { width: 100%; background: linear-gradient(180deg, var(--navy) 0%, var(--sidebar-active) 100%); border-radius: 4px 4px 0 0; position: relative; transition: all 0.3s; min-height: 10px; }
+    .monthly-bar-value { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 700; color: var(--navy); }
     .monthly-bar-label { font-size: 11px; color: #6c757d; font-weight: 600; text-align: center; white-space: nowrap; }
 </style>
 @endsection
@@ -126,7 +126,7 @@
                                         @endphp
                                         <div class="breakdown-item">
                                             <div class="breakdown-label">
-                                                <i class="fas fa-circle" style="font-size: 8px; color: #667eea;"></i>
+                                                <i class="fas fa-circle" style="font-size: 8px; color: var(--navy);"></i>
                                                 {{ $label }}
                                             </div>
                                             <div class="breakdown-value">{{ $count }}</div>
@@ -148,7 +148,7 @@
                                     @foreach($insights['by_agent'] as $agent => $count)
                                         <div class="breakdown-item">
                                             <div class="breakdown-label">
-                                                <i class="fas fa-circle" style="font-size: 8px; color: #667eea;"></i>
+                                                <i class="fas fa-circle" style="font-size: 8px; color: var(--navy);"></i>
                                                 {{ trim($agent) ?: 'Not assigned' }}
                                             </div>
                                             <div class="breakdown-value">{{ $count }}</div>

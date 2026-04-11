@@ -193,13 +193,13 @@
 							<div class="card-body">
 								<div class="form-group">
 									<label class="d-flex align-items-center">
-										<input type="checkbox" id="is_solicitor" name="is_solicitor" value="1" class="mr-2">
+										<input type="checkbox" id="is_solicitor" name="is_solicitor" value="1" class="mr-2" @if(old('is_solicitor')) checked @endif>
 										<h5 class="mb-0">Is this staff a Legal Practitioner?</h5>
 									</label>
 								</div>
 
 								<!-- Agent Details Fields (Hidden by default) -->
-								<div id="agent_details_section" style="display: none;">
+								<div id="agent_details_section" style="display: {{ old('is_solicitor') ? 'block' : 'none' }};">
 									<hr>
 									<h6 class="text-primary mb-3">Legal Practitioner registration details</h6>
 									
@@ -207,7 +207,7 @@
 										<div class="col-md-6">
 											<div class="form-group">
 												<label for="marn_number">MARN Number</label>
-												<input type="text" name="marn_number" id="marn_number" class="form-control" placeholder="Enter MARN Number">
+												<input type="text" name="marn_number" id="marn_number" value="{{ old('marn_number') }}" class="form-control" placeholder="Enter MARN Number">
 											</div>
 										</div>
 									</div>
@@ -218,13 +218,13 @@
 										<div class="col-md-6">
 											<div class="form-group">
 												<label for="company_name">Business Name</label>
-												<input type="text" name="company_name" class="form-control" placeholder="Enter Business Name">
+												<input type="text" name="company_name" value="{{ old('company_name') }}" class="form-control" placeholder="Enter Business Name">
 											</div>
 										</div>
 										<div class="col-md-6">
 											<div class="form-group">
 												<label for="tax_number">Tax Number (ABN/ACN)</label>
-												<input type="text" name="tax_number" class="form-control" placeholder="Enter Tax Number">
+												<input type="text" name="tax_number" value="{{ old('tax_number') }}" class="form-control" placeholder="Enter Tax Number">
 											</div>
 										</div>
 									</div>
@@ -233,7 +233,7 @@
 										<div class="col-md-12">
 											<div class="form-group">
 												<label for="business_address">Business Address</label>
-												<textarea name="business_address" class="form-control" rows="2" placeholder="Enter Business Address"></textarea>
+												<textarea name="business_address" class="form-control" rows="2" placeholder="Enter Business Address">{{ old('business_address') }}</textarea>
 											</div>
 										</div>
 									</div>
@@ -242,19 +242,19 @@
 										<div class="col-md-4">
 											<div class="form-group">
 												<label for="business_phone">Business Phone</label>
-												<input type="text" name="business_phone" class="form-control" placeholder="Enter Business Phone">
+												<input type="text" name="business_phone" value="{{ old('business_phone') }}" class="form-control" placeholder="Enter Business Phone">
 											</div>
 										</div>
 										<div class="col-md-4">
 											<div class="form-group">
 												<label for="business_mobile">Business Mobile</label>
-												<input type="text" name="business_mobile" class="form-control" placeholder="Enter Business Mobile">
+												<input type="text" name="business_mobile" value="{{ old('business_mobile') }}" class="form-control" placeholder="Enter Business Mobile">
 											</div>
 										</div>
 										<div class="col-md-4">
 											<div class="form-group">
 												<label for="business_email">Business Email</label>
-												<input type="email" name="business_email" class="form-control" placeholder="Enter Business Email">
+												<input type="email" name="business_email" value="{{ old('business_email') }}" class="form-control" placeholder="Enter Business Email">
 											</div>
 										</div>
 									</div>
@@ -289,6 +289,14 @@ $(document).ready(function() {
 			$('#agent_details_section').slideUp();
 		}
 	});
+
+    // Scroll to the first error banner or inline error on redirect-back
+    @if($errors->any())
+    var $firstError = $('.server-error .alert-danger, .custom-error').first();
+    if ($firstError.length) {
+        $('html, body').animate({ scrollTop: $firstError.offset().top - 80 }, 400);
+    }
+    @endif
 });
 </script>
 @endsection

@@ -179,7 +179,7 @@
 
     /* Header Styling */
     .assign-staff-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
         color: white;
         border-bottom: none;
         padding: 20px 25px;
@@ -261,8 +261,8 @@
     .enhanced-input:focus,
     .enhanced-select:focus,
     .enhanced-textarea:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        border-color: var(--navy);
+        box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.1);
         outline: none;
     }
 
@@ -292,11 +292,11 @@
     }
 
     .enhanced-dropdown-input-wrapper:hover {
-        border-color: #667eea;
+        border-color: var(--navy);
     }
 
     .enhanced-dropdown-input-wrapper.has-selection {
-        border-color: #667eea;
+        border-color: var(--navy);
         background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
     }
 
@@ -324,8 +324,8 @@
     }
 
     .enhanced-dropdown-input-wrapper:focus-within {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        border-color: var(--navy);
+        box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.1);
     }
 
     .selected-staff-display {
@@ -344,7 +344,7 @@
     }
 
     .enhanced-dropdown-input-wrapper.has-selection .selected-staff-display {
-        color: #667eea;
+        color: var(--navy);
         font-weight: 500;
     }
 
@@ -392,7 +392,7 @@
     }
 
     .enhanced-dropdown-input-wrapper.has-selection .dropdown-chevron-icon {
-        color: #667eea;
+        color: var(--navy);
     }
 
     .modern-dropdown-menu {
@@ -497,19 +497,19 @@
     }
 
     .btn-assign-staff {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
         border: none;
         border-radius: 8px;
         padding: 12px 30px;
         font-weight: 600;
         font-size: 1rem;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 12px rgba(30, 61, 96, 0.3);
     }
 
     .btn-assign-staff:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 6px 20px rgba(30, 61, 96, 0.4);
         background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
     }
 
@@ -593,7 +593,7 @@
 
     .popuploader i {
         font-size: 32px;
-        color: #667eea;
+        color: var(--navy);
         margin-bottom: 15px;
     }
 
@@ -626,7 +626,7 @@
         position: absolute;
         top: -8px;
         right: -8px;
-        background: #667eea;
+        background: var(--navy);
         color: white;
         border-radius: 50%;
         width: 20px;

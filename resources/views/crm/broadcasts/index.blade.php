@@ -1,8 +1,12 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'Broadcast Notifications')
 
+@section('styles')
+<link rel="stylesheet" href="{{ asset('css/broadcast-manage.css') }}">
+@endsection
+
 @section('content')
-<div class="main-content">
+<div class="main-content broadcast-manage-page">
     <section class="section">
         <div class="section-header">
             <div>
@@ -87,8 +91,8 @@
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <h4 class="mb-0">Broadcast History</h4>
                                         <div class="d-flex align-items-center gap-2">
-                                            <span class="badge badge-light broadcast-count-badge" id="broadcast-history-count">0 broadcasts</span>
-                                            <button type="button" class="btn btn-outline-light btn-sm broadcast-refresh-btn" id="broadcast-refresh-history">
+                                            <span class="badge broadcast-count-badge" id="broadcast-history-count">0 broadcasts</span>
+                                            <button type="button" class="btn btn-sm broadcast-refresh-btn" id="broadcast-refresh-history">
                                                 <i class="fas fa-sync-alt mr-1"></i> Refresh
                                             </button>
                                         </div>
@@ -222,14 +226,14 @@
                                                     <i class="fas fa-circle status-dot-online"></i>
                                                     <span class="count-text">1</span> online
                                                 </span>
-                                                <small class="text-muted ml-3">
+                                                <small class="active-staff-stats-hint ms-3">
                                                     <i class="fas fa-info-circle"></i> Presence calculated from active sessions within the last 5 minutes
                                                 </small>
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center gap-2 flex-shrink-0">
                                             @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
-                                            <a href="{{ route('staff-login-analytics.index') }}" class="btn btn-light btn-sm active-staff-action-btn">
+                                            <a href="{{ route('staff-login-analytics.index') }}" class="btn btn-sm active-staff-action-btn">
                                                 <i class="fas fa-chart-line"></i>
                                                 <span class="d-none d-md-inline">Analytics</span>
                                             </a>
@@ -274,8 +278,8 @@
                                                 </select>
                                             </div>
                                             <div class="col-md-1 col-lg-1">
-                                                <button type="button" 
-                                                        class="btn btn-outline-secondary btn-sm btn-block active-staff-clear-btn" 
+                                                <button type="button"
+                                                        class="btn btn-sm btn-block active-staff-clear-btn"
                                                         id="active-staff-clear-filters"
                                                         title="Clear filters">
                                                     <i class="fas fa-times"></i>
@@ -337,7 +341,7 @@
                                                 <tr>
                                                     <td colspan="6" class="text-center py-5">
                                                         <div class="active-staff-empty-state">
-                                                            <div class="spinner-border spinner-border-sm text-primary mb-3" role="status" id="active-staff-loading" style="display: none;">
+                                                            <div class="spinner-border spinner-border-sm active-staff-loading-spinner mb-3" role="status" id="active-staff-loading" style="display: none;">
                                                                 <span class="sr-only">Loading...</span>
                                                             </div>
                                                             <i class="fas fa-users mb-3 empty-state-icon"></i>
@@ -351,12 +355,12 @@
                                 </div>
                                 
                                 <!-- Modern Footer -->
-                                <div class="card-footer bg-white border-top active-staff-footer">
+                                <div class="card-footer border-top active-staff-footer">
                                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                                        <div class="text-muted small">
-                                            <i class="fas fa-info-circle text-primary"></i>
+                                        <div class="active-staff-footer-note small">
+                                            <i class="fas fa-info-circle active-staff-footer-note__icon"></i>
                                             <span id="active-staff-info">Refreshing manually will recalculate active sessions in real time.</span>
-                                            <span id="active-staff-last-refresh" class="ml-2"></span>
+                                            <span id="active-staff-last-refresh" class="ms-2"></span>
                                         </div>
                                         <nav aria-label="Active staff pagination" id="active-staff-pagination">
                                             <!-- Pagination will be inserted here by JavaScript -->
@@ -372,24 +376,24 @@
     </section>
 </div>
 
-<!-- Detail Modal -->
-<div class="modal fade" id="broadcastDetailModal" tabindex="-1" role="dialog" aria-labelledby="broadcastDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
+<!-- Detail Modal — tokens in public/css/broadcast-manage.css -->
+<div class="modal fade broadcast-detail-modal" id="broadcastDetailModal" tabindex="-1" role="dialog" aria-labelledby="broadcastDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content broadcast-detail-modal__content">
+            <div class="modal-header broadcast-detail-modal__header">
                 <h5 class="modal-title" id="broadcastDetailModalLabel">Broadcast Details</h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                <button type="button" class="close broadcast-detail-modal__close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="mb-3">
+            <div class="modal-body broadcast-detail-modal__body">
+                <div class="broadcast-detail-modal__summary mb-3">
                     <strong id="broadcast-detail-title" class="d-block"></strong>
                     <span id="broadcast-detail-message" class="d-block"></span>
                     <small class="text-muted" id="broadcast-detail-meta"></small>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-sm table-striped">
+                <div class="table-responsive broadcast-detail-modal__table-wrap">
+                    <table class="table table-sm table-striped broadcast-detail-modal__table mb-0">
                         <thead>
                             <tr>
                                 <th>Recipient</th>
@@ -405,8 +409,8 @@
                     </table>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <div class="modal-footer broadcast-detail-modal__footer">
+                <button type="button" class="btn broadcast-detail-modal__btn-close" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -478,6 +482,11 @@
     }
     
     (function () {
+        /* Full URLs so fetch works when the app lives in a subdirectory (e.g. /BansalLaw_CRM/public/) */
+        const BROADCAST_API_BASE = @json(url('/notifications/broadcasts'));
+        const ACTIVE_STAFF_JSON_URL = @json(url('/dashboard/active-staff'));
+        const GET_ASSIGNEE_AJAX_URL = @json(url('/getassigneeajax'));
+
         const composeForm = document.getElementById('broadcast-compose-form');
         const messageInput = document.getElementById('broadcast-message');
         const titleInput = document.getElementById('broadcast-title');
@@ -619,7 +628,7 @@
             items.forEach((item) => {
                 const row = document.createElement('tr');
                 const deleteBtn = isSuperAdmin 
-                    ? `<button type="button" class="btn btn-outline-danger btn-sm ml-1" data-action="delete-broadcast" data-batch="${item.batch_uuid}" title="Delete broadcast">
+                    ? `<button type="button" class="btn btn-sm btn-broadcast-delete ms-1" data-action="delete-broadcast" data-batch="${item.batch_uuid}" title="Delete broadcast">
                            <i class="fas fa-trash"></i>
                        </button>`
                     : '';
@@ -640,8 +649,8 @@
                     <td class="text-center">
                         <span class="badge badge-warning">${item.unread_count}</span>
                     </td>
-                    <td class="text-right">
-                        <button type="button" class="btn btn-outline-primary btn-sm" data-action="view-broadcast" data-batch="${item.batch_uuid}">
+                    <td class="text-right text-nowrap">
+                        <button type="button" class="btn btn-sm btn-broadcast-detail" data-action="view-broadcast" data-batch="${item.batch_uuid}">
                             <i class="fas fa-eye"></i> Details
                         </button>
                         ${deleteBtn}
@@ -668,7 +677,7 @@
             items.forEach((item) => {
                 const row = document.createElement('tr');
                 const deleteBtn = isSuperAdmin 
-                    ? `<button type="button" class="btn btn-outline-danger btn-sm ml-1" data-action="delete-broadcast" data-batch="${item.batch_uuid}" title="Delete broadcast">
+                    ? `<button type="button" class="btn btn-sm btn-broadcast-delete ms-1" data-action="delete-broadcast" data-batch="${item.batch_uuid}" title="Delete broadcast">
                            <i class="fas fa-trash"></i>
                        </button>`
                     : '';
@@ -685,8 +694,8 @@
                     <td class="text-center">
                         <span class="badge badge-warning">${item.unread_count}</span>
                     </td>
-                    <td class="text-right">
-                        <button type="button" class="btn btn-outline-primary btn-sm" data-action="view-broadcast" data-batch="${item.batch_uuid}">
+                    <td class="text-right text-nowrap">
+                        <button type="button" class="btn btn-sm btn-broadcast-detail" data-action="view-broadcast" data-batch="${item.batch_uuid}">
                             <i class="fas fa-eye"></i> Details
                         </button>
                         ${deleteBtn}
@@ -924,12 +933,12 @@
             document.querySelectorAll('.sortable').forEach(th => {
                 const sortIcon = th.querySelector('.sort-icon');
                 if (!sortIcon) return;
-                
+
                 const sortValue = th.getAttribute('data-sort');
                 if (sortValue === activeStaffState.sortBy) {
                     th.classList.add('active');
                     sortIcon.className = `fas fa-sort-${activeStaffState.sortDir === 'asc' ? 'up' : 'down'} sort-icon`;
-                    sortIcon.style.color = '#005792';
+                    sortIcon.style.color = '';
                 } else {
                     th.classList.remove('active');
                     sortIcon.className = 'fas fa-sort sort-icon';
@@ -940,7 +949,7 @@
 
         function loadHistory() {
             historyBody.classList.add('loading');
-            fetch('/notifications/broadcasts/history', {
+            fetch(BROADCAST_API_BASE + '/history', {
                 method: 'GET',
                 headers: { Accept: 'application/json' },
                 credentials: 'include',
@@ -971,7 +980,7 @@
             const mySentBody = document.getElementById('my-sent-body');
             mySentBody.classList.add('loading');
             
-            fetch('/notifications/broadcasts/my-history', {
+            fetch(BROADCAST_API_BASE + '/my-history', {
                 method: 'GET',
                 headers: { Accept: 'application/json' },
                 credentials: 'include',
@@ -998,7 +1007,7 @@
             const myReadBody = document.getElementById('my-read-body');
             myReadBody.classList.add('loading');
             
-            fetch('/notifications/broadcasts/read-history', {
+            fetch(BROADCAST_API_BASE + '/read-history', {
                 method: 'GET',
                 headers: { Accept: 'application/json' },
                 credentials: 'include',
@@ -1026,7 +1035,7 @@
                 return;
             }
 
-            fetch(`/notifications/broadcasts/${batchUuid}`, {
+            fetch(`${BROADCAST_API_BASE}/${batchUuid}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1060,7 +1069,7 @@
                 <td colspan="3" class="text-center text-muted py-3">Loading recipients…</td>
             </tr>`;
 
-            return fetch(`/notifications/broadcasts/${batchUuid}/details`, {
+            return fetch(`${BROADCAST_API_BASE}/${batchUuid}/details`, {
                 method: 'GET',
                 headers: { Accept: 'application/json' },
                 credentials: 'include',
@@ -1136,7 +1145,7 @@
                 params.append('team_id', activeStaffState.teamId);
             }
 
-            fetch(`/dashboard/active-staff?${params.toString()}`, {
+            fetch(`${ACTIVE_STAFF_JSON_URL}?${params.toString()}`, {
                 method: 'GET',
                 headers: { Accept: 'application/json' },
                 credentials: 'include',
@@ -1241,7 +1250,7 @@
 
             setSubmitting(true);
 
-            fetch('/notifications/broadcasts/send', {
+            fetch(BROADCAST_API_BASE + '/send', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1433,7 +1442,7 @@
                 placeholder: recipientSelect.data('placeholder') || 'Select recipients',
                 minimumInputLength: 0,  // Allow showing all users when clicking dropdown
                 ajax: {
-                    url: '/getassigneeajax',
+                    url: GET_ASSIGNEE_AJAX_URL,
                     dataType: 'json',
                     delay: 250,
                     headers: {
@@ -1537,659 +1546,4 @@
 </script>
 @endpush
 
-@push('styles')
-<style>
-    .broadcast-subtitle {
-        color: #4a5568;
-    }
-
-    /* Broadcast History Header Improvements */
-    .broadcast-count-badge {
-        background-color: rgba(255, 255, 255, 0.95) !important;
-        color: #005792 !important;
-        font-weight: 600 !important;
-        border: 1px solid rgba(0, 87, 146, 0.2) !important;
-        padding: 0.4rem 0.75rem !important;
-    }
-
-    .broadcast-refresh-btn {
-        background-color: rgba(255, 255, 255, 0.15) !important;
-        border-color: rgba(255, 255, 255, 0.5) !important;
-        color: #ffffff !important;
-        font-weight: 500 !important;
-        transition: all 0.2s ease;
-    }
-
-    .broadcast-refresh-btn:hover {
-        background-color: rgba(255, 255, 255, 0.95) !important;
-        border-color: #ffffff !important;
-        color: #005792 !important;
-        transform: translateY(-1px);
-    }
-
-    .broadcast-refresh-btn:active {
-        transform: translateY(0);
-    }
-
-    /* Message text readability */
-    .broadcast-message-text {
-        color: #495057 !important;
-        font-size: 0.9375rem;
-    }
-
-    /* History tabs styling */
-    #history-tabs .nav-link {
-        color: #6c757d;
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        margin: 0 0.25rem;
-        transition: all 0.2s ease;
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
-    #history-tabs .nav-link:hover {
-        background-color: rgba(0, 87, 146, 0.1);
-        color: #005792;
-    }
-
-    #history-tabs .nav-link.active {
-        background-color: #005792;
-        color: #ffffff;
-    }
-
-    #history-tabs .nav-link i {
-        font-size: 0.875rem;
-    }
-
-    /* Delete button styling */
-    .btn-outline-danger.btn-sm {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-    }
-
-    .btn-outline-danger.btn-sm:hover {
-        transform: scale(1.05);
-        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
-    }
-
-    /* TinyMCE Editor Styling */
-    .tox-tinymce {
-        border: 1px solid #e4e6fc !important;
-        border-radius: 8px !important;
-        overflow: hidden;
-    }
-
-    .tox .tox-toolbar {
-        background: #f8f9fa !important;
-        border-bottom: 1px solid #e4e6fc !important;
-    }
-
-    .tox .tox-edit-area__iframe {
-        background-color: #ffffff !important;
-    }
-
-    .tox .tox-statusbar {
-        border-top: 1px solid #e4e6fc !important;
-        background: #f8f9fa !important;
-    }
-
-    #broadcast-char-count {
-        font-size: 0.875rem;
-        font-weight: 500;
-        transition: color 0.2s ease;
-    }
-
-    /* Broadcast message display in history */
-    .broadcast-message-text {
-        color: #495057 !important;
-        font-size: 0.9375rem;
-        line-height: 1.5;
-    }
-
-    .broadcast-message-text p {
-        margin-bottom: 0.5rem;
-    }
-
-    .broadcast-message-text ul,
-    .broadcast-message-text ol {
-        margin-left: 1.25rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .broadcast-message-text strong {
-        font-weight: 600;
-    }
-
-    .broadcast-message-text a {
-        color: #005792;
-        text-decoration: underline;
-    }
-
-    /* Modal message display */
-    #broadcast-detail-message {
-        line-height: 1.6;
-        color: #495057;
-    }
-
-    #broadcast-detail-message p {
-        margin-bottom: 0.5rem;
-    }
-
-    #broadcast-detail-message ul,
-    #broadcast-detail-message ol {
-        margin-left: 1.25rem;
-        margin-bottom: 0.5rem;
-    }
-
-    #broadcast-detail-message strong {
-        font-weight: 600;
-    }
-
-    #broadcast-detail-message a {
-        color: #005792;
-        text-decoration: underline;
-    }
-
-    #broadcast-detail-title {
-        font-size: 1.25rem;
-        color: #2d3748;
-        margin-bottom: 1rem;
-    }
-
-    /* ============================================
-       MODERN ACTIVE USERS SECTION STYLING
-       ============================================ */
-    
-    /* Card Container */
-    .active-staff-modern-card {
-        border-radius: 12px;
-        overflow: hidden;
-        transition: box-shadow 0.3s ease;
-    }
-
-    .active-staff-modern-card:hover {
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
-    }
-
-    /* Header Section */
-    .active-staff-header {
-        background: linear-gradient(135deg, #005792 0%, #00BBF0 100%);
-        padding: 2rem;
-        color: #ffffff;
-    }
-
-    .active-staff-icon-wrapper {
-        width: 56px;
-        height: 56px;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(10px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        flex-shrink: 0;
-    }
-
-    .active-staff-title {
-        font-size: 1.75rem;
-        font-weight: 700;
-        color: #ffffff;
-        margin: 0;
-        letter-spacing: -0.5px;
-    }
-
-    .active-staff-subtitle {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 0.9375rem;
-        font-weight: 400;
-        margin: 0;
-    }
-
-    .active-staff-stats {
-        margin-top: 1rem;
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-    }
-
-    .active-staff-count-badge {
-        background: rgba(255, 255, 255, 0.95) !important;
-        color: #28a745 !important;
-        font-weight: 600;
-        font-size: 0.875rem;
-        padding: 0.5rem 1rem;
-        border-radius: 50px;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    }
-
-    .status-dot-online {
-        font-size: 0.5rem;
-        color: #28a745;
-        animation: pulse-dot 2s infinite;
-    }
-
-    @keyframes pulse-dot {
-        0%, 100% {
-            opacity: 1;
-        }
-        50% {
-            opacity: 0.6;
-        }
-    }
-
-    .count-text {
-        font-weight: 700;
-        font-size: 1rem;
-    }
-
-    .active-staff-action-btn,
-    .active-staff-refresh-btn {
-        border-radius: 8px;
-        font-weight: 600;
-        padding: 0.5rem 1rem;
-        transition: all 0.2s ease;
-        border: none;
-    }
-
-    .active-staff-action-btn {
-        background: rgba(255, 255, 255, 0.95);
-        color: #005792;
-    }
-
-    .active-staff-action-btn:hover {
-        background: #ffffff;
-        color: #005792;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .active-staff-refresh-btn {
-        background: rgba(255, 255, 255, 0.95);
-        color: #005792;
-    }
-
-    .active-staff-refresh-btn:hover {
-        background: #ffffff;
-        color: #005792;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .active-staff-refresh-btn:active {
-        transform: translateY(0);
-    }
-
-    /* Filters Section */
-    .active-staff-filters {
-        margin-top: 1.5rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .active-staff-search-input,
-    .active-staff-filter-select {
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        background: #ffffff;
-        transition: all 0.2s ease;
-    }
-
-    .active-staff-search-input:focus,
-    .active-staff-filter-select:focus {
-        border-color: #005792;
-        box-shadow: 0 0 0 3px rgba(0, 87, 146, 0.1);
-        outline: none;
-    }
-
-    .active-staff-clear-btn {
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        background: #ffffff;
-        color: #6c757d;
-        transition: all 0.2s ease;
-    }
-
-    .active-staff-clear-btn:hover {
-        background: #f8f9fa;
-        border-color: #dee2e6;
-        color: #495057;
-    }
-
-    /* Table Styling */
-    .active-staff-table-modern {
-        margin: 0;
-    }
-
-    .active-staff-table-modern thead {
-        background: #f8f9fa;
-    }
-
-    .active-staff-table-modern thead th {
-        font-weight: 600;
-        font-size: 0.8125rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #495057;
-        border-bottom: 2px solid #e9ecef;
-        padding: 1rem 1.25rem;
-        vertical-align: middle;
-    }
-
-    .active-staff-table-modern thead th .th-content {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .active-staff-table-modern thead th .th-content i:first-child {
-        color: #005792;
-        font-size: 0.875rem;
-    }
-
-    .active-staff-table-modern tbody td {
-        padding: 1rem 1.25rem;
-        vertical-align: middle;
-        border-bottom: 1px solid #f1f3f5;
-        transition: background-color 0.2s ease;
-    }
-
-    .active-staff-table-modern tbody tr {
-        transition: all 0.2s ease;
-    }
-
-    .active-staff-table-modern tbody tr:hover {
-        background-color: #f8f9fa;
-        cursor: pointer;
-    }
-
-    .active-staff-table-modern tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    .status-indicator {
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background-color: #28a745;
-        box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
-        animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% {
-            opacity: 1;
-            transform: scale(1);
-        }
-        50% {
-            opacity: 0.8;
-            transform: scale(1.1);
-        }
-    }
-
-    .status-indicator.online {
-        background-color: #28a745;
-        box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
-    }
-
-    .status-indicator.offline {
-        background-color: #6c757d;
-        box-shadow: 0 0 0 2px rgba(108, 117, 125, 0.2);
-        animation: none;
-    }
-
-    .user-avatar-wrapper {
-        position: relative;
-        flex-shrink: 0;
-    }
-
-    .user-avatar,
-    .user-avatar-fallback {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-
-    .user-avatar-fallback {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: linear-gradient(135deg, #005792 0%, #00BBF0 100%);
-        color: white;
-        font-weight: 600;
-        font-size: 0.875rem;
-    }
-
-    .sortable {
-        user-select: none;
-        position: relative;
-        cursor: pointer;
-    }
-
-    .sortable:hover {
-        background-color: #f1f3f5;
-    }
-
-    .sort-icon {
-        font-size: 0.75rem;
-        opacity: 0.4;
-        transition: opacity 0.2s ease;
-        margin-left: auto;
-    }
-
-    .sortable:hover .sort-icon {
-        opacity: 0.7;
-    }
-
-    .sortable.active .sort-icon {
-        opacity: 1;
-        color: #005792;
-    }
-
-    .team-badge {
-        font-size: 0.75rem;
-        padding: 0.35rem 0.65rem;
-        border-radius: 6px;
-        font-weight: 500;
-        display: inline-block;
-    }
-
-    /* Empty State */
-    .active-staff-empty-state {
-        padding: 3rem 1rem;
-    }
-
-    .empty-state-icon {
-        font-size: 3rem;
-        color: #dee2e6;
-        display: block;
-    }
-
-    .empty-state-message {
-        color: #6c757d;
-        font-size: 0.9375rem;
-        margin-top: 0.5rem;
-    }
-
-    #active-staff-retry-btn {
-        background-color: #005792 !important;
-        color: #ffffff !important;
-        border-color: #005792 !important;
-    }
-
-    #active-staff-retry-btn:hover {
-        background-color: #00BBF0 !important;
-        border-color: #00BBF0 !important;
-        color: #ffffff !important;
-    }
-
-    /* Footer Styling */
-    .active-staff-footer {
-        background: #ffffff;
-        border-top: 1px solid #e9ecef;
-        padding: 1rem 1.5rem;
-    }
-
-    .active-staff-footer .text-muted {
-        color: #6c757d !important;
-        font-size: 0.875rem;
-    }
-
-    .active-staff-footer .text-muted i {
-        margin-right: 0.5rem;
-        color: #005792;
-    }
-
-    /* Pagination Styling */
-    #active-staff-pagination .pagination {
-        margin-bottom: 0;
-    }
-
-    #active-staff-pagination .page-link {
-        color: #005792;
-        border-color: #dee2e6;
-        border-radius: 6px;
-        margin: 0 2px;
-        padding: 0.5rem 0.75rem;
-        transition: all 0.2s ease;
-    }
-
-    #active-staff-pagination .page-item.active .page-link {
-        background-color: #005792;
-        border-color: #005792;
-        color: #ffffff;
-    }
-
-    #active-staff-pagination .page-link:hover {
-        color: #00BBF0;
-        background-color: #f8f9fa;
-        border-color: #dee2e6;
-    }
-
-    /* Typography Improvements */
-    .active-staff-table-modern strong {
-        font-weight: 600;
-        color: #212529;
-    }
-
-    .active-staff-table-modern .text-muted {
-        color: #6c757d !important;
-        font-size: 0.8125rem;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 992px) {
-        .active-staff-header {
-            padding: 1.5rem;
-        }
-
-        .active-staff-title {
-            font-size: 1.5rem;
-        }
-
-        .active-staff-icon-wrapper {
-            width: 48px;
-            height: 48px;
-            font-size: 1.25rem;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .active-staff-header {
-            padding: 1.25rem;
-        }
-
-        .active-staff-title {
-            font-size: 1.25rem;
-        }
-
-        .active-staff-subtitle {
-            font-size: 0.875rem;
-        }
-
-        .active-staff-icon-wrapper {
-            width: 40px;
-            height: 40px;
-            font-size: 1rem;
-        }
-
-        .active-staff-stats {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.5rem;
-        }
-
-        .active-staff-count-badge {
-            font-size: 0.8125rem;
-            padding: 0.4rem 0.8rem;
-        }
-
-        .active-staff-filters .row {
-            margin: 0;
-        }
-
-        .active-staff-filters .col-md-5,
-        .active-staff-filters .col-md-3,
-        .active-staff-filters .col-md-1 {
-            margin-bottom: 0.75rem;
-        }
-
-        .user-avatar,
-        .user-avatar-fallback {
-            width: 32px;
-            height: 32px;
-            font-size: 0.75rem;
-        }
-
-        .active-staff-table-modern thead th,
-        .active-staff-table-modern tbody td {
-            padding: 0.75rem 0.5rem;
-            font-size: 0.8125rem;
-        }
-
-        .active-staff-table-modern thead th {
-            font-size: 0.75rem;
-        }
-
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-        }
-
-        .active-staff-footer {
-            padding: 0.75rem 1rem;
-            flex-direction: column;
-            align-items: flex-start !important;
-            gap: 1rem !important;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .active-staff-header {
-            padding: 1rem;
-        }
-
-        .active-staff-filters .row > div {
-            margin-bottom: 0.5rem;
-        }
-
-        .active-staff-action-btn span,
-        .active-staff-refresh-btn span {
-            display: none;
-        }
-    }
-
-    #active-staff-last-refresh {
-        color: #6c757d;
-        font-weight: 500;
-    }
-</style>
-@endpush
 
