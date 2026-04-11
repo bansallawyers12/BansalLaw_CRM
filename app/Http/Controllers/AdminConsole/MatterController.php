@@ -5,6 +5,7 @@ namespace App\Http\Controllers\AdminConsole;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Matter;
 
 class MatterController extends Controller
@@ -61,6 +62,21 @@ class MatterController extends Controller
             $obj->workflow_id = $requestData['workflow_id'] ?? null;
             $obj->status = $requestData['status'] ?? 1;
             $obj->is_for_company = $requestData['is_for_company'] ?? 0;
+
+            // Block fee defaults (stored on matter type, copied to cost assignment when editing)
+            if (Schema::hasColumn('matters', 'Block_1_Description')) {
+                $obj->Block_1_Description = $requestData['Block_1_Description'] ?? null;
+                $obj->Block_2_Description = $requestData['Block_2_Description'] ?? null;
+                $obj->Block_3_Description = $requestData['Block_3_Description'] ?? null;
+            }
+            if (Schema::hasColumn('matters', 'Block_1_Ex_Tax')) {
+                $obj->Block_1_Ex_Tax = $requestData['Block_1_Ex_Tax'] ?? null;
+                $obj->Block_2_Ex_Tax = $requestData['Block_2_Ex_Tax'] ?? null;
+                $obj->Block_3_Ex_Tax = $requestData['Block_3_Ex_Tax'] ?? null;
+            }
+            if (Schema::hasColumn('matters', 'additional_fee_1')) {
+                $obj->additional_fee_1 = $requestData['additional_fee_1'] ?? null;
+            }
 
             $saved = $obj->save();
             if (!$saved)
@@ -119,6 +135,20 @@ class MatterController extends Controller
         $obj->nick_name = $requestData['nick_name'];
         $obj->workflow_id = $requestData['workflow_id'] ?: null;
         $obj->is_for_company = $requestData['is_for_company'] ?? $obj->is_for_company ?? 0;
+
+        if (Schema::hasColumn('matters', 'Block_1_Description')) {
+            $obj->Block_1_Description = $requestData['Block_1_Description'] ?? null;
+            $obj->Block_2_Description = $requestData['Block_2_Description'] ?? null;
+            $obj->Block_3_Description = $requestData['Block_3_Description'] ?? null;
+        }
+        if (Schema::hasColumn('matters', 'Block_1_Ex_Tax')) {
+            $obj->Block_1_Ex_Tax = $requestData['Block_1_Ex_Tax'] ?? null;
+            $obj->Block_2_Ex_Tax = $requestData['Block_2_Ex_Tax'] ?? null;
+            $obj->Block_3_Ex_Tax = $requestData['Block_3_Ex_Tax'] ?? null;
+        }
+        if (Schema::hasColumn('matters', 'additional_fee_1')) {
+            $obj->additional_fee_1 = $requestData['additional_fee_1'] ?? null;
+        }
 
         $saved = $obj->save();
         if (!$saved)

@@ -71,14 +71,14 @@ return new class extends Migration
         }
 
         // ── 2. matters — drop Dept_* / surcharge default columns ─────────
+        // NOTE: Block_* and additional_fee_1 columns are intentionally kept on
+        // matters so AdminConsole can still store default fee templates per matter type.
+        // Only the immigration-specific Dept_* / surcharge / TotalDoHA* columns are removed.
         if (Schema::hasTable('matters')) {
             $matterDeptCols = array_merge(
                 ['surcharge'],
                 array_filter($this->deptCols, fn($c) => str_starts_with($c, 'Dept_')),
-                ['TotalDoHACharges', 'TotalDoHASurcharges', 'additional_fee_1',
-                 'Block_1_Ex_Tax', 'Block_2_Ex_Tax', 'Block_3_Ex_Tax',
-                 'Block_1_Description', 'Block_2_Description', 'Block_3_Description',
-                 'TotalBLOCKFEE'],
+                ['TotalDoHACharges', 'TotalDoHASurcharges'],
             );
             Schema::table('matters', function (Blueprint $table) use ($matterDeptCols) {
                 foreach ($matterDeptCols as $col) {
