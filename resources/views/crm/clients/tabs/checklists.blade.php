@@ -135,18 +135,8 @@
                                                 $office = $clientMatter ? $clientMatter->office : null;
                                                 
                                                 // Calculate costs
-                                                $totalDeptCost = 
-                                                    ($form->Dept_Base_Application_Charge ?? 0) +
-                                                    ($form->Dept_Non_Internet_Application_Charge ?? 0) +
-                                                    ($form->Dept_Additional_Applicant_Charge_18_Plus ?? 0) +
-                                                    ($form->Dept_Additional_Applicant_Charge_Under_18 ?? 0) +
-                                                    ($form->Dept_Subsequent_Temp_Application_Charge ?? 0) +
-                                                    ($form->Dept_Second_VAC_Instalment_Charge_18_Plus ?? 0) +
-                                                    ($form->Dept_Second_VAC_Instalment_Under_18 ?? 0) +
-                                                    ($form->Dept_Nomination_Application_Charge ?? 0) +
-                                                    ($form->Dept_Sponsorship_Application_Charge ?? 0);
+                                                $totalDisbursements = floatval($form->TotalDisbursements ?? 0);
                                                     
-                                                $totalSurcharge = $form->TotalDoHASurcharges ?? 0;
                                                 $totalOurCost = $form->TotalBLOCKFEE ?? 0;
                                                 
                                                 $agreementDoc = null;
@@ -179,7 +169,7 @@
                                                                 <i class="fas fa-users"></i> {{ $office ? $office->office_name : 'No Office' }}
                                                             </span>
                                                             <span class="badge badge-success">
-                                                                <i class="fas fa-dollar-sign"></i> ${{ number_format($totalOurCost + $totalDeptCost + $totalSurcharge, 2) }}
+                                                                <i class="fas fa-dollar-sign"></i> ${{ number_format($totalOurCost + $totalDisbursements, 2) }}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -228,23 +218,15 @@
                                                                 </div>
                                                                 <div class="cost-item cost-breakdown-item">
                                                                     <div class="d-flex justify-content-between align-items-center">
-                                                                        <span>Dept. Charges:</span>
-                                                                        <strong class="text-info" style="font-size: 1.05rem;">${{ number_format($totalDeptCost, 2) }}</strong>
+                                                                        <span>Disbursements:</span>
+                                                                        <strong class="text-info" style="font-size: 1.05rem;">${{ number_format($totalDisbursements, 2) }}</strong>
                                                                     </div>
                                                                 </div>
-                                                                @if($totalSurcharge > 0)
-                                                                <div class="cost-item cost-breakdown-item">
-                                                                    <div class="d-flex justify-content-between align-items-center">
-                                                                        <span>Surcharges:</span>
-                                                                        <strong class="text-danger" style="font-size: 1.05rem;">${{ number_format($totalSurcharge, 2) }}</strong>
-                                                                    </div>
-                                                                </div>
-                                                                @endif
                                                                 <hr class="cost-breakdown-hr">
                                                                 <div class="cost-item cost-breakdown-total">
                                                                     <div class="d-flex justify-content-between align-items-center">
                                                                         <span class="font-weight-bold" style="color: #1b5e20; font-size: 1rem;">Total Cost:</span>
-                                                                        <strong class="text-success" style="font-size: 1.1rem; font-weight: 700;">${{ number_format($totalOurCost + $totalDeptCost + $totalSurcharge, 2) }}</strong>
+                                                                        <strong class="text-success" style="font-size: 1.1rem; font-weight: 700;">${{ number_format($totalOurCost + $totalDisbursements, 2) }}</strong>
                                                                     </div>
                                                                 </div>
                                                                 <div class="cost-breakdown-edit mt-2">

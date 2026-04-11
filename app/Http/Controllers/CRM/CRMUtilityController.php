@@ -1095,48 +1095,32 @@ public function getChapters(Request $request)
 			$values['visa_apply'] = $matterTitleRow->title ?? '';
 		}
 
-		if ($matterInfo) {
+	if ($matterInfo) {
 
-			$block1 = floatval($matterInfo->Block_1_Ex_Tax ?? 0);
-			$block2 = floatval($matterInfo->Block_2_Ex_Tax ?? 0);
-			$block3 = floatval($matterInfo->Block_3_Ex_Tax ?? 0);
-			$blockTotal = $block1 + $block2 + $block3;
-			$totalSurcharges = floatval($matterInfo->TotalDoHASurcharges ?? 0);
-			$totalOther = floatval($matterInfo->additional_fee_1 ?? 0);
-			// Department charges total (Dept. Charges on checklist) - from TotalDoHACharges when present (e.g. cost_assignment_forms), else sum Dept_* for compatibility
-			$totalDepartmentCharges = floatval($matterInfo->TotalDoHACharges ?? 0);
-			if ($totalDepartmentCharges == 0 && isset($costAssignment)) {
-				$totalDepartmentCharges =
-					floatval($matterInfo->Dept_Base_Application_Charge ?? 0) +
-					floatval($matterInfo->Dept_Non_Internet_Application_Charge ?? 0) +
-					floatval($matterInfo->Dept_Additional_Applicant_Charge_18_Plus ?? 0) +
-					floatval($matterInfo->Dept_Additional_Applicant_Charge_Under_18 ?? 0) +
-					floatval($matterInfo->Dept_Subsequent_Temp_Application_Charge ?? 0) +
-					floatval($matterInfo->Dept_Second_VAC_Instalment_Charge_18_Plus ?? 0) +
-					floatval($matterInfo->Dept_Second_VAC_Instalment_Under_18 ?? 0) +
-					floatval($matterInfo->Dept_Nomination_Application_Charge ?? 0) +
-					floatval($matterInfo->Dept_Sponsorship_Application_Charge ?? 0);
-			}
-			$grandTotal = $blockTotal + $totalDepartmentCharges + $totalSurcharges + $totalOther;
+		$block1 = floatval($matterInfo->Block_1_Ex_Tax ?? 0);
+		$block2 = floatval($matterInfo->Block_2_Ex_Tax ?? 0);
+		$block3 = floatval($matterInfo->Block_3_Ex_Tax ?? 0);
+		$blockTotal = $block1 + $block2 + $block3;
+		$totalOther = floatval($matterInfo->additional_fee_1 ?? 0);
+		$totalDisbursements = floatval($matterInfo->TotalDisbursements ?? 0);
+		$grandTotal = $blockTotal + $totalDisbursements + $totalOther;
 
-			$formattedBlockTotal = number_format($blockTotal, 2, '.', '');
-			$b1 = number_format($block1, 2, '.', '');
-			$b2 = number_format($block2, 2, '.', '');
-			$b3 = number_format($block3, 2, '.', '');
-			$values['Blocktotalfeesincltax'] = $formattedBlockTotal;
-			$values['Blocktotalfeesinclgst'] = $formattedBlockTotal;
-			$values['Block1feesincltax'] = $b1;
-			$values['Block1feesinclgst'] = $b1;
-			$values['Block2feesincltax'] = $b2;
-			$values['Block2feesinclgst'] = $b2;
-			$values['Block3feesincltax'] = $b3;
-			$values['Block3feesinclgst'] = $b3;
-			// First email template: "Department fee, including the card Surcharge" row uses ${TotalDoHASurcharges} → send department total to match checklist
-			$values['TotalDoHASurcharges'] = number_format($totalDepartmentCharges, 2, '.', '');
-			// First email template: "Other Costs (estimated)" row uses ${TotalEstimatedOthCosts} → send surcharge to match checklist
-			$values['TotalEstimatedOthCosts'] = number_format($totalSurcharges, 2, '.', '');
-			$values['GrandTotalFeesAndCosts'] = number_format($grandTotal, 2, '.', '');
-		}
+		$formattedBlockTotal = number_format($blockTotal, 2, '.', '');
+		$b1 = number_format($block1, 2, '.', '');
+		$b2 = number_format($block2, 2, '.', '');
+		$b3 = number_format($block3, 2, '.', '');
+		$values['Blocktotalfeesincltax'] = $formattedBlockTotal;
+		$values['Blocktotalfeesinclgst'] = $formattedBlockTotal;
+		$values['Block1feesincltax'] = $b1;
+		$values['Block1feesinclgst'] = $b1;
+		$values['Block2feesincltax'] = $b2;
+		$values['Block2feesinclgst'] = $b2;
+		$values['Block3feesincltax'] = $b3;
+		$values['Block3feesinclgst'] = $b3;
+		$values['TotalDoHASurcharges'] = number_format($totalDisbursements, 2, '.', '');
+		$values['TotalEstimatedOthCosts'] = number_format($totalOther, 2, '.', '');
+		$values['GrandTotalFeesAndCosts'] = number_format($grandTotal, 2, '.', '');
+	}
 
 		return $values;
 	}
