@@ -2063,7 +2063,7 @@ class ClientsController extends Controller
             // so that every downstream view receives a clean null $id1.
             $knownTabNames = [
                 'personaldetails', 'companydetails', 'activityfeed', 'noteterm', 'personaldocuments', 'visadocuments', 'nominationdocuments',
-                'emails', 'client_portal',
+                'emails', 'client_portal', 'legalforms',
                 // Legacy removed tab slugs - keep as reserved so they are not treated as matter IDs
                 'formgenerations', 'formgenerationsl',
                 'workflow', 'checklists', 'account', 'notuseddocuments',
@@ -2207,10 +2207,14 @@ class ClientsController extends Controller
                         ->orderBy('last_name')
                         ->get();
                     $leadStageLabels = [
-                        'new' => 'New',
-                        'follow_up' => 'Follow up',
-                        'not_qualified' => 'Not qualified',
-                        'hostile' => 'Hostile',
+                        'new' => 'New Enquiry',
+                        'initial_consultation' => 'Initial Consultation',
+                        'conflict_check' => 'Conflict Check',
+                        'engaged' => 'Engaged',
+                        'retained' => 'Retained',
+                        'follow_up' => 'Follow Up',
+                        'not_proceeding' => 'Not Proceeding',
+                        'declined' => 'Declined',
                     ];
                 }
 
@@ -3906,6 +3910,14 @@ class ClientsController extends Controller
                     'status' => 'error',
                     'message' => 'Matter ID is required'
                 ], 400);
+            }
+
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'client_matter_id')) {
+                return response()->json([
+                    'status' => 'success',
+                    'emails' => [],
+                    'message' => 'Email integration not configured yet'
+                ]);
             }
 
             $query = \App\Models\EmailLog::where('client_matter_id', $client_matter_id)
@@ -5660,12 +5672,91 @@ class ClientsController extends Controller
      * Create an active client_matters row for a lead from the CRM client edit page (no cost assignment).
      * client_matters.client_id is admins.id (same pattern as savecostassignmentlead).
      */
+    public function storeCourtHearing(Request $request)
+    {
+        $validated = $request->validate([
+            'client_id'         => 'required|integer|exists:admins,id',
+            'client_matter_id'  => 'nullable|integer|exists:client_matters,id',
+            'court_name'        => 'nullable|string|max:255',
+            'case_number'       => 'nullable|string|max:100',
+            'judge_name'        => 'nullable|string|max:150',
+            'hearing_date'      => 'required|date',
+            'hearing_time'      => 'nullable|date_format:H:i',
+            'hearing_type'      => 'nullable|string|max:100',
+            'notes'             => 'nullable|string|max:5000',
+            'status'            => 'nullable|string|max:50',
+        ]);
+
+        $hearing = \App\Models\ClientCourtHearing::create([
+            'client_id'        => $validated['client_id'],
+            'client_matter_id' => $validated['client_matter_id'] ?? null,
+            'court_name'       => $validated['court_name'] ?? null,
+            'case_number'      => $validated['case_number'] ?? null,
+            'judge_name'       => $validated['judge_name'] ?? null,
+            'hearing_date'     => $validated['hearing_date'],
+            'hearing_time'     => $validated['hearing_time'] ?? null,
+            'hearing_type'     => $validated['hearing_type'] ?? null,
+            'notes'            => $validated['notes'] ?? null,
+            'status'           => $validated['status'] ?? 'Scheduled',
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'hearing' => $hearing]);
+        }
+        return redirect()->back()->with('success', 'Court hearing added.');
+    }
+
+    public function updateCourtHearing(Request $request, $id)
+    {
+        $hearing = \App\Models\ClientCourtHearing::findOrFail($id);
+
+        $validated = $request->validate([
+            'client_matter_id' => 'nullable|integer|exists:client_matters,id',
+            'court_name'       => 'nullable|string|max:255',
+            'case_number'      => 'nullable|string|max:100',
+            'judge_name'       => 'nullable|string|max:150',
+            'hearing_date'     => 'required|date',
+            'hearing_time'     => 'nullable|date_format:H:i',
+            'hearing_type'     => 'nullable|string|max:100',
+            'notes'            => 'nullable|string|max:5000',
+            'status'           => 'nullable|string|max:50',
+        ]);
+
+        $hearing->update([
+            'client_matter_id' => $validated['client_matter_id'] ?? null,
+            'court_name'       => $validated['court_name'] ?? null,
+            'case_number'      => $validated['case_number'] ?? null,
+            'judge_name'       => $validated['judge_name'] ?? null,
+            'hearing_date'     => $validated['hearing_date'],
+            'hearing_time'     => $validated['hearing_time'] ?? null,
+            'hearing_type'     => $validated['hearing_type'] ?? null,
+            'notes'            => $validated['notes'] ?? null,
+            'status'           => $validated['status'] ?? 'Scheduled',
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'hearing' => $hearing]);
+        }
+        return redirect()->back()->with('success', 'Court hearing updated.');
+    }
+
+    public function deleteCourtHearing(Request $request, $id)
+    {
+        $hearing = \App\Models\ClientCourtHearing::findOrFail($id);
+        $hearing->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
+        return redirect()->back()->with('success', 'Court hearing deleted.');
+    }
+
     public function storeLeadMatterFromEdit(Request $request)
     {
         $validated = $request->validate([
             'client_id' => 'required|integer|exists:admins,id',
             'matter_id' => 'required|integer|exists:matters,id',
-            'legal_practitioner' => 'required|integer|exists:staff,id',
+            'legal_practitioner' => 'nullable|integer|exists:staff,id',
             'person_responsible' => 'nullable|integer|exists:staff,id',
             'person_assisting' => 'nullable|integer|exists:staff,id',
             'office_id' => 'nullable|integer|exists:branches,id',
@@ -5701,7 +5792,7 @@ class ClientsController extends Controller
         $row->user_id = Auth::id();
         $row->client_id = (int) $admin->id;
         $row->office_id = $validated['office_id'] ?? optional(Auth::user())->office_id ?? null;
-        $row->sel_legal_practitioner = (int) $validated['legal_practitioner'];
+        $row->sel_legal_practitioner = isset($validated['legal_practitioner']) ? (int) $validated['legal_practitioner'] : null;
         $row->sel_person_responsible = $validated['person_responsible'] ?? null;
         $row->sel_person_assisting = $validated['person_assisting'] ?? null;
         $row->sel_matter_id = $matterId;
@@ -5728,11 +5819,24 @@ class ClientsController extends Controller
         $workflowId = $matterType && $matterType->workflow_id
             ? $matterType->workflow_id
             : \App\Models\Workflow::where('name', 'General')->value('id');
+
+        if (!$workflowId) {
+            $workflowId = \App\Models\Workflow::create([
+                'name' => 'General', 'status' => 1,
+            ])->id;
+        }
+
         $firstStageId = \App\Models\WorkflowStage::where('workflow_id', $workflowId)
             ->orderByRaw('COALESCE(sort_order, id) ASC')
             ->value('id')
-            ?? \App\Models\WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')->value('id')
-            ?? 1;
+            ?? \App\Models\WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')->value('id');
+
+        if (!$firstStageId) {
+            $firstStageId = \App\Models\WorkflowStage::create([
+                'name' => 'New', 'workflow_id' => $workflowId, 'sort_order' => 1,
+            ])->id;
+        }
+
         $row->workflow_id = $workflowId;
         $row->workflow_stage_id = $firstStageId;
         $row->matter_status = 1;

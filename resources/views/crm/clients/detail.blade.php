@@ -19,7 +19,7 @@ use App\Http\Controllers\Controller;
     <aside class="client-navigation-sidebar" id="client-sidebar">
         <div class="sidebar-header">
             @php
-                $clientDetailBackTabSlugs = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'visadocuments', 'nominationdocuments', 'emails', 'formgenerations', 'formgenerationsl', 'client_portal', 'application', 'workflow', 'checklists', 'account', 'notuseddocuments', 'companydetails'];
+                $clientDetailBackTabSlugs = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'visadocuments', 'nominationdocuments', 'emails', 'legalforms', 'formgenerations', 'formgenerationsl', 'client_portal', 'application', 'workflow', 'checklists', 'account', 'notuseddocuments', 'companydetails'];
                 $clientDetailBackMatterRef = null;
                 if (! empty($id1) && ! in_array(strtolower((string) $id1), array_map('strtolower', $clientDetailBackTabSlugs), true)) {
                     $clientDetailBackMatterRef = (string) $id1;
@@ -347,7 +347,7 @@ use App\Http\Controllers\Controller;
             
             // Valid tab names that should NOT be treated as matter IDs
             $validTabNames = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'visadocuments', 'nominationdocuments',
-                              'emails',
+                              'emails', 'legalforms',
                               // Legacy removed tab slugs
                               'formgenerations', 'formgenerationsl',
                               'client_portal', 'application', 'workflow', 'checklists'];
@@ -384,6 +384,10 @@ use App\Http\Controllers\Controller;
                     <span>Matter Documents</span>
                 </button>
                 @endif
+                <button class="client-nav-button" data-tab="legalforms">
+                    <i class="fas fa-file-signature"></i>
+                    <span>Legal Forms</span>
+                </button>
                 <button class="client-nav-button" data-tab="account">
                     <i class="fas fa-file-invoice-dollar"></i>
                     <span>Account</span>
@@ -476,6 +480,7 @@ use App\Http\Controllers\Controller;
                 @include('crm.clients.tabs.matter_documents')
             @endif
             @if((isset($id1) && $id1 != "") || $matter_cnt > 0)
+                @include('crm.clients.tabs.legal_forms')
                 @include('crm.clients.tabs.account')
                 @include('crm.clients.tabs.emails')
                 @include('crm.clients.tabs.checklists')

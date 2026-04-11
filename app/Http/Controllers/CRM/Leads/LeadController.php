@@ -23,6 +23,7 @@ use App\Services\ClientReferenceService;
 use App\Support\StaffClientVisibility;
 use App\Services\LeadFollowUpNoteService;
 use App\Models\Staff;
+use App\Models\ClientAddress;
 
 class LeadController extends Controller
 {
@@ -147,10 +148,14 @@ class LeadController extends Controller
             }
 
             $leadStageLabels = [
-                'new' => 'New',
-                'follow_up' => 'Follow up',
-                'not_qualified' => 'Not qualified',
-                'hostile' => 'Hostile',
+                'new' => 'New Enquiry',
+                'initial_consultation' => 'Initial Consultation',
+                'conflict_check' => 'Conflict Check',
+                'engaged' => 'Engaged',
+                'retained' => 'Retained',
+                'follow_up' => 'Follow Up',
+                'not_proceeding' => 'Not Proceeding',
+                'declined' => 'Declined',
             ];
 
             $lists = $query->sortable(['id' => 'desc'])
@@ -160,10 +165,14 @@ class LeadController extends Controller
             $lists = Lead::whereNull('id')->whereNotNull('id')->sortable(['id' => 'desc'])->paginate($perPage);
             $totalData = 0;
             $leadStageLabels = [
-                'new' => 'New',
-                'follow_up' => 'Follow up',
-                'not_qualified' => 'Not qualified',
-                'hostile' => 'Hostile',
+                'new' => 'New Enquiry',
+                'initial_consultation' => 'Initial Consultation',
+                'conflict_check' => 'Conflict Check',
+                'engaged' => 'Engaged',
+                'retained' => 'Retained',
+                'follow_up' => 'Follow Up',
+                'not_proceeding' => 'Not Proceeding',
+                'declined' => 'Declined',
             ];
         }
         
@@ -403,10 +412,14 @@ class LeadController extends Controller
         $countries = \App\Models\Country::orderBy('name', 'asc')->get();
         $assignableStaff = Staff::where('status', 1)->orderBy('first_name')->orderBy('last_name')->get();
         $leadStageLabels = [
-            'new' => 'New',
-            'follow_up' => 'Follow up',
-            'not_qualified' => 'Not qualified',
-            'hostile' => 'Hostile',
+            'new' => 'New Enquiry',
+            'initial_consultation' => 'Initial Consultation',
+            'conflict_check' => 'Conflict Check',
+            'engaged' => 'Engaged',
+            'retained' => 'Retained',
+            'follow_up' => 'Follow Up',
+            'not_proceeding' => 'Not Proceeding',
+            'declined' => 'Declined',
         ];
 
         return view('crm.leads.create', compact('countries', 'assignableStaff', 'leadStageLabels'));
@@ -829,6 +842,34 @@ class LeadController extends Controller
                         'updated_at' => now(),
                     ]);
                 }
+
+                // Save address to client_addresses table
+                $hasAddress = !empty(trim($requestData['address_line_1'] ?? ''))
+                    || !empty(trim($requestData['suburb'] ?? ''))
+                    || !empty(trim($requestData['state'] ?? ''))
+                    || !empty(trim($requestData['zip'] ?? ''));
+                if ($hasAddress) {
+                    $fullAddress = implode(', ', array_filter([
+                        trim($requestData['address_line_1'] ?? ''),
+                        trim($requestData['address_line_2'] ?? ''),
+                        trim($requestData['suburb'] ?? ''),
+                        trim($requestData['state'] ?? ''),
+                        trim($requestData['zip'] ?? ''),
+                        trim($requestData['country'] ?? ''),
+                    ]));
+                    ClientAddress::create([
+                        'admin_id' => Auth::user()->id,
+                        'client_id' => $admin->id,
+                        'address' => $fullAddress ?: null,
+                        'address_line_1' => trim($requestData['address_line_1'] ?? '') ?: null,
+                        'address_line_2' => trim($requestData['address_line_2'] ?? '') ?: null,
+                        'suburb' => trim($requestData['suburb'] ?? '') ?: null,
+                        'state' => trim($requestData['state'] ?? '') ?: null,
+                        'zip' => trim($requestData['zip'] ?? '') ?: null,
+                        'country' => trim($requestData['country'] ?? '') ?: null,
+                        'is_current' => true,
+                    ]);
+                }
                 
                 // Create company record if this is a company lead
                 if ($isCompany) {
@@ -961,10 +1002,14 @@ class LeadController extends Controller
         
         $assignableStaff = Staff::where('status', 1)->orderBy('first_name')->orderBy('last_name')->get();
         $leadStageLabels = [
-            'new' => 'New',
-            'follow_up' => 'Follow up',
-            'not_qualified' => 'Not qualified',
-            'hostile' => 'Hostile',
+            'new' => 'New Enquiry',
+            'initial_consultation' => 'Initial Consultation',
+            'conflict_check' => 'Conflict Check',
+            'engaged' => 'Engaged',
+            'retained' => 'Retained',
+            'follow_up' => 'Follow Up',
+            'not_proceeding' => 'Not Proceeding',
+            'declined' => 'Declined',
         ];
 
         return view('crm.leads.edit', compact(

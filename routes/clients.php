@@ -287,6 +287,15 @@ Route::post('/clients/getCostAssignmentLegalPractitionerDetailLead', [ClientsCon
 
 Route::post('/clients/{admin}/upload-agreement', [ClientsController::class, 'uploadAgreement'])->name('clients.uploadAgreement');
 
+// Legal Forms (Short Costs Disclosure, Cost Agreement, Authority to Act)
+Route::post('/legal-forms', [\App\Http\Controllers\CRM\LegalFormsController::class, 'store'])->name('legal-forms.store');
+Route::get('/legal-forms/client-forms', [\App\Http\Controllers\CRM\LegalFormsController::class, 'getClientForms'])->name('legal-forms.client-forms');
+Route::get('/legal-forms/{legalForm}', [\App\Http\Controllers\CRM\LegalFormsController::class, 'show'])->name('legal-forms.show');
+Route::put('/legal-forms/{legalForm}', [\App\Http\Controllers\CRM\LegalFormsController::class, 'update'])->name('legal-forms.update');
+Route::delete('/legal-forms/{legalForm}', [\App\Http\Controllers\CRM\LegalFormsController::class, 'destroy'])->name('legal-forms.destroy');
+Route::get('/legal-forms/{legalForm}/preview', [\App\Http\Controllers\CRM\LegalFormsController::class, 'previewPdf'])->name('legal-forms.preview');
+Route::get('/legal-forms/{legalForm}/download', [\App\Http\Controllers\CRM\LegalFormsController::class, 'downloadPdf'])->name('legal-forms.download');
+
 // Form 956
 Route::post('/forms', [Form956Controller::class, 'store'])->name('forms.store');
 Route::get('/forms/{form}', [Form956Controller::class, 'show'])->name('forms.show');
@@ -295,6 +304,11 @@ Route::put('/forms/{form}', [Form956Controller::class, 'update'])->name('forms.u
 Route::delete('/forms/{form}', [Form956Controller::class, 'destroy'])->name('forms.destroy');
 Route::get('/forms/{form}/preview', [Form956Controller::class, 'previewPdf'])->name('forms.preview');
 Route::get('/forms/{form}/pdf', [Form956Controller::class, 'generatePdf'])->name('forms.pdf');
+
+/*---------- Court Dates & Hearings ----------*/
+Route::post('/clients/court-hearings/store', [ClientsController::class, 'storeCourtHearing'])->name('clients.courtHearings.store');
+Route::post('/clients/court-hearings/{id}/update', [ClientsController::class, 'updateCourtHearing'])->name('clients.courtHearings.update');
+Route::post('/clients/court-hearings/{id}/delete', [ClientsController::class, 'deleteCourtHearing'])->name('clients.courtHearings.delete');
 
 /*---------- Client Matter Management ----------*/
 Route::get('/get-matter-templates', [CRMUtilityController::class, 'getmattertemplates'])->name('clients.getmattertemplates');
