@@ -6,17 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\ClientLegalForm;
 use App\Models\ClientMatter;
-use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use App\Models\Document;
+use App\Services\LegalFormDocxService;
+use GuzzleHttp\Client;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 class LegalFormsController extends Controller
 {
-    public function __construct()
+    private LegalFormDocxService $docxService;
+
+    public function __construct(LegalFormDocxService $docxService)
     {
         $this->middleware('auth:admin');
+        $this->docxService = $docxService;
     }
 
     public function store(Request $request): JsonResponse
@@ -53,20 +57,27 @@ class LegalFormsController extends Controller
         $data = $request->all();
         $data['created_by'] = Auth::id();
 
-        // Calculate GST and total for cost forms
+        // Ensure numeric fields are never null
+        $numericFields = [
+            'estimated_legal_fees', 'estimated_disbursements', 'estimated_barrister_fees',
+            'gst_amount', 'estimated_total', 'fixed_fee_amount', 'retainer_amount',
+        ];
+        foreach ($numericFields as $field) {
+            $data[$field] = floatval($data[$field] ?? 0);
+        }
+
         if (in_array($data['form_type'], ['short_costs_disclosure', 'cost_agreement'])) {
-            $fees = floatval($data['estimated_legal_fees'] ?? 0);
-            $disbursements = floatval($data['estimated_disbursements'] ?? 0);
-            $barrister = floatval($data['estimated_barrister_fees'] ?? 0);
+            $fees = $data['estimated_legal_fees'];
+            $disbursements = $data['estimated_disbursements'];
+            $barrister = $data['estimated_barrister_fees'];
             $data['gst_amount'] = round($fees * 0.10, 2);
             $data['estimated_total'] = $fees + $disbursements + $barrister + $data['gst_amount'];
         }
 
         $form = ClientLegalForm::create($data);
 
-        // Generate PDF
-        $pdfPath = $this->generatePdf($form);
-        $form->update(['pdf_path' => $pdfPath]);
+        $docxPath = $this->docxService->generate($form);
+        $form->update(['pdf_path' => $docxPath]);
 
         return response()->json([
             'success' => true,
@@ -99,6 +110,16 @@ class LegalFormsController extends Controller
 
         $data = $request->all();
 
+        $numericFields = [
+            'estimated_legal_fees', 'estimated_disbursements', 'estimated_barrister_fees',
+            'gst_amount', 'estimated_total', 'fixed_fee_amount', 'retainer_amount',
+        ];
+        foreach ($numericFields as $field) {
+            if (array_key_exists($field, $data)) {
+                $data[$field] = floatval($data[$field] ?? 0);
+            }
+        }
+
         if (in_array($legalForm->form_type, ['short_costs_disclosure', 'cost_agreement'])) {
             $fees = floatval($data['estimated_legal_fees'] ?? $legalForm->estimated_legal_fees);
             $disbursements = floatval($data['estimated_disbursements'] ?? $legalForm->estimated_disbursements);
@@ -109,9 +130,8 @@ class LegalFormsController extends Controller
 
         $legalForm->update($data);
 
-        // Re-generate PDF
-        $pdfPath = $this->generatePdf($legalForm);
-        $legalForm->update(['pdf_path' => $pdfPath]);
+        $docxPath = $this->docxService->generate($legalForm);
+        $legalForm->update(['pdf_path' => $docxPath]);
 
         return response()->json([
             'success' => true,
@@ -133,37 +153,39 @@ class LegalFormsController extends Controller
         ]);
     }
 
-    public function downloadPdf(ClientLegalForm $legalForm)
+    public function downloadDocx(ClientLegalForm $legalForm)
     {
-        // Always regenerate fresh PDF on download
-        $pdfPath = $this->generatePdf($legalForm);
-        $legalForm->update(['pdf_path' => $pdfPath]);
+        $docxPath = $this->docxService->generate($legalForm);
+        $legalForm->update(['pdf_path' => $docxPath]);
 
-        $fullPath = public_path($pdfPath);
+        $fullPath = public_path($docxPath);
         if (!file_exists($fullPath)) {
-            abort(404, 'PDF not found.');
+            abort(404, 'Document not found.');
         }
 
         $client = $legalForm->client;
         $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
         $typeLabel = str_replace(' ', '_', ClientLegalForm::FORM_TYPES[$legalForm->form_type] ?? 'Form');
-        $filename = $clientName . '_' . $typeLabel . '.pdf';
+        $filename = $clientName . '_' . $typeLabel . '.docx';
 
-        return response()->download($fullPath, $filename);
+        return response()->download($fullPath, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ]);
     }
 
-    public function previewPdf(ClientLegalForm $legalForm)
+    public function previewDocx(ClientLegalForm $legalForm)
     {
-        $pdfPath = $this->generatePdf($legalForm);
-        $legalForm->update(['pdf_path' => $pdfPath]);
+        $docxPath = $this->docxService->generate($legalForm);
+        $legalForm->update(['pdf_path' => $docxPath]);
 
-        $fullPath = public_path($pdfPath);
+        $fullPath = public_path($docxPath);
         if (!file_exists($fullPath)) {
-            abort(404, 'PDF not found.');
+            abort(404, 'Document not found.');
         }
 
-        return response()->file($fullPath, [
-            'Content-Type' => 'application/pdf',
+        return response()->download($fullPath, null, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'Content-Disposition' => 'inline; filename="' . basename($docxPath) . '"',
         ]);
     }
 
@@ -190,34 +212,108 @@ class LegalFormsController extends Controller
         ]);
     }
 
-    private function generatePdf(ClientLegalForm $form): string
+    public function generateScopeAI(Request $request): JsonResponse
     {
-        $form->load(['client', 'matter']);
+        $request->validate([
+            'client_id' => 'required|exists:admins,id',
+            'client_matter_id' => 'nullable|exists:client_matters,id',
+            'form_type' => 'required|in:short_costs_disclosure,cost_agreement,authority_to_act',
+            'field' => 'required|in:scope_of_work,authority_scope,variables_affecting_costs',
+        ]);
 
-        $client = $form->client;
-        $clientName = trim(($client->first_name ?? '') . '_' . ($client->last_name ?? ''));
-        $clientName = preg_replace('/[^a-zA-Z0-9_]/', '', $clientName);
+        $client = Admin::find($request->client_id);
+        $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
 
-        $viewName = match ($form->form_type) {
-            'short_costs_disclosure' => 'crm.legal-forms.pdf.short-costs-disclosure',
-            'cost_agreement' => 'crm.legal-forms.pdf.cost-agreement',
-            'authority_to_act' => 'crm.legal-forms.pdf.authority-to-act',
-        };
+        $contextParts = [];
+        $contextParts[] = "Client: {$clientName}";
+        if ($client->address) $contextParts[] = "Address: {$client->address}, {$client->city}, {$client->state} {$client->zip}";
+        if ($client->email) $contextParts[] = "Email: {$client->email}";
+        if ($client->phone) $contextParts[] = "Phone: {$client->phone}";
 
-        $pdf = PDF::loadView($viewName, ['form' => $form]);
-        $pdf->setPaper('A4', 'portrait');
+        $matterContext = '';
+        $documents = collect();
+        if ($request->client_matter_id) {
+            $matter = ClientMatter::with(['matter', 'personResponsible', 'legalPractitioner'])
+                ->find($request->client_matter_id);
 
-        $dir = 'legal_forms/' . $form->client_id;
-        $fullDir = public_path($dir);
-        if (!is_dir($fullDir)) {
-            mkdir($fullDir, 0755, true);
+            if ($matter) {
+                $matterType = $matter->matter ? $matter->matter->title : '';
+                $matterNick = $matter->matter ? $matter->matter->nick_name : '';
+                $caseDetail = $matter->case_detail ?? '';
+
+                if ($matterType) $contextParts[] = "Matter Type: {$matterType}";
+                if ($matterNick) $contextParts[] = "Matter Category: {$matterNick}";
+                if ($caseDetail) $contextParts[] = "Case Details: {$caseDetail}";
+                if ($matter->client_unique_matter_no) $contextParts[] = "Matter Reference: {$matter->client_unique_matter_no}";
+                if ($matter->personResponsible) {
+                    $contextParts[] = "Person Responsible: " . trim($matter->personResponsible->first_name . ' ' . $matter->personResponsible->last_name);
+                }
+                if ($matter->date_of_incidence) $contextParts[] = "Date of Incident: " . $matter->date_of_incidence->format('d/m/Y');
+                if ($matter->incidence_type) $contextParts[] = "Incident Type: {$matter->incidence_type}";
+
+                $documents = Document::where('client_matter_id', $matter->id)
+                    ->whereNotNull('file_name')
+                    ->select('file_name', 'doc_type', 'folder_name')
+                    ->limit(30)
+                    ->get();
+
+                if ($documents->isNotEmpty()) {
+                    $docList = $documents->map(function ($doc) {
+                        $parts = [$doc->file_name];
+                        if ($doc->doc_type) $parts[] = "({$doc->doc_type})";
+                        if ($doc->folder_name) $parts[] = "[{$doc->folder_name}]";
+                        return implode(' ', $parts);
+                    })->implode('; ');
+                    $contextParts[] = "Documents uploaded: {$docList}";
+                }
+            }
         }
 
-        $filename = $form->form_type . '_' . $form->id . '.pdf';
-        $relativePath = $dir . '/' . $filename;
+        $contextString = implode("\n", $contextParts);
+        $formTypeLabel = ClientLegalForm::FORM_TYPES[$request->form_type] ?? $request->form_type;
 
-        $pdf->save(public_path($relativePath));
+        $systemPrompts = [
+            'scope_of_work' => "You are a legal assistant at an Australian law firm (Bansal Lawyers). Based on the client and matter information provided, generate a professional Scope of Work description for a {$formTypeLabel}. The scope should clearly outline what legal services will be provided. Write in a formal, numbered list format suitable for an Australian legal costs disclosure document. Do not include any greeting or sign-off. Only output the scope text.",
+            'authority_scope' => "You are a legal assistant at an Australian law firm (Bansal Lawyers). Based on the client and matter information provided, generate a professional Authority to Act scope description. This should clearly state what the client is authorising the firm to do on their behalf. Write in formal legal language suitable for an Australian Authority to Act document. Do not include any greeting or sign-off. Only output the authority scope text.",
+            'variables_affecting_costs' => "You are a legal assistant at an Australian law firm (Bansal Lawyers). Based on the client and matter information provided, list the key variables that might affect the total legal costs. Write as a concise bullet-point list of factors. Examples include: complexity of the matter, amount of correspondence required, whether the other party cooperates, court involvement, expert reports needed, etc. Tailor the list to this specific matter type. Do not include any greeting or sign-off. Only output the variables list.",
+        ];
 
-        return $relativePath;
+        $systemPrompt = $systemPrompts[$request->field] ?? $systemPrompts['scope_of_work'];
+
+        try {
+            $openAiClient = new Client([
+                'base_uri' => 'https://api.openai.com/v1/',
+                'headers' => [
+                    'Authorization' => 'Bearer ' . config('services.openai.api_key'),
+                    'Content-Type' => 'application/json',
+                ],
+                'timeout' => config('services.openai.timeout', 30),
+            ]);
+
+            $response = $openAiClient->post('chat/completions', [
+                'json' => [
+                    'model' => 'gpt-4o-mini',
+                    'messages' => [
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user', 'content' => "Generate the text based on this information:\n\n{$contextString}"],
+                    ],
+                    'temperature' => 0.7,
+                    'max_tokens' => 1000,
+                ],
+            ]);
+
+            $result = json_decode($response->getBody(), true);
+            $generatedText = $result['choices'][0]['message']['content'] ?? '';
+
+            return response()->json([
+                'success' => true,
+                'text' => trim($generatedText),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'AI generation failed: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

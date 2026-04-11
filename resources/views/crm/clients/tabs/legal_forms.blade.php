@@ -7,15 +7,15 @@
                     <button class="btn btn-primary dropdown-toggle" type="button" id="createLegalFormBtn" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-plus"></i> Create Form
                     </button>
-                    <ul class="dropdown-menu" aria-labelledby="createLegalFormBtn">
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="createLegalFormBtn" style="z-index: 1050; min-width: 240px;">
                         <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('short_costs_disclosure')">
-                            <i class="fas fa-file-invoice-dollar"></i> Short Costs Disclosure
+                            <i class="fas fa-file-invoice-dollar text-primary"></i> Short Costs Disclosure
                         </a></li>
                         <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('cost_agreement')">
-                            <i class="fas fa-file-contract"></i> Cost Agreement
+                            <i class="fas fa-file-contract text-purple"></i> Cost Agreement
                         </a></li>
                         <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('authority_to_act')">
-                            <i class="fas fa-stamp"></i> Authority to Act
+                            <i class="fas fa-stamp text-success"></i> Authority to Act
                         </a></li>
                     </ul>
                 </div>
@@ -113,14 +113,24 @@
 
                     {{-- Scope of Work --}}
                     <div class="mb-3">
-                        <label class="form-label fw-bold" id="lf_scope_label">Scope of Work</label>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-bold mb-0" id="lf_scope_label">Scope of Work</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary ai-generate-btn" onclick="generateWithAI('scope_of_work')" title="Auto-generate using AI based on client & matter info">
+                                <i class="fas fa-magic"></i> AI Generate
+                            </button>
+                        </div>
                         <textarea name="scope_of_work" id="lf_scope_of_work" class="form-control" rows="5" placeholder="Describe the work to be undertaken..."></textarea>
                     </div>
 
                     {{-- Authority to Act specific --}}
                     <div id="lf_authority_section" style="display:none;">
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Authority Scope</label>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label fw-bold mb-0">Authority Scope</label>
+                                <button type="button" class="btn btn-sm btn-outline-primary ai-generate-btn" onclick="generateWithAI('authority_scope')" title="Auto-generate using AI based on client & matter info">
+                                    <i class="fas fa-magic"></i> AI Generate
+                                </button>
+                            </div>
                             <textarea name="authority_scope" id="lf_authority_scope" class="form-control" rows="4" placeholder="Describe what you are authorising the firm to do on your behalf..."></textarea>
                             <small class="text-muted">If left blank, the Scope of Work text above will be used.</small>
                         </div>
@@ -196,7 +206,12 @@
                                 <textarea name="cost_estimate_breakdown" id="lf_cost_estimate_breakdown" class="form-control" rows="3" placeholder="Detailed breakdown of costs (optional - if blank, the estimates above will be used in a table)..."></textarea>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Variables That Might Affect Costs</label>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label fw-bold mb-0">Variables That Might Affect Costs</label>
+                                    <button type="button" class="btn btn-sm btn-outline-primary ai-generate-btn" onclick="generateWithAI('variables_affecting_costs')" title="Auto-generate using AI based on client & matter info">
+                                        <i class="fas fa-magic"></i> AI Generate
+                                    </button>
+                                </div>
                                 <textarea name="variables_affecting_costs" id="lf_variables_affecting_costs" class="form-control" rows="3" placeholder="e.g. Amount of correspondence required, complexity of legal issues, whether spouse consents..."></textarea>
                             </div>
                         </div>
@@ -252,7 +267,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="saveLegalFormBtn" onclick="saveLegalForm()">
-                    <i class="fas fa-save"></i> Create Form & Generate PDF
+                    <i class="fas fa-save"></i> Create Form & Generate Word Document
                 </button>
             </div>
         </div>
@@ -390,7 +405,7 @@
             },
             complete: function() {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-save"></i> Create Form & Generate PDF';
+                btn.innerHTML = '<i class="fas fa-save"></i> Create Form & Generate Word Document';
             }
         });
     };
@@ -448,8 +463,7 @@
             html += '</div>';
             html += '</div>';
             html += '<div class="legal-form-card-actions">';
-            html += '<a href="/legal-forms/' + form.id + '/preview" target="_blank" class="btn btn-sm btn-outline-primary" title="Preview PDF"><i class="fas fa-eye"></i></a>';
-            html += '<a href="/legal-forms/' + form.id + '/download" class="btn btn-sm btn-outline-success" title="Download PDF"><i class="fas fa-download"></i></a>';
+            html += '<a href="/legal-forms/' + form.id + '/download" class="btn btn-sm btn-outline-success" title="Download Word Document"><i class="fas fa-file-word"></i> Download</a>';
             html += '<button class="btn btn-sm btn-outline-danger" onclick="deleteLegalForm(' + form.id + ')" title="Delete"><i class="fas fa-trash"></i></button>';
             html += '</div>';
             html += '</div>';
@@ -457,6 +471,69 @@
         html += '</div>';
         listEl.innerHTML = html;
     }
+
+    window.generateWithAI = function(fieldName) {
+        var clientId = {{ $fetchedData->id }};
+        var formType = document.getElementById('lf_form_type').value;
+        var matterId = document.getElementById('lf_client_matter_id').value;
+
+        var fieldMap = {
+            'scope_of_work': 'lf_scope_of_work',
+            'authority_scope': 'lf_authority_scope',
+            'variables_affecting_costs': 'lf_variables_affecting_costs'
+        };
+
+        var textareaId = fieldMap[fieldName];
+        if (!textareaId) return;
+
+        var textarea = document.getElementById(textareaId);
+        var btn = event.currentTarget;
+        var originalHtml = btn.innerHTML;
+
+        if (textarea.value.trim() !== '') {
+            if (!confirm('This will replace the current text. Continue?')) return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        textarea.style.opacity = '0.5';
+
+        $.ajax({
+            url: '/legal-forms/generate-scope-ai',
+            method: 'POST',
+            data: {
+                client_id: clientId,
+                client_matter_id: matterId || null,
+                form_type: formType,
+                field: fieldName
+            },
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function(response) {
+                if (response.success && response.text) {
+                    textarea.value = response.text;
+                    textarea.style.opacity = '1';
+                    textarea.style.borderColor = '#10b981';
+                    setTimeout(function() { textarea.style.borderColor = ''; }, 2000);
+                    if (typeof toastr !== 'undefined') toastr.success('AI text generated successfully!');
+                } else {
+                    textarea.style.opacity = '1';
+                    if (typeof toastr !== 'undefined') toastr.error(response.message || 'Failed to generate text.');
+                    else alert(response.message || 'Failed to generate text.');
+                }
+            },
+            error: function(xhr) {
+                textarea.style.opacity = '1';
+                var msg = 'AI generation failed.';
+                if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                if (typeof toastr !== 'undefined') toastr.error(msg);
+                else alert(msg);
+            },
+            complete: function() {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        });
+    };
 
     window.deleteLegalForm = function(formId) {
         if (!confirm('Are you sure you want to delete this form? This action cannot be undone.')) return;
@@ -479,15 +556,42 @@
         });
     };
 
-    // Load forms when the tab becomes active
-    $(document).on('click', '.client-nav-button[data-tab="legalforms"]', function() {
-        loadLegalForms();
+    // Load forms when the tab pane becomes visible (gains 'active' class)
+    var legalFormsTabPane = document.getElementById('legalforms-tab');
+    var legalFormsLoaded = false;
+
+    function checkAndLoadForms() {
+        if (legalFormsTabPane && legalFormsTabPane.classList.contains('active')) {
+            if (!legalFormsLoaded) {
+                legalFormsLoaded = true;
+                loadLegalForms();
+            }
+        } else {
+            legalFormsLoaded = false;
+        }
+    }
+
+    // Observe class changes on the tab pane to detect activation
+    if (legalFormsTabPane) {
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'class') {
+                    checkAndLoadForms();
+                }
+            });
+        });
+        observer.observe(legalFormsTabPane, { attributes: true });
+    }
+
+    // Also check on DOM ready in case tab is already active
+    $(document).ready(function() {
+        checkAndLoadForms();
     });
 
     // Also load on matter change
     $(document).on('change', '#sel_matter_id_client_detail', function() {
-        var activeTab = $('.client-nav-button.active').data('tab');
-        if (activeTab === 'legalforms') {
+        if (legalFormsTabPane && legalFormsTabPane.classList.contains('active')) {
+            legalFormsLoaded = false;
             loadLegalForms();
         }
     });
