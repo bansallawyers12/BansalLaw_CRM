@@ -3318,3 +3318,327 @@ body.sidebar-mini #checkindetailmodal .logsdata .logsitem span.logs_date {
 body.sidebar-mini #checkindetailmodal .logsdata .logsitem .logs_comment p {
   color: var(--text-dark) !important;
 }
+
+/* ---------- CRM access grants (dashboard, queue, my grants) — docs/theme.md ---------- */
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent-gold);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-grants-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card > .card-header,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-grants-card > .card-header {
+  background: var(--card-bg) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card .card-header h5,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-grants-card .card-header h4 {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card .card-header .btn-light {
+  background: var(--page-bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card .card-header .btn-light:hover,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card .card-header .btn-light:focus {
+  background: var(--sidebar-hover) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-grants-card .card-header .btn-outline-secondary {
+  color: var(--navy) !important;
+  border-color: var(--border) !important;
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-grants-card .card-header .btn-outline-secondary:hover,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-grants-card .card-header .btn-outline-secondary:focus {
+  background: var(--page-bg) !important;
+  border-color: var(--sidebar-active) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-pending-badge {
+  background: rgba(200, 153, 42, 0.15) !important;
+  color: #7a5800 !important;
+  border: 1px solid rgba(200, 153, 42, 0.35) !important;
+  font-weight: 700;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-pending-table thead th,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table thead th,
+body.sidebar-mini .crm-access-queue-page #crm-access-queue-table thead th,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table thead th {
+  background-color: var(--page-bg) !important;
+  color: var(--navy) !important;
+  border-color: var(--border) !important;
+  font-weight: 600 !important;
+  font-size: 0.8125rem !important;
+  letter-spacing: 0.02em;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table tbody tr:hover td,
+body.sidebar-mini .crm-access-dashboard-layout #crm-pending-table tbody tr:hover td,
+body.sidebar-mini .crm-access-queue-page #crm-access-queue-table tbody tr:hover td,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table tbody tr:hover td {
+  background-color: var(--sidebar-hover) !important;
+}
+
+body.sidebar-mini .crm-access-queue-page .table-striped tbody tr:nth-of-type(odd),
+body.sidebar-mini .crm-access-my-grants-page .table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(240, 246, 255, 0.45) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-filters label.small {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-filters .form-control,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-filters .form-control-sm {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-filters .form-control:focus {
+  border-color: var(--sidebar-active) !important;
+  box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-filters .form-control::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 1;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-summary .text-muted.small {
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-summary [data-field] {
+  color: var(--text-dark) !important;
+  font-weight: 600;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table .badge-success,
+body.sidebar-mini .crm-access-dashboard-layout #crm-pending-table .badge-success,
+body.sidebar-mini .crm-access-queue-page #crm-access-queue-table .badge-success,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table .badge-success {
+  background-color: rgba(30, 122, 82, 0.12) !important;
+  color: var(--success) !important;
+  border: 1px solid rgba(30, 122, 82, 0.35);
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table .badge-warning,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table .badge-warning {
+  background-color: rgba(200, 153, 42, 0.15) !important;
+  color: #7a5800 !important;
+  border: 1px solid rgba(200, 153, 42, 0.35);
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table .badge-secondary,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table .badge-secondary {
+  background-color: rgba(94, 122, 144, 0.12) !important;
+  color: var(--text-muted) !important;
+  border: 1px solid var(--border);
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table .badge-dark {
+  background-color: rgba(30, 61, 96, 0.1) !important;
+  color: var(--navy) !important;
+  border: 1px solid rgba(30, 61, 96, 0.2);
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table .badge-danger,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table .badge-danger {
+  background-color: rgba(168, 48, 32, 0.1) !important;
+  color: var(--danger) !important;
+  border: 1px solid rgba(168, 48, 32, 0.25);
+}
+
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table .badge-light {
+  background-color: rgba(94, 122, 144, 0.08) !important;
+  color: var(--text-muted) !important;
+  border: 1px solid var(--border);
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card tbody .text-muted,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table tbody .text-muted,
+body.sidebar-mini .crm-access-queue-page #crm-access-queue-table tbody .text-muted,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table tbody .text-muted {
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card a.small.text-muted {
+  color: var(--sidebar-active) !important;
+  text-decoration: underline;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card a.small.text-muted:hover {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-pending-table.table-bordered,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table.table-bordered {
+  border-color: var(--border);
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-pending-table.table-bordered th,
+body.sidebar-mini .crm-access-dashboard-layout #crm-pending-table.table-bordered td,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table.table-bordered th,
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-dash-table.table-bordered td {
+  border-color: var(--border) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout #crm-access-pending-card .text-success {
+  color: var(--success) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout .alert-info {
+  background: rgba(58, 111, 168, 0.12) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .crm-access-queue-page .alert-success {
+  background: rgba(30, 122, 82, 0.12) !important;
+  border: 1px solid rgba(30, 122, 82, 0.35) !important;
+  color: var(--success) !important;
+}
+
+body.sidebar-mini .crm-access-dashboard-layout .alert-danger,
+body.sidebar-mini .crm-access-queue-page .alert-danger {
+  background: rgba(168, 48, 32, 0.1) !important;
+  border: 1px solid rgba(168, 48, 32, 0.25) !important;
+  color: var(--danger) !important;
+}
+
+body.sidebar-mini .crm-access-queue-page .card,
+body.sidebar-mini .crm-access-my-grants-page .card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+}
+
+body.sidebar-mini .crm-access-queue-page .card-header,
+body.sidebar-mini .crm-access-my-grants-page .card-header {
+  background: var(--card-bg) !important;
+  color: var(--navy) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .crm-access-queue-page .card-header h4,
+body.sidebar-mini .crm-access-my-grants-page .card-header h4 {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini .crm-access-queue-page #crm-access-queue-table td,
+body.sidebar-mini .crm-access-queue-page #crm-access-queue-table th,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table td,
+body.sidebar-mini .crm-access-my-grants-page #crm-my-grants-table th {
+  border-color: var(--border) !important;
+}
+
+/* Request access modal — docs/theme.md (replaces hard-coded bootstrap blues) */
+body.sidebar-mini #crmCrossAccessModal .modal-content {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 24px rgba(30, 61, 96, 0.12) !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-header {
+  background: var(--navy) !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-radius: 10px 10px 0 0 !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-title {
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-body {
+  background: var(--card-bg) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-body label {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-body .form-control {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-body .form-control:focus {
+  border-color: var(--sidebar-active) !important;
+  box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-footer {
+  background: var(--card-bg) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+/* Layout may zero btn borders; keep footer actions visible */
+body.sidebar-mini #crmCrossAccessModal .modal-footer .btn {
+  border-width: 1px !important;
+  border-style: solid !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-footer .btn-primary {
+  background: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-footer .btn-primary:hover,
+body.sidebar-mini #crmCrossAccessModal .modal-footer .btn-primary:focus {
+  background: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-footer .btn-outline-secondary {
+  color: var(--navy) !important;
+  border-color: var(--border) !important;
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal .modal-footer .btn-outline-secondary:hover,
+body.sidebar-mini #crmCrossAccessModal .modal-footer .btn-outline-secondary:focus {
+  background: var(--page-bg) !important;
+  border-color: var(--sidebar-active) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal #crmCrossAccessMsg.alert-success {
+  background: rgba(30, 122, 82, 0.12) !important;
+  border: 1px solid rgba(30, 122, 82, 0.35) !important;
+  color: var(--success) !important;
+}
+
+body.sidebar-mini #crmCrossAccessModal #crmCrossAccessMsg.alert-danger {
+  background: rgba(168, 48, 32, 0.1) !important;
+  border: 1px solid rgba(168, 48, 32, 0.25) !important;
+  color: var(--danger) !important;
+}

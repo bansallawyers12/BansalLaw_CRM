@@ -1,13 +1,13 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'My access requests')
 @section('content')
-<div class="main-content">
+<div class="main-content crm-access-my-grants-page">
     <section class="section">
         <div class="section-body">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">My access requests</h4>
-                    <a href="{{ route('dashboard') }}" class="btn btn-sm btn-secondary">Dashboard</a>
+                    <a href="{{ route('dashboard') }}" class="btn btn-sm btn-outline-secondary">Dashboard</a>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">

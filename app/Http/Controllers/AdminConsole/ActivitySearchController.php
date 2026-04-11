@@ -92,7 +92,7 @@ class ActivitySearchController extends Controller
                     'client.email as client_email'
                 )
                 ->leftJoin('staff as creator', 'activities_logs.created_by', '=', 'creator.id')
-                ->leftJoin('staff as assignee', 'activities_logs.use_for', '=', 'assignee.id')
+                ->leftJoin('staff as assignee', $this->assigneeJoinOn())
                 ->leftJoin('admins as client', 'activities_logs.client_id', '=', 'client.id');
 
             // Filter by Assigner (created_by)
@@ -100,9 +100,9 @@ class ActivitySearchController extends Controller
                 $query->where('activities_logs.created_by', $request->assigner_id);
             }
 
-            // Filter by Assignee (use_for)
+            // Filter by Assignee (use_for stores staff id as string or labels like "matter")
             if ($request->filled('assignee_id')) {
-                $query->where('activities_logs.use_for', $request->assignee_id);
+                $query->where('activities_logs.use_for', (string) $request->assignee_id);
             }
 
             // Filter by Client
@@ -190,7 +190,7 @@ class ActivitySearchController extends Controller
                 'client.email as client_email'
             )
             ->leftJoin('staff as creator', 'activities_logs.created_by', '=', 'creator.id')
-            ->leftJoin('staff as assignee', 'activities_logs.use_for', '=', 'assignee.id')
+            ->leftJoin('staff as assignee', $this->assigneeJoinOn())
             ->leftJoin('admins as client', 'activities_logs.client_id', '=', 'client.id');
 
         // Apply same filters as index
@@ -199,7 +199,7 @@ class ActivitySearchController extends Controller
         }
 
         if ($request->filled('assignee_id')) {
-            $query->where('activities_logs.use_for', $request->assignee_id);
+            $query->where('activities_logs.use_for', (string) $request->assignee_id);
         }
 
         if ($request->filled('client_id')) {
@@ -333,5 +333,29 @@ class ActivitySearchController extends Controller
             });
 
         return response()->json($clients);
+    }
+
+    /**
+     * use_for is VARCHAR (staff id as text, or e.g. "matter"). PostgreSQL cannot compare varchar to bigint;
+     * join by comparing string form of staff.id to use_for.
+     */
+    private function assigneeJoinOn(): \Closure
+    {
+        $driver = DB::connection()->getDriverName();
+
+        return function ($join) use ($driver) {
+            if ($driver === 'pgsql') {
+                $join->whereRaw('assignee.id::text = activities_logs.use_for');
+
+                return;
+            }
+            if ($driver === 'mysql') {
+                $join->whereRaw('CAST(assignee.id AS CHAR) = activities_logs.use_for');
+
+                return;
+            }
+            // sqlite, sqlsrv, etc.
+            $join->whereRaw('CAST(assignee.id AS TEXT) = activities_logs.use_for');
+        };
     }
 }
