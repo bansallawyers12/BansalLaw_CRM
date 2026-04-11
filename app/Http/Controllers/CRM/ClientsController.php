@@ -4740,48 +4740,41 @@ class ClientsController extends Controller
                     $BlocktotalfeesincltaxFormated = number_format($Blocktotalfeesincltax, 2, '.', '');
                     //dd($BlocktotalfeesincltaxFormated);
 
-                    $DoHAMainApplicantChargePersonCount = ($matter_info->Dept_Base_Application_Charge_no_of_person ?? 0) ."Person" ;
-                    $DoHAMainApplicantCharge = $matter_info->Dept_Base_Application_Charge_after_person ?? 0;
-                    $DoHAMainApplicantSurcharge = $matter_info->Dept_Base_Application_Charge_after_person_surcharge ?? 0;
+                    $DoHAMainApplicantChargePersonCount = '';
+                    $DoHAMainApplicantCharge = 0;
+                    $DoHAMainApplicantSurcharge = 0;
 
-                    $DoHAAdditionalApplicantCharge18PlusPersonCount = ($matter_info->Dept_Additional_Applicant_Charge_18_Plus_no_of_person ?? 0) ."Person" ;
-                    $DoHAAdditionalApplicantCharge18Plus = $matter_info->Dept_Additional_Applicant_Charge_18_Plus_after_person ?? 0;
-                    $DoHAAdditional18PlusSurcharge = $matter_info->Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge ?? 0;
+                    $DoHAAdditionalApplicantCharge18PlusPersonCount = '';
+                    $DoHAAdditionalApplicantCharge18Plus = 0;
+                    $DoHAAdditional18PlusSurcharge = 0;
 
-                    $DoHAAdditionalApplicantChargeUnder18PersonCount = ($matter_info->Dept_Additional_Applicant_Charge_Under_18_no_of_person ?? 0) ."Person" ;
-                    $DoHAAdditionalApplicantChargeUnder18 = $matter_info->Dept_Additional_Applicant_Charge_Under_18_after_person ?? 0;
-                    $DoHAAdditionalUnder18Surcharge = $matter_info->Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge ?? 0;
+                    $DoHAAdditionalApplicantChargeUnder18PersonCount = '';
+                    $DoHAAdditionalApplicantChargeUnder18 = 0;
+                    $DoHAAdditionalUnder18Surcharge = 0;
 
-                    $DoHASecondInstalmentMainPersonCount = ($matter_info->Dept_Subsequent_Temp_Application_Charge_no_of_person ?? 0) ."Person" ;
-                    $DoHASecondInstalmentMain = $matter_info->Dept_Subsequent_Temp_Application_Charge_after_person ?? 0;
-                    $DoHASecondInstalmentMainSurcharge = $matter_info->Dept_Subsequent_Temp_Application_Charge_after_person_surcharge ?? 0;
+                    $DoHASecondInstalmentMainPersonCount = '';
+                    $DoHASecondInstalmentMain = 0;
+                    $DoHASecondInstalmentMainSurcharge = 0;
 
-                    $DoHASubsequentApplicantCharge18PlusPersonCount = ($matter_info->Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person ?? 0) ."Person" ;
-                    $DoHASubsequentApplicantCharge18Plus = $matter_info->Dept_Second_VAC_Instalment_Charge_18_Plus_after_person ?? 0;
-                    $DoHASubsequentApplicantCharge18PlusSurcharge = $matter_info->Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge ?? 0;
+                    $DoHASubsequentApplicantCharge18PlusPersonCount = '';
+                    $DoHASubsequentApplicantCharge18Plus = 0;
+                    $DoHASubsequentApplicantCharge18PlusSurcharge = 0;
 
-                    $DoHASubsequentApplicantChargeUnder18PersonCount = ($matter_info->Dept_Second_VAC_Instalment_Under_18_no_of_person ?? 0) ."Person" ;
-                    $DoHASubsequentTempAppCharge = $matter_info->Dept_Second_VAC_Instalment_Under_18_after_person ?? 0;
-                    $DoHASubsequentTempAppSurcharge = $matter_info->Dept_Second_VAC_Instalment_Under_18_after_person_surcharge ?? 0;
+                    $DoHASubsequentApplicantChargeUnder18PersonCount = '';
+                    $DoHASubsequentTempAppCharge = 0;
+                    $DoHASubsequentTempAppSurcharge = 0;
 
-                    $DoHANonInternetChargePersonCount = ($matter_info->Dept_Non_Internet_Application_Charge_no_of_person ?? 0) ."Person" ;
-                    $DoHANonInternetCharge = $matter_info->Dept_Non_Internet_Application_Charge_after_person ?? 0;
-                    $DoHANonInternetSurcharge = $matter_info->Dept_Non_Internet_Application_Charge_after_person_surcharge ?? 0;
+                    $DoHANonInternetChargePersonCount = '';
+                    $DoHANonInternetCharge = 0;
+                    $DoHANonInternetSurcharge = 0;
 
-                    $TotalDoHACharges = $matter_info->TotalDoHACharges ?? 0;
-                    $TotalDoHASurcharges = $matter_info->TotalDoHASurcharges ?? 0;
-                    // Total for "Amount incl Surcharge" column = sum of per-row Amount incl Surcharge (matches table total)
-                    $TotalDoHAChargesInclSurcharge = number_format(
-                        floatval($DoHAMainApplicantSurcharge ?? 0) + floatval($DoHAAdditional18PlusSurcharge ?? 0)
-                        + floatval($DoHAAdditionalUnder18Surcharge ?? 0) + floatval($DoHASecondInstalmentMainSurcharge ?? 0)
-                        + floatval($DoHASubsequentApplicantCharge18PlusSurcharge ?? 0) + floatval($DoHASubsequentTempAppSurcharge ?? 0)
-                        + floatval($DoHANonInternetSurcharge ?? 0),
-                        2, '.', ''
-                    );
+                    $TotalDisbursements = floatval($matter_info->TotalDisbursements ?? 0);
+                    $TotalDoHACharges = $TotalDisbursements;
+                    $TotalDoHASurcharges = 0;
+                    $TotalDoHAChargesInclSurcharge = number_format($TotalDisbursements, 2, '.', '');
 
                     $TotalEstimatedOtherCosts = $matter_info->additional_fee_1 ?? 0;
-                    // Total Fees, Charges & Costs = professional fees + full DoHA charges (incl surcharge) + estimated costs
-                    $GrandTotalFeesAndCosts = floatval($Blocktotalfeesincltax) + floatval($TotalDoHAChargesInclSurcharge) + floatval($TotalEstimatedOtherCosts);
+                    $GrandTotalFeesAndCosts = floatval($Blocktotalfeesincltax) + $TotalDisbursements + floatval($TotalEstimatedOtherCosts);
                     $GrandTotalFeesAndCostsFormated = number_format($GrandTotalFeesAndCosts, 2, '.', '');
                 }
             }
@@ -5155,7 +5148,13 @@ class ClientsController extends Controller
 
             //get cost assignment matter fee
             $costassignmentmatterInfo = DB::table('cost_assignment_forms')->where('client_id',$requestData['client_id'])->where('client_matter_id',$requestData['client_matter_id'])->first();
-            //dd($costassignmentmatterInfo);
+            if($costassignmentmatterInfo){
+                $disbursementLines = DB::table('disbursement_lines')
+                    ->where('cost_assignment_form_id', $costassignmentmatterInfo->id)
+                    ->orderBy('sort_order')
+                    ->get();
+                $costassignmentmatterInfo->disbursement_lines = $disbursementLines;
+            }
             if($matterInfo){
                 $response['cost_assignment_matterInfo'] = $costassignmentmatterInfo;
             } else {

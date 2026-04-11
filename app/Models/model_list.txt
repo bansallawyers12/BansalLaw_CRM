@@ -59,7 +59,6 @@ OurService.php
 PasswordResetLink.php
 PersonalDocumentType.php
 Profile.php
-RefreshToken.php
 Relationship.php
 Report.php
 Service.php

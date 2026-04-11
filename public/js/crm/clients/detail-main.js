@@ -4760,8 +4760,143 @@ success: function(response) {
         window.calculateTotalBlockFee               = calculateTotalBlockFee;
         window.calculateTotalDisbursements          = calculateTotalDisbursements;
         window.populateDisbursementRows             = populateDisbursementRows;
+        window.getCostAssignmentLegalPractitionerDetail = getCostAssignmentLegalPractitionerDetail;
 
+        // ──────────────────────────────────────────────────────────────────
+        //  Cost assignment form submit handler
+        // ──────────────────────────────────────────────────────────────────
+        $(document).on('submit', '#costAssignmentform', function(e) {
+            e.preventDefault();
+            $.ajax({
+                url: $(this).attr('action'),
+                method: 'POST',
+                data: $(this).serialize(),
+                dataType: 'json',
+                success: function(response) {
+                    var obj = safeParseJsonResponse(response);
+                    if (obj && obj.status) {
+                        var $modal = $('#costAssignmentCreateFormModel');
+                        if ($modal.length && $modal.hasClass('show')) {
+                            $modal.modal('hide');
+                        }
+                        localStorage.setItem('activeTab', 'checklists');
+                        setTimeout(function() { location.reload(); }, 500);
+                    }
+                },
+                error: function(xhr) {
+                    $('.custom-error-msg').html('');
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        var errors = xhr.responseJSON.errors;
+                        for (var field in errors) {
+                            $('.custom-error-msg').append('<p class="text-red-600">' + errors[field][0] + '</p>');
+                        }
+                    } else {
+                        $('.custom-error-msg').append('<p class="text-red-600">An error occurred while submitting the form.</p>');
+                    }
+                }
+            });
+        });
 
+        // ──────────────────────────────────────────────────────────────────
+        //  Lead section — cost assignment
+        // ──────────────────────────────────────────────────────────────────
+        $(document).delegate('.costAssignmentCreateFormLead', 'click', function() {
+            $('#cost_assignment_lead_id').val(window.ClientDetailConfig.clientId);
+            $('#sel_legal_practitioner_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').select2({
+                dropdownParent: $('#costAssignmentCreateFormModelLead')
+            });
+            $('#costAssignmentCreateFormModelLead').modal('show');
+        });
+
+        $(document).delegate('#sel_matter_id_lead', 'change', function() {
+            var client_matter_id = $(this).val();
+            var client_id = window.ClientDetailConfig.clientId;
+            if (client_id && client_matter_id) {
+                getCostAssignmentLegalPractitionerDetailLead(client_id, client_matter_id);
+            }
+        });
+
+        function getCostAssignmentLegalPractitionerDetailLead(client_id, client_matter_id) {
+            $.ajax({
+                type: 'post',
+                url: window.ClientDetailConfig.urls.getCostAssignmentLegalPractitionerLead,
+                sync: true,
+                data: {client_id: client_id, client_matter_id: client_matter_id},
+                success: function(response) {
+                    var obj = safeParseJsonResponse(response);
+                    if (!obj) return;
+
+                    if (obj.cost_assignment_matterInfo) {
+                        $('#Block_1_Ex_Tax_lead').val(obj.cost_assignment_matterInfo.Block_1_Ex_Tax);
+                        $('#Block_2_Ex_Tax_lead').val(obj.cost_assignment_matterInfo.Block_2_Ex_Tax);
+                        $('#Block_3_Ex_Tax_lead').val(obj.cost_assignment_matterInfo.Block_3_Ex_Tax);
+                        $('#additional_fee_1_lead').val(obj.cost_assignment_matterInfo.additional_fee_1);
+                        $('#TotalBLOCKFEE_lead').val(obj.cost_assignment_matterInfo.TotalBLOCKFEE);
+                        var lines = obj.cost_assignment_matterInfo.disbursement_lines || [];
+                        populateDisbursementRows(lines, $('#disbursement-rows-lead'));
+                        calculateTotalDisbursements('#costAssignmentCreateFormModelLead');
+                    } else {
+                        $('#Block_1_Ex_Tax_lead').val(obj.matterInfo ? obj.matterInfo.Block_1_Ex_Tax : '');
+                        $('#Block_2_Ex_Tax_lead').val(obj.matterInfo ? obj.matterInfo.Block_2_Ex_Tax : '');
+                        $('#Block_3_Ex_Tax_lead').val(obj.matterInfo ? obj.matterInfo.Block_3_Ex_Tax : '');
+                        $('#additional_fee_1_lead').val(obj.matterInfo ? obj.matterInfo.additional_fee_1 : '');
+                        $('#TotalBLOCKFEE_lead').val(obj.matterInfo ? obj.matterInfo.TotalBLOCKFEE : '');
+                        populateDisbursementRows([], $('#disbursement-rows-lead'));
+                    }
+
+                    initializeCostAssignmentCalculationsLead();
+                }
+            });
+        }
+
+        function initializeCostAssignmentCalculationsLead() {
+            $('#Block_1_Ex_Tax_lead, #Block_2_Ex_Tax_lead, #Block_3_Ex_Tax_lead').off('input change keyup').on('input change keyup', function() {
+                calculateTotalBlockFeeLead();
+            });
+            calculateTotalBlockFeeLead();
+            calculateTotalDisbursements('#costAssignmentCreateFormModelLead');
+        }
+
+        function calculateTotalBlockFeeLead() {
+            var block1 = parseFloat($('#Block_1_Ex_Tax_lead').val()) || 0;
+            var block2 = parseFloat($('#Block_2_Ex_Tax_lead').val()) || 0;
+            var block3 = parseFloat($('#Block_3_Ex_Tax_lead').val()) || 0;
+            $('#TotalBLOCKFEE_lead').val((block1 + block2 + block3).toFixed(2));
+        }
+
+        window.initializeCostAssignmentCalculationsLead = initializeCostAssignmentCalculationsLead;
+        window.calculateTotalBlockFeeLead               = calculateTotalBlockFeeLead;
+
+        // ──────────────────────────────────────────────────────────────────
+        //  Lead form submit handler
+        // ──────────────────────────────────────────────────────────────────
+        $(document).on('submit', '#costAssignmentformLead', function(e) {
+            e.preventDefault();
+            $.ajax({
+                url: $(this).attr('action'),
+                method: 'POST',
+                data: $(this).serialize(),
+                dataType: 'json',
+                success: function(response) {
+                    var obj = safeParseJsonResponse(response);
+                    if (obj && obj.status) {
+                        $('#costAssignmentCreateFormModelLead').modal('hide');
+                        localStorage.setItem('activeTab', 'checklists');
+                        setTimeout(function() { location.reload(); }, 500);
+                    }
+                },
+                error: function(xhr) {
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        var errors = xhr.responseJSON.errors;
+                        for (var field in errors) {
+                            $('.custom-error-msg-lead').append('<p class="text-red-600">' + errors[field][0] + '</p>');
+                        }
+                    }
+                }
+            });
+        });
+
+        // Agreement modal: drag-and-drop and click-to-browse; auto-upload on file set
         (function() {
             var $form = $('#agreementUploadForm');
             var $input = $form.find('input[name="agreement_doc"]');
