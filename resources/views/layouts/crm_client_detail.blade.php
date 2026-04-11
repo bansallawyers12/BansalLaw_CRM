@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="{{asset('icons/font-awesome/css/all.min.css')}}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>window.__CRM_APP_NAME__=@json(config('app.name'));</script>
+    <script>window.__CRM_BROADCAST_BASE__=@json(rtrim(url('/notifications/broadcasts'), '/'));</script>
     <script src="{{ asset('js/datetime-display.js') }}"></script>
 
     <style>
@@ -1653,7 +1654,8 @@
     <link rel="stylesheet" href="{{ asset('css/crm-theme.css') }}">
 </head>
 <body class="sidebar-mini">
-    <div class="broadcast-banner" data-broadcast-banner>
+    <div class="broadcast-banner" data-broadcast-banner
+        data-broadcast-unread-url="{{ route('notifications.broadcasts.unread') }}">
         <div class="broadcast-banner__header">
             <h5 class="broadcast-banner__header-title">
                 <i class="fas fa-bullhorn"></i>

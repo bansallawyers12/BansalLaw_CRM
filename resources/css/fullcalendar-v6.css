@@ -1,176 +1,273 @@
-/* FullCalendar v6 Custom Styles */
-/* Note: CSS is imported via JS in v6, no need for separate CSS imports */
+/* FullCalendar v6 — Powder Blue & Soft Gold (docs/theme.md; :root from public/css/crm-theme.css) */
 
-/* Status-based event colors */
-.fc-event.event-pending {
-    background-color: #ffc107 !important;
-    border-color: #ffc107 !important;
-    color: #000 !important;
+/* Scoped to booking page so JS-injected FullCalendar styles still inherit themed --fc-* vars */
+.booking-calendar-page .calendar-v6-container .fc {
+    /* Mirror @fullcalendar/core vars.css — set here so they beat :root after bundle inject order */
+    --fc-small-font-size: 0.85em;
+    --fc-page-bg-color: var(--card-bg);
+    --fc-neutral-bg-color: rgba(221, 234, 248, 0.5);
+    --fc-neutral-text-color: var(--text-muted);
+    --fc-border-color: var(--border);
+
+    --fc-button-text-color: #fff;
+    --fc-button-bg-color: var(--navy);
+    --fc-button-border-color: var(--navy);
+    --fc-button-hover-bg-color: var(--sidebar-active);
+    --fc-button-hover-border-color: var(--sidebar-active);
+    --fc-button-active-bg-color: var(--sidebar-active);
+    --fc-button-active-border-color: var(--sidebar-active);
+
+    --fc-event-bg-color: var(--navy);
+    --fc-event-border-color: var(--navy);
+    --fc-event-text-color: #fff;
+    --fc-event-selected-overlay-color: rgba(30, 61, 96, 0.2);
+
+    --fc-more-link-bg-color: var(--sidebar-bg);
+    --fc-more-link-text-color: var(--navy);
+
+    --fc-event-resizer-thickness: 8px;
+    --fc-event-resizer-dot-total-width: 8px;
+    --fc-event-resizer-dot-border-width: 1px;
+
+    --fc-non-business-color: rgba(221, 234, 248, 0.35);
+    --fc-bg-event-color: rgba(200, 153, 42, 0.4);
+    --fc-bg-event-opacity: 0.35;
+    --fc-highlight-color: rgba(58, 111, 168, 0.14);
+    --fc-today-bg-color: rgba(254, 250, 232, 0.75);
+    --fc-now-indicator-color: var(--danger);
+    --fc-daygrid-event-dot-width: 8px;
+
+    font-family: inherit;
 }
 
-.fc-event.event-confirmed {
-    background-color: #28a745 !important;
-    border-color: #28a745 !important;
+.booking-calendar-page .calendar-v6-container .fc-event.event-pending {
+    background-color: rgba(200, 153, 42, 0.38) !important;
+    border-color: var(--accent-gold) !important;
+    color: var(--text-dark) !important;
+}
+
+.booking-calendar-page .calendar-v6-container .fc-event.event-paid,
+.booking-calendar-page .calendar-v6-container .fc-event.event-rescheduled,
+.booking-calendar-page .calendar-v6-container .fc-event[class*="event-paid"],
+.booking-calendar-page .calendar-v6-container .fc-event[data-paid="true"] {
+    background-color: var(--navy) !important;
+    border-color: var(--navy) !important;
     color: #fff !important;
 }
 
-.fc-event.event-completed {
-    background-color: #17a2b8 !important;
-    border-color: #17a2b8 !important;
+.booking-calendar-page .calendar-v6-container .fc-event.event-confirmed {
+    background-color: var(--success) !important;
+    border-color: var(--success) !important;
     color: #fff !important;
 }
 
-.fc-event.event-cancelled {
-    background-color: #dc3545 !important;
-    border-color: #dc3545 !important;
+.booking-calendar-page .calendar-v6-container .fc-event.event-completed {
+    background-color: var(--sidebar-active) !important;
+    border-color: var(--sidebar-active) !important;
+    color: #fff !important;
+}
+
+.booking-calendar-page .calendar-v6-container .fc-event.event-cancelled {
+    background-color: var(--danger) !important;
+    border-color: var(--danger) !important;
     color: #fff !important;
     text-decoration: line-through !important;
 }
 
-.fc-event.event-no-show {
-    background-color: #6c757d !important;
-    border-color: #6c757d !important;
+.booking-calendar-page .calendar-v6-container .fc-event.event-no-show {
+    background-color: var(--text-muted) !important;
+    border-color: var(--text-muted) !important;
     color: #fff !important;
-    opacity: 0.7 !important;
+    opacity: 0.88 !important;
 }
 
-/* Better event text visibility */
-.fc-event {
+.booking-calendar-page .calendar-v6-container .fc-event {
     cursor: pointer;
     font-size: 0.85em;
     padding: 2px 4px;
 }
 
-.fc-event:hover {
-    opacity: 0.85;
+.booking-calendar-page .calendar-v6-container .fc-event:hover {
+    opacity: 0.9;
     transform: scale(1.02);
     transition: all 0.2s ease;
 }
 
-/* Calendar container */
-.fc {
-    font-family: inherit;
-}
-
-/* Header toolbar styling */
-.fc-toolbar {
+.booking-calendar-page .calendar-v6-container .fc-toolbar {
     margin-bottom: 1.5rem;
 }
 
-.fc-toolbar-title {
+.booking-calendar-page .calendar-v6-container .fc-toolbar-title {
     font-size: 1.5rem;
     font-weight: 600;
+    color: var(--navy);
 }
 
-/* Button styling to match admin theme */
-.fc-button {
-    background-color: #007bff !important;
-    border-color: #007bff !important;
+.booking-calendar-page .calendar-v6-container .fc .fc-button {
+    background-color: var(--navy) !important;
+    border-color: var(--navy) !important;
     color: #fff !important;
-    padding: 0.375rem 0.75rem !important;
-    font-size: 0.875rem !important;
-    border-radius: 0.25rem !important;
     text-transform: capitalize !important;
+    border-radius: 8px !important;
 }
 
-.fc-button:hover:not(:disabled) {
-    background-color: #0056b3 !important;
-    border-color: #0056b3 !important;
+.booking-calendar-page .calendar-v6-container .fc .fc-button:hover:not(:disabled),
+.booking-calendar-page .calendar-v6-container .fc .fc-button:focus:not(:disabled) {
+    background-color: var(--sidebar-active) !important;
+    border-color: var(--sidebar-active) !important;
+    color: #fff !important;
 }
 
-.fc-button:active,
-.fc-button.fc-button-active {
-    background-color: #0056b3 !important;
-    border-color: #004085 !important;
+.booking-calendar-page .calendar-v6-container .fc .fc-button:focus-visible {
+    box-shadow: 0 0 0 0.2rem rgba(30, 61, 96, 0.28) !important;
 }
 
-.fc-button:disabled {
-    opacity: 0.65;
+.booking-calendar-page .calendar-v6-container .fc .fc-button:disabled {
+    opacity: 0.55;
     cursor: not-allowed;
 }
 
-/* Today button highlight */
-.fc-today-button {
-    background-color: #28a745 !important;
-    border-color: #28a745 !important;
+.booking-calendar-page .calendar-v6-container .fc .fc-button-primary {
+    background-color: var(--navy) !important;
+    border-color: var(--navy) !important;
 }
 
-.fc-today-button:hover:not(:disabled) {
-    background-color: #218838 !important;
-    border-color: #1e7e34 !important;
+.booking-calendar-page .calendar-v6-container .fc .fc-button-active:not(:disabled),
+.booking-calendar-page .calendar-v6-container .fc .fc-button-active:not(:disabled):hover {
+    background-color: var(--sidebar-active) !important;
+    border-color: var(--sidebar-active) !important;
+    color: #fff !important;
 }
 
-/* Today's date highlight */
-.fc-day-today {
-    background-color: rgba(255, 220, 40, 0.15) !important;
+.booking-calendar-page .calendar-v6-container .fc-today-button {
+    background-color: var(--success) !important;
+    border-color: var(--success) !important;
+    color: #fff !important;
 }
 
-/* Better mobile responsiveness */
+.booking-calendar-page .calendar-v6-container .fc-today-button:hover:not(:disabled) {
+    filter: brightness(0.95);
+}
+
+.booking-calendar-page .calendar-v6-container .fc-day-today {
+    background-color: rgba(254, 250, 232, 0.65) !important;
+}
+
+/*
+ * Date / label colours — docs/theme.md
+ * Body dates: --text-dark; secondary / outside month: --text-muted; today: --navy (headings);
+ * Weekday column titles: --text-muted (labels); link hover: --sidebar-active (breadcrumb active).
+ */
+.booking-calendar-page .calendar-v6-container .fc .fc-daygrid-day-number,
+.booking-calendar-page .calendar-v6-container .fc a.fc-daygrid-day-number {
+    color: var(--text-dark) !important;
+    font-weight: 500;
+}
+
+.booking-calendar-page .calendar-v6-container .fc a.fc-daygrid-day-number:hover {
+    color: var(--sidebar-active) !important;
+}
+
+.booking-calendar-page .calendar-v6-container .fc .fc-day-today:not(.fc-day-other) .fc-daygrid-day-number,
+.booking-calendar-page .calendar-v6-container .fc .fc-day-today:not(.fc-day-other) a.fc-daygrid-day-number {
+    color: var(--navy) !important;
+    font-weight: 700;
+}
+
+.booking-calendar-page .calendar-v6-container .fc .fc-day-other .fc-daygrid-day-number,
+.booking-calendar-page .calendar-v6-container .fc .fc-day-other a.fc-daygrid-day-number {
+    color: var(--text-muted) !important;
+    font-weight: 400;
+    opacity: 0.88;
+}
+
+.booking-calendar-page .calendar-v6-container .fc .fc-col-header-cell-cushion,
+.booking-calendar-page .calendar-v6-container .fc a.fc-col-header-cell-cushion {
+    color: var(--text-muted) !important;
+    font-weight: 600;
+}
+
+.booking-calendar-page .calendar-v6-container .fc .fc-timegrid-axis-cushion,
+.booking-calendar-page .calendar-v6-container .fc .fc-timegrid-slot-label-cushion {
+    color: var(--text-muted) !important;
+}
+
+.booking-calendar-page .calendar-v6-container .fc .fc-list-day-text,
+.booking-calendar-page .calendar-v6-container .fc .fc-list-day-side-text,
+.booking-calendar-page .calendar-v6-container .fc a.fc-list-day-text {
+    color: var(--text-dark) !important;
+}
+
+.booking-calendar-page .calendar-v6-container .fc .fc-list-day-side-text {
+    color: var(--text-muted) !important;
+}
+
+.booking-calendar-page .calendar-v6-container .fc .fc-more-link {
+    color: var(--sidebar-active) !important;
+    font-weight: 600;
+}
+
+.booking-calendar-page .calendar-v6-container .fc .fc-day-sat,
+.booking-calendar-page .calendar-v6-container .fc .fc-day-sun {
+    background-color: rgba(221, 234, 248, 0.38);
+}
+
 @media (max-width: 768px) {
-    .fc-toolbar {
+    .booking-calendar-page .calendar-v6-container .fc-toolbar {
         flex-direction: column;
         gap: 0.5rem;
     }
-    
-    .fc-toolbar-chunk {
+
+    .booking-calendar-page .calendar-v6-container .fc-toolbar-chunk {
         display: flex;
         justify-content: center;
         width: 100%;
     }
-    
-    .fc-event {
+
+    .booking-calendar-page .calendar-v6-container .fc-event {
         font-size: 0.75em;
     }
 }
 
-/* Loading indicator */
-.fc-event-loading {
-    animation: pulse 1.5s ease-in-out infinite;
+.booking-calendar-page .calendar-v6-container .fc-event-loading {
+    animation: fc-booking-pulse 1.5s ease-in-out infinite;
 }
 
-@keyframes pulse {
+@keyframes fc-booking-pulse {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    50% { opacity: 0.55; }
 }
 
-/* Pop-over styling for "more events" link */
-.fc-popover {
+.booking-calendar-page .calendar-v6-container .fc-popover {
     z-index: 1050;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0.5rem 1rem rgba(30, 61, 96, 0.12);
+    border-color: var(--border);
 }
 
-/* Day header styling */
-.fc-col-header-cell {
+.booking-calendar-page .calendar-v6-container .fc-col-header-cell {
     font-weight: 600;
     padding: 0.5rem;
-    background-color: #f8f9fa;
+    background-color: var(--page-bg);
+    color: var(--text-muted);
+    border-color: var(--border);
 }
 
-/* Time grid specific */
-.fc-timegrid-slot {
+.booking-calendar-page .calendar-v6-container .fc-timegrid-slot {
     height: 3rem;
 }
 
-.fc-timegrid-event {
-    border-radius: 3px;
+.booking-calendar-page .calendar-v6-container .fc-timegrid-event {
+    border-radius: 6px;
 }
 
-/* List view styling */
-.fc-list-event:hover {
-    background-color: #f8f9fa;
+.booking-calendar-page .calendar-v6-container .fc-list-event:hover {
+    background-color: #ebf3ff;
 }
 
-.fc-list-event-dot {
+.booking-calendar-page .calendar-v6-container .fc-list-event-dot {
     border-width: 8px !important;
 }
 
-/* Event time text */
-.fc-event-time {
+.booking-calendar-page .calendar-v6-container .fc-event-time {
     font-weight: 600;
 }
-
-/* Ensure no conflicts with v3 */
-.calendar-v6-container .fc {
-    /* Scoped to prevent conflicts */
-}
-

@@ -7,6 +7,7 @@
 @vite(['resources/css/fullcalendar-v6.css'])
 
 <div class="section-body">
+    <div class="booking-calendar-page">
     <div class="row">
         <div class="col-12">
             <!-- Back and Calendar Type Navigation -->
@@ -101,6 +102,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </div>
 
@@ -309,16 +311,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     const borderColor = getStatusColor(apt.status);
                     const textColor = getStatusTextColor(apt.status);
                     
-                    // Temporary debug logging - check browser console
-                    if (apt.status === 'paid') {
-                        console.log('Paid status appointment detected:', {
-                            id: apt.id,
-                            name: apt.client_name,
-                            status: apt.status,
-                            backgroundColor: backgroundColor
-                        });
-                    }
-                    
                     return {
                         id: apt.id,
                         title: `${apt.client_name} (${meetingTypeDisplay})`,
@@ -400,7 +392,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let clientNameDisplay = props.client_name;
             if (props.client_id_encoded) {
                 const clientProfileUrl = `/clients/detail/${props.client_id_encoded}`;
-                clientNameDisplay = `<a href="${clientProfileUrl}" target="_blank" style="color: #007bff; text-decoration: underline;">${props.client_name}</a>`;
+                clientNameDisplay = `<a href="${clientProfileUrl}" target="_blank" class="booking-calendar-link">${props.client_name}</a>`;
             }
             
             // Format meeting type for display
@@ -433,7 +425,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="col-md-6">
                             <p><strong>Location:</strong> ${props.location ? props.location.charAt(0).toUpperCase() + props.location.slice(1) : 'N/A'}</p>
                             <p><strong>Meeting Type:</strong> 
-                                <span id="meetingTypeDisplay-${event.id}" style="cursor: pointer; color: #007bff; text-decoration: underline;" onclick="showMeetingTypeDropdown(${event.id}, '${props.meeting_type}')" title="Click to change meeting type">
+                                <span id="meetingTypeDisplay-${event.id}" class="booking-calendar-link booking-calendar-link--action" onclick="showMeetingTypeDropdown(${event.id}, '${props.meeting_type}')" title="Click to change meeting type">
                                     ${meetingTypeDisplay}
                                     <i class="fas fa-edit ml-1" style="font-size: 0.8em;"></i>
                                 </span>
@@ -590,10 +582,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 container: 'body'
             });
             
-            // Apply blue color with !important for paid status appointments
             if (props.status === 'paid') {
-                info.el.style.setProperty('background-color', '#007bff', 'important');
-                info.el.style.setProperty('border-color', '#007bff', 'important');
+                info.el.style.setProperty('background-color', 'var(--navy)', 'important');
+                info.el.style.setProperty('border-color', 'var(--navy)', 'important');
                 info.el.style.setProperty('color', '#fff', 'important');
             }
         }
@@ -604,21 +595,22 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('FullCalendar v6 initialized successfully');
         
         // Helper functions
+    /* docs/theme.md — hex fallbacks if :root vars unavailable to FullCalendar internals */
     function getStatusColor(status) {
         const colors = {
-            'pending': '#ffc107',
-            'paid': '#007bff',
-            'confirmed': '#28a745',
-            'completed': '#17a2b8',
-            'cancelled': '#dc3545',
-            'no_show': '#6c757d',
-            'rescheduled': '#007bff'
+            'pending': '#D4A84A',
+            'paid': '#1E3D60',
+            'confirmed': '#1E7A52',
+            'completed': '#3A6FA8',
+            'cancelled': '#A83020',
+            'no_show': '#5E7A90',
+            'rescheduled': '#1E3D60'
         };
-        return colors[status] || '#6c757d';
+        return colors[status] || '#5E7A90';
     }
-    
+
     function getStatusTextColor(status) {
-        return status === 'pending' ? '#000' : '#fff';
+        return status === 'pending' ? '#1A2C40' : '#fff';
     }
     
     function getStatusClass(status) {
@@ -1168,55 +1160,103 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-/* Fix navigation button contrast - Ensure proper visibility */
-.btn-outline-primary {
-    color: #007bff !important;
-    border-color: #007bff !important;
+/* Booking calendar page — scoped (docs/theme.md); modals are body-portaled */
+.booking-calendar-page {
+    background: var(--page-bg);
+    border-radius: 10px;
+    padding: 4px 0 8px;
+}
+
+.booking-calendar-page .card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+    overflow: hidden;
+}
+
+.booking-calendar-page .card-header {
+    background: var(--navy) !important;
+    background-image: none !important;
+    color: #fff !important;
+    border-bottom: 1px solid var(--border);
+}
+
+.booking-calendar-page .card-header h4 {
+    color: #fff !important;
+    margin: 0;
+}
+
+.booking-calendar-page .card-header .text-muted {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.booking-calendar-page .card-header .btn-info {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.45) !important;
+    color: #fff !important;
+}
+
+.booking-calendar-page .card-header .btn-info:hover {
+    background: rgba(255, 255, 255, 0.32) !important;
+    color: #fff !important;
+}
+
+.booking-calendar-page .btn-primary {
+    background-color: var(--navy) !important;
+    border-color: var(--navy) !important;
+    color: #fff !important;
+}
+
+.booking-calendar-page .btn-primary:hover {
+    background-color: var(--sidebar-active) !important;
+    border-color: var(--sidebar-active) !important;
+}
+
+.booking-calendar-page .btn-secondary {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--navy) !important;
+}
+
+.booking-calendar-page .btn-secondary:hover {
+    background: var(--sidebar-bg) !important;
+}
+
+.booking-calendar-page .btn-outline-primary {
+    color: var(--navy) !important;
+    border-color: var(--navy) !important;
     background-color: transparent !important;
-    font-weight: 500 !important;
-}
-
-.btn-outline-primary:hover {
-    color: #fff !important;
-    background-color: #007bff !important;
-    border-color: #007bff !important;
-}
-
-.btn-outline-primary:focus {
-    color: #007bff !important;
-    border-color: #007bff !important;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
-}
-
-.btn-outline-primary:active {
-    color: #fff !important;
-    background-color: #007bff !important;
-    border-color: #007bff !important;
-}
-
-/* Additional specificity for calendar navigation buttons */
-.btn-group .btn-outline-primary {
-    color: #007bff !important;
-    border-color: #007bff !important;
-    background-color: transparent !important;
-}
-
-.btn-group .btn-outline-primary:hover {
-    color: #fff !important;
-    background-color: #007bff !important;
-    border-color: #007bff !important;
-}
-
-/* Override Bootstrap CSS variables for better visibility */
-.btn-outline-primary {
-    --bs-btn-color: #007bff !important;
-    --bs-btn-border-color: #007bff !important;
+    font-weight: 600 !important;
+    --bs-btn-color: var(--navy) !important;
+    --bs-btn-border-color: var(--navy) !important;
     --bs-btn-hover-color: #fff !important;
-    --bs-btn-hover-bg: #007bff !important;
-    --bs-btn-hover-border-color: #007bff !important;
+    --bs-btn-hover-bg: var(--navy) !important;
+    --bs-btn-hover-border-color: var(--navy) !important;
 }
 
-/* Additional inline styles for stats and legend */
+.booking-calendar-page .btn-outline-primary:hover,
+.booking-calendar-page .btn-outline-primary:focus,
+.booking-calendar-page .btn-outline-primary:active,
+.booking-calendar-page .btn-group .btn-outline-primary:hover {
+    color: #fff !important;
+    background-color: var(--navy) !important;
+    border-color: var(--navy) !important;
+}
+
+.booking-calendar-page .btn-group .btn-primary {
+    background-color: var(--navy) !important;
+    border-color: var(--navy) !important;
+}
+
+.booking-calendar-link {
+    color: var(--sidebar-active) !important;
+    text-decoration: underline;
+}
+
+.booking-calendar-link--action {
+    cursor: pointer;
+}
+
 .calendar-stats {
     display: flex;
     justify-content: space-around;
@@ -1228,20 +1268,27 @@ document.addEventListener('DOMContentLoaded', function() {
 .stat-box {
     text-align: center;
     padding: 15px;
-    background: #f8f9fa;
-    border-radius: 5px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
     min-width: 120px;
+    box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
 }
 
 .stat-box h3 {
     margin: 0;
     font-size: 2rem;
-    color: #007bff;
+    font-weight: 700;
+    color: var(--navy);
 }
 
 .stat-box p {
     margin: 5px 0 0 0;
-    color: #6c757d;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
 }
 
 .calendar-legend {
@@ -1250,52 +1297,96 @@ document.addEventListener('DOMContentLoaded', function() {
     gap: 20px;
     margin-bottom: 20px;
     flex-wrap: wrap;
+    color: var(--text-dark);
 }
 
 .legend-item {
     display: flex;
     align-items: center;
     gap: 5px;
+    font-size: 13px;
 }
 
 .legend-color {
     width: 20px;
     height: 20px;
-    border-radius: 3px;
+    border-radius: 4px;
+    flex-shrink: 0;
 }
 
-/* Legend color styles */
 .legend-color.event-pending {
-    background-color: #ffc107;
+    background-color: rgba(200, 153, 42, 0.55);
+    border: 1px solid var(--accent-gold);
 }
 
 .legend-color.event-paid {
-    background-color: #007bff;
+    background-color: var(--navy);
 }
 
 .legend-color.event-confirmed {
-    background-color: #28a745;
+    background-color: var(--success);
 }
 
 .legend-color.event-completed {
-    background-color: #17a2b8;
+    background-color: var(--sidebar-active);
 }
 
 .legend-color.event-cancelled {
-    background-color: #dc3545;
+    background-color: var(--danger);
 }
 
 .legend-color.event-no-show {
-    background-color: #6c757d;
+    background-color: var(--text-muted);
 }
 
-/* Paid appointment color - blue with !important to override FullCalendar styles */
-.fc-event.event-paid,
-.fc-event[class*="event-paid"],
-.fc-event[data-paid="true"] {
-    background-color: #007bff !important;
-    border-color: #007bff !important;
-    color: #fff !important;
+#eventModal .modal-content,
+#cancellationConfirmModal .modal-content {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#eventModal .modal-header,
+#cancellationConfirmModal .modal-header {
+    background: var(--navy);
+    color: #fff;
+    border-bottom: 1px solid var(--border);
+}
+
+#eventModal .modal-header .close,
+#cancellationConfirmModal .modal-header .close {
+    color: #fff;
+    opacity: 0.9;
+}
+
+#eventModal .modal-footer .btn-primary {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: #fff;
+}
+
+#eventModal .modal-footer .btn-primary:hover {
+    background: var(--sidebar-active);
+    border-color: var(--sidebar-active);
+    color: #fff;
+}
+
+#cancellationConfirmModal .modal-footer .btn-danger {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #fff;
+}
+
+#cancellationConfirmModal .modal-footer .btn-danger:hover {
+    filter: brightness(0.95);
+    color: #fff;
+}
+
+#eventModal .modal-footer .btn-secondary,
+#cancellationConfirmModal .modal-footer .btn-secondary {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--navy);
 }
 </style>
 

@@ -6,86 +6,118 @@
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
 <style>
-    /* Page-specific styles for action_completed page */
-    .listing-container .filter-buttons { 
-        display: flex; 
-        flex-wrap: wrap; 
-        gap: 10px; 
-        margin-bottom: 20px; 
+    /* Completed actions — docs/theme.md (tokens from crm-theme.css :root) */
+    .listing-container .filter-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
         max-width: 100%;
     }
-    
-    .listing-container .filter-buttons a, 
-    .listing-container .filter-buttons button {
-        background-color: #0d6efd;
-        color: #FFF;
-        padding: 8px 15px;
+
+    /* Wrapper <button><a>…</a></button> — strip chrome so themed <a> shows */
+    .listing-container .filter-buttons > button {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0;
+    }
+
+    .listing-container .filter-buttons a.group_type {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--page-bg, #f0f6ff) !important;
+        color: var(--navy, #1e3d60) !important;
+        border: 1px solid var(--border, #c8dcef) !important;
+        border-radius: 8px;
+        padding: 8px 14px;
         font-size: 0.9em;
-        font-weight: 500;
-        text-decoration: none;
-        border: none;
-        transition: background-color 0.2s ease;
+        font-weight: 600;
+        text-decoration: none !important;
+        transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
         white-space: nowrap;
     }
-    
-    .listing-container .filter-buttons a.active, 
-    .listing-container .filter-buttons button.active {
-        background-color: #0d6efd;
-        color: white;
+
+    .listing-container .filter-buttons a.group_type:hover {
+        background: var(--sidebar-hover, #c8dcef) !important;
+        color: var(--navy, #1e3d60) !important;
     }
-    
-    .listing-container .filter-buttons a:hover, 
-    .listing-container .filter-buttons button:hover {
-        background-color: #d3d7db;
+
+    .listing-container .filter-buttons a.group_type.active {
+        background: var(--navy, #1e3d60) !important;
+        color: #fff !important;
+        border-color: var(--navy, #1e3d60) !important;
     }
-    
-    .listing-container .filter-buttons .countAction {
-        background-color: #ffffff;
-        color: #0d6efd;
+
+    .listing-container .filter-buttons a.group_type:not(.active) .countAction {
+        background: rgba(30, 61, 96, 0.1);
+        color: var(--navy, #1e3d60);
         padding: 2px 8px;
-        border-radius: 50%;
+        border-radius: 999px;
         font-size: 0.8em;
-        margin-left: 5px;
+        margin-left: 4px;
+        font-weight: 700;
     }
-    
-    .listing-container .action-buttons { 
-        display: flex; 
-        gap: 5px; 
+
+    .listing-container .filter-buttons a.group_type.active .countAction {
+        background: rgba(255, 255, 255, 0.22);
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.8em;
+        margin-left: 4px;
+        font-weight: 700;
+    }
+
+    .listing-container .card-header .nav-pills .nav-link {
+        color: var(--text-dark, #1a2c40);
+        border: 1px solid var(--border, #c8dcef);
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    .listing-container .card-header .nav-pills .nav-link:hover {
+        background: var(--sidebar-hover, #c8dcef);
+        color: var(--navy, #1e3d60);
+    }
+
+    .listing-container .card-header .nav-pills .nav-link.active {
+        background: var(--navy, #1e3d60) !important;
+        color: #fff !important;
+        border-color: var(--navy, #1e3d60);
+    }
+
+    .listing-container .action-buttons {
+        display: flex;
+        gap: 5px;
         flex-wrap: wrap;
     }
-    
+
     .listing-container .action-buttons .btn {
         padding: 5px 10px;
         font-size: 0.9em;
-        border-radius: 4px;
+        border-radius: 8px;
         white-space: nowrap;
     }
-    
-    .listing-container .btn-primary { 
-        background-color: #0d6efd; 
-        color: white; 
+
+    .listing-container .btn-link {
+        color: var(--sidebar-active, #3a6fa8) !important;
     }
-    
-    .listing-container .btn-danger { 
-        background-color: #dc3545; 
-        color: white; 
+
+    .listing-container .btn-link:hover {
+        color: var(--navy, #1e3d60) !important;
     }
-    
-    .listing-container .btn-primary:hover { 
-        background-color: #0b5ed7; 
+
+    .listing-container .sort_col a {
+        color: var(--sidebar-active, #3a6fa8) !important;
+        text-decoration: none;
+        font-weight: 600;
     }
-    
-    .listing-container .btn-danger:hover { 
-        background-color: #c82333; 
-    }
-    
-    .listing-container .sort_col a { 
-        color: #0d6efd !important; 
-        text-decoration: none; 
-    }
-    
-    .listing-container .sort_col a:hover { 
-        text-decoration: underline; 
+
+    .listing-container .sort_col a:hover {
+        color: var(--navy, #1e3d60) !important;
+        text-decoration: underline;
     }
     
     /* Column width specifications */
@@ -157,6 +189,11 @@
         max-width: 400px;
         word-wrap: break-word;
     }
+
+    .listing-container .table tbody td[colspan] {
+        color: var(--text-muted, #5e7a90) !important;
+        font-style: italic;
+    }
     
     /* Responsive adjustments */
     @media (max-width: 768px) {
@@ -164,10 +201,13 @@
             flex-direction: column;
         }
         
-        .listing-container .filter-buttons a, 
-        .listing-container .filter-buttons button {
+        .listing-container .filter-buttons > button {
             width: 100%;
-            text-align: center;
+        }
+
+        .listing-container .filter-buttons a.group_type {
+            width: 100%;
+            justify-content: center;
         }
         
         .listing-container .card-header .d-flex {

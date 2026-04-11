@@ -31,9 +31,28 @@
     const markReadBtn = bannerEl.querySelector(markReadSelector);
     const dismissBtn = bannerEl.querySelectorAll(dismissSelector);
 
+    const broadcastUnreadFromDom = (bannerEl.getAttribute('data-broadcast-unread-url') || '').trim();
+    const broadcastBase =
+        typeof window.__CRM_BROADCAST_BASE__ === 'string' && window.__CRM_BROADCAST_BASE__
+            ? String(window.__CRM_BROADCAST_BASE__).replace(/\/$/, '')
+            : '';
+    const broadcastPath = (suffix) => {
+        const s = suffix.startsWith('/') ? suffix : `/${suffix}`;
+        if (broadcastBase) {
+            return `${broadcastBase}${s}`;
+        }
+        return `/notifications/broadcasts${s}`;
+    };
+    const markReadUrlForId = (id) => {
+        if (broadcastUnreadFromDom) {
+            const base = broadcastUnreadFromDom.replace(/\/?unread\/?(\?.*)?$/i, '');
+            return `${base}/${encodeURIComponent(String(id))}/read`;
+        }
+        return broadcastPath(`/${id}/read`);
+    };
     const endpoints = {
-        unread: '/notifications/broadcasts/unread',
-        markRead: (id) => `/notifications/broadcasts/${id}/read`,
+        unread: broadcastUnreadFromDom || broadcastPath('/unread'),
+        markRead: (id) => markReadUrlForId(id),
     };
 
     const state = {

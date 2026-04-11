@@ -6,6 +6,97 @@
     /* Signature dashboard — aligned with docs/theme.md (Powder Blue & Soft Gold) */
     .signature-dashboard {
         padding: 20px;
+        background: var(--page-bg);
+        border-radius: 10px;
+        color: var(--text-dark);
+    }
+
+    /* Bootstrap defaults use legacy blue — re-map inside this page */
+    .signature-dashboard .btn-primary {
+        background-color: var(--navy) !important;
+        border-color: var(--navy) !important;
+        color: #fff !important;
+    }
+    .signature-dashboard .btn-primary:hover,
+    .signature-dashboard .btn-primary:focus {
+        background-color: var(--sidebar-active) !important;
+        border-color: var(--sidebar-active) !important;
+        color: #fff !important;
+    }
+    .signature-dashboard .btn-light {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--navy) !important;
+    }
+    .signature-dashboard .btn-light:hover,
+    .signature-dashboard .btn-light:focus {
+        background: var(--sidebar-bg) !important;
+        color: var(--navy) !important;
+    }
+    .signature-dashboard .btn-secondary {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--navy) !important;
+    }
+    .signature-dashboard .btn-secondary:hover,
+    .signature-dashboard .btn-secondary:focus {
+        background: var(--sidebar-bg) !important;
+        border-color: var(--border) !important;
+        color: var(--navy) !important;
+    }
+    .signature-dashboard .btn-warning {
+        background: var(--accent-gold) !important;
+        border-color: var(--accent-gold) !important;
+        color: #fff !important;
+    }
+    .signature-dashboard .btn-warning:hover {
+        filter: brightness(0.96);
+        color: #fff !important;
+    }
+    .signature-dashboard .btn-danger {
+        background: var(--danger) !important;
+        border-color: var(--danger) !important;
+        color: #fff !important;
+    }
+    .signature-dashboard .btn-danger:hover {
+        filter: brightness(0.95);
+        color: #fff !important;
+    }
+
+    .signature-dashboard .alert-success {
+        background: rgba(30, 122, 82, 0.1);
+        border: 1px solid rgba(30, 122, 82, 0.28);
+        color: var(--success);
+    }
+    .signature-dashboard .alert-danger {
+        background: rgba(168, 48, 32, 0.08);
+        border: 1px solid rgba(168, 48, 32, 0.28);
+        color: var(--danger);
+    }
+
+    .signature-dashboard .pagination .page-link {
+        color: var(--navy);
+        border-color: var(--border);
+        background: var(--card-bg);
+    }
+    .signature-dashboard .pagination .page-link:hover {
+        background: var(--sidebar-bg);
+        color: var(--sidebar-active);
+        border-color: var(--border);
+    }
+    .signature-dashboard .pagination .page-item.active .page-link {
+        background: var(--navy);
+        border-color: var(--navy);
+        color: #fff;
+    }
+    .signature-dashboard .pagination .page-item.disabled .page-link {
+        color: var(--text-muted);
+        background: var(--page-bg);
+        border-color: var(--border);
+    }
+
+    .signature-dashboard table small {
+        color: var(--text-muted);
     }
 
     .dashboard-header {
@@ -357,6 +448,40 @@
         background: var(--page-bg) !important;
         border: 1px solid var(--border);
     }
+
+    /* Attach modal (outside .signature-dashboard) */
+    #attachModal .modal-content {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    #attachModal .modal-header {
+        background: var(--navy);
+        color: #fff;
+        border-bottom: 1px solid var(--border);
+    }
+    #attachModal .modal-header .close {
+        color: #fff;
+        opacity: 0.9;
+    }
+    #attachModal .modal-footer .btn-primary {
+        background: var(--navy);
+        border-color: var(--navy);
+        color: #fff;
+    }
+    #attachModal .modal-footer .btn-primary:hover {
+        background: var(--sidebar-active);
+        border-color: var(--sidebar-active);
+        color: #fff;
+    }
+    #attachModal .modal-footer .btn-secondary {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        color: var(--navy);
+    }
+    #attachModal .modal-footer .btn-secondary:hover {
+        background: var(--sidebar-bg);
+    }
 </style>
 @endsection
 
@@ -641,7 +766,7 @@
                     </div>
                     
                     <div class="form-group">
-                        <label>Attach To <span style="color: #dc3545;">*</span></label>
+                        <label>Attach To <span style="color: var(--danger);">*</span></label>
                         <select class="form-control" id="attachEntityType" name="entity_type" required>
                             <option value="">-- Select Type --</option>
                             <option value="client">Client</option>
@@ -650,7 +775,7 @@
                     </div>
                     
                     <div class="form-group" id="entitySelectGroup" style="display: none;">
-                        <label id="entitySelectLabel">Select Entity <span style="color: #dc3545;">*</span></label>
+                        <label id="entitySelectLabel">Select Entity <span style="color: var(--danger);">*</span></label>
                         <select class="form-control" id="attachEntityId" name="entity_id" required>
                             <option value="">-- Select --</option>
                         </select>
