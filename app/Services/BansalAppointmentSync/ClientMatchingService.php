@@ -127,7 +127,6 @@ class ClientMatchingService
             // Required NOT NULL fields (matching LeadController pattern)
             $client->password = Hash::make('LEAD_PLACEHOLDER'); // Placeholder password (NOT NULL constraint, will be overwritten if client portal activated)
             $client->status = '1'; // Default status: 1 (Active)
-            $client->verified = 0; // Not verified (required NOT NULL column)
             
             // Client Portal fields (required NOT NULL columns, default 0 for new leads)
             $client->cp_status = 0; // Client portal status (NOT NULL, default 0 - inactive)

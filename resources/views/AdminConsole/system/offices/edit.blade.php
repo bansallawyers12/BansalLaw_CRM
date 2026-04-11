@@ -3,7 +3,7 @@
 
 @section('content')
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features adminconsole-offices-form">
 	<section class="section">
 		<div class="section-body">
 			<form action="{{ route('adminconsole.system.offices.update', $fetchedData->id) }}" method="POST" name="edit-branch" autocomplete="off" enctype="multipart/form-data">

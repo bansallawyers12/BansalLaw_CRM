@@ -973,7 +973,7 @@ body.sidebar-mini .adminconsole-email-labels .card .card-body table.table tbody 
 }
 
 /* Email Labels — create / edit form (features/email-labels/create, …/edit); docs/theme.md */
-body.sidebar-mini .adminconsole-email-labels-form .accordion {
+body.sidebar-mini .main-content.adminconsole-email-labels-form .accordion {
   border: 1px solid var(--border) !important;
   border-radius: 10px !important;
   overflow: hidden !important;
@@ -982,7 +982,7 @@ body.sidebar-mini .adminconsole-email-labels-form .accordion {
   margin-bottom: 0 !important;
 }
 
-body.sidebar-mini .adminconsole-email-labels-form .accordion-header {
+body.sidebar-mini .main-content.adminconsole-email-labels-form .accordion .accordion-header {
   background: var(--navy) !important;
   background-image: none !important;
   color: #fff !important;
@@ -990,20 +990,27 @@ body.sidebar-mini .adminconsole-email-labels-form .accordion-header {
   cursor: pointer !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
   margin: 0 !important;
+  box-shadow: none !important;
 }
 
-body.sidebar-mini .adminconsole-email-labels-form .accordion-header:hover {
+body.sidebar-mini .main-content.adminconsole-email-labels-form .accordion .accordion-header:hover {
   filter: brightness(1.04) !important;
 }
 
-body.sidebar-mini .adminconsole-email-labels-form .accordion-header h4 {
+body.sidebar-mini .main-content.adminconsole-email-labels-form .accordion .accordion-header[aria-expanded="true"] {
+  background: var(--navy) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+body.sidebar-mini .main-content.adminconsole-email-labels-form .accordion .accordion-header h4 {
   color: #fff !important;
   margin: 0 !important;
   font-size: 1rem !important;
   font-weight: 700 !important;
 }
 
-body.sidebar-mini .adminconsole-email-labels-form .accordion-body {
+body.sidebar-mini .main-content.adminconsole-email-labels-form .accordion .accordion-body {
   background: var(--card-bg) !important;
   padding: 1.25rem !important;
   border: none !important;
@@ -1054,9 +1061,10 @@ body.sidebar-mini .adminconsole-email-labels-form .span_req {
   color: var(--danger) !important;
 }
 
-/* Workflow — create / edit; Admin emails — create / edit; CRM email template — create / edit (shared accordion form shell); docs/theme.md */
+/* Workflow / emails / CRM email template / offices — shared accordion form shell; docs/theme.md */
 body.sidebar-mini .adminconsole-workflow-form .card .form-group label,
 body.sidebar-mini .adminconsole-emails-form .card .form-group label,
+body.sidebar-mini .adminconsole-offices-form .card .form-group label,
 body.sidebar-mini .adminconsole-crm-email-template-form .card .form-group label {
   color: var(--text-muted) !important;
   font-weight: 600 !important;
@@ -1067,6 +1075,7 @@ body.sidebar-mini .adminconsole-crm-email-template-form .card .form-group label 
 
 /* Checkbox row: avoid shouting “ENABLE THIS FEATURE” */
 body.sidebar-mini .adminconsole-emails-form .form-group label:has(> input[type="checkbox"]),
+body.sidebar-mini .adminconsole-offices-form .form-group label:has(> input[type="checkbox"]),
 body.sidebar-mini .adminconsole-crm-email-template-form .form-group label:has(> input[type="checkbox"]) {
   text-transform: none !important;
   font-size: 14px !important;
@@ -1075,6 +1084,7 @@ body.sidebar-mini .adminconsole-crm-email-template-form .form-group label:has(> 
 }
 
 body.sidebar-mini .adminconsole-emails-form .card .card-body h4,
+body.sidebar-mini .adminconsole-offices-form .card .card-body h4,
 body.sidebar-mini .adminconsole-crm-email-template-form .card .card-body h4 {
   color: var(--navy) !important;
   font-weight: 700 !important;
@@ -1087,6 +1097,8 @@ body.sidebar-mini .adminconsole-workflow-form .form-text,
 body.sidebar-mini .adminconsole-workflow-form small.form-text,
 body.sidebar-mini .adminconsole-emails-form .form-text,
 body.sidebar-mini .adminconsole-emails-form small.form-text,
+body.sidebar-mini .adminconsole-offices-form .form-text,
+body.sidebar-mini .adminconsole-offices-form small.form-text,
 body.sidebar-mini .adminconsole-crm-email-template-form .form-text,
 body.sidebar-mini .adminconsole-crm-email-template-form small.form-text {
   color: var(--text-muted) !important;
@@ -1094,6 +1106,7 @@ body.sidebar-mini .adminconsole-crm-email-template-form small.form-text {
 
 body.sidebar-mini .adminconsole-workflow-form .card-header h4 small,
 body.sidebar-mini .adminconsole-emails-form .card-header h4 small,
+body.sidebar-mini .adminconsole-offices-form .card-header h4 small,
 body.sidebar-mini .adminconsole-crm-email-template-form .card-header h4 small {
   color: var(--text-muted) !important;
   font-weight: 500 !important;
@@ -1104,6 +1117,7 @@ body.sidebar-mini .adminconsole-crm-email-template-form .card-header h4 small {
 
 body.sidebar-mini .adminconsole-workflow-form .alert-info,
 body.sidebar-mini .adminconsole-emails-form .alert-info,
+body.sidebar-mini .adminconsole-offices-form .alert-info,
 body.sidebar-mini .adminconsole-crm-email-template-form .alert-info {
   background: rgba(58, 111, 168, 0.12) !important;
   border: 1px solid rgba(58, 111, 168, 0.28) !important;
@@ -1115,6 +1129,8 @@ body.sidebar-mini .adminconsole-workflow-form .alert-info strong,
 body.sidebar-mini .adminconsole-workflow-form .alert-info em,
 body.sidebar-mini .adminconsole-emails-form .alert-info strong,
 body.sidebar-mini .adminconsole-emails-form .alert-info em,
+body.sidebar-mini .adminconsole-offices-form .alert-info strong,
+body.sidebar-mini .adminconsole-offices-form .alert-info em,
 body.sidebar-mini .adminconsole-crm-email-template-form .alert-info strong,
 body.sidebar-mini .adminconsole-crm-email-template-form .alert-info em {
   color: var(--navy) !important;
@@ -1124,6 +1140,8 @@ body.sidebar-mini .adminconsole-workflow-form .alert-info .fas,
 body.sidebar-mini .adminconsole-workflow-form .alert-info .fa,
 body.sidebar-mini .adminconsole-emails-form .alert-info .fas,
 body.sidebar-mini .adminconsole-emails-form .alert-info .fa,
+body.sidebar-mini .adminconsole-offices-form .alert-info .fas,
+body.sidebar-mini .adminconsole-offices-form .alert-info .fa,
 body.sidebar-mini .adminconsole-crm-email-template-form .alert-info .fas,
 body.sidebar-mini .adminconsole-crm-email-template-form .alert-info .fa {
   color: var(--sidebar-active) !important;
@@ -1132,6 +1150,7 @@ body.sidebar-mini .adminconsole-crm-email-template-form .alert-info .fa {
 /* Protected stage notice — theme.md “Pending” / gold tint */
 body.sidebar-mini .adminconsole-workflow-form .alert-warning,
 body.sidebar-mini .adminconsole-emails-form .alert-warning,
+body.sidebar-mini .adminconsole-offices-form .alert-warning,
 body.sidebar-mini .adminconsole-crm-email-template-form .alert-warning {
   background: rgba(200, 153, 42, 0.15) !important;
   border: 1px solid rgba(200, 153, 42, 0.35) !important;
@@ -1141,12 +1160,14 @@ body.sidebar-mini .adminconsole-crm-email-template-form .alert-warning {
 
 body.sidebar-mini .adminconsole-workflow-form .alert-warning strong,
 body.sidebar-mini .adminconsole-emails-form .alert-warning strong,
+body.sidebar-mini .adminconsole-offices-form .alert-warning strong,
 body.sidebar-mini .adminconsole-crm-email-template-form .alert-warning strong {
   color: #5c4300 !important;
 }
 
 body.sidebar-mini .adminconsole-workflow-form input.form-control[readonly],
 body.sidebar-mini .adminconsole-emails-form input.form-control[readonly],
+body.sidebar-mini .adminconsole-offices-form input.form-control[readonly],
 body.sidebar-mini .adminconsole-crm-email-template-form input.form-control[readonly] {
   background: var(--page-bg) !important;
   color: var(--text-dark) !important;
@@ -1158,6 +1179,8 @@ body.sidebar-mini .adminconsole-workflow-form .custom-error,
 body.sidebar-mini .adminconsole-workflow-form .custom-error strong,
 body.sidebar-mini .adminconsole-emails-form .custom-error,
 body.sidebar-mini .adminconsole-emails-form .custom-error strong,
+body.sidebar-mini .adminconsole-offices-form .custom-error,
+body.sidebar-mini .adminconsole-offices-form .custom-error strong,
 body.sidebar-mini .adminconsole-crm-email-template-form .custom-error,
 body.sidebar-mini .adminconsole-crm-email-template-form .custom-error strong {
   color: var(--danger) !important;
@@ -1167,15 +1190,18 @@ body.sidebar-mini .adminconsole-workflow-form label .span_req,
 body.sidebar-mini .adminconsole-workflow-form .span_req,
 body.sidebar-mini .adminconsole-emails-form label .span_req,
 body.sidebar-mini .adminconsole-emails-form .span_req,
+body.sidebar-mini .adminconsole-offices-form label .span_req,
+body.sidebar-mini .adminconsole-offices-form .span_req,
 body.sidebar-mini .adminconsole-crm-email-template-form label .span_req,
 body.sidebar-mini .adminconsole-crm-email-template-form .span_req {
   color: var(--danger) !important;
 }
 
 /* Add Workflow Stage form (…/workflow/{id}/stage/create); accordion + inline stage table; docs/theme.md */
-body.sidebar-mini .adminconsole-workflow-form .accordion,
-body.sidebar-mini .adminconsole-emails-form .accordion,
-body.sidebar-mini .adminconsole-crm-email-template-form .accordion {
+body.sidebar-mini .main-content.adminconsole-workflow-form .accordion,
+body.sidebar-mini .main-content.adminconsole-emails-form .accordion,
+body.sidebar-mini .main-content.adminconsole-offices-form .accordion,
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion {
   border: 1px solid var(--border) !important;
   border-radius: 10px !important;
   overflow: hidden !important;
@@ -1184,9 +1210,14 @@ body.sidebar-mini .adminconsole-crm-email-template-form .accordion {
   margin-bottom: 0 !important;
 }
 
-body.sidebar-mini .adminconsole-workflow-form .accordion-header,
-body.sidebar-mini .adminconsole-emails-form .accordion-header,
-body.sidebar-mini .adminconsole-crm-email-template-form .accordion-header {
+/*
+ * Stisla style.css: .accordion .accordion-header[aria-expanded="true"] uses purple #6777ef.
+ * Global body.sidebar-mini h4 { navy !important } can beat parent color — force white on dark bar.
+ */
+body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header {
   background: var(--navy) !important;
   background-image: none !important;
   color: #fff !important;
@@ -1194,29 +1225,184 @@ body.sidebar-mini .adminconsole-crm-email-template-form .accordion-header {
   cursor: pointer !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
   margin: 0 !important;
+  box-shadow: none !important;
 }
 
-body.sidebar-mini .adminconsole-workflow-form .accordion-header:hover,
-body.sidebar-mini .adminconsole-emails-form .accordion-header:hover,
-body.sidebar-mini .adminconsole-crm-email-template-form .accordion-header:hover {
+body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header:hover {
   filter: brightness(1.04) !important;
 }
 
-body.sidebar-mini .adminconsole-workflow-form .accordion-header h4,
-body.sidebar-mini .adminconsole-emails-form .accordion-header h4,
-body.sidebar-mini .adminconsole-crm-email-template-form .accordion-header h4 {
+body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header[aria-expanded="true"] {
+  background: var(--navy) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header h4 {
   color: #fff !important;
   margin: 0 !important;
   font-size: 1rem !important;
   font-weight: 700 !important;
 }
 
-body.sidebar-mini .adminconsole-workflow-form .accordion-body,
-body.sidebar-mini .adminconsole-emails-form .accordion-body,
-body.sidebar-mini .adminconsole-crm-email-template-form .accordion-body {
+body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-body {
   background: var(--card-bg) !important;
   padding: 1.25rem !important;
   border: none !important;
+}
+
+/* Offices branch form — Select2 (country / admin); docs/theme.md */
+body.sidebar-mini .adminconsole-offices-form .select2-container--default .select2-selection--single {
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  min-height: 42px !important;
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-form .select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: var(--text-dark) !important;
+  line-height: 40px !important;
+  padding-left: 12px !important;
+}
+
+body.sidebar-mini .adminconsole-offices-form .select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 40px !important;
+}
+
+body.sidebar-mini .adminconsole-offices-form .select2-container--default.select2-container--focus .select2-selection--single {
+  border-color: var(--sidebar-active) !important;
+  box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
+}
+
+/* System — office view / view-client (users & clients tabs); docs/theme.md */
+body.sidebar-mini .adminconsole-offices-view .office-view-overview-heading {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  margin: 0 !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-kpi {
+  margin: 0 !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-kpi-label {
+  display: block !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  color: var(--text-muted) !important;
+  margin-bottom: 4px !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-kpi-value {
+  font-size: 1.35rem !important;
+  font-weight: 700 !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-title {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-detail-table {
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  background: var(--card-bg) !important;
+  margin-bottom: 0 !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-detail-table td {
+  border-color: var(--border) !important;
+  padding: 12px 16px !important;
+  vertical-align: top !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-detail-table td b {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-detail-table tr:nth-child(even) td {
+  background: var(--page-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-detail-table tr:nth-child(odd) td {
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-tabs {
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  margin-bottom: 0 !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-tabs .nav-link {
+  color: var(--navy) !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  padding: 10px 18px !important;
+  background: var(--page-bg) !important;
+  border: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-tabs .nav-link:hover {
+  background: var(--sidebar-hover) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-tabs .nav-link.active {
+  background: var(--sidebar-active) !important;
+  color: #fff !important;
+  border-color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-table-toolbar {
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin-bottom: 12px !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-table-toolbar--split {
+  justify-content: space-between !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-table-toolbar .btn {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-table-toolbar .btn-outline-primary {
+  color: var(--navy) !important;
+  border: 1px solid var(--border) !important;
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-view .office-view-table-toolbar .btn-outline-primary:hover {
+  background: var(--sidebar-hover) !important;
+  color: var(--navy) !important;
+  border-color: var(--border) !important;
 }
 
 /* Summernote (crm-email-template description, etc.) — docs/theme.md */

@@ -4,7 +4,7 @@
 @section('content')
 
 <!-- Main Content -->
-<div class="main-content">
+<div class="main-content adminconsole-features adminconsole-offices-form">
 	<section class="section">
 		<div class="section-body">
 			<form action="{{ route('adminconsole.system.offices.store') }}" method="POST" name="add-branch" autocomplete="off" enctype="multipart/form-data">

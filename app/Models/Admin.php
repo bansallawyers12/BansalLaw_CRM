@@ -42,7 +42,7 @@ class Admin extends Authenticatable
         // Address
         'country', 'state', 'city', 'address', 'zip',
         // Profile (profile_img removed - use avatar.png)
-        'status', 'verified',
+        'status',
         // Lead pipeline (admins.type = lead); clients may ignore
         'lead_status', 'followup_date', 'user_id',
         // Company Lead/Client Flag (company data stored in companies table)

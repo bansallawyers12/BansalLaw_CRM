@@ -74,13 +74,12 @@
     margin-left: 0px !important;
 }
 
-/* Hover state for ACTION column buttons */
+/* Hover state for ACTION column buttons (text must contrast with blue background) */
 .card .card-body table.table tbody tr td:last-child a:hover,
 .card .card-body table.table tbody tr td:last-child .btn:hover,
 .card .card-body table.table tbody tr td.last_td a:hover {
-    background-color: #1e40af !important;  /* Slightly lighter dark blue on hover */
-    /*color: #ffffff !important;*/
-    color: #1e40af !important;
+    background-color: #1e40af !important;
+    color: #ffffff !important;
     text-decoration: none;
 }
 

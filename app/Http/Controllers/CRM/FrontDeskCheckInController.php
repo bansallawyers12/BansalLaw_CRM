@@ -316,7 +316,7 @@ class FrontDeskCheckInController extends Controller
             // Generate a unique CRM reference for the new lead
             $ref = $this->refService->generateClientReference($validated['first_name']);
 
-            // admins columns vary by migration (e.g. verified dropped); mirror LeadController insert + prune.
+            // admins columns vary by migration; mirror LeadController insert + prune.
             $adminEmail = $this->allocateUniqueLeadEmailForWizard(
                 (string) ($validated['email'] ?? ''),
                 $validated['phone']
@@ -335,7 +335,6 @@ class FrontDeskCheckInController extends Controller
                 'lead_status'          => 'new',
                 'is_archived'          => 0,
                 'is_deleted'           => null,
-                'verified'             => 0,
                 'cp_status'            => 0,
                 'cp_code_verify'       => 0,
                 'australian_study'     => 0,
