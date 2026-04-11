@@ -84,6 +84,63 @@
     text-decoration: none;
 }
 
+/*
+ * Office visits — .office-visits-page: Pls Send = theme.md Status “Active” (soft tint + success text).
+ */
+.office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-success,
+body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-success {
+    background-color: rgba(30, 122, 82, 0.12) !important;
+    background-image: none !important;
+    border: 1px solid rgba(30, 122, 82, 0.32) !important;
+    color: var(--success) !important;
+    border-radius: 10px !important;
+    text-decoration: none !important;
+}
+.office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-success:hover,
+.office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-success:focus,
+body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-success:hover,
+body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-success:focus {
+    background-color: rgba(30, 122, 82, 0.2) !important;
+    border-color: rgba(30, 122, 82, 0.45) !important;
+    color: var(--success) !important;
+    filter: none !important;
+}
+.office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-danger,
+body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-danger {
+    background-color: var(--danger) !important;
+    background-image: none !important;
+    border: 1px solid var(--danger) !important;
+    color: #fff !important;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+}
+.office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-danger:hover,
+.office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-danger:focus,
+body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-danger:hover,
+body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-danger:focus {
+    background-color: var(--danger) !important;
+    border-color: var(--danger) !important;
+    color: #fff !important;
+    filter: brightness(0.94) !important;
+}
+
+/* Header CTA: gold on navy (theme.md); do not use navy .btn-primary here — it disappears */
+.office-visits-page .card .card-header .card-header-action .btn-gold {
+    background-color: var(--accent-gold) !important;
+    background-image: none !important;
+    border: 1px solid var(--accent-gold) !important;
+    color: #fff !important;
+    padding: 8px 18px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+}
+.office-visits-page .card .card-header .card-header-action .btn-gold:hover,
+.office-visits-page .card .card-header .card-header-action .btn-gold:focus {
+    background-color: #b88a26 !important;
+    border-color: #b88a26 !important;
+    color: #fff !important;
+}
+
 /* Ensure last_td class also gets proper padding */
 .card .card-body table.table tbody tr td.last_td {
     width: 110px;

@@ -10,17 +10,25 @@
 
 <style>
 /* Office visits — Powder Blue & Soft Gold (docs/theme.md); vars from public/css/crm-theme.css */
+/* Count badge on inactive pills: navy chip on white */
 .office-visits-page .countAction {
 	background: var(--navy);
-	padding: 0 5px;
-	border-radius: 50%;
+	padding: 0 6px;
+	border-radius: 999px;
 	color: #fff;
-	margin-left: 5px;
+	margin-left: 6px;
 	font-size: 0.75em;
 	font-weight: 600;
 	min-width: 1.35em;
 	text-align: center;
 	display: inline-block;
+	line-height: 1.4;
+}
+/* Active pill: light chip so counts stay readable on --sidebar-active */
+.office-visits-page .nav-pills .nav-link.active .countAction {
+	background: rgba(255, 255, 255, 0.22);
+	color: #fff;
+	border: 1px solid rgba(255, 255, 255, 0.35);
 }
 .office-visits-page .card .card-body table.table {
 	--bs-table-color: var(--text-dark) !important;
@@ -46,21 +54,54 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 .office-visits-page .card .card-body table.table th, .office-visits-page .card .card-body table.table td { color: var(--text-dark) !important; }
 .office-visits-page .card .card-body table.table thead th {
 	color: var(--text-muted) !important;
-	font-weight: 600;
+	font-weight: 600 !important;
+	font-size: 0.72rem !important;
+	letter-spacing: 0.05em !important;
+	text-transform: uppercase !important;
 	background-color: var(--page-bg) !important;
+	border-color: var(--border) !important;
+	border-bottom: 1px solid var(--border) !important;
+}
+body.sidebar-mini .office-visits-page .card .card-body table.table thead th {
+	background-color: var(--page-bg) !important;
+	color: var(--text-muted) !important;
 	border-color: var(--border) !important;
 }
 .office-visits-page .card .card-body table.table tbody td { color: var(--text-dark) !important; }
+body.sidebar-mini .office-visits-page .card .card-body table.table tbody td {
+	color: var(--text-dark) !important;
+	border-color: var(--border) !important;
+}
+.office-visits-page .card .card-body table.table tbody tr:nth-child(even) td {
+	background-color: rgba(221, 234, 248, 0.35) !important;
+}
+body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr:hover td {
+	background-color: #ebf3ff !important;
+	color: var(--text-dark) !important;
+}
+.office-visits-page .card .card-body table.table .text-muted {
+	color: var(--text-muted) !important;
+}
 .office-visits-page .card .card-body table.table tbody td .badge { color: inherit !important; }
 .office-visits-page .card .card-body table.table a:not(.btn) { color: var(--sidebar-active) !important; }
 .office-visits-page .card .card-body table.table a:not(.btn):hover { color: var(--navy) !important; }
 .office-visits-page .pagination { justify-content: center; margin-top: 20px; }
-.office-visits-page .pagination .page-link { color: var(--navy); border-color: var(--border); }
-.office-visits-page .pagination .page-link:hover { background: var(--sidebar-bg); color: var(--navy); border-color: var(--border); }
+.office-visits-page .pagination .page-link {
+	color: var(--navy) !important;
+	border-color: var(--border) !important;
+	background: var(--card-bg) !important;
+	border-radius: 8px !important;
+}
+.office-visits-page .pagination .page-link:hover {
+	background: var(--sidebar-bg) !important;
+	color: var(--navy) !important;
+	border-color: var(--border) !important;
+}
 .office-visits-page .pagination .page-item.active .page-link {
-	background-color: var(--navy);
-	border-color: var(--navy);
-	color: #fff;
+	background-color: var(--navy) !important;
+	border-color: var(--navy) !important;
+	color: #fff !important;
+	font-weight: 600 !important;
 }
 .office-visits-page .dropdown-content {
 	display: none;
@@ -89,50 +130,138 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 	font-weight: 600;
 	padding: 10px;
 }
+/* theme.md Status Badges → Active: soft tint + --success text (not solid Bootstrap green) */
 .office-visits-page .btn-success {
-	background-color: var(--success) !important;
-	border-color: var(--success) !important;
-	color: #fff !important;
+	background-color: rgba(30, 122, 82, 0.12) !important;
+	border: 1px solid rgba(30, 122, 82, 0.32) !important;
+	color: var(--success) !important;
+	background-image: none !important;
 }
-.office-visits-page .btn-success:hover { filter: brightness(0.95); color: #fff !important; }
+.office-visits-page .btn-success:hover,
+.office-visits-page .btn-success:focus {
+	background-color: rgba(30, 122, 82, 0.2) !important;
+	border-color: rgba(30, 122, 82, 0.45) !important;
+	color: var(--success) !important;
+	filter: none !important;
+}
 .office-visits-page .btn-danger {
 	background-color: var(--danger) !important;
 	border-color: var(--danger) !important;
 	color: #fff !important;
 }
 .office-visits-page .btn-danger:hover { filter: brightness(0.95); color: #fff !important; }
+/*
+ * custom.css forces .card .card-body table … td:last-child a/.btn to legacy blue — override for theme.md
+ * Pls Send: theme.md Status → Active (soft green + success text). Waiting: solid danger.
+ */
+body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-success,
+.office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-success {
+	background-color: rgba(30, 122, 82, 0.12) !important;
+	background-image: none !important;
+	border: 1px solid rgba(30, 122, 82, 0.32) !important;
+	color: var(--success) !important;
+	border-radius: 10px !important;
+	text-decoration: none !important;
+	min-height: 32px;
+	display: inline-flex !important;
+	align-items: center;
+	justify-content: center;
+	padding: 6px 14px !important;
+	font-size: 0.875rem !important;
+	font-weight: 600 !important;
+	--bs-btn-color: var(--success);
+	--bs-btn-bg: rgba(30, 122, 82, 0.12);
+	--bs-btn-border-color: rgba(30, 122, 82, 0.32);
+}
+body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-success:hover,
+body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-success:focus,
+.office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-success:hover,
+.office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-success:focus {
+	background-color: rgba(30, 122, 82, 0.2) !important;
+	border-color: rgba(30, 122, 82, 0.45) !important;
+	color: var(--success) !important;
+	filter: none !important;
+}
+body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-danger,
+.office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-danger {
+	background-color: var(--danger) !important;
+	background-image: none !important;
+	border: 1px solid var(--danger) !important;
+	color: #fff !important;
+	border-radius: 8px !important;
+	text-decoration: none !important;
+	min-height: 32px;
+	display: inline-flex !important;
+	align-items: center;
+	justify-content: center;
+	padding: 6px 14px !important;
+	font-size: 0.875rem !important;
+	font-weight: 600 !important;
+}
+body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-danger:hover,
+.office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-danger:hover {
+	background-color: var(--danger) !important;
+	border-color: var(--danger) !important;
+	color: #fff !important;
+	filter: brightness(0.94) !important;
+}
 .office-visits-page .btn { white-space: normal !important; word-wrap: break-word !important; max-width: 100% !important; }
 .office-visits-page .nav-pills { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; max-width: 100%; }
+.office-visits-page .nav-pills .nav-item { margin: 0; }
 .office-visits-page .nav-pills .nav-link {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	max-width: 200px;
+	max-width: 220px;
 	color: var(--navy) !important;
-	background: var(--card-bg);
+	background-color: var(--card-bg) !important;
 	border: 1px solid var(--border) !important;
-	border-radius: 8px !important;
+	border-radius: 10px !important;
 	font-weight: 600;
+	padding: 10px 18px !important;
+	box-shadow: none !important;
+	text-decoration: none !important;
 }
-.office-visits-page .nav-pills .nav-link:hover { background: var(--sidebar-bg); border-color: var(--border) !important; }
+.office-visits-page .nav-pills .nav-link:hover {
+	background-color: var(--sidebar-bg) !important;
+	border-color: var(--border) !important;
+	color: var(--navy) !important;
+}
+/* theme.md: active = --sidebar-active; gold accent like sidebar’s 3px edge — here as bottom bar only (no yellow ring) */
 .office-visits-page .nav-pills .nav-link.active {
-	background: var(--sidebar-active) !important;
+	background-color: var(--sidebar-active) !important;
+	background-image: none !important;
+	color: #fff !important;
+	border: 1px solid var(--sidebar-active) !important;
+	box-shadow: inset 0 -3px 0 0 var(--accent-gold) !important;
+}
+.office-visits-page .nav-pills .nav-link.active:hover {
+	background-color: var(--sidebar-active) !important;
 	color: #fff !important;
 	border-color: var(--sidebar-active) !important;
-	box-shadow: inset 3px 0 0 0 var(--accent-gold);
+	box-shadow: inset 0 -3px 0 0 var(--accent-gold) !important;
+	filter: brightness(1.03);
 }
 .office-visits-page .card-header-action { max-width: 100%; overflow-x: hidden; }
 .office-visits-page .card-header-action .btn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.office-visits-page .card .card-header .btn-primary {
-	background-color: var(--navy) !important;
-	border-color: var(--navy) !important;
+/* Navy card header: primary-style navy btn is invisible — use Gold button per theme.md */
+.office-visits-page .card .card-header .card-header-action .btn-gold {
+	background-color: var(--accent-gold) !important;
+	background-image: none !important;
+	border: 1px solid var(--accent-gold) !important;
+	color: #fff !important;
+	padding: 8px 18px !important;
+	border-radius: 8px !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 3px rgba(30, 61, 96, 0.2);
+}
+.office-visits-page .card .card-header .card-header-action .btn-gold:hover,
+.office-visits-page .card .card-header .card-header-action .btn-gold:focus {
+	background-color: #b88a26 !important;
+	border-color: #b88a26 !important;
 	color: #fff !important;
 }
-.office-visits-page .card .card-header .btn-primary:hover {
-	background-color: var(--sidebar-active) !important;
-	border-color: var(--sidebar-active) !important;
-}
-.office-visits-page .card .card-body table.table tbody tr td:last-child .btn:hover { color: #fff !important; }
+.office-visits-page .card .card-body table.table tbody tr td:last-child > a.btn.btn-danger:hover { color: #fff !important; }
 .office-visits-page .badge.badge-info {
 	background-color: rgba(58, 111, 168, 0.18) !important;
 	color: var(--sidebar-active) !important;
@@ -194,7 +323,7 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 						<div class="card-header">
 							<h4>In Person</h4>
 							<div class="card-header-action">
-								<a href="{{ route('front-desk.checkin.index') }}" class="btn btn-primary">Create In Person</a>
+								<a href="{{ route('front-desk.checkin.index') }}" class="btn btn-gold">Create In Person</a>
 							</div>
 						</div>
 						<div class="card-body">

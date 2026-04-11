@@ -104,6 +104,45 @@ body.sidebar-mini .card.card-primary .card-header {
   border-bottom: none !important;
 }
 
+/*
+ * custom.css sets .text-muted { color: #fff } — unreadable on theme cards.
+ * Restore theme.md --text-muted anywhere content sits on --page-bg / --card-bg.
+ */
+body.sidebar-mini .main-content .text-muted,
+body.sidebar-mini .card .text-muted,
+body.sidebar-mini .modal .text-muted {
+  color: var(--text-muted) !important;
+}
+
+/* Headings using .text-primary (e.g. admin staff solicitor block) → theme navy */
+body.sidebar-mini .main-content .text-primary,
+body.sidebar-mini .card .text-primary {
+  color: var(--navy) !important;
+}
+
+/* Read-only field values on detail pages */
+body.sidebar-mini .form-control-plaintext {
+  color: var(--text-dark) !important;
+}
+
+/* Admin Console — staff detail (View Staff) */
+body.sidebar-mini .adminconsole-staff-view .card .form-group label {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+body.sidebar-mini .adminconsole-staff-view .card .form-group label strong {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .adminconsole-staff-view .card hr {
+  border-top-color: var(--border) !important;
+}
+
 /* ---------- Buttons (all Bootstrap variants) — docs/theme.md ---------- */
 /* Overrides public/css/custom.css purple gradients on .btn-primary etc. */
 body.sidebar-mini .btn {
@@ -823,6 +862,35 @@ body.sidebar-mini .badge.badge-success {
   color: var(--success) !important;
 }
 
+/* Other Bootstrap badges — match theme.md status / accents (staff view, lists, etc.) */
+body.sidebar-mini .badge.badge-info {
+  background: rgba(58, 111, 168, 0.18) !important;
+  color: var(--sidebar-active) !important;
+  border: 1px solid rgba(58, 111, 168, 0.35) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .badge.badge-primary {
+  background: rgba(30, 61, 96, 0.1) !important;
+  color: var(--navy) !important;
+  border: 1px solid rgba(30, 61, 96, 0.22) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .badge.badge-secondary {
+  background: rgba(94, 122, 144, 0.12) !important;
+  color: var(--text-muted) !important;
+  border: 1px solid var(--border) !important;
+  font-weight: 600 !important;
+}
+
+body.sidebar-mini .badge.badge-danger {
+  background: rgba(168, 48, 32, 0.12) !important;
+  color: var(--danger) !important;
+  border: 1px solid rgba(168, 48, 32, 0.28) !important;
+  font-weight: 600 !important;
+}
+
 .badge-status-pending {
   background: rgba(200, 153, 42, 0.15) !important;
   color: #7a5800 !important;
@@ -878,4 +946,210 @@ body.sidebar-mini .clear-filter-btn:focus svg {
   color: #fff !important;
   fill: #fff !important;
   text-decoration: none !important;
+}
+
+/* ---------- In Person Details modal (#checkindetailmodal) — docs/theme.md ---------- */
+body.sidebar-mini #checkindetailmodal .modal-content {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 24px rgba(30, 61, 96, 0.12) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-header {
+  background: var(--card-bg) !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-radius: 10px 10px 0 0 !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-title {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-header .close {
+  color: var(--text-muted) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-header .close:hover,
+body.sidebar-mini #checkindetailmodal .modal-header .close:focus {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-body {
+  background: var(--card-bg) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-body a:not(.btn) {
+  color: var(--sidebar-active) !important;
+  font-weight: 600;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-body a:not(.btn):hover,
+body.sidebar-mini #checkindetailmodal .modal-body a:not(.btn):focus {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-body label {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-body b {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-body h4 {
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+  margin-top: 1rem !important;
+}
+
+body.sidebar-mini #checkindetailmodal h5.text-warning {
+  color: #7a5800 !important;
+}
+
+body.sidebar-mini #checkindetailmodal h5.text-info {
+  color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini #checkindetailmodal h5.text-success {
+  color: var(--success) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .form-control {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .form-control:focus {
+  border-color: var(--sidebar-active) !important;
+  box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .table {
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .table thead th {
+  background: var(--page-bg) !important;
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  border: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .table td {
+  border-color: var(--border) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .table tbody tr:hover {
+  background-color: #ebf3ff !important;
+}
+
+/* Wait / attend strip — theme success tones (replaces inline rgb green) */
+body.sidebar-mini #checkindetailmodal .checkin-session-time-bar {
+  margin-top: 14px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.08);
+}
+
+body.sidebar-mini #checkindetailmodal .checkin-session-time-inner {
+  padding: 6px 8px;
+}
+
+/* Strictly theme.md greens: --success #1E7A52; darker segment = blended (not ad-hoc RGB) */
+body.sidebar-mini #checkindetailmodal .checkin-session-time-wait {
+  background-color: color-mix(in srgb, var(--success) 72%, #000 28%);
+}
+
+body.sidebar-mini #checkindetailmodal .checkin-session-time-attend {
+  background-color: color-mix(in srgb, var(--success) 88%, #fff 12%);
+}
+
+@supports not (background-color: color-mix(in srgb, red, blue)) {
+  body.sidebar-mini #checkindetailmodal .checkin-session-time-wait {
+    background-color: #155a3d;
+  }
+
+  body.sidebar-mini #checkindetailmodal .checkin-session-time-attend {
+    background-color: var(--success);
+  }
+}
+
+/* Bar copy must stay white (modal body sets --text-dark; some builds lack strong .text-white) */
+body.sidebar-mini #checkindetailmodal .checkin-session-time-bar,
+body.sidebar-mini #checkindetailmodal .checkin-session-time-bar p,
+body.sidebar-mini #checkindetailmodal .checkin-session-time-bar span {
+  color: #fff !important;
+}
+
+/* Solid success actions in this modal (anchor buttons; beat Bootstrap --bs-btn-* / legacy greens) */
+body.sidebar-mini #checkindetailmodal .modal-body a.btn.btn-success,
+body.sidebar-mini #checkindetailmodal .modal-body button.btn.btn-success {
+  --bs-btn-color: #fff !important;
+  --bs-btn-bg: var(--success) !important;
+  --bs-btn-border-color: var(--success) !important;
+  --bs-btn-hover-color: #fff !important;
+  --bs-btn-hover-bg: #186846 !important;
+  --bs-btn-hover-border-color: #186846 !important;
+  --bs-btn-active-color: #fff !important;
+  --bs-btn-active-bg: #186846 !important;
+  --bs-btn-active-border-color: #186846 !important;
+  background-color: var(--success) !important;
+  background-image: none !important;
+  border: 1px solid var(--success) !important;
+  color: #fff !important;
+  text-decoration: none !important;
+}
+
+body.sidebar-mini #checkindetailmodal .modal-body a.btn.btn-success:hover,
+body.sidebar-mini #checkindetailmodal .modal-body a.btn.btn-success:focus,
+body.sidebar-mini #checkindetailmodal .modal-body button.btn.btn-success:hover,
+body.sidebar-mini #checkindetailmodal .modal-body button.btn.btn-success:focus {
+  background-color: #186846 !important;
+  border-color: #186846 !important;
+  color: #fff !important;
+  filter: none !important;
+}
+
+/* Activity logs — beat custom.css #6777ef */
+body.sidebar-mini #checkindetailmodal .logsdata .logsitem {
+  background: var(--page-bg) !important;
+  border: 1px solid var(--border) !important;
+  padding: 8px !important;
+  margin-bottom: 6px !important;
+  border-radius: 8px !important;
+}
+
+body.sidebar-mini #checkindetailmodal .logsdata .logsitem span.ag-avatar {
+  background: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #checkindetailmodal .logsdata .logsitem span.text_info {
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .logsdata .logsitem span.text_info span {
+  color: var(--sidebar-active) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .logsdata .logsitem span.logs_date {
+  color: var(--text-muted) !important;
+}
+
+body.sidebar-mini #checkindetailmodal .logsdata .logsitem .logs_comment p {
+  color: var(--text-dark) !important;
 }
