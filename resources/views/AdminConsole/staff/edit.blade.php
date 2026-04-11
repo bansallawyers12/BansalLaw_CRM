@@ -346,6 +346,14 @@ $(document).ready(function() {
 		}
 	});
 
+    // Scroll to the first error banner or inline error on redirect-back
+    @if($errors->any() || Session::has('error'))
+    var $firstError = $('.server-error .alert-danger, .custom-error').first();
+    if ($firstError.length) {
+        $('html, body').animate({ scrollTop: $firstError.offset().top - 80 }, 400);
+    }
+    @endif
+
     var $grantSuperAdminAccess = $('input[name="grant_super_admin_access"][type="checkbox"]');
     if ($grantSuperAdminAccess.length) {
         $grantSuperAdminAccess.on('change', function() {

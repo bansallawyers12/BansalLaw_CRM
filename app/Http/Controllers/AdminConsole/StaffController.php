@@ -107,69 +107,83 @@ class StaffController extends Controller
         }
 
         if ($request->isMethod('post')) {
-            $requestData = $request->all();
+            try {
+                $requestData = $request->all();
 
-            $this->validate($request, [
-                'first_name' => 'required|max:255',
-                'last_name' => 'required|max:255',
-                'email' => 'required|email|max:255|unique:staff',
-                'password' => 'required|string|min:8|max:255|confirmed',
-                'phone' => 'required',
-                'role' => 'required',
-                'office' => 'required',
-            ]);
+                $this->validate($request, [
+                    'first_name' => 'required|max:255',
+                    'last_name' => 'required|max:255',
+                    'email' => 'required|email|max:255|unique:staff',
+                    'password' => 'required|string|min:8|max:255|confirmed',
+                    'phone' => 'required',
+                    'role' => 'required',
+                    'office' => 'required',
+                ]);
 
-            $obj = new Staff();
-            $obj->first_name = @$requestData['first_name'];
-            $obj->last_name = @$requestData['last_name'];
-            $obj->email = @$requestData['email'];
-            $obj->country_code = @$requestData['country_code'];
-            $obj->position = @$requestData['position'];
-            $obj->password = Hash::make(@$requestData['password']);
-            $obj->phone = @$requestData['phone'];
-            $obj->role = @$requestData['role'];
-            if ((int) $obj->role === 14) {
-                // Calling Team always gets quick access auto-enabled
-                $obj->quick_access_enabled = true;
-            } else {
-                $storeActor = Auth::user();
-                if ($storeActor instanceof Staff && app(CrmAccessService::class)->canManageStaffQuickAccess($storeActor)) {
-                    $obj->quick_access_enabled = $request->boolean('quick_access_enabled');
+                $obj = new Staff();
+                $obj->first_name = @$requestData['first_name'];
+                $obj->last_name = @$requestData['last_name'];
+                $obj->email = @$requestData['email'];
+                $obj->country_code = @$requestData['country_code'];
+                $obj->position = @$requestData['position'];
+                $obj->password = Hash::make(@$requestData['password']);
+                $obj->phone = @$requestData['phone'];
+                $obj->role = @$requestData['role'];
+                if ((int) $obj->role === 14) {
+                    // Calling Team always gets quick access auto-enabled
+                    $obj->quick_access_enabled = true;
+                } else {
+                    $storeActor = Auth::user();
+                    if ($storeActor instanceof Staff && app(CrmAccessService::class)->canManageStaffQuickAccess($storeActor)) {
+                        $obj->quick_access_enabled = $request->boolean('quick_access_enabled');
+                    }
                 }
+                $obj->office_id = @$requestData['office'];
+                $obj->team = @$requestData['team'];
+                $obj->show_dashboard_per = isset($requestData['show_dashboard_per']) ? 1 : 0;
+                $obj->permission = (isset($requestData['permission']) && is_array($requestData['permission']))
+                    ? implode(',', $requestData['permission'])
+                    : '';
+                $obj->sheet_access = $this->normalizeStaffSheetAccess($requestData['sheet_access'] ?? null);
+                $obj->is_solicitor = isset($requestData['is_solicitor']) ? 1 : 0;
+
+                if (isset($requestData['is_solicitor'])) {
+                    $obj->marn_number = @$requestData['marn_number'];
+                    $obj->company_name = @$requestData['company_name'];
+                    $obj->business_address = @$requestData['business_address'];
+                    $obj->business_phone = @$requestData['business_phone'];
+                    $obj->business_mobile = @$requestData['business_mobile'];
+                    $obj->business_email = @$requestData['business_email'];
+                    $obj->tax_number = @$requestData['tax_number'];
+                }
+
+                $obj->status = isset($requestData['status']) ? (int) $requestData['status'] : 1;
+
+                $saved = $obj->save();
+
+                if (!$saved) {
+                    return redirect()->back()->withInput()->with('error', config('constants.server_error'));
+                }
+
+                $loginUrl = url('/login');
+
+                return redirect()->route('adminconsole.staff.active')->with(
+                    'success',
+                    "Staff added successfully. They can sign in at {$loginUrl} using this email address and the password you set."
+                );
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                return redirect()->back()->withErrors($e->validator)->withInput();
+            } catch (\Exception $e) {
+                Log::error('Staff Store Error: ' . $e->getMessage(), [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]);
+                $errorMsg = 'An error occurred while creating the staff.';
+                if (config('app.debug')) {
+                    $errorMsg .= ' (' . $e->getMessage() . ')';
+                }
+                return redirect()->back()->withInput()->with('error', $errorMsg);
             }
-            $obj->office_id = @$requestData['office'];
-            $obj->team = @$requestData['team'];
-            $obj->show_dashboard_per = isset($requestData['show_dashboard_per']) ? 1 : 0;
-            $obj->permission = (isset($requestData['permission']) && is_array($requestData['permission']))
-                ? implode(',', $requestData['permission'])
-                : '';
-            $obj->sheet_access = $this->normalizeStaffSheetAccess($requestData['sheet_access'] ?? null);
-            $obj->is_solicitor = isset($requestData['is_solicitor']) ? 1 : 0;
-
-            if (isset($requestData['is_solicitor'])) {
-                $obj->marn_number = @$requestData['marn_number'];
-                $obj->company_name = @$requestData['company_name'];
-                $obj->business_address = @$requestData['business_address'];
-                $obj->business_phone = @$requestData['business_phone'];
-                $obj->business_mobile = @$requestData['business_mobile'];
-                $obj->business_email = @$requestData['business_email'];
-                $obj->tax_number = @$requestData['tax_number'];
-            }
-
-            $obj->status = isset($requestData['status']) ? (int) $requestData['status'] : 1;
-
-            $saved = $obj->save();
-
-            if (!$saved) {
-                return redirect()->back()->with('error', config('constants.server_error'));
-            }
-
-            $loginUrl = url('/login');
-
-            return redirect()->route('adminconsole.staff.active')->with(
-                'success',
-                "Staff added successfully. They can sign in at {$loginUrl} using this email address and the password you set."
-            );
         }
 
         return redirect()->route('adminconsole.staff.create');
@@ -319,7 +333,7 @@ class StaffController extends Controller
             }
 
             if (!$saved) {
-                return redirect()->back()->with('error', config('constants.server_error'));
+                return redirect()->back()->withInput()->with('error', config('constants.server_error'));
             }
 
             return redirect()->route('adminconsole.staff.view', $id)->with('success', 'Staff updated successfully.');
@@ -331,7 +345,11 @@ class StaffController extends Controller
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
             ]);
-            return redirect()->back()->with('error', 'An error occurred while updating the staff.');
+            $errorMsg = 'An error occurred while updating the staff.';
+            if (config('app.debug')) {
+                $errorMsg .= ' (' . $e->getMessage() . ')';
+            }
+            return redirect()->back()->withInput()->with('error', $errorMsg);
         }
     }
 
