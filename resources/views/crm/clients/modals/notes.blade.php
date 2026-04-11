@@ -299,7 +299,7 @@
 }
 
 .create-note-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
     color: white;
     border-bottom: none;
     padding: 20px 25px;
@@ -380,8 +380,8 @@
 }
 
 .enhanced-select:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.1);
     outline: none;
 }
 
@@ -409,20 +409,20 @@
 
 .btn-create-note,
 .btn-create-action {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
     border: none;
     border-radius: 8px;
     padding: 12px 30px;
     font-weight: 600;
     font-size: 1rem;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px rgba(30, 61, 96, 0.3);
 }
 
 .btn-create-note:hover,
 .btn-create-action:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 20px rgba(30, 61, 96, 0.4);
 }
 
 .btn-outline-secondary {
@@ -486,8 +486,8 @@
 /* Enhanced focus states */
 .enhanced-select:focus,
 .enhanced-textarea:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.1);
     outline: none;
 }
 
@@ -576,16 +576,16 @@
 }
 
 .note-toolbar .note-btn:hover {
-    background: #667eea !important;
+    background: var(--navy) !important;
     color: white !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3) !important;
+    box-shadow: 0 2px 4px rgba(30, 61, 96, 0.3) !important;
 }
 
 .note-toolbar .note-btn.active {
-    background: #667eea !important;
+    background: var(--navy) !important;
     color: white !important;
-    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3) !important;
+    box-shadow: 0 2px 4px rgba(30, 61, 96, 0.3) !important;
 }
 
 /* STEP 6: Dropdown Styling */
@@ -597,7 +597,7 @@
 }
 
 .note-toolbar .dropdown-item:hover {
-    background: #667eea !important;
+    background: var(--navy) !important;
     color: white !important;
     border-radius: 6px !important;
 }
@@ -605,8 +605,8 @@
 /* STEP 7: Focus State */
 .rich-text-container .note-editor.note-frame:focus-within,
 .rich-text-container .note-editor.editor-focused {
-    border-color: #667eea !important;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+    border-color: var(--navy) !important;
+    box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.1) !important;
 }
 
 /* STEP 8: Remove Status Bar Gap (if exists) */
@@ -623,7 +623,7 @@
 
 /* STEP 10: Selection Styling */
 .note-editable ::selection {
-    background: #667eea !important;
+    background: var(--navy) !important;
     color: white !important;
 }
 
@@ -704,7 +704,7 @@
 
 /* Text color indicator */
 .note-toolbar .note-btn[data-name="forecolor"]:after {
-    background: #667eea !important;
+    background: var(--navy) !important;
 }
 
 /* Highlight color indicator */
@@ -737,7 +737,7 @@
 
 .note-color .note-palette .note-color-btn:hover {
     transform: scale(1.2) !important;
-    border: 2px solid #667eea !important;
+    border: 2px solid var(--navy) !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
 }
 

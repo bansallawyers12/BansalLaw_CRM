@@ -1148,7 +1148,7 @@
                             line-height: 1;
                             vertical-align: baseline;
                             margin: 0 0.14285714em;
-                            background-color: #6777ef;
+                            background-color: var(--navy);
                             background-image: none;
                             padding: 0.5833em 0.833em;
                             color: #fff;
@@ -1165,7 +1165,7 @@
                             color: #fff !important;
                         }
                         .ui.label.tag-normal {
-                            background-color: #6777ef;
+                            background-color: var(--navy);
                         }
                         .ag-align-center {
                             align-items: center;

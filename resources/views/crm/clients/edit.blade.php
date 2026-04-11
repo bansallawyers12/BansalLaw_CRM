@@ -25,56 +25,47 @@
             display:block !important
         }
         tr.matter-tab-row-highlight td {
-            background-color: #e8ecff !important;
+            background-color: #ebf3ff !important;
             transition: background-color 0.35s ease;
         }
 
-        /* ---- Tab nav pills improved ---- */
-        .client-edit-top-pills { margin-bottom: 1.5rem; border-bottom: 2px solid #e8eaed; padding-bottom: 0; gap: 4px; display: flex; flex-wrap: wrap; }
-        .client-edit-top-pills > li > a { border-radius: 8px 8px 0 0; padding: 10px 18px; font-weight: 600; font-size: 0.93em; color: #555; border: 1px solid transparent; border-bottom: none; transition: background 0.15s, color 0.15s; display: flex; align-items: center; gap: 6px; }
-        .client-edit-top-pills > li > a:hover { background: #f0f4ff; color: #3b5bdb; }
-        .client-edit-top-pills > li.active > a { background: #fff; color: #3b5bdb; border-color: #e8eaed; border-bottom-color: #fff; margin-bottom: -2px; }
-
         /* ---- Matter type dropdown ---- */
         .matter-type-select {
-            border: 2px solid #d0daf5 !important;
+            border: 2px solid var(--border-color, #c8dcef) !important;
             border-radius: 8px !important;
             font-size: 0.97em !important;
             transition: border-color 0.15s, box-shadow 0.15s;
         }
         .matter-type-select:focus {
-            border-color: #3b5bdb !important;
-            box-shadow: 0 0 0 3px rgba(59,91,219,0.12) !important;
+            border-color: var(--secondary-color, #3a6fa8) !important;
+            box-shadow: 0 0 0 3px rgba(200, 153, 42, 0.2) !important;
             outline: none !important;
         }
         /* ---- Dynamic matter form selects ---- */
         .dyn-select {
-            border: 1.5px solid #ced4da !important;
+            border: 1.5px solid var(--border-color, #c8dcef) !important;
             border-radius: 6px !important;
             height: 40px !important;
             font-size: 0.94em !important;
-            color: #333 !important;
+            color: var(--text-color, #1a2c40) !important;
             padding: 6px 10px !important;
         }
         .dyn-select:focus {
-            border-color: #3b5bdb !important;
-            box-shadow: 0 0 0 2px rgba(59,91,219,0.10) !important;
+            border-color: var(--secondary-color, #3a6fa8) !important;
+            box-shadow: 0 0 0 2px rgba(200, 153, 42, 0.15) !important;
         }
         #matterSpecificFields .form-control {
-            border: 1.5px solid #ced4da;
+            border: 1.5px solid var(--border-color, #c8dcef);
             border-radius: 6px;
             height: 40px;
             font-size: 0.93em;
-            color: #333;
+            color: var(--text-color, #1a2c40);
         }
         #matterSpecificFields select.form-control { height: 40px; }
         .dyn-required { color: #c0392b; font-weight: bold; margin-left: 2px; }
         @keyframes dynFadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         #subTypeFieldsContainer > div { animation: dynFadeIn 0.3s ease; }
 
-        /* ---- Hearing table status ---- */
-        #hearingsTable th { font-size: 0.82em; white-space: nowrap; background: #f8f9fa; }
-        #hearingsTable td { font-size: 0.88em; vertical-align: middle; }
         </style>
 @endpush
 
@@ -185,7 +176,7 @@
                     <input type="hidden" name="type" value="{{ $fetchedData->type }}">
 
     <div id="home" class="tab-pane fade in active">
-      <h3><i class="fas fa-user" style="color:#3b5bdb;margin-right:8px;"></i> Client Info (Personal)</h3>
+      <h3><i class="fas fa-user"></i> Client Info (Personal)</h3>
      
 
                 <!-- Personal Section -->
@@ -1472,7 +1463,7 @@
           $defaultIcon = ['icon' => 'fa-folder-open', 'color' => '#555'];
       @endphp
 
-      <h3 style="padding:1rem 0 0.5rem;"><i class="fas fa-briefcase" style="color:#3b5bdb;margin-right:8px;"></i> Matter Details</h3>
+      <h3><i class="fas fa-briefcase"></i> Matter Details</h3>
 
       {{-- ====== STEP 1: Matter Type Selector ====== --}}
       <section class="content-section" id="matterTypeSelectorSection">
@@ -2082,7 +2073,7 @@
 
     {{-- ====== TAB 4: Court Dates & Hearings ====== --}}
     <div id="menu4" class="tab-pane fade">
-      <h3 style="padding:1rem 0 0.5rem;"><i class="fas fa-gavel" style="color:#3b5bdb;margin-right:8px;"></i> Court Dates &amp; Hearings</h3>
+      <h3><i class="fas fa-gavel"></i> Court Dates &amp; Hearings</h3>
       <p class="text-muted" style="margin-bottom:1.5rem;">Track important court appearances, hearings, and deadlines. All entries are optional.</p>
 
       {{-- Add Hearing Form --}}

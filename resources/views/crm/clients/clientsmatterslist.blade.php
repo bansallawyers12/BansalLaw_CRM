@@ -20,8 +20,8 @@
     
     /* Professional Action Button Design */
     .listing-container .table td .dropdown-toggle {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        border: 1px solid #667eea !important;
+        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+        border: 1px solid var(--navy) !important;
         min-width: 80px;
         max-width: 90px;
         padding: 6px 12px;
@@ -29,7 +29,7 @@
         font-weight: 500;
         color: white !important;
         border-radius: 6px;
-        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+        box-shadow: 0 2px 4px rgba(30, 61, 96, 0.2);
         position: relative;
         display: inline-flex;
         align-items: center;
@@ -40,12 +40,12 @@
     .listing-container .table td .dropdown-toggle:hover {
         background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
         border-color: #5a6fd8 !important;
-        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 8px rgba(30, 61, 96, 0.3);
     }
     
     .listing-container .table td .dropdown-toggle:focus {
         outline: none;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+        box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.25);
     }
     
     .listing-container .table td .dropdown-toggle::after {
@@ -76,7 +76,7 @@
         font-size: 14px;
         text-align: left;
         background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border: 1px solid rgba(102, 126, 234, 0.2);
+        border: 1px solid rgba(30, 61, 96, 0.2);
         border-radius: 8px;
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         background-clip: padding-box;
@@ -112,10 +112,10 @@
     }
     
     .listing-container .dropdown-item:hover {
-        color: #667eea;
+        color: var(--navy);
         text-decoration: none;
         background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%);
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+        box-shadow: 0 2px 8px rgba(30, 61, 96, 0.15);
     }
     
     .listing-container .dropdown-item:active {
@@ -178,7 +178,7 @@
         border: 1px solid white !important;
         border-radius: 8px !important;
         background: white !important;
-        color: #667eea !important;
+        color: var(--navy) !important;
         font-weight: 600 !important;
         padding: 8px 16px !important;
         min-width: 110px;
@@ -189,13 +189,13 @@
 
     .listing-container .per-page-select:focus {
         outline: none;
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        border-color: var(--navy) !important;
+        box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.2);
     }
 
     .listing-container .per-page-select option {
         background: white;
-        color: #667eea;
+        color: var(--navy);
     }
 
     .listing-container .filter_panel {
@@ -559,8 +559,8 @@
                                             @if($_cmEffectiveSa)
                                             <td class="tdCls">
                                                 <div class="dropdown d-inline">
-                                                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
-                                                    <div class="dropdown-menu">
+                                                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-haspopup="true" aria-expanded="false">Action</button>
+                                                    <div class="dropdown-menu dropdown-menu-end">
                                                         <a class="dropdown-item has-icon" href="javascript:;" onclick="deleteAction({{$list->id}}, 'client_matters')"><i class="fas fa-trash"></i> Delete Matter</a>
                                                     </div>
                                                 </div>

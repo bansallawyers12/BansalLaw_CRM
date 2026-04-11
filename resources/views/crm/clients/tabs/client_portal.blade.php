@@ -1406,7 +1406,7 @@
 }
 
 .portal-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
     color: white;
     padding: 20px 25px;
     border-radius: 8px 8px 0 0;
@@ -1567,9 +1567,9 @@
 }
 
 .copy-btn:hover {
-    background: #667eea;
+    background: var(--navy);
     color: white;
-    border-color: #667eea;
+    border-color: var(--navy);
 }
 
 .credential-actions {
@@ -1840,7 +1840,7 @@
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
     color: #ffffff;
     display: flex;
     align-items: center;
@@ -1853,7 +1853,7 @@
 .sender-name {
     font-size: 13px;
     font-weight: 600;
-    color: #667eea;
+    color: var(--navy);
 }
 
 .message-content {
@@ -2572,7 +2572,7 @@
 }
 
 .details-section-header h5 i {
-    color: #667eea;
+    color: var(--navy);
 }
 
 /* Summary View Styles (matching edit form design) */
@@ -3551,20 +3551,20 @@
 /* Reopen button - styled like matter list page (purple) */
 .client-portal-reopen-btn,
 .stage-navigation-buttons .matter-detail-reopen-btn.client-portal-reopen-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    border: 1px solid #667eea !important;
+    background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+    border: 1px solid var(--navy) !important;
     color: white !important;
     padding: 6px 12px;
     font-size: 13px;
     font-weight: 500;
     border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+    box-shadow: 0 2px 4px rgba(30, 61, 96, 0.2);
 }
 .client-portal-reopen-btn:hover,
 .stage-navigation-buttons .matter-detail-reopen-btn.client-portal-reopen-btn:hover {
     background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
     border-color: #5a6fd8 !important;
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 8px rgba(30, 61, 96, 0.3);
     color: white !important;
 }
 

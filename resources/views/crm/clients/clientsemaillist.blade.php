@@ -20,8 +20,8 @@
     
     /* Professional Action Button Design */
     .listing-container .table td .dropdown-toggle {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        border: 1px solid #667eea !important;
+        background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+        border: 1px solid var(--navy) !important;
         min-width: 80px;
         max-width: 90px;
         padding: 6px 12px;
@@ -29,7 +29,7 @@
         font-weight: 500;
         color: white !important;
         border-radius: 6px;
-        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+        box-shadow: 0 2px 4px rgba(30, 61, 96, 0.2);
         transition: all 0.3s ease;
         position: relative;
         display: inline-flex;
@@ -41,13 +41,13 @@
     .listing-container .table td .dropdown-toggle:hover {
         background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
         border-color: #5a6fd8 !important;
-        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 8px rgba(30, 61, 96, 0.3);
         transform: translateY(-1px);
     }
     
     .listing-container .table td .dropdown-toggle:focus {
         outline: none;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+        box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.25);
     }
     
     .listing-container .table td .dropdown-toggle::after {
@@ -79,7 +79,7 @@
         font-size: 14px;
         text-align: left;
         background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border: 1px solid rgba(102, 126, 234, 0.2);
+        border: 1px solid rgba(30, 61, 96, 0.2);
         border-radius: 8px;
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         background-clip: padding-box;
@@ -116,11 +116,11 @@
     }
     
     .listing-container .dropdown-item:hover {
-        color: #667eea;
+        color: var(--navy);
         text-decoration: none;
         background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%);
         transform: translateX(2px);
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+        box-shadow: 0 2px 8px rgba(30, 61, 96, 0.15);
     }
     
     .listing-container .dropdown-item:active {
@@ -256,8 +256,8 @@
                                             @if($_emEffectiveSa)
                                             <td class="tdCls">
                                                 <div class="dropdown d-inline">
-                                                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
-                                                    <div class="dropdown-menu">
+                                                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-haspopup="true" aria-expanded="false">Action</button>
+                                                    <div class="dropdown-menu dropdown-menu-end">
                                                         <a class="dropdown-item has-icon" href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->id)) )}}"><i class="fas fa-eye"></i> View Details</a>
                                                         <a class="dropdown-item has-icon" href="mailto:{{ @$list->email }}"><i class="fas fa-envelope"></i> Send Email</a>
                                                     </div>

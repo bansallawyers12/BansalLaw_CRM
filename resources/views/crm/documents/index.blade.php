@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Documents - E-Signature App</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="stylesheet" href="{{ asset('css/crm-theme.css') }}">
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 font-sans antialiased">
+<body class="bg-gray-100 dark:bg-gray-900 font-sans antialiased crm-esign-documents">
     <div class="min-h-screen px-4 sm:px-6 lg:px-8 py-12">
         <div class="max-w-6xl mx-auto">
             <!-- Header -->

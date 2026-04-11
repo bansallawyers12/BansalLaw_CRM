@@ -2,528 +2,29 @@
 @section('title', 'Financial Analytics Dashboard')
 
 @section('styles')
-<link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
-<link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
+<link rel="stylesheet" href="{{ asset('css/financial-analytics-dashboard.css') }}">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<style>
-    /* Modern Dashboard Styling */
-    .analytics-container {
-        background: #f8fafc;
-        min-height: 100vh;
-        padding: 24px 32px;
-    }
-
-    /* Page Header */
-    .analytics-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 16px;
-        padding: 32px;
-        margin-bottom: 32px;
-        box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2);
-    }
-
-    .analytics-header h1 {
-        color: white;
-        font-size: 32px;
-        font-weight: 700;
-        margin: 0 0 8px 0;
-        letter-spacing: -0.5px;
-    }
-
-    .analytics-header p {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 16px;
-        margin: 0;
-    }
-
-    /* Date Range Selector */
-    .date-range-selector {
-        background: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(10px);
-        border-radius: 12px;
-        padding: 16px 20px;
-        margin-top: 24px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        flex-wrap: wrap;
-    }
-
-    .date-range-selector label {
-        color: white;
-        font-weight: 600;
-        margin: 0;
-    }
-
-    .date-range-selector input,
-    .date-range-selector select {
-        background: rgba(255, 255, 255, 0.3);
-        border: 2px solid rgba(255, 255, 255, 0.4);
-        border-radius: 8px;
-        color: white;
-        padding: 8px 12px;
-        font-weight: 500;
-    }
-
-    .date-range-selector select option {
-        background: #ffffff;
-        color: #1e293b;
-        padding: 8px 12px;
-        font-weight: 500;
-    }
-
-    .date-range-selector input::placeholder {
-        color: rgba(255, 255, 255, 0.7);
-    }
-
-    .date-range-selector .btn-apply {
-        background: white;
-        color: #667eea;
-        border: none;
-        border-radius: 8px;
-        padding: 8px 24px;
-        font-weight: 700;
-        transition: all 0.3s ease;
-    }
-
-    .date-range-selector .btn-apply:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
-    }
-
-    /* Stats Grid */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 24px;
-        margin-bottom: 32px;
-    }
-
-    .stat-card {
-        background: white;
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-        transition: all 0.3s ease;
-        border: 2px solid transparent;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
-        border-color: #667eea;
-    }
-
-    .stat-card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 16px;
-    }
-
-    .stat-card-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-    }
-
-    .stat-card-icon.blue { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-    .stat-card-icon.green { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
-    .stat-card-icon.orange { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
-    .stat-card-icon.purple { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
-    .stat-card-icon.red { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; }
-    .stat-card-icon.teal { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); color: white; }
-
-    .stat-card-title {
-        font-size: 14px;
-        color: #64748b;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 8px;
-    }
-
-    .stat-card-value {
-        font-size: 32px;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 8px;
-        line-height: 1;
-    }
-
-    .stat-card-subtitle {
-        font-size: 13px;
-        color: #94a3b8;
-        margin-bottom: 12px;
-    }
-
-    .stat-card-trend {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .stat-card-trend.up {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .stat-card-trend.down {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .stat-card-trend.neutral {
-        background: #f1f5f9;
-        color: #475569;
-    }
-
-    /* Chart Cards */
-    .chart-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 24px;
-        margin-bottom: 32px;
-    }
-
-    @media (min-width: 768px) {
-        .chart-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    .chart-card {
-        background: white;
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-    }
-
-    .chart-card.full-width {
-        grid-column: 1 / -1;
-    }
-
-    .chart-card-title {
-        font-size: 18px;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .chart-container {
-        position: relative;
-        height: 300px;
-    }
-
-    /* Table Card */
-    .table-card {
-        background: white;
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-        margin-bottom: 24px;
-    }
-
-    .table-card-title {
-        font-size: 18px;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .analytics-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .analytics-table thead {
-        background: #f8fafc;
-    }
-
-    .analytics-table th {
-        padding: 12px 16px;
-        text-align: left;
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 2px solid #e2e8f0;
-    }
-
-    .analytics-table td {
-        padding: 16px;
-        border-bottom: 1px solid #f1f5f9;
-        font-size: 14px;
-        color: #475569;
-    }
-
-    .analytics-table tr:hover {
-        background: #f8fafc;
-    }
-
-    .analytics-table .client-name {
-        font-weight: 600;
-        color: #1e293b;
-    }
-
-    .analytics-table .amount {
-        font-weight: 700;
-        color: #059669;
-    }
-
-    /* Quick Links Section */
-    .quick-links {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px;
-        margin-bottom: 32px;
-    }
-
-    .quick-link-card {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        text-align: center;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-        border: 2px solid transparent;
-    }
-
-    .quick-link-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
-        border-color: #667eea;
-        text-decoration: none;
-    }
-
-    .quick-link-card i {
-        font-size: 32px;
-        margin-bottom: 12px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .quick-link-card h4 {
-        font-size: 16px;
-        font-weight: 700;
-        color: #1e293b;
-        margin: 0;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .analytics-container {
-            padding: 16px;
-        }
-
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .chart-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .quick-links {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        .analytics-header h1 {
-            font-size: 24px;
-        }
-    }
-
-    /* Loading State */
-    .loading-skeleton {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 200% 100%;
-        animation: loading 1.5s infinite;
-    }
-
-    @keyframes loading {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
-    }
-
-    /* Tabs Styling */
-    .analytics-tabs {
-        background: white;
-        border-radius: 16px;
-        padding: 0;
-        margin-bottom: 32px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
-    }
-
-    .tabs-nav {
-        display: flex;
-        background: #f8fafc;
-        border-bottom: 2px solid #e2e8f0;
-        overflow-x: auto;
-    }
-
-    .tab-item {
-        flex: 1;
-        min-width: 150px;
-        padding: 16px 24px;
-        text-align: center;
-        cursor: pointer;
-        border: none;
-        background: transparent;
-        color: #64748b;
-        font-weight: 600;
-        font-size: 14px;
-        transition: all 0.3s ease;
-        position: relative;
-        white-space: nowrap;
-    }
-
-    .tab-item:hover {
-        background: rgba(102, 126, 234, 0.05);
-        color: #667eea;
-    }
-
-    .tab-item.active {
-        color: #667eea;
-        background: white;
-    }
-
-    .tab-item.active::after {
-        content: '';
-        position: absolute;
-        bottom: -2px;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-
-    .tab-item i {
-        margin-right: 8px;
-        font-size: 16px;
-    }
-
-    .tab-content {
-        display: none;
-    }
-
-    .tab-content.active {
-        display: block;
-    }
-
-    @media (max-width: 768px) {
-        .tabs-nav {
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .tab-item {
-            min-width: 120px;
-            padding: 12px 16px;
-            font-size: 13px;
-        }
-    }
-
-    /* ========================================================================= */
-    /* FONT AWESOME SAFETY */
-    /* ========================================================================= */
-    .fas {
-        font-family: "Font Awesome 5 Free" !important;
-        font-weight: 900 !important;
-        font-style: normal;
-        font-variant: normal;
-        text-rendering: auto;
-        -webkit-font-smoothing: antialiased;
-    }
-
-    .far {
-        font-family: "Font Awesome 5 Free" !important;
-        font-weight: 400 !important;
-        font-style: normal;
-        font-variant: normal;
-        text-rendering: auto;
-        -webkit-font-smoothing: antialiased;
-    }
-
-    .fab {
-        font-family: "Font Awesome 5 Brands" !important;
-        font-weight: 400 !important;
-        font-style: normal;
-        font-variant: normal;
-        text-rendering: auto;
-        -webkit-font-smoothing: antialiased;
-    }
-
-    /* ========================================================================= */
-    /* ACCESSIBILITY FOCUS STATES */
-    /* ========================================================================= */
-    .tab-item:focus,
-    .btn-apply:focus,
-    .quick-link-card:focus,
-    select:focus,
-    input[type="date"]:focus,
-    button:focus {
-        outline: 3px solid #667eea !important;
-        outline-offset: 2px;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-    }
-
-    .stat-card:focus-within {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-    }
-
-    .quick-link-card {
-        cursor: pointer;
-        display: block;
-        position: relative;
-    }
-
-    .quick-link-card:active {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
-    }
-</style>
 @endsection
 
 @section('content')
-<div class="analytics-container">
+<div class="analytics-container financial-analytics-dashboard">
     <!-- Page Header -->
     <div class="analytics-header">
         <h1><i class="fas fa-chart-line"></i> Financial Analytics Dashboard</h1>
-        <p>Comprehensive overview of your financial performance and key metrics</p>
-        <p style="font-size: 13px; margin-top: 8px; opacity: 0.85; color: rgba(255, 255, 255, 0.9);">
+        <p class="analytics-header-lead">Comprehensive overview of your financial performance and key metrics</p>
+        <p class="analytics-header-period">
             <i class="fas fa-calendar-alt"></i> Data period: {{ $startDate->format('M d, Y') }} - {{ $endDate->format('M d, Y') }}
         </p>
         
         <!-- Date Range Selector -->
         <div class="date-range-selector">
-            <form method="GET" action="{{ route('clients.analytics-dashboard') }}" id="dateRangeForm" style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap; width: 100%;">
+            <form method="GET" action="{{ route('clients.analytics-dashboard') }}" id="dateRangeForm">
                 @if($receiptType !== null)
                 <input type="hidden" name="receipt_type" value="{{ $receiptType }}">
                 @endif
                 
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="date-range-field">
                     <label for="quick_select">Quick Select:</label>
                     <select name="quick_select" id="quick_select" onchange="handleQuickSelect(this.value)">
                         <option value="" {{ $quickSelect === '' ? 'selected' : '' }}>Custom Range</option>
@@ -536,12 +37,12 @@
                     </select>
                 </div>
                 
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="date-range-field">
                     <label for="start_date">From:</label>
                     <input type="date" name="start_date" id="start_date" value="{{ $startDate->format('Y-m-d') }}">
                 </div>
                 
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="date-range-field">
                     <label for="end_date">To:</label>
                     <input type="date" name="end_date" id="end_date" value="{{ $endDate->format('Y-m-d') }}">
                 </div>
@@ -595,11 +96,11 @@
     @endphp
 
     @unless($hasData)
-    <div class="alert alert-info" style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 12px; padding: 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 16px;">
-        <i class="fas fa-info-circle" style="color: #2196f3; font-size: 24px;"></i>
+    <div class="analytics-empty-alert" role="status">
+        <i class="fas fa-info-circle" aria-hidden="true"></i>
         <div>
-            <strong style="color: #1565c0; font-size: 16px;">No Data Available</strong>
-            <p style="color: #1976d2; margin: 4px 0 0 0; font-size: 14px;">
+            <strong>No data available</strong>
+            <p>
                 There are no transactions for the selected date range ({{ $startDate->format('M d, Y') }} - {{ $endDate->format('M d, Y') }}).
                 Try selecting a different period or ensure recent transactions have been recorded.
             </p>
@@ -879,11 +380,11 @@
                 <tr>
                     <td>
                         @if($index == 0)
-                            <i class="fas fa-trophy" style="color: #fbbf24;"></i> #{{ $index + 1 }}
+                            <i class="fas fa-trophy rank-icon--gold" aria-hidden="true"></i> #{{ $index + 1 }}
                         @elseif($index == 1)
-                            <i class="fas fa-medal" style="color: #94a3b8;"></i> #{{ $index + 1 }}
+                            <i class="fas fa-medal rank-icon--silver" aria-hidden="true"></i> #{{ $index + 1 }}
                         @elseif($index == 2)
-                            <i class="fas fa-award" style="color: #cd7f32;"></i> #{{ $index + 1 }}
+                            <i class="fas fa-award rank-icon--bronze" aria-hidden="true"></i> #{{ $index + 1 }}
                         @else
                             #{{ $index + 1 }}
                         @endif
@@ -902,16 +403,16 @@
         <h3 class="table-card-title">
             <i class="fas fa-trophy"></i> Top Clients by Transaction Volume
         </h3>
-        <div style="text-align: center; padding: 60px 20px; color: #94a3b8;">
-            <i class="fas fa-users" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
-            <p style="font-size: 16px; margin: 0;">No client data available for this period</p>
+               <div class="table-empty-state">
+            <i class="fas fa-users" aria-hidden="true"></i>
+            <p>No client data available for this period</p>
         </div>
     </div>
     @endif
 
     <!-- Quick Links -->
-    <h3 style="font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 16px;">
-        <i class="fas fa-link"></i> Quick Access
+    <h3 class="analytics-quick-access-title">
+        <i class="fas fa-link" aria-hidden="true"></i> Quick Access
     </h3>
     <div class="quick-links">
         <a href="{{ route('clients.clientreceiptlist') }}" class="quick-link-card">
@@ -943,11 +444,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const chartColors = {
-        blue: 'rgba(102, 126, 234, 0.8)',
-        green: 'rgba(17, 153, 142, 0.8)',
-        orange: 'rgba(240, 147, 251, 0.8)',
-        purple: 'rgba(79, 172, 254, 0.8)',
-        red: 'rgba(250, 112, 154, 0.8)',
+        blue: 'rgba(30, 61, 96, 0.85)',
+        green: 'rgba(30, 122, 82, 0.85)',
+        orange: 'rgba(200, 153, 42, 0.85)',
+        purple: 'rgba(58, 111, 168, 0.85)',
+        red: 'rgba(168, 48, 32, 0.85)',
     };
 
     // Trend Chart
@@ -956,7 +457,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!trendData || !trendData.months || trendData.months.length === 0) {
             document.getElementById('trendChart').parentElement.innerHTML =
-                '<p style="text-align:center;padding:100px 20px;color:#94a3b8;font-size:14px;"><i class="fas fa-info-circle"></i> No trend data available for the selected period</p>';
+                '<p class="chart-placeholder-message"><i class="fas fa-info-circle" aria-hidden="true"></i> No trend data available for the selected period</p>';
         } else {
             const trendCtx = document.getElementById('trendChart').getContext('2d');
             new Chart(trendCtx, {
@@ -968,7 +469,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             label: 'Deposits',
                             data: trendData.deposits || [],
                             borderColor: chartColors.blue,
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            backgroundColor: 'rgba(30, 61, 96, 0.12)',
                             tension: 0.4,
                             fill: true,
                         },
@@ -976,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             label: 'Office Receipts',
                             data: trendData.office_receipts || [],
                             borderColor: chartColors.green,
-                            backgroundColor: 'rgba(17, 153, 142, 0.1)',
+                            backgroundColor: 'rgba(30, 122, 82, 0.12)',
                             tension: 0.4,
                             fill: true,
                         },
@@ -984,7 +485,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             label: 'Invoices',
                             data: trendData.invoices || [],
                             borderColor: chartColors.orange,
-                            backgroundColor: 'rgba(240, 147, 251, 0.1)',
+                            backgroundColor: 'rgba(200, 153, 42, 0.12)',
                             tension: 0.4,
                             fill: true,
                         }
@@ -1022,7 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
         console.error('Error initializing trend chart:', error);
         document.getElementById('trendChart').parentElement.innerHTML =
-            '<p style="text-align:center;padding:100px 20px;color:#dc3545;font-size:14px;"><i class="fas fa-exclamation-triangle"></i> Error loading chart</p>';
+            '<p class="chart-placeholder-message chart-placeholder-message--error"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Error loading chart</p>';
     }
 
     // Payment Method Chart
@@ -1031,7 +532,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!paymentMethods || paymentMethods.length === 0) {
             document.getElementById('paymentMethodChart').parentElement.innerHTML =
-                '<p style="text-align:center;padding:100px 20px;color:#94a3b8;font-size:14px;"><i class="fas fa-info-circle"></i> No payment method data for this period</p>';
+                '<p class="chart-placeholder-message"><i class="fas fa-info-circle" aria-hidden="true"></i> No payment method data for this period</p>';
         } else {
             const paymentMethodCtx = document.getElementById('paymentMethodChart').getContext('2d');
             new Chart(paymentMethodCtx, {
@@ -1070,7 +571,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
         console.error('Error initializing payment method chart:', error);
         document.getElementById('paymentMethodChart').parentElement.innerHTML =
-            '<p style="text-align:center;padding:100px 20px;color:#dc3545;font-size:14px;"><i class="fas fa-exclamation-triangle"></i> Error loading chart</p>';
+            '<p class="chart-placeholder-message chart-placeholder-message--error"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Error loading chart</p>';
     }
 
     // Allocation Chart
@@ -1079,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!receiptStats || ((parseInt(receiptStats.allocated_count) || 0) === 0 && (parseInt(receiptStats.unallocated_count) || 0) === 0)) {
             document.getElementById('allocationChart').parentElement.innerHTML =
-                '<p style="text-align:center;padding:100px 20px;color:#94a3b8;font-size:14px;"><i class="fas fa-info-circle"></i> No allocation data available</p>';
+                '<p class="chart-placeholder-message"><i class="fas fa-info-circle" aria-hidden="true"></i> No allocation data available</p>';
         } else {
             const allocationCtx = document.getElementById('allocationChart').getContext('2d');
             new Chart(allocationCtx, {
@@ -1111,7 +612,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
         console.error('Error initializing allocation chart:', error);
         document.getElementById('allocationChart').parentElement.innerHTML =
-            '<p style="text-align:center;padding:100px 20px;color:#dc3545;font-size:14px;"><i class="fas fa-exclamation-triangle"></i> Error loading chart</p>';
+            '<p class="chart-placeholder-message chart-placeholder-message--error"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Error loading chart</p>';
     }
 });
 

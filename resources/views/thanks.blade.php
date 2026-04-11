@@ -14,7 +14,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -78,7 +78,7 @@
 
         .download-btn {
             display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
             color: white;
             padding: 14px 32px;
             border-radius: 8px;
@@ -91,7 +91,7 @@
 
         .download-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 6px 20px rgba(30, 61, 96, 0.4);
         }
 
         .footer {

@@ -293,8 +293,8 @@
                         datasets: [{
                             label: 'Total Logins',
                             data: counts,
-                            borderColor: 'rgb(102, 126, 234)',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderColor: 'rgb(30, 61, 96)',
+                            backgroundColor: 'rgba(30, 61, 96, 0.1)',
                             tension: 0.4,
                             fill: true
                         }, {
@@ -362,8 +362,8 @@
                         datasets: [{
                             label: 'Logins',
                             data: counts,
-                            backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                            borderColor: 'rgb(102, 126, 234)',
+                            backgroundColor: 'rgba(30, 61, 96, 0.8)',
+                            borderColor: 'rgb(30, 61, 96)',
                             borderWidth: 1
                         }]
                     },
@@ -427,8 +427,8 @@
                         datasets: [{
                             label: 'Login Count',
                             data: counts,
-                            backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                            borderColor: 'rgb(102, 126, 234)',
+                            backgroundColor: 'rgba(30, 61, 96, 0.8)',
+                            borderColor: 'rgb(30, 61, 96)',
                             borderWidth: 1
                         }]
                     },

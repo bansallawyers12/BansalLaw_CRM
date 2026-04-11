@@ -959,7 +959,7 @@
                     floatingSaveBtn.style.background = 'linear-gradient(135deg, #dc3545 0%, #fd7e14 100%)';
                     floatingSaveBtn.querySelector('span').textContent = 'Save Changes';
                 } else {
-                    floatingSaveBtn.style.background = 'linear-gradient(135deg, #6777ef 0%, #47c363 100%)';
+                    floatingSaveBtn.style.background = 'linear-gradient(135deg, #1e3d60 0%, #1e7a52 100%)';
                     floatingSaveBtn.querySelector('span').textContent = 'Save Lead';
                 }
             }

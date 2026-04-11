@@ -192,7 +192,7 @@
                                         <!-- Date & Time Label at Top -->
                                         <div class="form-group">
                                             <label for="description" class="font-weight-bold text-dark mb-3" style="font-size: 16px;">
-                                                <i class="fas fa-calendar-clock mr-2" style="color: #667eea;"></i>
+                                                <i class="fas fa-calendar-clock mr-2" style="color: var(--navy);"></i>
                                                 Date & Time <span class="span_req">*</span>
                                             </label>
 
