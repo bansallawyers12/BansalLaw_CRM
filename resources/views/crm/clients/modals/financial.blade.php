@@ -594,7 +594,9 @@
                                             ->forClientType((bool) (isset($fetchedData) && $fetchedData->is_company));
                                         $leadCostMatterList = $leadCostMatterQuery->get();
                                     @endphp
-                                    @foreach($leadCostMatterList as $matterlist)
+                                    {{-- General Matter (id 1): always available; matches checklist dropdown and savecostassignmentlead --}}
+                                    <option value="1">General Matter</option>
+                                    @foreach($leadCostMatterList->reject(function ($m) { return (int) $m->id === 1; }) as $matterlist)
                                         <option value="{{$matterlist->id}}">{{@$matterlist->title}}</option>
                                     @endforeach
                                 </select>
