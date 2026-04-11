@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Document;
 use App\Services\CrmAccess\CrmAccessService;
 use App\Support\CrmSheets;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -79,6 +80,17 @@ class Staff extends Authenticatable
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    /**
+     * Legacy attribute name for solicitor flag; persists to column `is_solicitor`.
+     */
+    protected function isMigrationAgent(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => (int) ($this->attributes['is_solicitor'] ?? 0),
+            set: fn ($value) => ['is_solicitor' => ((bool) $value) ? 1 : 0],
+        );
+    }
 
     /**
      * Sortable columns for listings.

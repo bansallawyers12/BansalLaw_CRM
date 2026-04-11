@@ -46,9 +46,6 @@ return new class extends Migration
         if (Schema::hasColumn('staff', 'is_solicitor')) {
             $staffRow['is_solicitor'] = 1;
         }
-        if (Schema::hasColumn('staff', 'is_migration_agent')) {
-            $staffRow['is_migration_agent'] = 1;
-        }
         if (Schema::hasColumn('staff', 'verified')) {
             $staffRow['verified'] = 0;
         }
