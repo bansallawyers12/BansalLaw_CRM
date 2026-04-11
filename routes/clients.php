@@ -288,12 +288,13 @@ Route::post('/clients/{admin}/upload-agreement', [ClientsController::class, 'upl
 
 // Legal Forms (Short Costs Disclosure, Cost Agreement, Authority to Act)
 Route::post('/legal-forms', [\App\Http\Controllers\CRM\LegalFormsController::class, 'store'])->name('legal-forms.store');
+Route::post('/legal-forms/generate-scope-ai', [\App\Http\Controllers\CRM\LegalFormsController::class, 'generateScopeAI'])->name('legal-forms.generate-scope-ai');
 Route::get('/legal-forms/client-forms', [\App\Http\Controllers\CRM\LegalFormsController::class, 'getClientForms'])->name('legal-forms.client-forms');
 Route::get('/legal-forms/{legalForm}', [\App\Http\Controllers\CRM\LegalFormsController::class, 'show'])->name('legal-forms.show');
 Route::put('/legal-forms/{legalForm}', [\App\Http\Controllers\CRM\LegalFormsController::class, 'update'])->name('legal-forms.update');
 Route::delete('/legal-forms/{legalForm}', [\App\Http\Controllers\CRM\LegalFormsController::class, 'destroy'])->name('legal-forms.destroy');
-Route::get('/legal-forms/{legalForm}/preview', [\App\Http\Controllers\CRM\LegalFormsController::class, 'previewPdf'])->name('legal-forms.preview');
-Route::get('/legal-forms/{legalForm}/download', [\App\Http\Controllers\CRM\LegalFormsController::class, 'downloadPdf'])->name('legal-forms.download');
+Route::get('/legal-forms/{legalForm}/preview', [\App\Http\Controllers\CRM\LegalFormsController::class, 'previewDocx'])->name('legal-forms.preview');
+Route::get('/legal-forms/{legalForm}/download', [\App\Http\Controllers\CRM\LegalFormsController::class, 'downloadDocx'])->name('legal-forms.download');
 
 // Form 956
 Route::post('/forms', [Form956Controller::class, 'store'])->name('forms.store');
