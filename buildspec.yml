@@ -14,15 +14,8 @@ phases:
       php: 8.2
       nodejs: 22
     commands:
-      # CodeBuild phpenv PHP often ships without ext-sodium loaded; lcobucci/jwt (Passport) requires it.
-      - |
-        if ! php -m 2>/dev/null | grep -qi '^sodium$'; then
-          INI_DIR=$(php -r "echo PHP_CONFIG_FILE_PATH;")
-          if [ -z "$INI_DIR" ] || [ ! -d "$INI_DIR" ]; then INI_DIR=$(php -r "echo dirname(php_ini_loaded_file());"); fi
-          mkdir -p "${INI_DIR}/conf.d"
-          echo "extension=sodium" > "${INI_DIR}/conf.d/99-sodium.ini"
-        fi
-        php -m | grep -qi '^sodium$' || { echo "ext-sodium still missing; install/enable sodium for this CodeBuild image."; exit 1; }
+      # CodeBuild phpenv PHP often has no loadable sodium module (ini trick fails). Composer still needs to resolve
+      # lcobucci/jwt; we only ignore ext-sodium here — production EC2 has sodium; vendor is excluded from artifacts.
       # Laravel post-install runs `php artisan package:discover`; CodeBuild has no .env unless we create one.
       - |
         if [ ! -f .env ]; then
@@ -31,7 +24,7 @@ phases:
   pre_build:
     commands:
       - echo "composer install (locked) + npm build"
-      - composer install --no-interaction --no-dev --optimize-autoloader
+      - composer install --no-interaction --no-dev --optimize-autoloader --ignore-platform-req=ext-sodium
       - npm ci
       - npm run build
       # npm run dev — local Vite only; never enable here (process does not exit)
@@ -59,24 +52,24 @@ phases:
         echo "Starting Deployment..."
         echo "======================================"
 
+        echo "Enabling maintenance mode..."
+        sudo -u $APP_USER php artisan down --retry=60 || true
+
         echo "Syncing source → project..."
         rsync -av --delete \
           --exclude='.env' \
           --exclude='storage/' \
           --exclude='node_modules/' \
           --exclude='vendor/' \
-          $SOURCE_DIR/ $PROJECT_DIR/
+          "$SOURCE_DIR/" "$PROJECT_DIR/"
 
         echo "Fixing ownership..."
-        chown -R $APP_USER:$WEB_USER $PROJECT_DIR
+        chown -R $APP_USER:$WEB_USER "$PROJECT_DIR"
 
-        cd $PROJECT_DIR
-
-        echo "Enabling maintenance mode..."
-        sudo -u $APP_USER php artisan down --retry=60 || true
+        cd "$PROJECT_DIR"
 
         echo "Updating backend dependencies..."
-        sudo -u $APP_USER composer update --no-dev --optimize-autoloader --no-interaction
+        sudo -u $APP_USER composer install --no-dev --optimize-autoloader --no-interaction
 
         # ========================================
         # PYTHON VENV SETUP (SAFE + OPTIMIZED)
@@ -107,8 +100,7 @@ phases:
         # sudo -u $APP_USER php artisan import:reference-master-data
 
         echo "Building frontend assets..."
-        # npm run dev = local Vite only; production uses build
-        sudo -u $APP_USER bash -lc "cd $PROJECT_DIR && npm ci && npm run build"
+        # Assets are pre-built by CodeBuild (public/build/ is in the artifact) — no need to rebuild on the server.
 
         echo "Ensuring required directories..."
         sudo -u $APP_USER mkdir -p storage/framework/{sessions,views,cache/data}
@@ -139,10 +131,10 @@ phases:
         systemctl restart migration-python-services || true
 
         echo "Reloading web server..."
-        if systemctl is-active --quiet nginx; then
-            systemctl reload nginx
-        elif systemctl is-active --quiet apache2; then
+        if systemctl is-active --quiet apache2; then
             systemctl reload apache2
+        elif systemctl is-active --quiet nginx; then
+            systemctl reload nginx
         fi
 
         echo "Disabling maintenance mode..."
