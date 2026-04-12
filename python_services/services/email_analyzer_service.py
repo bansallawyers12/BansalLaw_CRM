@@ -55,17 +55,15 @@ class EmailAnalyzerService:
                 'notification', 'alert', 'warning', 'error', 'system', 'automated',
                 'no-reply', 'noreply', 'do-not-reply', 'support', 'help', 'service'
             ],
-            'visa_immigration': [
+            'legal': [
+                'legal', 'court', 'lawyer', 'attorney', 'lawsuit', 'settlement',
+                'litigation', 'legal advice', 'legal document', 'contract',
+                'agreement', 'terms', 'conditions', 'legal notice',
                 'visa', 'immigration', 'application', 'tribunal', 'appeal', 'aat',
                 'permanent residence', 'citizenship', 'passport',
                 'solicitor', 'legal practitioner', 'law firm', 'visa application',
                 'department of home affairs', 'dha', 'immi', 'bridging visa',
                 'student visa', 'work visa', 'partner visa', 'parent visa',
-            ],
-            'legal': [
-                'legal', 'court', 'lawyer', 'attorney', 'lawsuit', 'settlement',
-                'litigation', 'legal advice', 'legal document', 'contract',
-                'agreement', 'terms', 'conditions', 'legal notice'
             ]
         }
         

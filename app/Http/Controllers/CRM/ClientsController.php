@@ -2062,17 +2062,21 @@ class ClientsController extends Controller
             // only has two segments, e.g. /clients/detail/{client}/{tab}), move it to $tab
             // so that every downstream view receives a clean null $id1.
             $knownTabNames = [
-                'personaldetails', 'companydetails', 'activityfeed', 'noteterm', 'personaldocuments', 'visadocuments', 'nominationdocuments',
+                'personaldetails', 'companydetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments',
                 'emails', 'client_portal', 'legalforms',
                 // Legacy removed tab slugs - keep as reserved so they are not treated as matter IDs
                 'formgenerations', 'formgenerationsl',
                 'workflow', 'checklists', 'account', 'notuseddocuments',
+                'visadocuments', // legacy alias → matterdocuments
             ];
             if ($id1 && in_array(strtolower($id1), $knownTabNames)) {
                 if (empty($tab)) {
                     $tab = $id1;
                 }
                 $id1 = null;
+            }
+            if ($tab !== null && strtolower((string) $tab) === 'visadocuments') {
+                $tab = 'matterdocuments';
             }
 
             $targetRecord = Admin::query()
@@ -2106,9 +2110,9 @@ class ClientsController extends Controller
             // Set default tab if not provided
             $activeTab = $tab ?? 'personaldetails';
 
-            // Banking matters (BANK_1, …): hide Matter Documents tab — remap stale /visadocuments URLs.
+            // Banking matters (BANK_1, …): hide Matter Documents tab — remap stale /matterdocuments URLs.
             if ($id1 !== null && $id1 !== '' && preg_match('/^bank_/i', (string) $id1) === 1
-                && strtolower((string) $activeTab) === 'visadocuments') {
+                && strtolower((string) $activeTab) === 'matterdocuments') {
                 $activeTab = 'personaldetails';
             }
 

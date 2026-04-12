@@ -110,6 +110,12 @@ Route::get('/debug-pdf-page/{id}/{page}', function($id, $page) {
                 $admin = \App\Models\Admin::where('id', $document->client_id)->select('client_id')->first();
                 if ($admin && $admin->client_id) {
                     $s3Key = $admin->client_id . '/' . $document->doc_type . '/' . $document->myfile_key;
+                    if (! Storage::disk('s3')->exists($s3Key) && str_contains($s3Key, '/matter/')) {
+                        $alt = str_replace('/matter/', '/visa/', $s3Key);
+                        if (Storage::disk('s3')->exists($alt)) {
+                            $s3Key = $alt;
+                        }
+                    }
                     if (Storage::disk('s3')->exists($s3Key)) {
                         $tmpPdfPath = storage_path('app/tmp_' . uniqid() . '.pdf');
                         file_put_contents($tmpPdfPath, Storage::disk('s3')->get($s3Key));

@@ -29,7 +29,6 @@ return new class extends Migration
             ['title' => 'Merits Review', 'nick_name' => 'MERITS', 'is_for_company' => false],
             ['title' => 'Judicial Review', 'nick_name' => 'JR', 'is_for_company' => false],
             ['title' => 'Notice of intention to consider cancellation', 'nick_name' => 'NOICC', 'is_for_company' => false],
-            ['title' => 'Immigration matter', 'nick_name' => 'IMM', 'is_for_company' => false],
         ];
     }
 

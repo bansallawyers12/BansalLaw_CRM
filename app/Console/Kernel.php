@@ -20,7 +20,6 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\ProcessServiceAccountTokens',
         '\App\Console\Commands\MigrateSecondDatabase',
         '\App\Console\Commands\CleanUtf8Data',
-        //'\App\Console\Commands\VisaExpireReminderEmail',
         
         // Appointment Sync System Commands
         '\App\Console\Commands\SyncBansalAppointments',
@@ -54,8 +53,6 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\CheckMigrationTablesExist',
         '\App\Console\Commands\MarkMigrationsAsRunCommand',
 
-        // Visa Sheet Diagnostics
-        '\App\Console\Commands\DiagnoseVisaSheet',
         '\App\Console\Commands\ExpireCrmAccessGrants',
         '\App\Console\Commands\CacheAccessGrantGlobalCounts',
     ];
@@ -75,9 +72,6 @@ class Kernel extends ConsoleKernel
 
         //InPerson Complete Task Removal daily 1 time
         $schedule->command('InPersonCompleteTaskRemoval:daily')->daily();
-        //visa expire Reminder email before 15 days daily at 1 time
-        //$schedule->command('VisaExpireReminderEmail:daily')->daily();
-        
         // Appointment Sync System - Sync from public booking website every 5 minutes (look back 24 hours)
         $schedule->command('booking:sync-appointments --minutes=1440')
             ->everyFiveMinutes()

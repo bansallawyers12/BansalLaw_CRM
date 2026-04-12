@@ -19,7 +19,7 @@ use App\Http\Controllers\Controller;
     <aside class="client-navigation-sidebar" id="client-sidebar">
         <div class="sidebar-header">
             @php
-                $clientDetailBackTabSlugs = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'visadocuments', 'nominationdocuments', 'emails', 'legalforms', 'formgenerations', 'formgenerationsl', 'client_portal', 'application', 'workflow', 'checklists', 'account', 'notuseddocuments', 'companydetails'];
+                $clientDetailBackTabSlugs = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments', 'emails', 'legalforms', 'formgenerations', 'formgenerationsl', 'client_portal', 'application', 'workflow', 'checklists', 'account', 'notuseddocuments', 'companydetails'];
                 $clientDetailBackMatterRef = null;
                 if (! empty($id1) && ! in_array(strtolower((string) $id1), array_map('strtolower', $clientDetailBackTabSlugs), true)) {
                     $clientDetailBackMatterRef = (string) $id1;
@@ -346,7 +346,7 @@ use App\Http\Controllers\Controller;
             $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
             
             // Valid tab names that should NOT be treated as matter IDs
-            $validTabNames = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'visadocuments', 'nominationdocuments',
+            $validTabNames = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments',
                               'emails', 'legalforms',
                               // Legacy removed tab slugs
                               'formgenerations', 'formgenerationsl',
@@ -379,7 +379,7 @@ use App\Http\Controllers\Controller;
                     <span>Personal Documents</span>
                 </button>
                 @if(!$hideMatterDocumentsForBankMatter)
-                <button class="client-nav-button" data-tab="visadocuments">
+                <button class="client-nav-button" data-tab="matterdocuments">
                     <i class="fas fa-file-contract"></i>
                     <span>Matter Documents</span>
                 </button>

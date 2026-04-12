@@ -2077,11 +2077,11 @@ success: function(response) {
 
                 }
 
-                else if( activeTab == 'visadocuments') {
+                else if( activeTab == 'matterdocuments') {
 
                     if(selectedMatter != "" ) {
 
-                        $('#visadocuments-tab .migdocumnetlist1').find('.drow').each(function() {
+                        $('#matterdocuments-tab .migdocumnetlist1').find('.drow').each(function() {
 
                             if ($(this).data('matterid') == selectedMatter) {
 
@@ -5748,7 +5748,7 @@ success: function(response) {
                         // Remove document from current tab (Personal or matter documents)
                         if(res.doc_type == 'personal') {
                             $('.documnetlist_'+res.doc_category+' #id_'+res.doc_id).remove();
-                        } else if( res.doc_type == 'visa' || res.doc_type == 'nomination') {
+                        } else if( res.doc_type == 'matter' || res.doc_type == 'visa' || res.doc_type == 'nomination') {
                             $('.migdocumnetlist1 #id_'+res.doc_id).remove();
                         }
 
@@ -7658,7 +7658,8 @@ success: function(response) {
             var visa_doc_cat = dragZone.data('doccategory');
             var formId = dragZone.data('formid');
             var form = $('#' + formId);
-            var laneDocType = (form.find('input[name="doctype"]').val() || 'visa').toLowerCase();
+            var laneDocType = (form.find('input[name="doctype"]').val() || 'matter').toLowerCase();
+            if (laneDocType === 'visa') { laneDocType = 'matter'; }
             var uploadUrl = laneDocType === 'nomination'
                 ? site_url + '/documents/upload-nomination-document'
                 : site_url + '/documents/upload-visa-document';
@@ -7920,7 +7921,8 @@ success: function(response) {
             // Create FormData before clearing the input
 
             var $form = $('#mig_upload_form_'+fileidL1);
-            var laneDocType = ($form.find('input[name="doctype"]').val() || 'visa').toLowerCase();
+            var laneDocType = ($form.find('input[name="doctype"]').val() || 'matter').toLowerCase();
+            if (laneDocType === 'visa') { laneDocType = 'matter'; }
             var uploadUrl = laneDocType === 'nomination'
                 ? site_url+'/documents/upload-nomination-document'
                 : site_url+'/documents/upload-visa-document';

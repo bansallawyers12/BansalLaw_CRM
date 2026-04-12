@@ -200,7 +200,7 @@ For every flow below, create/verify the sender in SendGrid first, then apply the
 | Signature send/reminder | ZeptoMail API (`ZeptoMailService`) | `app/Services/SignatureService.php`, `app/Http/Controllers/CRM/SignatureDashboardController.php`, `app/Http/Controllers/CRM/DocumentController.php` | Verified sender used by signature flows (often `MAIL_FROM_ADDRESS`) |
 | Client portal activation/deactivation | Bare `Mail::send()` | `app/Http/Controllers/CRM/ClientPortalController.php` | `MAIL_FROM_ADDRESS` value |
 | Appointment confirmation/cancellation | Bare `Mail::to()` | `app/Services/BansalAppointmentSync/NotificationService.php` | `MAIL_FROM_ADDRESS` value (or dedicated appointments sender) |
-| Visa expiry + cron email jobs | Bare `Mail` sends | `app/Console/Commands/VisaExpireReminderEmail.php`, `app/Console/Commands/CronJob.php` | `MAIL_FROM_ADDRESS` value (or dedicated reminders sender) |
+| Scheduled cron jobs | Bare `Mail` sends | `app/Console/Commands/CronJob.php` | `MAIL_FROM_ADDRESS` value (or dedicated reminders sender) |
 | Hubdoc invoice forwarding | Bare `Mail::to()` (transport default dependent) | `app/Http/Controllers/CRM/ClientAccountsController.php`, `app/Jobs/SendHubdocInvoiceJob.php` | `MAIL_FROM_ADDRESS` value (Hubdoc recipient stays `HUBDOC_EMAIL`) |
 
 ### Required SendGrid sender identities (minimum set)
@@ -423,11 +423,7 @@ Mail::mailer('sendgrid')->send('emails.client_portal_active_email', [...], funct
 
 ### 4.11 Scheduled commands
 
-**`app/Console/Commands/VisaExpireReminderEmail.php`**
-
-- Artisan signature: `VisaExpireReminderEmail:daily`
-- Queries clients whose visa is expiring (linked to client matters)
-- Update: `Mail::mailer('sendgrid')->to()->send(new CommonMail(...))`
+**Note:** The legacy `VisaExpireReminderEmail` command was **removed** as part of the law-practice CRM cleanup.
 
 **`app/Console/Commands/CronJob.php`**
 
@@ -466,13 +462,12 @@ Run these after configuring SendGrid:
 4. **Office receipt email** — send office receipt (queued)
 5. **EOI confirmation email** — trigger EOI confirmation via matter
 6. **Appointment confirmation email** — create or update a booking appointment
-7. **Visa expiry reminder** — run `php artisan VisaExpireReminderEmail:daily` manually
-8. **Client portal activation** — toggle portal access for a client
-9. **Hubdoc invoice send** — send an invoice to Hubdoc and confirm the PDF arrives at `HUBDOC_EMAIL`
-10. **Document signature send** — send a document for e-signature from the signature dashboard
-11. **Signature reminder** — send a reminder to a pending signer
-12. Confirm email activity is logged in `email_logs` table
-13. Confirm errors appear in `storage/logs/laravel.log`
+7. **Client portal activation** — toggle portal access for a client
+8. **Hubdoc invoice send** — send an invoice to Hubdoc and confirm the PDF arrives at `HUBDOC_EMAIL`
+9. **Document signature send** — send a document for e-signature from the signature dashboard
+10. **Signature reminder** — send a reminder to a pending signer
+11. Confirm email activity is logged in `email_logs` table
+12. Confirm errors appear in `storage/logs/laravel.log`
 
 Queue worker must be running for queued mailables:
 
@@ -500,7 +495,6 @@ php artisan queue:work
 | `app/Http/Controllers/CRM/SignatureDashboardController.php` | Replace ZeptoMail/`applyConfig()` usage with `Mail::mailer('sendgrid')` |
 | `app/Services/SignatureService.php` | Replace `ZeptoMailService` calls with `Mail::mailer('sendgrid')`; remove constructor injection |
 | `app/Services/BansalAppointmentSync/NotificationService.php` | Add `Mail::mailer('sendgrid')` to appointment sends |
-| `app/Console/Commands/VisaExpireReminderEmail.php` | Add `Mail::mailer('sendgrid')` |
 | `app/Console/Commands/CronJob.php` | Add `Mail::mailer('sendgrid')` |
 | `app/Http/Controllers/CRM/ClientAccountsController.php` (`sendToHubdoc`) | Add `Mail::mailer('sendgrid')` — keeps Hubdoc unaffected |
 | `app/Jobs/SendHubdocInvoiceJob.php` | Add `Mail::mailer('sendgrid')` — keeps Hubdoc unaffected |

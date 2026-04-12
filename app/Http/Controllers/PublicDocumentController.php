@@ -591,8 +591,8 @@ class PublicDocumentController extends Controller
                     ]);
                 }
 
-                // For visa documents: create {checklist}_signed row in same category (if not already exists)
-                if ($document->doc_type === 'visa' && $document->client_id && $document->folder_name && !str_ends_with($document->checklist ?? '', '_signed')) {
+                // For matter-lane documents: create {checklist}_signed row in same category (if not already exists)
+                if (in_array($document->doc_type, ['matter', 'visa'], true) && $document->client_id && $document->folder_name && !str_ends_with($document->checklist ?? '', '_signed')) {
                     $signedChecklist = ($document->checklist ?? 'Document') . '_signed';
                     $exists = Document::where('client_id', $document->client_id)->where('folder_name', $document->folder_name)
                         ->where('client_matter_id', $document->client_matter_id)->where('checklist', $signedChecklist)->exists();
@@ -621,7 +621,7 @@ class PublicDocumentController extends Controller
                         $signedDoc->client_id = $document->client_id;
                         $signedDoc->client_matter_id = $document->client_matter_id;
                         $signedDoc->folder_name = $document->folder_name;
-                        $signedDoc->doc_type = 'visa';
+                        $signedDoc->doc_type = 'matter';
                         $signedDoc->type = 'client';
                         $signedDoc->user_id = $document->user_id;
                         $signedDoc->status = 'signed';

@@ -1,10 +1,10 @@
 # Bansal Law CRM
 
-A comprehensive Laravel-based Customer Relationship Management (CRM) system. **The product is being positioned for use by an Australian law firm.** The codebase today retains strong **immigration and migration-agency** workflows (matters framed around visas, employer sponsorship, and migration-style reporting), but the underlying modules—clients, matters, documents, billing, portal, access control—are suitable as a foundation for broader legal practice management once terminology, compliance, and financial rules are aligned with Australian practice.
+A comprehensive Laravel-based Customer Relationship Management (CRM) system for **Australian legal practice**. Core modules cover clients, matters, documents, billing, portal, and access control. Legacy **immigration-agency-only** artefacts (CRM “sheets”, visa-pricing config, visa-sheet checklist automation, English test band calculator, ART listing UI) have been **removed or neutralised** in favour of configurable matter types and neutral legal terminology; some labels (e.g. database table `visa_document_types`) remain as technical debt until a future rename.
 
 ## Purpose
 
-- Streamline matter-based client work from intake to closure (today: immigration-focused stages and labels)
+- Streamline matter-based client work from intake to closure
 - Centralize client information, documents, and communication in one platform
 - Automate appointment scheduling and reminders
 - Track matters, progress, and important deadlines

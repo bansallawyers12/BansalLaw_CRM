@@ -90,7 +90,7 @@ class Form956Controller extends Controller
                 $doc->client_matter_id = $form->client_matter_id;
                 $doc->form956_id = $form->id;
                 $doc->type = 'client';
-                $doc->doc_type = 'visa';
+                $doc->doc_type = 'matter';
                 $doc->folder_name = $folderName;
                 $doc->checklist = '956 Form_ ' . $agentNameDisplay;
                 $doc->save();

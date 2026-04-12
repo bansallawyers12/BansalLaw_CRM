@@ -476,7 +476,7 @@
                                 <select id="moveNominationTargetType" class="form-control" style="margin-bottom: 15px;">
                                     <option value="">-- Select Destination --</option>
                                     <option value="personal">Personal Documents</option>
-                                    <option value="visa">Matter Documents</option>
+                                    <option value="matter">Matter Documents</option>
                                     <option value="nomination">Nomination Documents</option>
                                 </select>
                             </div>
@@ -699,9 +699,9 @@
                         }
                         $('#moveNominationPersonalCategoryContainer').show();
                         
-                    } else if (targetType === 'visa') {
+                    } else if (targetType === 'matter') {
                         const categories = [];
-                        $('#visadocuments-tab .subtab6-button').each(function() {
+                        $('#matterdocuments-tab .subtab6-button').each(function() {
                             const catId = $(this).data('subtab6');
                             const catTitle = $(this).text().trim();
                             if (catId && catTitle) {
@@ -810,7 +810,7 @@
                             $error.text('Please select a personal category').show();
                             return;
                         }
-                    } else if (targetType === 'visa') {
+                    } else if (targetType === 'matter') {
                         targetId = $('#moveNominationVisaCategoryId').val();
                         if (!targetId) {
                             $error.text('Please select a visa category').show();

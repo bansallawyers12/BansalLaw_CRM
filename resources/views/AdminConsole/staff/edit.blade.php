@@ -235,8 +235,6 @@
                                     }?>
                                 </div>
 
-                                @include('AdminConsole.staff.partials.sheet-access', ['sheetDefinitions' => $sheetDefinitions, 'selectedSheetKeys' => $selectedSheetKeys])
-
 							    <div class="form-group">
 							    	<label><input @if($fetchedData->show_dashboard_per == 1) checked @endif value="1" type="checkbox" name="show_dashboard_per" class="show_dashboard_per"> Can view on dasboard</label>
 								</div>

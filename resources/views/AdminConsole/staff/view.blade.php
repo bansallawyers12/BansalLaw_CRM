@@ -125,25 +125,6 @@
 								</div>
 							</div>
 							<div class="form-group">
-								<label for="sheet_access"><strong>CRM sheets</strong></label>
-								<p class="form-control-plaintext">
-									@php
-										$rawSheetsView = $fetchedData->sheet_access ?? null;
-										$sheetDefsView = \App\Support\CrmSheets::definitions();
-										$sheetListView = is_string($rawSheetsView) ? json_decode($rawSheetsView, true) : null;
-									@endphp
-									@if($rawSheetsView === null || $rawSheetsView === '')
-										<span class="badge badge-secondary">All sheets</span>
-									@elseif(! is_array($sheetListView) || count($sheetListView) === 0)
-										<span class="text-muted">None</span>
-									@else
-										@foreach($sheetListView as $sk)
-											<span class="badge badge-primary mr-1 mb-1">{{ $sheetDefsView[$sk] ?? $sk }}</span>
-										@endforeach
-									@endif
-								</p>
-							</div>
-							<div class="form-group">
 								<label for="show_dashboard_per"><strong>Dashboard View Permission</strong></label>
 								<p class="form-control-plaintext">
 									@if($fetchedData->show_dashboard_per == 1)

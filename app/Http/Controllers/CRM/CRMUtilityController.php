@@ -1280,22 +1280,6 @@ public function getChapters(Request $request)
             }
         }
 
-        // Visa sheet integration: when checklist sent, update the correct reference table per subclass (TR, Visitor, Student, PR, Employer Sponsored)
-        $checklistWasSent = (!empty($requestData['checklistfile']) || !empty($requestData['checklistfile_document']));
-        $clientMatterId = $requestData['compose_client_matter_id'] ?? null;
-        $isLead = (($requestData['type'] ?? '') === 'lead');
-        $leadId = $requestData['lead_id'] ?? ($requestData['client_id'] ?? null);
-        $composeMatterId = $requestData['compose_matter_id'] ?? null;
-
-        if ($checklistWasSent && $clientMatterId) {
-            $clientMatter = ClientMatter::with('matter')->find($clientMatterId);
-            if ($clientMatter) {
-                $clientMatter->recordChecklistSent(Auth::user()->id);
-            }
-        } elseif ($checklistWasSent && $isLead && $leadId && $composeMatterId) {
-            \App\Services\VisaSheetService::recordLeadChecklistSent((int) $leadId, (int) $composeMatterId, Auth::user()->id);
-        }
-
 		$subject = $requestData['subject'];
 		$message = $requestData['message'];
 

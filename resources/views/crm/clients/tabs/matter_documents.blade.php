@@ -1,5 +1,5 @@
-           <!-- Matter Documents tab (matter-specific; internal id visadocuments-tab) -->
-           <div class="tab-pane" id="visadocuments-tab">
+           <!-- Matter Documents tab (matter-specific; internal id matterdocuments-tab) -->
+           <div class="tab-pane" id="matterdocuments-tab">
                 <div class="card full-width documentalls-container">
                     <?php
                     $client_selected_matter_id1 = null;
@@ -180,7 +180,7 @@
                                                 if ($documentsTableReady) {
                                                     $documents = \App\Models\Document::with('signers')->where('client_id', $fetchedData->id)
                                                         ->whereNull('not_used_doc')
-                                                        ->where('doc_type', 'visa')
+                                                        ->whereIn('doc_type', ['matter', 'visa'])
                                                         ->where('folder_name', $folderName)
                                                         ->where('type', 'client')
                                                         ->orderBy('created_at', 'DESC')
@@ -247,7 +247,7 @@
                                                                             <input type="hidden" name="client_matter_id" value="<?= $fetch->client_matter_id ?? '' ?>">
                                                                             <input type="hidden" name="fileid" value="<?= $fetch->id ?>">
                                                                             <input type="hidden" name="type" value="client">
-                                                                            <input type="hidden" name="doctype" value="visa">
+                                                                            <input type="hidden" name="doctype" value="matter">
                                                                             <input type="hidden" name="doccategory" value="<?= $catVal->title ?>">
                                                                             <div class="document-drag-drop-zone visa-doc-drag-zone" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" data-formid="mig_upload_form_<?= $fetch->id ?>">
                                                                                 <div class="drag-zone-inner">
@@ -267,7 +267,7 @@
                                                                         <input type="hidden" name="client_matter_id" value="<?= $fetch->client_matter_id ?? '' ?>">
                                                                         <input type="hidden" name="fileid" value="<?= $fetch->id ?>">
                                                                         <input type="hidden" name="type" value="client">
-                                                                        <input type="hidden" name="doctype" value="visa">
+                                                                        <input type="hidden" name="doctype" value="matter">
                                                                         <input type="hidden" name="doccategory" value="<?= $catVal->title ?>">
                                                                         <div class="document-drag-drop-zone visa-doc-drag-zone" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" data-formid="mig_upload_form_<?= $fetch->id ?>">
                                                                             <div class="drag-zone-inner">
@@ -285,13 +285,13 @@
                                                                 <a class="renamechecklist" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
                                                                 <a class="renamedoc" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
                                                                 <a class="download-file" data-filelink="<?= e($downloadUrl ?? $fileUrl) ?>" data-filename="<?= e($fetch->myfile_key ?: basename($fetch->myfile ?? '')) ?>" data-id="<?= $fetch->id ?>" href="#" style="display: none;"></a>
-                                                                <a class="notuseddoc" data-id="<?= $fetch->id ?>" data-doctype="visa" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
+                                                                <a class="notuseddoc" data-id="<?= $fetch->id ?>" data-doctype="matter" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                                             <?php endif; ?>
                                                         </td>
                                                     </tr>
                                                     <?php
                                                     $docStatus = $fetch->status ?? '';
-                                                    $showSigActionBar = in_array($docStatus, ['placed', 'sent']) && $fetch->doc_type === 'visa' && $fetch->file_name && ($fetch->filetype ?? '') === 'pdf';
+                                                    $showSigActionBar = in_array($docStatus, ['placed', 'sent']) && in_array($fetch->doc_type, ['matter', 'visa'], true) && $fetch->file_name && ($fetch->filetype ?? '') === 'pdf';
                                                     if ($showSigActionBar):
                                                         $signingUrl = null;
                                                         if ($fetch->signature_doc_link) {
@@ -357,7 +357,7 @@
                                                             <a class="renamechecklist" data-id="<?= $signedDoc->id ?>" href="javascript:;" style="display: none;"></a>
                                                             <a class="renamedoc" data-id="<?= $signedDoc->id ?>" href="javascript:;" style="display: none;"></a>
                                                             <a class="download-file" data-filelink="<?= e($signedDownloadUrl) ?>" data-filename="<?= e($signedDoc->getSignedDownloadFilename()) ?>" data-id="<?= $signedDoc->id ?>" href="#" style="display: none;"></a>
-                                                            <a class="notuseddoc" data-id="<?= $signedDoc->id ?>" data-doctype="visa" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
+                                                            <a class="notuseddoc" data-id="<?= $signedDoc->id ?>" data-doctype="matter" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                                         </td>
                                                     </tr>
                                                     <?php endforeach; ?>
@@ -396,7 +396,7 @@
                                                             <a class="renamechecklist" data-id="<?= $signedDoc->id ?>" href="javascript:;" style="display: none;"></a>
                                                             <a class="renamedoc" data-id="<?= $signedDoc->id ?>" href="javascript:;" style="display: none;"></a>
                                                             <a class="download-file" data-filelink="<?= e($signedDownloadUrl) ?>" data-filename="<?= e($signedDoc->getSignedDownloadFilename()) ?>" data-id="<?= $signedDoc->id ?>" href="#" style="display: none;"></a>
-                                                            <a class="notuseddoc" data-id="<?= $signedDoc->id ?>" data-doctype="visa" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
+                                                            <a class="notuseddoc" data-id="<?= $signedDoc->id ?>" data-doctype="matter" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                                         </td>
                                                     </tr>
                                                 <?php endforeach; endforeach; ?>
@@ -411,7 +411,7 @@
                                             if ($documentsTableReady) {
                                                 $documents = \App\Models\Document::where('client_id', $fetchedData->id)
                                                     ->whereNull('not_used_doc')
-                                                    ->where('doc_type', 'visa')
+                                                    ->whereIn('doc_type', ['matter', 'visa'])
                                                     ->where('folder_name', $id)
                                                     ->where('type', 'client')
                                                     ->orderBy('updated_at', 'DESC')
@@ -433,7 +433,7 @@
                                                                     <div class="dropdown-menu">
                                                                         <a target="_blank" class="dropdown-item" href="<?= $fetch->myfile ?>">Preview</a>
                                                                         <a href="#" class="dropdown-item download-file" data-filelink="<?= $fetch->myfile ?>" data-filename="<?= $fetch->myfile_key ?>">Download</a>
-                                                                        <a data-id="<?= $fetch->id ?>" class="dropdown-item notuseddoc" data-doctype="visa" data-href="notuseddoc" href="javascript:;">Not Used</a>
+                                                                        <a data-id="<?= $fetch->id ?>" class="dropdown-item notuseddoc" data-doctype="matter" data-href="notuseddoc" href="javascript:;">Not Used</a>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -499,7 +499,7 @@
                                 <select id="moveVisaTargetType" class="form-control" style="margin-bottom: 15px;">
                                     <option value="">-- Select Destination --</option>
                                     <option value="personal">Personal Documents</option>
-                                    <option value="visa">Matter Documents</option>
+                                    <option value="matter">Matter Documents</option>
                                 </select>
                             </div>
                             
@@ -624,7 +624,7 @@
                             $('.renamedoc[data-id="' + currentVisaContextFile + '"]').click();
                             break;
                         case 'move':
-                            openMoveVisaDocumentModal(currentVisaContextFile, 'visa');
+                            openMoveVisaDocumentModal(currentVisaContextFile, 'matter');
                             break;
                         case 'preview':
                             // Prefer context menu fileUrl (preview route for signed docs; direct URL for unsigned). Fallback to download link for compatibility.
@@ -711,7 +711,7 @@
                         }
                         $('#moveVisaPersonalCategoryContainer').show();
                         
-                    } else if (targetType === 'visa') {
+                    } else if (targetType === 'matter') {
                         // Load visa document categories from DOM (like personal - same UX)
                         const categories = [];
                         $('.subtab6-button').each(function() {
@@ -786,7 +786,7 @@
                             $error.text('Please select a personal category').show();
                             return;
                         }
-                    } else if (targetType === 'visa') {
+                    } else if (targetType === 'matter') {
                         targetId = $('#moveVisaVisaCategoryId').val();
                         if (!targetId) {
                             $error.text('Please select a matter document category').show();
@@ -849,7 +849,7 @@
                 // Form 956: Auto-download PDF when visa documents tab is shown (downloads once per URL per page load)
                 // Exposed as a global so sidebar-tabs.js can call it directly (stopImmediatePropagation blocks delegated click events)
                 window.autoDownloadForm956Pdfs = function() {
-                    var $containers = $('#visadocuments-tab .form956-download-upload[data-download-url]').filter(':visible');
+                    var $containers = $('#matterdocuments-tab .form956-download-upload[data-download-url]').filter(':visible');
                     if ($containers.length === 0) return;
                     var seenUrls = {};
                     var downloadIdx = 0;
@@ -1063,7 +1063,7 @@
                 });
                 
                 // Re-initialize when Matter Documents tab is shown
-                $(document).on('click', '.client-nav-button[data-tab="visadocuments"]', function() {
+                $(document).on('click', '.client-nav-button[data-tab="matterdocuments"]', function() {
                     console.log('📂 Matter Documents tab clicked, reinitializing...');
                     setTimeout(function() {
                         initVisaDocDragDrop();
@@ -1071,7 +1071,7 @@
                 });
                 
                 // Also check if tab is already active (e.g., direct URL navigation)
-                if ($('#visadocuments-tab').hasClass('active')) {
+                if ($('#matterdocuments-tab').hasClass('active')) {
                     console.log('📂 Matter Documents tab already active on load');
                     setTimeout(function() {
                         initVisaDocDragDrop();
@@ -1653,7 +1653,7 @@
                     $('#confirm-bulk-upload').prop('disabled', true);
                     
                     $.ajax({
-                        url: '{{ route("clients.documents.bulkUploadVisaDocuments") }}',
+                        url: '{{ route("clients.documents.bulkUploadmatterdocuments") }}',
                         method: 'POST',
                         data: formData,
                         processData: false,

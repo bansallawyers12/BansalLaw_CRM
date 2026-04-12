@@ -1142,9 +1142,9 @@ class DocumentController extends Controller
                                    $document->doc_type === 'agreement' && 
                                    !empty($document->client_id);
             
-            // Visa document workflow: create signer and link, but do NOT send email (user clicks Send from action bar)
-            $isVisaDocument = !empty($document->client_matter_id) && 
-                              $document->doc_type === 'visa' && 
+            // Matter document workflow: create signer and link, but do NOT send email (user clicks Send from action bar)
+            $isMatterLaneDocument = !empty($document->client_matter_id) &&
+                              in_array($document->doc_type, ['matter', 'visa'], true) &&
                               !empty($document->client_id);
             
             // Force refresh by reloading document from database
@@ -1271,8 +1271,8 @@ class DocumentController extends Controller
                 }
             }
             
-            if ($isVisaDocument) {
-                // Visa document workflow: Create signer + link, status = placed (user sends from action bar)
+            if ($isMatterLaneDocument) {
+                // Matter document workflow: Create signer + link, status = placed (user sends from action bar)
                 try {
                     $client = $document->client;
                     if (!$client || empty($client->email)) {
@@ -1292,7 +1292,7 @@ class DocumentController extends Controller
                         'signature_doc_link' => json_encode($signatureLinks),
                     ]);
                     $encodedClientId = base64_encode(convert_uuencode($client->id));
-                    $redirectUrl = url("/clients/detail/{$encodedClientId}/visadocuments");
+                    $redirectUrl = url("/clients/detail/{$encodedClientId}/matterdocuments");
                     ActivitiesLog::create([
                         'client_id' => $client->id,
                         'created_by' => auth('admin')->id(),
@@ -1623,11 +1623,7 @@ class DocumentController extends Controller
                                         'data' => $obj5->toArray()
                                     ]);
                                 } elseif (!empty($request->checklistfile)) {
-                                    // Visa sheet integration: update reference table when checklist sent (TR, Visitor, Student, PR, Employer Sponsored)
-                                    $clientMatter = \App\Models\ClientMatter::with('matter')->find($document->client_matter_id);
-                                    if ($clientMatter) {
-                                        $clientMatter->recordChecklistSent(Auth::guard('admin')->id());
-                                    }
+                                    // Checklist sent — legacy visa-sheet reference updates removed (law-practice CRM).
                                 }
                             } catch (\Exception $e) {
                                 Log::error('Exception while saving EmailLog', [

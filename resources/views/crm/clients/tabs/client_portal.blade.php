@@ -13,7 +13,7 @@
                 $matterNumber = '';
                 
                 // Tab names that should NOT be treated as matter reference - use latest matter instead
-                $validTabNames = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'visadocuments', 'emails', 'formgenerations', 'formgenerationsl', 'client_portal', 'workflow', 'checklists'];
+                $validTabNames = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'emails', 'formgenerations', 'formgenerationsl', 'client_portal', 'workflow', 'checklists'];
                 $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array(strtolower($id1), array_map('strtolower', $validTabNames));
                 
                 if ($isMatterIdInUrl) {
@@ -3620,7 +3620,7 @@
                                           
 <?php
                 // Tab names that should NOT be treated as matter reference
-                $validTabNames = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'visadocuments', 'emails', 'formgenerations', 'formgenerationsl', 'client_portal', 'workflow', 'checklists'];
+                $validTabNames = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'emails', 'formgenerations', 'formgenerationsl', 'client_portal', 'workflow', 'checklists'];
                 $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array(strtolower($id1), array_map('strtolower', $validTabNames));
                 
                 if ($isMatterIdInUrl) {
@@ -6080,7 +6080,7 @@ $(document).on('click', '.cp-reject-doc-btn', function () {
                     <select class="form-control" id="moveDestination">
                         <option value="">-- Select Destination --</option>
                         <option value="personal">Personal Documents</option>
-                        <option value="visa">Matter Documents</option>
+                        <option value="matter">Matter Documents</option>
                     </select>
                 </div>
                 <div class="form-group" id="moveCategoryGroup" style="display:none;">

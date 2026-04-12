@@ -5157,17 +5157,6 @@ class ClientPersonalDetailsController extends Controller
                             }
                         }
 
-                        // Calculate proficiency level using the service
-                        $proficiencyService = new \App\Services\EnglishProficiencyService();
-                        $scores = [
-                            'listening' => $listening,
-                            'reading' => $reading,
-                            'writing' => $writing,
-                            'speaking' => $speaking,
-                            'overall' => $overallScore
-                        ];
-                        $proficiencyResult = $proficiencyService->calculateProficiency($testType, $scores, $formattedTestDate);
-
                         if ($testScoreId) {
                             // Update existing record
                             $existingTestScore = \App\Models\ClientTestScore::find($testScoreId);
@@ -5180,8 +5169,8 @@ class ClientPersonalDetailsController extends Controller
                                     'writing' => $writing,
                                     'speaking' => $speaking,
                                     'overall_score' => $overallScore,
-                                    'proficiency_level' => $proficiencyResult['level'],
-                                    'proficiency_points' => $proficiencyResult['points'],
+                                    'proficiency_level' => null,
+                                    'proficiency_points' => null,
                                     'test_date' => $formattedTestDate,
                                     'test_reference_no' => $testReferenceNo,
                                     'relevant_test' => $relevantTest
@@ -5198,8 +5187,8 @@ class ClientPersonalDetailsController extends Controller
                                 'writing' => $writing,
                                 'speaking' => $speaking,
                                 'overall_score' => $overallScore,
-                                'proficiency_level' => $proficiencyResult['level'],
-                                'proficiency_points' => $proficiencyResult['points'],
+                                'proficiency_level' => null,
+                                'proficiency_points' => null,
                                 'test_date' => $formattedTestDate,
                                 'test_reference_no' => $testReferenceNo,
                                 'relevant_test' => $relevantTest

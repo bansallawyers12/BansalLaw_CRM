@@ -78,23 +78,6 @@
                     <div class="dropdown-divider"></div>
                 </div>
             </div>
-            @php
-                $u = Auth::user();
-                $visibleCrmSheets = ($u && $u instanceof \App\Models\Staff)
-                    ? $u->visibleCrmSheetMenuItems()
-                    : [];
-                $firstSheetKey = $visibleCrmSheets === [] ? null : array_key_first($visibleCrmSheets);
-            @endphp
-            @if($firstSheetKey !== null)
-            <div class="icon-dropdown js-dropdown">
-                <a href="{{ \App\Support\CrmSheets::urlForKey($firstSheetKey) }}" class="icon-btn" title="Sheets"><i class="fas fa-table"></i></a>
-                <div class="icon-dropdown-menu">
-                    @foreach($visibleCrmSheets as $vt => $vc)
-                    <a class="dropdown-item" href="{{ \App\Support\CrmSheets::urlForKey($vt) }}"><i class="fas fa-{{ $vt === 'art' ? 'gavel' : 'clipboard-list' }} mr-2"></i> {{ $vc }}</a>
-                    @endforeach
-                </div>
-            </div>
-            @endif
         </div>
     </div>
     <div class="topbar-center">

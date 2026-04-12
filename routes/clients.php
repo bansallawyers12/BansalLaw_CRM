@@ -43,11 +43,6 @@ Route::get('/clients/export/{id}', [ClientsController::class, 'export'])->name('
 Route::post('/clients/import', [ClientsController::class, 'import'])->name('clients.import');
 Route::post('/clients/save-section', [ClientPersonalDetailsController::class, 'saveSection'])->name('clients.saveSection');
 Route::post('/edit-test-scores', [ClientsController::class, 'editTestScores'])->name('clients.editTestScores');
-/*---------- Sheets ----------*/
-Route::get('/clients/sheets/art', [\App\Http\Controllers\CRM\ArtSheetController::class, 'index'])->name('clients.sheets.art');
-Route::get('/clients/sheets/art/insights', [\App\Http\Controllers\CRM\ArtSheetController::class, 'insights'])->name('clients.sheets.art.insights');
-Route::post('/clients/sheets/art/toggle-pin', [\App\Http\Controllers\CRM\ArtSheetController::class, 'togglePin'])->name('clients.sheets.art.toggle-pin');
-
 /*---------- Phone & Email Verification ----------*/
 Route::prefix('clients/phone')->name('clients.phone.')->group(function () {
     Route::post('/send-otp', [PhoneVerificationController::class, 'sendOTP'])->name('sendOTP');
@@ -160,9 +155,11 @@ Route::get('/pinactivitylog', [ClientsController::class, 'pinactivitylog']);
 /*---------- Client Documents Management ----------*/
 Route::post('/documents/add-edu-checklist', [ClientDocumentsController::class, 'addedudocchecklist'])->name('clients.documents.addedudocchecklist');
 Route::post('/documents/upload-edu-document', [ClientDocumentsController::class, 'uploadedudocument'])->name('clients.documents.uploadedudocument');
-Route::post('/documents/add-visa-checklist', [ClientDocumentsController::class, 'addvisadocchecklist'])->name('clients.documents.addvisadocchecklist');
+Route::post('/documents/add-matter-checklist', [ClientDocumentsController::class, 'addvisadocchecklist'])->name('clients.documents.addMatterDocChecklist');
+Route::post('/documents/add-visa-checklist', [ClientDocumentsController::class, 'addvisadocchecklist']);
 Route::post('/documents/add-nomination-checklist', [ClientDocumentsController::class, 'addNominationDocChecklist'])->name('clients.documents.addNominationDocChecklist');
-Route::post('/documents/upload-visa-document', [ClientDocumentsController::class, 'uploadvisadocument'])->name('clients.documents.uploadvisadocument');
+Route::post('/documents/upload-matter-document', [ClientDocumentsController::class, 'uploadvisadocument'])->name('clients.documents.uploadMatterDocument');
+Route::post('/documents/upload-visa-document', [ClientDocumentsController::class, 'uploadvisadocument']);
 Route::post('/documents/upload-nomination-document', [ClientDocumentsController::class, 'uploadNominationDocument'])->name('clients.documents.uploadNominationDocument');
 Route::post('/documents/rename', [ClientDocumentsController::class, 'renamedoc'])->name('clients.documents.renamedoc');
 Route::get('/documents/delete', [ClientDocumentsController::class, 'deletedocs'])->name('clients.documents.deletedocs');
@@ -186,7 +183,8 @@ Route::post('/documents/update-visa-category', [ClientDocumentsController::class
 Route::post('/documents/update-nomination-category', [ClientDocumentsController::class, 'updateNominationDocCategory'])->name('clients.documents.updateNominationDocCategory');
 Route::post('/documents/get-auto-checklist-matches', [ClientDocumentsController::class, 'getAutoChecklistMatches'])->name('clients.documents.getAutoChecklistMatches');
 Route::post('/documents/bulk-upload-personal', [ClientDocumentsController::class, 'bulkUploadPersonalDocuments'])->name('clients.documents.bulkUploadPersonalDocuments');
-Route::post('/documents/bulk-upload-visa', [ClientDocumentsController::class, 'bulkUploadVisaDocuments'])->name('clients.documents.bulkUploadVisaDocuments');
+Route::post('/documents/bulk-upload-matter', [ClientDocumentsController::class, 'bulkUploadmatterdocuments'])->name('clients.documents.bulkUploadMatterDocuments');
+Route::post('/documents/bulk-upload-visa', [ClientDocumentsController::class, 'bulkUploadmatterdocuments']);
 Route::post('/documents/bulk-upload-nomination', [ClientDocumentsController::class, 'bulkUploadNominationDocuments'])->name('clients.documents.bulkUploadNominationDocuments');
 
 /*---------- Client Invoices & Receipts ----------*/

@@ -6341,7 +6341,10 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 	 */
 	public function getDocumentCategoriesForMove(Request $request)
 	{
-		$type     = $request->get('type');         // 'personal' or 'visa'
+		$type     = $request->get('type');         // 'personal' or 'matter' (legacy: 'visa')
+		if ($type === 'visa') {
+			$type = 'matter';
+		}
 		$clientId = (int) $request->get('client_id');
 		$matterId = (int) $request->get('matter_id');
 
@@ -6360,7 +6363,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 				return response()->json(['success' => true, 'categories' => $categories]);
 			}
 
-			if ($type === 'visa') {
+			if ($type === 'matter') {
 				$categories = DB::table('visa_document_types')
 					->where('status', 1)
 					->where(function ($q) use ($clientId, $matterId) {

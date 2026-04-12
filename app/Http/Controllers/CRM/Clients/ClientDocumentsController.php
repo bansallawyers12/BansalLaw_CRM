@@ -99,7 +99,10 @@ class ClientDocumentsController extends Controller
             } else {
                 $client_unique_id = "";
             }
-            $doctype = isset($request->doctype)? $request->doctype : '';
+            $doctype = isset($request->doctype) ? (string) $request->doctype : 'matter';
+            if ($doctype === 'visa' || $doctype === '') {
+                $doctype = 'matter';
+            }
             
             // Validate folder_name
             if(empty($request->folder_name)) {
@@ -571,7 +574,10 @@ class ClientDocumentsController extends Controller
                 $client_unique_id = "";
             }
 
-            $doctype = isset($request->doctype)? $request->doctype : '';
+            $doctype = isset($request->doctype) ? (string) $request->doctype : 'matter';
+            if ($doctype === 'visa' || $doctype === '') {
+                $doctype = 'matter';
+            }
             if ($request->has('visa_checklist'))
         {
             $checklistArray = $request->input('visa_checklist');
@@ -630,7 +636,16 @@ class ClientDocumentsController extends Controller
                     {
                         $admin = $fetch->staff;
                         $VisaDocumentType = VisaDocumentType::where('id', $fetch->folder_name)->first();
-                        $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetch->client_id . '/visa/' . $fetch->myfile;
+                        if ($fetch->myfile_key) {
+                            $fileUrl = $fetch->myfile;
+                        } else {
+                            $cuid = (string) $fetch->client_id;
+                            $mf = (string) $fetch->myfile;
+                            $keyM = $cuid . '/matter/' . $mf;
+                            $keyV = $cuid . '/visa/' . $mf;
+                            $key = $this->s3Disk()->exists($keyM) ? $keyM : ($this->s3Disk()->exists($keyV) ? $keyV : $keyM);
+                            $fileUrl = $this->s3Disk()->url($key);
+                        }
                         
                         // Hide non-matching documents with CSS (original behavior)
                         if (
@@ -677,7 +692,7 @@ class ClientDocumentsController extends Controller
                                             <input type="hidden" name="client_matter_id" value="<?php echo $fetch->client_matter_id;?>">
                                             <input type="hidden" name="fileid" value="<?php echo $fetch->id;?>">
                                             <input type="hidden" name="type" value="client">
-                                            <input type="hidden" name="doctype" value="visa">
+                                            <input type="hidden" name="doctype" value="matter">
                                             <input type="hidden" name="doccategory" value="<?php echo $VisaDocumentType->title; ?>">
                                             
                                             <!-- Drag and Drop Zone -->
@@ -709,7 +724,7 @@ class ClientDocumentsController extends Controller
                                     <a class="renamechecklist" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
                                     <a class="renamedoc" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
                                     <a class="download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>" href="#" style="display: none;"></a>
-                                    <a class="notuseddoc" data-id="<?php echo $fetch->id; ?>" data-doctype="visa" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
+                                    <a class="notuseddoc" data-id="<?php echo $fetch->id; ?>" data-doctype="matter" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -738,7 +753,7 @@ class ClientDocumentsController extends Controller
                                             <a target="_blank" class="dropdown-item" href="<?php echo $fetch->myfile; ?>">Preview</a>
                                             <a href="#" class="dropdown-item download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>">Download</a>
 
-                                            <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item notuseddoc" data-doctype="visa" data-href="notuseddoc" href="javascript:;">Not Used</a>
+                                            <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item notuseddoc" data-doctype="matter" data-href="notuseddoc" href="javascript:;">Not Used</a>
                                            
 
                                         </div>
@@ -990,7 +1005,7 @@ class ClientDocumentsController extends Controller
     {
         $request->merge(['doctype' => $request->input('doctype', 'nomination')]);
 
-        return $this->bulkUploadVisaDocuments($request);
+        return $this->bulkUploadmatterdocuments($request);
     }
 
     /**
@@ -1009,7 +1024,10 @@ class ClientDocumentsController extends Controller
         $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
         $client_first_name = !empty($admin_info1) ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin_info1->first_name) : "client";
     
-        $doctype = isset($request->doctype)? $request->doctype : '';
+        $doctype = isset($request->doctype) ? (string) $request->doctype : 'matter';
+        if ($doctype === 'visa' || $doctype === '') {
+            $doctype = 'matter';
+        }
         
         try {
             if ($request->hasfile('document_upload')) {
@@ -1554,7 +1572,7 @@ class ClientDocumentsController extends Controller
 
                 if ($doc->doc_type == 'personal') {
                     $response['folder_name'] = 'preview-container-' . ($doc->folder_name ?? '');
-                } else if ($doc->doc_type == 'visa') {
+                } else if (in_array($doc->doc_type, ['matter', 'visa'], true)) {
                     $response['folder_name'] = 'preview-container-migdocumnetlist';
                 } else if ($doc->doc_type == 'nomination') {
                     $response['folder_name'] = 'preview-container-nomdocumnetlist';
@@ -1672,12 +1690,12 @@ class ClientDocumentsController extends Controller
             // Validate required fields
             $request->validate([
                 'document_id' => 'required|integer',
-                'target_type' => 'required|in:personal,visa,nomination',
-                'target_id' => 'required|integer', // Category ID for both personal and visa
+                'target_type' => 'required|in:personal,matter,visa,nomination',
+                'target_id' => 'required|integer', // Category ID for both personal and matter documents
             ]);
             
             $documentId = $request->document_id;
-            $targetType = $request->target_type;
+            $targetType = $request->target_type === 'visa' ? 'matter' : $request->target_type;
             $targetId = $request->target_id;
             
             // Get the document
@@ -1722,17 +1740,17 @@ class ClientDocumentsController extends Controller
                 
                 $targetName = $category->title;
                 
-            } elseif ($targetType === 'visa') {
+            } elseif ($targetType === 'matter') {
                 // Moving to matter documents - targetId is the category ID
                 // Get the category to find its matter
                 $category = \App\Models\VisaDocumentType::find($targetId);
                 if (!$category) {
-                    $response['message'] = 'Target visa category not found';
+                    $response['message'] = 'Target matter document category not found';
                     return response()->json($response);
                 }
                 
                 $document->type       = 'client';
-                $document->doc_type   = 'visa';
+                $document->doc_type   = 'matter';
                 $document->folder_name = $targetId; // Category ID
                 // Preserve document's matter when target category is global (client_matter_id null)
                 // so the document stays visible in the matter-filtered visa documents view
@@ -2255,7 +2273,13 @@ class ClientDocumentsController extends Controller
             $s3Key = ltrim(urldecode($parsed['path']), '/');
             
             // Check if file exists in S3
-            if (!$this->s3Disk()->exists($s3Key)) {
+            if (! $this->s3Disk()->exists($s3Key) && str_contains($s3Key, '/matter/')) {
+                $altKey = str_replace('/matter/', '/visa/', $s3Key);
+                if ($this->s3Disk()->exists($altKey)) {
+                    $s3Key = $altKey;
+                }
+            }
+            if (! $this->s3Disk()->exists($s3Key)) {
                 return abort(404, 'File not found in S3');
             }
             
@@ -3218,14 +3242,17 @@ class ClientDocumentsController extends Controller
     /**
      * Bulk upload visa documents
      */
-    public function bulkUploadVisaDocuments(Request $request) {
+    public function bulkUploadmatterdocuments(Request $request) {
         $response = ['status' => false, 'message' => 'Please try again'];
         
         try {
             $clientid = $request->clientid;
             $categoryid = $request->categoryid;
             $matterid = $request->matterid ?? null;
-            $doctype = $request->doctype ?? 'visa';
+            $doctype = $request->doctype ?? 'matter';
+            if ($doctype === 'visa') {
+                $doctype = 'matter';
+            }
             $type = $request->type ?? 'client';
 
             if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientid)) {
@@ -3420,7 +3447,7 @@ class ClientDocumentsController extends Controller
             if ($uploadedCount > 0) {
                 // Log activity
                 $matterRef = $this->getMatterReference($clientid, $matterid);
-                $docLabel = $doctype === 'nomination' ? 'nomination' : 'visa';
+                $docLabel = $doctype === 'nomination' ? 'nomination' : 'matter';
                 $subject = !empty($matterRef) 
                     ? "bulk uploaded {$uploadedCount} {$docLabel} documents - {$matterRef}"
                     : "bulk uploaded {$uploadedCount} {$docLabel} documents";

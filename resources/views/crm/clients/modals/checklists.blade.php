@@ -78,7 +78,7 @@
                     @csrf
                     <input type="hidden" name="clientid" value="{{$fetchedData->id}}">
                     <input type="hidden" name="type" value="client">
-                    <input type="hidden" name="doctype" value="visa">
+                    <input type="hidden" name="doctype" value="matter">
                     <input type="hidden" name="client_matter_id" id="hidden_client_matter_id" value="">
                     <input type="hidden" name="folder_name" id="visa_folder_name" value="">
 

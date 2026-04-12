@@ -161,8 +161,8 @@
                 ensureAllTabActive();
                 filterNotesByMatter(SidebarTabs.selectedMatter);
                 break;
-            case 'visadocuments':
-                filterVisaDocumentsByMatter(SidebarTabs.selectedMatter);
+            case 'matterdocuments':
+                filtermatterdocumentsByMatter(SidebarTabs.selectedMatter);
                 // Trigger auto-download of any pending Form 956 PDFs
                 setTimeout(function() {
                     if (typeof window.autoDownloadForm956Pdfs === 'function') {
@@ -233,9 +233,9 @@
     /**
      * Filter visa documents by matter
      */
-    function filterVisaDocumentsByMatter(matterId) {
+    function filtermatterdocumentsByMatter(matterId) {
         if (matterId !== "") {
-            $('#visadocuments-tab .migdocumnetlist1').find('.drow').each(function() {
+            $('#matterdocuments-tab .migdocumnetlist1').find('.drow').each(function() {
                 var docMatterId = $(this).data('matterid');
                 // Show if: matches the selected matter, OR has no matter ID at all
                 // (covers legacy docs uploaded before matter-scoping was introduced,
@@ -248,7 +248,7 @@
                 }
             });
         } else {
-            $('#visadocuments-tab .migdocumnetlist1').find('.drow').hide();
+            $('#matterdocuments-tab .migdocumnetlist1').find('.drow').hide();
         }
     }
 
@@ -384,7 +384,7 @@
         activateTab: activateTab,
         ensureAllTabActive: ensureAllTabActive,
         filterNotesByMatter: filterNotesByMatter,
-        filterVisaDocumentsByMatter: filterVisaDocumentsByMatter,
+        filtermatterdocumentsByMatter: filtermatterdocumentsByMatter,
         filterNominationDocumentsByMatter: filterNominationDocumentsByMatter,
         filterEmailsByMatter: filterEmailsByMatter
     };

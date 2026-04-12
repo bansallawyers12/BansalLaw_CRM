@@ -45,19 +45,6 @@ trait ClientAuthorization
     }
 
     /**
-     * Per-staff CRM sheet whitelist (null/empty column = all sheets, legacy).
-     */
-    protected function canAccessCrmSheet(string $sheetKey): bool
-    {
-        $user = Auth::guard('admin')->user();
-        if (!$user instanceof \App\Models\Staff) {
-            return false;
-        }
-
-        return $user->allowsCrmSheet($sheetKey);
-    }
-
-    /**
      * Get module access or return empty result
      *
      * @param string $moduleId

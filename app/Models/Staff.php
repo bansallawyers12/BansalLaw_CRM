@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Models\Document;
 use App\Services\CrmAccess\CrmAccessService;
-use App\Support\CrmSheets;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -42,7 +41,6 @@ class Staff extends Authenticatable
         'position',
         'team',
         'permission',
-        'sheet_access',
         'office_id',
         'show_dashboard_per',
         'time_zone',
@@ -211,7 +209,7 @@ class Staff extends Authenticatable
     }
 
     /**
-     * Whether the staff role grants a CRM module key (e.g. "20" = clients / sheets base access).
+     * Whether the staff role grants a CRM module key (e.g. "20" = clients).
      */
     public function hasCrmModule(string $moduleId = '20'): bool
     {
@@ -223,54 +221,6 @@ class Staff extends Authenticatable
         $moduleAccess = is_array($decoded) ? $decoded : (array) $decoded;
 
         return array_key_exists($moduleId, $moduleAccess);
-    }
-
-    /**
-     * Sheet menu entries this user may see (module 20 + per-staff sheet whitelist).
-     *
-     * @return array<string, string> sheet_key => label
-     */
-    public function visibleCrmSheetMenuItems(): array
-    {
-        if (! $this->hasCrmModule('20')) {
-            return [];
-        }
-        $out = [];
-        foreach (CrmSheets::definitions() as $key => $label) {
-            if ($this->allowsCrmSheet($key)) {
-                $out[$key] = $label;
-            }
-        }
-
-        return $out;
-    }
-
-    /**
-     * Whether this staff member may open a CRM sheet (whitelist in sheet_access JSON).
-     * Null or empty column means unrestricted (all sheets), for backward compatibility.
-     * Super admin (role id 1) is never restricted by sheet_access.
-     * Malformed JSON denies access (fail closed).
-     */
-    public function allowsCrmSheet(string $sheetKey): bool
-    {
-        if (in_array((int) ($this->role ?? 0), [1, 12], true)) {
-            return true;
-        }
-
-        if ($this->hasEffectiveSuperAdminPrivileges()) {
-            return true;
-        }
-
-        $raw = $this->attributes['sheet_access'] ?? null;
-        if ($raw === null || $raw === '') {
-            return true;
-        }
-        $list = json_decode($raw, true);
-        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($list)) {
-            return false;
-        }
-
-        return in_array($sheetKey, $list, true);
     }
 
     /**
