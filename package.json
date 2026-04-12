@@ -3,6 +3,10 @@
     "name": "bansal-law-crm",
     "private": true,
     "type": "module",
+    "engines": {
+        "node": ">=24.0.0",
+        "npm": ">=11.0.0"
+    },
     "scripts": {
         "build": "vite build",
         "dev": "vite",

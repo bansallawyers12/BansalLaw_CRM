@@ -12,7 +12,7 @@ phases:
   install:
     runtime-versions:
       php: 8.2
-      nodejs: 22
+      nodejs: 24
     commands:
       # CodeBuild phpenv PHP often has no loadable sodium module (ini trick fails). Composer still needs to resolve
       # lcobucci/jwt; we only ignore ext-sodium here — production EC2 has sodium; vendor is excluded from artifacts.
