@@ -1005,7 +1005,7 @@ class ClientDocumentsController extends Controller
     {
         $request->merge(['doctype' => $request->input('doctype', 'nomination')]);
 
-        return $this->bulkUploadmatterdocuments($request);
+        return $this->bulkUploadMatterDocuments($request);
     }
 
     /**
@@ -3240,9 +3240,9 @@ class ClientDocumentsController extends Controller
     }
     
     /**
-     * Bulk upload visa documents
+     * Bulk upload matter-lane documents (legacy route name: visa bulk upload).
      */
-    public function bulkUploadmatterdocuments(Request $request) {
+    public function bulkUploadMatterDocuments(Request $request) {
         $response = ['status' => false, 'message' => 'Please try again'];
         
         try {

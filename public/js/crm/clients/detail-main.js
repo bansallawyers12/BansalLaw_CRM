@@ -7662,7 +7662,7 @@ success: function(response) {
             if (laneDocType === 'visa') { laneDocType = 'matter'; }
             var uploadUrl = laneDocType === 'nomination'
                 ? site_url + '/documents/upload-nomination-document'
-                : site_url + '/documents/upload-visa-document';
+                : site_url + '/documents/upload-matter-document';
             var previewPane = laneDocType === 'nomination' ? 'preview-container-nomdocumnetlist' : 'preview-container-migdocumnetlist';
             var contextMenuFn = laneDocType === 'nomination' ? 'showNominationFileContextMenu' : 'showVisaFileContextMenu';
             
@@ -7925,7 +7925,7 @@ success: function(response) {
             if (laneDocType === 'visa') { laneDocType = 'matter'; }
             var uploadUrl = laneDocType === 'nomination'
                 ? site_url+'/documents/upload-nomination-document'
-                : site_url+'/documents/upload-visa-document';
+                : site_url+'/documents/upload-matter-document';
             var previewPane = laneDocType === 'nomination' ? 'preview-container-nomdocumnetlist' : 'preview-container-migdocumnetlist';
             var contextMenuFn = laneDocType === 'nomination' ? 'showNominationFileContextMenu' : 'showVisaFileContextMenu';
             var formData = new FormData($form[0]);

@@ -183,8 +183,8 @@ Route::post('/documents/update-visa-category', [ClientDocumentsController::class
 Route::post('/documents/update-nomination-category', [ClientDocumentsController::class, 'updateNominationDocCategory'])->name('clients.documents.updateNominationDocCategory');
 Route::post('/documents/get-auto-checklist-matches', [ClientDocumentsController::class, 'getAutoChecklistMatches'])->name('clients.documents.getAutoChecklistMatches');
 Route::post('/documents/bulk-upload-personal', [ClientDocumentsController::class, 'bulkUploadPersonalDocuments'])->name('clients.documents.bulkUploadPersonalDocuments');
-Route::post('/documents/bulk-upload-matter', [ClientDocumentsController::class, 'bulkUploadmatterdocuments'])->name('clients.documents.bulkUploadMatterDocuments');
-Route::post('/documents/bulk-upload-visa', [ClientDocumentsController::class, 'bulkUploadmatterdocuments']);
+Route::post('/documents/bulk-upload-matter', [ClientDocumentsController::class, 'bulkUploadMatterDocuments'])->name('clients.documents.bulkUploadMatterDocuments');
+Route::post('/documents/bulk-upload-visa', [ClientDocumentsController::class, 'bulkUploadMatterDocuments']);
 Route::post('/documents/bulk-upload-nomination', [ClientDocumentsController::class, 'bulkUploadNominationDocuments'])->name('clients.documents.bulkUploadNominationDocuments');
 
 /*---------- Client Invoices & Receipts ----------*/

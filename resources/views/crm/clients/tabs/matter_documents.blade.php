@@ -1653,7 +1653,7 @@
                     $('#confirm-bulk-upload').prop('disabled', true);
                     
                     $.ajax({
-                        url: '{{ route("clients.documents.bulkUploadmatterdocuments") }}',
+                        url: '{{ route("clients.documents.bulkUploadMatterDocuments") }}',
                         method: 'POST',
                         data: formData,
                         processData: false,
