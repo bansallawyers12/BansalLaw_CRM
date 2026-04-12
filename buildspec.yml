@@ -3,8 +3,23 @@ version: 0.2
 # CodeBuild packages the repo; the generated scripts/deploy.sh runs on the app server
 # (e.g. via CodeDeploy / SSH) and performs: composer, migrate --force, npm build, cache, restarts.
 # Do not run migrations here in CodeBuild unless this build has DB access and the same .env as production.
+#
+# npm run dev: local Vite dev server only (HMR). CI and deploy use npm run build — do not run dev in CodeBuild
+# or deploy (it never exits). composer update: pre_build + deploy.sh refresh PHP deps (pre_build excludes vendor from artifacts).
 
 phases:
+  # Omit this install block if your CodeBuild project uses a custom image that already provides PHP/Node/Composer.
+  install:
+    runtime-versions:
+      php: 8.2
+      nodejs: 22
+  pre_build:
+    commands:
+      - echo "composer update + npm (next pipeline run refreshes lockfile / assets before packaging)"
+      - composer update --no-interaction --no-dev
+      - npm ci
+      - npm run build
+      # npm run dev — local Vite only; never enable here (process does not exit)
   build:
     commands:
       - echo "======================================"
@@ -45,8 +60,8 @@ phases:
         echo "Enabling maintenance mode..."
         sudo -u $APP_USER php artisan down --retry=60 || true
 
-        echo "Installing backend dependencies..."
-        sudo -u $APP_USER composer install --no-dev --optimize-autoloader --no-interaction
+        echo "Updating backend dependencies..."
+        sudo -u $APP_USER composer update --no-dev --optimize-autoloader --no-interaction
 
         # ========================================
         # PYTHON VENV SETUP (SAFE + OPTIMIZED)
@@ -77,6 +92,7 @@ phases:
         # sudo -u $APP_USER php artisan import:reference-master-data
 
         echo "Building frontend assets..."
+        # npm run dev = local Vite only; production uses build
         sudo -u $APP_USER bash -lc "cd $PROJECT_DIR && npm ci && npm run build"
 
         echo "Ensuring required directories..."
@@ -129,5 +145,6 @@ artifacts:
     - '**/*'
   exclude-paths:
     - 'node_modules/**/*'
+    - 'vendor/**/*'
     - '.git/**/*'
     - 'tests/**/*'
