@@ -14,8 +14,16 @@ phases:
       php: 8.2
       nodejs: 22
     commands:
+      # CodeBuild phpenv PHP often ships without ext-sodium loaded; lcobucci/jwt (Passport) requires it.
+      - |
+        if ! php -m 2>/dev/null | grep -qi '^sodium$'; then
+          INI_DIR=$(php -r "echo PHP_CONFIG_FILE_PATH;")
+          if [ -z "$INI_DIR" ] || [ ! -d "$INI_DIR" ]; then INI_DIR=$(php -r "echo dirname(php_ini_loaded_file());"); fi
+          mkdir -p "${INI_DIR}/conf.d"
+          echo "extension=sodium" > "${INI_DIR}/conf.d/99-sodium.ini"
+        fi
+        php -m | grep -qi '^sodium$' || { echo "ext-sodium still missing; install/enable sodium for this CodeBuild image."; exit 1; }
       # Laravel post-install runs `php artisan package:discover`; CodeBuild has no .env unless we create one.
-      # If composer still fails with "ext-*" messages, install matching packages for your image (AL2: yum install php-gd php-intl …).
       - |
         if [ ! -f .env ]; then
           if [ -f .env.example ]; then cp .env.example .env; else printf 'APP_KEY=base64:%s\nAPP_ENV=production\n' "$(openssl rand -base64 32)" > .env; fi
