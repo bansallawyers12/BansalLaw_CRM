@@ -5,7 +5,7 @@ version: 0.2
 # Do not run migrations here in CodeBuild unless this build has DB access and the same .env as production.
 #
 # npm run dev: local Vite dev server only (HMR). CI and deploy use npm run build — do not run dev in CodeBuild
-# or deploy (it never exits). composer update: pre_build + deploy.sh refresh PHP deps (pre_build excludes vendor from artifacts).
+# or deploy (it never exits). Use `composer install` in CI (locked); run `composer update` locally and commit composer.lock.
 
 phases:
   # Omit this install block if your CodeBuild project uses a custom image that already provides PHP/Node/Composer.
@@ -13,10 +13,17 @@ phases:
     runtime-versions:
       php: 8.2
       nodejs: 22
+    commands:
+      # Laravel post-install runs `php artisan package:discover`; CodeBuild has no .env unless we create one.
+      # If composer still fails with "ext-*" messages, install matching packages for your image (AL2: yum install php-gd php-intl …).
+      - |
+        if [ ! -f .env ]; then
+          if [ -f .env.example ]; then cp .env.example .env; else printf 'APP_KEY=base64:%s\nAPP_ENV=production\n' "$(openssl rand -base64 32)" > .env; fi
+        fi
   pre_build:
     commands:
-      - echo "composer update + npm (next pipeline run refreshes lockfile / assets before packaging)"
-      - composer update --no-interaction --no-dev
+      - echo "composer install (locked) + npm build"
+      - composer install --no-interaction --no-dev --optimize-autoloader
       - npm ci
       - npm run build
       # npm run dev — local Vite only; never enable here (process does not exit)
