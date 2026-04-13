@@ -134,7 +134,7 @@ class PythonConverterService
     }
 
     /**
-     * Get API status information
+     * Get API status information (same "healthy" rule as isApiAvailable())
      */
     public function getApiStatus(): array
     {
@@ -142,20 +142,24 @@ class PythonConverterService
             $response = $this->getHttpClient()->get($this->apiUrl . '/health');
 
             if ($response->successful()) {
+                $json = $response->json();
+                $healthy = ($json['status'] ?? '') === 'healthy';
+
                 return [
-                    'available' => true,
-                    'status' => $response->json()
-                ];
-            } else {
-                return [
-                    'available' => false,
-                    'error' => 'API responded with error: ' . $response->status()
+                    'available' => $healthy,
+                    'status' => $json,
+                    'error' => $healthy ? null : 'Health endpoint did not report status: healthy',
                 ];
             }
+
+            return [
+                'available' => false,
+                'error' => 'API responded with error: ' . $response->status(),
+            ];
         } catch (\Exception $e) {
             return [
                 'available' => false,
-                'error' => 'API connection failed: ' . $e->getMessage()
+                'error' => 'API connection failed: ' . $e->getMessage(),
             ];
         }
     }

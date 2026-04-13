@@ -70,7 +70,8 @@ return [
     ],
 
     'python_converter' => [
-        'url' => env('PYTHON_CONVERTER_URL', 'http://localhost:5001'),
+        // Falls back to PYTHON_SERVICE_URL so one .env line suffices when both use the same process
+        'url' => env('PYTHON_CONVERTER_URL') ?: env('PYTHON_SERVICE_URL', 'http://localhost:5001'),
         'timeout' => env('PYTHON_CONVERTER_TIMEOUT', 120),
     ],
 

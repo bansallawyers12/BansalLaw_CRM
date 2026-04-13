@@ -126,11 +126,11 @@
 <!-- Context Menu Overlay -->
 <div id="contextMenuOverlay" class="context-menu-overlay" style="display: none;"></div>
 
-<link rel="stylesheet" href="{{ asset('css/emails.css') }}">
+<link rel="stylesheet" href="{{ asset('css/emails.css') }}?v={{ file_exists(public_path('css/emails.css')) ? filemtime(public_path('css/emails.css')) : 1 }}">
 <style>
 .lead-email-notice { background: #f0f9ff; padding: 10px 15px; border-radius: 4px; font-size: 13px; color: #0369a1; }
 </style>
-<script src="{{ asset('js/emails.js') }}"></script>
+<script src="{{ asset('js/emails.js') }}?v={{ file_exists(public_path('js/emails.js')) ? filemtime(public_path('js/emails.js')) : 1 }}"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

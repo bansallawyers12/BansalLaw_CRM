@@ -89,6 +89,38 @@
     }
 
     /**
+     * filterEmails may return a raw array of emails, or { status, emails, message }
+     * when the schema is not migrated / integration not configured (see ClientsController::filterEmails).
+     */
+    function normalizeEmailListResponse(data) {
+        if (Array.isArray(data)) {
+            return data;
+        }
+        if (data && data.emails != null) {
+            const e = data.emails;
+            if (Array.isArray(e)) {
+                return e;
+            }
+            // PHP may JSON-encode a non-sequential list as an object; only treat numeric keys as a list.
+            if (typeof e === 'object' && e !== null) {
+                const keys = Object.keys(e);
+                if (keys.length > 0 && keys.every(k => /^\d+$/.test(k))) {
+                    return keys
+                        .map(k => Number(k))
+                        .sort((a, b) => a - b)
+                        .map(k => e[String(k)]);
+                }
+            }
+        }
+        if (data && data.status === 'error') {
+            console.warn('Email list request returned error status:', data.message || data);
+            return [];
+        }
+        console.warn('Unexpected email list response shape:', data);
+        return [];
+    }
+
+    /**
      * Show notification message
      */
     function showNotification(message, type = 'info') {
@@ -837,9 +869,15 @@
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const emails = await response.json();
-            console.log('Emails received:', emails);
-            
+            const raw = await response.json();
+            console.log('Emails received:', raw);
+
+            let emails = normalizeEmailListResponse(raw);
+            if (!Array.isArray(emails)) {
+                console.warn('Email list was not an array after normalize; coercing to []', emails);
+                emails = [];
+            }
+
             // Debug: Check attachments in received emails
             emails.forEach((email, index) => {
                 if (email.attachments && email.attachments.length > 0) {
@@ -850,11 +888,18 @@
             // Apply sorting
             const sortedEmails = sortEmails(emails);
 
-            // Render emails
-            renderEmails(sortedEmails);
-
-            // Update counts
-            updateEmailCounts(sortedEmails.length);
+            // API may return a human-readable message with an empty list (e.g. integration not configured)
+            const emptyInfo =
+                !Array.isArray(raw) && raw && raw.message && sortedEmails.length === 0
+                    ? raw.message
+                    : null;
+            if (sortedEmails.length === 0 && emptyInfo) {
+                renderEmptyState(emptyInfo, null);
+                updateEmailCounts(0);
+            } else {
+                renderEmails(sortedEmails);
+                updateEmailCounts(sortedEmails.length);
+            }
 
         } catch (error) {
             console.error('Error loading emails:', error);
