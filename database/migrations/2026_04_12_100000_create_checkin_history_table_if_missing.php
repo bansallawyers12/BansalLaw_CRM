@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Office visit / front-desk flows write to CheckinHistory; Laravel's default table name
- * would be checkin_histories. Legacy schema uses singular checkin_history (see docs/PLAN_DEDICATED_STAFF_TABLE.md).
+ * would be checkin_histories. Legacy schema uses singular checkin_history (see docs/archive/PLAN_DEDICATED_STAFF_TABLE.md).
  */
 return new class extends Migration
 {
