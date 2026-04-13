@@ -390,7 +390,8 @@ Staff can be flagged as solicitors (`is_solicitor`) and assigned as matter legal
 - **Controllers**: 
   - `ClientsController` - Client CRUD operations and relationship management
   - `ClientPersonalDetailsController` - Per-section AJAX save for client/company details
-  - `ClientPortalController` - Client portal operations including workflow management and portal user management
+  - `ClientMatterHubController` - Matter hub routes (logs, notes, ownership, checklist helpers, legacy `/client-portal/*` paths)
+  - `ClientMatterWorkflowController` - Matter workflow tab API (`/client-portal/detail`, load/upsert)
   - `ClientAccountsController` - Invoice, receipt, and payment management
   - `BookingAppointmentsController` - Appointment scheduling and calendar
   - `DocumentController` / `ClientDocumentsController` - Document upload, download, and signature handling

@@ -12,7 +12,7 @@ use App\Http\Controllers\CRM\CRMUtilityController;
 use App\Http\Controllers\CRM\EmailUploadController;
 use App\Http\Controllers\CRM\EmailLabelController;
 use App\Http\Controllers\CRM\EmailLogAttachmentController;
-use App\Http\Controllers\CRM\ClientPortalController;
+use App\Http\Controllers\CRM\ClientMatterHubController;
 use App\Http\Controllers\CRM\Form956Controller;
 use App\Http\Controllers\CRM\UploadChecklistController;
 use App\Http\Controllers\CRM\SendGridSendersController;
@@ -333,32 +333,10 @@ Route::post('/add-appointment', [ClientsController::class, 'addAppointment']);
 Route::post('/add-appointment-book', [ClientsController::class, 'addAppointmentBook']);
 Route::get('/get-appointments', [ClientsController::class, 'getAppointments']);
 
-/*---------- Matter workflow APIs (URL prefix /api/client-portal* — ClientPortalController) ----------*/
-Route::post('/api/client-portal-details/approve-audit', [ClientPortalController::class, 'approveAuditValue'])->name('clients.approveAuditValue');
-Route::post('/api/client-portal-details/reject-audit', [ClientPortalController::class, 'rejectAuditValue'])->name('clients.rejectAuditValue');
-Route::post('/api/client-portal-details/approve-visa-audit', [ClientPortalController::class, 'approveVisaAudit'])->name('clients.approveVisaAudit');
-Route::post('/api/client-portal-details/reject-visa-audit', [ClientPortalController::class, 'rejectVisaAudit'])->name('clients.rejectVisaAudit');
-Route::post('/api/client-portal-details/approve-email-audit', [ClientPortalController::class, 'approveEmailAudit'])->name('clients.approveEmailAudit');
-Route::post('/api/client-portal-details/reject-email-audit', [ClientPortalController::class, 'rejectEmailAudit'])->name('clients.rejectEmailAudit');
-Route::post('/api/client-portal-details/approve-phone-audit', [ClientPortalController::class, 'approvePhoneAudit'])->name('clients.approvePhoneAudit');
-Route::post('/api/client-portal-details/reject-phone-audit', [ClientPortalController::class, 'rejectPhoneAudit'])->name('clients.rejectPhoneAudit');
-Route::post('/api/client-portal-details/approve-passport-audit', [ClientPortalController::class, 'approvePassportAudit'])->name('clients.approvePassportAudit');
-Route::post('/api/client-portal-details/reject-passport-audit', [ClientPortalController::class, 'rejectPassportAudit'])->name('clients.rejectPassportAudit');
-Route::post('/api/client-portal-details/approve-qualification-audit', [ClientPortalController::class, 'approveQualificationAudit'])->name('clients.approveQualificationAudit');
-Route::post('/api/client-portal-details/reject-qualification-audit', [ClientPortalController::class, 'rejectQualificationAudit'])->name('clients.rejectQualificationAudit');
-Route::post('/api/client-portal-details/approve-experience-audit', [ClientPortalController::class, 'approveExperienceAudit'])->name('clients.approveExperienceAudit');
-Route::post('/api/client-portal-details/reject-experience-audit', [ClientPortalController::class, 'rejectExperienceAudit'])->name('clients.rejectExperienceAudit');
-Route::post('/api/client-portal-details/approve-occupation-audit', [ClientPortalController::class, 'approveOccupationAudit'])->name('clients.approveOccupationAudit');
-Route::post('/api/client-portal-details/reject-occupation-audit', [ClientPortalController::class, 'rejectOccupationAudit'])->name('clients.rejectOccupationAudit');
-Route::post('/api/client-portal-details/approve-test-score-audit', [ClientPortalController::class, 'approveTestScoreAudit'])->name('clients.approveTestScoreAudit');
-Route::post('/api/client-portal-details/reject-test-score-audit', [ClientPortalController::class, 'rejectTestScoreAudit'])->name('clients.rejectTestScoreAudit');
-Route::post('/api/client-portal-details/approve-address-audit', [ClientPortalController::class, 'approveAddressAudit'])->name('clients.approveAddressAudit');
-Route::post('/api/client-portal-details/reject-address-audit', [ClientPortalController::class, 'rejectAddressAudit'])->name('clients.rejectAddressAudit');
-Route::post('/api/client-portal-details/approve-travel-audit', [ClientPortalController::class, 'approveTravelAudit'])->name('clients.approveTravelAudit');
-Route::post('/api/client-portal-details/reject-travel-audit', [ClientPortalController::class, 'rejectTravelAudit'])->name('clients.rejectTravelAudit');
-Route::get('/api/client-portal/checklist-documents', [ClientPortalController::class, 'getChecklistDocuments'])->name('clients.getChecklistDocuments');
-Route::post('/api/client-portal/delete-document', [ClientPortalController::class, 'deleteChecklistDocument'])->name('clients.deleteChecklistDocument');
-Route::post('/api/client-portal/update-document-status', [ClientPortalController::class, 'updateChecklistDocumentStatus'])->name('clients.updateChecklistDocumentStatus');
+/*---------- CRM matter checklist documents (workflow checklist type) ----------*/
+Route::get('/api/crm/matter-checklist-documents', [ClientMatterHubController::class, 'getChecklistDocuments'])->name('clients.getChecklistDocuments');
+Route::post('/api/crm/matter-checklist-delete-document', [ClientMatterHubController::class, 'deleteChecklistDocument'])->name('clients.deleteChecklistDocument');
+Route::post('/api/crm/matter-checklist-update-document-status', [ClientMatterHubController::class, 'updateChecklistDocumentStatus'])->name('clients.updateChecklistDocumentStatus');
 
 /*---------- Client Validation & Utilities ----------*/
 Route::post('/check-email', [ClientsController::class, 'checkEmail'])->name('check.email');

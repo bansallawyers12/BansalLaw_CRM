@@ -45,7 +45,7 @@ class DocumentChecklistController extends Controller
             // Validation rules with unique check for nick_name and optional fields
             $this->validate($request, [
                 'name' => ['required','max:255',
-                    Rule::unique('portal_document_checklists')->where(function ($query) {
+                    Rule::unique('document_checklists')->where(function ($query) {
                         return $query->where('doc_type', request('doc_type'));
                     })
                 ],
@@ -96,7 +96,7 @@ class DocumentChecklistController extends Controller
             'name' => [
                 'required',
                 'max:255',
-                Rule::unique('portal_document_checklists')->where(function ($query) use ($request) {
+                Rule::unique('document_checklists')->where(function ($query) use ($request) {
                     return $query->where('doc_type', $request->doc_type);
                 })->ignore($id)
             ]

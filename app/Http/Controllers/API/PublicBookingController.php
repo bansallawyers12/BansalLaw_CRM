@@ -18,7 +18,7 @@ use Carbon\Carbon;
 use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\Payment\StripePaymentService;
 
-class ClientPortalAppointmentController extends BaseController
+class PublicBookingController extends BaseController
 {
     /**
      * Get appointment variable lists
@@ -1690,7 +1690,7 @@ class ClientPortalAppointmentController extends BaseController
                                            ($request->cancel_reason ? '<p><strong>Cancellation Reason:</strong> ' . e($request->cancel_reason) . '</p>' : '');
                 $activityLog->task_status = 0;
                 $activityLog->pin = 0;
-                $activityLog->source = 'client_portal';
+                $activityLog->source = 'public_booking';
                 $activityLog->save();
             }
 

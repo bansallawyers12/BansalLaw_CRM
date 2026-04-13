@@ -36,7 +36,6 @@ class CheckMigrationTablesExist extends Command
         'email_labels',
         'email_label_email_log',
         'email_log_attachments',
-        'clientportal_details_audit',
         'staff_login_logs',
         'companies',
         'appointment_payments',

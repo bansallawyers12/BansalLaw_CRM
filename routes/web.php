@@ -18,7 +18,6 @@ use App\Http\Controllers\CRM\BroadcastController;
 // use App\Http\Controllers\CRM\EmailTemplateController; // DISABLED: email_templates table has been deleted
 use App\Http\Controllers\CRM\AuditLogController;
 use App\Http\Controllers\Auth\AdminLoginController;
-use App\Http\Controllers\CRM\ReverbMessagingLabController;
 use App\Http\Controllers\CRM\SuperAdminElevationController;
 
 /*
@@ -247,10 +246,12 @@ Route::middleware(['auth:admin'])->group(function() {
 	require __DIR__ . '/clients.php';
 
 	/*--------------------------------------------------
-	| SECTION: Applications & Office Visits Routes
+	| SECTION: Matter workflow, CRM matter hub, office visits, booking
 	|--------------------------------------------------*/
-	// Client Portal, Office Visits, and Booking Appointments routes
-	require __DIR__ . '/client_portal.php';
+	require __DIR__ . '/matter_workflow.php';
+	require __DIR__ . '/crm_matter_hub.php';
+	require __DIR__ . '/office_visits.php';
+	require __DIR__ . '/booking_admin.php';
 
 	/*---------- Front-Desk Check-In Wizard ----------*/
 	Route::prefix('front-desk/checkin')->name('front-desk.checkin.')->group(function () {
@@ -322,15 +323,6 @@ Route::middleware(['auth:admin'])->group(function() {
 
 
 	});
-
-/*
-| Reverb lab: outside the block above so unauthenticated visitors can be
-| signed in via .env (REVERB_ACCESS_*) before auth:admin runs.
-*/
-Route::middleware(['reverb.lab.env.auto', 'auth:admin'])->group(function () {
-    Route::get('/reverb-messaging-test', [ReverbMessagingLabController::class, 'index'])->name('reverb-messaging-lab.index');
-    Route::post('/reverb-messaging-test/resolve-matter', [ReverbMessagingLabController::class, 'resolveMatter'])->name('reverb-messaging-lab.resolve-matter');
-});
 
 /*--------------------------------------------------
 | SECTION: Document Signature Routes (Admin & Public)

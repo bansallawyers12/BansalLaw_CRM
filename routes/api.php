@@ -5,8 +5,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\ServiceAccountController;
 use App\Http\Controllers\API\StaffApiAuthController;
-use App\Http\Controllers\API\ClientPortalCommonListingController;
-use App\Http\Controllers\API\ClientPortalAppointmentController;
+use App\Http\Controllers\API\PublicListingController;
+use App\Http\Controllers\API\PublicBookingController;
 use App\Http\Controllers\API\OthersController;
 
 /*
@@ -22,17 +22,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout-all', [StaffApiAuthController::class, 'logoutAll']);
 });
 
-Route::get('/countries', [ClientPortalCommonListingController::class, 'getCountries']);
+Route::get('/countries', [PublicListingController::class, 'getCountries']);
 
-Route::get('/appointment-variable-lists', [ClientPortalAppointmentController::class, 'getAppointmentVariableLists']);
+Route::get('/appointment-variable-lists', [PublicBookingController::class, 'getAppointmentVariableLists']);
 
-Route::post('/appointments/add-appointment-without-login', [ClientPortalAppointmentController::class, 'addAppointmentWithoutLogin']);
+Route::post('/appointments/add-appointment-without-login', [PublicBookingController::class, 'addAppointmentWithoutLogin']);
 
-Route::post('/appointments/get-disabled-dates', [ClientPortalAppointmentController::class, 'getDisabledDateFromCalendar']);
-Route::post('/appointments/get-disabled-slots', [ClientPortalAppointmentController::class, 'getDisabledSlotsOfAnyDateFromCalendar']);
+Route::post('/appointments/get-disabled-dates', [PublicBookingController::class, 'getDisabledDateFromCalendar']);
+Route::post('/appointments/get-disabled-slots', [PublicBookingController::class, 'getDisabledSlotsOfAnyDateFromCalendar']);
 
-Route::post('/appointments/record-payment-without-login', [ClientPortalAppointmentController::class, 'recordAppointmentPaymentWithoutLogin']);
-Route::post('/appointments/record-payment-without-login-wallet', [ClientPortalAppointmentController::class, 'recordAppointmentPaymentWithoutLoginWallet']);
+Route::post('/appointments/record-payment-without-login', [PublicBookingController::class, 'recordAppointmentPaymentWithoutLogin']);
+Route::post('/appointments/record-payment-without-login-wallet', [PublicBookingController::class, 'recordAppointmentPaymentWithoutLoginWallet']);
 
 Route::post('/payments/create-payment-intent', function (Request $request) {
     $validated = $request->validate([

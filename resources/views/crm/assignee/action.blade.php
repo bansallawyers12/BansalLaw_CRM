@@ -700,7 +700,6 @@
                 <button class="tab-button" data-filter="query">Query <span class="badge" id="query-count">0</span></button>
                 <button class="tab-button" data-filter="urgent">Urgent <span class="badge" id="urgent-count">0</span></button>
                 <button class="tab-button" data-filter="personal_action">Personal Action <span class="badge" id="personal-task-count">0</span></button>
-                <button type="button" class="tab-button" data-filter="client_portal" title="Actions with task group &quot;Client Portal&quot; (e.g. mobile app)">Portal tasks <span class="badge" id="client-portal-count">0</span></button>
                 <button class="tab-button" data-filter="follow_up">Follow up <span class="badge" id="follow-up-count">0</span></button>
             </div>
 
@@ -1375,7 +1374,6 @@ $(function () {
                         <option value="Query" ${taskGroup == 'Query' ? 'selected' : ''}>❓ Query</option>
                         <option value="Urgent" ${taskGroup == 'Urgent' ? 'selected' : ''}>🔥 Urgent</option>
                         <option value="Personal Action" ${taskGroup == 'Personal Action' ? 'selected' : ''}>👤 Personal Action</option>
-                        <option value="Client Portal" ${taskGroup == 'Client Portal' ? 'selected' : ''}>🌐 Client app (legacy group)</option>
                     </select>
                     <div id="task-group-error" class="error-message"></div>
                 </div>
@@ -1609,7 +1607,6 @@ $(function () {
                     $('#query-count').text(data.query || 0);
                     $('#urgent-count').text(data.urgent || 0);
                     $('#personal-task-count').text(data.personal_action || 0);
-                    $('#client-portal-count').text(data.client_portal || 0);
                     $('#follow-up-count').text(data.follow_up || 0);
                 } else {
                     console.warn('Invalid badge count data received');

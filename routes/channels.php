@@ -42,24 +42,6 @@ Broadcast::channel('matter.{matterId}', function ($user, $matterId) {
     return $isAssociated || $isSuperAdmin;
 });
 
-// Private matter channels (Pusher format: private-matter.{matterId})
-Broadcast::channel('private-matter.{matterId}', function ($user, $matterId) {
-    // Check if user is associated with this matter
-    $isAssociated = DB::table('client_matters')
-        ->where('id', $matterId)
-        ->where(function($query) use ($user) {
-            $query->where('client_id', $user->id)
-                  ->orWhere('sel_legal_practitioner', $user->id)
-                  ->orWhere('sel_person_responsible', $user->id)
-                  ->orWhere('sel_person_assisting', $user->id);
-        })
-        ->exists();
-
-    $isSuperAdmin = $user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges();
-
-    return $isAssociated || $isSuperAdmin;
-});
-
 // Public broadcast channel (for system-wide broadcasts)
 Broadcast::channel('broadcasts', function () {
     // Allow all authenticated users to subscribe

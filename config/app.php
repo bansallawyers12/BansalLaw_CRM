@@ -75,7 +75,6 @@ return [
         'website_label' => env('APP_PUBLIC_WEBSITE_LABEL', 'www.bansallawyers.com.au'),
         'website_short_url' => env('APP_PUBLIC_WEBSITE_SHORT_URL', 'https://www.bansallawyers.com.au'),
         'website_short_label' => env('APP_PUBLIC_WEBSITE_SHORT_LABEL', 'www.bansallawyers.com.au'),
-        'client_portal_play_store_url' => env('CLIENT_PORTAL_PLAY_STORE_URL', 'https://play.google.com/store/apps/details?id=com.bansalimmigration.clientportal'),
     ],
 
     /*

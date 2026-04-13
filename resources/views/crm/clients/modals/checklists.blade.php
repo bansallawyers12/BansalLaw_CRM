@@ -1,6 +1,7 @@
 <!-- Legacy create_checklist modal removed - functionality moved to adminconsole DocumentChecklist -->
 @php
-    $__portalChecklistsOk = \Illuminate\Support\Facades\Schema::hasTable('portal_document_checklists');
+    $__portalChecklistsOk = \Illuminate\Support\Facades\Schema::hasTable('document_checklists')
+        || \Illuminate\Support\Facades\Schema::hasTable('portal_document_checklists');
 @endphp
 
 <!-- Add Personal Checklist Modal -->
@@ -15,7 +16,7 @@
 			</div>
 			<div class="modal-body">
                 @if (! $__portalChecklistsOk)
-                    <div class="alert alert-warning">Document checklist options require the <code>portal_document_checklists</code> table. Run <code>php artisan migrate</code>, then add items under Admin → Document checklist.</div>
+                    <div class="alert alert-warning">Document checklist options require the <code>document_checklists</code> table. Run <code>php artisan migrate</code>, then add items under Admin → Document checklist.</div>
                 @endif
 				<form method="post" action="{{URL::to('/documents/add-edu-checklist')}}" name="edu_upload_form" id="edu_upload_form" autocomplete="off"  enctype="multipart/form-data">
                     @csrf
@@ -72,7 +73,7 @@
 			</div>
 			<div class="modal-body">
                 @if (! $__portalChecklistsOk)
-                    <div class="alert alert-warning">Document checklist options require the <code>portal_document_checklists</code> table. Run <code>php artisan migrate</code>.</div>
+                    <div class="alert alert-warning">Document checklist options require the <code>document_checklists</code> table. Run <code>php artisan migrate</code>.</div>
                 @endif
 				<form method="post" action="{{ route('clients.documents.addMatterDocChecklist') }}" name="mig_upload_form" id="mig_upload_form" autocomplete="off"  enctype="multipart/form-data">
                     @csrf
@@ -130,7 +131,7 @@
 			</div>
 			<div class="modal-body">
                 @if (! $__portalChecklistsOk)
-                    <div class="alert alert-warning">Document checklist options require the <code>portal_document_checklists</code> table. Run <code>php artisan migrate</code>.</div>
+                    <div class="alert alert-warning">Document checklist options require the <code>document_checklists</code> table. Run <code>php artisan migrate</code>.</div>
                 @endif
 				<form method="post" action="{{ URL::to('/documents/add-nomination-checklist') }}" name="nom_upload_checklist_form" id="nom_upload_checklist_form" autocomplete="off"  enctype="multipart/form-data">
                     @csrf

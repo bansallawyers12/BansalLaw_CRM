@@ -14,8 +14,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
-use App\Services\FCMService;
-use App\Events\NotificationCountUpdated;
 use App\Support\StaffClientVisibility;
 
 class DashboardService
@@ -501,89 +499,41 @@ class DashboardService
             return ['success' => false, 'message' => 'Failed to complete action'];
         }
 
-        // Activity Feed: log completion for client-linked actions, except Client Portal category (matches AssigneeController).
         if ($noteData->client_id) {
-            $taskGroup = $noteData->task_group ?? '';
-
-            if ((string) $taskGroup !== 'Client Portal') {
-                $assigneeName = 'N/A';
-                if ($noteData->assigned_to) {
-                    $assignee = \App\Models\Staff::find($noteData->assigned_to);
-                    $assigneeName = $assignee ? $assignee->first_name . ' ' . $assignee->last_name : 'N/A';
-                }
-
-                $description = '';
-                if (!empty($completionNotes)) {
-                    $description .= '<p>';
-                    $description .= '<i class="fas fa-ellipsis-v convert-activity-to-note" ';
-                    $description .= 'style="cursor: pointer; color: #6c757d;" ';
-                    $description .= 'title="Convert to Note" ';
-                    $description .= 'data-activity-id="" ';
-                    $description .= 'data-activity-subject="Completion Notes" ';
-                    $description .= 'data-activity-description="' . htmlspecialchars($completionNotes, ENT_QUOTES) . '" ';
-                    $description .= 'data-activity-created-by="' . Auth::id() . '" ';
-                    $description .= 'data-activity-created-at="' . now() . '" ';
-                    $description .= 'data-client-id="' . $noteData->client_id . '"></i></p>';
-                    $description .= '<p>' . nl2br(htmlspecialchars($completionNotes)) . '</p>';
-                    $description .= '<hr>';
-                }
-                $description .= '<p>' . ($noteData->description ?? '') . '</p>';
-
-                ActivitiesLog::create([
-                    'client_id' => $noteData->client_id,
-                    'created_by' => Auth::id(),
-                    'subject' => 'completed action for ' . $assigneeName,
-                    'description' => $description,
-                    'use_for' => (Auth::id() != $noteData->assigned_to) ? $noteData->assigned_to : null,
-                    'followup_date' => $noteData->updated_at,
-                    'task_group' => $noteData->task_group ?? null,
-                    'task_status' => 1,
-                    'pin' => 0,
-                ]);
+            $assigneeName = 'N/A';
+            if ($noteData->assigned_to) {
+                $assignee = \App\Models\Staff::find($noteData->assigned_to);
+                $assigneeName = $assignee ? $assignee->first_name . ' ' . $assignee->last_name : 'N/A';
             }
 
-            // Client Portal category only: notify client (notification list API + push + real-time)
-            if ((string) $taskGroup === 'Client Portal') {
-                $messageText = trim(strip_tags(preg_replace('/<br\s*\/?>/i', "\n", (string) ($noteData->description ?? ''))));
-                if (mb_strlen($messageText) > 200) {
-                    $messageText = mb_substr($messageText, 0, 197) . '...';
-                }
-                $notificationMessage = 'This action is completed. ' . ($messageText ?: 'An action has been completed for your matter.');
-                // module_id = client matter id so notification appears in List API when client filters by client_matter_id
-                $moduleId = !empty($noteData->matter_id) ? (int) $noteData->matter_id : null;
-                if ($moduleId === null) {
-                    $moduleId = ClientMatter::where('client_id', $noteData->client_id)->orderByDesc('id')->value('id') ?? $noteData->client_id;
-                }
-                DB::table('notifications')->insert([
-                    'sender_id' => Auth::id(),
-                    'receiver_id' => $noteData->client_id,
-                    'module_id' => $moduleId,
-                    'url' => '/activities',
-                    'notification_type' => 'action_completed',
-                    'message' => $notificationMessage,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                    'sender_status' => 1,
-                    'receiver_status' => 0,
-                    'seen' => 0,
-                ]);
-                try {
-                    $fcm = new FCMService();
-                    $fcm->sendToUser($noteData->client_id, 'Action completed', $notificationMessage, [
-                        'type' => 'action_completed',
-                        'client_matter_id' => (string) $moduleId,
-                        'url' => '/activities',
-                    ]);
-                } catch (\Exception $e) {
-                    Log::warning('FCM send failed on action complete (Client Portal)', ['client_id' => $noteData->client_id, 'error' => $e->getMessage()]);
-                }
-                try {
-                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $noteData->client_id)->where('receiver_status', 0)->count();
-                    broadcast(new NotificationCountUpdated($noteData->client_id, $clientCount, $notificationMessage, '/activities'));
-                } catch (\Exception $e) {
-                    Log::warning('Broadcast failed on action complete (Client Portal)', ['client_id' => $noteData->client_id, 'error' => $e->getMessage()]);
-                }
+            $description = '';
+            if (!empty($completionNotes)) {
+                $description .= '<p>';
+                $description .= '<i class="fas fa-ellipsis-v convert-activity-to-note" ';
+                $description .= 'style="cursor: pointer; color: #6c757d;" ';
+                $description .= 'title="Convert to Note" ';
+                $description .= 'data-activity-id="" ';
+                $description .= 'data-activity-subject="Completion Notes" ';
+                $description .= 'data-activity-description="' . htmlspecialchars($completionNotes, ENT_QUOTES) . '" ';
+                $description .= 'data-activity-created-by="' . Auth::id() . '" ';
+                $description .= 'data-activity-created-at="' . now() . '" ';
+                $description .= 'data-client-id="' . $noteData->client_id . '"></i></p>';
+                $description .= '<p>' . nl2br(htmlspecialchars($completionNotes)) . '</p>';
+                $description .= '<hr>';
             }
+            $description .= '<p>' . ($noteData->description ?? '') . '</p>';
+
+            ActivitiesLog::create([
+                'client_id' => $noteData->client_id,
+                'created_by' => Auth::id(),
+                'subject' => 'completed action for ' . $assigneeName,
+                'description' => $description,
+                'use_for' => (Auth::id() != $noteData->assigned_to) ? $noteData->assigned_to : null,
+                'followup_date' => $noteData->updated_at,
+                'task_group' => $noteData->task_group ?? null,
+                'task_status' => 1,
+                'pin' => 0,
+            ]);
         }
 
         return ['success' => true, 'message' => 'Action completed successfully'];

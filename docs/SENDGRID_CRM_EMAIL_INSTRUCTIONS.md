@@ -198,7 +198,7 @@ For every flow below, create/verify the sender in SendGrid first, then apply the
 | Invoice + receipts (client sends) | SMTP-style/bare mail sends | `app/Http/Controllers/CRM/ClientAccountsController.php`, `app/Mail/InvoiceEmailManager.php`, `app/Mail/MultipleattachmentEmailManager.php` | `APP_INVOICE_EMAIL` / `config('app.brand.invoice_email')` (e.g. `admin@bansallawyers.com.au`) |
 | EOI/ROI confirmation | `EmailConfigService::applyConfig()` (SMTP runtime swap) | `app/Http/Controllers/CRM/ClientEoiRoiController.php`, `app/Http/Controllers/CRM/EoiRoiSheetController.php` | `EOI_FROM_EMAIL` / `admin@bansallawyers.com.au` |
 | Signature send/reminder | ZeptoMail API (`ZeptoMailService`) | `app/Services/SignatureService.php`, `app/Http/Controllers/CRM/SignatureDashboardController.php`, `app/Http/Controllers/CRM/DocumentController.php` | Verified sender used by signature flows (often `MAIL_FROM_ADDRESS`) |
-| Client portal activation/deactivation | Bare `Mail::send()` | `app/Http/Controllers/CRM/ClientPortalController.php` | `MAIL_FROM_ADDRESS` value |
+| ~~Client portal activation~~ (removed) | — | — | — |
 | Appointment confirmation/cancellation | Bare `Mail::to()` | `app/Services/BansalAppointmentSync/NotificationService.php` | `MAIL_FROM_ADDRESS` value (or dedicated appointments sender) |
 | Scheduled cron jobs | Bare `Mail` sends | `app/Console/Commands/CronJob.php` | `MAIL_FROM_ADDRESS` value (or dedicated reminders sender) |
 | Hubdoc invoice forwarding | Bare `Mail::to()` (transport default dependent) | `app/Http/Controllers/CRM/ClientAccountsController.php`, `app/Jobs/SendHubdocInvoiceJob.php` | `MAIL_FROM_ADDRESS` value (Hubdoc recipient stays `HUBDOC_EMAIL`) |
@@ -409,17 +409,9 @@ Mail::mailer('sendgrid')->to($appointment->client_email)->send(new AppointmentMa
 
 Same pattern for `AppointmentCancellation`.
 
-### 4.10 Client portal activation emails
+### 4.10 Client portal activation emails (removed)
 
-**File:** `app/Http/Controllers/CRM/ClientPortalController.php`
-
-```php
-// Current
-Mail::send('emails.client_portal_active_email', [...], function($message) { ... });
-
-// Updated
-Mail::mailer('sendgrid')->send('emails.client_portal_active_email', [...], function($message) { ... });
-```
+The standalone client portal app and its activation email (`emails.client_portal_active_email`) were removed from the CRM. No SendGrid migration is required for that flow.
 
 ### 4.11 Scheduled commands
 
@@ -462,12 +454,11 @@ Run these after configuring SendGrid:
 4. **Office receipt email** — send office receipt (queued)
 5. **EOI confirmation email** — trigger EOI confirmation via matter
 6. **Appointment confirmation email** — create or update a booking appointment
-7. **Client portal activation** — toggle portal access for a client
-8. **Hubdoc invoice send** — send an invoice to Hubdoc and confirm the PDF arrives at `HUBDOC_EMAIL`
-9. **Document signature send** — send a document for e-signature from the signature dashboard
-10. **Signature reminder** — send a reminder to a pending signer
-11. Confirm email activity is logged in `email_logs` table
-12. Confirm errors appear in `storage/logs/laravel.log`
+7. **Hubdoc invoice send** — send an invoice to Hubdoc and confirm the PDF arrives at `HUBDOC_EMAIL`
+8. **Document signature send** — send a document for e-signature from the signature dashboard
+9. **Signature reminder** — send a reminder to a pending signer
+10. Confirm email activity is logged in `email_logs` table
+11. Confirm errors appear in `storage/logs/laravel.log`
 
 Queue worker must be running for queued mailables:
 
@@ -489,7 +480,6 @@ php artisan queue:work
 | `app/Services/EmailConfigService.php` | Remove `applyConfig()`, `getZeptoAccount()`, `getZeptoApiConfig()`; simplify `buildConfig()` to return only From address/name/signature |
 | `app/Http/Controllers/Controller.php` | Add `Mail::mailer('sendgrid')` to all five send helper methods |
 | `app/Http/Controllers/CRM/ClientAccountsController.php` | Add `Mail::mailer('sendgrid')` to all invoice/receipt queue calls |
-| `app/Http/Controllers/CRM/ClientPortalController.php` | Add `Mail::mailer('sendgrid')` to portal activation send |
 | `app/Http/Controllers/CRM/ClientEoiRoiController.php` | Remove `applyConfig()` call; add `Mail::mailer('sendgrid')` |
 | `app/Http/Controllers/CRM/EoiRoiSheetController.php` | Remove `applyConfig()` call; add `Mail::mailer('sendgrid')` |
 | `app/Http/Controllers/CRM/SignatureDashboardController.php` | Replace ZeptoMail/`applyConfig()` usage with `Mail::mailer('sendgrid')` |

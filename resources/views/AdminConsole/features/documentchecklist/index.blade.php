@@ -73,7 +73,7 @@
 													aria-expanded="false">Action</button>
 												<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="docChkAction_{{ $list->id }}">
 													<li><a class="dropdown-item has-icon" href="{{route('adminconsole.features.documentchecklist.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a></li>
-													<li><a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'portal_document_checklists')"><i class="fas fa-trash"></i> Delete</a></li>
+													<li><a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'document_checklists')"><i class="fas fa-trash"></i> Delete</a></li>
 												</ul>
 											</div>
 										</td>

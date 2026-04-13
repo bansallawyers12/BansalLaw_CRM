@@ -10,7 +10,6 @@ use Spatie\QueryBuilder\QueryBuilder;
 // WARNING: Appointment and AppointmentLog models have been removed - old appointment system deleted
 // use App\Models\Appointment;
 use App\Models\Note;
-use App\Models\ClientMatter;
 // use App\Models\AppointmentLog;
 use App\Models\Notification;
 use Carbon\Carbon;
@@ -120,70 +119,22 @@ class AssigneeController extends Controller
                 }
                 $description .= '<p>'.@$note_data['description'].'</p>';
 
-                // Skip Personal Details Activity Feed for Client Portal actions (Action page category);
-                // client notifications below still run; other task groups keep the completion log.
                 $taskGroup = $note_data['task_group'] ?? '';
-                if ((string) $taskGroup !== 'Client Portal') {
-                    $objs = new ActivitiesLog;
-                    $objs->client_id = $note_data['client_id'];
-                    $objs->created_by = Auth::user()->id;
-                    $objs->subject = 'completed action for '.@$assignee_name;
-                    $objs->description = $description;
-                    if(Auth::user()->id != @$note_data['assigned_to']){
-                        $objs->use_for = @$note_data['assigned_to'];
-                    } else {
-                        $objs->use_for = null;
-                    }
-                    $objs->followup_date = @$note_data['updated_at']; // ActivitiesLog uses followup_date
-                    $objs->task_group = $taskGroup;
-                    $objs->task_status = 1; //marked completed
-                    $objs->pin = 0;
-                    $objs->save();
+                $objs = new ActivitiesLog;
+                $objs->client_id = $note_data['client_id'];
+                $objs->created_by = Auth::user()->id;
+                $objs->subject = 'completed action for '.@$assignee_name;
+                $objs->description = $description;
+                if(Auth::user()->id != @$note_data['assigned_to']){
+                    $objs->use_for = @$note_data['assigned_to'];
+                } else {
+                    $objs->use_for = null;
                 }
-
-                // Client Portal category only: notify client (notification list API + push + real-time)
-                $clientId = $note_data['client_id'] ?? null;
-                if ($clientId && (string) $taskGroup === 'Client Portal') {
-                    $messageText = trim(strip_tags(preg_replace('/<br\s*\/?>/i', "\n", (string) ($note_data['description'] ?? ''))));
-                    if (mb_strlen($messageText) > 200) {
-                        $messageText = mb_substr($messageText, 0, 197) . '...';
-                    }
-                    $notificationMessage = 'This action is completed. ' . ($messageText ?: 'An action has been completed for your matter.');
-                    // module_id = client matter id so notification appears in List API when client filters by client_matter_id
-                    $moduleId = !empty($note_data['matter_id']) ? (int) $note_data['matter_id'] : null;
-                    if ($moduleId === null) {
-                        $moduleId = ClientMatter::where('client_id', $clientId)->orderByDesc('id')->value('id') ?? $clientId;
-                    }
-                    DB::table('notifications')->insert([
-                        'sender_id' => Auth::user()->id,
-                        'receiver_id' => $clientId,
-                        'module_id' => $moduleId,
-                        'url' => '/activities',
-                        'notification_type' => 'action_completed',
-                        'message' => $notificationMessage,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                        'sender_status' => 1,
-                        'receiver_status' => 0,
-                        'seen' => 0,
-                    ]);
-                    try {
-                        $fcm = new FCMService();
-                        $fcm->sendToUser($clientId, 'Action completed', $notificationMessage, [
-                            'type' => 'action_completed',
-                            'client_matter_id' => (string) $moduleId,
-                            'url' => '/activities',
-                        ]);
-                    } catch (\Exception $e) {
-                        Log::warning('FCM send failed on action complete (Client Portal)', ['client_id' => $clientId, 'error' => $e->getMessage()]);
-                    }
-                    try {
-                        $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
-                        broadcast(new NotificationCountUpdated($clientId, $clientCount, $notificationMessage, '/activities'));
-                    } catch (\Exception $e) {
-                        Log::warning('Broadcast failed on action complete (Client Portal)', ['client_id' => $clientId, 'error' => $e->getMessage()]);
-                    }
-                }
+                $objs->followup_date = @$note_data['updated_at']; // ActivitiesLog uses followup_date
+                $objs->task_group = $taskGroup;
+                $objs->task_status = 1; //marked completed
+                $objs->pin = 0;
+                $objs->save();
             }
             $response['status'] 	= 	true;
             $response['message']	=	'Action completed successfully';
@@ -320,7 +271,6 @@ class AssigneeController extends Controller
             'Query' => $groupedCounts['Query'] ?? 0,
             'Urgent' => $groupedCounts['Urgent'] ?? 0,
             'Personal Action' => $groupedCounts['Personal Action'] ?? 0,
-            'Client Portal' => $groupedCounts['Client Portal'] ?? 0,
             'Follow Up' => $groupedCounts['Follow Up'] ?? 0,
         ];
 
@@ -371,33 +321,12 @@ class AssigneeController extends Controller
                         $actionGroup = $request->filter;
                         if ($actionGroup == 'personal_action') {
                             $actionGroup = 'Personal Action';
-                        } elseif ($actionGroup == 'client_portal') {
-                            $actionGroup = 'Client Portal';
                         } elseif ($actionGroup == 'follow_up') {
                             $actionGroup = 'Follow Up';
                         } else {
                             $actionGroup = ucfirst($actionGroup);
                         }
                         $query->where('notes.task_group', $actionGroup);
-
-                        // Super Admin Client Portal tab should show one row per grouped action.
-                        if (
-                            Auth::check()
-                            && $this->viewerSeesAllActions()
-                            && $request->filter == 'client_portal'
-                        ) {
-                            $query->whereRaw(
-                                "notes.id IN (
-                                    SELECT MAX(grouped_notes.id)
-                                    FROM notes as grouped_notes
-                                    WHERE grouped_notes.status <> '1'
-                                        AND grouped_notes.type = 'client'
-                                        AND grouped_notes.is_action = 1
-                                        AND grouped_notes.task_group = 'Client Portal'
-                                    GROUP BY COALESCE(NULLIF(grouped_notes.unique_group_id, ''), CONCAT('note_', grouped_notes.id))
-                                )"
-                            );
-                        }
                     }
                 }
 
@@ -454,8 +383,8 @@ class AssigneeController extends Controller
                     })
                     ->addColumn('assigner_name', function($data) {
                         try {
-                            // Client Portal actions created by client (e.g. upload from mobile): show client name as assigner
-                            if (isset($data->task_group) && (string) $data->task_group === 'Client Portal' && (int) $data->user_id === (int) $data->client_id && $data->noteClient) {
+                            // Query actions created by client (e.g. client-submitted items): show client name as assigner
+                            if (isset($data->task_group) && (string) $data->task_group === 'Query' && (int) $data->user_id === (int) $data->client_id && $data->noteClient) {
                                 $portalLabel = Utf8Helper::safeSanitize(trim($data->noteClient->company_name_or_personal_name ?? ''));
                                 return $portalLabel !== '' ? $portalLabel : 'N/P';
                             }
@@ -608,7 +537,6 @@ class AssigneeController extends Controller
             'query' => 0,
             'urgent' => 0,
             'personal_action' => 0,
-            'client_portal' => 0,
             'follow_up' => 0,
         ];
 
@@ -627,12 +555,6 @@ class AssigneeController extends Controller
         $counts['query'] = (clone $query)->where('task_group', 'Query')->count();
         $counts['urgent'] = (clone $query)->where('task_group', 'Urgent')->count();
         $counts['personal_action'] = (clone $query)->where('task_group', 'Personal Action')->count();
-        $counts['client_portal'] = $this->viewerSeesAllActions()
-            ? (clone $query)
-                ->where('task_group', 'Client Portal')
-                ->distinct(DB::raw("COALESCE(NULLIF(unique_group_id, ''), CONCAT('note_', id))"))
-                ->count(DB::raw("COALESCE(NULLIF(unique_group_id, ''), CONCAT('note_', id))"))
-            : (clone $query)->where('task_group', 'Client Portal')->count();
         $counts['follow_up'] = (clone $query)->where('task_group', 'Follow Up')->count();
 
         return response()->json($counts);
@@ -807,7 +729,7 @@ class AssigneeController extends Controller
             'client_id' => 'nullable|string', // Client ID is optional for Personal Actions
             'assigned_to' => 'required|exists:staff,id',
             'description' => 'required|string',
-            'task_group' => 'required|string|in:Call,Checklist,Review,Query,Urgent,Personal Action,Client Portal',
+            'task_group' => 'required|string|in:Call,Checklist,Review,Query,Urgent,Personal Action',
         ]);
 
         try {
@@ -830,8 +752,8 @@ class AssigneeController extends Controller
             // Step 1: Mark the current action as complete
             $currentAction->update(['status' => '1']);
 
-            // Step 2: Activity Feed log for completed action (omit Client Portal — same as Action page complete flow)
-            if ($currentAction->client_id && (string) ($currentAction->task_group ?? '') !== 'Client Portal') {
+            // Step 2: Activity Feed log for completed action
+            if ($currentAction->client_id) {
                 $completionLog = new ActivitiesLog;
                 $completionLog->client_id = $currentAction->client_id;
                 $completionLog->created_by = Auth::user()->id;
@@ -871,8 +793,8 @@ class AssigneeController extends Controller
             $newAction->unique_group_id = $actionUniqueId; // Generate unique group ID for the new action
             $newAction->save();
 
-            // Step 4: Activity Feed log for the new action (omit when new row is Client Portal category)
-            if ($clientId && (string) ($validated['task_group'] ?? '') !== 'Client Portal') {
+            // Step 4: Activity Feed log for the new action
+            if ($clientId) {
                 $newActionLog = new ActivitiesLog;
                 $newActionLog->client_id = $clientId;
                 $newActionLog->created_by = Auth::user()->id;

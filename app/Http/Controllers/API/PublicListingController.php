@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Country;
 use Illuminate\Http\Request;
 
-class ClientPortalCommonListingController extends BaseController
+class PublicListingController extends BaseController
 {
     /**
      * Get list of all countries
