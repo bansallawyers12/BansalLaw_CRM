@@ -602,9 +602,27 @@
                     } catch {
                         throw new Error(`Upload validation failed. Please check your file format and try again.`);
                     }
+                } else if (response.status === 400) {
+                    // Processing error - parse JSON for detailed per-file errors
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        let errorMsg = errorData.message || 'Upload failed';
+                        if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
+                            const details = errorData.errors.map((e, i) =>
+                                `${i + 1}. ${e.filename || 'Unknown file'}: ${e.error || 'Unknown error'}`
+                            ).join('\n');
+                            errorMsg += '\n\nDetails:\n' + details;
+                        }
+                        throw new Error(errorMsg);
+                    } catch (jsonErr) {
+                        if (jsonErr.message && !jsonErr.message.startsWith('Unexpected')) {
+                            throw jsonErr; // re-throw our formatted error
+                        }
+                        throw new Error(`Upload failed: ${errorText.substring(0, 500)}`);
+                    }
                 }
                 
-                throw new Error(`Upload failed: ${response.status} ${response.statusText}. ${errorText.substring(0, 200)}`);
+                throw new Error(`Upload failed: ${response.status} ${response.statusText}. ${errorText.substring(0, 500)}`);
             }
 
             const contentType = response.headers.get('content-type');

@@ -118,6 +118,30 @@
       padding: 5px 10px;
     }
 
+    .tags-row {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag-chip {
+      border: 1px solid #cfe0ff;
+      background: #eef4ff;
+      color: #1e3a8a;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 10px;
+      line-height: 1;
+    }
+
+    .tag-chip.red {
+      border-color: #fecaca;
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
     .actions {
       display: flex;
       flex-wrap: wrap;
@@ -399,11 +423,17 @@
           <div class="meta-row">
             <span class="meta-item">C-1092 / M-04</span>
             <span class="meta-item">Priya Sharma</span>
-            <span class="meta-item">Today, 10:24 AM</span>
+            <span class="meta-item">Last Activity: 2 hours ago</span>
           </div>
           <div class="matter-row">
             <span class="matter-chip">Corporate Dispute (M-04)</span>
             <button class="btn secondary">Change Matter</button>
+          </div>
+          <div class="tags-row">
+            <span class="tag-chip">VIP</span>
+            <span class="tag-chip">Follow-up Required</span>
+            <span class="tag-chip">High Value</span>
+            <span class="tag-chip red">Docs Pending</span>
           </div>
         </div>
       </div>

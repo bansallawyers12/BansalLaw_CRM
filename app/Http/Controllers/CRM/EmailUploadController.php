@@ -142,7 +142,8 @@ class EmailUploadController extends Controller
                 $status = false;
             }
             
-            // Return response with proper status
+            // Always return 200 so the JS processes the JSON body and shows
+            // full per-file error details.  The `status` field signals success/failure.
             return response()->json([
                 'status' => $status,
                 'message' => $message,
@@ -150,7 +151,7 @@ class EmailUploadController extends Controller
                 'failed' => $failedCount,
                 'errors' => $errors,
                 'total_files' => $uploadedCount + $failedCount
-            ], $status ? 200 : 400);
+            ], 200);
 
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
@@ -171,8 +172,8 @@ class EmailUploadController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Upload failed: ' . $errorMessage,
-                'technical_error' => $e->getMessage() // Include original for debugging
-            ], 500);
+                'technical_error' => $e->getMessage()
+            ], 200);
         }
     }
 
@@ -283,7 +284,7 @@ class EmailUploadController extends Controller
                 'failed' => $failedCount,
                 'errors' => $errors,
                 'total_files' => $uploadedCount + $failedCount
-            ], $status ? 200 : 400);
+            ], 200);
 
         } catch (\Exception $e) {
             Log::error('Sent email upload error', [
@@ -293,7 +294,7 @@ class EmailUploadController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Upload failed: ' . $e->getMessage(),
-            ], 500);
+            ], 200);
         }
     }
 
