@@ -96,10 +96,34 @@
         if (Array.isArray(data)) {
             return data;
         }
+        // Sometimes the backend can return JSON as a string.
+        if (typeof data === 'string') {
+            try {
+                return normalizeEmailListResponse(JSON.parse(data));
+            } catch (e) {
+                console.warn('Could not parse email list JSON string response:', e);
+                return [];
+            }
+        }
+        // Support Laravel paginator payload shape: { data: [...] }
+        if (data && Array.isArray(data.data)) {
+            return data.data;
+        }
         if (data && data.emails != null) {
             const e = data.emails;
             if (Array.isArray(e)) {
                 return e;
+            }
+            // Sometimes emails may be sent as a JSON string
+            if (typeof e === 'string') {
+                try {
+                    const parsed = JSON.parse(e);
+                    if (Array.isArray(parsed)) {
+                        return parsed;
+                    }
+                } catch (err) {
+                    console.warn('Could not parse `emails` JSON string:', err);
+                }
             }
             // PHP may JSON-encode a non-sequential list as an object; only treat numeric keys as a list.
             if (typeof e === 'object' && e !== null) {
@@ -115,6 +139,10 @@
         if (data && data.status === 'error') {
             console.warn('Email list request returned error status:', data.message || data);
             return [];
+        }
+        // Fallback: if backend returns a single email object, render it as one-item list.
+        if (data && typeof data === 'object' && (data.id || data.subject || data.from_mail || data.to_mail)) {
+            return [data];
         }
         console.warn('Unexpected email list response shape:', data);
         return [];
@@ -872,18 +900,14 @@
             const raw = await response.json();
             console.log('Emails received:', raw);
 
-            let emails = normalizeEmailListResponse(raw);
-            if (!Array.isArray(emails)) {
-                console.warn('Email list was not an array after normalize; coercing to []', emails);
-                emails = [];
-            }
+            const emails = normalizeEmailListResponse(raw);
 
             // Debug: Check attachments in received emails
-            emails.forEach((email, index) => {
+            for (const [index, email] of emails.entries()) {
                 if (email.attachments && email.attachments.length > 0) {
                     console.log(`Email ${index} (ID: ${email.id}) has ${email.attachments.length} attachments`);
                 }
-            });
+            }
 
             // Apply sorting
             const sortedEmails = sortEmails(emails);
