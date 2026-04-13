@@ -370,7 +370,7 @@ body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:l
 												@if(@$totalData !== 0)
 												@foreach (@$lists as $list)
 												<tr did="{{@$list->id}}" id="id_{{@$list->id}}" data-status="{{ (int) $list->status }}">
-													<td style="white-space: initial;"><a id="{{@$list->id}}" class="opencheckindetail" href="javascript:;">#{{$list->id}}</a></td>
+													<td style="white-space: initial;"><a href="javascript:void(0)" class="opencheckindetail" data-checkin-id="{{ $list->id }}" role="button">#{{$list->id}}</a></td>
 													<td style="white-space: initial;"><a href="javascript:;">{{date('l',strtotime($list->created_at))}}</a><br>{{date('d/m/Y',strtotime($list->created_at))}}</td>
 													<td style="white-space: initial;"><?php if($list->sesion_start != ''){ echo date('h:i A',strtotime($list->sesion_start)); }else{ echo '-'; } ?></td>
 													<td style="white-space: initial;">

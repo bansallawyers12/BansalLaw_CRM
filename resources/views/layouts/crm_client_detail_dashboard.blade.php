@@ -709,6 +709,39 @@
     <script>
     var site_url = '{{URL::to('/')}}';
     var dataformat = '{{$dataformat}}';
+    /**
+     * In Person / office visit detail modal (Bootstrap 5 native API + AJAX body).
+     */
+    window.openCheckinDetailModal = function (checkinId) {
+        if (!checkinId) return;
+        var modalEl = document.getElementById('checkindetailmodal');
+        if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        } else if (window.jQuery && modalEl) {
+            window.jQuery(modalEl).modal('show');
+        }
+        window.jQuery('.popuploader').show();
+        window.jQuery.ajax({
+            url: site_url + '/get-checkin-detail',
+            type: 'GET',
+            data: { id: checkinId },
+            success: function (html) {
+                window.jQuery('.popuploader').hide();
+                window.jQuery('.showchecindetail').html(html);
+            },
+            error: function (xhr) {
+                window.jQuery('.popuploader').hide();
+                var msg = 'Could not load in person details.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                window.jQuery('.showchecindetail').html(
+                    '<div class="alert alert-danger"></div>'
+                );
+                window.jQuery('.showchecindetail .alert-danger').text(msg);
+            }
+        });
+    };
     </script>
     <script src="{{asset('js/app.min.js')}}"></script>
     <script src="{{asset('js/fullcalendar.min.js')}}"></script>
@@ -931,19 +964,12 @@
                 });
             });
 
-            $(document).delegate('.opencheckindetail', 'click', function(){
-                $('#checkindetailmodal').modal('show');
-                $('.popuploader').show();
-                var appliid = $(this).attr('id');
-                $.ajax({
-                    url: site_url+'/get-checkin-detail',
-                    type:'GET',
-                    data:{id: appliid},
-                    success: function(responses){
-                        $('.popuploader').hide();
-                        $('.showchecindetail').html(responses);
-                    }
-                });
+            $(document).on('click', '.opencheckindetail', function (e) {
+                e.preventDefault();
+                var appliid = $(this).data('checkin-id') || $(this).attr('id');
+                if (typeof window.openCheckinDetailModal === 'function') {
+                    window.openCheckinDetailModal(appliid);
+                }
             });
 
             /* $(".niceCountryInputSelector").each(function(i,e){
@@ -1646,18 +1672,9 @@
             };
             
             window.viewDetails = function(checkinId) {
-                // Open checkin details modal
-                $('#checkindetailmodal').modal('show');
-                $('.popuploader').show();
-                $.ajax({
-                    url: site_url + '/get-checkin-detail',
-                    type: 'GET',
-                    data: {id: checkinId},
-                    success: function(response) {
-                        $('.popuploader').hide();
-                        $('.showchecindetail').html(response);
-                    }
-                });
+                if (typeof window.openCheckinDetailModal === 'function') {
+                    window.openCheckinDetailModal(checkinId);
+                }
             };
             
             // Initial load of office visit notifications
