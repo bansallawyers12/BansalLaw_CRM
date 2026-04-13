@@ -14,7 +14,6 @@ use App\Http\Controllers\CRM\CRMUtilityController;
 use App\Http\Controllers\CRM\AssigneeController;
 use App\Http\Controllers\CRM\ActiveStaffController;
 use App\Http\Controllers\CRM\BroadcastNotificationAjaxController;
-use App\Http\Controllers\CRM\BroadcastController;
 // use App\Http\Controllers\CRM\EmailTemplateController; // DISABLED: email_templates table has been deleted
 use App\Http\Controllers\CRM\AuditLogController;
 use App\Http\Controllers\Auth\AdminLoginController;
@@ -130,10 +129,9 @@ Route::middleware(['auth:admin'])->group(function() {
     Route::get('/getpartnerajax', [CRMUtilityController::class, 'getpartnerajax']);
     Route::get('/checkclientexist', [CRMUtilityController::class, 'checkclientexist']);
 
-    Route::get('/notifications/broadcasts/manage', [BroadcastController::class, 'index'])->name('notifications.broadcasts.index');
-    /* Legacy broadcast notification links: /broadcasts/{uuid} -> redirect to manage page (fixes 404) */
-    Route::get('/broadcasts/{batchUuid}', function (string $batchUuid) {
-        return redirect('/notifications/broadcasts/manage?batch=' . urlencode($batchUuid));
+    /* Legacy broadcast notification links stored as /broadcasts/{uuid} */
+    Route::get('/broadcasts/{batchUuid}', function () {
+        return redirect()->route('crm.all-notifications');
     })->where('batchUuid', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
     Route::redirect('/dashboard/active-users', '/dashboard/active-staff', 301);
     Route::get('/dashboard/active-staff', [ActiveStaffController::class, 'index'])->name('dashboard.active-staff');

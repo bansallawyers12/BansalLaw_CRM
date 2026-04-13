@@ -1578,11 +1578,11 @@ public function getChapters(Request $request)
 					$notification->url = url($path . '/workflow');
 				}
 			}
-			// Broadcast notifications: /broadcasts/{uuid} (404) -> manage page with batch param
+			// Broadcast notifications: /broadcasts/{uuid} -> all notifications (manage console removed)
 			if ($notification->notification_type === 'broadcast' && str_starts_with($notification->url ?? '', '/broadcasts/')) {
 				$batchUuid = \Illuminate\Support\Str::afterLast($notification->url ?? '', '/');
 				if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $batchUuid)) {
-					$notification->url = url('/notifications/broadcasts/manage?batch=' . urlencode($batchUuid));
+					$notification->url = route('crm.all-notifications');
 				}
 			}
 			// Retired Matter tab used URL segment "client_portal"; remap stored links to Workflow.
