@@ -625,7 +625,7 @@ public function up()
 ```
 
 ### 3. Staff Table Migration Dependency
-If you're also implementing the dedicated `staff` table migration from `docs/archive/PLAN_DEDICATED_STAFF_TABLE.md`, coordinate the timing:
+If you're also implementing the dedicated `staff` table migration (already landed in this codebase), coordinate the timing:
 - Option A: Do staff table migration first, then rename columns to reference `staff` table
 - Option B: Rename columns first (keeping FK to `admins`), then migrate to `staff` table and update FKs
 

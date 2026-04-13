@@ -90,7 +90,7 @@ This document describes every column in the `booking_appointments` table, how it
 ### `assigned_by_admin_id` (integer, nullable)
 - **Type:** Unsigned Integer, FK to `admins.id`
 - **Usage:** Admin/staff who assigned the consultant
-- **Used in:** `BookingAppointment::assignedBy()` relationship; set when consultant is assigned via CRM; `docs/archive/PLAN_DEDICATED_STAFF_TABLE.md` – planned rename to `assigned_by_staff_id`
+- **Used in:** `BookingAppointment::assignedBy()` relationship; set when consultant is assigned via CRM; planned rename to `assigned_by_staff_id` (see `PLAN_USER_TO_CLIENT_STAFF_RENAME.md`).
 - **Status:** ✅ **Actively used**
 
 ---
