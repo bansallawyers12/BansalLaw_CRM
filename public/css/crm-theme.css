@@ -2966,6 +2966,97 @@ body.sidebar-mini .control-label {
   color: var(--navy) !important;
 }
 
+/* Account tab — invoice / ledger reference dropdowns (docs/theme.md)
+ * Beats layout/custom .dropdown-item:hover (blue bg + broken contrast on <a>).
+ * client-detail.css uses .account-section * { max-width: 100% } which clips menus — override here. */
+body.sidebar-mini #account-tab .transaction-table-wrapper {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+}
+
+body.sidebar-mini #account-tab .transaction-table td:has(.dropdown) {
+  overflow: visible !important;
+}
+
+body.sidebar-mini #account-tab .transaction-table .dropdown-menu {
+  background: var(--card-bg) !important;
+  background-image: none !important;
+  border: 1px solid var(--border) !important;
+  border-top: 3px solid var(--accent-gold) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(30, 61, 96, 0.12) !important;
+  padding: 6px 0 !important;
+  font-size: 0.875rem !important;
+  min-width: 280px !important;
+  max-width: min(420px, calc(100vw - 32px)) !important;
+  width: max-content !important;
+}
+
+body.sidebar-mini #account-tab .transaction-table .dropdown-item,
+body.sidebar-mini #account-tab .transaction-table a.dropdown-item {
+  color: var(--text-dark) !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  font-weight: 600 !important;
+  max-width: none !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 0.625rem !important;
+  white-space: normal !important;
+  line-height: 1.35 !important;
+  padding: 10px 16px !important;
+}
+
+body.sidebar-mini #account-tab .transaction-table .dropdown-item i,
+body.sidebar-mini #account-tab .transaction-table a.dropdown-item i {
+  color: var(--sidebar-active) !important;
+  flex-shrink: 0 !important;
+  width: 1.125rem !important;
+  margin-right: 0 !important;
+  margin-top: 0.12em !important;
+  text-align: center !important;
+}
+
+body.sidebar-mini #account-tab .transaction-table .dropdown-item:hover,
+body.sidebar-mini #account-tab .transaction-table .dropdown-item:focus,
+body.sidebar-mini #account-tab .transaction-table a.dropdown-item:hover,
+body.sidebar-mini #account-tab .transaction-table a.dropdown-item:focus {
+  background-color: #ebf3ff !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini #account-tab .transaction-table .dropdown-item:hover i,
+body.sidebar-mini #account-tab .transaction-table .dropdown-item:focus i,
+body.sidebar-mini #account-tab .transaction-table a.dropdown-item:hover i,
+body.sidebar-mini #account-tab .transaction-table a.dropdown-item:focus i {
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini #account-tab .transaction-table .dropdown-item:active,
+body.sidebar-mini #account-tab .transaction-table a.dropdown-item:active {
+  background-color: rgba(200, 153, 42, 0.15) !important;
+  color: #7a5800 !important;
+}
+
+body.sidebar-mini #account-tab .transaction-table .dropdown-item:active i,
+body.sidebar-mini #account-tab .transaction-table a.dropdown-item:active i {
+  color: var(--accent-gold) !important;
+}
+
+body.sidebar-mini #account-tab .transaction-table .dropdown-divider {
+  border-top-color: var(--border) !important;
+}
+
+body.sidebar-mini #account-tab .reference-dropdown-trigger {
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini #account-tab .reference-dropdown-trigger:hover {
+  background-color: var(--accent-light) !important;
+  color: var(--navy) !important;
+}
+
 /* Bell icon + unread badge: badge overlays icon (avoids flex “tall bar” layout) */
 .main-topbar .notification-bell-inner {
   position: relative;

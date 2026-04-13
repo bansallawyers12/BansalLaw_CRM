@@ -1042,7 +1042,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             },
             error: function(xhr, status, error) {
-                alert('An error occurred while updating. Please try again.');
+                var msg = 'An error occurred while updating. Please try again.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                } else if (xhr.responseText && xhr.responseText.indexOf('{') === 0) {
+                    try {
+                        var j = JSON.parse(xhr.responseText);
+                        if (j.message) msg = j.message;
+                    } catch (e) { /* keep default */ }
+                }
+                alert(msg);
                 console.error('AJAX error:', status, error, xhr.responseText);
             }
         });
@@ -2084,73 +2093,7 @@ document.addEventListener('DOMContentLoaded', function() {
     background-color: #f0f8ff !important;
 }
 
-/* Reference Dropdown Trigger - Clean Text Style */
-.reference-dropdown-trigger {
-    cursor: pointer;
-    color: #495057;
-    font-weight: 500;
-    font-size: 13px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-    display: inline-block;
-    position: relative;
-}
-
-.reference-dropdown-trigger:hover {
-    background-color: #f8f9fa;
-    color: #007bff;
-}
-
-/* Dropdown Menu Styling */
-.transaction-table .dropdown-menu {
-    min-width: 200px;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-    padding: 6px 0;
-    margin-top: 2px;
-    font-size: 13px;
-}
-
-/* Dropdown Items */
-.transaction-table .dropdown-item {
-    padding: 8px 16px;
-    color: #495057;
-    transition: all 0.15s ease;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-}
-
-.transaction-table .dropdown-item:hover {
-    background-color: #f1f3f5;
-    color: #007bff;
-    padding-left: 20px;
-}
-
-.transaction-table .dropdown-item:active {
-    background-color: #e9ecef;
-    color: #0056b3;
-}
-
-.transaction-table .dropdown-item i {
-    width: 18px;
-    margin-right: 10px;
-    text-align: center;
-    font-size: 13px;
-    color: #6c757d;
-}
-
-.transaction-table .dropdown-item:hover i {
-    color: #007bff;
-}
-
-/* Dropdown Divider */
-.transaction-table .dropdown-divider {
-    margin: 4px 0;
-    border-top: 1px solid #e9ecef;
-}
+/* Reference dropdown + invoice menu colours: public/css/crm-theme.css (#account-tab .transaction-table) */
 
 /* FIX: Remove Bootstrap's default dropdown-toggle arrow (we have custom caret-down icon) */
 .transaction-table .dropdown-toggle::after {
@@ -2705,6 +2648,11 @@ $(document).ready(function() {
             $('#edit_office_client_matter_id').val(matterId);
             $('#edit_office_trans_date').val(transDate);
             $('#edit_office_entry_date').val(entryDate);
+            // Match <option value="..."> (e.g. DB "Bank Transfer" vs value "Bank transfer")
+            var pmMap = { 'Bank Transfer': 'Bank transfer', 'bank transfer': 'Bank transfer' };
+            if (pmMap[paymentMethod]) {
+                paymentMethod = pmMap[paymentMethod];
+            }
             $('#edit_office_payment_method').val(paymentMethod);
             $('#edit_office_deposit_amount').val(principalOffice.toFixed(2));
             $('#edit_office_eftpos_surcharge').val(sur > 0 ? sur.toFixed(2) : '');

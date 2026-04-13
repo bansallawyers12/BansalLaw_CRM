@@ -65,6 +65,125 @@ class ClientAccountsController extends Controller
     }
 
     /**
+     * Load PDF bytes for emailing: absolute local path, HTTP URL, or S3 object via myfile_key.
+     */
+    protected function getPdfBinaryForDocument(object $doc, int $adminsClientTableId, string $defaultDocFolder): ?string
+    {
+        if (!empty($doc->myfile)) {
+            $mf = $doc->myfile;
+            if (is_file($mf)) {
+                $c = @file_get_contents($mf);
+
+                return ($c !== false && $c !== '') ? $c : null;
+            }
+            if (preg_match('#^https?://#i', $mf)) {
+                $ctx = stream_context_create(['http' => ['timeout' => 45]]);
+                $c = @file_get_contents($mf, false, $ctx);
+                if ($c !== false && $c !== '') {
+                    return $c;
+                }
+            }
+        }
+
+        if (empty($doc->myfile_key)) {
+            return null;
+        }
+
+        $path = $doc->myfile_key;
+        if (strpos($path, '/') === false) {
+            $clientInfo = DB::table('admins')->select('client_id')->where('id', $adminsClientTableId)->first();
+            $unique = $clientInfo->client_id ?? 'unknown';
+            $folder = !empty($doc->doc_type) ? $doc->doc_type : $defaultDocFolder;
+            $path = $unique . '/' . $folder . '/' . $doc->myfile_key;
+        }
+
+        try {
+            if (Storage::disk('s3')->exists($path)) {
+                return Storage::disk('s3')->get($path);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('getPdfBinaryForDocument S3 read failed: ' . $e->getMessage(), ['path' => $path]);
+        }
+
+        return null;
+    }
+
+    /**
+     * If S3 upload fails during PDF generation, store on local disk and link document so Send-to-Client still works.
+     */
+    protected function persistReceiptPdfLocalAndLink(
+        string $pdfBinary,
+        string $fileName,
+        string $documentModelType,
+        string $docTypeFolder,
+        int $adminsClientTableId,
+        \Closure $linkDocumentId
+    ): void {
+        $userId = Auth::check() ? Auth::user()->id : 1;
+        $safeBase = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $fileName);
+        $localRel = 'receipt_pdfs/' . uniqid('pdf_', true) . '_' . $safeBase;
+        Storage::disk('local')->put($localRel, $pdfBinary);
+        $absolutePath = Storage::disk('local')->path($localRel);
+
+        $document = new \App\Models\Document;
+        $document->file_name = $fileName;
+        $document->filetype = 'pdf';
+        $document->user_id = $userId;
+        $document->myfile = $absolutePath;
+        $document->myfile_key = basename($localRel);
+        $document->client_id = $adminsClientTableId;
+        $document->type = $documentModelType;
+        $document->doc_type = $docTypeFolder;
+        $document->file_size = strlen($pdfBinary);
+        $document->save();
+
+        $linkDocumentId((int) $document->id);
+    }
+
+    /**
+     * Stream a PDF from a documents row (S3 / URL / local path). Avoids redirect()->away + attachment headers (Chrome ERR_UNSAFE_REDIRECT).
+     */
+    protected function pdfBinaryResponseFromDocument(
+        object $doc,
+        int $adminsClientId,
+        string $defaultDocFolder,
+        bool $download
+    ): ?\Illuminate\Http\Response {
+        $pdfContent = $this->getPdfBinaryForDocument($doc, $adminsClientId, $defaultDocFolder);
+        if ($pdfContent === null || $pdfContent === '') {
+            return null;
+        }
+
+        $name = (string) ($doc->file_name ?? 'document.pdf');
+        $name = str_replace(["\r", "\n", '"'], '', $name);
+        if ($name === '') {
+            $name = 'document.pdf';
+        }
+
+        $disp = $download ? 'attachment' : 'inline';
+
+        return response($pdfContent, 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', $disp . '; filename="' . $name . '"');
+    }
+
+    /**
+     * Stream already-generated PDF bytes (no S3 redirect).
+     */
+    protected function pdfBinaryResponse(string $pdfBinary, string $fileName, bool $download): \Illuminate\Http\Response
+    {
+        $name = str_replace(["\r", "\n", '"'], '', basename($fileName));
+        if ($name === '') {
+            $name = 'document.pdf';
+        }
+        $disp = $download ? 'attachment' : 'inline';
+
+        return response($pdfBinary, 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', $disp . '; filename="' . $name . '"');
+    }
+
+    /**
      * Apply enhanced date filtering to query
      * Supports quick presets, custom date range, and financial year
      *
@@ -1900,37 +2019,72 @@ class ClientAccountsController extends Controller
   // Update Office Receipt
   public function updateOfficeReceipt(Request $request)
   {
+      try {
       $requestData = $request->all();
       if (!empty($requestData['client_id'])) {
           $this->ensureCrmRecordAccess((int) $requestData['client_id']);
       }
       $id = $request->input('id');
       $saveType = $request->input('save_type', 'final');
+
+      if ($id === null || $id === '' || !ctype_digit((string) $id)) {
+          return response()->json([
+              'status' => false,
+              'message' => 'Invalid receipt record. Close the form and open Edit again.',
+          ], 422);
+      }
+
+      $existingOffice = DB::table('account_client_receipts')
+          ->where('id', (int) $id)
+          ->where('receipt_type', 2)
+          ->first();
+      if (!$existingOffice) {
+          return response()->json([
+              'status' => false,
+              'message' => 'Office receipt not found or you do not have access.',
+          ], 404);
+      }
       
       // Handle document upload if new file is provided
       $insertedDocId = null;
       $doctype = isset($request->doctype) ? $request->doctype : '';
       
-      if ($request->hasfile('document_upload')) {
-          $files = is_array($request->file('document_upload')) ? $request->file('document_upload') : [$request->file('document_upload')];
-          
+      if ($request->hasFile('document_upload')) {
+          $files = $request->file('document_upload');
+          $files = is_array($files) ? $files : [$files];
           $client_info = \App\Models\Admin::select('client_id')->where('id', $requestData['client_id'])->first();
-          $client_unique_id = !empty($client_info) ? $client_info->client_id : "";
+          $client_unique_id = !empty($client_info) ? $client_info->client_id : 'local';
           
           foreach ($files as $file) {
+           if (!$file || !$file->isValid()) {
+               continue;
+           }
            $size = $file->getSize();
            $fileName = $file->getClientOriginalName();
            $nameWithoutExtension = pathinfo($fileName, PATHINFO_FILENAME);
            $fileExtension = $file->getClientOriginalExtension();
-           $name = time() . $file->getClientOriginalName();
+           $name = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
            $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
-           Storage::disk('s3')->put($filePath, file_get_contents($file));
+           $myfileUrl = null;
+           try {
+               Storage::disk('s3')->put($filePath, file_get_contents($file->getRealPath()));
+               $myfileUrl = $this->s3PublicUrl($filePath);
+           } catch (\Throwable $e) {
+               Log::warning('Office receipt document S3 upload failed; storing locally', [
+                   'error' => $e->getMessage(),
+                   'path' => $filePath,
+               ]);
+               $localRel = 'office_receipt_uploads/' . uniqid('doc_', true) . '_' . $name;
+               Storage::disk('local')->put($localRel, file_get_contents($file->getRealPath()));
+               $myfileUrl = Storage::disk('local')->path($localRel);
+               $filePath = $localRel;
+           }
            
            $obj = new \App\Models\Document;
            $obj->file_name = $nameWithoutExtension;
            $obj->filetype = $fileExtension;
            $obj->user_id = Auth::user()->id;
-           $obj->myfile = $this->s3PublicUrl($filePath);
+           $obj->myfile = $myfileUrl;
            $obj->myfile_key = $name;
            $obj->client_id = $requestData['client_id'];
            $obj->type = $request->type;
@@ -2162,9 +2316,13 @@ class ClientAccountsController extends Controller
           }
           
           // Log activity
-          $userName = Auth::user()->first_name . ' ' . Auth::user()->last_name;
+          $actor = Auth::user();
+          $userName = trim(($actor->first_name ?? '') . ' ' . ($actor->last_name ?? ''));
+          if ($userName === '') {
+              $userName = $actor->email ?? 'Staff';
+          }
           $formattedAmount = '$' . number_format(floatval($receipt->deposit_amount), 2);
-          $transDate = date('d/m/Y', strtotime($receipt->trans_date));
+          $transDate = $receipt->trans_date ?? '';
           $saveTypeText = $saveType == 'draft' ? ' (Draft)' : '';
           
           $subject = "Office Receipt Updated - {$formattedAmount} (Ref: {$receipt->trans_no}){$saveTypeText}";
@@ -2204,11 +2362,21 @@ class ClientAccountsController extends Controller
            'message' => $saveType == 'draft' ? 'Office receipt draft saved successfully' : 'Office receipt finalized successfully',
           ], 200);
       }
-      
+
       return response()->json([
           'status' => false,
-          'message' => 'Failed to update office receipt',
-      ], 500);
+          'message' => 'No changes were saved. The receipt may have been removed or the data did not match an office receipt.',
+      ], 422);
+      } catch (\Throwable $e) {
+          Log::error('updateOfficeReceipt failed: ' . $e->getMessage(), [
+              'trace' => $e->getTraceAsString(),
+          ]);
+
+          return response()->json([
+              'status' => false,
+              'message' => 'Could not update office receipt: ' . $e->getMessage(),
+          ], 500);
+      }
   }
   
   // Get invoices by matter for dropdown
@@ -2865,59 +3033,16 @@ class ClientAccountsController extends Controller
            ->where('id', $receipt_entry->pdf_document_id)
            ->first();
           
-          if ($existingPdf && !empty($existingPdf->myfile)) {
-           // PDF exists in AWS, return it
-           if ($request->has('download')) {
-               // Force download: fetch from S3 and stream with proper headers
-               try {
-                   $pdfContent = null;
-                   
-                   // Try to get file from S3 using the file key if available
-                   if (!empty($existingPdf->myfile_key)) {
-                       $s3Path = $existingPdf->myfile_key;
-                       
-                       // If myfile_key is just filename, construct full path
-                       if (strpos($s3Path, '/') === false) {
-                           // Get client_id from receipt_entry or record_get
-                           $clientIdForPath = null;
-                           if ($receipt_entry && !empty($receipt_entry->client_id)) {
-                               $clientIdForPath = $receipt_entry->client_id;
-                           } elseif (!empty($record_get) && count($record_get) > 0 && !empty($record_get[0]->client_id)) {
-                               $clientIdForPath = $record_get[0]->client_id;
-                           }
-                           
-                           if ($clientIdForPath) {
-                               $client_info = DB::table('admins')->select('client_id')->where('id', $clientIdForPath)->first();
-                               $client_unique_id = $client_info->client_id ?? 'unknown';
-                               // Use doc_type from document if available, otherwise default to 'invoices'
-                               $docType = $existingPdf->doc_type ?? 'invoices';
-                               $s3Path = $client_unique_id . '/' . $docType . '/' . $s3Path;
-                           }
-                       }
-                       
-                       // Try to get from S3
-                       if (Storage::disk('s3')->exists($s3Path)) {
-                           $pdfContent = Storage::disk('s3')->get($s3Path);
-                       }
-                   }
-                   
-                   // Fallback: download from URL if S3 get failed or key not available
-                   if (empty($pdfContent)) {
-                       $pdfContent = file_get_contents($existingPdf->myfile);
-                   }
-                   
-                   return response($pdfContent, 200)
-                       ->header('Content-Type', 'application/pdf')
-                       ->header('Content-Disposition', 'attachment; filename="' . $existingPdf->file_name . '"');
-               } catch (\Exception $e) {
-                   // If S3 download fails, fallback to redirect (but won't force download)
-                   Log::warning('Failed to download PDF from S3 for invoice ' . $id . ': ' . $e->getMessage());
-                   return redirect()->away($existingPdf->myfile);
-               }
-           } else {
-               // Stream in browser
-               return redirect()->away($existingPdf->myfile);
-           }
+          if ($existingPdf) {
+              $stream = $this->pdfBinaryResponseFromDocument(
+                  $existingPdf,
+                  (int) $queryClientId,
+                  'invoices',
+                  $request->has('download')
+              );
+              if ($stream !== null) {
+                  return $stream;
+              }
           }
       }
       
@@ -3150,21 +3275,15 @@ class ClientAccountsController extends Controller
            ->where('client_id', $queryClientId)
            ->update(['pdf_document_id' => $document->id]);
           
-          // Return appropriate response
-          if ($request->has('download')) {
-           // Force download: return PDF directly with download headers
-           return $pdf->download($fileName);
-          } else {
-           // Stream in browser (redirect to S3 URL for preview)
-           return redirect()->away($s3Url);
-          }
-          
+          // Return PDF bytes directly (no external redirect — avoids Chrome ERR_UNSAFE_REDIRECT)
+          return $this->pdfBinaryResponse($pdfContent, $fileName, $request->has('download'));
+
       } catch (\Exception $e) {
           Log::error('PDF Generation/Upload Error: ' . $e->getMessage(), [
            'invoice_id' => $id,
            'trace' => $e->getTraceAsString()
           ]);
-          
+
           // Fall back to direct PDF generation
           $pdf = PDF::setOptions([
            'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
@@ -3196,7 +3315,28 @@ class ClientAccountsController extends Controller
            'client_matter_no',
            'client_matter_display'
           ]));
-          
+
+          try {
+              $pdfBinary = $pdf->output();
+              $fileName = 'Invoice-' . ($record_get[0]->invoice_no ?? $id) . '.pdf';
+              $this->persistReceiptPdfLocalAndLink(
+                  $pdfBinary,
+                  $fileName,
+                  'invoice',
+                  'invoices',
+                  (int) $record_get[0]->client_id,
+                  function (int $documentId) use ($id, $queryClientId) {
+                      DB::table('account_client_receipts')
+                          ->where('receipt_id', $id)
+                          ->where('receipt_type', 3)
+                          ->where('client_id', $queryClientId)
+                          ->update(['pdf_document_id' => $documentId]);
+                  }
+              );
+          } catch (\Throwable $e2) {
+              Log::error('Invoice local PDF persist failed: ' . $e2->getMessage());
+          }
+
           // Return appropriate response based on download parameter
           $pdfFileName = 'Invoice-' . ($record_get[0]->invoice_no ?? $id) . '.pdf';
           if ($request->has('download')) {
@@ -3205,7 +3345,7 @@ class ClientAccountsController extends Controller
               return $pdf->stream($pdfFileName);
           }
       }
-      
+
       // ============= END CACHING LOGIC =============
   }
 
@@ -4842,22 +4982,19 @@ class ClientAccountsController extends Controller
          ->where('id', $record_get->pdf_document_id)
          ->first();
         
-        if ($existingPdf && !empty($existingPdf->myfile)) {
-         // PDF exists in AWS, return it
-         if ($request->has('download')) {
-             // Force download with proper headers
-             $headers = [
-                 'Content-Type' => 'application/pdf',
-                 'Content-Disposition' => 'attachment; filename="' . $existingPdf->file_name . '"',
-             ];
-             return redirect()->away($existingPdf->myfile)->withHeaders($headers);
-         } else {
-             // Stream in browser
-             return redirect()->away($existingPdf->myfile);
-         }
+        if ($existingPdf) {
+            $stream = $this->pdfBinaryResponseFromDocument(
+                $existingPdf,
+                (int) $record_get->client_id,
+                'receipts',
+                $request->has('download')
+            );
+            if ($stream !== null) {
+                return $stream;
+            }
         }
     }
-    
+
     try {
         // Generate PDF if it doesn't exist or was deleted
         $pdf = PDF::setOptions([
@@ -4899,26 +5036,40 @@ class ClientAccountsController extends Controller
          ->where('id', $id)
          ->update(['pdf_document_id' => $document->id]);
         
-        // Return appropriate response
-        if ($request->has('download')) {
-         // Force download
-         $headers = [
-             'Content-Type' => 'application/pdf',
-             'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
-         ];
-         return redirect()->away($s3Url)->withHeaders($headers);
-        } else {
-         // Stream in browser
-         return redirect()->away($s3Url);
-        }
-        
+        return $this->pdfBinaryResponse($pdfContent, $fileName, $request->has('download'));
+
     } catch (\Exception $e) {
         Log::error('PDF Generation/Upload Error: ' . $e->getMessage(), [
          'receipt_id' => $id,
          'trace' => $e->getTraceAsString()
         ]);
-        
-        // Fall back to direct PDF generation
+
+        $pdf = PDF::setOptions([
+         'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
+         'logOutputFile' => storage_path('logs/log.htm'),
+         'tempDir' => storage_path('logs/')
+        ])->loadView('emails.genclientfundreceipt', compact(['record_get', 'clientname', 'client_matter_no', 'client_matter_display']));
+
+        try {
+            $pdfBinary = $pdf->output();
+            $fileName = 'Receipt-' . ($record_get->trans_no ?? $id) . '.pdf';
+            $this->persistReceiptPdfLocalAndLink(
+                $pdfBinary,
+                $fileName,
+                'client_fund_receipt',
+                'receipts',
+                (int) $record_get->client_id,
+                function (int $documentId) use ($id) {
+                    DB::table('account_client_receipts')
+                        ->where('id', $id)
+                        ->where('receipt_type', 1)
+                        ->update(['pdf_document_id' => $documentId]);
+                }
+            );
+        } catch (\Throwable $e2) {
+            Log::error('Client fund receipt local PDF persist failed: ' . $e2->getMessage());
+        }
+
         return $pdf->stream('Receipt-' . ($record_get->trans_no ?? $id) . '.pdf');
     }
 }
@@ -5082,24 +5233,21 @@ public function genofficereceiptInvoice(Request $request, $id){
          ->where('id', $record_get->pdf_document_id)
          ->first();
         
-        if ($existingPdf && !empty($existingPdf->myfile)) {
-         // PDF exists in AWS, return it
-         if ($request->has('download')) {
-             // Force download with proper headers
-             $headers = [
-                 'Content-Type' => 'application/pdf',
-                 'Content-Disposition' => 'attachment; filename="' . $existingPdf->file_name . '"',
-             ];
-             return redirect()->away($existingPdf->myfile)->withHeaders($headers);
-         } else {
-             // Stream in browser
-             return redirect()->away($existingPdf->myfile);
-         }
+        if ($existingPdf) {
+            $stream = $this->pdfBinaryResponseFromDocument(
+                $existingPdf,
+                (int) $record_get->client_id,
+                'office_receipts',
+                $request->has('download')
+            );
+            if ($stream !== null) {
+                return $stream;
+            }
         }
     }
-    
+
     // ============= PDF DATA PREPARATION =============
-    
+
     $clientname = DB::table('admins')->where('id',$record_get->client_id)->first();
     
     // Validate client exists
@@ -5215,35 +5363,44 @@ public function genofficereceiptInvoice(Request $request, $id){
          ->where('id', $id)
          ->update(['pdf_document_id' => $document->id]);
         
-        // Return appropriate response
-        if ($request->has('download')) {
-         // Force download
-         $headers = [
-             'Content-Type' => 'application/pdf',
-             'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
-         ];
-         return redirect()->away($s3Url)->withHeaders($headers);
-        } else {
-         // Stream in browser
-         return redirect()->away($s3Url);
-        }
-        
+        return $this->pdfBinaryResponse($pdfContent, $fileName, $request->has('download'));
+
     } catch (\Exception $e) {
         Log::error('PDF Generation/Upload Error: ' . $e->getMessage(), [
          'office_receipt_id' => $id,
          'trace' => $e->getTraceAsString()
         ]);
-        
+
         // Fall back to direct PDF generation
         $pdf = PDF::setOptions([
          'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
          'logOutputFile' => storage_path('logs/log.htm'),
          'tempDir' => storage_path('logs/')
         ])->loadView('emails.genofficereceipt',compact(['record_get','clientname','client_matter_no','client_matter_display']));
-        
+
+        try {
+            $pdfBinary = $pdf->output();
+            $fileName = 'Office-Receipt-' . ($record_get->trans_no ?? $id) . '.pdf';
+            $this->persistReceiptPdfLocalAndLink(
+                $pdfBinary,
+                $fileName,
+                'office_receipt',
+                'office_receipts',
+                (int) $record_get->client_id,
+                function (int $documentId) use ($id) {
+                    DB::table('account_client_receipts')
+                        ->where('id', $id)
+                        ->where('receipt_type', 2)
+                        ->update(['pdf_document_id' => $documentId]);
+                }
+            );
+        } catch (\Throwable $e2) {
+            Log::error('Office receipt local PDF persist failed: ' . $e2->getMessage());
+        }
+
         return $pdf->stream('Office-Receipt-' . ($record_get->trans_no ?? $id) . '.pdf');
     }
-    
+
     // ============= END CACHING LOGIC =============
 }
 
@@ -5907,47 +6064,39 @@ public function getInvoiceAmount(Request $request)
                 ], 404);
             }
 
-            // Generate PDF (reuse existing logic from genInvoice)
-            $invoiceUrl = url('/clients/genInvoice/' . $id);
-            
-            // Get or generate PDF
-            $pdfUrl = null;
-            if (!empty($receipt_entry->pdf_document_id)) {
-                $existingPdf = DB::table('documents')
-                    ->where('id', $receipt_entry->pdf_document_id)
-                    ->first();
-                
-                if ($existingPdf && !empty($existingPdf->myfile)) {
-                    $pdfUrl = $existingPdf->myfile;
-                }
-            }
-
-            if (!$pdfUrl) {
-                // Generate PDF if not exists
+            // Get or generate PDF (genInvoice stores pdf_document_id; may be S3 URL or local path)
+            if (empty($receipt_entry->pdf_document_id)) {
                 $genRequest = new Request();
-                $response = $this->genInvoice($genRequest, $id);
-                
-                // Get the newly created PDF
+                $this->genInvoice($genRequest, $id);
                 $receipt_entry = DB::table('account_client_receipts')
                     ->where('receipt_id', $id)
                     ->where('receipt_type', 3)
                     ->first();
-                
-                if (!empty($receipt_entry->pdf_document_id)) {
-                    $existingPdf = DB::table('documents')
-                        ->where('id', $receipt_entry->pdf_document_id)
-                        ->first();
-                    
-                    if ($existingPdf && !empty($existingPdf->myfile)) {
-                        $pdfUrl = $existingPdf->myfile;
-                    }
-                }
             }
 
-            if (!$pdfUrl) {
+            if (!$receipt_entry || empty($receipt_entry->pdf_document_id)) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Failed to generate PDF'
+                ], 500);
+            }
+
+            $existingPdf = DB::table('documents')
+                ->where('id', $receipt_entry->pdf_document_id)
+                ->first();
+
+            if (!$existingPdf) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to generate PDF'
+                ], 500);
+            }
+
+            $pdfContent = $this->getPdfBinaryForDocument($existingPdf, (int) $receipt_entry->client_id, 'invoices');
+            if ($pdfContent === null || $pdfContent === '') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Could not load the PDF for email (S3/private URL). Try again or contact support.'
                 ], 500);
             }
 
@@ -5961,8 +6110,6 @@ public function getInvoiceAmount(Request $request)
                 "If you have any questions, please don't hesitate to contact us.<br><br>" .
                 "Best regards,<br>" . e(config('app.name'));
 
-            // Download PDF from S3 to temporary file
-            $pdfContent = file_get_contents($pdfUrl);
             $tempFilePath = storage_path('app/temp_invoice_' . $id . '.pdf');
             file_put_contents($tempFilePath, $pdfContent);
 
@@ -6040,44 +6187,38 @@ public function getInvoiceAmount(Request $request)
                 ], 404);
             }
 
-            // Get or generate PDF
-            $pdfUrl = null;
-            if (!empty($record_get->pdf_document_id)) {
-                $existingPdf = DB::table('documents')
-                    ->where('id', $record_get->pdf_document_id)
-                    ->first();
-                
-                if ($existingPdf && !empty($existingPdf->myfile)) {
-                    $pdfUrl = $existingPdf->myfile;
-                }
-            }
-
-            if (!$pdfUrl) {
-                // Generate PDF if not exists
+            if (empty($record_get->pdf_document_id)) {
                 $genRequest = new Request();
-                $response = $this->genClientFundReceipt($genRequest, $id);
-                
-                // Get the newly created PDF
+                $this->genClientFundReceipt($genRequest, $id);
                 $record_get = DB::table('account_client_receipts')
                     ->where('receipt_type', 1)
                     ->where('id', $id)
                     ->first();
-                
-                if (!empty($record_get->pdf_document_id)) {
-                    $existingPdf = DB::table('documents')
-                        ->where('id', $record_get->pdf_document_id)
-                        ->first();
-                    
-                    if ($existingPdf && !empty($existingPdf->myfile)) {
-                        $pdfUrl = $existingPdf->myfile;
-                    }
-                }
             }
 
-            if (!$pdfUrl) {
+            if (!$record_get || empty($record_get->pdf_document_id)) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Failed to generate PDF'
+                ], 500);
+            }
+
+            $existingPdf = DB::table('documents')
+                ->where('id', $record_get->pdf_document_id)
+                ->first();
+
+            if (!$existingPdf) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to generate PDF'
+                ], 500);
+            }
+
+            $pdfContent = $this->getPdfBinaryForDocument($existingPdf, (int) $record_get->client_id, 'receipts');
+            if ($pdfContent === null || $pdfContent === '') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Could not load the PDF for email (S3/private URL). Try again or contact support.'
                 ], 500);
             }
 
@@ -6091,8 +6232,6 @@ public function getInvoiceAmount(Request $request)
                 "If you have any questions, please don't hesitate to contact us.<br><br>" .
                 "Best regards,<br>" . e(config('app.name'));
 
-            // Download PDF from S3 to temporary file
-            $pdfContent = file_get_contents($pdfUrl);
             $tempFilePath = storage_path('app/temp_client_receipt_' . $id . '.pdf');
             file_put_contents($tempFilePath, $pdfContent);
 
@@ -6167,44 +6306,38 @@ public function getInvoiceAmount(Request $request)
                 ], 404);
             }
 
-            // Get or generate PDF
-            $pdfUrl = null;
-            if (!empty($record_get->pdf_document_id)) {
-                $existingPdf = DB::table('documents')
-                    ->where('id', $record_get->pdf_document_id)
-                    ->first();
-                
-                if ($existingPdf && !empty($existingPdf->myfile)) {
-                    $pdfUrl = $existingPdf->myfile;
-                }
-            }
-
-            if (!$pdfUrl) {
-                // Generate PDF if not exists
+            if (empty($record_get->pdf_document_id)) {
                 $genRequest = new Request();
-                $response = $this->genofficereceiptInvoice($genRequest, $id);
-                
-                // Get the newly created PDF
+                $this->genofficereceiptInvoice($genRequest, $id);
                 $record_get = DB::table('account_client_receipts')
                     ->where('receipt_type', 2)
                     ->where('id', $id)
                     ->first();
-                
-                if (!empty($record_get->pdf_document_id)) {
-                    $existingPdf = DB::table('documents')
-                        ->where('id', $record_get->pdf_document_id)
-                        ->first();
-                    
-                    if ($existingPdf && !empty($existingPdf->myfile)) {
-                        $pdfUrl = $existingPdf->myfile;
-                    }
-                }
             }
 
-            if (!$pdfUrl) {
+            if (!$record_get || empty($record_get->pdf_document_id)) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Failed to generate PDF'
+                ], 500);
+            }
+
+            $existingPdf = DB::table('documents')
+                ->where('id', $record_get->pdf_document_id)
+                ->first();
+
+            if (!$existingPdf) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to generate PDF'
+                ], 500);
+            }
+
+            $pdfContent = $this->getPdfBinaryForDocument($existingPdf, (int) $record_get->client_id, 'office_receipts');
+            if ($pdfContent === null || $pdfContent === '') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Could not load the PDF for email (S3/private URL). Try again or contact support.'
                 ], 500);
             }
 
@@ -6218,8 +6351,6 @@ public function getInvoiceAmount(Request $request)
                 "If you have any questions, please don't hesitate to contact us.<br><br>" .
                 "Best regards,<br>" . e(config('app.name'));
 
-            // Download PDF from S3 to temporary file
-            $pdfContent = file_get_contents($pdfUrl);
             $tempFilePath = storage_path('app/temp_office_receipt_' . $id . '.pdf');
             file_put_contents($tempFilePath, $pdfContent);
 

@@ -1,5 +1,29 @@
 <?php
 
+$awsBucket = env('AWS_BUCKET');
+$s3Configured = is_string($awsBucket) && $awsBucket !== '';
+
+$s3AwsDisk = [
+    'driver' => 's3',
+    'key' => env('AWS_ACCESS_KEY_ID', ''),
+    'secret' => env('AWS_SECRET_ACCESS_KEY', ''),
+    'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+    'bucket' => $awsBucket,
+    'url' => env('AWS_URL'),
+];
+
+$s3LocalDisk = [
+    'driver' => 'local',
+    'root' => storage_path('app'),
+    'throw' => false,
+];
+
+$s3EmailsLocalDisk = [
+    'driver' => 'local',
+    'root' => storage_path('app/s3-emails-local'),
+    'throw' => false,
+];
+
 return [
 
     /*
@@ -58,23 +82,9 @@ return [
             'driver' => 'local',
             'root'   => public_path() . '/invoices',
         ],
-        's3' => [
-            'driver' => 's3',
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'region' => env('AWS_DEFAULT_REGION'),
-            'bucket' => env('AWS_BUCKET'),
-            'url' => env('AWS_URL'),
-        ],
+        's3' => $s3Configured ? $s3AwsDisk : $s3LocalDisk,
 
-        's3-emails' => [
-            'driver' => 's3',
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'region' => env('AWS_DEFAULT_REGION'),
-            'bucket' => env('AWS_BUCKET'),
-            'url' => env('AWS_URL'),
-        ],
+        's3-emails' => $s3Configured ? $s3AwsDisk : $s3EmailsLocalDisk,
 
     ],
 

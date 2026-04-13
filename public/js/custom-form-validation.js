@@ -915,6 +915,12 @@ function customValidate(formName, savetype = '')
 										return;
 									}
 								}
+								if (!obj || obj.status !== true) {
+									var failMsg = (obj && obj.message) ? obj.message : 'Could not save the invoice. Please try again.';
+									alert(failMsg);
+									$('.custom-error-msg').html('<span class="alert alert-danger">' + failMsg + '</span>');
+									return;
+								}
 								alert('Invoice No - '+ obj.invoice_no + ' is generated');
 								$('#createreceiptmodal').modal('hide');
                                 localStorage.setItem('activeTab', 'accounts');
@@ -1146,6 +1152,15 @@ function customValidate(formName, savetype = '')
 								}else{
 									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
 								}
+							},
+							error: function(xhr) {
+								$('.popuploader').hide();
+								var msg = 'An error occurred while saving the invoice. Please try again.';
+								if (xhr.responseJSON && xhr.responseJSON.message) {
+									msg = xhr.responseJSON.message;
+								}
+								alert(msg);
+								$('.custom-error-msg').html('<span class="alert alert-danger">' + msg + '</span>');
 							}
 						});
 					}

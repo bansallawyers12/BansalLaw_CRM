@@ -936,7 +936,7 @@
 
                                             <td>
                                                 <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
-                                                <input data-valid="required" style="display: inline-block;" class="form-control deposit_amount_invoice_per_row" name="deposit_amount[]" type="text" value="" />
+                                                <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="" />
                                             </td>
 
                                             <td>
@@ -951,7 +951,7 @@
                                         <tr>
                                             <td colspan="5" style="width:83.6%;text-align:right;color: #34395e;">Totals</td>
                                             <td colspan="2">
-                                                <span class="total_deposit_amount_all_rows_invoice" style="color: #34395e;"></span>
+                                                <span class="total_withdraw_amount_all_rows_invoice" style="color: #34395e;"></span>
                                             </td>
                                         </tr>
                                     </tbody>
