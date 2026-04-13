@@ -394,12 +394,18 @@
         color: #7a5800;
     }
 
-    .btn-primary-custom {
-        background: var(--navy);
-        color: #fff;
+    /* Anchor styled as button — beat global <a> / text-fill rules so label stays readable */
+    .signature-dashboard a.btn-primary-custom,
+    .signature-dashboard a.btn-primary-custom:link,
+    .signature-dashboard a.btn-primary-custom:visited,
+    .signature-dashboard a.btn-primary-custom:active {
+        background: var(--navy) !important;
+        color: #fff !important;
+        -webkit-text-fill-color: #fff !important;
+        text-decoration: none !important;
         padding: 10px 20px;
         border-radius: 8px;
-        border: none;
+        border: none !important;
         font-weight: 600;
         display: inline-flex;
         align-items: center;
@@ -408,10 +414,17 @@
         transition: background-color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .btn-primary-custom:hover {
-        background: var(--sidebar-active);
-        color: #fff;
+    .signature-dashboard a.btn-primary-custom:hover,
+    .signature-dashboard a.btn-primary-custom:focus {
+        background: var(--sidebar-active) !important;
+        color: #fff !important;
+        -webkit-text-fill-color: #fff !important;
         box-shadow: 0 2px 8px rgba(30, 61, 96, 0.15);
+    }
+
+    .signature-dashboard a.btn-primary-custom i {
+        color: #fff !important;
+        opacity: 1 !important;
     }
 
     .overdue-indicator {

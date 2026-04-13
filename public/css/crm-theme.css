@@ -3844,6 +3844,28 @@ body.sidebar-mini #create_appoint.add_appointment .appointment-modal-actions-row
   border-top: 1px solid var(--border) !important;
 }
 
+/* Signature dashboard — “Send New Document” CTA is an <a>; global link styling must not wash out label */
+body.sidebar-mini .main-content .signature-dashboard a.btn-primary-custom,
+body.sidebar-mini .main-content .signature-dashboard a.btn-primary-custom:link,
+body.sidebar-mini .main-content .signature-dashboard a.btn-primary-custom:visited,
+body.sidebar-mini .main-content .signature-dashboard a.btn-primary-custom:active {
+  background: var(--navy) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  text-decoration: none !important;
+}
+
+body.sidebar-mini .main-content .signature-dashboard a.btn-primary-custom:hover,
+body.sidebar-mini .main-content .signature-dashboard a.btn-primary-custom:focus {
+  background: var(--sidebar-active) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+body.sidebar-mini .main-content .signature-dashboard a.btn-primary-custom i {
+  color: #fff !important;
+}
+
 /* ---------- Assignee Action (/action) — DataTables pagination (docs/theme.md) ----------
    dataTables_min_latest.css paints .paginate_button:hover black/white; reset li + theme .page-link */
 body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button {
