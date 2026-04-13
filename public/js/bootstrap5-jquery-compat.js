@@ -9,21 +9,20 @@
     var $ = jQuery;
 
     // Modal: $('#modal').modal('show'|'hide'|'toggle')
-    if (!$.fn.modal) {
-        $.fn.modal = function(action) {
-            return this.each(function() {
-                var el = this;
-                if (typeof el === 'string') el = document.querySelector(el);
-                if (!el || !el.id) return;
-                try {
-                    var instance = bootstrap.Modal.getOrCreateInstance(el);
-                    if (action === 'show') instance.show();
-                    else if (action === 'hide') instance.hide();
-                    else if (action === 'toggle') instance.toggle();
-                } catch (e) { console.warn('Bootstrap modal:', e); }
-            });
-        };
-    }
+    // Always assign (like $.fn.popover below): legacy plugins may define a broken $.fn.modal
+    // that targets Bootstrap 4; BS5 markup requires delegating to bootstrap.Modal.
+    $.fn.modal = function(action) {
+        return this.each(function() {
+            var el = this;
+            if (!el || el.nodeType !== 1) return;
+            try {
+                var instance = bootstrap.Modal.getOrCreateInstance(el);
+                if (action === 'show') instance.show();
+                else if (action === 'hide') instance.hide();
+                else if (action === 'toggle') instance.toggle();
+            } catch (e) { console.warn('Bootstrap modal:', e); }
+        });
+    };
 
     // Collapse: $(target).collapse('toggle'|'show'|'hide')
     if (!$.fn.collapse) {
