@@ -2,11 +2,11 @@
 <div class="modal fade add_appointment custom_modal" id="create_appoint" tabindex="-1" role="dialog" aria-labelledby="create_interestModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
-			<div class="modal-header" style="background: linear-gradient(135deg, #0056b3 0%, #004085 100%); color: white; border-bottom: 2px solid rgba(255,255,255,0.2); padding: 18px 24px;">
-				<h5 class="modal-title" id="interestModalLabel" style="font-weight: 700; font-size: 18px;">
+			<div class="modal-header appointment-schedule-modal-header">
+				<h5 class="modal-title" id="interestModalLabel">
 					<i class="fas fa-calendar-plus mr-2"></i>Schedule Appointment
 				</h5>
-				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.9; font-size: 24px; font-weight: 300;">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -308,7 +308,7 @@
                             </div>
                         </div>
 
-                        <div class="col-12 col-md-12 col-lg-12 text-right pt-3" style="border-top: 1px solid #e9ecef;">
+                        <div class="col-12 col-md-12 col-lg-12 text-right pt-3 appointment-modal-actions-row">
 							<button onclick="customValidate('appointform')" type="button" class="btn btn-primary btn-lg px-4" id="appointform_save">
 								<i class="fas fa-calendar-check mr-2"></i>Schedule Appointment
 							</button>

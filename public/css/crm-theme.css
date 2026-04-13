@@ -3773,6 +3773,77 @@ body.sidebar-mini #crmCrossAccessModal #crmCrossAccessMsg.alert-danger {
   color: var(--danger) !important;
 }
 
+/* ---------- Schedule Appointment modal (#create_appoint) — docs/theme.md ----------
+   Global body.sidebar-mini h1–h5 { navy } was forcing an illegible title on the blue header. */
+body.sidebar-mini #create_appoint.add_appointment .modal-content {
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(30, 61, 96, 0.12) !important;
+}
+
+body.sidebar-mini #create_appoint.add_appointment .appointment-schedule-modal-header,
+body.sidebar-mini #create_appoint.add_appointment .modal-header {
+  background: var(--navy) !important;
+  background-image: none !important;
+  border-bottom: 3px solid var(--accent-gold) !important;
+  color: #fff !important;
+  padding: 18px 24px !important;
+}
+
+body.sidebar-mini #create_appoint.add_appointment .modal-header .modal-title,
+body.sidebar-mini #create_appoint.add_appointment .modal-header .modal-title i,
+body.sidebar-mini #create_appoint.add_appointment .modal-header h5 {
+  color: #fff !important;
+  font-weight: 700 !important;
+  font-size: 18px !important;
+}
+
+body.sidebar-mini #create_appoint.add_appointment .modal-header .close,
+body.sidebar-mini #create_appoint.add_appointment .modal-header .close span {
+  color: #fff !important;
+  opacity: 0.92 !important;
+  text-shadow: none !important;
+  font-size: 24px !important;
+  font-weight: 300 !important;
+}
+
+body.sidebar-mini #create_appoint.add_appointment .modal-header .close:hover,
+body.sidebar-mini #create_appoint.add_appointment .modal-header .close:focus {
+  opacity: 1 !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #create_appoint.add_appointment .modal-body .btn.btn-primary {
+  background: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #create_appoint.add_appointment .modal-body .btn.btn-primary:hover,
+body.sidebar-mini #create_appoint.add_appointment .modal-body .btn.btn-primary:focus {
+  background: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #create_appoint.add_appointment .modal-body .btn.btn-outline-secondary {
+  color: var(--navy) !important;
+  border-color: var(--border) !important;
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini #create_appoint.add_appointment .modal-body .btn.btn-outline-secondary:hover,
+body.sidebar-mini #create_appoint.add_appointment .modal-body .btn.btn-outline-secondary:focus {
+  background: var(--sidebar-bg) !important;
+  border-color: var(--sidebar-active) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini #create_appoint.add_appointment .appointment-modal-actions-row {
+  border-top: 1px solid var(--border) !important;
+}
+
 /* ---------- Assignee Action (/action) — DataTables pagination (docs/theme.md) ----------
    dataTables_min_latest.css paints .paginate_button:hover black/white; reset li + theme .page-link */
 body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button {

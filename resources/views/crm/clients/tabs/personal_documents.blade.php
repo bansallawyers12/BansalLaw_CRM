@@ -33,7 +33,7 @@
                     <!-- Personal Documents Content -->
                     <div class="personal-documents-content" id="personal-documents-content">
                         <!-- Document Type Subtabs Container -->
-                        <div class="subtab-header-container" style="background-color: #4a90e2; padding: 10px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div class="subtab-header-container">
                             <nav class="subtabs2" style="display: flex; gap: 5px; flex-wrap: wrap; flex: 1;">
                                 <?php foreach ($persDocCatList as $catVal): ?>
                                     <?php
@@ -93,13 +93,13 @@
                                         </div>
                                         
                                         <!-- Bulk Upload Dropzone (Hidden by default) -->
-                                        <div class="bulk-upload-dropzone-container" id="bulk-upload-<?= $id ?>" style="display: none; margin: 15px 0; padding: 20px; border: 2px dashed #4a90e2; border-radius: 8px; background-color: #f8f9fa;">
+                                        <div class="bulk-upload-dropzone-container" id="bulk-upload-<?= $id ?>" style="display: none; margin: 15px 0; padding: 20px;">
                                             <div class="bulk-upload-dropzone" data-categoryid="<?= $id ?>" style="text-align: center; padding: 30px; cursor: pointer;">
-                                                <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #2563eb; margin-bottom: 15px;"></i>
-                                                <p style="font-size: 16px; color: #374151; margin-bottom: 10px;">
+                                                <i class="fas fa-cloud-upload-alt bulk-upload-icon"></i>
+                                                <p class="bulk-upload-lead">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
-                                                <p style="font-size: 14px; color: #4b5563;">You can select multiple files at once</p>
+                                                <p class="bulk-upload-hint">You can select multiple files at once</p>
                                                 <input type="file" class="bulk-upload-file-input" data-categoryid="<?= $id ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
                                             </div>
                                             <div class="bulk-upload-file-list" style="display: none; margin-top: 20px;">
@@ -147,10 +147,10 @@
                                                                 <span style="flex: 1;"><?= htmlspecialchars($fetch->checklist) ?></span>
                                                                 <div class="checklist-actions" style="display: flex; gap: 5px;">
                                                                     <?php if (!$fetch->file_name): ?>
-                                                                    <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
+                                                                    <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Edit Checklist Name">
                                                                         <i class="fas fa-edit"></i>
                                                                     </a>
-                                                                    <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
+                                                                    <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Delete Checklist">
                                                                         <i class="fas fa-trash"></i>
                                                                     </a>
                                                                     <?php endif; ?>
@@ -238,7 +238,7 @@
                                     </div>
 
                                     <div class="preview-pane file-preview-container preview-container-<?= $id ?>" style="display: inline; margin-top: 15px !important; width: 499px;">
-                                        <p style="color: #374151;">Click on a file to preview it here.</p>
+                                        <p class="preview-placeholder-text">Click on a file to preview it here.</p>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -248,26 +248,26 @@
             </div>
 
             <!-- Custom Context Menu -->
-            <div id="fileContextMenu" class="context-menu" style="display: none; position: fixed; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10000; min-width: 180px;">
-                <div class="context-menu-item" onclick="handleContextAction('rename-checklist')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+            <div id="fileContextMenu" class="context-menu personal-docs-context-menu" style="display: none; position: fixed; z-index: 10000; min-width: 180px;">
+                <div class="context-menu-item" onclick="handleContextAction('rename-checklist')" style="padding: 8px 12px; cursor: pointer;">
                     <i class="fa fa-edit" style="margin-right: 8px;"></i> Rename Checklist
                 </div>
-                <div class="context-menu-item" onclick="handleContextAction('rename-doc')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+                <div class="context-menu-item" onclick="handleContextAction('rename-doc')" style="padding: 8px 12px; cursor: pointer;">
                     <i class="fa fa-file-text" style="margin-right: 8px;"></i> Rename File Name
                 </div>
-                <div class="context-menu-item" onclick="handleContextAction('move')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+                <div class="context-menu-item" onclick="handleContextAction('move')" style="padding: 8px 12px; cursor: pointer;">
                     <i class="fa fa-arrows-alt" style="margin-right: 8px;"></i> Move Document
                 </div>
-                <div class="context-menu-item" onclick="handleContextAction('preview')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+                <div class="context-menu-item" onclick="handleContextAction('preview')" style="padding: 8px 12px; cursor: pointer;">
                     <i class="fa fa-eye" style="margin-right: 8px;"></i> Preview
                 </div>
-                <div id="context-pdf-option" class="context-menu-item" onclick="handleContextAction('pdf')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; display: none;">
+                <div id="context-pdf-option" class="context-menu-item" onclick="handleContextAction('pdf')" style="padding: 8px 12px; cursor: pointer; display: none;">
                     <i class="fa fa-file-pdf" style="margin-right: 8px;"></i> PDF
                 </div>
-                <div class="context-menu-item" onclick="handleContextAction('download')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+                <div class="context-menu-item" onclick="handleContextAction('download')" style="padding: 8px 12px; cursor: pointer;">
                     <i class="fa fa-download" style="margin-right: 8px;"></i> Download
                 </div>
-                <div class="context-menu-item" onclick="handleContextAction('not-used')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+                <div class="context-menu-item" onclick="handleContextAction('not-used')" style="padding: 8px 12px; cursor: pointer;">
                     <i class="fa fa-trash" style="margin-right: 8px;"></i> Not Used
                 </div>
             </div>
@@ -1075,17 +1075,17 @@
             </script>
 
             <style>
-                .context-menu-item:hover {
-                    background-color: #f8f9fa;
+                /* Personal documents — colours from docs/theme.md (CSS variables in crm-theme.css) */
+                .personal-docs-context-menu .context-menu-item:hover {
+                    background-color: var(--sidebar-bg, #ddeaf8);
                 }
 
-                /* Drag and Drop Zone Styles */
                 .document-drag-drop-zone {
-                    border: 2px dashed #ccc;
-                    border-radius: 4px;
+                    border: 2px dashed var(--border, #c8dcef);
+                    border-radius: 8px;
                     padding: 15px 20px;
                     text-align: center;
-                    background-color: #f9f9f9;
+                    background-color: var(--page-bg, #f0f6ff);
                     cursor: pointer !important;
                     transition: all 0.3s ease;
                     min-height: 60px;
@@ -1097,19 +1097,18 @@
                     z-index: 1;
                 }
                 
-                /* Make all child elements transparent to pointer events so drag events reach the dropzone */
                 .document-drag-drop-zone * {
                     pointer-events: none;
                 }
 
                 .document-drag-drop-zone:hover {
-                    border-color: #007bff;
-                    background-color: #f0f8ff;
+                    border-color: var(--sidebar-active, #3a6fa8);
+                    background-color: rgba(221, 234, 248, 0.6);
                 }
 
                 .document-drag-drop-zone.drag_over {
-                    border-color: #28a745;
-                    background-color: #e8f5e9;
+                    border-color: var(--success, #1e7a52);
+                    background-color: rgba(30, 122, 82, 0.1);
                     border-width: 3px;
                 }
 
@@ -1117,12 +1116,12 @@
                     display: flex;
                     align-items: center;
                     gap: 10px;
-                    color: #374151;
+                    color: var(--text-dark, #1a2c40);
                 }
 
                 .drag-zone-inner i {
                     font-size: 20px;
-                    color: #2563eb;
+                    color: var(--sidebar-active, #3a6fa8);
                 }
 
                 .drag-zone-text {
@@ -1138,27 +1137,24 @@
                 .document-drag-drop-zone.uploading .drag-zone-text::after {
                     content: ' Uploading...';
                     font-weight: bold;
-                    color: #007bff;
+                    color: var(--sidebar-active, #3a6fa8);
                 }
 
-                /* Bulk Upload Styles */
                 .bulk-upload-dropzone {
                     position: relative;
                 }
                 
-                /* Make all child elements transparent to pointer events so drag events reach the dropzone */
                 .bulk-upload-dropzone * {
                     pointer-events: none;
                 }
                 
                 .bulk-upload-dropzone.drag_over {
-                    border-color: #28a745;
-                    background-color: #e8f5e9;
+                    border-color: var(--success, #1e7a52);
+                    background-color: rgba(30, 122, 82, 0.08);
                 }
 
-                /* Bulk Upload Mapping Table Styles */
                 #bulk-upload-mapping-table table tbody tr {
-                    border-bottom: 1px solid #dee2e6;
+                    border-bottom: 1px solid var(--border, #c8dcef);
                 }
 
                 #bulk-upload-mapping-table table tbody tr td {
@@ -1189,8 +1185,8 @@
                 }
 
                 .bulk-upload-file-item .file-name {
-                    font-weight: 500;
-                    color: #333;
+                    font-weight: 600;
+                    color: var(--text-dark, #1a2c40);
                     word-break: break-word;
                     overflow-wrap: break-word;
                     white-space: normal;
@@ -1200,7 +1196,7 @@
 
                 .bulk-upload-file-item .file-size {
                     font-size: 12px;
-                    color: #4b5563;
+                    color: var(--text-muted, #5e7a90);
                 }
 
                 .bulk-upload-file-item .checklist-select {
@@ -1210,22 +1206,25 @@
                 .bulk-upload-file-item .match-status {
                     font-size: 12px;
                     padding: 2px 8px;
-                    border-radius: 3px;
+                    border-radius: 4px;
                 }
 
                 .match-status.auto-matched {
-                    background-color: #d4edda;
-                    color: #155724;
+                    background-color: rgba(30, 122, 82, 0.12);
+                    color: var(--success, #1e7a52);
+                    border: 1px solid rgba(30, 122, 82, 0.28);
                 }
 
                 .match-status.manual {
-                    background-color: #fff3cd;
-                    color: #856404;
+                    background-color: rgba(200, 153, 42, 0.15);
+                    color: #7a5800;
+                    border: 1px solid rgba(200, 153, 42, 0.35);
                 }
 
                 .match-status.new-checklist {
-                    background-color: #cce5ff;
-                    color: #004085;
+                    background-color: rgba(30, 61, 96, 0.1);
+                    color: var(--navy, #1e3d60);
+                    border: 1px solid rgba(58, 111, 168, 0.25);
                 }
 
                 .remove-bulk-file {
@@ -1235,9 +1234,9 @@
                 }
 
                 .remove-bulk-file:hover {
-                    background-color: #c82333;
-                    border-color: #bd2130;
-                    transform: scale(1.1);
+                    background-color: var(--danger, #a83020);
+                    border-color: var(--danger, #a83020);
+                    transform: scale(1.05);
                 }
 
                 .remove-bulk-file i {
@@ -1252,19 +1251,20 @@
                     top: 0;
                     width: 100%;
                     height: 100%;
-                    background-color: rgba(0,0,0,0.5);
+                    background-color: rgba(30, 61, 96, 0.35);
                 }
 
                 .bulk-upload-mapping-content {
-                    background-color: #fefefe;
+                    background-color: var(--card-bg, #fff);
                     margin: 5% auto;
                     padding: 20px;
-                    border: 1px solid #888;
-                    border-radius: 8px;
+                    border: 1px solid var(--border, #c8dcef);
+                    border-radius: 10px;
                     width: 90%;
                     max-width: 900px;
                     max-height: 80vh;
                     overflow-y: auto;
+                    box-shadow: 0 4px 24px rgba(30, 61, 96, 0.12);
                 }
 
                 .bulk-upload-mapping-header {
@@ -1273,29 +1273,30 @@
                     align-items: center;
                     margin-bottom: 20px;
                     padding-bottom: 15px;
-                    border-bottom: 2px solid #eee;
+                    border-bottom: 1px solid var(--border, #c8dcef);
                 }
 
                 .bulk-upload-mapping-header h3 {
                     margin: 0;
-                    color: #333;
+                    color: var(--navy, #1e3d60);
+                    font-weight: 700;
                 }
 
                 .close-mapping-modal {
-                    color: #aaa;
+                    color: var(--text-muted, #5e7a90);
                     font-size: 28px;
                     font-weight: bold;
                     cursor: pointer;
                 }
 
                 .close-mapping-modal:hover {
-                    color: #000;
+                    color: var(--navy, #1e3d60);
                 }
 
                 .bulk-upload-actions {
                     margin-top: 20px;
                     padding-top: 15px;
-                    border-top: 2px solid #eee;
+                    border-top: 1px solid var(--border, #c8dcef);
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
@@ -1309,20 +1310,21 @@
                 .progress-bar-container {
                     width: 100%;
                     height: 25px;
-                    background-color: #f0f0f0;
-                    border-radius: 4px;
+                    background-color: var(--page-bg, #f0f6ff);
+                    border-radius: 6px;
                     overflow: hidden;
+                    border: 1px solid var(--border, #c8dcef);
                 }
 
                 .progress-bar {
                     height: 100%;
-                    background-color: #4a90e2;
+                    background-color: var(--sidebar-active, #3a6fa8);
                     width: 0%;
                     transition: width 0.3s ease;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    color: white;
+                    color: #fff;
                     font-size: 12px;
                 }
             </style>
@@ -1709,7 +1711,7 @@
                         html += '<tr class="bulk-upload-file-item" data-file-index="' + index + '" data-file-name="' + escapeHtml(fileName) + '">';
                         html += '<td>';
                         html += '<div class="file-info">';
-                        html += '<i class="fas fa-file" style="color: #4a90e2;"></i>';
+                        html += '<i class="fas fa-file personal-doc-file-icon"></i>';
                         html += '<div>';
                         html += '<div class="file-name">' + escapeHtml(fileName) + '</div>';
                         html += '<div class="file-size">' + fileSize + '</div>';

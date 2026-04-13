@@ -121,16 +121,16 @@
   .note-footer { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
 
-/* Documents Tab CSS */
-.documentalls-container { padding: 0; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 20px; }
+/* Documents Tab CSS (tokens: docs/theme.md via crm-theme.css :root) */
+.documentalls-container { padding: 0; background-color: var(--card-bg, #fff); border-radius: 10px; box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06); border: 1px solid var(--border, #c8dcef); margin-top: 20px; }
 .subtabs, .subtabs2, .subtabs6 { display: flex; background-color: transparent; padding: 0; gap: 5px; flex-wrap: wrap; }
-.subtabs3 { display: flex; background-color: #4a90e2; padding: 10px; border-radius: 8px 8px 0 0; gap: 5px; flex-wrap: wrap; }
-.subtab-header-container { background-color: #4a90e2; padding: 10px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+.subtabs3 { display: flex; background-color: var(--sidebar-active, #3a6fa8); padding: 10px; border-radius: 8px 8px 0 0; gap: 5px; flex-wrap: wrap; border-bottom: 3px solid var(--accent-gold, #c8992a); }
+.subtab-header-container { background-color: var(--sidebar-active, #3a6fa8); padding: 10px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 3px solid var(--accent-gold, #c8992a); }
 .subtab-button.ml-auto { margin-left: auto; }
-.subtab-button, .subtab2-button, .subtab6-button, .subtab3-button { padding: 10px 20px; background: none; border: none; color: white !important; font-size: 1rem; font-weight: 500; cursor: pointer; }
-.subtab-button:hover, .subtab2-button:hover, .subtab6-button:hover, .subtab3-button:hover { background-color: #357ab8; border-radius: 5px; }
-.subtab-button.active, .subtab2-button.active, .subtab6-button.active, .subtab3-button.active { background-color: #357ab8; border-radius: 5px; }
-.subtab-content, .subtab2-content, .subtab6-content, .subtab3-content { padding: 15px; background: #fff; display: flex; flex-direction: row; gap: 20px; }
+.subtab-button, .subtab2-button, .subtab6-button, .subtab3-button { padding: 10px 20px; background: none; border: none; color: #fff !important; font-size: 1rem; font-weight: 500; cursor: pointer; border-radius: 5px; }
+.subtab-button:hover, .subtab2-button:hover, .subtab6-button:hover, .subtab3-button:hover { background-color: rgba(255, 255, 255, 0.18); }
+.subtab-button.active, .subtab2-button.active, .subtab6-button.active, .subtab3-button.active { background-color: rgba(255, 255, 255, 0.28); box-shadow: inset 0 -2px 0 0 var(--accent-gold, #c8992a); }
+.subtab-content, .subtab2-content, .subtab6-content, .subtab3-content { padding: 15px; background: var(--card-bg, #fff); display: flex; flex-direction: row; gap: 20px; }
 .subtab-pane, .subtab2-pane, .subtab6-pane, .subtab3-pane { display: none; width: 100%; }
 .subtab-pane.active, .subtab2-pane.active, .subtab6-pane.active { display: flex; flex-direction: row; gap: 20px; }
 .subtab3-pane.active { display: block; }
@@ -164,24 +164,43 @@
     margin-top: 20px;
 }
 .subtab-header, .subtab2-header, .subtab6-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.subtab-header h3, .subtab2-header h3, .subtab6-header h3 { font-size: 1.5rem; color: #333; margin: 0; display: flex; align-items: center; }
-.subtab-header h3 i, .subtab2-header h3 i, .subtab6-header h3 i { margin-right: 8px; color: #4a90e2; }
-.subtab-header .add-checklist-btn, .subtab2-header .add-checklist-btn, .subtab6-header .add-checklist-btn, .add_personal_doc_cat-btn, .add-visa-doc-category-btn { background-color: #28a745 !important; color: white; border: none; padding: 8px 16px; font-weight: 500; border-radius: 5px; }
-.subtab-header .add-checklist-btn:hover, .subtab2-header .add-checklist-btn:hover, .subtab6-header .add-checklist-btn:hover, .add_personal_doc_cat-btn:hover, .add-visa-doc-category-btn:hover { background-color: #218838 !important; color: white; }
+.subtab-header h3, .subtab2-header h3, .subtab6-header h3 { font-size: 1.5rem; color: var(--navy, #1e3d60); margin: 0; display: flex; align-items: center; font-weight: 700; }
+.subtab-header h3 i, .subtab2-header h3 i, .subtab6-header h3 i { margin-right: 8px; color: var(--sidebar-active, #3a6fa8); }
+.subtab-header .add-checklist-btn, .subtab2-header .add-checklist-btn, .subtab6-header .add-checklist-btn, .add_personal_doc_cat-btn, .add-visa-doc-category-btn { background-color: var(--navy, #1e3d60) !important; color: #fff !important; border: none; padding: 8px 16px; font-weight: 600; border-radius: 8px; }
+.subtab-header .add-checklist-btn:hover, .subtab2-header .add-checklist-btn:hover, .subtab6-header .add-checklist-btn:hover, .add_personal_doc_cat-btn:hover, .add-visa-doc-category-btn:hover { filter: brightness(1.06); color: #fff !important; }
+.subtab2-header .btn-info.bulk-upload-toggle-btn { background-color: rgba(58, 111, 168, 0.12) !important; color: var(--sidebar-active, #3a6fa8) !important; border: 1px solid rgba(58, 111, 168, 0.32) !important; font-weight: 600; }
+.subtab2-header .btn-info.bulk-upload-toggle-btn:hover { background-color: rgba(58, 111, 168, 0.2) !important; border-color: rgba(58, 111, 168, 0.45) !important; color: var(--navy, #1e3d60) !important; }
+#personaldocuments-tab .subtab-header-container .btn-secondary { background: var(--card-bg, #fff) !important; color: var(--navy, #1e3d60) !important; border: 1px solid var(--border, #c8dcef) !important; font-weight: 600; }
+#personaldocuments-tab .subtab-header-container .btn-secondary:hover { background: var(--sidebar-bg, #ddeaf8) !important; color: var(--navy, #1e3d60) !important; }
+#personaldocuments-tab .edit-checklist-btn { color: var(--sidebar-active, #3a6fa8); cursor: pointer; }
+#personaldocuments-tab .edit-checklist-btn:hover { color: var(--navy, #1e3d60); }
+#personaldocuments-tab .delete-checklist-btn { color: var(--danger, #a83020); cursor: pointer; }
+#personaldocuments-tab .delete-checklist-btn:hover { filter: brightness(1.08); }
+#personaldocuments-tab .preview-pane .preview-placeholder-text { color: var(--text-muted, #5e7a90); margin: 0; }
+#personaldocuments-tab .bulk-upload-dropzone-container { border: 2px dashed var(--sidebar-active, #3a6fa8); border-radius: 8px; background-color: var(--page-bg, #f0f6ff); }
+#personaldocuments-tab .bulk-upload-dropzone .bulk-upload-icon { font-size: 48px; color: var(--sidebar-active, #3a6fa8); margin-bottom: 15px; display: inline-block; }
+#personaldocuments-tab .bulk-upload-dropzone .bulk-upload-lead { font-size: 16px; color: var(--text-dark, #1a2c40); margin-bottom: 10px; }
+#personaldocuments-tab .bulk-upload-dropzone .bulk-upload-hint { font-size: 14px; color: var(--text-muted, #5e7a90); }
+.personal-docs-context-menu { background: var(--card-bg, #fff); border: 1px solid var(--border, #c8dcef); border-radius: 8px; box-shadow: 0 4px 16px rgba(30, 61, 96, 0.12); }
+.personal-docs-context-menu .context-menu-item { border-bottom: 1px solid var(--border, #c8dcef); color: var(--text-dark, #1a2c40); }
+.personal-docs-context-menu .context-menu-item:last-child { border-bottom: none; }
+.personal-docs-context-menu .context-menu-item:hover { background-color: var(--sidebar-bg, #ddeaf8); }
+#personaldocuments-tab .personal-doc-file-icon { color: var(--sidebar-active, #3a6fa8); }
 .checklist-table-container { flex: 1.5; overflow-x: auto; }
-.checklist-table { width: 100%; border-collapse: collapse; background: #ffffff; color: #333; }
-.checklist-table thead { background: #f8f9fa; }
-.checklist-table th { padding: 10px; text-align: left; font-weight: 600; color: #333; border-bottom: 1px solid #dee2e6; }
-.checklist-table tbody tr { border-bottom: 1px solid #dee2e6; }
-.checklist-table td { padding: 10px; color: #333; }
-.checklist-table td a.file-link { color: #4a90e2; text-decoration: none; }
-.checklist-table td a.file-link:hover { text-decoration: underline; }
-.checklist-table td small { color: #666; }
-.preview-pane { flex: 1; background: #ffffff; border-radius: 5px; padding: 0; color: #333; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 200px; display: flex; align-items: flex-start; justify-content: center; }
+.checklist-table { width: 100%; border-collapse: collapse; background: var(--card-bg, #fff); color: var(--text-dark, #1a2c40); }
+.checklist-table thead { background: var(--page-bg, #f0f6ff); }
+.checklist-table th { padding: 10px 8px; text-align: left; font-weight: 600; font-size: 0.72rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted, #5e7a90); border-bottom: 1px solid var(--border, #c8dcef); }
+.checklist-table tbody tr { border-bottom: 1px solid var(--border, #c8dcef); }
+.checklist-table tbody tr:hover { background-color: #ebf3ff; }
+.checklist-table td { padding: 10px; color: var(--text-dark, #1a2c40); }
+.checklist-table td a.file-link { color: var(--sidebar-active, #3a6fa8); text-decoration: none; font-weight: 600; }
+.checklist-table td a.file-link:hover { color: var(--navy, #1e3d60); text-decoration: underline; }
+.checklist-table td small { color: var(--text-muted, #5e7a90); }
+.preview-pane { flex: 1; background: var(--card-bg, #fff); border-radius: 8px; padding: 0; color: var(--text-dark, #1a2c40); border: 1px solid var(--border, #c8dcef); box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06); min-height: 200px; display: flex; align-items: flex-start; justify-content: center; }
 .preview-content { width: 100%; height: 100%; }
 @media (max-width: 768px) {
   .subtabs { flex-direction: column; padding: 10px; }
-  .subtabs3 { flex-direction: column; padding: 10px; background-color: #4a90e2; }
+  .subtabs3 { flex-direction: column; padding: 10px; background-color: var(--sidebar-active, #3a6fa8); }
   .subtab-button, .subtab3-button { padding: 8px 10px; font-size: 0.9rem; }
   .subtab-pane.active { flex-direction: column; }
   .subtab-header { flex-direction: column; gap: 10px; align-items: flex-start; }
