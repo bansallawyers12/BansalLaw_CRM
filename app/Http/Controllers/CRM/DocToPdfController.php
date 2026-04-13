@@ -51,8 +51,8 @@ class DocToPdfController extends Controller
     public function debugConfig()
     {
         $config = [
-            'python_converter_url' => env('PYTHON_CONVERTER_URL', 'http://localhost:5000'),
-            'python_converter_timeout' => env('PYTHON_CONVERTER_TIMEOUT', 120),
+            'python_converter_url' => config('services.python_converter.url'),
+            'python_converter_timeout' => config('services.python_converter.timeout'),
             'app_url' => url('/'),
         ];
 

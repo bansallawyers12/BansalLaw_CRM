@@ -13,8 +13,9 @@ class PythonConverterService
 
     public function __construct()
     {
-        $this->apiUrl = env('PYTHON_CONVERTER_URL', 'http://localhost:5000');
-        $this->timeout = env('PYTHON_CONVERTER_TIMEOUT', 120); // 2 minutes timeout
+        // Must match config/services.php (same default port as unified python_services)
+        $this->apiUrl = config('services.python_converter.url', 'http://localhost:5001');
+        $this->timeout = (int) config('services.python_converter.timeout', 120);
     }
 
     /**
