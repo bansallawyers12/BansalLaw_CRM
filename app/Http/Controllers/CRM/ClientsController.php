@@ -2186,8 +2186,7 @@ class ClientsController extends Controller
                 
                 //dd($clientFamilyDetails);
                 
-                // Check and insert/update application record when Client Portal tab is accessed
-                // applications table removed - workflow is tracked via client_matters
+                // applications table removed — matter workflow is tracked via client_matters
                 
                 // Get current admin user data for SMS templates
                 $currentAdmin = Auth::user();

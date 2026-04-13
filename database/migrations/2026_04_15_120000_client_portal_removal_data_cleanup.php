@@ -22,6 +22,10 @@ return new class extends Migration
         }
     }
 
+    /**
+     * Only reverses the checklist table rename. Does not restore clientportal_details_audit
+     * or revert notes.task_group (Client Portal → Query).
+     */
     public function down(): void
     {
         if (Schema::hasTable('document_checklists') && ! Schema::hasTable('portal_document_checklists')) {

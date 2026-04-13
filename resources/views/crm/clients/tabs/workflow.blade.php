@@ -1,8 +1,8 @@
-<!-- Workflow Tab - Matter-specific, mirrors Client Portal workflow UI -->
+{{-- Workflow tab: matter stages, deadlines, discontinue/reopen (server-rendered + JS) --}}
 <div class="tab-pane" id="workflow-tab">
     <div class="card full-width workflow-tab-container">
         <?php
-        // Get the selected matter based on URL parameter or latest matter (same logic as Client Portal)
+        // Selected matter from URL matter ref or latest active matter for this client
         $workflowSelectedMatter = null;
         $workflowMatterName = '';
         $workflowMatterNumber = '';
@@ -516,7 +516,7 @@
             });
         }
 
-        // Reopen button (for discontinued matters - workflow tab and client portal tab)
+        // Reopen button (discontinued matters, workflow tab)
         document.addEventListener('click', function(e) {
             var btn = e.target.closest('.matter-detail-reopen-btn');
             if (!btn) return;

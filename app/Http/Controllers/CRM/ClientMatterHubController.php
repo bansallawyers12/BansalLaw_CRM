@@ -339,7 +339,7 @@ class ClientMatterHubController extends Controller
 
 				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
 
-				// Activity Feed (activities_logs): skip when request is from Client Portal tab; keep for Workflow tab etc.
+				// Activity feed: logged for all CRM workflow stage changes (legacy hook always allows logging).
 				if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
 					$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $nextStage->name . '</b>';
 					if ($isAdvancingToDecisionReceived) {
@@ -493,7 +493,7 @@ class ClientMatterHubController extends Controller
 
 				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
 
-				// Activity Feed (activities_logs): skip when request is from Client Portal tab; keep for Workflow tab etc.
+				// Activity feed: logged for all CRM workflow stage changes (legacy hook always allows logging).
 				if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
 					$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $prevStage->name . '</b>';
 
@@ -551,6 +551,17 @@ class ClientMatterHubController extends Controller
 				'message' => 'An error occurred while updating the stage. Please try again.'
 			], 500);
 		}
+	}
+
+	/**
+	 * Client detail tabs where matter discontinue/reopen should notify the client (DB notifications + FCM).
+	 * Includes legacy URL slug `client_portal` and the current Workflow tab (`workflow`).
+	 */
+	private function shouldNotifyClientForMatterLifecycle(?string $currentTab): bool
+	{
+		$t = strtolower(trim((string) $currentTab));
+
+		return in_array($t, ['application', 'client_portal', 'workflow'], true);
 	}
 
 	private function shouldOmitActivitiesLogForClientPortalWebContext(Request $request): bool
@@ -628,7 +639,7 @@ class ClientMatterHubController extends Controller
 
 			$matterNo = $clientMatter->client_unique_matter_no ?? 'ID:' . $matterId;
 
-			// Activity Feed: Workflow tab does not send source; omit only if Client Portal context is explicit.
+			// Activity feed: workflow change from CRM (legacy hook always allows logging).
 			if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
 				$activityLog = new ActivitiesLog;
 				$activityLog->client_id = $clientMatter->client_id;
@@ -700,7 +711,7 @@ class ClientMatterHubController extends Controller
 					$description .= '<br>Notes: ' . e($notes);
 				}
 
-				// Activity Feed: omit when discontinuing from Client Portal / application tab (current_tab in request).
+				// Activity feed: matter discontinued from CRM (legacy hook always allows logging).
 				if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
 					$activityLog = new ActivitiesLog;
 					$activityLog->client_id = $clientMatter->client_id;
@@ -715,9 +726,9 @@ class ClientMatterHubController extends Controller
 					$activityLog->save();
 				}
 
-				// Notify client and send push when Discontinue is from Client Portal tab only
+				// Notify client and send push when discontinue is from matter-related tabs (workflow, application, legacy client_portal slug)
 				$currentTab = $request->input('current_tab', 'personaldetails');
-				if (in_array($currentTab, ['application', 'client_portal'])) {
+				if ($this->shouldNotifyClientForMatterLifecycle($currentTab)) {
 					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
 					$notificationMessage = 'Your matter ' . $matterNo . ' has been discontinued. Reason: ' . e($reason);
 					DB::table('notifications')->insert([
@@ -815,7 +826,7 @@ class ClientMatterHubController extends Controller
 			if ($saved) {
 				// applications table removed
 
-				// Activity Feed: omit when reopening from client detail Client Portal / application tab; keep for Workflow tab and matter list.
+				// Activity feed: matter reopened from CRM (legacy hook always allows logging).
 				if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
 					$activityLog = new ActivitiesLog;
 					$activityLog->client_id = $clientMatter->client_id;
@@ -830,18 +841,17 @@ class ClientMatterHubController extends Controller
 					$activityLog->save();
 				}
 
-				// Notify client and send push when Reopen is from Client Portal tab OR from Matter List (only if Client Portal is active)
+				// Notify client and send push when reopen is from matter-related tabs or matter list
 				$currentTab = $request->input('current_tab', '');
 				$source = $request->input('source', '');
 				$shouldNotify = false;
 
-			if (in_array($currentTab, ['application', 'client_portal'])) {
-				// Reopen from Client Portal tab on client detail page - always notify
-				$shouldNotify = true;
-			} elseif ($source === 'matter_list') {
-				// Reopen from Matter List - always notify
-				$shouldNotify = true;
-			}
+				if ($this->shouldNotifyClientForMatterLifecycle($currentTab)) {
+					$shouldNotify = true;
+				} elseif ($source === 'matter_list') {
+					// Reopen from Matter List - always notify
+					$shouldNotify = true;
+				}
 
 				if ($shouldNotify) {
 					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
@@ -934,7 +944,7 @@ class ClientMatterHubController extends Controller
 			$clientId = $clientMatter->client_id;
 			$clientMatter->delete();
 
-			// Activity Feed: omit when delete is invoked with Client Portal context (source/current_tab).
+			// Activity feed: permanent matter delete from CRM (legacy hook always allows logging).
 			if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
 				$activityLog = new ActivitiesLog;
 				$activityLog->client_id = $clientId;
@@ -1445,7 +1455,7 @@ class ClientMatterHubController extends Controller
 			}
 		}
 
-		// Create action for Action page Client Portal tab so it appears in the list
+		// Create assignee action notes (Query task group)
 		$clientMatter = ClientMatter::find($clientMatterId);
 		if ($clientMatter) {
 			$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatterId;
@@ -1515,7 +1525,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 						'seen' => 0
 					]);
 
-					// Create action for Action page Client Portal tab
+					// Create assignee action notes (Query task group)
 					$clientMatterModel = ClientMatter::find($clientMatterId);
 					if ($clientMatterModel) {
 						$desc = 'Document "' . $docType . '" deleted for matter ' . $matterNo;
@@ -1566,7 +1576,8 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 		$response['status'] 	= 	true;
 
 		$response['doclistdata']	=	$doclistdata;
-		$response['client_portal_upload_count']	=	@$applicationuploadcount[0]->cnt;
+		$response['client_portal_upload_count']	=	@$applicationuploadcount[0]->cnt; // legacy response key (distinct workflow checklist uploads)
+		$response['workflow_checklist_upload_count'] = (int) (@$applicationuploadcount[0]->cnt ?? 0);
 
 		$checklistItems = $clientMatterId ? CpDocChecklist::where('client_matter_id', $clientMatterId)->get() : collect();
 			$checklistdata = '<table class="table"><tbody>';
@@ -1629,7 +1640,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 						'seen' => 0
 					]);
 
-					// Create action for Action page Client Portal tab
+					// Create assignee action notes (Query task group)
 					$clientMatterModel = ClientMatter::find($clientMatterId);
 					if ($clientMatterModel) {
 						$desc = 'Document "' . $docType . '" deleted for matter ' . $matterNo;
@@ -1799,7 +1810,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 				]);
 			
 			if ($updated) {
-				// Log activity (Client Portal Documents tab - website)
+				// Log activity (workflow checklist document, CRM)
 				$doc = DB::table('documents')->where('id', $documentId)->first();
 				if ($doc) {
 					$clientMatterId = $doc->client_matter_id ?? null;
@@ -1809,8 +1820,8 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 							DB::table('activities_logs')->insert([
 								'client_id' => $clientMatter->client_id,
 								'created_by' => Auth::guard('admin')->id(),
-								'subject' => 'Approved document in Client Portal (Documents tab)',
-								'description' => 'Document approved via Client Portal tab (website) for document ID: ' . $documentId,
+								'subject' => 'Approved workflow checklist document',
+								'description' => 'Workflow checklist document approved in CRM for document ID: ' . $documentId,
 								'task_status' => 0,
 								'pin' => 0,
 								'source' => 'crm',
@@ -1838,7 +1849,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 							'seen' => 0
 						]);
 
-						// Create action for Action page Client Portal tab
+						// Create assignee action notes (Query task group)
 						$clientMatterModel = ClientMatter::find($clientMatterId);
 						if ($clientMatterModel) {
 							$desc = 'Document "' . $docType . '" approved for matter ' . $matterNo;
@@ -1889,7 +1900,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 				->update($updateData);
 			
 			if ($updated) {
-				// Log activity (Client Portal Documents tab - website)
+				// Log activity (workflow checklist document, CRM)
 				$doc = DB::table('documents')->where('id', $documentId)->first();
 				if ($doc) {
 					$clientMatterId = $doc->client_matter_id ?? null;
@@ -1899,8 +1910,8 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 							DB::table('activities_logs')->insert([
 								'client_id' => $clientMatter->client_id,
 								'created_by' => Auth::guard('admin')->id(),
-								'subject' => 'Rejected document in Client Portal (Documents tab)',
-								'description' => 'Document rejected via Client Portal tab (website) for document ID: ' . $documentId . (trim($rejectReason ?? '') !== '' ? '. Reason: ' . trim($rejectReason) : ''),
+								'subject' => 'Rejected workflow checklist document',
+								'description' => 'Workflow checklist document rejected in CRM for document ID: ' . $documentId . (trim($rejectReason ?? '') !== '' ? '. Reason: ' . trim($rejectReason) : ''),
 								'task_status' => 0,
 								'pin' => 0,
 								'source' => 'crm',
@@ -1928,7 +1939,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 							'seen' => 0
 						]);
 
-						// Create action for Action page Client Portal tab
+						// Create assignee action notes (Query task group)
 						$clientMatterModel = ClientMatter::find($clientMatterId);
 						if ($clientMatterModel) {
 							$desc = 'Document "' . $docType . '" rejected for matter ' . $matterNo;
@@ -2088,7 +2099,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 	}
 
 	/**
-	 * GET /api/client-portal/checklist-documents
+	 * GET /api/crm/matter-checklist-documents
 	 * Returns documents for a given cp_doc_checklists entry.
 	 */
 	public function getChecklistDocuments(Request $request)
@@ -2112,7 +2123,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 	}
 
 	/**
-	 * POST /api/client-portal/delete-document
+	 * POST /api/crm/matter-checklist-delete-document
 	 * Deletes a single document by ID.
 	 */
 	public function deleteChecklistDocument(Request $request)
@@ -2155,7 +2166,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 	}
 
 	/**
-	 * POST /api/client-portal/update-document-status
+	 * POST /api/crm/matter-checklist-update-document-status
 	 * Updates cp_doc_status (1=Approved, 2=Rejected) on a document.
 	 */
 	public function updateChecklistDocumentStatus(Request $request)
@@ -2186,7 +2197,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 	}
 
 	/**
-	 * Notify client (List Notifications API + badge) and create Client Portal action for document approve/reject/delete from website.
+	 * Notify client (list notifications + badge) and create assignee Query notes for document approve/reject/delete from CRM.
 	 * Message format: "{Super admin or PERSON ASSISTING name} approved/rejected/deleted document of {ChecklistName} checklist in {MatterName}."
 	 */
 	private function notifyClientAndCreateActionForDocumentStatusChange(int $documentId, string $action): void
@@ -2240,7 +2251,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 	}
 
 	/**
-	 * Notify client and create Client Portal action when document is deleted (document no longer exists).
+	 * Notify client and create assignee Query notes when a checklist document is deleted (record no longer exists).
 	 */
 	private function notifyClientAndCreateActionForDocumentStatusChangeByMatter(int $clientMatterId, string $checklistName, string $action): void
 	{
