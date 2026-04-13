@@ -121,8 +121,10 @@
     .tags-row {
       margin-top: 10px;
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 8px;
+      overflow: hidden;
+      max-width: 100%;
     }
 
     .tag-chip {
@@ -134,12 +136,19 @@
       font-weight: 600;
       padding: 5px 10px;
       line-height: 1;
+      white-space: nowrap;
     }
 
     .tag-chip.red {
       border-color: #fecaca;
       background: #fee2e2;
       color: #991b1b;
+    }
+
+    .tag-chip.more {
+      border-color: #e2e8f0;
+      background: #f8fafc;
+      color: #475569;
     }
 
     .actions {
@@ -395,6 +404,36 @@
       font-size: 13px;
     }
 
+    .panel-footer-meta {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .empty-state {
+      border: 1px dashed #cbd5e1;
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .empty-state .title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 4px;
+    }
+
+    .empty-state .desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
     @media (max-width: 1024px) {
       .layout { grid-template-columns: 1fr; }
     }
@@ -433,7 +472,7 @@
             <span class="tag-chip">VIP</span>
             <span class="tag-chip">Follow-up Required</span>
             <span class="tag-chip">High Value</span>
-            <span class="tag-chip red">Docs Pending</span>
+            <span class="tag-chip more">+3 more</span>
           </div>
         </div>
       </div>
@@ -486,6 +525,7 @@
               <div class="value">14 Apr 2026, 11:30 AM</div>
             </div>
           </div>
+          <div class="panel-footer-meta">Last updated by Priya Sharma • 2 hours ago</div>
         </div>
 
         <div class="tab-panel" id="timeline">
@@ -529,6 +569,11 @@
               <small>Due: 15 Apr • Assigned: Priya Sharma</small>
             </div>
           </div>
+          <div class="empty-state" style="display:none;">
+            <div class="title">No tasks yet</div>
+            <div class="desc">There are no actions linked to this client/lead.</div>
+            <button class="btn">Add Task</button>
+          </div>
         </div>
 
         <div class="tab-panel" id="documents">
@@ -557,6 +602,11 @@
                 <div class="value">Utility Bill</div>
               </div>
             </div>
+            <div class="empty-state" style="display:none;">
+              <div class="title">No personal documents</div>
+              <div class="desc">Start by uploading personal documents for this record.</div>
+              <button class="btn">Upload Document</button>
+            </div>
           </div>
 
           <div class="subtab-panel" id="matter-docs">
@@ -578,6 +628,11 @@
                 <div class="value">Affidavit Draft</div>
               </div>
             </div>
+            <div class="empty-state" style="display:none;">
+              <div class="title">No matter documents</div>
+              <div class="desc">No matter-level files found for the selected matter.</div>
+              <button class="btn">Upload Document</button>
+            </div>
           </div>
         </div>
 
@@ -597,10 +652,18 @@
               <div class="meta">To: rohit.jain@email.com • 10 Apr 2026 • Sent by Priya</div>
             </div>
           </div>
+          <div class="empty-state" style="display:none;">
+            <div class="title">No emails yet</div>
+            <div class="desc">No email conversation has started for this record.</div>
+            <button class="btn">Send Email</button>
+          </div>
         </div>
 
         <div class="tab-panel" id="billing">
-          <h3 class="section-title">Billing (Recreated)</h3>
+          <h3 class="section-title">
+            <span>Billing (Recreated)</span>
+            <button class="btn primary">Create Invoice</button>
+          </h3>
           <div class="billing-grid">
             <div class="billing-box">
               <div class="txt">Total Billed</div>
@@ -630,6 +693,7 @@
               <div class="value">RCT-9013 • 08 Apr 2026</div>
             </div>
           </div>
+          <div class="panel-footer-meta">Last updated by Accounts Team • 1 day ago</div>
         </div>
       </section>
 
