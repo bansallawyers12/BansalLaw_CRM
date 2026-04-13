@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="{{asset('css/components.css')}}">
     <link rel="stylesheet" href="{{asset('css/custom.css')}}">
     <link rel="stylesheet" href="{{asset('css/dataTables_min_latest.css')}}">
-    <link rel="stylesheet" href="{{asset('icons/font-awesome/css/all.min.css')}}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
     <script src="{{asset('js/jquery_min_latest.js')}}"></script>
     <script>window.__CRM_BROADCAST_BASE__=@json(rtrim(url('/notifications/broadcasts'), '/'));</script>
     <script src="{{ asset('js/datetime-display.js') }}"></script>
