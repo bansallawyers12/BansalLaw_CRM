@@ -2315,7 +2315,7 @@
                     $('.modal .modal-body .is_application select').attr('data-valid', '');
                     $('.modal .modal-body .is_partner select').attr('data-valid', 'required');
                 }
-                else if(relid == 'client_portal'){
+                else if(relid == 'application'){
                     $('.modal .modal-body .is_contact').hide();
                     $('.modal .modal-body .is_partner').hide();
                     $('.modal .modal-body .is_application').show();
@@ -2903,7 +2903,7 @@
     @include('crm.partials.cross-access-modal', ['crossAccessLeadBase' => url('/history')])
     @stack('scripts')
     
-    {{-- Define updateNotificationBell before Vite so it's available when Echo/client_portal receive events --}}
+    {{-- Define updateNotificationBell before Vite so it is available when Echo / real-time notifications fire --}}
     <script>
     (function() {
         window.updateNotificationBell = function(count, options) {

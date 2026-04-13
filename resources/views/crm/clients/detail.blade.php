@@ -19,7 +19,7 @@ use App\Http\Controllers\Controller;
     <aside class="client-navigation-sidebar" id="client-sidebar">
         <div class="sidebar-header">
             @php
-                $clientDetailBackTabSlugs = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments', 'emails', 'legalforms', 'formgenerations', 'formgenerationsl', 'client_portal', 'application', 'workflow', 'checklists', 'account', 'notuseddocuments', 'companydetails'];
+                $clientDetailBackTabSlugs = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments', 'emails', 'legalforms', 'formgenerations', 'formgenerationsl', 'application', 'workflow', 'checklists', 'account', 'notuseddocuments', 'companydetails'];
                 $clientDetailBackMatterRef = null;
                 if (! empty($id1) && ! in_array(strtolower((string) $id1), array_map('strtolower', $clientDetailBackTabSlugs), true)) {
                     $clientDetailBackMatterRef = (string) $id1;
@@ -350,7 +350,7 @@ use App\Http\Controllers\Controller;
                               'emails', 'legalforms',
                               // Legacy removed tab slugs
                               'formgenerations', 'formgenerationsl',
-                              'client_portal', 'application', 'workflow', 'checklists'];
+                              'application', 'workflow', 'checklists'];
             
             // Check if $id1 is a valid matter ID (not a tab name)
             $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array(strtolower($id1), array_map('strtolower', $validTabNames));
@@ -403,10 +403,6 @@ use App\Http\Controllers\Controller;
                 <button class="client-nav-button" data-tab="workflow">
                     <i class="fas fa-stream"></i>
                     <span>Workflow</span>
-                </button>
-                <button class="client-nav-button" data-tab="client_portal">
-                    <i class="fas fa-briefcase"></i>
-                    <span>Matter</span>
                 </button>
                 <?php
                 // Get last updated date for the client record
@@ -485,7 +481,6 @@ use App\Http\Controllers\Controller;
                 @include('crm.clients.tabs.emails')
                 @include('crm.clients.tabs.checklists')
                 @include('crm.clients.tabs.workflow')
-                @include('crm.clients.tabs.client_portal')
             @else
                 @include('crm.clients.tabs.checklists')
             @endif
@@ -1371,11 +1366,6 @@ $(document).ready(function() {
             listOfInvoice: '{{ URL::to("/clients/listOfInvoice") }}',
             clientLedgerBalance: '{{ URL::to("/clients/clientLedgerBalanceAmount") }}',
             getInvoicesByMatter: '{{ URL::to("/get-invoices-by-matter") }}',
-            loadMatterUpsert: '{{ URL::to("/client-portal/load-matter-upsert") }}',
-            getClientPortalDetail: '{{ URL::to("/client-portal/detail") }}',
-            updateIntake: '{{ URL::to("/client-portal/updateintake") }}',
-            updateExpectWin: '{{ URL::to("/client-portal/updateexpectwin") }}',
-            updateDates: '{{ URL::to("/client-portal/updatedates") }}',
             updateNoteDatetime: '{{ URL::to("/update-note-datetime") }}',
             referencesStore: '{{ route("references.store") }}',
             updateClientFundsLedger: '{{ route("clients.update-client-funds-ledger") }}',
@@ -1421,7 +1411,6 @@ $(document).ready(function() {
             updateStage: '{{ URL::to("/updatestage") }}',
             completeStage: '{{ URL::to("/completestage") }}',
             updateBackStage: '{{ URL::to("/updatebackstage") }}',
-            getMatterNotes: '{{ URL::to("/client-portal/notes") }}',
             sendToHubdoc: '{{ url("/clients/sendToHubdoc") }}',
             checkHubdocStatus: '{{ url("/clients/checkHubdocStatus") }}',
             updateMailReadBit: '{{ URL::to("/clients/updatemailreadbit") }}',
@@ -1550,7 +1539,6 @@ $(document).ready(function() {
 {{-- Newly added external JS placeholders for progressive migration --}}
 <script src="{{ URL::asset('js/crm/clients/shared.js') }}" defer></script>
 <script src="{{ URL::asset('js/crm/clients/detail.js') }}" defer></script>
-<script src="{{ URL::asset('js/crm/clients/tabs/client_portal.js') }}" defer></script>
 
 {{-- Client detail utilities (must load before detail-main.js) --}}
 <script src="{{ URL::asset('js/crm/clients/utils/flatpickr-helpers.js') }}"></script>

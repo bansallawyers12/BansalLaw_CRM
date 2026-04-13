@@ -2109,6 +2109,9 @@ class ClientsController extends Controller
 
             // Set default tab if not provided
             $activeTab = $tab ?? 'personaldetails';
+            if (strtolower((string) $activeTab) === 'client_portal') {
+                $activeTab = 'workflow';
+            }
 
             // Banking matters (BANK_1, …): hide Matter Documents tab — remap stale /matterdocuments URLs.
             if ($id1 !== null && $id1 !== '' && preg_match('/^bank_/i', (string) $id1) === 1
@@ -2148,7 +2151,10 @@ class ClientsController extends Controller
                     
                     $encodeId = base64_encode(convert_uuencode($id));
                     $activeTab = $tab ?? 'companydetails';
-                    
+                    if (strtolower((string) $activeTab) === 'client_portal') {
+                        $activeTab = 'workflow';
+                    }
+
                     return view('crm.companies.detail', compact(
                         'fetchedData', 'clientAddresses', 'clientContacts', 'emails',
                         'encodeId', 'id1', 'activeTab',

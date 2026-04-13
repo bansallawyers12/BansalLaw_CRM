@@ -43,8 +43,7 @@ use App\Services\FCMService;
 /**
  * Staff CRM controller for matter/case workflow (legacy name: ClientPortalController).
  *
- * Routes still use /client-portal/* URLs; the Matter tab uses this controller.
- * External client mobile app APIs were removed — this is admin-session only.
+ * Routes still use /client-portal/* and /api/client-portal* URL prefixes; the CRM Matter tab was removed — use Workflow on the client record instead.
  */
 class ClientPortalController extends Controller
 {
@@ -3400,35 +3399,27 @@ class ClientPortalController extends Controller
 	}
 
 	/**
-	 * Returns the client portal tab HTML for AJAX load when matter changes.
-	 * Used by showClientMatterPortalData in detail-main.js.
+	 * Legacy AJAX endpoint that previously returned the Matter / client-portal tab HTML.
+	 * The tab was removed from the CRM UI; respond with a short notice and link to Workflow.
 	 */
 	public function getClientPortalDetail(Request $request){
 		$matterId = $request->id ?? $request->client_matter_id;
-		$clientMatter = ClientMatter::with('workflowStage')->find($matterId);
+		$clientMatter = ClientMatter::query()->find($matterId);
 		if (!$clientMatter) {
-			return response('<div class="p-4 text-danger">Matter not found.</div>', 404);
+			return response('<div class="p-3 text-danger">Matter not found.</div>', 404)
+				->header('Content-Type', 'text/html; charset=UTF-8');
 		}
-		$fetchedData = Admin::whereIn('type', ['client', 'lead'])->find($clientMatter->client_id);
-		if (!$fetchedData) {
-			return response('<div class="p-4 text-danger">Client not found.</div>', 404);
+		$encodeId = base64_encode(convert_uuencode((string) $clientMatter->client_id));
+		$path = '/clients/detail/'.$encodeId;
+		if (! empty($clientMatter->client_unique_matter_no)) {
+			$path .= '/'.rawurlencode((string) $clientMatter->client_unique_matter_no);
 		}
-		$id1 = $clientMatter->client_unique_matter_no;
-		$clientId = $fetchedData->id;
-		$clientContacts = ClientContact::where('client_id', $clientId)->orderBy('id')->get();
-		$emails = ClientEmail::where('client_id', $clientId)->get();
-		$clientAddresses = ClientAddress::where('client_id', $clientId)->orderByRaw('start_date DESC NULLS LAST, created_at DESC')->get();
-		$clientPassports = ClientPassportInformation::where('client_id', $clientId)->orderBy('id')->get();
-		$visaCountries = ClientVisaCountry::with('matter')->where('client_id', $clientId)->orderBy('id')->get();
-		$clientTravels = ClientTravelInformation::where('client_id', $clientId)->orderByRaw('travel_arrival_date DESC NULLS LAST, created_at DESC')->get();
-		$qualifications = ClientQualification::where('client_id', $clientId)->orderByRaw('finish_date DESC NULLS LAST')->get();
-		$experiences = ClientExperience::where('client_id', $clientId)->orderByRaw('job_finish_date DESC NULLS LAST')->get();
-		$clientOccupations = ClientOccupation::where('client_id', $clientId)->get();
-		$testScores = ClientTestScore::where('client_id', $clientId)->get();
-		return view('crm.clients.tabs.client_portal', compact(
-			'fetchedData', 'id1', 'clientContacts', 'emails', 'clientAddresses', 'clientPassports',
-			'visaCountries', 'clientTravels', 'qualifications', 'experiences', 'clientOccupations', 'testScores'
-		));
+		$path .= '/workflow';
+		$workflowUrl = url($path);
+		$html = '<div class="p-3"><p class="mb-2 text-muted">This view is no longer used. Open the <strong>Workflow</strong> tab for this matter.</p>'
+			.'<a class="btn btn-sm btn-primary" href="'.e($workflowUrl).'">Go to Workflow</a></div>';
+
+		return response($html, 200)->header('Content-Type', 'text/html; charset=UTF-8');
 	}
 
 	public function completestage(Request $request){

@@ -349,9 +349,9 @@
             });
         }
 
-        // Verification: Payment, Service Agreement, Forms modal - Submit handled by delegated handler in client_portal.blade.php
+        // Verification: Payment, Service Agreement, Forms modal — submit handlers live in this tab / shared CRM scripts.
 
-        // Decision Received modal: Submit - handled by delegated handler in client_portal.blade.php
+        // Decision Received modal: submit handled by delegated handlers on the client detail page.
 
         // Workflow tab: Back to Previous Stage
         var prevBtn = document.getElementById('workflow-tab-back-to-previous-stage');

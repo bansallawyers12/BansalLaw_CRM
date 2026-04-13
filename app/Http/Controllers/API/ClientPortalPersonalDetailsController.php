@@ -10139,7 +10139,7 @@ class ClientPortalPersonalDetailsController extends Controller
         if (!empty($firstMatter->client_unique_matter_no)) {
             $notificationUrl .= '/' . $firstMatter->client_unique_matter_no;
         }
-        $notificationUrl .= '/client_portal';
+        $notificationUrl .= '/workflow';
 
         foreach ($recipientIds as $receiverStaffId) {
             if (!$receiverStaffId || !Staff::where('id', $receiverStaffId)->exists()) {

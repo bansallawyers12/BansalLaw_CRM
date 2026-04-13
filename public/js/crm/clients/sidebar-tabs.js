@@ -173,11 +173,6 @@
             case 'nominationdocuments':
                 filterNominationDocumentsByMatter(SidebarTabs.selectedMatter);
                 break;
-            case 'client_portal':
-                if (typeof showClientMatterPortalData === 'function') {
-                    showClientMatterPortalData(SidebarTabs.selectedMatter);
-                }
-                break;
         }
     }
 

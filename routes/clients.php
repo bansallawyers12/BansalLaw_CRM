@@ -333,7 +333,7 @@ Route::post('/add-appointment', [ClientsController::class, 'addAppointment']);
 Route::post('/add-appointment-book', [ClientsController::class, 'addAppointmentBook']);
 Route::get('/get-appointments', [ClientsController::class, 'getAppointments']);
 
-/*---------- Matter / case workflow (legacy route names reference client_portal) ----------*/
+/*---------- Matter workflow APIs (URL prefix /api/client-portal* — ClientPortalController) ----------*/
 Route::post('/api/client-portal-details/approve-audit', [ClientPortalController::class, 'approveAuditValue'])->name('clients.approveAuditValue');
 Route::post('/api/client-portal-details/reject-audit', [ClientPortalController::class, 'rejectAuditValue'])->name('clients.rejectAuditValue');
 Route::post('/api/client-portal-details/approve-visa-audit', [ClientPortalController::class, 'approveVisaAudit'])->name('clients.approveVisaAudit');
