@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\ClientLegalForm;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\TemplateProcessor;
 
 class LegalFormDocxService
@@ -12,6 +14,62 @@ class LegalFormDocxService
     public function __construct()
     {
         $this->templatesDir = storage_path('app/templates/legal_forms');
+    }
+
+    private function ensureTemplatesDirectory(): void
+    {
+        if (! is_dir($this->templatesDir)) {
+            mkdir($this->templatesDir, 0755, true);
+        }
+    }
+
+    /**
+     * First-time setup: Word templates are not committed to the repo. Build minimal
+     * .docx stubs so TemplateProcessor can run; replace with firm-branded files anytime.
+     */
+    private function ensureCostAgreementTemplate(): void
+    {
+        $path = $this->templatesDir . '/cost_agreement_template.docx';
+        if (is_file($path)) {
+            return;
+        }
+
+        $placeholders = [
+            'CLIENT_NAME', 'CLIENT_ADDRESS', 'FORM_DATE_LONG', 'FORM_DATE_SHORT', 'MATTER_REFERENCE',
+            'PERSON_RESPONSIBLE', 'PERSON_RESPONSIBLE_EMAIL', 'FIXED_FEE_AMOUNT', 'ESTIMATED_TOTAL',
+            'RETAINER_AMOUNT', 'SCOPE_OF_WORK', 'VARIABLES_AFFECTING_COSTS',
+            'COSTS_BREAKDOWN_FEES', 'COSTS_BREAKDOWN_DISBURSEMENTS',
+        ];
+
+        $phpWord = new PhpWord;
+        $section = $phpWord->addSection();
+        $section->addTitle('Cost agreement', 1);
+        foreach ($placeholders as $name) {
+            $section->addText('${' . $name . '}');
+            $section->addTextBreak();
+        }
+
+        IOFactory::createWriter($phpWord, 'Word2007')->save($path);
+    }
+
+    private function ensureAuthorityToActTemplate(): void
+    {
+        $path = $this->templatesDir . '/authority_to_act_template.docx';
+        if (is_file($path)) {
+            return;
+        }
+
+        $placeholders = ['CLIENT_NAME', 'CLIENT_ADDRESS', 'MATTER_REFERENCE', 'FORM_DATE_SHORT', 'AUTHORITY_SCOPE', 'AUTHORITY_ITEMS'];
+
+        $phpWord = new PhpWord;
+        $section = $phpWord->addSection();
+        $section->addTitle('Authority to act', 1);
+        foreach ($placeholders as $name) {
+            $section->addText('${' . $name . '}');
+            $section->addTextBreak();
+        }
+
+        IOFactory::createWriter($phpWord, 'Word2007')->save($path);
     }
 
     public function generate(ClientLegalForm $form): string
@@ -27,6 +85,9 @@ class LegalFormDocxService
 
     private function generateCostAgreement(ClientLegalForm $form): string
     {
+        $this->ensureTemplatesDirectory();
+        $this->ensureCostAgreementTemplate();
+
         $tp = new TemplateProcessor($this->templatesDir . '/cost_agreement_template.docx');
 
         $client = $form->client;
@@ -55,6 +116,13 @@ class LegalFormDocxService
 
     private function generateShortCostsDisclosure(ClientLegalForm $form): string
     {
+        $this->ensureTemplatesDirectory();
+
+        $templatePath = $this->templatesDir . '/short_costs_disclosure_template.docx';
+        if (! is_file($templatePath)) {
+            return $this->generateShortCostsDisclosureAsPhpWord($form);
+        }
+
         $client = $form->client;
         $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
         $clientAddress = collect([$client->address, $client->city, $client->state, $client->zip])
@@ -68,7 +136,9 @@ class LegalFormDocxService
         }
         $filename = $form->form_type . '_' . $form->id . '.docx';
         $path = $dir . '/' . $filename;
-        copy($this->templatesDir . '/short_costs_disclosure_template.docx', public_path($path));
+        if (! @copy($templatePath, public_path($path))) {
+            return $this->generateShortCostsDisclosureAsPhpWord($form);
+        }
 
         // Map form field index (1-based) to values.
         // Field order: 1=Date, 2=Firm, 3=Contact, 4=FirmAddress, 5=FirmPhone, 6=FirmMobile,
@@ -104,6 +174,67 @@ class LegalFormDocxService
         $this->replaceAllFormFields(public_path($path), $fieldValuesByIndex);
 
         return $path;
+    }
+
+    /**
+     * Fallback when short_costs_disclosure_template.docx is not deployed (no form fields).
+     */
+    private function generateShortCostsDisclosureAsPhpWord(ClientLegalForm $form): string
+    {
+        $client = $form->client;
+        $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
+        $clientAddress = collect([$client->address, $client->city, $client->state, $client->zip])
+            ->filter()->implode(', ');
+        $formDate = $form->form_date ? $form->form_date->format('d/m/Y') : now()->format('d/m/Y');
+
+        $dir = 'legal_forms/' . $form->client_id;
+        $fullDir = public_path($dir);
+        if (! is_dir($fullDir)) {
+            mkdir($fullDir, 0755, true);
+        }
+        $filename = $form->form_type . '_' . $form->id . '.docx';
+        $relativePath = $dir . '/' . $filename;
+        $fullPath = public_path($relativePath);
+
+        $phpWord = new PhpWord;
+        $section = $phpWord->addSection();
+        $section->addTitle('Short Form Disclosure of Costs', 1);
+        $section->addTextBreak();
+
+        $rows = [
+            ['Date', $formDate],
+            ['Law practice', $form->firm_name ?? 'Bansal Lawyers'],
+            ['Contact', $form->firm_contact ?? ($form->person_responsible ?? '')],
+            ['Practice address', $form->firm_address ?? ''],
+            ['Phone', $form->firm_phone ?? ''],
+            ['Mobile', $form->firm_mobile ?? ''],
+            ['State', $form->firm_state ?? ''],
+            ['Postcode', $form->firm_postcode ?? ''],
+            ['Email', $form->firm_email ?? ''],
+            ['Client name', $clientName],
+            ['Client phone', $client->phone ?? ''],
+            ['Client address', $clientAddress],
+            ['Client mobile', $client->mobile ?? ''],
+            ['Client email', $client->email ?? ''],
+            ['Client state', $client->state ?? ''],
+            ['Client postcode', $client->zip ?? ''],
+            ['Scope of work', $form->scope_of_work ?? ''],
+            ['Legal fees (ex GST)', number_format($form->estimated_legal_fees ?? 0, 2)],
+            ['Disbursements (ex GST)', number_format($form->estimated_disbursements ?? 0, 2)],
+            ['Barrister fees (ex GST)', number_format($form->estimated_barrister_fees ?? 0, 2)],
+            ['GST', number_format($form->gst_amount ?? 0, 2)],
+            ['Total estimate', number_format($form->estimated_total ?? 0, 2)],
+        ];
+
+        foreach ($rows as [$label, $value]) {
+            $section->addText($label . ': ', ['bold' => true]);
+            $section->addText((string) $value);
+            $section->addTextBreak();
+        }
+
+        IOFactory::createWriter($phpWord, 'Word2007')->save($fullPath);
+
+        return $relativePath;
     }
 
     /**
@@ -208,6 +339,9 @@ class LegalFormDocxService
 
     private function generateAuthorityToAct(ClientLegalForm $form): string
     {
+        $this->ensureTemplatesDirectory();
+        $this->ensureAuthorityToActTemplate();
+
         $tp = new TemplateProcessor($this->templatesDir . '/authority_to_act_template.docx');
 
         $client = $form->client;

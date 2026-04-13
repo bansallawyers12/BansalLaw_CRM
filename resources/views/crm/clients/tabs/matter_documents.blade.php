@@ -95,7 +95,7 @@
                     <!-- Matter Documents content -->
                     <div class="visa-documents-content" id="visa-documents-content">
                         <!-- Matter document type subtabs container -->
-                        <div class="subtab-header-container" style="background-color: #4a90e2; padding: 10px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div class="subtab-header-container">
                             <nav class="subtabs6" style="display: flex; gap: 5px; flex-wrap: wrap; flex: 1;">
                                 <?php foreach ($visaDocCatList as $catVal): ?>
                                     <?php
@@ -139,8 +139,8 @@
                                         <div class="subtab6-header" style="margin-left: 10px;">
                                             <h3><i class="fas fa-file-alt"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
                                             <div style="display: flex; gap: 10px;">
-                                                <button type="button" class="btn btn-primary btn-sm form956CreateForm inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200" data-form956-folder="<?= $id ?>">
-                                                    <i class="fas fa-plus mr-2"></i> Create Form 956
+                                                <button type="button" class="btn btn-sm form956CreateForm" data-form956-folder="<?= $id ?>">
+                                                                                                       <i class="fas fa-plus me-1"></i> Create Form 956
                                                 </button>
                                                 <button type="button" class="btn add-checklist-btn add_migration_doc" data-type="visa" data-categoryid="<?= $id ?>">
                                                     <i class="fas fa-plus"></i> Add Checklist
@@ -152,13 +152,13 @@
                                         </div>
                                         
                                         <!-- Bulk upload dropzone for matter documents (hidden by default) -->
-                                        <div class="bulk-upload-dropzone-container-visa" id="bulk-upload-visa-<?= $id ?>" style="display: none; margin: 15px 0; padding: 20px; border: 2px dashed #4a90e2; border-radius: 8px; background-color: #f8f9fa;">
+                                        <div class="bulk-upload-dropzone-container-visa matter-bulk-dropzone" id="bulk-upload-visa-<?= $id ?>" style="display: none;">
                                             <div class="bulk-upload-dropzone-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" style="text-align: center; padding: 30px; cursor: pointer;">
-                                                <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #2563eb; margin-bottom: 15px;"></i>
-                                                <p style="font-size: 16px; color: #374151; margin-bottom: 10px;">
+                                                <i class="fas fa-cloud-upload-alt matter-bulk-dropzone-icon"></i>
+                                                <p class="matter-bulk-dropzone-lead">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
-                                                <p style="font-size: 14px; color: #4b5563;">You can select multiple files at once</p>
+                                                <p class="matter-bulk-dropzone-hint">You can select multiple files at once</p>
                                                 <input type="file" class="bulk-upload-file-input-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
                                             </div>
                                             <div class="bulk-upload-file-list-visa" style="display: none; margin-top: 20px;">
@@ -239,7 +239,7 @@
                                                                 </div>
                                                             <?php elseif ($isForm956): ?>
                                                                 <div class="form956-download-upload" style="display: flex; flex-direction: column; gap: 10px;" data-download-url="<?= e($downloadUrl) ?>" data-doc-id="<?= $fetch->id ?>">
-                                                                    <p class="mb-0" style="font-size: 12px; color: #374151;">Form 956 PDF downloads automatically. Check, update, then upload your completed form below.</p>
+                                                                    <p class="mb-0 matter-form956-hint">Form 956 PDF downloads automatically. Check, update, then upload your completed form below.</p>
                                                                     <div class="migration_upload_document" style="display: inline-block;">
                                                                         <form method="POST" enctype="multipart/form-data" id="mig_upload_form_<?= $fetch->id ?>">
                                                                             @csrf
@@ -301,7 +301,7 @@
                                                         $pendingSigner = $fetch->signers()->whereIn('status', ['pending'])->first();
                                                         $signerId = $pendingSigner ? $pendingSigner->id : null;
                                                     ?>
-                                                    <tr class="visa-sig-action-bar" data-doc-id="<?= $fetch->id ?>" data-signer-id="<?= $signerId ?>" style="background: #f8f9fa; border-left: 4px solid #4a90e2;">
+                                                    <tr class="visa-sig-action-bar" data-doc-id="<?= $fetch->id ?>" data-signer-id="<?= $signerId ?>">
                                                         <td colspan="3" style="padding: 10px 16px;">
                                                             <div class="d-flex flex-wrap align-items-center gap-2" style="flex-wrap: wrap;">
                                                                 <button type="button" class="btn btn-sm btn-primary visa-sig-send-btn" data-doc-id="<?= $fetch->id ?>" <?= $docStatus === 'sent' ? 'disabled' : '' ?>>
@@ -445,8 +445,8 @@
                                         <?php endforeach; ?>
                                     </div>
 
-                                    <div class="preview-pane file-preview-container preview-container-migdocumnetlist" style="display: inline;margin-top: 15px !important; width: 499px;">
-                                        <p style="color: #374151;">Click on a file to preview it here.</p>
+                                    <div class="preview-pane file-preview-container preview-container-migdocumnetlist matter-preview-pane" style="display: inline; margin-top: 15px !important; width: 499px;">
+                                        <p class="preview-placeholder-text">Click on a file to preview it here.</p>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -1412,7 +1412,7 @@
                     const modal = $('#bulk-upload-mapping-modal');
                     const tableContainer = $('#bulk-upload-mapping-table');
                     
-                    let html = '<table class="table table-bordered" style="width: 100%;">';
+                    let html = '<table class="table table-bordered checklist-table" style="width: 100%;">';
                     html += '<thead><tr><th style="width: 25%;">File Name</th><th style="width: 45%;">Checklist Assignment</th><th style="width: 20%;">Status</th><th style="width: 10%; text-align: center;">Actions</th></tr></thead>';
                     html += '<tbody>';
                     
@@ -1434,7 +1434,7 @@
                         html += '<tr class="bulk-upload-file-item" data-file-index="' + index + '" data-file-name="' + escapeHtml(fileName) + '">';
                         html += '<td>';
                         html += '<div class="file-info">';
-                        html += '<i class="fas fa-file" style="color: #4a90e2;"></i>';
+                        html += '<i class="fas fa-file matter-bulk-file-icon"></i>';
                         html += '<div>';
                         html += '<div class="file-name">' + escapeHtml(fileName) + '</div>';
                         html += '<div class="file-size">' + fileSize + '</div>';
@@ -1700,8 +1700,10 @@
             </script>
 
             <style>
+                /* theme.md tokens via crm-theme.css :root */
+                .matter-form956-hint { font-size: 12px; color: var(--text-dark, #1a2c40); }
                 .context-menu-item:hover {
-                    background-color: #f8f9fa;
+                    background-color: var(--sidebar-bg, #ddeaf8);
                 }
 
                 /* Bulk Upload Dropzone Styles for Visa */
@@ -1715,17 +1717,17 @@
                 }
                 
                 .bulk-upload-dropzone-visa.drag_over {
-                    border-color: #28a745;
-                    background-color: #e8f5e9;
+                    border-color: var(--success, #1e7a52);
+                    background-color: rgba(30, 122, 82, 0.08);
                 }
 
                 /* Drag and Drop Zone Styles */
                 .document-drag-drop-zone {
-                    border: 2px dashed #ccc;
+                    border: 2px dashed var(--border, #c8dcef);
                     border-radius: 4px;
                     padding: 15px 20px;
                     text-align: center;
-                    background-color: #f9f9f9;
+                    background-color: var(--page-bg, #f0f6ff);
                     cursor: pointer !important;
                     transition: all 0.3s ease;
                     min-height: 60px;
@@ -1743,13 +1745,13 @@
                 }
 
                 .document-drag-drop-zone:hover {
-                    border-color: #007bff;
-                    background-color: #f0f8ff;
+                    border-color: var(--sidebar-active, #3a6fa8);
+                    background-color: var(--sidebar-bg, #ddeaf8);
                 }
 
                 .document-drag-drop-zone.drag_over {
-                    border-color: #28a745;
-                    background-color: #e8f5e9;
+                    border-color: var(--success, #1e7a52);
+                    background-color: rgba(30, 122, 82, 0.08);
                     border-width: 3px;
                 }
 
@@ -1757,12 +1759,12 @@
                     display: flex;
                     align-items: center;
                     gap: 10px;
-                    color: #374151;
+                    color: var(--text-dark, #1a2c40);
                 }
 
                 .drag-zone-inner i {
                     font-size: 20px;
-                    color: #2563eb;
+                    color: var(--sidebar-active, #3a6fa8);
                 }
 
                 .drag-zone-text {
@@ -1778,7 +1780,7 @@
                 .document-drag-drop-zone.uploading .drag-zone-text::after {
                     content: ' Uploading...';
                     font-weight: bold;
-                    color: #007bff;
+                    color: var(--sidebar-active, #3a6fa8);
                 }
 
                 /* Bulk Upload File List Styles */

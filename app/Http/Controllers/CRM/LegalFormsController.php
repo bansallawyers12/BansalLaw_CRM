@@ -12,6 +12,8 @@ use GuzzleHttp\Client;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LegalFormsController extends Controller
 {
@@ -74,10 +76,22 @@ class LegalFormsController extends Controller
             $data['estimated_total'] = $fees + $disbursements + $barrister + $data['gst_amount'];
         }
 
-        $form = ClientLegalForm::create($data);
+        try {
+            $form = DB::transaction(function () use ($data) {
+                $form = ClientLegalForm::create($data);
+                $docxPath = $this->docxService->generate($form);
+                $form->update(['pdf_path' => $docxPath]);
 
-        $docxPath = $this->docxService->generate($form);
-        $form->update(['pdf_path' => $docxPath]);
+                return $form;
+            });
+        } catch (\Throwable $e) {
+            Log::error('Legal form create failed', ['exception' => $e]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage() ?: 'Could not generate the Word document. Check storage permissions and templates.',
+            ], 422);
+        }
 
         return response()->json([
             'success' => true,
@@ -128,10 +142,20 @@ class LegalFormsController extends Controller
             $data['estimated_total'] = $fees + $disbursements + $barrister + $data['gst_amount'];
         }
 
-        $legalForm->update($data);
+        try {
+            DB::transaction(function () use ($legalForm, $data) {
+                $legalForm->update($data);
+                $docxPath = $this->docxService->generate($legalForm);
+                $legalForm->update(['pdf_path' => $docxPath]);
+            });
+        } catch (\Throwable $e) {
+            Log::error('Legal form update failed', ['exception' => $e]);
 
-        $docxPath = $this->docxService->generate($legalForm);
-        $legalForm->update(['pdf_path' => $docxPath]);
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage() ?: 'Could not regenerate the Word document.',
+            ], 422);
+        }
 
         return response()->json([
             'success' => true,
