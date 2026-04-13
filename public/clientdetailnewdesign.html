@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Detail New Design</title>
+  <style>
+    :root{
+      --bg:#f5f7fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --border:#e2e8f0;
+      --primary:#1d4ed8;
+      --primary-soft:#dbeafe;
+      --success:#16a34a;
+      --warn:#d97706;
+      --danger:#dc2626;
+      --radius:14px;
+      --shadow:0 10px 25px rgba(15,23,42,.06);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 24px auto;
+      padding: 0 16px 24px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    /* Top Header */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .identity-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .identity-info {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .name {
+      margin: 0;
+      font-size: 23px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .meta-row {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .meta-item {
+      color: #475569;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .matter-row {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .matter-chip {
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      color: #334155;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 10px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn.primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .btn.secondary {
+      background: var(--primary-soft);
+      border-color: #bfd7ff;
+      color: #1e40af;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+    }
+
+    .main-card {
+      padding: 16px;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+    }
+
+    .tab {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: #334155;
+      border-radius: 9px;
+      padding: 7px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .field {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fafcff;
+    }
+
+    .label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .value {
+      font-size: 14px;
+      color: #1e293b;
+      font-weight: 600;
+    }
+
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .event {
+      border-left: 3px solid #cbd5e1;
+      padding-left: 10px;
+    }
+
+    .event .when {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .event .what {
+      margin-top: 2px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .task {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .task input { margin-top: 3px; }
+    .task p { margin: 0; font-size: 14px; }
+    .task small { color: var(--muted); }
+
+    .subtabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      border-bottom: 1px dashed var(--border);
+      padding-bottom: 10px;
+    }
+
+    .subtab {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: #334155;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .subtab.active {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .subtab-panel { display: none; }
+    .subtab-panel.active { display: block; }
+
+    .billing-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .billing-box {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fcfdff;
+    }
+
+    .billing-box .num {
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .billing-box .txt {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .emails-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .email-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .email-item .subject {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .email-item .meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .sidebar-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .side-card {
+      padding: 14px;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .kpi {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fcfdff;
+    }
+
+    .kpi .num { font-size: 18px; font-weight: 700; }
+    .kpi .txt { font-size: 12px; color: var(--muted); }
+
+    .note {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 14px;
+      color: #334155;
+      background: #fff;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 1024px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 920px) {
+      .topbar { flex-direction: column; }
+      .actions { justify-content: flex-start; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .billing-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 520px) {
+      .billing-grid { grid-template-columns: 1fr; }
+      .meta-row { gap: 6px 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Top part -->
+    <section class="card topbar">
+      <div class="identity-wrap">
+        <div class="avatar">RJ</div>
+        <div class="identity-info">
+          <h1 class="name">Rohit Jain</h1>
+          <div class="meta-row">
+            <span class="meta-item">C-1092 / M-04</span>
+            <span class="meta-item">Priya Sharma</span>
+            <span class="meta-item">Today, 10:24 AM</span>
+          </div>
+          <div class="matter-row">
+            <span class="matter-chip">Corporate Dispute (M-04)</span>
+            <button class="btn secondary">Change Matter</button>
+          </div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn">Log Call</button>
+        <button class="btn">Send Email</button>
+        <button class="btn">Send SMS</button>
+        <button class="btn">Add Action</button>
+        <button class="btn primary">Update Stage</button>
+      </div>
+    </section>
+
+    <div class="layout">
+      <!-- Second box -->
+      <section class="card main-card">
+        <div class="tabs">
+          <button class="tab active" data-tab="overview">Overview</button>
+          <button class="tab" data-tab="timeline">Timeline</button>
+          <button class="tab" data-tab="actions">Actions</button>
+          <button class="tab" data-tab="documents">Documents</button>
+          <button class="tab" data-tab="emails">Emails</button>
+          <button class="tab" data-tab="billing">Billing</button>
+        </div>
+
+        <div class="tab-panel active" id="overview">
+          <h3 class="section-title">Overview</h3>
+          <div class="grid-2">
+            <div class="field">
+              <div class="label">Client/Lead Type</div>
+              <div class="value">Client (Converted from Lead)</div>
+            </div>
+            <div class="field">
+              <div class="label">Current Stage</div>
+              <div class="value">Consultation Completed</div>
+            </div>
+            <div class="field">
+              <div class="label">Phone</div>
+              <div class="value">+61 4XX XXX XXX</div>
+            </div>
+            <div class="field">
+              <div class="label">Primary Email</div>
+              <div class="value">rohit.jain@email.com</div>
+            </div>
+            <div class="field">
+              <div class="label">Matter</div>
+              <div class="value">Corporate Dispute</div>
+            </div>
+            <div class="field">
+              <div class="label">Next Follow-up</div>
+              <div class="value">14 Apr 2026, 11:30 AM</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="timeline">
+          <h3 class="section-title">Timeline</h3>
+          <div class="timeline">
+            <div class="event">
+              <div class="when">Today, 10:24 AM</div>
+              <div class="what">Call logged by Priya Sharma (12 mins)</div>
+            </div>
+            <div class="event">
+              <div class="when">Yesterday, 06:10 PM</div>
+              <div class="what">Engagement letter sent</div>
+            </div>
+            <div class="event">
+              <div class="when">10 Apr 2026</div>
+              <div class="what">Lead converted to client</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="actions">
+          <h3 class="section-title">Actions (Tasks)</h3>
+          <div class="task">
+            <input type="checkbox" />
+            <div>
+              <p>Collect signed Vakalatnama</p>
+              <small>Due: 14 Apr • Assigned: Ankit</small>
+            </div>
+          </div>
+          <div class="task">
+            <input type="checkbox" />
+            <div>
+              <p>Send payment reminder</p>
+              <small>Due: Today • Assigned: Accounts</small>
+            </div>
+          </div>
+          <div class="task">
+            <input type="checkbox" />
+            <div>
+              <p>Prepare draft legal notice</p>
+              <small>Due: 15 Apr • Assigned: Priya Sharma</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="documents">
+          <h3 class="section-title">Documents</h3>
+          <div class="subtabs">
+            <button class="subtab active" data-subtab="personal-docs">Personal Documents</button>
+            <button class="subtab" data-subtab="matter-docs">Matter Documents</button>
+          </div>
+
+          <div class="subtab-panel active" id="personal-docs">
+            <div class="grid-2">
+              <div class="field">
+                <div class="label">Uploaded</div>
+                <div class="value">Passport.pdf</div>
+              </div>
+              <div class="field">
+                <div class="label">Uploaded</div>
+                <div class="value">ID_Proof.pdf</div>
+              </div>
+              <div class="field">
+                <div class="label">Pending</div>
+                <div class="value">Address Proof</div>
+              </div>
+              <div class="field">
+                <div class="label">Pending</div>
+                <div class="value">Utility Bill</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="subtab-panel" id="matter-docs">
+            <div class="grid-2">
+              <div class="field">
+                <div class="label">Uploaded</div>
+                <div class="value">Contract.pdf</div>
+              </div>
+              <div class="field">
+                <div class="label">Uploaded</div>
+                <div class="value">Meeting_Notes.docx</div>
+              </div>
+              <div class="field">
+                <div class="label">Pending</div>
+                <div class="value">Signed Vakalatnama</div>
+              </div>
+              <div class="field">
+                <div class="label">Pending</div>
+                <div class="value">Affidavit Draft</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="emails">
+          <h3 class="section-title">Emails</h3>
+          <div class="emails-list">
+            <div class="email-item">
+              <div class="subject">Engagement Letter Shared</div>
+              <div class="meta">To: rohit.jain@email.com • 12 Apr 2026 • Sent by Priya</div>
+            </div>
+            <div class="email-item">
+              <div class="subject">Document Checklist Reminder</div>
+              <div class="meta">To: rohit.jain@email.com • 11 Apr 2026 • Sent by CRM</div>
+            </div>
+            <div class="email-item">
+              <div class="subject">Consultation Summary</div>
+              <div class="meta">To: rohit.jain@email.com • 10 Apr 2026 • Sent by Priya</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="billing">
+          <h3 class="section-title">Billing (Recreated)</h3>
+          <div class="billing-grid">
+            <div class="billing-box">
+              <div class="txt">Total Billed</div>
+              <div class="num">$12,500</div>
+            </div>
+            <div class="billing-box">
+              <div class="txt">Total Paid</div>
+              <div class="num" style="color:var(--success)">$8,900</div>
+            </div>
+            <div class="billing-box">
+              <div class="txt">Outstanding</div>
+              <div class="num" style="color:var(--danger)">$3,600</div>
+            </div>
+            <div class="billing-box">
+              <div class="txt">Trust Balance</div>
+              <div class="num">$1,200</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <div class="label">Last Invoice</div>
+              <div class="value">INV-2309 • 05 Apr 2026</div>
+            </div>
+            <div class="field">
+              <div class="label">Last Receipt</div>
+              <div class="value">RCT-9013 • 08 Apr 2026</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="sidebar-stack">
+        <div class="card side-card">
+          <h3 class="section-title">Quick Metrics</h3>
+          <div class="kpi-grid">
+            <div class="kpi">
+              <div class="num">12</div>
+              <div class="txt">Total Interactions</div>
+            </div>
+            <div class="kpi">
+              <div class="num">3</div>
+              <div class="txt">Open Actions</div>
+            </div>
+            <div class="kpi">
+              <div class="num">8</div>
+              <div class="txt">Documents</div>
+            </div>
+            <div class="kpi">
+              <div class="num">2</div>
+              <div class="txt">Unread Emails</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card side-card">
+          <h3 class="section-title">Current Stage Note</h3>
+          <div class="note">
+            Matter ready for filing once signed documents and outstanding payment are received.
+          </div>
+        </div>
+
+        <div class="card side-card">
+          <h3 class="section-title">Mapping Notes</h3>
+          <p class="muted">
+            This mockup is designed to map to your existing tabs:
+            Personal/Matter Documents, Emails, Actions (Tasks), and Accounts/Billing.
+          </p>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll(".tab");
+    const panels = document.querySelectorAll(".tab-panel");
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("active"));
+        panels.forEach(p => p.classList.remove("active"));
+        tab.classList.add("active");
+        const panel = document.getElementById(tab.dataset.tab);
+        if (panel) panel.classList.add("active");
+      });
+    });
+
+    const subtabs = document.querySelectorAll(".subtab");
+    const subpanels = document.querySelectorAll(".subtab-panel");
+    subtabs.forEach(subtab => {
+      subtab.addEventListener("click", () => {
+        subtabs.forEach(s => s.classList.remove("active"));
+        subpanels.forEach(p => p.classList.remove("active"));
+        subtab.classList.add("active");
+        const panel = document.getElementById(subtab.dataset.subtab);
+        if (panel) panel.classList.add("active");
+      });
+    });
+  </script>
+</body>
+</html>

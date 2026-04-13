@@ -49,19 +49,9 @@ class EmailUploadController extends Controller
     {
         try {
             // Validate file input
-            $validator = Validator::make($request->all(), [
-                'email_files' => 'required',
-                'email_files.*' => 'mimes:msg|max:30720', // 30MB max
-                'client_id' => 'required',
-                'type' => 'required|in:client,lead'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors(),
-                ], 422);
+            $validationResponse = $this->validateEmailUploadRequest($request);
+            if ($validationResponse) {
+                return $validationResponse;
             }
 
             $this->ensureCrmRecordAccess((int) $request->client_id);
@@ -193,19 +183,9 @@ class EmailUploadController extends Controller
     {
         try {
             // Validate file input
-            $validator = Validator::make($request->all(), [
-                'email_files' => 'required',
-                'email_files.*' => 'mimes:msg|max:30720', // 30MB max
-                'client_id' => 'required',
-                'type' => 'required|in:client,lead'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors(),
-                ], 422);
+            $validationResponse = $this->validateEmailUploadRequest($request);
+            if ($validationResponse) {
+                return $validationResponse;
             }
 
             $this->ensureCrmRecordAccess((int) $request->client_id);
@@ -1019,6 +999,58 @@ class EmailUploadController extends Controller
         }
         
         return $sanitizedFilename;
+    }
+
+    /**
+     * Validate email upload payload and enforce .msg extension checks.
+     *
+     * Relying on MIME-only validation can reject valid Outlook files because
+     * some systems report .msg as generic application/octet-stream.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse|null
+     */
+    protected function validateEmailUploadRequest(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email_files' => 'required|array|min:1',
+            'email_files.*' => 'file|max:30720', // 30MB max
+            'client_id' => 'required',
+            'type' => 'required|in:client,lead'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $invalidFiles = [];
+        foreach ($request->file('email_files', []) as $file) {
+            $originalName = (string) $file->getClientOriginalName();
+            $extension = strtolower((string) $file->getClientOriginalExtension());
+
+            if ($extension !== 'msg') {
+                $invalidFiles[] = $originalName ?: 'Unknown file';
+            }
+        }
+
+        if (!empty($invalidFiles)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed',
+                'errors' => [
+                    'email_files' => [
+                        'Only .msg files are allowed.'
+                    ],
+                ],
+                'invalid_files' => $invalidFiles,
+            ], 422);
+        }
+
+        return null;
     }
 }
 
