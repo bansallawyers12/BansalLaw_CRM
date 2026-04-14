@@ -13,7 +13,8 @@
   --cdn-radius: 14px;
   --cdn-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
   box-sizing: border-box;
-  max-width: 1320px;
+  width: 100%;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 16px 16px 24px;
   background: var(--cdn-bg);
@@ -44,6 +45,13 @@
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   font-size: 14px;
   color: var(--cdn-text);
+}
+
+.cdn-demo-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .cdn-demo-banner__badge {
@@ -82,11 +90,32 @@
   color: #1e3a8a;
 }
 
+.cdn-demo-banner__link:focus-visible {
+  outline: 2px solid var(--cdn-primary);
+  outline-offset: 2px;
+}
+
+.cdn-demo-banner__link--muted {
+  background: #fff;
+  color: #475569;
+  border-color: var(--cdn-border);
+}
+
+.cdn-demo-banner__link--muted:hover {
+  background: #f8fafc;
+  color: #1e293b;
+}
+
 /* Main CRM flex row */
 .client-detail-newdesign-demo-shell .crm-container {
   background: transparent;
   gap: 16px;
   align-items: flex-start;
+  width: 100%;
+}
+
+.client-detail-newdesign-demo-shell .crm-container.sidebar-collapsed {
+  gap: 0;
 }
 
 .client-detail-newdesign-demo-shell .client-navigation-sidebar {

@@ -2094,11 +2094,8 @@ class ClientsController extends Controller
                     'cid' => (int) $id,
                     'name' => $displayName,
                     'record_type' => (string) ($targetRecord->type ?? 'client'),
-                    'redirect_to' => route('clients.detail', [
-                        'client_id' => $encodeId,
-                        'client_unique_matter_ref_no' => $id1,
-                        'tab' => $tab,
-                    ]),
+                    // Return user to the exact URL they opened (production detail, demo detail, query string, etc.).
+                    'redirect_to' => $request->fullUrl(),
                 ];
 
                 return view('crm.access.detail-gate', [
