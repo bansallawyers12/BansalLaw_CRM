@@ -14,7 +14,7 @@
 		<!-- Icons-->
 			<link rel="stylesheet" type="text/css" href="{{asset('public/icons/@coreui/icons/css/coreui-icons.min.css')}}" />
 			<link rel="stylesheet" type="text/css" href="{{asset('public/icons/flag-icon-css/css/flag-icon.min.css')}}" />
-			<link rel="stylesheet" type="text/css" href="{{asset('public/icons/font-awesome/css/font-awesome.min.css')}}" />
+			<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
 			<link rel="stylesheet" type="text/css" href="{{asset('public/icons/simple-line-icons/css/simple-line-icons.css')}}" />
 		
 		<!-- Main styles for this application-->

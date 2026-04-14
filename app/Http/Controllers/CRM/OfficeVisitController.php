@@ -154,7 +154,7 @@ class OfficeVisitController extends Controller
 				throw new \Exception('Failed to save notification.');
 			}
 
-				// Broadcast real-time notification via Reverb (wrap in try-catch to prevent failures)
+				// Broadcast notification event (wrap in try-catch to prevent failures)
 				try {
 					broadcast(new OfficeVisitNotificationCreated(
 						$notification->id,
@@ -547,7 +547,7 @@ class OfficeVisitController extends Controller
 	    	
 	    	$notifyClientName = $objs->contactDisplayLabel();
 
-	    	// Broadcast real-time notification via Reverb (wrap in try-catch)
+	    	// Broadcast notification event (wrap in try-catch)
 	    	try {
 	    	    broadcast(new OfficeVisitNotificationCreated(
 	    	        $o->id,
@@ -615,7 +615,7 @@ class OfficeVisitController extends Controller
 		        $o->sender_status = 1;     // Mark as sent by sender
 		        $o->save();
 		        
-		        // Broadcast real-time notification via Reverb (wrap in try-catch)
+		        // Broadcast notification event (wrap in try-catch)
 		        try {
 		            broadcast(new OfficeVisitNotificationCreated(
 		                $o->id,

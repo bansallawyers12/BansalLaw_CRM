@@ -22,7 +22,7 @@ class AppointmentSyncServiceProvider extends ServiceProvider
             return new BansalApiClient(
                 config('services.bansal_api.url'),
                 config('services.bansal_api.token'),
-                config('services.bansal_api.timeout', 30)
+                (int) config('services.bansal_api.timeout', 30)
             );
         });
 

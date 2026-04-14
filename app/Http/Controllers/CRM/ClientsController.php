@@ -70,7 +70,6 @@ use App\Models\SmsTemplate;
 
 use Illuminate\Support\Facades\Http;
 
-use App\Models\Form956;
 use PhpOffice\PhpWord\TemplateProcessor;
 use App\Models\CostAssignmentForm;
 use App\Models\PersonalDocumentType;
@@ -2043,7 +2042,7 @@ class ClientsController extends Controller
         }
     }
 
-    public function detail(Request $request, $id = NULL, $id1 = NULL, $tab = NULL)
+    public function detail(Request $request, $id = NULL, $id1 = NULL, $tab = NULL, string $detailView = 'crm.clients.detail')
     {
 
         if (isset($request->t)) {
@@ -2095,11 +2094,8 @@ class ClientsController extends Controller
                     'cid' => (int) $id,
                     'name' => $displayName,
                     'record_type' => (string) ($targetRecord->type ?? 'client'),
-                    'redirect_to' => route('clients.detail', [
-                        'client_id' => $encodeId,
-                        'client_unique_matter_ref_no' => $id1,
-                        'tab' => $tab,
-                    ]),
+                    // Return user to the exact URL they opened (production detail, demo detail, query string, etc.).
+                    'redirect_to' => $request->fullUrl(),
                 ];
 
                 return view('crm.access.detail-gate', [
@@ -2230,7 +2226,7 @@ class ClientsController extends Controller
                 $showGoogleReviewReminderModal = $this->shouldShowGoogleReviewReminderModal($fetchedData);
 
                 //Return the view with all data
-                return view('crm.clients.detail', compact(
+                return view($detailView, compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
                     'experiences', 'testScores', 'visaCountries', 'clientOccupations','ClientPoints', 'clientSpouseDetail',
                     'encodeId', 'id1','clientFamilyDetails', 'activeTab',
@@ -2244,6 +2240,14 @@ class ClientsController extends Controller
         } else {
             return redirect()->route('clients.index')->with('error', config('constants.unauthorized'));
         }
+    }
+
+    /**
+     * Same behaviour as {@see detail()} but renders the duplicated Blade used for new-design QA (does not replace production).
+     */
+    public function detailNewDesignDemo(Request $request, $id = NULL, $id1 = NULL, $tab = NULL)
+    {
+        return $this->detail($request, $id, $id1, $tab, 'crm.clients.detail_newdesign_demo');
     }
 
     protected function googleReviewCrmTemplateExists(): bool
@@ -5044,52 +5048,6 @@ class ClientsController extends Controller
                 'message' => 'Error generating document: ' . $e->getMessage()
             ], 500);
         }
-    }
-
-    // Get Legal Practitioner detail (matter assignee; column sel_legal_practitioner)
-    public function getLegalPractitionerDetail(Request $request)
-    {
-        $requestData = 	$request->all();
-        $client_matter_id = $requestData['client_matter_id'];
-        $clientMatterInfo = DB::table('client_matters')->select('sel_legal_practitioner','sel_matter_id')->where('id',$client_matter_id)->first();
-        //dd($clientMatterInfo);
-        if($clientMatterInfo) {
-            //get matter name
-            $matterInfo = DB::table('matters')->select('title','nick_name')->where('id',$clientMatterInfo->sel_matter_id)->first();
-            //dd($matterInfo);
-            if($matterInfo){
-                $response['matterInfo'] = $matterInfo;
-            } else {
-                $response['matterInfo'] = "";
-            }
-
-            $sel_legal_practitioner = $clientMatterInfo->sel_legal_practitioner;
-            $agentInfo = DB::table('staff')->select(
-                'id as agentId',
-                'first_name',
-                'last_name',
-                'company_name',
-                'is_solicitor',
-                'marn_number',
-                'legal_practitioner_number',
-                'business_address',
-                'business_phone',
-                'business_mobile',
-                'business_email',
-                'tax_number'
-            )->where('id', $sel_legal_practitioner)->first();
-            //dd($agentInfo);
-            if($agentInfo){
-                $response['agentInfo'] 	= $agentInfo;
-                $response['status'] 	= 	true;
-                $response['message']	=	'Record is exist';
-            } else {
-                $response['agentInfo'] 	= "";
-                $response['status'] 	= 	false;
-                $response['message']	=	'Record is not exist.Please try again';
-            }
-        }
-        echo json_encode($response);
     }
 
     // Get visa agreement Legal Practitioner detail

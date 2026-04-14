@@ -158,7 +158,7 @@ class HomeController extends Controller
                 Log::error('Bansal API token not configured');
                 return json_encode([
                     'success' => false,
-                    'message' => 'Bansal API token not configured. Set BANSAL_API_TOKEN in .env'
+                    'message' => 'Bansal API token not configured. Set the BANSAL_API_TOKEN environment variable.'
                 ]);
             }
             

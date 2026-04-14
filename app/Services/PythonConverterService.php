@@ -13,8 +13,9 @@ class PythonConverterService
 
     public function __construct()
     {
-        $this->apiUrl = env('PYTHON_CONVERTER_URL', 'http://localhost:5000');
-        $this->timeout = env('PYTHON_CONVERTER_TIMEOUT', 120); // 2 minutes timeout
+        // Must match config/services.php (same default port as unified python_services)
+        $this->apiUrl = config('services.python_converter.url', 'http://localhost:5001');
+        $this->timeout = (int) config('services.python_converter.timeout', 120);
     }
 
     /**
@@ -133,7 +134,7 @@ class PythonConverterService
     }
 
     /**
-     * Get API status information
+     * Get API status information (same "healthy" rule as isApiAvailable())
      */
     public function getApiStatus(): array
     {
@@ -141,20 +142,24 @@ class PythonConverterService
             $response = $this->getHttpClient()->get($this->apiUrl . '/health');
 
             if ($response->successful()) {
+                $json = $response->json();
+                $healthy = ($json['status'] ?? '') === 'healthy';
+
                 return [
-                    'available' => true,
-                    'status' => $response->json()
-                ];
-            } else {
-                return [
-                    'available' => false,
-                    'error' => 'API responded with error: ' . $response->status()
+                    'available' => $healthy,
+                    'status' => $json,
+                    'error' => $healthy ? null : 'Health endpoint did not report status: healthy',
                 ];
             }
+
+            return [
+                'available' => false,
+                'error' => 'API responded with error: ' . $response->status(),
+            ];
         } catch (\Exception $e) {
             return [
                 'available' => false,
-                'error' => 'API connection failed: ' . $e->getMessage()
+                'error' => 'API connection failed: ' . $e->getMessage(),
             ];
         }
     }

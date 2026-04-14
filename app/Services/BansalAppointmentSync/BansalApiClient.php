@@ -16,11 +16,11 @@ class BansalApiClient
     public function __construct(
         protected ?string $baseUrl = null,
         protected ?string $apiToken = null,
-        protected int $timeout = 30
+        protected ?int $timeout = null,
     ) {
-        $this->baseUrl = rtrim($baseUrl ?: config('services.bansal_api.url'), '/');
-        $this->apiToken = $apiToken ?: config('services.bansal_api.token');
-        $this->timeout = $timeout ?: config('services.bansal_api.timeout', 30);
+        $this->baseUrl = rtrim($baseUrl ?? config('services.bansal_api.url'), '/');
+        $this->apiToken = $apiToken ?? config('services.bansal_api.token');
+        $this->timeout = (int) ($timeout ?? config('services.bansal_api.timeout', 30));
     }
 
     /**
@@ -37,7 +37,7 @@ class BansalApiClient
     protected function assertTokenConfigured(): void
     {
         if (empty($this->apiToken)) {
-            throw new Exception('Bansal API token not configured. Set BANSAL_API_TOKEN in .env');
+            throw new Exception('Bansal API token not configured. Set the BANSAL_API_TOKEN environment variable.');
         }
     }
 

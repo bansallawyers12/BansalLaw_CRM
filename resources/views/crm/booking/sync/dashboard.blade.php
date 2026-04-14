@@ -284,7 +284,7 @@ html, body {
                         <div class="col-md-6">
                             <p><strong>API Endpoint:</strong></p>
                             <p class="text-muted">
-                                <code>{{ config('services.bansal_api.base_url') }}</code>
+                                <code>{{ config('services.bansal_api.url') }}</code>
                             </p>
                         </div>
                         <div class="col-md-6">

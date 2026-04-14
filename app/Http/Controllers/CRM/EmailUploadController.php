@@ -49,19 +49,9 @@ class EmailUploadController extends Controller
     {
         try {
             // Validate file input
-            $validator = Validator::make($request->all(), [
-                'email_files' => 'required',
-                'email_files.*' => 'mimes:msg|max:30720', // 30MB max
-                'client_id' => 'required',
-                'type' => 'required|in:client,lead'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors(),
-                ], 422);
+            $validationResponse = $this->validateEmailUploadRequest($request);
+            if ($validationResponse) {
+                return $validationResponse;
             }
 
             $this->ensureCrmRecordAccess((int) $request->client_id);
@@ -152,7 +142,8 @@ class EmailUploadController extends Controller
                 $status = false;
             }
             
-            // Return response with proper status
+            // Always return 200 so the JS processes the JSON body and shows
+            // full per-file error details.  The `status` field signals success/failure.
             return response()->json([
                 'status' => $status,
                 'message' => $message,
@@ -160,7 +151,7 @@ class EmailUploadController extends Controller
                 'failed' => $failedCount,
                 'errors' => $errors,
                 'total_files' => $uploadedCount + $failedCount
-            ], $status ? 200 : 400);
+            ], 200);
 
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
@@ -181,8 +172,8 @@ class EmailUploadController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Upload failed: ' . $errorMessage,
-                'technical_error' => $e->getMessage() // Include original for debugging
-            ], 500);
+                'technical_error' => $e->getMessage()
+            ], 200);
         }
     }
 
@@ -193,19 +184,9 @@ class EmailUploadController extends Controller
     {
         try {
             // Validate file input
-            $validator = Validator::make($request->all(), [
-                'email_files' => 'required',
-                'email_files.*' => 'mimes:msg|max:30720', // 30MB max
-                'client_id' => 'required',
-                'type' => 'required|in:client,lead'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors(),
-                ], 422);
+            $validationResponse = $this->validateEmailUploadRequest($request);
+            if ($validationResponse) {
+                return $validationResponse;
             }
 
             $this->ensureCrmRecordAccess((int) $request->client_id);
@@ -303,7 +284,7 @@ class EmailUploadController extends Controller
                 'failed' => $failedCount,
                 'errors' => $errors,
                 'total_files' => $uploadedCount + $failedCount
-            ], $status ? 200 : 400);
+            ], 200);
 
         } catch (\Exception $e) {
             Log::error('Sent email upload error', [
@@ -313,7 +294,7 @@ class EmailUploadController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Upload failed: ' . $e->getMessage(),
-            ], 500);
+            ], 200);
         }
     }
 
@@ -1019,6 +1000,58 @@ class EmailUploadController extends Controller
         }
         
         return $sanitizedFilename;
+    }
+
+    /**
+     * Validate email upload payload and enforce .msg extension checks.
+     *
+     * Relying on MIME-only validation can reject valid Outlook files because
+     * some systems report .msg as generic application/octet-stream.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse|null
+     */
+    protected function validateEmailUploadRequest(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email_files' => 'required|array|min:1',
+            'email_files.*' => 'file|max:30720', // 30MB max
+            'client_id' => 'required',
+            'type' => 'required|in:client,lead'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $invalidFiles = [];
+        foreach ($request->file('email_files', []) as $file) {
+            $originalName = (string) $file->getClientOriginalName();
+            $extension = strtolower((string) $file->getClientOriginalExtension());
+
+            if ($extension !== 'msg') {
+                $invalidFiles[] = $originalName ?: 'Unknown file';
+            }
+        }
+
+        if (!empty($invalidFiles)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed',
+                'errors' => [
+                    'email_files' => [
+                        'Only .msg files are allowed.'
+                    ],
+                ],
+                'invalid_files' => $invalidFiles,
+            ], 422);
+        }
+
+        return null;
     }
 }
 

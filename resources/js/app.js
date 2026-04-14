@@ -2,19 +2,16 @@ import './bootstrap';
 
 import Alpine from 'alpinejs';
 import SignaturePad from 'signature_pad';
-import Echo from 'laravel-echo';
-import Pusher from 'pusher-js';
 
 // Make global
 window.Alpine = Alpine;
 window.SignaturePad = SignaturePad;
-window.Pusher = Pusher;
 
 Alpine.start();
 
 /*
 |--------------------------------------------------------------------------
-| Notification Bell Update (always available - used by Echo / matter tab)
+| Notification Bell Update (always available — used by polling / matter tab)
 |--------------------------------------------------------------------------
 */
 window.updateNotificationBell = function (count, options = {}) {
@@ -52,68 +49,7 @@ window.updateNotificationBell = function (count, options = {}) {
     }
 };
 
-/*
-|--------------------------------------------------------------------------
-| Laravel Echo + Reverb
-|--------------------------------------------------------------------------
-| - Local: ws://localhost:8080 (REVERB_SCHEME=http, REVERB_PORT=8080)
-| - Production: wss://host:443 (REVERB_SCHEME=https, Nginx proxies to Reverb)
-*/
-
-if (import.meta.env.VITE_REVERB_APP_KEY) {
-    try {
-        const useTLS = import.meta.env.VITE_REVERB_SCHEME === 'https';
-        const port = parseInt(import.meta.env.VITE_REVERB_PORT, 10);
-        const wsPort = !isNaN(port) ? port : (useTLS ? 443 : 8080);
-
-        window.Echo = new Echo({
-            broadcaster: 'reverb',
-            key: import.meta.env.VITE_REVERB_APP_KEY,
-
-            wsHost: import.meta.env.VITE_REVERB_HOST || 'localhost',
-            wsPort,
-            wssPort: wsPort,
-
-            forceTLS: useTLS,
-            enabledTransports: useTLS ? ['wss'] : ['ws', 'wss'],
-
-            authEndpoint: '/broadcasting/auth',
-            auth: {
-                headers: {
-                    'X-CSRF-TOKEN': document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute('content'),
-                },
-            },
-        });
-
-        console.log('✅ Laravel Echo initialized with Reverb', useTLS ? '(wss)' : '(ws)');
-
-        // Subscribe to notification count updates (works whether Messages tab is open or not)
-        const userId = document.querySelector('meta[name="current-user-id"]')?.content;
-        if (userId) {
-            const userChannel = window.Echo.private('user.' + userId);
-            userChannel.listen('.notification.count.updated', function (e) {
-                try {
-                    const count = e.unread_count !== undefined ? parseInt(e.unread_count, 10) : 0;
-                    const opts = { showToast: true };
-                    if (e.message) opts.message = e.message;
-                    if (e.url) opts.url = e.url;
-                    window.updateNotificationBell(count, opts);
-                } catch (err) {
-                    console.warn('Notification count update error:', err);
-                }
-            });
-        }
-    } catch (error) {
-        console.warn('⚠️ Failed to initialize Laravel Echo:', error);
-        window.EchoDisabled = true;
-    }
-} else {
-    window.EchoDisabled = true;
-}
-
-// Polling fallback for notification badge (updates without page refresh when WebSocket unavailable)
+// Polling for notification badge (updates without page refresh)
 (function pollNotificationCount() {
     const badgeEl = document.getElementById('countbell_notification');
     const userId = document.querySelector('meta[name="current-user-id"]')?.content;
@@ -139,7 +75,6 @@ if (import.meta.env.VITE_REVERB_APP_KEY) {
             .catch(() => {});
     }
 
-    setTimeout(fetchCount, 5000);
     setInterval(fetchCount, 30000);
     document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'visible') fetchCount();

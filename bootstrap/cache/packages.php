@@ -25,12 +25,11 @@
       0 => 'Laravel\\Passport\\PassportServiceProvider',
     ),
   ),
-  'laravel/reverb' => 
+  'laravel/sail' => 
   array (
     'providers' => 
     array (
-      0 => 'Laravel\\Reverb\\ApplicationManagerServiceProvider',
-      1 => 'Laravel\\Reverb\\ReverbServiceProvider',
+      0 => 'Laravel\\Sail\\SailServiceProvider',
     ),
   ),
   'laravel/sanctum' => 

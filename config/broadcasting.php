@@ -11,7 +11,7 @@ return [
     | framework when an event needs to be broadcast. You may set this to
     | any of the connections defined in the "connections" array below.
     |
-    | Supported: "reverb", "pusher", "redis", "log", "null"
+    | Supported: "pusher", "redis", "log", "null"
     |
     */
 
@@ -29,26 +29,6 @@ return [
     */
 
     'connections' => [
-
-        'reverb' => [
-            'driver' => 'reverb',
-            'key' => env('REVERB_APP_KEY'),
-            'secret' => env('REVERB_APP_SECRET'),
-            'app_id' => env('REVERB_APP_ID'),
-            'options' => [
-                // For production: Set REVERB_HOST in .env to your server hostname/domain
-                // For localhost: Use 127.0.0.1 or leave REVERB_HOST unset
-                'host' => env('REVERB_HOST', '127.0.0.1'),
-                'port' => env('REVERB_PORT', 8080),
-                'scheme' => env('REVERB_SCHEME', 'http'),
-                'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
-            ],
-            'client_options' => [
-                // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
-                'timeout' => 5,
-                'connect_timeout' => 5,
-            ],
-        ],
 
         'pusher' => [
             'driver' => 'pusher',

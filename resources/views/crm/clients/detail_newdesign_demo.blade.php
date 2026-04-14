@@ -1,14 +1,37 @@
+{{-- Duplicated from detail.blade.php for UI experiments; merge or regenerate from production when tabs change. --}}
 @extends('layouts.crm_client_detail')
-@section('title', 'Client Detail')
+@section('title', 'Client Detail — New Design (Demo)')
 
 @section('content')
 @php \App\Support\EnsureDummyMatterStaff::ensure(); @endphp
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="{{ URL::asset('css/client-detail.css') }}">
+<link rel="stylesheet" href="{{ URL::asset('css/client-detail-newdesign-demo.css') }}">
 
 <?php
 use App\Http\Controllers\Controller;
 ?>
+@php
+    $cdnDetailRouteParams = array_filter([
+        'client_id' => $encodeId,
+        'client_unique_matter_ref_no' => $id1,
+        'tab' => $activeTab ?? null,
+    ], function ($v) {
+        return $v !== null && $v !== '';
+    });
+@endphp
+<div class="client-detail-newdesign-demo-shell">
+<div class="cdn-demo-banner" role="status">
+    <div class="cdn-demo-banner__inner">
+        <span class="cdn-demo-banner__badge">Demo</span>
+        <span class="cdn-demo-banner__text">New layout preview — same CRM data, routes, and JavaScript as production. Use this page to verify behaviour before any cutover.</span>
+        <div class="cdn-demo-banner__actions">
+            <a class="cdn-demo-banner__link" href="{{ route('clients.detail', $cdnDetailRouteParams) }}">Open production layout</a>
+            <a class="cdn-demo-banner__link cdn-demo-banner__link--muted" href="{{ route('clients.detail.demo_newdesign', $cdnDetailRouteParams) }}">Reload demo (canonical URL)</a>
+        </div>
+    </div>
+</div>
 <div class="crm-container" data-client-id="{{ $fetchedData->id }}">
     <!-- Collapsed Toggle Button (shown when sidebar is collapsed) -->
     <button id="collapsed-toggle" class="collapsed-toggle-btn" title="Show Sidebar">
@@ -493,6 +516,7 @@ use App\Http\Controllers\Controller;
 
     <!-- Activity Feed (Personal Details, Activity nav, etc.) -->
     @include('crm.clients.tabs.activity_feed')
+</div>
 </div>
 
 @include('crm.clients.addclientmodal')

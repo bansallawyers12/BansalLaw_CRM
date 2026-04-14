@@ -89,6 +89,66 @@
     }
 
     /**
+     * filterEmails may return a raw array of emails, or { status, emails, message }
+     * when the schema is not migrated / integration not configured (see ClientsController::filterEmails).
+     */
+    function normalizeEmailListResponse(data) {
+        if (Array.isArray(data)) {
+            return data;
+        }
+        // Sometimes the backend can return JSON as a string.
+        if (typeof data === 'string') {
+            try {
+                return normalizeEmailListResponse(JSON.parse(data));
+            } catch (e) {
+                console.warn('Could not parse email list JSON string response:', e);
+                return [];
+            }
+        }
+        // Support Laravel paginator payload shape: { data: [...] }
+        if (data && Array.isArray(data.data)) {
+            return data.data;
+        }
+        if (data && data.emails != null) {
+            const e = data.emails;
+            if (Array.isArray(e)) {
+                return e;
+            }
+            // Sometimes emails may be sent as a JSON string
+            if (typeof e === 'string') {
+                try {
+                    const parsed = JSON.parse(e);
+                    if (Array.isArray(parsed)) {
+                        return parsed;
+                    }
+                } catch (err) {
+                    console.warn('Could not parse `emails` JSON string:', err);
+                }
+            }
+            // PHP may JSON-encode a non-sequential list as an object; only treat numeric keys as a list.
+            if (typeof e === 'object' && e !== null) {
+                const keys = Object.keys(e);
+                if (keys.length > 0 && keys.every(k => /^\d+$/.test(k))) {
+                    return keys
+                        .map(k => Number(k))
+                        .sort((a, b) => a - b)
+                        .map(k => e[String(k)]);
+                }
+            }
+        }
+        if (data && data.status === 'error') {
+            console.warn('Email list request returned error status:', data.message || data);
+            return [];
+        }
+        // Fallback: if backend returns a single email object, render it as one-item list.
+        if (data && typeof data === 'object' && (data.id || data.subject || data.from_mail || data.to_mail)) {
+            return [data];
+        }
+        console.warn('Unexpected email list response shape:', data);
+        return [];
+    }
+
+    /**
      * Show notification message
      */
     function showNotification(message, type = 'info') {
@@ -542,9 +602,27 @@
                     } catch {
                         throw new Error(`Upload validation failed. Please check your file format and try again.`);
                     }
+                } else if (response.status === 400) {
+                    // Processing error - parse JSON for detailed per-file errors
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        let errorMsg = errorData.message || 'Upload failed';
+                        if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
+                            const details = errorData.errors.map((e, i) =>
+                                `${i + 1}. ${e.filename || 'Unknown file'}: ${e.error || 'Unknown error'}`
+                            ).join('\n');
+                            errorMsg += '\n\nDetails:\n' + details;
+                        }
+                        throw new Error(errorMsg);
+                    } catch (jsonErr) {
+                        if (jsonErr.message && !jsonErr.message.startsWith('Unexpected')) {
+                            throw jsonErr; // re-throw our formatted error
+                        }
+                        throw new Error(`Upload failed: ${errorText.substring(0, 500)}`);
+                    }
                 }
                 
-                throw new Error(`Upload failed: ${response.status} ${response.statusText}. ${errorText.substring(0, 200)}`);
+                throw new Error(`Upload failed: ${response.status} ${response.statusText}. ${errorText.substring(0, 500)}`);
             }
 
             const contentType = response.headers.get('content-type');
@@ -837,24 +915,33 @@
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const emails = await response.json();
-            console.log('Emails received:', emails);
-            
+            const raw = await response.json();
+            console.log('Emails received:', raw);
+
+            const emails = normalizeEmailListResponse(raw);
+
             // Debug: Check attachments in received emails
-            emails.forEach((email, index) => {
+            for (const [index, email] of emails.entries()) {
                 if (email.attachments && email.attachments.length > 0) {
                     console.log(`Email ${index} (ID: ${email.id}) has ${email.attachments.length} attachments`);
                 }
-            });
+            }
 
             // Apply sorting
             const sortedEmails = sortEmails(emails);
 
-            // Render emails
-            renderEmails(sortedEmails);
-
-            // Update counts
-            updateEmailCounts(sortedEmails.length);
+            // API may return a human-readable message with an empty list (e.g. integration not configured)
+            const emptyInfo =
+                !Array.isArray(raw) && raw && raw.message && sortedEmails.length === 0
+                    ? raw.message
+                    : null;
+            if (sortedEmails.length === 0 && emptyInfo) {
+                renderEmptyState(emptyInfo, null);
+                updateEmailCounts(0);
+            } else {
+                renderEmails(sortedEmails);
+                updateEmailCounts(sortedEmails.length);
+            }
 
         } catch (error) {
             console.error('Error loading emails:', error);

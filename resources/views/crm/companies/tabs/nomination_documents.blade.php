@@ -175,13 +175,8 @@
                                                 <?php foreach ($parentDocs as $visaKey => $fetch): ?>
                                                     <?php
                                                     $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
-                                                    $isForm956 = !empty($fetch->form956_id);
 
-                                                    // Build file URL for normal docs; Form 956 uses forms.preview/forms.pdf
-                                                    if ($isForm956) {
-                                                        $fileUrl = url()->route('forms.preview', $fetch->form956_id);
-                                                        $downloadUrl = url()->route('forms.pdf', $fetch->form956_id);
-                                                    } elseif (!empty($fetch->myfile) && strpos($fetch->myfile, 'http') === 0) {
+                                                    if (!empty($fetch->myfile) && strpos($fetch->myfile, 'http') === 0) {
                                                         $fileUrl = $fetch->myfile;
                                                         $downloadUrl = $fetch->myfile;
                                                     } else {
@@ -194,7 +189,7 @@
                                                             <div data-id="<?= $fetch->id ?>" data-visachecklistname="<?= htmlspecialchars($fetch->checklist) ?>" class="visachecklist-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" style="display: flex; align-items: center; gap: 8px;">
                                                                 <span style="flex: 1;"><?= htmlspecialchars($fetch->checklist) ?></span>
                                                                 <div class="checklist-actions" style="display: flex; gap: 5px;">
-                                                                    <?php if (!$fetch->file_name && !$isForm956): ?>
+                                                                    <?php if (!$fetch->file_name): ?>
                                                                     <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
                                                                         <i class="fas fa-edit"></i>
                                                                     </a>
@@ -216,28 +211,6 @@
                                                                     <a href="javascript:void(0);" onclick="previewFile('<?= $fetch->filetype ?? 'pdf' ?>','<?= $fileUrlJs ?>','preview-container-nomdocumnetlist')">
                                                                         <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($displayFileName) ?></span>
                                                                     </a>
-                                                                </div>
-                                                            <?php elseif ($isForm956): ?>
-                                                                <div class="form956-download-upload" style="display: flex; flex-direction: column; gap: 10px;" data-download-url="<?= e($downloadUrl) ?>" data-doc-id="<?= $fetch->id ?>">
-                                                                    <p class="mb-0" style="font-size: 12px; color: #374151;">Form 956 PDF downloads automatically. Check, update, then upload your completed form below.</p>
-                                                                    <div class="migration_upload_document" style="display: inline-block;">
-                                                                        <form method="POST" enctype="multipart/form-data" id="mig_upload_form_<?= $fetch->id ?>">
-                                                                            @csrf
-                                                                            <input type="hidden" name="clientid" value="<?= $fetchedData->id ?>">
-                                                                            <input type="hidden" name="client_matter_id" value="<?= $fetch->client_matter_id ?? '' ?>">
-                                                                            <input type="hidden" name="fileid" value="<?= $fetch->id ?>">
-                                                                            <input type="hidden" name="type" value="client">
-                                                                            <input type="hidden" name="doctype" value="nomination">
-                                                                            <input type="hidden" name="doccategory" value="<?= $catVal->title ?>">
-                                                                            <div class="document-drag-drop-zone nomination-doc-drag-zone" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" data-formid="mig_upload_form_<?= $fetch->id ?>">
-                                                                                <div class="drag-zone-inner">
-                                                                                    <i class="fas fa-cloud-upload-alt"></i>
-                                                                                    <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
-                                                                                </div>
-                                                                            </div>
-                                                                            <input class="migdocupload d-none" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" type="file" name="document_upload" style="display: none;"/>
-                                                                        </form>
-                                                                    </div>
                                                                 </div>
                                                             <?php else: ?>
                                                                 <div class="migration_upload_document" style="display: inline-block;">
@@ -307,14 +280,8 @@
                                                     $signedDocs = $signedByParent->get($signedKey, collect());
                                                     foreach ($signedDocs as $signedDoc):
                                                         $signedAdmin = \App\Models\Staff::where('id', $signedDoc->user_id)->first();
-                                                        $signedIsForm956 = !empty($signedDoc->form956_id);
-                                                        if ($signedIsForm956) {
-                                                            $signedFileUrl = url()->route('forms.preview', $signedDoc->form956_id);
-                                                            $signedDownloadUrl = url()->route('forms.pdf', $signedDoc->form956_id);
-                                                        } else {
-                                                            $signedFileUrl = url()->route('documents.preview.signed', $signedDoc->id);
-                                                            $signedDownloadUrl = $signedDoc->signed_doc_link ?? $signedDoc->myfile;
-                                                        }
+                                                        $signedFileUrl = url()->route('documents.preview.signed', $signedDoc->id);
+                                                        $signedDownloadUrl = $signedDoc->signed_doc_link ?? $signedDoc->myfile;
                                                         $signedDisplayName = ($signedDoc->file_name ?? 'signed') . '.' . ($signedDoc->filetype ?? 'pdf');
                                                     ?>
                                                     <tr class="drow visa-signed-row" data-matterid="<?= $signedDoc->client_matter_id ?>" data-catid="<?= $signedDoc->folder_name ?>" id="id_<?= $signedDoc->id ?>">
@@ -348,14 +315,8 @@
                                                     $signedDocs = $signedByParent->get($orphanKey, collect());
                                                     foreach ($signedDocs as $signedDoc):
                                                         $signedAdmin = \App\Models\Staff::where('id', $signedDoc->user_id)->first();
-                                                        $signedIsForm956 = !empty($signedDoc->form956_id);
-                                                        if ($signedIsForm956) {
-                                                            $signedFileUrl = url()->route('forms.preview', $signedDoc->form956_id);
-                                                            $signedDownloadUrl = url()->route('forms.pdf', $signedDoc->form956_id);
-                                                        } else {
-                                                            $signedFileUrl = url()->route('documents.preview.signed', $signedDoc->id);
-                                                            $signedDownloadUrl = $signedDoc->signed_doc_link ?? $signedDoc->myfile;
-                                                        }
+                                                        $signedFileUrl = url()->route('documents.preview.signed', $signedDoc->id);
+                                                        $signedDownloadUrl = $signedDoc->signed_doc_link ?? $signedDoc->myfile;
                                                         $signedDisplayName = ($signedDoc->file_name ?? 'signed') . '.' . ($signedDoc->filetype ?? 'pdf');
                                                         $signedFileUrlJs = addslashes($signedFileUrl);
                                                 ?>
@@ -876,45 +837,6 @@
                     }
                 });
 
-                // Form 956: Auto-download PDF when visa documents tab is shown (downloads once per URL per page load)
-                // Exposed as a global so sidebar-tabs.js can call it directly (stopImmediatePropagation blocks delegated click events)
-                window.autoDownloadForm956Pdfs = function() {
-                    var $containers = $('#nominationdocuments-tab .form956-download-upload[data-download-url]').filter(':visible');
-                    if ($containers.length === 0) return;
-                    var seenUrls = {};
-                    var downloadIdx = 0;
-                    $containers.each(function() {
-                        var url = $(this).data('download-url');
-                        var docId = $(this).data('doc-id');
-                        var lsKey = 'form956_dl_' + docId;
-                        // Skip if already downloaded in a previous session or this session
-                        if (!url || seenUrls[url]) return;
-                        if (docId && localStorage.getItem(lsKey)) return;
-                        seenUrls[url] = true;
-                        var $el = $(this);
-                        var idx = downloadIdx++;
-                        (function(u, key, $container) {
-                            setTimeout(function() {
-                                fetch(u, { credentials: 'same-origin' })
-                                    .then(function(r) { return r.blob(); })
-                                    .then(function(blob) {
-                                        var a = document.createElement('a');
-                                        a.href = URL.createObjectURL(blob);
-                                        a.download = 'Form956.pdf';
-                                        document.body.appendChild(a);
-                                        a.click();
-                                        document.body.removeChild(a);
-                                        URL.revokeObjectURL(a.href);
-                                        if (key) localStorage.setItem(key, '1');
-                                    })
-                                    .catch(function() {
-                                        window.open(u, '_blank');
-                                        if (key) localStorage.setItem(key, '1');
-                                    });
-                            }, idx * 800);
-                        })(url, lsKey, $el);
-                    });
-                };
             </script>
 
             <script>

@@ -33,7 +33,6 @@ class Document extends Model
         'mail_type',
         'client_matter_id',
         'cp_list_id',
-        'form956_id',
         'office_id',
         'checklist',
         'cp_rejection_reason',

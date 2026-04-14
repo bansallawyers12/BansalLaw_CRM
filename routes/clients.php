@@ -13,7 +13,6 @@ use App\Http\Controllers\CRM\EmailUploadController;
 use App\Http\Controllers\CRM\EmailLabelController;
 use App\Http\Controllers\CRM\EmailLogAttachmentController;
 use App\Http\Controllers\CRM\ClientMatterHubController;
-use App\Http\Controllers\CRM\Form956Controller;
 use App\Http\Controllers\CRM\UploadChecklistController;
 use App\Http\Controllers\CRM\SendGridSendersController;
 use App\Http\Controllers\CRM\AccessGrantController;
@@ -65,6 +64,7 @@ Route::post('/clients/convert-lead-only', [ClientsController::class, 'convertLea
 Route::get('/document/download/pdf/{id}', [ClientsController::class, 'downloadpdf']);
 Route::get('/clients/removetag', [ClientsController::class, 'removetag']);
 Route::get('/clients/detail/{client_id}/{client_unique_matter_ref_no?}/{tab?}', [ClientsController::class, 'detail'])->name('clients.detail');
+Route::get('/clients/detail-demo-newdesign/{client_id}/{client_unique_matter_ref_no?}/{tab?}', [ClientsController::class, 'detailNewDesignDemo'])->name('clients.detail.demo_newdesign');
 Route::post('/clients/google-review-reminder', [ClientsController::class, 'updateGoogleReviewReminder'])->name('clients.google-review-reminder');
 Route::post('/clients/google-review-reminder/sms', [ClientsController::class, 'sendGoogleReviewReminderSms'])->name('clients.google-review-reminder.sms');
 
@@ -272,7 +272,6 @@ Route::post('/clients/save-relationship', [ClientPersonalDetailsController::clas
 
 /*---------- Client Agreements & Forms ----------*/
 Route::post('/clients/generateagreement', [ClientsController::class, 'generateagreement'])->name('clients.generateagreement');
-Route::post('/clients/getLegalPractitionerDetail', [ClientsController::class, 'getLegalPractitionerDetail'])->name('clients.getLegalPractitionerDetail');
 Route::post('/clients/getVisaAgreementLegalPractitionerDetail', [ClientsController::class, 'getVisaAgreementLegalPractitionerDetail'])->name('clients.getVisaAgreementLegalPractitionerDetail');
 Route::post('/clients/getCostAssignmentLegalPractitionerDetail', [ClientsController::class, 'getCostAssignmentLegalPractitionerDetail'])->name('clients.getCostAssignmentLegalPractitionerDetail');
 Route::post('/clients/savecostassignment', [ClientsController::class, 'savecostassignment'])->name('clients.savecostassignment');
@@ -293,15 +292,6 @@ Route::put('/legal-forms/{legalForm}', [\App\Http\Controllers\CRM\LegalFormsCont
 Route::delete('/legal-forms/{legalForm}', [\App\Http\Controllers\CRM\LegalFormsController::class, 'destroy'])->name('legal-forms.destroy');
 Route::get('/legal-forms/{legalForm}/preview', [\App\Http\Controllers\CRM\LegalFormsController::class, 'previewDocx'])->name('legal-forms.preview');
 Route::get('/legal-forms/{legalForm}/download', [\App\Http\Controllers\CRM\LegalFormsController::class, 'downloadDocx'])->name('legal-forms.download');
-
-// Form 956
-Route::post('/forms', [Form956Controller::class, 'store'])->name('forms.store');
-Route::get('/forms/{form}', [Form956Controller::class, 'show'])->name('forms.show');
-Route::get('/forms/{form}/edit', [Form956Controller::class, 'edit'])->name('forms.edit');
-Route::put('/forms/{form}', [Form956Controller::class, 'update'])->name('forms.update');
-Route::delete('/forms/{form}', [Form956Controller::class, 'destroy'])->name('forms.destroy');
-Route::get('/forms/{form}/preview', [Form956Controller::class, 'previewPdf'])->name('forms.preview');
-Route::get('/forms/{form}/pdf', [Form956Controller::class, 'generatePdf'])->name('forms.pdf');
 
 /*---------- Court Dates & Hearings ----------*/
 Route::post('/clients/court-hearings/store', [ClientsController::class, 'storeCourtHearing'])->name('clients.courtHearings.store');

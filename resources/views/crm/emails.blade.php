@@ -164,8 +164,8 @@
 <div id="contextMenuOverlay" class="context-menu-overlay" style="display: none;"></div>
 
 <!-- Include necessary CSS and JavaScript -->
-<link rel="stylesheet" href="{{ asset('css/emails.css') }}">
-<script src="{{ asset('js/emails.js') }}"></script>
+<link rel="stylesheet" href="{{ asset('css/emails.css') }}?v={{ file_exists(public_path('css/emails.css')) ? filemtime(public_path('css/emails.css')) : 1 }}">
+<script src="{{ asset('js/emails.js') }}?v={{ file_exists(public_path('js/emails.js')) ? filemtime(public_path('js/emails.js')) : 1 }}"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
