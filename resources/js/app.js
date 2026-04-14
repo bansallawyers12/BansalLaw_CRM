@@ -75,7 +75,6 @@ window.updateNotificationBell = function (count, options = {}) {
             .catch(() => {});
     }
 
-    setTimeout(fetchCount, 5000);
     setInterval(fetchCount, 30000);
     document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'visible') fetchCount();
