@@ -2042,7 +2042,7 @@ class ClientsController extends Controller
         }
     }
 
-    public function detail(Request $request, $id = NULL, $id1 = NULL, $tab = NULL)
+    public function detail(Request $request, $id = NULL, $id1 = NULL, $tab = NULL, string $detailView = 'crm.clients.detail')
     {
 
         if (isset($request->t)) {
@@ -2229,7 +2229,7 @@ class ClientsController extends Controller
                 $showGoogleReviewReminderModal = $this->shouldShowGoogleReviewReminderModal($fetchedData);
 
                 //Return the view with all data
-                return view('crm.clients.detail', compact(
+                return view($detailView, compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
                     'experiences', 'testScores', 'visaCountries', 'clientOccupations','ClientPoints', 'clientSpouseDetail',
                     'encodeId', 'id1','clientFamilyDetails', 'activeTab',
@@ -2243,6 +2243,14 @@ class ClientsController extends Controller
         } else {
             return redirect()->route('clients.index')->with('error', config('constants.unauthorized'));
         }
+    }
+
+    /**
+     * Same behaviour as {@see detail()} but renders the duplicated Blade used for new-design QA (does not replace production).
+     */
+    public function detailNewDesignDemo(Request $request, $id = NULL, $id1 = NULL, $tab = NULL)
+    {
+        return $this->detail($request, $id, $id1, $tab, 'crm.clients.detail_newdesign_demo');
     }
 
     protected function googleReviewCrmTemplateExists(): bool

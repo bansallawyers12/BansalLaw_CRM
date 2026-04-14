@@ -1,0 +1,186 @@
+/**
+ * Scoped skin for detail_newdesign_demo.blade.php only.
+ * Mirrors tokens from public/clientdetailnewdesign.html without changing production detail.blade.php.
+ */
+.client-detail-newdesign-demo-shell {
+  --cdn-bg: #f5f7fb;
+  --cdn-card: #ffffff;
+  --cdn-text: #0f172a;
+  --cdn-muted: #64748b;
+  --cdn-border: #e2e8f0;
+  --cdn-primary: #1d4ed8;
+  --cdn-primary-soft: #dbeafe;
+  --cdn-radius: 14px;
+  --cdn-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+  box-sizing: border-box;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 16px 16px 24px;
+  background: var(--cdn-bg);
+  min-height: calc(100vh - 120px);
+}
+
+.client-detail-newdesign-demo-shell *,
+.client-detail-newdesign-demo-shell *::before,
+.client-detail-newdesign-demo-shell *::after {
+  box-sizing: inherit;
+}
+
+/* Demo notice */
+.cdn-demo-banner {
+  background: var(--cdn-card);
+  border: 1px solid var(--cdn-border);
+  border-radius: var(--cdn-radius);
+  box-shadow: var(--cdn-shadow);
+  margin-bottom: 16px;
+  padding: 12px 16px;
+}
+
+.cdn-demo-banner__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 14px;
+  color: var(--cdn-text);
+}
+
+.cdn-demo-banner__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.cdn-demo-banner__text {
+  flex: 1 1 220px;
+  color: #334155;
+  line-height: 1.45;
+}
+
+.cdn-demo-banner__link {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  color: #1e40af;
+  background: var(--cdn-primary-soft);
+  border: 1px solid #bfd7ff;
+}
+
+.cdn-demo-banner__link:hover {
+  background: #bfdbfe;
+  color: #1e3a8a;
+}
+
+/* Main CRM flex row */
+.client-detail-newdesign-demo-shell .crm-container {
+  background: transparent;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.client-detail-newdesign-demo-shell .client-navigation-sidebar {
+  background: var(--cdn-card);
+  border: 1px solid var(--cdn-border);
+  border-radius: var(--cdn-radius);
+  box-shadow: var(--cdn-shadow);
+  overflow: hidden;
+}
+
+.client-detail-newdesign-demo-shell .sidebar-header {
+  border-bottom: 1px solid var(--cdn-border);
+}
+
+.client-detail-newdesign-demo-shell .client-id {
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  color: var(--cdn-muted);
+  font-weight: 600;
+}
+
+.client-detail-newdesign-demo-shell .client-name {
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--cdn-text);
+}
+
+.client-detail-newdesign-demo-shell .client-sidebar-nav {
+  padding: 8px 10px 12px;
+  gap: 6px;
+  display: flex;
+  flex-direction: column;
+}
+
+.client-detail-newdesign-demo-shell .client-nav-button {
+  border-radius: 10px;
+  border: 1px solid var(--cdn-border);
+  background: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  color: #334155;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.client-detail-newdesign-demo-shell .client-nav-button:hover {
+  border-color: #bfd7ff;
+  background: #f8fafc;
+}
+
+.client-detail-newdesign-demo-shell .client-nav-button.active {
+  border-color: var(--cdn-primary);
+  color: var(--cdn-primary);
+  background: var(--cdn-primary-soft);
+}
+
+.client-detail-newdesign-demo-shell .main-content {
+  background: var(--cdn-card);
+  border: 1px solid var(--cdn-border);
+  border-radius: var(--cdn-radius);
+  box-shadow: var(--cdn-shadow);
+  padding: 16px 18px 20px;
+}
+
+.client-detail-newdesign-demo-shell .main-content-with-tabs {
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.client-detail-newdesign-demo-shell .matter-status-badge {
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  background: #f1f5f9;
+  border: 1px solid var(--cdn-border);
+  color: #334155;
+}
+
+.client-detail-newdesign-demo-shell .sidebar-toggle-btn,
+.client-detail-newdesign-demo-shell .client-detail-back-btn {
+  border-radius: 10px;
+}
+
+.client-detail-newdesign-demo-shell .collapsed-toggle-btn {
+  border-radius: 12px;
+  background: var(--cdn-primary);
+  box-shadow: var(--cdn-shadow);
+}
+
+@media (max-width: 1024px) {
+  .client-detail-newdesign-demo-shell {
+    padding: 12px;
+  }
+
+  .client-detail-newdesign-demo-shell .crm-container {
+    flex-direction: column;
+  }
+}
