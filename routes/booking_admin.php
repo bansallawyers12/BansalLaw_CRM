@@ -78,4 +78,8 @@ Route::controller(BookingAppointmentsController::class)
 
         Route::get('/api/appointments', 'getAppointments')
             ->name('api.appointments');
+
+        Route::get('/api/calendar-stats/{type}', 'calendarStatsJson')
+            ->name('api.calendar-stats')
+            ->whereIn('type', ['ajay', 'kunal']);
     });

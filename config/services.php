@@ -137,7 +137,9 @@ return [
     'appointment_api' => [
         'url' => rtrim(env('APPOINTMENT_API_URL', 'https://www.bansallawyers.com.au/api'), '/'),
         'service_token' => env('APPOINTMENT_API_SERVICE_TOKEN'),
-        'timeout' => (int) env('APPOINTMENT_API_TIMEOUT', 30000),
+        /** When set, used as Bearer token instead of /service-account/authenticate. */
+        'bearer_token' => env('APPOINTMENT_API_BEARER_TOKEN'),
+        'timeout' => (int) env('APPOINTMENT_API_TIMEOUT', 120),
     ],
 
     /*

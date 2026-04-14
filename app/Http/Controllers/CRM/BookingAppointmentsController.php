@@ -11,6 +11,8 @@ use App\Models\AppointmentSyncLog;
 use App\Models\ActivitiesLog;
 use App\Services\BansalAppointmentSync\AppointmentSyncService;
 use App\Services\BansalAppointmentSync\BansalApiClient;
+use App\Services\Booking\BookingCalendarExternalFeed;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -23,19 +25,292 @@ use Yajra\DataTables\Facades\DataTables;
 
 class BookingAppointmentsController extends Controller
 {
-    protected AppointmentSyncService $syncService;
+       protected AppointmentSyncService $syncService;
     protected BansalApiClient $bansalApiClient;
+    protected BookingCalendarExternalFeed $calendarExternalFeed;
 
-    public function __construct(AppointmentSyncService $syncService, BansalApiClient $bansalApiClient)
-    {
+    public function __construct(
+        AppointmentSyncService $syncService,
+        BansalApiClient $bansalApiClient,
+        BookingCalendarExternalFeed $calendarExternalFeed
+    ) {
         $this->middleware('auth:admin');
         $this->syncService = $syncService;
         $this->bansalApiClient = $bansalApiClient;
+        $this->calendarExternalFeed = $calendarExternalFeed;
     }
 
     protected function assertBookingAppointmentAccess(BookingAppointment $appointment): void
     {
         StaffClientVisibility::abortUnlessMayAccessBookingAppointment($appointment);
+    }
+
+    /**
+     * ?status= value for the public /appointments API (null means omit the parameter).
+     */
+    protected function calendarApiStatusQueryValue(): int|string|null
+    {
+        $raw = config('booking_calendar.external.api_status_filter', 1);
+        if ($raw === '' || $raw === null) {
+            return null;
+        }
+
+        return $raw;
+    }
+
+    protected function calendarIncludePastInVisibleRange(): bool
+    {
+        return (bool) config('booking_calendar.include_past_in_visible_range', false);
+    }
+
+    /**
+     * When BOOKING_CALENDAR_INCLUDE_PAST_IN_RANGE is true: restrict to FullCalendar’s [start, end) window.
+     */
+    protected function applyCalendarVisibleDatetimeWindow(Builder $query, Request $request, Carbon $startOfToday): void
+    {
+        if ($request->filled('start') && $request->filled('end')) {
+            try {
+                $rangeStart = Carbon::parse($request->get('start'));
+                $rangeEnd = Carbon::parse($request->get('end'));
+                $query->where('appointment_datetime', '>=', $rangeStart)
+                    ->where('appointment_datetime', '<', $rangeEnd);
+
+                return;
+            } catch (Exception) {
+                // fall through
+            }
+        }
+        $query->where('appointment_datetime', '>=', $startOfToday);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $normalized
+     * @return list<array<string, mixed>>
+     */
+    protected function filterNormalizedRowsForCalendarVisibleRange(Request $request, array $normalized, Carbon $startOfToday): array
+    {
+        return array_values(array_filter($normalized, function (array $row) use ($request, $startOfToday) {
+            if (empty($row['appointment_datetime'])) {
+                return false;
+            }
+            try {
+                $dt = Carbon::parse($row['appointment_datetime'], config('app.timezone'));
+            } catch (Exception) {
+                return false;
+            }
+            if ($dt->gte($startOfToday)) {
+                return true;
+            }
+            if ($request->filled('start') && $request->filled('end')) {
+                try {
+                    $rangeStart = Carbon::parse($request->get('start'));
+                    $rangeEnd = Carbon::parse($request->get('end'));
+
+                    return $dt->gte($rangeStart) && $dt->lt($rangeEnd);
+                } catch (Exception) {
+                    return false;
+                }
+            }
+
+            return false;
+        }));
+    }
+
+    /**
+     * FullCalendar JSON: local DB, external Bansal public API, or both (see config/booking_calendar.php).
+     *
+     * @param  Builder<BookingAppointment>  $query  Pre-filtered (e.g. by calendar type)
+     * @return array{success: bool, data: array<int, array<string, mixed>>, message?: string}
+     */
+    protected function buildCalendarFeedResponse(Request $request, Builder $query): array
+    {
+        $source = config('booking_calendar.data_source', 'local');
+        $startOfToday = Carbon::today(config('app.timezone'));
+        $currentDateTime = Carbon::now(config('app.timezone'));
+        $includePast = $this->calendarIncludePastInVisibleRange();
+
+        if ($source === 'local') {
+            if ($includePast) {
+                $this->applyCalendarVisibleDatetimeWindow($query, $request, $startOfToday);
+            } else {
+                $query->where('appointment_datetime', '>=', $startOfToday);
+            }
+            $appointments = $query->get();
+
+            Log::info('Calendar API Request - Showing Today and Future Appointments (local)', [
+                'type' => $request->get('type'),
+                'start' => $request->get('start'),
+                'end' => $request->get('end'),
+                'start_of_today_filter' => $startOfToday->toDateTimeString(),
+                'current_datetime' => $currentDateTime->toDateTimeString(),
+                'timezone' => $startOfToday->timezone->getName(),
+                'appointments_count_after_filter' => $appointments->count(),
+            ]);
+
+            return [
+                'success' => true,
+                'data' => $appointments
+                    ->map(fn (BookingAppointment $a) => $this->calendarExternalFeed->calendarPayloadFromModel($a))
+                    ->values()
+                    ->all(),
+            ];
+        }
+
+        if ($source === 'merge') {
+            try {
+                return [
+                    'success' => true,
+                    'data' => $this->mergeCalendarLocalAndExternal($request, $query, $startOfToday),
+                ];
+            } catch (Exception $e) {
+                Log::error('Calendar merge (external) failed; using local only', ['error' => $e->getMessage()]);
+                if ($this->calendarIncludePastInVisibleRange()) {
+                    $this->applyCalendarVisibleDatetimeWindow($query, $request, $startOfToday);
+                } else {
+                    $query->where('appointment_datetime', '>=', $startOfToday);
+                }
+                $appointments = $query->get();
+
+                return [
+                    'success' => true,
+                    'data' => $appointments
+                        ->map(fn (BookingAppointment $a) => $this->calendarExternalFeed->calendarPayloadFromModel($a))
+                        ->values()
+                        ->all(),
+                ];
+            }
+        }
+
+        // external
+        $type = (string) $request->get('type', 'ajay');
+        $apiStatus = $this->calendarApiStatusQueryValue();
+        $serviceId = $this->calendarExternalFeed->resolveServiceIdForCalendarType($type);
+
+        try {
+            // Synthetic bansal_appointment_id must match stats: API rows often omit id — without this, KPIs show data but events are empty.
+            $normalized = $this->calendarExternalFeed->fetchAppointmentsNormalized(
+                $serviceId,
+                $apiStatus,
+                $request->get('start'),
+                $request->get('end'),
+                true
+            );
+            if ($normalized === [] && ($request->filled('start') || $request->filled('end'))) {
+                $normalized = $this->calendarExternalFeed->fetchAppointmentsNormalized(
+                    $serviceId,
+                    $apiStatus,
+                    null,
+                    null,
+                    true
+                );
+            }
+        } catch (Exception $e) {
+            Log::error('Calendar external API failed', ['error' => $e->getMessage()]);
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => [],
+            ];
+        }
+
+        if ($this->calendarIncludePastInVisibleRange()) {
+            $normalized = $this->filterNormalizedRowsForCalendarVisibleRange($request, $normalized, $startOfToday);
+        } else {
+            $normalized = array_values(array_filter($normalized, function (array $row) use ($startOfToday) {
+                if (empty($row['appointment_datetime'])) {
+                    return false;
+                }
+                try {
+                    return Carbon::parse($row['appointment_datetime'], config('app.timezone'))->gte($startOfToday);
+                } catch (Exception) {
+                    return false;
+                }
+            }));
+        }
+
+        $data = $this->calendarExternalFeed->resolveWithLocalCrmRows($normalized);
+
+        Log::info('Calendar API Request - external Bansal appointment API', [
+            'type' => $type,
+            'service_id' => $serviceId,
+            'rows' => count($data),
+        ]);
+
+        return ['success' => true, 'data' => $data];
+    }
+
+    /**
+     * @param  Builder<BookingAppointment>  $query
+     * @return list<array<string, mixed>>
+     */
+    protected function mergeCalendarLocalAndExternal(Request $request, Builder $query, Carbon $startOfToday): array
+    {
+        $localQuery = clone $query;
+        if ($this->calendarIncludePastInVisibleRange()) {
+            $this->applyCalendarVisibleDatetimeWindow($localQuery, $request, $startOfToday);
+        } else {
+            $localQuery->where('appointment_datetime', '>=', $startOfToday);
+        }
+        $localModels = $localQuery->get();
+
+        $localPayloads = $localModels
+            ->map(fn (BookingAppointment $a) => $this->calendarExternalFeed->calendarPayloadFromModel($a))
+            ->values()
+            ->all();
+
+        $localBansalKeys = $localModels->pluck('bansal_appointment_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->flip()
+            ->all();
+
+        $type = (string) $request->get('type', 'ajay');
+        $apiStatus = $this->calendarApiStatusQueryValue();
+        $serviceId = $this->calendarExternalFeed->resolveServiceIdForCalendarType($type);
+
+        $normalized = $this->calendarExternalFeed->fetchAppointmentsNormalized(
+            $serviceId,
+            $apiStatus,
+            $request->get('start'),
+            $request->get('end'),
+            true
+        );
+        if ($normalized === [] && ($request->filled('start') || $request->filled('end'))) {
+            $normalized = $this->calendarExternalFeed->fetchAppointmentsNormalized(
+                $serviceId,
+                $apiStatus,
+                null,
+                null,
+                true
+            );
+        }
+
+        if ($this->calendarIncludePastInVisibleRange()) {
+            $normalized = $this->filterNormalizedRowsForCalendarVisibleRange($request, $normalized, $startOfToday);
+        } else {
+            $normalized = array_values(array_filter($normalized, function (array $row) use ($startOfToday) {
+                if (empty($row['appointment_datetime'])) {
+                    return false;
+                }
+                try {
+                    return Carbon::parse($row['appointment_datetime'], config('app.timezone'))->gte($startOfToday);
+                } catch (Exception) {
+                    return false;
+                }
+            }));
+        }
+
+        $extras = [];
+        foreach ($normalized as $row) {
+            $bid = $row['bansal_appointment_id'] ?? null;
+            if ($bid && isset($localBansalKeys[(int) $bid])) {
+                continue;
+            }
+            $extras[] = $this->calendarExternalFeed->toReadOnlyCalendarPayload($row);
+        }
+
+        return array_merge($localPayloads, $extras);
     }
 
     /**
@@ -158,67 +433,7 @@ class BookingAppointmentsController extends Controller
 
         // Check if calendar format is requested
         if ($request->get('format') === 'calendar') {
-            // Show today's appointments (all times) and future appointments
-            // Filter out only past appointments (before today)
-            // Use explicit timezone-aware comparison to ensure accuracy
-            $currentDateTime = Carbon::now(config('app.timezone'));
-            $startOfToday = Carbon::today(config('app.timezone'));
-            
-            // Show appointments from start of today onwards (includes all of today + future)
-            $query->where('appointment_datetime', '>=', $startOfToday);
-            
-            $appointments = $query->get();
-            
-            // Debug logging to verify filter is working
-            Log::info('Calendar API Request - Showing Today and Future Appointments', [
-                'type' => $request->get('type'),
-                'start' => $request->get('start'),
-                'end' => $request->get('end'),
-                'start_of_today_filter' => $startOfToday->toDateTimeString(),
-                'current_datetime' => $currentDateTime->toDateTimeString(),
-                'timezone' => $startOfToday->timezone->getName(),
-                'appointments_count_after_filter' => $appointments->count(),
-                'sample_appointment_dates' => $appointments->take(5)->map(function($apt) use ($startOfToday, $currentDateTime) {
-                    return [
-                        'id' => $apt->id,
-                        'datetime' => $apt->appointment_datetime->toDateTimeString(),
-                        'is_today' => $apt->appointment_datetime->isToday(),
-                        'is_future' => $apt->appointment_datetime->gt($currentDateTime),
-                        'days_from_now' => $apt->appointment_datetime->diffInDays($currentDateTime, false)
-                    ];
-                })->toArray()
-            ]);
-            
-            return response()->json([
-                'success' => true,
-                'data' => $appointments->map(function ($appointment) {
-                    $encodedClientId = $appointment->client_id 
-                        ? base64_encode(convert_uuencode($appointment->client_id)) 
-                        : null;
-                    
-                    return [
-                        'id' => $appointment->id,
-                        'client_id' => $appointment->client_id,
-                        'client_id_encoded' => $encodedClientId,
-                        'client_name' => $appointment->client_name,
-                        'client_email' => $appointment->client_email,
-                        'client_phone' => $appointment->client_phone,
-                        'service_type' => $appointment->service_type,
-                        'appointment_datetime' => $appointment->appointment_datetime->toIso8601String(),
-                        'duration_minutes' => $appointment->duration_minutes,
-                        'status' => $appointment->status,
-                        'location' => $appointment->location,
-                        'meeting_type' => $appointment->meeting_type,
-                        'preferred_language' => $appointment->preferred_language ?? 'English',
-                        'is_paid' => $appointment->is_paid,
-                        'final_amount' => $appointment->final_amount ?? 0,
-                        'consultant' => $appointment->consultant ? [
-                            'id' => $appointment->consultant->id,
-                            'name' => $appointment->consultant->name,
-                        ] : null,
-                    ];
-                })
-            ]);
+            return response()->json($this->buildCalendarFeedResponse($request, $query));
         }
 
         // Default: Return DataTables format ordered by ID (descending - newest first)
@@ -298,6 +513,73 @@ class BookingAppointmentsController extends Controller
     }
 
     /**
+     * KPI header cards for the booking calendar (shared with JSON refresh for first-load reliability).
+     *
+     * @return array{this_month: int, today: int, upcoming: int, pending: int, paid: int, no_show: int}
+     */
+    protected function calendarHeaderStatsForType(string $type): array
+    {
+        $calendarStatsBase = function () use ($type) {
+            $q = BookingAppointment::query()->whereHas('consultant', function ($q2) use ($type) {
+                $q2->where('calendar_type', $type);
+            });
+            StaffClientVisibility::restrictBookingAppointmentEloquentQuery($q);
+
+            return $q;
+        };
+
+        $calendarSource = config('booking_calendar.data_source', 'local');
+        $apiStatus = $this->calendarApiStatusQueryValue();
+
+        if ($calendarSource === 'external') {
+            return $this->calendarExternalFeed->computeStats($type, $apiStatus);
+        }
+
+        if ($calendarSource === 'merge') {
+            $localStats = [
+                'this_month' => (clone $calendarStatsBase())->whereMonth('appointment_datetime', now()->month)->count(),
+                'today' => (clone $calendarStatsBase())->whereDate('appointment_datetime', today())->count(),
+                'upcoming' => (clone $calendarStatsBase())->where('appointment_datetime', '>', now())->count(),
+                'pending' => (clone $calendarStatsBase())->where('status', 'pending')->where('is_paid', 1)->count(),
+                'paid' => (clone $calendarStatsBase())->where('status', 'paid')->where('is_paid', 1)->count(),
+                'no_show' => (clone $calendarStatsBase())->where('status', 'no_show')->count(),
+            ];
+
+            return $this->calendarExternalFeed->computeMergeStatsWithLocal($type, $apiStatus, $localStats);
+        }
+
+        return [
+            'this_month' => (clone $calendarStatsBase())->whereMonth('appointment_datetime', now()->month)->count(),
+            'today' => (clone $calendarStatsBase())->whereDate('appointment_datetime', today())->count(),
+            'upcoming' => (clone $calendarStatsBase())->where('appointment_datetime', '>', now())->count(),
+            'pending' => (clone $calendarStatsBase())->where('status', 'pending')->where('is_paid', 1)->count(),
+            'paid' => (clone $calendarStatsBase())->where('status', 'paid')->where('is_paid', 1)->count(),
+            'no_show' => (clone $calendarStatsBase())->where('status', 'no_show')->count(),
+        ];
+    }
+
+    /**
+     * JSON stats for calendar header cards (retried client-side when SSR/API is cold).
+     */
+    public function calendarStatsJson(string $type)
+    {
+        $validTypes = ['ajay', 'kunal'];
+        if (! in_array($type, $validTypes, true)) {
+            return response()->json(['success' => false, 'message' => 'Invalid calendar type'], 404);
+        }
+
+        try {
+            $stats = $this->calendarHeaderStatsForType($type);
+        } catch (Exception $e) {
+            Log::error('calendarStatsJson failed', ['type' => $type, 'error' => $e->getMessage()]);
+
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+
+        return response()->json(['success' => true, 'data' => $stats]);
+    }
+
+    /**
      * Calendar view by type
      */
     public function calendar($type)
@@ -325,24 +607,7 @@ class BookingAppointmentsController extends Controller
             default => ucfirst($type)
         };
 
-        $calendarStatsBase = function () use ($type) {
-            $q = BookingAppointment::query()->whereHas('consultant', function ($q2) use ($type) {
-                $q2->where('calendar_type', $type);
-            });
-            StaffClientVisibility::restrictBookingAppointmentEloquentQuery($q);
-
-            return $q;
-        };
-
-        // Calculate statistics for this calendar type (same visibility as calendar events)
-        $stats = [
-            'this_month' => (clone $calendarStatsBase())->whereMonth('appointment_datetime', now()->month)->count(),
-            'today' => (clone $calendarStatsBase())->whereDate('appointment_datetime', today())->count(),
-            'upcoming' => (clone $calendarStatsBase())->where('appointment_datetime', '>', now())->count(),
-            'pending' => (clone $calendarStatsBase())->where('status', 'pending')->where('is_paid', 1)->count(),
-            'paid' => (clone $calendarStatsBase())->where('status', 'paid')->where('is_paid', 1)->count(),
-            'no_show' => (clone $calendarStatsBase())->where('status', 'no_show')->count(),
-        ];
+        $stats = $this->calendarHeaderStatsForType($type);
 
         $consultants = AppointmentConsultant::active()->get();
 

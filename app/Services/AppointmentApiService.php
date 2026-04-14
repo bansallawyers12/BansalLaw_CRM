@@ -19,6 +19,31 @@ class AppointmentApiService
         $this->serviceToken = $serviceToken ?? config('services.appointment_api.service_token');
     }
 
+    protected function httpTimeoutSeconds(): int
+    {
+        $t = (int) config('services.appointment_api.timeout', 120);
+
+        return max(5, min(300, $t > 600 ? (int) ($t / 1000) : $t));
+    }
+
+    /**
+     * GET /appointments with default filters used by the admin calendar (public booking API).
+     *
+     * @param  array<string, mixed>  $params
+     */
+    /**
+     * @param  int|string|null  $apiStatus  Omit from query when null (stats / loose listing).
+     */
+    public function getAppointmentsByServiceAndStatus(int $serviceId, int|string|null $apiStatus = 1, array $params = []): array
+    {
+        $query = array_merge(['service_id' => $serviceId], $params);
+        if ($apiStatus !== null && $apiStatus !== '') {
+            $query['status'] = $apiStatus;
+        }
+
+        return $this->getAppointments($query);
+    }
+
     /**
      * Authenticate using service token (no login required)
      */
@@ -33,7 +58,7 @@ class AppointmentApiService
             }
 
             // Authenticate with service token
-            $response = Http::timeout(300)->post($this->baseUrl . '/service-account/authenticate', [
+            $response = Http::timeout($this->httpTimeoutSeconds())->post($this->baseUrl . '/service-account/authenticate', [
                 'service_token' => $this->serviceToken
             ]);
 
@@ -64,20 +89,51 @@ class AppointmentApiService
     public function getAppointments($params = [])
     {
         $this->ensureAuthenticated();
-        
-        try {
-            $response = Http::withToken($this->token)
-                ->timeout(30)
-                ->get($this->baseUrl . '/appointments', $params);
 
-            if ($response->successful()) {
-                return $response->json();
+        $useCachedServiceToken = ! empty($this->serviceToken)
+            && empty(config('services.appointment_api.bearer_token'));
+
+        $maxAttempts = 3;
+        $lastError = null;
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                $response = Http::withToken($this->token)
+                    ->timeout($this->httpTimeoutSeconds())
+                    ->get($this->baseUrl . '/appointments', $params);
+
+                if ($response->successful()) {
+                    return $response->json();
+                }
+
+                $status = $response->status();
+
+                if ($status === 401 && $useCachedServiceToken && $attempt < $maxAttempts) {
+                    Cache::forget('appointment_api_token');
+                    $this->token = null;
+                    $this->authenticate();
+
+                    continue;
+                }
+
+                $retryableStatus = in_array($status, [408, 425, 429, 500, 502, 503, 504], true);
+                if ($retryableStatus && $attempt < $maxAttempts) {
+                    usleep(250000 * (2 ** ($attempt - 1)));
+
+                    continue;
+                }
+
+                throw new Exception('Failed to fetch appointments: HTTP ' . $status);
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                $lastError = $e;
+                if ($attempt >= $maxAttempts) {
+                    throw new Exception('Get appointments error: ' . $e->getMessage());
+                }
+                usleep(250000 * (2 ** ($attempt - 1)));
             }
-
-            throw new Exception('Failed to fetch appointments: ' . $response->status());
-        } catch (Exception $e) {
-            throw new Exception('Get appointments error: ' . $e->getMessage());
         }
+
+        throw new Exception('Get appointments error: ' . ($lastError ? $lastError->getMessage() : 'max retries exceeded'));
     }
 
     /**
@@ -89,7 +145,7 @@ class AppointmentApiService
         
         try {
             $response = Http::withToken($this->token)
-                ->timeout(30)
+                ->timeout($this->httpTimeoutSeconds())
                 ->get($this->baseUrl . '/appointments/statistics/overview');
 
             if ($response->successful()) {
@@ -111,7 +167,7 @@ class AppointmentApiService
         
         try {
             $response = Http::withToken($this->token)
-                ->timeout(30)
+                ->timeout($this->httpTimeoutSeconds())
                 ->post($this->baseUrl . '/appointments', $data);
 
             if ($response->successful()) {
@@ -133,7 +189,7 @@ class AppointmentApiService
         
         try {
             $response = Http::withToken($this->token)
-                ->timeout(30)
+                ->timeout($this->httpTimeoutSeconds())
                 ->put($this->baseUrl . '/appointments/' . $id, $data);
 
             if ($response->successful()) {
@@ -155,7 +211,7 @@ class AppointmentApiService
 
         try {
             $response = Http::withToken($this->token)
-                ->timeout(30)
+                ->timeout($this->httpTimeoutSeconds())
                 ->post($this->baseUrl . '/appointments/update-appointment', [
                     'appointment_id' => $appointmentId,
                     'appointment_date' => $date,
@@ -181,7 +237,7 @@ class AppointmentApiService
         
         try {
             $response = Http::withToken($this->token)
-                ->timeout(30)
+                ->timeout($this->httpTimeoutSeconds())
                 ->delete($this->baseUrl . '/appointments/' . $id);
 
             if ($response->successful()) {
@@ -199,7 +255,14 @@ class AppointmentApiService
      */
     protected function ensureAuthenticated()
     {
-        if (!$this->token) {
+        $bearer = config('services.appointment_api.bearer_token');
+        if (! empty($bearer)) {
+            $this->token = $bearer;
+
+            return;
+        }
+
+        if (! $this->token) {
             $this->authenticate();
         }
     }
