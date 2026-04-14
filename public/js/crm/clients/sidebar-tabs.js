@@ -163,12 +163,6 @@
                 break;
             case 'matterdocuments':
                 filtermatterdocumentsByMatter(SidebarTabs.selectedMatter);
-                // Trigger auto-download of any pending Form 956 PDFs
-                setTimeout(function() {
-                    if (typeof window.autoDownloadForm956Pdfs === 'function') {
-                        window.autoDownloadForm956Pdfs();
-                    }
-                }, 300);
                 break;
             case 'nominationdocuments':
                 filterNominationDocumentsByMatter(SidebarTabs.selectedMatter);

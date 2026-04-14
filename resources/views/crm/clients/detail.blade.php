@@ -1369,7 +1369,6 @@ $(document).ready(function() {
             updateNoteDatetime: '{{ URL::to("/update-note-datetime") }}',
             referencesStore: '{{ route("references.store") }}',
             updateClientFundsLedger: '{{ route("clients.update-client-funds-ledger") }}',
-            getLegalPractitionerDetail: '{{ URL::to("/clients/getLegalPractitionerDetail") }}',
             createIntakeUrl: '{{ url("/clients/store-application-doc-via-form") }}',
             enhanceMail: '{{ route("mail.enhance") }}',
             composeEmail: '{{ URL::to("/sendmail") }}',

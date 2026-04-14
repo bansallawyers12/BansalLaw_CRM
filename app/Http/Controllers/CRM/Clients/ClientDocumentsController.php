@@ -2250,12 +2250,6 @@ class ClientDocumentsController extends Controller
             return abort(400, 'Missing file URL');
         }
 
-        // Form 956: filelink is our forms.pdf route URL (e.g. http://app/forms/123/pdf) - redirect directly
-        $path = parse_url($fileUrl, PHP_URL_PATH);
-        if (filter_var($fileUrl, FILTER_VALIDATE_URL) && $path && preg_match('#/forms/\d+/(?:pdf|preview)#', $path)) {
-            return redirect()->away($fileUrl);
-        }
-
         try {
             // Extract S3 key from the URL
             $parsed = parse_url($fileUrl);

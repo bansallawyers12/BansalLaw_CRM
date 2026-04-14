@@ -70,7 +70,6 @@ use App\Models\SmsTemplate;
 
 use Illuminate\Support\Facades\Http;
 
-use App\Models\Form956;
 use PhpOffice\PhpWord\TemplateProcessor;
 use App\Models\CostAssignmentForm;
 use App\Models\PersonalDocumentType;
@@ -5044,52 +5043,6 @@ class ClientsController extends Controller
                 'message' => 'Error generating document: ' . $e->getMessage()
             ], 500);
         }
-    }
-
-    // Get Legal Practitioner detail (matter assignee; column sel_legal_practitioner)
-    public function getLegalPractitionerDetail(Request $request)
-    {
-        $requestData = 	$request->all();
-        $client_matter_id = $requestData['client_matter_id'];
-        $clientMatterInfo = DB::table('client_matters')->select('sel_legal_practitioner','sel_matter_id')->where('id',$client_matter_id)->first();
-        //dd($clientMatterInfo);
-        if($clientMatterInfo) {
-            //get matter name
-            $matterInfo = DB::table('matters')->select('title','nick_name')->where('id',$clientMatterInfo->sel_matter_id)->first();
-            //dd($matterInfo);
-            if($matterInfo){
-                $response['matterInfo'] = $matterInfo;
-            } else {
-                $response['matterInfo'] = "";
-            }
-
-            $sel_legal_practitioner = $clientMatterInfo->sel_legal_practitioner;
-            $agentInfo = DB::table('staff')->select(
-                'id as agentId',
-                'first_name',
-                'last_name',
-                'company_name',
-                'is_solicitor',
-                'marn_number',
-                'legal_practitioner_number',
-                'business_address',
-                'business_phone',
-                'business_mobile',
-                'business_email',
-                'tax_number'
-            )->where('id', $sel_legal_practitioner)->first();
-            //dd($agentInfo);
-            if($agentInfo){
-                $response['agentInfo'] 	= $agentInfo;
-                $response['status'] 	= 	true;
-                $response['message']	=	'Record is exist';
-            } else {
-                $response['agentInfo'] 	= "";
-                $response['status'] 	= 	false;
-                $response['message']	=	'Record is not exist.Please try again';
-            }
-        }
-        echo json_encode($response);
     }
 
     // Get visa agreement Legal Practitioner detail

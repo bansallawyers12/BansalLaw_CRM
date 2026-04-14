@@ -32,9 +32,6 @@ return new class extends Migration
             if (! Schema::hasColumn('documents', 'office_id')) {
                 $table->unsignedBigInteger('office_id')->nullable()->index();
             }
-            if (! Schema::hasColumn('documents', 'form956_id')) {
-                $table->unsignedBigInteger('form956_id')->nullable()->index();
-            }
             if (! Schema::hasColumn('documents', 'client_matter_id')) {
                 $table->string('client_matter_id', 64)->nullable();
             }
@@ -99,7 +96,7 @@ return new class extends Migration
         }
 
         $cols = array_values(array_filter([
-            'client_id', 'lead_id', 'user_id', 'created_by', 'office_id', 'form956_id',
+            'client_id', 'lead_id', 'user_id', 'created_by', 'office_id',
             'client_matter_id', 'type', 'doc_type', 'folder_name', 'mail_type', 'checklist',
             'not_used_doc', 'file_name', 'filetype', 'myfile', 'myfile_key', 'file_size',
             'cp_list_id', 'cp_rejection_reason', 'cp_doc_status',

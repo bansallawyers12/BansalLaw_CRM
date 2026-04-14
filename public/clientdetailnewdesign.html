@@ -222,8 +222,48 @@
       background: var(--primary-soft);
     }
 
+    .tab:focus-visible,
+    .subtab:focus-visible,
+    .btn:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    .skip-link:focus {
+      position: fixed;
+      left: 12px;
+      top: 12px;
+      z-index: 9999;
+      width: auto;
+      height: auto;
+      padding: 10px 14px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      clip: auto;
+      overflow: visible;
+    }
+
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
+
+    .billing-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 0 0 12px;
+    }
+
+    .billing-section-head .billing-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
+    }
 
     .section-title {
       margin: 0 0 12px;
@@ -649,13 +689,14 @@
   </style>
 </head>
 <body>
+  <a href="#client-main" class="skip-link" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Skip to content</a>
   <div class="container">
     <!-- Top part -->
-    <section class="card topbar">
+    <header class="card topbar">
       <div class="identity-wrap">
-        <div class="avatar">RJ</div>
+        <div class="avatar" aria-hidden="true">RJ</div>
         <div class="identity-info">
-          <h1 class="name">Rohit Jain</h1>
+          <h1 class="name" id="client-page-title">Rohit Jain</h1>
           <div class="meta-row">
             <span class="meta-item">C-1092 / M-04</span>
             <span class="meta-item">Priya Sharma</span>
@@ -663,7 +704,7 @@
           </div>
           <div class="matter-row">
             <span class="matter-chip">Corporate Dispute (M-04)</span>
-            <button class="btn secondary">Change Matter</button>
+            <button type="button" class="btn secondary">Change Matter</button>
           </div>
           <div class="tags-row">
             <span class="tag-chip">VIP</span>
@@ -674,27 +715,26 @@
         </div>
       </div>
       <div class="actions">
-        <button class="btn">Log Call</button>
-        <button class="btn">Send Email</button>
-        <button class="btn">Send SMS</button>
-        <button class="btn">Add Action</button>
-        <button class="btn primary">Update Stage</button>
+        <button type="button" class="btn">Log Call</button>
+        <button type="button" class="btn">Send Email</button>
+        <button type="button" class="btn">Send SMS</button>
+        <button type="button" class="btn">Add Action</button>
+        <button type="button" class="btn primary">Update Stage</button>
       </div>
-    </section>
+    </header>
 
     <div class="layout" id="client-layout">
-      <!-- Second box -->
-      <section class="card main-card">
-        <div class="tabs">
-          <button class="tab active" data-tab="overview">Overview</button>
-          <button class="tab" data-tab="timeline">Timeline</button>
-          <button class="tab" data-tab="actions">Actions</button>
-          <button class="tab" data-tab="documents">Documents</button>
-          <button class="tab" data-tab="emails">Emails</button>
-          <button class="tab" data-tab="billing">Billing</button>
+      <main id="client-main" class="card main-card" tabindex="-1">
+        <div class="tabs" role="tablist" aria-label="Client record sections">
+          <button type="button" role="tab" class="tab active" id="tab-overview" data-tab="overview" aria-selected="true" aria-controls="overview">Overview</button>
+          <button type="button" role="tab" class="tab" id="tab-timeline" data-tab="timeline" aria-selected="false" aria-controls="timeline">Timeline</button>
+          <button type="button" role="tab" class="tab" id="tab-actions" data-tab="actions" aria-selected="false" aria-controls="actions">Actions</button>
+          <button type="button" role="tab" class="tab" id="tab-documents" data-tab="documents" aria-selected="false" aria-controls="documents">Documents</button>
+          <button type="button" role="tab" class="tab" id="tab-emails" data-tab="emails" aria-selected="false" aria-controls="emails">Emails</button>
+          <button type="button" role="tab" class="tab" id="tab-billing" data-tab="billing" aria-selected="false" aria-controls="billing">Billing</button>
         </div>
 
-        <div class="tab-panel active" id="overview">
+        <div class="tab-panel active" id="overview" role="tabpanel" aria-labelledby="tab-overview" aria-hidden="false">
           <h3 class="section-title">Overview</h3>
           <div class="grid-2">
             <div class="field">
@@ -725,7 +765,7 @@
           <div class="panel-footer-meta">Last updated by Priya Sharma • 2 hours ago</div>
         </div>
 
-        <div class="tab-panel" id="timeline">
+        <div class="tab-panel" id="timeline" role="tabpanel" aria-labelledby="tab-timeline" aria-hidden="true">
           <h3 class="section-title">Timeline</h3>
           <div class="timeline">
             <div class="event">
@@ -743,24 +783,24 @@
           </div>
         </div>
 
-        <div class="tab-panel" id="actions">
+        <div class="tab-panel" id="actions" role="tabpanel" aria-labelledby="tab-actions" aria-hidden="true">
           <h3 class="section-title">Actions (Tasks)</h3>
           <div class="task">
-            <input type="checkbox" />
+            <input type="checkbox" aria-label="Mark complete: Collect signed Vakalatnama" />
             <div>
               <p>Collect signed Vakalatnama</p>
               <small>Due: 14 Apr • Assigned: Ankit</small>
             </div>
           </div>
           <div class="task">
-            <input type="checkbox" />
+            <input type="checkbox" aria-label="Mark complete: Send payment reminder" />
             <div>
               <p>Send payment reminder</p>
               <small>Due: Today • Assigned: Accounts</small>
             </div>
           </div>
           <div class="task">
-            <input type="checkbox" />
+            <input type="checkbox" aria-label="Mark complete: Prepare draft legal notice" />
             <div>
               <p>Prepare draft legal notice</p>
               <small>Due: 15 Apr • Assigned: Priya Sharma</small>
@@ -769,21 +809,21 @@
           <div class="empty-state" style="display:none;">
             <div class="title">No tasks yet</div>
             <div class="desc">There are no actions linked to this client/lead.</div>
-            <button class="btn">Add Task</button>
+            <button type="button" class="btn">Add Task</button>
           </div>
         </div>
 
-        <div class="tab-panel" id="documents">
+        <div class="tab-panel" id="documents" role="tabpanel" aria-labelledby="tab-documents" aria-hidden="true">
           <h3 class="section-title">Documents</h3>
           <p class="muted" style="margin: 0 0 12px;">
             The right column shows a preview for the active document group. Switch Personal / Matter to change the sample file in the preview.
           </p>
-          <div class="subtabs">
-            <button class="subtab active" data-subtab="personal-docs">Personal Documents</button>
-            <button class="subtab" data-subtab="matter-docs">Matter Documents</button>
+          <div class="subtabs" role="tablist" aria-label="Document scope">
+            <button type="button" role="tab" class="subtab active" id="subtab-personal" data-subtab="personal-docs" aria-selected="true" aria-controls="personal-docs">Personal Documents</button>
+            <button type="button" role="tab" class="subtab" id="subtab-matter" data-subtab="matter-docs" aria-selected="false" aria-controls="matter-docs">Matter Documents</button>
           </div>
 
-          <div class="subtab-panel active" id="personal-docs">
+          <div class="subtab-panel active" id="personal-docs" role="tabpanel" aria-labelledby="subtab-personal" aria-hidden="false">
             <div class="grid-2">
               <div class="field" style="cursor:pointer;border-color:var(--primary);box-shadow:0 0 0 1px rgba(29,78,216,0.15);">
                 <div class="label">Selected for preview</div>
@@ -805,11 +845,11 @@
             <div class="empty-state" style="display:none;">
               <div class="title">No personal documents</div>
               <div class="desc">Start by uploading personal documents for this record.</div>
-              <button class="btn">Upload Document</button>
+              <button type="button" class="btn">Upload Document</button>
             </div>
           </div>
 
-          <div class="subtab-panel" id="matter-docs">
+          <div class="subtab-panel" id="matter-docs" role="tabpanel" aria-labelledby="subtab-matter" aria-hidden="true">
             <div class="grid-2">
               <div class="field" style="cursor:pointer;border-color:var(--primary);box-shadow:0 0 0 1px rgba(29,78,216,0.15);">
                 <div class="label">Selected for preview</div>
@@ -831,12 +871,12 @@
             <div class="empty-state" style="display:none;">
               <div class="title">No matter documents</div>
               <div class="desc">No matter-level files found for the selected matter.</div>
-              <button class="btn">Upload Document</button>
+              <button type="button" class="btn">Upload Document</button>
             </div>
           </div>
         </div>
 
-        <div class="tab-panel" id="emails">
+        <div class="tab-panel" id="emails" role="tabpanel" aria-labelledby="tab-emails" aria-hidden="true">
           <h3 class="section-title">Emails</h3>
           <p class="muted" style="margin: 0 0 12px;">
             The right column shows a read-only preview of the selected message (sample below matches “Engagement Letter Shared”).
@@ -858,15 +898,15 @@
           <div class="empty-state" style="display:none;">
             <div class="title">No emails yet</div>
             <div class="desc">No email conversation has started for this record.</div>
-            <button class="btn">Send Email</button>
+            <button type="button" class="btn">Send Email</button>
           </div>
         </div>
 
-        <div class="tab-panel" id="billing">
-          <h3 class="section-title">
-            <span>Billing (Recreated)</span>
-            <button class="btn primary">Create Invoice</button>
-          </h3>
+        <div class="tab-panel" id="billing" role="tabpanel" aria-labelledby="tab-billing" aria-hidden="true">
+          <div class="billing-section-head">
+            <h2 class="billing-title">Billing (Recreated)</h2>
+            <button type="button" class="btn primary">Create Invoice</button>
+          </div>
           <div class="billing-grid">
             <div class="billing-box">
               <div class="txt">Total Billed</div>
@@ -898,9 +938,9 @@
           </div>
           <div class="panel-footer-meta">Last updated by Accounts Team • 1 day ago</div>
         </div>
-      </section>
+      </main>
 
-      <aside class="sidebar-stack" id="sidebar-stack">
+      <aside class="sidebar-stack" id="sidebar-stack" aria-label="Sidebar">
         <div class="card side-card sidebar-when-default" id="sidebar-metrics">
           <h3 class="section-title">Quick Metrics</h3>
           <div class="kpi-grid">
@@ -930,7 +970,7 @@
           </div>
           <h3 class="section-title" style="margin-top: 14px;">Mapping Notes</h3>
           <p class="muted" style="margin: 0;">
-            This mockup maps to your existing tabs: Personal/Matter Documents, Emails, Actions (Tasks), and Accounts/Billing.
+            This mock aligns with the live CRM: personal and matter (visa) document checklists, emails, tasks/actions, and accounts/billing. Company records use a parallel nomination-documents flow not shown in this client-only mockup.
           </p>
         </div>
 
@@ -998,6 +1038,15 @@
   </div>
 
   <script>
+    document.querySelector(".skip-link")?.addEventListener("click", function (e) {
+      e.preventDefault();
+      const main = document.getElementById("client-main");
+      if (main) {
+        main.focus({ preventScroll: true });
+        main.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+
     const tabs = document.querySelectorAll(".tab");
     const panels = document.querySelectorAll(".tab-panel");
     const clientLayout = document.getElementById("client-layout");
@@ -1053,11 +1102,21 @@
 
     tabs.forEach(tab => {
       tab.addEventListener("click", () => {
-        tabs.forEach(t => t.classList.remove("active"));
-        panels.forEach(p => p.classList.remove("active"));
+        tabs.forEach(t => {
+          t.classList.remove("active");
+          t.setAttribute("aria-selected", "false");
+        });
+        panels.forEach(p => {
+          p.classList.remove("active");
+          p.setAttribute("aria-hidden", "true");
+        });
         tab.classList.add("active");
+        tab.setAttribute("aria-selected", "true");
         const panel = document.getElementById(tab.dataset.tab);
-        if (panel) panel.classList.add("active");
+        if (panel) {
+          panel.classList.add("active");
+          panel.setAttribute("aria-hidden", "false");
+        }
         setSidebarForTab(tab.dataset.tab);
       });
     });
@@ -1066,11 +1125,21 @@
     const subpanels = document.querySelectorAll(".subtab-panel");
     subtabs.forEach(subtab => {
       subtab.addEventListener("click", () => {
-        subtabs.forEach(s => s.classList.remove("active"));
-        subpanels.forEach(p => p.classList.remove("active"));
+        subtabs.forEach(s => {
+          s.classList.remove("active");
+          s.setAttribute("aria-selected", "false");
+        });
+        subpanels.forEach(p => {
+          p.classList.remove("active");
+          p.setAttribute("aria-hidden", "true");
+        });
         subtab.classList.add("active");
+        subtab.setAttribute("aria-selected", "true");
         const panel = document.getElementById(subtab.dataset.subtab);
-        if (panel) panel.classList.add("active");
+        if (panel) {
+          panel.classList.add("active");
+          panel.setAttribute("aria-hidden", "false");
+        }
         const mainTab = document.querySelector(".tab.active");
         if (mainTab && mainTab.dataset.tab === "documents") {
           setDocumentPreviewFromSubtab();
