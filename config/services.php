@@ -129,16 +129,29 @@ return [
         'timeout' => env('TWILIO_TIMEOUT', 30),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Bansal website CRM API (appointments / public booking sync)
+    |--------------------------------------------------------------------------
+    |
+    | Set these in the environment (e.g. server env or secrets manager), not
+    | necessarily in .env, if you prefer to keep secrets out of files.
+    |
+    | - BANSAL_API_BASE_URL or BANSAL_API_URL: API root (no trailing slash).
+    |   Default below targets production; override for local (e.g. http://localhost/api/crm).
+    | - BANSAL_API_TOKEN: Bearer token (required for any feature calling this API).
+    | - BANSAL_API_TIMEOUT: HTTP timeout in seconds (default 30).
+    |
+    | Reconnecting: set the variables above on this CRM (e.g. production .env or server env).
+    | Issue the token on the website side for the /api/crm routes this app calls. Then run:
+    |   php artisan booking:test-api --show-config
+    |
+    */
+
     'bansal_api' => [
         'url' => rtrim(env('BANSAL_API_BASE_URL', env('BANSAL_API_URL', 'https://www.bansallawyers.com.au/api/crm')), '/'),
         'token' => env('BANSAL_API_TOKEN'),
-        'timeout' => env('BANSAL_API_TIMEOUT', 30),
-    ],
-
-    'appointment_api' => [
-        'url' => rtrim(env('APPOINTMENT_API_URL', 'https://www.bansallawyers.com.au/api'), '/'),
-        'service_token' => env('APPOINTMENT_API_SERVICE_TOKEN'),
-        'timeout' => (int) env('APPOINTMENT_API_TIMEOUT', 30000),
+        'timeout' => (int) env('BANSAL_API_TIMEOUT', 30),
     ],
 
     /*

@@ -47,7 +47,7 @@ class CheckInNotificationService
             'sender_status'     => 1,
         ]);
 
-        // Broadcast via Reverb (reuse the office-visit event shape)
+        // Broadcast office-visit event (no-op when BROADCAST_DRIVER=null)
         try {
             broadcast(new OfficeVisitNotificationCreated(
                 $notification->id,

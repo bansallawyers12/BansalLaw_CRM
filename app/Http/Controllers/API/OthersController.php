@@ -40,7 +40,7 @@ class OthersController extends Controller
             if (empty($apiToken)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Bansal API token not configured. Set BANSAL_API_TOKEN in .env'
+                    'message' => 'Bansal API token not configured. Set the BANSAL_API_TOKEN environment variable.'
                 ], 500);
             }
 
@@ -154,7 +154,7 @@ class OthersController extends Controller
             if (empty($apiToken)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Bansal API token not configured. Set BANSAL_API_TOKEN in .env'
+                    'message' => 'Bansal API token not configured. Set the BANSAL_API_TOKEN environment variable.'
                 ], 500);
             }
 
@@ -255,7 +255,7 @@ class OthersController extends Controller
             if (empty($apiToken)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Bansal API token not configured. Set BANSAL_API_TOKEN in .env'
+                    'message' => 'Bansal API token not configured. Set the BANSAL_API_TOKEN environment variable.'
                 ], 500);
             }
 
@@ -376,7 +376,7 @@ class OthersController extends Controller
             if (empty($apiToken)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Bansal API token not configured. Set BANSAL_API_TOKEN in .env'
+                    'message' => 'Bansal API token not configured. Set the BANSAL_API_TOKEN environment variable.'
                 ], 500);
             }
 

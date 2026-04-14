@@ -92,11 +92,6 @@ return [
             'level' => 'debug',
         ],
 
-        'reverb' => [
-            'driver' => 'single',
-            'path' => storage_path('logs/reverb.log'),
-            'level' => env('REVERB_LOG_LEVEL', 'debug'),
-        ],
     ],
 
 ];

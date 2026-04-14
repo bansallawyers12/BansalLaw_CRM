@@ -2723,34 +2723,9 @@
             }
         };
         
-        // Initial load of office visit notifications
+        // Office visit toasts: HTTP polling (WebSockets / Reverb removed)
         loadOfficeVisitNotifications();
-        
-        // Wait for window.Echo to be available, then setup real-time notifications
-        function setupOfficeVisitRealtimeNotifications() {
-            if (window.Echo) {
-                const userId = document.querySelector('meta[name="current-user-id"]')?.content;
-                if (userId) {
-                    console.log('✅ Subscribing to office visit notifications for user:', userId);
-                    const userChannel = window.Echo.private(`user.${userId}`);
-                    userChannel.listen('.OfficeVisitNotificationCreated', (e) => {
-                        console.log('📬 Received office visit notification:', e);
-                        if (e.notification) {
-                            showTeamsNotification(e.notification);
-                        }
-                    });
-                    // Notification bell count is handled in app.js (immediate subscription when Echo loads)
-                } else {
-                    console.warn('⚠️ User ID not found, cannot subscribe to office visit notifications');
-                }
-            } else {
-                // Echo not ready yet, wait and try again
-                setTimeout(setupOfficeVisitRealtimeNotifications, 200);
-            }
-        }
-        
-        // Start setup (will wait for Echo if needed)
-        setTimeout(setupOfficeVisitRealtimeNotifications, 500);
+        setInterval(loadOfficeVisitNotifications, 30000);
     });
     </script>
     <script>
@@ -2920,7 +2895,7 @@
     @include('crm.partials.cross-access-modal', ['crossAccessLeadBase' => url('/history')])
     @stack('scripts')
     
-    {{-- Define updateNotificationBell before Vite so it is available when Echo / real-time notifications fire --}}
+    {{-- Define updateNotificationBell before Vite (app.js may replace this implementation) --}}
     <script>
     (function() {
         window.updateNotificationBell = function(count, options) {
@@ -2945,41 +2920,9 @@
         };
     })();
     </script>
-    {{-- Vite: Load Laravel Echo with Reverb for real-time WebSocket notifications --}}
-    {{-- Must load BEFORE broadcasts.js so window.Echo is available --}}
+    {{-- Vite: app bundle (notification polling, FullCalendar, etc.). broadcasts.js polls HTTP for admin broadcast banners. --}}
     @vite(['resources/js/app.js'])
-    
-    {{-- Wait for Echo to be available before loading broadcasts.js --}}
-    <script>
-        // Poll for window.Echo to be available (Vite modules load asynchronously)
-        let echoCheckAttempts = 0;
-        const maxAttempts = 50; // 5 seconds max wait
-        
-        const waitForEcho = setInterval(() => {
-            echoCheckAttempts++;
-            
-            if (typeof window.Echo !== 'undefined') {
-                console.log('✅ window.Echo detected, loading broadcasts.js...');
-                clearInterval(waitForEcho);
-                
-                // Dynamically load broadcasts.js now that Echo is ready
-                const script = document.createElement('script');
-                script.src = '{{asset('js/broadcasts.js')}}';
-                document.body.appendChild(script);
-            } else if (echoCheckAttempts >= maxAttempts) {
-                // Only show warning if Echo was expected but failed (not if intentionally disabled)
-                if (!window.EchoDisabled) {
-                    console.warn('⚠️ window.Echo not available after waiting, broadcasts.js will use polling fallback');
-                }
-                clearInterval(waitForEcho);
-                
-                // Load broadcasts.js anyway (it has fallback to polling)
-                const script = document.createElement('script');
-                script.src = '{{asset('js/broadcasts.js')}}';
-                document.body.appendChild(script);
-            }
-        }, 100); // Check every 100ms
-    </script>
+    <script src="{{ asset('js/broadcasts.js') }}" defer></script>
 
     @include('partials.email-from-sendgrid-script')
     @yield('scripts')
