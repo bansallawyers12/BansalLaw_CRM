@@ -185,6 +185,11 @@
       display: grid;
       grid-template-columns: 2fr 1fr;
       gap: 16px;
+      align-items: start;
+    }
+
+    .layout.preview-open {
+      grid-template-columns: 1fr 1fr;
     }
 
     .main-card {
@@ -370,6 +375,196 @@
       gap: 16px;
     }
 
+    .sidebar-stack.preview-open {
+      min-height: min(72vh, 680px);
+    }
+
+    .sidebar-stack.preview-open .preview-dock {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .sidebar-stack.preview-open .preview-dock .doc-preview-frame {
+      flex: 1;
+      min-height: min(52vh, 480px);
+    }
+
+    .sidebar-stack.preview-open .preview-dock .email-preview-shell {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: min(52vh, 420px);
+    }
+
+    .sidebar-stack.preview-open .preview-dock .email-preview-body {
+      flex: 1;
+      min-height: 200px;
+    }
+
+    .preview-card .preview-pane {
+      display: none;
+    }
+
+    .preview-card .preview-pane.active {
+      display: block;
+    }
+
+    .preview-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .preview-file {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .preview-file .ext {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--primary);
+      background: var(--primary-soft);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .preview-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .preview-actions .btn {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
+    .doc-preview-frame {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+      min-height: 280px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .doc-preview-chrome {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .doc-preview-chrome span.dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #cbd5e1;
+    }
+
+    .doc-preview-page {
+      flex: 1;
+      margin: 12px;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+      padding: 16px 18px;
+      font-size: 11px;
+      line-height: 1.5;
+      color: #475569;
+    }
+
+    .doc-preview-page .doc-line {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .doc-preview-page .doc-line.w70 { width: 70%; }
+    .doc-preview-page .doc-line.w85 { width: 85%; }
+    .doc-preview-page .doc-line.w55 { width: 55%; }
+
+    .doc-preview-hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .email-preview-shell {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .email-preview-meta {
+      padding: 12px 14px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .email-preview-row {
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: 6px 10px;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .email-preview-row:last-child { margin-bottom: 0; }
+
+    .email-preview-row .k {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .email-preview-row .v {
+      color: #1e293b;
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    .email-preview-body {
+      padding: 14px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #334155;
+      min-height: 200px;
+    }
+
+    .email-preview-body p { margin: 0 0 10px; }
+
+    .email-preview-attach {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--border);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .email-preview-attach strong { color: #1e293b; }
+
+    .default-side-blocks .field { margin-bottom: 8px; }
+    .default-side-blocks .field:last-child { margin-bottom: 0; }
+
     .side-card {
       padding: 14px;
     }
@@ -435,7 +630,9 @@
     }
 
     @media (max-width: 1024px) {
-      .layout { grid-template-columns: 1fr; }
+      .layout,
+      .layout.preview-open { grid-template-columns: 1fr; }
+      .sidebar-stack.preview-open { min-height: auto; }
     }
 
     @media (max-width: 920px) {
@@ -485,7 +682,7 @@
       </div>
     </section>
 
-    <div class="layout">
+    <div class="layout" id="client-layout">
       <!-- Second box -->
       <section class="card main-card">
         <div class="tabs">
@@ -578,6 +775,9 @@
 
         <div class="tab-panel" id="documents">
           <h3 class="section-title">Documents</h3>
+          <p class="muted" style="margin: 0 0 12px;">
+            The right column shows a preview for the active document group. Switch Personal / Matter to change the sample file in the preview.
+          </p>
           <div class="subtabs">
             <button class="subtab active" data-subtab="personal-docs">Personal Documents</button>
             <button class="subtab" data-subtab="matter-docs">Matter Documents</button>
@@ -585,8 +785,8 @@
 
           <div class="subtab-panel active" id="personal-docs">
             <div class="grid-2">
-              <div class="field">
-                <div class="label">Uploaded</div>
+              <div class="field" style="cursor:pointer;border-color:var(--primary);box-shadow:0 0 0 1px rgba(29,78,216,0.15);">
+                <div class="label">Selected for preview</div>
                 <div class="value">Passport.pdf</div>
               </div>
               <div class="field">
@@ -611,8 +811,8 @@
 
           <div class="subtab-panel" id="matter-docs">
             <div class="grid-2">
-              <div class="field">
-                <div class="label">Uploaded</div>
+              <div class="field" style="cursor:pointer;border-color:var(--primary);box-shadow:0 0 0 1px rgba(29,78,216,0.15);">
+                <div class="label">Selected for preview</div>
                 <div class="value">Contract.pdf</div>
               </div>
               <div class="field">
@@ -638,6 +838,9 @@
 
         <div class="tab-panel" id="emails">
           <h3 class="section-title">Emails</h3>
+          <p class="muted" style="margin: 0 0 12px;">
+            The right column shows a read-only preview of the selected message (sample below matches “Engagement Letter Shared”).
+          </p>
           <div class="emails-list">
             <div class="email-item">
               <div class="subject">Engagement Letter Shared</div>
@@ -697,8 +900,8 @@
         </div>
       </section>
 
-      <aside class="sidebar-stack">
-        <div class="card side-card">
+      <aside class="sidebar-stack" id="sidebar-stack">
+        <div class="card side-card sidebar-when-default" id="sidebar-metrics">
           <h3 class="section-title">Quick Metrics</h3>
           <div class="kpi-grid">
             <div class="kpi">
@@ -720,19 +923,75 @@
           </div>
         </div>
 
-        <div class="card side-card">
+        <div class="card side-card sidebar-when-default" id="sidebar-insights">
           <h3 class="section-title">Current Stage Note</h3>
           <div class="note">
             Matter ready for filing once signed documents and outstanding payment are received.
           </div>
+          <h3 class="section-title" style="margin-top: 14px;">Mapping Notes</h3>
+          <p class="muted" style="margin: 0;">
+            This mockup maps to your existing tabs: Personal/Matter Documents, Emails, Actions (Tasks), and Accounts/Billing.
+          </p>
         </div>
 
-        <div class="card side-card">
-          <h3 class="section-title">Mapping Notes</h3>
-          <p class="muted">
-            This mockup is designed to map to your existing tabs:
-            Personal/Matter Documents, Emails, Actions (Tasks), and Accounts/Billing.
-          </p>
+        <div class="card side-card preview-card preview-dock" id="sidebar-previewer" hidden>
+          <h3 class="section-title"><span id="sidebar-preview-title">Preview</span></h3>
+
+          <div class="preview-pane" id="preview-documents" data-preview="documents">
+            <div class="preview-toolbar">
+              <div class="preview-file" id="doc-preview-filename">
+                Passport.pdf <span class="ext">PDF</span>
+              </div>
+              <div class="preview-actions">
+                <button type="button" class="btn">Download</button>
+                <button type="button" class="btn primary">Open</button>
+              </div>
+            </div>
+            <div class="doc-preview-frame">
+              <div class="doc-preview-chrome">
+                <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                <span style="margin-left: 8px;">Document preview</span>
+              </div>
+              <div class="doc-preview-page">
+                <div class="doc-line w85"></div>
+                <div class="doc-line w70"></div>
+                <div class="doc-line w55"></div>
+                <div class="doc-line w85" style="margin-top: 16px"></div>
+                <div class="doc-line w70"></div>
+                <div class="doc-line w85"></div>
+                <div class="doc-line w55"></div>
+              </div>
+            </div>
+            <p class="doc-preview-hint">Placeholder preview — wire to your PDF viewer or storage URL.</p>
+          </div>
+
+          <div class="preview-pane" id="preview-email-pane" data-preview="email">
+            <div class="email-preview-shell">
+              <div class="email-preview-meta">
+                <div class="email-preview-row">
+                  <span class="k">Subject</span>
+                  <span class="v">Engagement Letter Shared</span>
+                </div>
+                <div class="email-preview-row">
+                  <span class="k">From</span>
+                  <span class="v">Priya Sharma &lt;priya@firm.example&gt;</span>
+                </div>
+                <div class="email-preview-row">
+                  <span class="k">To</span>
+                  <span class="v">rohit.jain@email.com</span>
+                </div>
+              </div>
+              <div class="email-preview-body">
+                <p>Dear Mr. Jain,</p>
+                <p>Please find attached the engagement letter for your review. It covers scope, professional fees, and the next steps we discussed during consultation.</p>
+                <p>Once you sign and return the letter, we can proceed with drafting the legal notice and collecting the remaining KYC documents.</p>
+                <p>Regards,<br />Priya Sharma</p>
+                <div class="email-preview-attach">
+                  <strong>Attachments:</strong> Engagement_Letter.pdf
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </aside>
     </div>
@@ -741,6 +1000,57 @@
   <script>
     const tabs = document.querySelectorAll(".tab");
     const panels = document.querySelectorAll(".tab-panel");
+    const clientLayout = document.getElementById("client-layout");
+    const sidebarStack = document.getElementById("sidebar-stack");
+    const sidebarPreviewer = document.getElementById("sidebar-previewer");
+    const sidebarPreviewTitle = document.getElementById("sidebar-preview-title");
+    const defaultSidebarBlocks = document.querySelectorAll(".sidebar-when-default");
+    const previewPanes = document.querySelectorAll("#sidebar-previewer .preview-pane");
+    const docPreviewFilename = document.getElementById("doc-preview-filename");
+
+    const previewTitles = {
+      documents: "Document preview",
+      email: "Email preview"
+    };
+
+    function setDocumentPreviewFromSubtab() {
+      const activeSub = document.querySelector(".subtab.active");
+      const id = activeSub ? activeSub.dataset.subtab : "personal-docs";
+      if (id === "matter-docs") {
+        docPreviewFilename.innerHTML = 'Contract.pdf <span class="ext">PDF</span>';
+      } else {
+        docPreviewFilename.innerHTML = 'Passport.pdf <span class="ext">PDF</span>';
+      }
+    }
+
+    function setSidebarForTab(tabId) {
+      const previewMode = tabId === "documents" || tabId === "emails";
+      const mode =
+        tabId === "documents" ? "documents" : tabId === "emails" ? "email" : null;
+
+      clientLayout.classList.toggle("preview-open", previewMode);
+      sidebarStack.classList.toggle("preview-open", previewMode);
+
+      defaultSidebarBlocks.forEach(el => {
+        el.hidden = previewMode;
+      });
+
+      sidebarPreviewer.hidden = !previewMode;
+
+      previewPanes.forEach(pane => {
+        const key = pane.dataset.preview;
+        pane.classList.toggle("active", previewMode && key === mode);
+      });
+
+      if (previewMode && mode) {
+        sidebarPreviewTitle.textContent = previewTitles[mode];
+      }
+
+      if (tabId === "documents") {
+        setDocumentPreviewFromSubtab();
+      }
+    }
+
     tabs.forEach(tab => {
       tab.addEventListener("click", () => {
         tabs.forEach(t => t.classList.remove("active"));
@@ -748,6 +1058,7 @@
         tab.classList.add("active");
         const panel = document.getElementById(tab.dataset.tab);
         if (panel) panel.classList.add("active");
+        setSidebarForTab(tab.dataset.tab);
       });
     });
 
@@ -760,8 +1071,14 @@
         subtab.classList.add("active");
         const panel = document.getElementById(subtab.dataset.subtab);
         if (panel) panel.classList.add("active");
+        const mainTab = document.querySelector(".tab.active");
+        if (mainTab && mainTab.dataset.tab === "documents") {
+          setDocumentPreviewFromSubtab();
+        }
       });
     });
+
+    setSidebarForTab("overview");
   </script>
 </body>
 </html>

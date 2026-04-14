@@ -100,6 +100,10 @@
       display:grid;
       grid-template-columns: 2fr 1fr;
       gap:16px;
+      align-items:start;
+    }
+    .layout.preview-open{
+      grid-template-columns:1fr 1fr;
     }
 
     .card{
@@ -188,6 +192,29 @@
     .task small{color:var(--muted)}
 
     .sidebar-stack{display:flex;flex-direction:column;gap:16px}
+    .sidebar-stack.preview-open{
+      min-height:min(72vh, 680px);
+    }
+    .sidebar-stack.preview-open .preview-dock{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+    }
+    .sidebar-stack.preview-open .preview-dock .doc-preview-frame{
+      flex:1;
+      min-height:min(52vh, 480px);
+    }
+    .sidebar-stack.preview-open .preview-dock .email-preview-shell{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      min-height:min(52vh, 420px);
+    }
+    .sidebar-stack.preview-open .preview-dock .email-preview-body{
+      flex:1;
+      min-height:200px;
+    }
 
     .kpi{
       display:grid;
@@ -212,10 +239,129 @@
       color:#334155;
     }
 
+    .preview-card .preview-pane{display:none}
+    .preview-card .preview-pane.active{display:block}
+
+    .preview-toolbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .preview-file{
+      font-size:13px;
+      font-weight:700;
+      color:#1e293b;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .preview-file .ext{
+      font-size:11px;
+      font-weight:600;
+      color:var(--primary);
+      background:var(--primary-soft);
+      padding:2px 8px;
+      border-radius:6px;
+    }
+    .preview-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .preview-actions .btn{padding:6px 10px;font-size:12px}
+
+    .doc-preview-frame{
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:linear-gradient(180deg,#f1f5f9 0%,#e2e8f0 100%);
+      min-height:280px;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+    .doc-preview-chrome{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      padding:8px 10px;
+      background:#fff;
+      border-bottom:1px solid var(--border);
+      font-size:11px;
+      color:var(--muted);
+    }
+    .doc-preview-chrome span.dot{
+      width:8px;height:8px;border-radius:50%;
+      background:#cbd5e1;
+    }
+    .doc-preview-page{
+      flex:1;
+      margin:12px;
+      background:#fff;
+      border:1px solid #cbd5e1;
+      border-radius:8px;
+      box-shadow:0 4px 14px rgba(15,23,42,.08);
+      padding:16px 18px;
+      font-size:11px;
+      line-height:1.5;
+      color:#475569;
+    }
+    .doc-preview-page .doc-line{height:8px;background:#e2e8f0;border-radius:4px;margin-bottom:10px}
+    .doc-preview-page .doc-line.w70{width:70%}
+    .doc-preview-page .doc-line.w85{width:85%}
+    .doc-preview-page .doc-line.w55{width:55%}
+    .doc-preview-hint{
+      margin-top:10px;
+      font-size:12px;
+      color:var(--muted);
+      text-align:center;
+    }
+
+    .email-preview-shell{
+      border:1px solid var(--border);
+      border-radius:12px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .email-preview-meta{
+      padding:12px 14px;
+      background:#f8fafc;
+      border-bottom:1px solid var(--border);
+    }
+    .email-preview-row{
+      display:grid;
+      grid-template-columns:52px 1fr;
+      gap:6px 10px;
+      font-size:12px;
+      margin-bottom:6px;
+    }
+    .email-preview-row:last-child{margin-bottom:0}
+    .email-preview-row .k{color:var(--muted);font-weight:600}
+    .email-preview-row .v{color:#1e293b;font-weight:600;word-break:break-word}
+    .email-preview-body{
+      padding:14px;
+      font-size:13px;
+      line-height:1.55;
+      color:#334155;
+      min-height:200px;
+    }
+    .email-preview-body p{margin:0 0 10px}
+    .email-preview-attach{
+      margin-top:12px;
+      padding-top:12px;
+      border-top:1px dashed var(--border);
+      font-size:12px;
+      color:var(--muted);
+    }
+    .email-preview-attach strong{color:#1e293b}
+
+    .default-side-blocks .field{margin-bottom:8px}
+    .default-side-blocks .field:last-child{margin-bottom:0}
+
     @media (max-width: 960px){
-      .layout{grid-template-columns:1fr}
+      .layout,
+      .layout.preview-open{grid-template-columns:1fr}
       .grid-2{grid-template-columns:1fr}
       .topbar{flex-direction:column}
+      .sidebar-stack.preview-open{min-height:auto}
     }
   </style>
 </head>
@@ -242,7 +388,7 @@
       </div>
     </div>
 
-    <div class="layout">
+    <div class="layout" id="client-layout">
       <!-- Main Content -->
       <div class="card">
         <div class="tabs">
@@ -250,6 +396,7 @@
           <button class="tab" data-tab="timeline">Timeline</button>
           <button class="tab" data-tab="tasks">Tasks</button>
           <button class="tab" data-tab="documents">Documents</button>
+          <button class="tab" data-tab="email">Email</button>
           <button class="tab" data-tab="billing">Billing</button>
         </div>
 
@@ -337,9 +484,10 @@
 
         <div class="tab-panel" id="documents">
           <h3 class="section-title">Documents</h3>
+          <p style="margin:0 0 12px;font-size:13px;color:var(--muted);">Files linked to this matter. The preview on the right follows the selected document.</p>
           <div class="grid-2">
-            <div class="field">
-              <div class="label">Uploaded</div>
+            <div class="field" style="cursor:pointer;border-color:var(--primary);box-shadow:0 0 0 1px rgba(29,78,216,.15);">
+              <div class="label">Selected for preview</div>
               <div class="value">Contract.pdf</div>
             </div>
             <div class="field">
@@ -353,6 +501,25 @@
             <div class="field">
               <div class="label">Pending</div>
               <div class="value">ID Proof</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="email">
+          <h3 class="section-title">Email</h3>
+          <p style="margin:0 0 12px;font-size:13px;color:var(--muted);">Recent correspondence. The right panel shows how the message will read to the client.</p>
+          <div class="timeline">
+            <div class="event">
+              <div class="when">Yesterday, 6:10 PM</div>
+              <div class="what">Engagement letter sent — “Engagement &amp; fee structure”</div>
+            </div>
+            <div class="event">
+              <div class="when">09 Apr 2026</div>
+              <div class="what">Consultation summary shared</div>
+            </div>
+            <div class="event">
+              <div class="when">08 Apr 2026</div>
+              <div class="what">Intro reply — next steps &amp; document checklist</div>
             </div>
           </div>
         </div>
@@ -380,9 +547,9 @@
         </div>
       </div>
 
-      <!-- Sidebar -->
-      <div class="sidebar-stack">
-        <div class="card">
+      <!-- Sidebar: metrics + insights hide on Documents / Email; preview dock fills column -->
+      <div class="sidebar-stack" id="sidebar-stack">
+        <div class="card sidebar-when-default" id="sidebar-metrics">
           <h3 class="section-title">Quick Metrics</h3>
           <div class="kpi">
             <div class="box">
@@ -404,22 +571,80 @@
           </div>
         </div>
 
-        <div class="card">
-          <h3 class="section-title">Lead Scoring (if lead)</h3>
-          <div class="field">
-            <div class="label">Score</div>
-            <div class="value">78 / 100</div>
-          </div>
-          <div class="field" style="margin-top:8px;">
-            <div class="label">Probability to Convert</div>
-            <div class="value" style="color:var(--success)">High</div>
+        <div class="card sidebar-when-default" id="sidebar-insights">
+          <h3 class="section-title">Insights</h3>
+          <div class="default-side-blocks">
+            <div class="field">
+              <div class="label">Lead score</div>
+              <div class="value">78 / 100</div>
+            </div>
+            <div class="field">
+              <div class="label">Probability to convert</div>
+              <div class="value" style="color:var(--success)">High</div>
+            </div>
+            <div class="note" style="margin-top:10px;">
+              Client prefers WhatsApp updates in evening hours. Keep messages concise and include next action in each update.
+            </div>
           </div>
         </div>
 
-        <div class="card">
-          <h3 class="section-title">Internal Note</h3>
-          <div class="note">
-            Client prefers WhatsApp updates in evening hours. Keep messages concise and include next action in each update.
+        <div class="card preview-card preview-dock" id="sidebar-previewer" hidden>
+          <h3 class="section-title"><span id="sidebar-preview-title">Preview</span></h3>
+
+          <div class="preview-pane" id="preview-documents" data-preview="documents">
+            <div class="preview-toolbar">
+              <div class="preview-file">
+                Contract.pdf <span class="ext">PDF</span>
+              </div>
+              <div class="preview-actions">
+                <button type="button" class="btn">Download</button>
+                <button type="button" class="btn primary">Open</button>
+              </div>
+            </div>
+            <div class="doc-preview-frame">
+              <div class="doc-preview-chrome">
+                <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                <span style="margin-left:8px;">Document preview</span>
+              </div>
+              <div class="doc-preview-page">
+                <div class="doc-line w85"></div>
+                <div class="doc-line w70"></div>
+                <div class="doc-line w55"></div>
+                <div class="doc-line w85" style="margin-top:16px"></div>
+                <div class="doc-line w70"></div>
+                <div class="doc-line w85"></div>
+                <div class="doc-line w55"></div>
+              </div>
+            </div>
+            <p class="doc-preview-hint">Placeholder preview — wire to your PDF viewer or storage URL.</p>
+          </div>
+
+          <div class="preview-pane" id="preview-email" data-preview="email">
+            <div class="email-preview-shell">
+              <div class="email-preview-meta">
+                <div class="email-preview-row">
+                  <span class="k">Subject</span>
+                  <span class="v">Engagement letter &amp; next steps — Jain Infra matter</span>
+                </div>
+                <div class="email-preview-row">
+                  <span class="k">From</span>
+                  <span class="v">Priya Sharma &lt;priya@bansallaw.example&gt;</span>
+                </div>
+                <div class="email-preview-row">
+                  <span class="k">To</span>
+                  <span class="v">Rohit Jain &lt;rohit.jain@email.com&gt;</span>
+                </div>
+              </div>
+              <div class="email-preview-body">
+                <p>Dear Mr. Jain,</p>
+                <p>Thank you for engaging our firm. Please find attached the engagement letter outlining scope, timelines, and professional fees for the contract dispute matter.</p>
+                <p>Kindly sign and return the engagement letter at your earliest convenience, along with the Vakalatnama and ID proof previously discussed.</p>
+                <p>Best regards,<br />Priya Sharma<br />Associate, Bansal Law</p>
+                <div class="email-preview-attach">
+                  <strong>Attachments:</strong> Engagement_Letter.pdf
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -429,6 +654,40 @@
   <script>
     const tabs = document.querySelectorAll('.tab');
     const panels = document.querySelectorAll('.tab-panel');
+    const clientLayout = document.getElementById('client-layout');
+    const sidebarStack = document.getElementById('sidebar-stack');
+    const sidebarPreviewer = document.getElementById('sidebar-previewer');
+    const sidebarPreviewTitle = document.getElementById('sidebar-preview-title');
+    const defaultSidebarBlocks = document.querySelectorAll('.sidebar-when-default');
+    const previewPanes = document.querySelectorAll('#sidebar-previewer .preview-pane');
+
+    const previewTitles = {
+      documents: 'Document preview',
+      email: 'Email preview'
+    };
+
+    function setSidebarForTab(tabId) {
+      const previewMode = tabId === 'documents' || tabId === 'email';
+      const mode = tabId === 'documents' ? 'documents' : tabId === 'email' ? 'email' : null;
+
+      clientLayout.classList.toggle('preview-open', previewMode);
+      sidebarStack.classList.toggle('preview-open', previewMode);
+
+      defaultSidebarBlocks.forEach(el => {
+        el.hidden = previewMode;
+      });
+
+      sidebarPreviewer.hidden = !previewMode;
+
+      previewPanes.forEach(pane => {
+        const key = pane.dataset.preview;
+        pane.classList.toggle('active', previewMode && key === mode);
+      });
+
+      if (previewMode && mode) {
+        sidebarPreviewTitle.textContent = previewTitles[mode];
+      }
+    }
 
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
@@ -438,8 +697,11 @@
         tab.classList.add('active');
         const target = document.getElementById(tab.dataset.tab);
         if (target) target.classList.add('active');
+        setSidebarForTab(tab.dataset.tab);
       });
     });
+
+    setSidebarForTab('overview');
   </script>
 </body>
 </html>
