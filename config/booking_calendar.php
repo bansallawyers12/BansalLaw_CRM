@@ -43,4 +43,31 @@ return [
         'stats_omit_status_param' => filter_var(env('BOOKING_CALENDAR_STATS_OMIT_STATUS', false), FILTER_VALIDATE_BOOL),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Website bookings admin list (GET /booking/appointments)
+    |--------------------------------------------------------------------------
+    |
+    | Rows are loaded from the public booking API (APPOINTMENT_API_URL + /appointments).
+    | When WEBSITE_BOOKINGS_API_SERVICE_ID is set, that service_id is sent on every request
+    | (some APIs require it). Leave unset to omit service_id and request all services.
+    |
+    */
+    'website_bookings_list' => [
+        'api_service_id' => env('WEBSITE_BOOKINGS_API_SERVICE_ID'),
+        /** Primary query names for the public /appointments API (mirrors are also sent). */
+        'api_date_param_from' => env('WEBSITE_BOOKINGS_API_DATE_FROM_PARAM', 'date_from'),
+        'api_date_param_to' => env('WEBSITE_BOOKINGS_API_DATE_TO_PARAM', 'date_to'),
+        /**
+         * When a from/to date is set, fetch multiple API pages (up to max), filter by date in PHP,
+         * then paginate — fixes APIs that ignore date params or use different names.
+         */
+        'aggregate_when_date_filtered' => filter_var(
+            env('WEBSITE_BOOKINGS_AGGREGATE_ON_DATE', true),
+            FILTER_VALIDATE_BOOL
+        ),
+        'aggregated_fetch_max_api_pages' => (int) env('WEBSITE_BOOKINGS_AGGREGATE_MAX_API_PAGES', 40),
+        'api_per_chunk' => (int) env('WEBSITE_BOOKINGS_API_PER_CHUNK', 100),
+    ],
+
 ];

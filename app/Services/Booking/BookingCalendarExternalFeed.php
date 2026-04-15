@@ -6,6 +6,7 @@ use App\Models\BookingAppointment;
 use App\Services\AppointmentApiService;
 use App\Support\StaffClientVisibility;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -442,10 +443,353 @@ class BookingCalendarExternalFeed
     }
 
     /**
+     * List appointments for the CRM "Website Bookings" page via GET {APPOINTMENT_API_URL}/appointments.
+     *
+     * @return array{rows: list<array<string, mixed>>, meta: array<string, int|null>}
+     */
+    public function fetchWebsiteBookingsListFromPublicApi(Request $request): array
+    {
+        $perPage = min(max((int) $request->query('per_page', 20), 1), 100);
+        $page = max((int) $request->query('page', 1), 1);
+
+        $hasDateRange = $request->filled('date_from') || $request->filled('date_to');
+        if ($hasDateRange && filter_var(config('booking_calendar.website_bookings_list.aggregate_when_date_filtered', true), FILTER_VALIDATE_BOOL)) {
+            return $this->fetchWebsiteBookingsListAggregatedWithDateFilter($request, $page, $perPage);
+        }
+
+        $params = $this->buildWebsiteBookingsApiBaseParams($request, $page, $perPage);
+
+        $json = $this->appointmentApi->getAppointments($params);
+        if (! is_array($json)) {
+            throw new \RuntimeException('Appointment API returned invalid response');
+        }
+
+        $rawList = $this->extractListFromPayload($json);
+
+        $normalized = [];
+        foreach ($rawList as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $norm = $this->normalizeApiRowForBookingsList($row);
+            if (empty($norm['appointment_datetime'])) {
+                continue;
+            }
+            $normalized[] = $norm;
+        }
+
+        $meta = $this->extractPaginationMetaFromWebsiteApi($json, count($normalized), $page, $perPage);
+
+        return [
+            'rows' => $normalized,
+            'meta' => $meta,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function buildWebsiteBookingsApiBaseParams(Request $request, int $page, int $perPage): array
+    {
+        $params = [
+            'page' => $page,
+            'per_page' => $perPage,
+        ];
+
+        $serviceId = config('booking_calendar.website_bookings_list.api_service_id');
+        if ($serviceId !== null && $serviceId !== '' && (int) $serviceId > 0) {
+            $params['service_id'] = (int) $serviceId;
+        }
+
+        $this->applyWebsiteBookingsDateParamsToApiQuery($request, $params);
+
+        if ($request->filled('consultant_id')) {
+            $params['consultant_id'] = $request->consultant_id;
+        }
+        if ($request->filled('search')) {
+            $params['search'] = $request->search;
+        }
+        if ($request->filled('status')) {
+            $apiStatus = $this->mapCrmStatusSlugToWebsiteApiStatus((string) $request->status);
+            if ($apiStatus !== null) {
+                $params['status'] = $apiStatus;
+            }
+        }
+
+        return $params;
+    }
+
+    /**
+     * @param  array<string, mixed>  $params
+     */
+    protected function applyWebsiteBookingsDateParamsToApiQuery(Request $request, array &$params): void
+    {
+        if (! $request->filled('date_from') && ! $request->filled('date_to')) {
+            return;
+        }
+
+        $primaryFrom = (string) config('booking_calendar.website_bookings_list.api_date_param_from', 'date_from');
+        $primaryTo = (string) config('booking_calendar.website_bookings_list.api_date_param_to', 'date_to');
+
+        if ($request->filled('date_from')) {
+            $d = (string) $request->date_from;
+            $params[$primaryFrom] = $d;
+            $params['date_from'] = $d;
+            $params['start_date'] = $d;
+            $params['from_date'] = $d;
+            $params['appointment_date_from'] = $d;
+        }
+        if ($request->filled('date_to')) {
+            $d = (string) $request->date_to;
+            $params[$primaryTo] = $d;
+            $params['date_to'] = $d;
+            $params['end_date'] = $d;
+            $params['to_date'] = $d;
+            $params['appointment_date_to'] = $d;
+        }
+    }
+
+    /**
+     * @return array{rows: list<array<string, mixed>>, meta: array<string, int|null>}
+     */
+    protected function fetchWebsiteBookingsListAggregatedWithDateFilter(Request $request, int $pageRequested, int $perPageRequested): array
+    {
+        $maxPages = max(1, (int) config('booking_calendar.website_bookings_list.aggregated_fetch_max_api_pages', 40));
+        $chunk = max(10, min(100, (int) config('booking_calendar.website_bookings_list.api_per_chunk', 100)));
+
+        $dateFrom = $request->filled('date_from') ? (string) $request->date_from : null;
+        $dateTo = $request->filled('date_to') ? (string) $request->date_to : null;
+
+        $allRaw = [];
+
+        for ($apiPage = 1; $apiPage <= $maxPages; $apiPage++) {
+            $params = $this->buildWebsiteBookingsApiBaseParams($request, $apiPage, $chunk);
+            $json = $this->appointmentApi->getAppointments($params);
+            if (! is_array($json)) {
+                throw new \RuntimeException('Appointment API returned invalid response');
+            }
+
+            $batch = $this->extractListFromPayload($json);
+            foreach ($batch as $row) {
+                if (is_array($row)) {
+                    $allRaw[] = $row;
+                }
+            }
+
+            $metaChunk = $this->extractPaginationMetaFromWebsiteApi($json, count($batch), $apiPage, $chunk);
+            $lastPageHint = max(1, (int) ($metaChunk['last_page'] ?? 1));
+
+            if ($apiPage >= $lastPageHint || count($batch) === 0) {
+                break;
+            }
+        }
+
+        $seen = [];
+        $deduped = [];
+        foreach ($allRaw as $row) {
+            $id = $row['id'] ?? $row['appointment_id'] ?? null;
+            $key = $id !== null ? 'id:' . $id : 'h:' . md5(json_encode($row) ?: '');
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $deduped[] = $row;
+        }
+
+        $normalized = [];
+        foreach ($deduped as $row) {
+            $norm = $this->normalizeApiRowForBookingsList($row);
+            if (empty($norm['appointment_datetime'])) {
+                continue;
+            }
+            if (! $this->normalizedRowMatchesWebsiteBookingsDateRange($norm, $dateFrom, $dateTo)) {
+                continue;
+            }
+            $normalized[] = $norm;
+        }
+
+        usort($normalized, function (array $a, array $b): int {
+            $da = (string) ($a['appointment_datetime'] ?? '');
+            $db = (string) ($b['appointment_datetime'] ?? '');
+
+            return strcmp($db, $da);
+        });
+
+        $total = count($normalized);
+        $lastPage = max(1, (int) ceil($total / max(1, $perPageRequested)));
+        $pageRequested = min(max(1, $pageRequested), $lastPage);
+        $offset = ($pageRequested - 1) * $perPageRequested;
+        $pageRows = array_slice($normalized, $offset, $perPageRequested);
+
+        $meta = [
+            'current_page' => $pageRequested,
+            'last_page' => $lastPage,
+            'per_page' => $perPageRequested,
+            'total' => $total,
+            'from' => $total > 0 ? $offset + 1 : 0,
+            'to' => $total > 0 ? min($total, $offset + count($pageRows)) : 0,
+        ];
+
+        if (count($allRaw) > 0 && $total === 0) {
+            Log::warning('Website bookings date filter: API rows were fetched but none matched the selected date range (timezone or API data).', [
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo,
+                'api_rows' => count($allRaw),
+            ]);
+        }
+
+        return [
+            'rows' => $pageRows,
+            'meta' => $meta,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $norm
+     */
+    protected function normalizedRowMatchesWebsiteBookingsDateRange(array $norm, ?string $dateFrom, ?string $dateTo): bool
+    {
+        if (($dateFrom === null || $dateFrom === '') && ($dateTo === null || $dateTo === '')) {
+            return true;
+        }
+
+        try {
+            $dt = Carbon::parse($norm['appointment_datetime'], config('app.timezone'));
+        } catch (Throwable) {
+            return false;
+        }
+
+        if ($dateFrom !== null && $dateFrom !== '') {
+            try {
+                $from = Carbon::parse($dateFrom, config('app.timezone'))->startOfDay();
+                if ($dt->lt($from)) {
+                    return false;
+                }
+            } catch (Throwable) {
+                return false;
+            }
+        }
+
+        if ($dateTo !== null && $dateTo !== '') {
+            try {
+                $to = Carbon::parse($dateTo, config('app.timezone'))->endOfDay();
+                if ($dt->gt($to)) {
+                    return false;
+                }
+            } catch (Throwable) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Map CRM filter dropdown values to the website /appointments API status parameter (often numeric).
+     */
+    protected function mapCrmStatusSlugToWebsiteApiStatus(string $slug): int|string|null
+    {
+        $s = strtolower(trim($slug));
+
+        return match ($s) {
+            'pending' => 1,
+            'paid' => 2,
+            'confirmed' => 3,
+            'completed' => 4,
+            'cancelled' => 5,
+            'no_show' => 6,
+            default => null,
+        };
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     * @return array<string, mixed>
+     */
+    public function normalizeApiRowForBookingsList(array $item): array
+    {
+        $base = $this->normalizeApiRow($item);
+
+        $details = Arr::get($item, 'enquiry_details')
+            ?? Arr::get($item, 'description')
+            ?? Arr::get($item, 'notes')
+            ?? Arr::get($item, 'message');
+
+        if (is_string($details)) {
+            $base['enquiry_details'] = $details;
+        } elseif (is_scalar($details)) {
+            $base['enquiry_details'] = (string) $details;
+        } else {
+            $base['enquiry_details'] = null;
+        }
+
+        $et = Arr::get($item, 'enquiry_type');
+        $base['enquiry_type'] = $this->isMeaningfulApiScalar($et) ? trim((string) $et) : null;
+
+        $tf = Arr::get($item, 'timeslot_full') ?? Arr::get($item, 'slot_display') ?? Arr::get($item, 'time_slot');
+        if ($this->isMeaningfulApiScalar($tf)) {
+            $base['timeslot_full'] = trim((string) $tf);
+        }
+
+        return $base;
+    }
+
+    /**
+     * @return array{current_page: int, last_page: int, per_page: int, total: int, from: int|null, to: int|null}
+     */
+    protected function extractPaginationMetaFromWebsiteApi(array $json, int $rowsOnPage, int $requestedPage, int $requestedPerPage): array
+    {
+        $candidates = [
+            $json['pagination'] ?? null,
+            $json['meta'] ?? null,
+        ];
+        $data = $json['data'] ?? null;
+        if (is_array($data) && ! array_is_list($data)) {
+            $candidates[] = $data['pagination'] ?? null;
+            $candidates[] = $data['meta'] ?? null;
+        }
+
+        foreach ($candidates as $p) {
+            if (! is_array($p)) {
+                continue;
+            }
+            if (! isset($p['total']) && ! isset($p['last_page'])) {
+                continue;
+            }
+
+            $total = (int) ($p['total'] ?? 0);
+            $perPage = (int) ($p['per_page'] ?? $requestedPerPage);
+            $perPage = max(1, $perPage);
+            $lastPage = (int) ($p['last_page'] ?? ($total > 0 ? (int) ceil($total / $perPage) : 1));
+            $currentPage = (int) ($p['current_page'] ?? $requestedPage);
+            $from = $p['from'] ?? ($total > 0 ? (($currentPage - 1) * $perPage + 1) : null);
+            $to = $p['to'] ?? ($total > 0 ? min($total, ($currentPage - 1) * $perPage + $rowsOnPage) : null);
+
+            return [
+                'current_page' => max(1, $currentPage),
+                'last_page' => max(1, $lastPage),
+                'per_page' => $perPage,
+                'total' => $total,
+                'from' => $from !== null ? (int) $from : null,
+                'to' => $to !== null ? (int) $to : null,
+            ];
+        }
+
+        return [
+            'current_page' => 1,
+            'last_page' => 1,
+            'per_page' => $requestedPerPage,
+            'total' => $rowsOnPage,
+            'from' => $rowsOnPage > 0 ? 1 : 0,
+            'to' => $rowsOnPage,
+        ];
+    }
+
+    /**
      * @param  array<string, mixed>  $payload
      * @return list<array<string, mixed>>
      */
-    protected function extractListFromPayload(array $payload): array
+    public function extractListFromPayload(array $payload): array
     {
         foreach (['data', 'appointments', 'items', 'results'] as $key) {
             if (! isset($payload[$key])) {

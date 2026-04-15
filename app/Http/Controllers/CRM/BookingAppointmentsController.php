@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\DB;
 use Exception;
 use Carbon\Carbon;
 use App\Support\StaffClientVisibility;
+use Illuminate\Support\Str;
 use Yajra\DataTables\Facades\DataTables;
 
 class BookingAppointmentsController extends Controller
@@ -314,62 +315,65 @@ class BookingAppointmentsController extends Controller
     }
 
     /**
-     * Display appointment list
+     * Display appointment list (table rows load from live website API via /booking/api/appointments?format=list).
      */
-    public function index(Request $request)
+    public function index()
     {
-        $query = BookingAppointment::with(['client', 'consultant']);
-        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
-        
-        // Apply filters
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-        
-        if ($request->filled('consultant_id')) {
-            $query->where('consultant_id', $request->consultant_id);
-        }
-        
-        if ($request->filled('date_from')) {
-            $query->whereDate('appointment_datetime', '>=', $request->date_from);
-        }
-        
-        if ($request->filled('date_to')) {
-            $query->whereDate('appointment_datetime', '<=', $request->date_to);
-        }
-        
-        // Search in Client Reference and Description
-        if ($request->filled('search')) {
-            $searchTerm = $request->search;
-            $searchTermLower = strtolower($searchTerm);
-            $query->where(function($q) use ($searchTerm, $searchTermLower) {
-                // Search in enquiry_details
-                $q->whereRaw('LOWER(enquiry_details) LIKE ?', ['%' . $searchTermLower . '%'])
-                  // Search in client_unique_matter_no via ClientMatter
-                  ->orWhereIn('client_id', function($subQuery) use ($searchTermLower) {
-                      $subQuery->select('client_id')
-                               ->from('client_matters')
-                               ->whereRaw('LOWER(client_unique_matter_no) LIKE ?', ['%' . $searchTermLower . '%']);
-                  })
-                  // Search in admins.client_id column
-                  ->orWhereIn('client_id', function($subQuery) use ($searchTermLower) {
-                      $subQuery->select('id')
-                               ->from('admins')
-                               ->whereRaw('LOWER(client_id) LIKE ?', ['%' . $searchTermLower . '%']);
-                  });
-            });
-        }
-        
-        // Paginate appointments ordered by ID (descending - newest first)
-        // Preserve filter parameters in pagination links
-        $appointments = $query->orderByDesc('id')
-            ->paginate(20)
-            ->appends($request->except('page'));
+        $consultants = AppointmentConsultant::active()->get();
 
-        // Map latest matter reference for each appointment client
+        $statsBase = BookingAppointment::query();
+        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($statsBase);
+
+        $stats = [
+            'pending' => (clone $statsBase)->where('status', 'pending')->where('is_paid', 1)->count(),
+            'paid' => (clone $statsBase)->where('status', 'paid')->where('is_paid', 1)->count(),
+            'confirmed' => (clone $statsBase)->where('status', 'confirmed')->count(),
+            'today' => (clone $statsBase)->whereDate('appointment_datetime', today())->count(),
+            'total' => (clone $statsBase)->count(),
+        ];
+
+        return view('crm.booking.appointments.index', compact('consultants', 'stats'));
+    }
+
+    /**
+     * Website bookings table JSON: proxies https://www.bansallawyers.com.au/api/appointments (see APPOINTMENT_API_URL).
+     */
+    protected function websiteBookingsListFromPublicApi(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $bearer = config('services.appointment_api.bearer_token');
+        $service = config('services.appointment_api.service_token');
+        if (empty($bearer) && empty($service)) {
+            return response()->json([
+                'message' => 'Appointment API is not configured. Set APPOINTMENT_API_BEARER_TOKEN or APPOINTMENT_API_SERVICE_TOKEN in .env.',
+            ], 503);
+        }
+
+        try {
+            $bundle = $this->calendarExternalFeed->fetchWebsiteBookingsListFromPublicApi($request);
+        } catch (\Throwable $e) {
+            Log::error('Website bookings list: public API failed', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Could not load appointments from the website API: ' . $e->getMessage(),
+            ], 502);
+        }
+
+        $rows = $bundle['rows'];
+        $meta = $bundle['meta'];
+
+        $bansalIds = collect($rows)->pluck('bansal_appointment_id')->filter()->map(fn ($id) => (int) $id)->unique()->values()->all();
+        $locals = collect();
+        if ($bansalIds !== []) {
+            $locals = BookingAppointment::with(['client', 'consultant'])
+                ->whereIn('bansal_appointment_id', $bansalIds)
+                ->get()
+                ->keyBy(fn (BookingAppointment $m) => (int) $m->bansal_appointment_id);
+        }
+
+        $clientIds = $locals->pluck('client_id')->filter()->unique();
         $clientMatterRefs = [];
-        $clientIds = $appointments->pluck('client_id')->filter()->unique();
-
         if ($clientIds->isNotEmpty()) {
             $clientMatterRefs = ClientMatter::whereIn('client_id', $clientIds)
                 ->select('client_id', 'client_unique_matter_no')
@@ -379,23 +383,119 @@ class BookingAppointmentsController extends Controller
                 ->pluck('client_unique_matter_no', 'client_id')
                 ->toArray();
         }
-        
-        // Get consultants for filter
-        $consultants = AppointmentConsultant::active()->get();
-        
-        $statsBase = BookingAppointment::query();
-        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($statsBase);
 
-        // Calculate statistics (same visibility as list)
-        $stats = [
-            'pending' => (clone $statsBase)->where('status', 'pending')->where('is_paid', 1)->count(),
-            'paid' => (clone $statsBase)->where('status', 'paid')->where('is_paid', 1)->count(),
-            'confirmed' => (clone $statsBase)->where('status', 'confirmed')->count(),
-            'today' => (clone $statsBase)->whereDate('appointment_datetime', today())->count(),
-            'total' => (clone $statsBase)->count(),
+        $data = [];
+        foreach ($rows as $norm) {
+            $bid = $norm['bansal_appointment_id'] ?? null;
+            $local = $bid !== null ? ($locals[(int) $bid] ?? null) : null;
+
+            if ($local) {
+                $visibilityQuery = BookingAppointment::query()->whereKey($local->getKey());
+                StaffClientVisibility::restrictBookingAppointmentEloquentQuery($visibilityQuery);
+                if (! $visibilityQuery->exists()) {
+                    continue;
+                }
+            }
+
+            $data[] = $this->serializeWebsiteApiRowForBookingTable($norm, $local, $clientMatterRefs);
+        }
+
+        return response()->json([
+            'data' => $data,
+            'meta' => $meta,
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $norm
+     * @param  array<int, string>  $clientMatterRefs
+     * @return array<string, mixed>
+     */
+    protected function serializeWebsiteApiRowForBookingTable(array $norm, ?BookingAppointment $local, array $clientMatterRefs): array
+    {
+        $dt = Carbon::parse($norm['appointment_datetime']);
+
+        $clientDetailUrl = null;
+        $clientReference = null;
+        if ($local && $local->client_id) {
+            $encodedClientId = base64_encode(convert_uuencode($local->client_id));
+            $latestMatterRef = $clientMatterRefs[$local->client_id] ?? null;
+            $clientDetailUrl = $latestMatterRef
+                ? route('clients.detail', [$encodedClientId, $latestMatterRef])
+                : route('clients.detail', [$encodedClientId]);
+            $clientReference = $local->client?->client_id;
+        }
+
+        $status = (string) ($norm['status'] ?? 'pending');
+        $statusBadge = match ($status) {
+            'pending' => 'warning',
+            'paid' => 'primary',
+            'confirmed' => 'success',
+            'completed' => 'info',
+            'cancelled' => 'danger',
+            'no_show' => 'dark',
+            default => 'secondary',
+        };
+
+        $statusLabel = $norm['status_label'] ?? ucwords(str_replace('_', ' ', $status));
+
+        $consultantName = null;
+        if ($local && $local->consultant) {
+            $consultantName = $local->consultant->name;
+        } elseif (! empty($norm['consultant']) && is_array($norm['consultant'])) {
+            $consultantName = $norm['consultant']['name'] ?? null;
+        }
+
+        $isPaid = (bool) ($norm['is_paid'] ?? false);
+        $finalAmount = $norm['final_amount'] ?? 0;
+
+        $enquiryDetails = $norm['enquiry_details'] ?? null;
+        $enquiryDetailsShort = $enquiryDetails ? Str::limit((string) $enquiryDetails, 100) : null;
+
+        $serviceType = $norm['service_type'] ?? null;
+        $enquiryType = $norm['enquiry_type'] ?? null;
+
+        $timeslotFull = $norm['timeslot_full'] ?? null;
+        if (! is_string($timeslotFull) || trim($timeslotFull) === '') {
+            $timeslotFull = null;
+        }
+
+        $location = $norm['location'] ?? null;
+
+        $crmId = $local?->id;
+        $websiteId = $norm['bansal_appointment_id'] ?? null;
+        $displayId = $crmId ?? $websiteId;
+
+        $showUrl = $local ? route('booking.appointments.show', $local->id) : null;
+        $editUrl = $local ? route('booking.appointments.edit', $local->id) : null;
+
+        return [
+            'id' => $displayId,
+            'crm_appointment_id' => $crmId,
+            'website_appointment_id' => $websiteId,
+            'client_name' => $local ? $local->client_name : ($norm['client_name'] ?? ''),
+            'client_email' => $local ? $local->client_email : ($norm['client_email'] ?? ''),
+            'client_phone' => $local ? $local->client_phone : ($norm['client_phone'] ?? ''),
+            'client_id' => $local?->client_id,
+            'client_reference' => $clientReference,
+            'client_detail_url' => $clientDetailUrl,
+            'appointment_date_label' => $dt->format('d M Y'),
+            'appointment_time_label' => $dt->format('h:i A'),
+            'timeslot_full' => $timeslotFull,
+            'location' => $location,
+            'service_type' => $serviceType ?: null,
+            'enquiry_type' => $enquiryType,
+            'enquiry_details' => $enquiryDetails,
+            'enquiry_details_short' => $enquiryDetailsShort,
+            'consultant_name' => $consultantName,
+            'status' => $status,
+            'status_label' => $statusLabel,
+            'status_badge_class' => $statusBadge,
+            'is_paid' => $isPaid,
+            'final_amount' => $finalAmount,
+            'show_url' => $showUrl,
+            'edit_url' => $editUrl,
         ];
-        
-        return view('crm.booking.appointments.index', compact('appointments', 'consultants', 'stats', 'clientMatterRefs'));
     }
 
     /**
@@ -403,6 +503,10 @@ class BookingAppointmentsController extends Controller
      */
     public function getAppointments(Request $request)
     {
+        if ($request->get('format') === 'list') {
+            return $this->websiteBookingsListFromPublicApi($request);
+        }
+
         $query = BookingAppointment::with(['client', 'consultant']);
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
 

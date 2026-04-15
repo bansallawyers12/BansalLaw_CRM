@@ -296,6 +296,56 @@
 .booking-appointments-page .table-responsive table.table tbody td a:hover {
     color: var(--navy);
 }
+
+/* Pagination — Powder Blue & Soft Gold (docs/theme.md); override Bootstrap primary blue */
+.booking-appointments-page #appointments-pagination p.text-muted,
+.booking-appointments-page #appointments-pagination .text-muted {
+    color: var(--text-muted) !important;
+}
+
+.booking-appointments-page #appointments-pagination .pagination {
+    gap: 0.25rem;
+}
+
+.booking-appointments-page #appointments-pagination .pagination .page-link {
+    color: var(--navy);
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.booking-appointments-page #appointments-pagination .pagination .page-link:hover {
+    color: var(--navy);
+    background-color: var(--sidebar-bg);
+    border-color: var(--sidebar-hover);
+}
+
+.booking-appointments-page #appointments-pagination .pagination .page-link:focus {
+    box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.2);
+    color: var(--navy);
+}
+
+.booking-appointments-page #appointments-pagination .pagination .page-item.active .page-link {
+    background-color: var(--navy);
+    border-color: var(--navy);
+    color: #fff;
+}
+
+.booking-appointments-page #appointments-pagination .pagination .page-item.active .page-link:hover,
+.booking-appointments-page #appointments-pagination .pagination .page-item.active .page-link:focus {
+    background-color: var(--sidebar-active);
+    border-color: var(--sidebar-active);
+    color: #fff;
+}
+
+.booking-appointments-page #appointments-pagination .pagination .page-item.disabled .page-link {
+    color: var(--text-muted);
+    background-color: var(--page-bg);
+    border-color: var(--border);
+    opacity: 0.7;
+    pointer-events: none;
+}
 </style>
 
 <div class="section-body booking-appointments-page">
@@ -306,7 +356,7 @@
                     <h4>
                         <i class="fas fa-globe mr-2"></i> 
                         Website Bookings 
-                        <small class="text-muted">(Synced from public booking website)</small>
+                        <small class="text-muted">(Live list from {{ rtrim(config('services.appointment_api.url'), '/') }}/appointments)</small>
                     </h4>
                     <div class="card-header-action">
                         @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
@@ -401,7 +451,7 @@
 
                     <!-- Filters -->
                     <div class="filter-section">
-                        <form method="GET" action="{{ route('booking.appointments.index') }}" id="filter-form">
+                        <form method="GET" action="{{ route('booking.appointments.index') }}" id="filter-form" autocomplete="off">
                             <div class="row mb-3">
                                 <div class="col-md-12">
                                     <label>Search with Client Reference, Description</label>
@@ -456,10 +506,6 @@
                         </form>
                     </div>
 
-                    <!-- DataTable -->
-                    @php
-                        $clientMatterRefs = $clientMatterRefs ?? [];
-                    @endphp
                     <div class="table-responsive">
                         <table class="table table-striped table-hover" id="appointments-table">
                             <thead>
@@ -475,126 +521,17 @@
                                     <th width="150">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                @forelse($appointments as $appointment)
+                            <tbody id="appointments-table-body">
                                 <tr>
-                                    <td>{{ $appointment->id ?? $appointment->id }}</td>
-                                    
-                                    <td>
-                                        @if($appointment->client_id)
-                                            @php
-                                                $encodedClientId = base64_encode(convert_uuencode($appointment->client_id));
-                                                $latestMatterRef = $clientMatterRefs[$appointment->client_id] ?? null;
-                                                $clientDetailParams = [$encodedClientId];
-
-                                                if (!empty($latestMatterRef)) {
-                                                    $clientDetailParams[] = $latestMatterRef;
-                                                }
-
-                                                $clientDetailUrl = route('clients.detail', $clientDetailParams);
-                                            @endphp
-                                            <strong>
-                                                <a href="{{ $clientDetailUrl }}" target="_blank">
-                                                    {{ $appointment->client_name }}
-                                                </a>
-                                            </strong><br>
-                                            <small>
-                                                <a href="{{ $clientDetailUrl }}" target="_blank">
-                                                    {{ $appointment->client_email }}
-                                                </a>
-                                            </small><br>
-                                            <small>{{ $appointment->client_phone }}</small>
-                                            @if($appointment->client && $appointment->client->client_id)
-                                                <div class="mt-1">
-                                                    <small class="text-muted">{{ $appointment->client->client_id }}</small>
-                                                </div>
-                                            @endif
-                                         @else
-                                            <strong>{{ $appointment->client_name }}</strong><br>
-                                            <small>{{ $appointment->client_email }}</small><br>
-                                            <small>{{ $appointment->client_phone }}</small>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <strong>{{ $appointment->appointment_datetime->format('d M Y') }}</strong><br>
-                                        <small>{{ $appointment->appointment_datetime->format('h:i A') }}</small><br>
-                                        <small><i class="fas fa-map-marker-alt"></i> {{ ucfirst($appointment->location) }}</small>
-                                    </td>
-                                    <td>
-                                        {{ $appointment->service_type ?? 'N/A' }}<br>
-                                        <small>{{ $appointment->enquiry_type ?? '' }}</small>
-                                    </td>
-                                    <td>
-                                        @if($appointment->consultant)
-                                            {{ $appointment->consultant->name }}
-                                        @else
-                                            <span class="text-muted">Not Assigned</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($appointment->enquiry_details)
-                                            <small>{{ Str::limit($appointment->enquiry_details, 100) }}</small>
-                                        @else
-                                            <span class="text-muted">N/A</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @php
-                                            $statusClass = 'secondary';
-                                            $statusText = ucfirst($appointment->status);
-                                            switch($appointment->status) {
-                                                case 'pending': $statusClass = 'warning'; break;
-                                                case 'paid': $statusClass = 'primary'; break;
-                                                case 'confirmed': $statusClass = 'success'; break;
-                                                case 'completed': $statusClass = 'info'; break;
-                                                case 'cancelled': $statusClass = 'danger'; break;
-                                                case 'no_show': $statusClass = 'dark'; break;
-                                            }
-                                        @endphp
-                                        <span class="badge badge-{{ $statusClass }}">{{ $statusText }}</span>
-                                    </td>
-                                    <td>
-                                        @if($appointment->is_paid)
-                                            <span class="badge badge-primary">Paid</span><br>
-                                            <small>${{ number_format($appointment->final_amount, 2) }}</small>
-                                        @else
-                                            <span class="badge badge-secondary">Free</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <a href="{{ route('booking.appointments.show', $appointment->id) }}" class="btn btn-sm btn-primary" title="View Details">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="{{ route('booking.appointments.edit', $appointment->id) }}"
-                                            class="btn btn-sm btn-warning"
-                                            title="Edit Date & Time">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        
-                                        <button onclick="quickAction('{{ $appointment->id }}')" class="btn btn-sm btn-info" title="Quick Actions">
-                                            <i class="fas fa-bolt"></i>
-                                        </button>
+                                    <td colspan="9" class="text-center text-muted py-4">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading appointments…
                                     </td>
                                 </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="9" class="text-center">
-                                        <p class="text-muted mt-3 mb-3">
-                                            <i class="fas fa-info-circle"></i> No appointments found.
-                                        </p>
-                                    </td>
-                                </tr>
-                                @endforelse
                             </tbody>
                         </table>
                     </div>
 
-                    <!-- Pagination -->
-                    @if($appointments->hasPages())
-                    <div class="d-flex justify-content-center mt-3">
-                        {{ $appointments->links() }}
-                    </div>
-                    @endif
+                    <div id="appointments-pagination" class="mt-3"></div>
 
                     <!-- Edit Date & Time Modal -->
                     <div class="modal fade" id="editDatetimeModal" tabindex="-1" role="dialog" aria-labelledby="editDatetimeModalLabel" aria-hidden="true">
@@ -638,6 +575,237 @@
 </div>
 
 <script>
+const appointmentsListApiUrl = @json(route('booking.api.appointments'));
+const appointmentsListPerPage = 20;
+let appointmentsListCurrentPage = {{ (int) request('page', 1) }};
+
+function escapeHtml(text) {
+    if (text === null || text === undefined) {
+        return '';
+    }
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
+}
+
+function getAppointmentsListParams(page) {
+    return {
+        format: 'list',
+        page: page,
+        per_page: appointmentsListPerPage,
+        search: ($('#filter-search').val() || '').trim(),
+        status: $('#filter-status').val() || '',
+        consultant_id: $('#filter-consultant').val() || '',
+        date_from: $('#filter-date-from').val() || '',
+        date_to: $('#filter-date-to').val() || ''
+    };
+}
+
+function syncAppointmentsUrlToAddressBar(page) {
+    const p = getAppointmentsListParams(page);
+    const params = new URLSearchParams();
+    if (p.search) {
+        params.set('search', p.search);
+    }
+    if (p.status) {
+        params.set('status', p.status);
+    }
+    if (p.consultant_id) {
+        params.set('consultant_id', p.consultant_id);
+    }
+    if (p.date_from) {
+        params.set('date_from', p.date_from);
+    }
+    if (p.date_to) {
+        params.set('date_to', p.date_to);
+    }
+    if (page > 1) {
+        params.set('page', String(page));
+    }
+    const qs = params.toString();
+    window.history.replaceState({}, '', window.location.pathname + (qs ? ('?' + qs) : ''));
+}
+
+function buildAppointmentRowHtml(row) {
+    let clientCell = '';
+    const name = escapeHtml(row.client_name || '');
+    const email = escapeHtml(row.client_email || '');
+    const phone = escapeHtml(row.client_phone || '');
+    if (row.client_id && row.client_detail_url) {
+        const href = row.client_detail_url;
+        clientCell += '<strong><a href="' + escapeHtml(href) + '" target="_blank">' + name + '</a></strong><br>';
+        clientCell += '<small><a href="' + escapeHtml(href) + '" target="_blank">' + email + '</a></small><br>';
+        clientCell += '<small>' + phone + '</small>';
+        if (row.client_reference) {
+            clientCell += '<div class="mt-1"><small class="text-muted">' + escapeHtml(row.client_reference) + '</small></div>';
+        }
+    } else {
+        clientCell += '<strong>' + name + '</strong><br><small>' + email + '</small><br><small>' + phone + '</small>';
+    }
+
+    const timeLine = row.timeslot_full
+        ? escapeHtml(row.timeslot_full)
+        : escapeHtml(row.appointment_time_label || '');
+    const locRaw = row.location ? String(row.location) : '';
+    const locLabel = locRaw
+        ? escapeHtml(locRaw.charAt(0).toUpperCase() + locRaw.slice(1))
+        : '';
+    const serviceMain = row.service_type ? escapeHtml(row.service_type) : 'N/A';
+    const serviceSub = row.enquiry_type ? escapeHtml(row.enquiry_type) : '';
+    const consultantCell = row.consultant_name
+        ? escapeHtml(row.consultant_name)
+        : '<span class="text-muted">Not Assigned</span>';
+    let descCell = '<span class="text-muted">N/A</span>';
+    if (row.enquiry_details_short) {
+        descCell = '<small>' + escapeHtml(row.enquiry_details_short) + '</small>';
+    }
+
+    const badgeClass = escapeHtml(row.status_badge_class || 'secondary');
+    const statusLabel = escapeHtml(row.status_label || '');
+    const amt = Number(row.final_amount);
+    const paymentCell = row.is_paid
+        ? ('<span class="badge badge-primary">Paid</span><br><small>$' + escapeHtml(amt.toFixed(2)) + '</small>')
+        : '<span class="badge badge-secondary">Free</span>';
+
+    const idDisp = escapeHtml(String(row.id != null ? row.id : ''));
+    const showUrl = row.show_url || '';
+    const editUrl = row.edit_url || '';
+    const viewBtn = showUrl
+        ? ('<a href="' + escapeHtml(showUrl) + '" class="btn btn-sm btn-primary" title="View in CRM"><i class="fas fa-eye"></i></a>')
+        : ('<button type="button" class="btn btn-sm btn-secondary" disabled title="Not synced to CRM yet"><i class="fas fa-eye"></i></button>');
+    const editBtn = editUrl
+        ? ('<a href="' + escapeHtml(editUrl) + '" class="btn btn-sm btn-warning" title="Edit in CRM"><i class="fas fa-edit"></i></a>')
+        : ('<button type="button" class="btn btn-sm btn-secondary" disabled title="Not synced to CRM yet"><i class="fas fa-edit"></i></button>');
+    const crmId = row.crm_appointment_id;
+    const quickBtn = crmId
+        ? ('<button type="button" class="btn btn-sm btn-info quick-action-btn" data-id="' + escapeHtml(String(crmId)) + '" title="Quick Actions"><i class="fas fa-bolt"></i></button>')
+        : ('<button type="button" class="btn btn-sm btn-secondary" disabled title="Requires synced CRM record"><i class="fas fa-bolt"></i></button>');
+
+    return (
+        '<tr>' +
+        '<td>' + idDisp + '</td>' +
+        '<td>' + clientCell + '</td>' +
+        '<td><strong>' + escapeHtml(row.appointment_date_label || '') + '</strong><br>' +
+        '<small>' + timeLine + '</small><br>' +
+        '<small><i class="fas fa-map-marker-alt"></i> ' + locLabel + '</small></td>' +
+        '<td>' + serviceMain + '<br><small>' + serviceSub + '</small></td>' +
+        '<td>' + consultantCell + '</td>' +
+        '<td>' + descCell + '</td>' +
+        '<td><span class="badge badge-' + badgeClass + '">' + statusLabel + '</span></td>' +
+        '<td>' + paymentCell + '</td>' +
+        '<td>' + viewBtn + ' ' + editBtn + ' ' + quickBtn + '</td>' +
+        '</tr>'
+    );
+}
+
+function renderAppointmentsPagination(meta) {
+    const $wrap = $('#appointments-pagination');
+    $wrap.empty();
+    if (!meta || meta.last_page <= 1) {
+        return;
+    }
+    const cur = meta.current_page;
+    const last = meta.last_page;
+    const from = meta.from != null ? meta.from : 0;
+    const to = meta.to != null ? meta.to : 0;
+    const total = meta.total != null ? meta.total : 0;
+
+    let html = '<div class="d-flex flex-column align-items-center">';
+    html += '<p class="text-muted small mb-2">Showing ' + from + '–' + to + ' of ' + total + '</p>';
+    html += '<nav><ul class="pagination pagination-sm mb-0">';
+
+    html += '<li class="page-item' + (cur <= 1 ? ' disabled' : '') + '">';
+    html += '<a class="page-link appointments-page-link" href="#" data-page="' + (cur - 1) + '">Previous</a></li>';
+
+    const windowSize = 5;
+    let start = Math.max(1, cur - Math.floor(windowSize / 2));
+    let end = Math.min(last, start + windowSize - 1);
+    if (end - start < windowSize - 1) {
+        start = Math.max(1, end - windowSize + 1);
+    }
+    for (let i = start; i <= end; i++) {
+        html += '<li class="page-item' + (i === cur ? ' active' : '') + '">';
+        html += '<a class="page-link appointments-page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+    }
+
+    html += '<li class="page-item' + (cur >= last ? ' disabled' : '') + '">';
+    html += '<a class="page-link appointments-page-link" href="#" data-page="' + (cur + 1) + '">Next</a></li>';
+
+    html += '</ul></nav></div>';
+    $wrap.html(html);
+}
+
+function loadAppointmentsList(page) {
+    appointmentsListCurrentPage = page;
+    const $tbody = $('#appointments-table-body');
+    $tbody.html(
+        '<tr><td colspan="9" class="text-center text-muted py-4">' +
+        '<i class="fas fa-spinner fa-spin"></i> Loading appointments…</td></tr>'
+    );
+
+    $.ajax({
+        url: appointmentsListApiUrl,
+        method: 'GET',
+        data: getAppointmentsListParams(page),
+        dataType: 'json'
+    }).done(function (res) {
+        if (res.message && !res.data) {
+            $tbody.html(
+                '<tr><td colspan="9" class="text-center text-danger py-4">' + escapeHtml(res.message) + '</td></tr>'
+            );
+            $('#appointments-pagination').empty();
+            return;
+        }
+        const rows = res.data || [];
+        if (!rows.length) {
+            $tbody.html(
+                '<tr><td colspan="9" class="text-center text-muted py-4">' +
+                '<i class="fas fa-info-circle"></i> No appointments found.</td></tr>'
+            );
+        } else {
+            $tbody.html(rows.map(buildAppointmentRowHtml).join(''));
+        }
+        renderAppointmentsPagination(res.meta);
+        syncAppointmentsUrlToAddressBar(page);
+    }).fail(function (xhr) {
+        const msg = (xhr.responseJSON && xhr.responseJSON.message)
+            ? xhr.responseJSON.message
+            : 'Could not load appointments.';
+        $tbody.html(
+            '<tr><td colspan="9" class="text-center text-danger py-4">' + escapeHtml(msg) + '</td></tr>'
+        );
+        $('#appointments-pagination').empty();
+    });
+}
+
+$('#filter-form').on('submit', function (e) {
+    e.preventDefault();
+    loadAppointmentsList(1);
+});
+
+$(document).on('click', '.appointments-page-link', function (e) {
+    e.preventDefault();
+    const $li = $(this).closest('li');
+    if ($li.hasClass('disabled')) {
+        return;
+    }
+    const p = parseInt($(this).data('page'), 10);
+    if (!isNaN(p) && p >= 1) {
+        loadAppointmentsList(p);
+    }
+});
+
+$(document).on('click', '.quick-action-btn', function () {
+    const id = $(this).data('id');
+    if (id) {
+        quickAction(String(id));
+    }
+});
+
+$(function () {
+    loadAppointmentsList(appointmentsListCurrentPage);
+});
+
 function manualSync() {
     if (!confirm('Start manual sync now? This will fetch latest appointments from the public booking website.')) {
         return;
@@ -791,10 +959,8 @@ $('#edit-datetime-form').on('submit', function(event) {
     });
 });
 
-// Auto-reload every 5 minutes to get latest synced data
-setInterval(function() {
-    console.log('Auto-refreshing appointments...');
-    window.location.reload();
+setInterval(function () {
+    loadAppointmentsList(appointmentsListCurrentPage);
 }, 5 * 60 * 1000);
 </script>
 
