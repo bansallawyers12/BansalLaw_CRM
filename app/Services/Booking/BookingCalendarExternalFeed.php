@@ -444,14 +444,14 @@ class BookingCalendarExternalFeed
     }
 
     /**
-     * List appointments for the CRM "Website Bookings" page via GET {APPOINTMENT_API_URL}/appointments.
+     * List appointments for the CRM "Website Bookings" page (CRM route accepts GET or POST; filters in request input).
      *
      * @return array{rows: list<array<string, mixed>>, meta: array<string, int|null>}
      */
     public function fetchWebsiteBookingsListFromPublicApi(Request $request): array
     {
-        $perPage = min(max((int) $request->query('per_page', 20), 1), 100);
-        $page = max((int) $request->query('page', 1), 1);
+        $perPage = min(max((int) $request->input('per_page', 20), 1), 100);
+        $page = max((int) $request->input('page', 1), 1);
 
         $hasDateRange = $request->filled('date_from') || $request->filled('date_to');
         $aggregateDates = $hasDateRange && filter_var(config('booking_calendar.website_bookings_list.aggregate_when_date_filtered', true), FILTER_VALIDATE_BOOL);

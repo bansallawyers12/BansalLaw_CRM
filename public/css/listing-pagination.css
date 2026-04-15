@@ -1,8 +1,8 @@
 /* Pagination — docs/theme.md tokens (:root in crm-theme.css) */
 
 .listing-container .card-footer {
-    background: transparent;
-    border-top: none;
+    background: var(--page-bg, #f0f6ff);
+    border-top: 1px solid var(--border, #c8dcef);
     padding: 1rem 1.5rem;
 }
 
@@ -30,19 +30,21 @@
     height: 32px;
     padding: 0 6px;
     font-size: 14px;
-    color: var(--text-muted, #5e7a90);
+    font-weight: 600;
+    color: var(--navy, #1e3d60);
     background: var(--card-bg, #ffffff);
     border: 1px solid var(--border, #c8dcef);
     border-radius: 8px;
     text-decoration: none;
     white-space: nowrap;
+    box-shadow: none;
 }
 
 .listing-container .pagination li.active span,
 .listing-container .pagination li.active .page-link,
 .listing-container .pagination .page-item.active .page-link {
-    background-color: var(--sidebar-active, #3a6fa8) !important;
-    border-color: var(--sidebar-active, #3a6fa8) !important;
+    background-color: var(--navy, #1e3d60) !important;
+    border-color: var(--navy, #1e3d60) !important;
     color: #fff !important;
     font-weight: 600;
 }
@@ -57,13 +59,12 @@
     opacity: 0.55;
 }
 
-.listing-container .pagination li a:hover:not(.disabled),
-.listing-container .pagination .page-link:hover:not(.disabled) {
-    background-color: var(--sidebar-hover, #c8dcef);
+.listing-container .pagination .page-item:not(.disabled) .page-link:hover {
+    background-color: var(--sidebar-bg, #ddeaf8);
     border-color: var(--border, #c8dcef);
     color: var(--navy, #1e3d60);
     text-decoration: none;
-    box-shadow: 0 2px 4px rgba(30, 61, 96, 0.08);
+    box-shadow: none;
 }
 
 .listing-container .pagination li:first-child,
@@ -75,14 +76,14 @@
 .listing-container .pagination li:last-child a {
     padding: 0 8px;
     font-size: 14px;
-    color: var(--text-muted, #5e7a90);
-    font-weight: 500;
+    color: var(--navy, #1e3d60);
+    font-weight: 600;
 }
 
-.listing-container .pagination li:first-child a:hover,
-.listing-container .pagination li:last-child a:hover {
+.listing-container .pagination .page-item:first-child:not(.disabled) a:hover,
+.listing-container .pagination .page-item:last-child:not(.disabled) a:hover {
     color: var(--navy, #1e3d60);
-    background-color: var(--sidebar-hover, #c8dcef);
+    background-color: var(--sidebar-bg, #ddeaf8);
 }
 
 .listing-container .showing-text {

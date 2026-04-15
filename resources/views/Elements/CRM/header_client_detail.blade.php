@@ -25,12 +25,6 @@
                     <a class="dropdown-item" href="{{ route('booking.appointments.index') }}">
                         <i class="fas fa-list mr-2"></i> All Bookings
                     </a>
-                    <a class="dropdown-item" href="{{ route('booking.appointments.index', ['status' => 9]) }}">
-                        <i class="fas fa-clock mr-2"></i> Payment Pending
-                        @if($pendingCount > 0)
-                            <span class="badge badge-warning ml-1">{{ $pendingCount }}</span>
-                        @endif
-                    </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}">
                         <i class="fas fa-calendar-alt mr-2"></i> Ajay Calendar

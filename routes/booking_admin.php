@@ -76,7 +76,7 @@ Route::controller(BookingAppointmentsController::class)
             ->name('sync.manual')
             ->middleware('can:trigger-manual-sync');
 
-        Route::get('/api/appointments', 'getAppointments')
+        Route::match(['get', 'post'], '/api/appointments', 'getAppointments')
             ->name('api.appointments');
 
         Route::get('/api/calendar-stats/{type}', 'calendarStatsJson')

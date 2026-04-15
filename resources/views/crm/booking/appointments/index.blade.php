@@ -297,7 +297,7 @@
     color: var(--navy);
 }
 
-/* Pagination — Powder Blue & Soft Gold (docs/theme.md); override Bootstrap primary blue */
+/* Pagination — docs/theme.md (outline + primary); crm-theme.css sets BS pagination variables */
 .booking-appointments-page #appointments-pagination p.text-muted,
 .booking-appointments-page #appointments-pagination .text-muted {
     color: var(--text-muted) !important;
@@ -308,6 +308,7 @@
 }
 
 .booking-appointments-page #appointments-pagination .pagination .page-link {
+    box-shadow: none;
     color: var(--navy);
     background-color: var(--card-bg);
     border: 1px solid var(--border);
@@ -318,7 +319,8 @@
 .booking-appointments-page #appointments-pagination .pagination .page-link:hover {
     color: var(--navy);
     background-color: var(--sidebar-bg);
-    border-color: var(--sidebar-hover);
+    border-color: var(--border);
+    box-shadow: none;
 }
 
 .booking-appointments-page #appointments-pagination .pagination .page-link:focus {
@@ -330,6 +332,7 @@
     background-color: var(--navy);
     border-color: var(--navy);
     color: #fff;
+    box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
 }
 
 .booking-appointments-page #appointments-pagination .pagination .page-item.active .page-link:hover,
@@ -343,8 +346,9 @@
     color: var(--text-muted);
     background-color: var(--page-bg);
     border-color: var(--border);
-    opacity: 0.7;
+    opacity: 0.55;
     pointer-events: none;
+    box-shadow: none;
 }
 </style>
 
@@ -456,7 +460,7 @@
                                 <div class="col-md-12">
                                     <label>Search (client name, email, phone, reference, description)</label>
                                     <input type="text" class="form-control" name="search" id="filter-search"
-                                           value="{{ request('search') }}"
+                                           value=""
                                            placeholder="e.g. name, email, matter ref, or keywords in notes">
                                 </div>
                             </div>
@@ -484,7 +488,7 @@
                                     <select class="form-control" name="consultant_id" id="filter-consultant">
                                         <option value="">All Consultants</option>
                                         @foreach($consultants as $consultant)
-                                            <option value="{{ $consultant->id }}" {{ request('consultant_id') == $consultant->id ? 'selected' : '' }}>
+                                            <option value="{{ $consultant->id }}">
                                                 {{ $consultant->name }}
                                             </option>
                                         @endforeach
@@ -492,11 +496,11 @@
                                 </div>
                                 <div class="col-md-2">
                                     <label>From Date</label>
-                                    <input type="date" class="form-control" name="date_from" id="filter-date-from" value="{{ request('date_from') }}">
+                                    <input type="date" class="form-control" name="date_from" id="filter-date-from" value="">
                                 </div>
                                 <div class="col-md-2">
                                     <label>To Date</label>
-                                    <input type="date" class="form-control" name="date_to" id="filter-date-to" value="{{ request('date_to') }}">
+                                    <input type="date" class="form-control" name="date_to" id="filter-date-to" value="">
                                 </div>
                                 <div class="col-md-2">
                                     <label>&nbsp;</label>
@@ -583,8 +587,9 @@
 
 <script>
 const appointmentsListApiUrl = @json(route('booking.api.appointments'));
+const appointmentsListCsrfToken = @json(csrf_token());
 const appointmentsListPerPage = 20;
-let appointmentsListCurrentPage = {{ (int) request('page', 1) }};
+let appointmentsListCurrentPage = 1;
 
 function escapeHtml(text) {
     if (text === null || text === undefined) {
@@ -595,42 +600,31 @@ function escapeHtml(text) {
     return d.innerHTML;
 }
 
-function getAppointmentsListParams(page) {
+/** List API: all filters (including status) in POST body. */
+function appointmentsListRequestUrl() {
+    return appointmentsListApiUrl;
+}
+
+function getAppointmentsListPostData(page) {
     return {
+        _token: appointmentsListCsrfToken,
         format: 'list',
         page: page,
         per_page: appointmentsListPerPage,
-        search: ($('#filter-search').val() || '').trim(),
         status: $('#filter-status').val() || '',
+        search: ($('#filter-search').val() || '').trim(),
         consultant_id: $('#filter-consultant').val() || '',
         date_from: $('#filter-date-from').val() || '',
         date_to: $('#filter-date-to').val() || ''
     };
 }
 
-function syncAppointmentsUrlToAddressBar(page) {
-    const p = getAppointmentsListParams(page);
-    const params = new URLSearchParams();
-    if (p.search) {
-        params.set('search', p.search);
+/** Keep /booking/appointments URL clean — filters are POST-only (no ?query string). */
+function syncAppointmentsCleanUrl() {
+    if (window.location.search === '') {
+        return;
     }
-    if (p.status) {
-        params.set('status', p.status);
-    }
-    if (p.consultant_id) {
-        params.set('consultant_id', p.consultant_id);
-    }
-    if (p.date_from) {
-        params.set('date_from', p.date_from);
-    }
-    if (p.date_to) {
-        params.set('date_to', p.date_to);
-    }
-    if (page > 1) {
-        params.set('page', String(page));
-    }
-    const qs = params.toString();
-    window.history.replaceState({}, '', window.location.pathname + (qs ? ('?' + qs) : ''));
+    window.history.replaceState({}, '', window.location.pathname);
 }
 
 function buildAppointmentRowHtml(row) {
@@ -751,9 +745,9 @@ function loadAppointmentsList(page) {
     );
 
     $.ajax({
-        url: appointmentsListApiUrl,
-        method: 'GET',
-        data: getAppointmentsListParams(page),
+        url: appointmentsListRequestUrl(),
+        method: 'POST',
+        data: getAppointmentsListPostData(page),
         dataType: 'json'
     }).done(function (res) {
         if (res.message && !res.data) {
@@ -773,7 +767,7 @@ function loadAppointmentsList(page) {
             $tbody.html(rows.map(buildAppointmentRowHtml).join(''));
         }
         renderAppointmentsPagination(res.meta);
-        syncAppointmentsUrlToAddressBar(page);
+        syncAppointmentsCleanUrl();
     }).fail(function (xhr) {
         const msg = (xhr.responseJSON && xhr.responseJSON.message)
             ? xhr.responseJSON.message
@@ -810,6 +804,7 @@ $(document).on('click', '.quick-action-btn', function () {
 });
 
 $(function () {
+    syncAppointmentsCleanUrl();
     loadAppointmentsList(appointmentsListCurrentPage);
 });
 

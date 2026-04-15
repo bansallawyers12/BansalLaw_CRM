@@ -4197,3 +4197,43 @@ body.crm-esign-documents {
 body.crm-esign-documents .min-h-screen > .max-w-6xl > div:first-child h1 {
   color: var(--navy) !important;
 }
+
+/* ---------- Laravel / Bootstrap pagination (docs/theme.md — outline + primary buttons) ----------
+   Default BS/Laravel views set --bs-pagination-active-* to app blue (#3490dc); reset to theme tokens. */
+body.sidebar-mini .listing-container .pagination,
+body.sidebar-mini #appointments-pagination .pagination {
+  --bs-pagination-color: var(--navy);
+  --bs-pagination-bg: var(--card-bg);
+  --bs-pagination-border-color: var(--border);
+  --bs-pagination-hover-color: var(--navy);
+  --bs-pagination-hover-bg: var(--sidebar-bg);
+  --bs-pagination-hover-border-color: var(--border);
+  --bs-pagination-focus-color: var(--navy);
+  --bs-pagination-focus-bg: var(--sidebar-bg);
+  --bs-pagination-focus-box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2);
+  --bs-pagination-active-color: #fff;
+  --bs-pagination-active-bg: var(--navy);
+  --bs-pagination-active-border-color: var(--navy);
+  --bs-pagination-disabled-color: var(--text-muted);
+  --bs-pagination-disabled-bg: var(--page-bg);
+  --bs-pagination-disabled-border-color: var(--border);
+}
+
+body.sidebar-mini .listing-container .pagination .page-link,
+body.sidebar-mini #appointments-pagination .pagination .page-link {
+  box-shadow: none;
+}
+
+body.sidebar-mini .listing-container .pagination .page-item.active .page-link,
+body.sidebar-mini #appointments-pagination .pagination .page-item.active .page-link {
+  box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+}
+
+body.sidebar-mini .listing-container .pagination .page-item.active .page-link:hover,
+body.sidebar-mini .listing-container .pagination .page-item.active .page-link:focus,
+body.sidebar-mini #appointments-pagination .pagination .page-item.active .page-link:hover,
+body.sidebar-mini #appointments-pagination .pagination .page-item.active .page-link:focus {
+  background-color: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
