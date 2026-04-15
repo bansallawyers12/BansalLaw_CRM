@@ -68,6 +68,18 @@ return [
         ),
         'aggregated_fetch_max_api_pages' => (int) env('WEBSITE_BOOKINGS_AGGREGATE_MAX_API_PAGES', 40),
         'api_per_chunk' => (int) env('WEBSITE_BOOKINGS_API_PER_CHUNK', 100),
+        /** Primary query param for text search (mirrors like q, keyword are also sent). */
+        'api_search_param' => env('WEBSITE_BOOKINGS_API_SEARCH_PARAM', 'search'),
+        /**
+         * When the search box is used, scan multiple API pages then filter in PHP by client + description
+         * (many /appointments APIs ignore search or use a different param name).
+         */
+        'aggregate_when_search_filtered' => filter_var(
+            env('WEBSITE_BOOKINGS_AGGREGATE_ON_SEARCH', true),
+            FILTER_VALIDATE_BOOL
+        ),
+        /** Seconds to cache KPI counts on /booking/appointments (0 = fetch every request). */
+        'kpi_cache_ttl_seconds' => (int) env('WEBSITE_BOOKINGS_KPI_CACHE_SECONDS', 90),
     ],
 
 ];

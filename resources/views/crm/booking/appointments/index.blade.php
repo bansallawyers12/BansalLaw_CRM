@@ -454,22 +454,29 @@
                         <form method="GET" action="{{ route('booking.appointments.index') }}" id="filter-form" autocomplete="off">
                             <div class="row mb-3">
                                 <div class="col-md-12">
-                                    <label>Search with Client Reference, Description</label>
-                                    <input type="text" class="form-control" name="search" id="filter-search" 
-                                           value="{{ request('search') }}" 
-                                           placeholder="Search with Client reference, description">
+                                    <label>Search (client name, email, phone, reference, description)</label>
+                                    <input type="text" class="form-control" name="search" id="filter-search"
+                                           value="{{ request('search') }}"
+                                           placeholder="e.g. name, email, matter ref, or keywords in notes">
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-3">
                                     <label>Status</label>
                                     <select class="form-control" name="status" id="filter-status">
-                                        <option value="">All Status</option>
-                                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                        <option value="confirmed" {{ request('status') == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                                        <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                                        <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                                        <option value="no_show" {{ request('status') == 'no_show' ? 'selected' : '' }}>No Show</option>
+                                        <option value="" {{ ($bookingListStatusForSelect ?? '') === '' ? 'selected' : '' }}>All Status</option>
+                                        <option value="0" {{ ($bookingListStatusForSelect ?? '') === '0' ? 'selected' : '' }}>Pending</option>
+                                        <option value="1" {{ ($bookingListStatusForSelect ?? '') === '1' ? 'selected' : '' }}>Approved</option>
+                                        <option value="2" {{ ($bookingListStatusForSelect ?? '') === '2' ? 'selected' : '' }}>Completed</option>
+                                        <option value="3" {{ ($bookingListStatusForSelect ?? '') === '3' ? 'selected' : '' }}>Rejected</option>
+                                        <option value="4" {{ ($bookingListStatusForSelect ?? '') === '4' ? 'selected' : '' }}>N/P</option>
+                                        <option value="5" {{ ($bookingListStatusForSelect ?? '') === '5' ? 'selected' : '' }}>In Progress</option>
+                                        <option value="6" {{ ($bookingListStatusForSelect ?? '') === '6' ? 'selected' : '' }}>Did Not Come</option>
+                                        <option value="7" {{ ($bookingListStatusForSelect ?? '') === '7' ? 'selected' : '' }}>Cancelled</option>
+                                        <option value="8" {{ ($bookingListStatusForSelect ?? '') === '8' ? 'selected' : '' }}>Missed</option>
+                                        <option value="9" {{ ($bookingListStatusForSelect ?? '') === '9' ? 'selected' : '' }}>Pending With Payment Pending</option>
+                                        <option value="10" {{ ($bookingListStatusForSelect ?? '') === '10' ? 'selected' : '' }}>Pending With Payment Success</option>
+                                        <option value="11" {{ ($bookingListStatusForSelect ?? '') === '11' ? 'selected' : '' }}>Pending With Payment Failed</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3">

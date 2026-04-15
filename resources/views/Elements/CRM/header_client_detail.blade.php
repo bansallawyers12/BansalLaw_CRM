@@ -25,7 +25,7 @@
                     <a class="dropdown-item" href="{{ route('booking.appointments.index') }}">
                         <i class="fas fa-list mr-2"></i> All Bookings
                     </a>
-                    <a class="dropdown-item" href="{{ route('booking.appointments.index', ['status' => 'pending']) }}">
+                    <a class="dropdown-item" href="{{ route('booking.appointments.index', ['status' => 9]) }}">
                         <i class="fas fa-clock mr-2"></i> Payment Pending
                         @if($pendingCount > 0)
                             <span class="badge badge-warning ml-1">{{ $pendingCount }}</span>

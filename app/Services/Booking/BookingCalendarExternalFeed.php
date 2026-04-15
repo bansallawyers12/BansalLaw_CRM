@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Throwable;
 
 class BookingCalendarExternalFeed
@@ -453,7 +454,12 @@ class BookingCalendarExternalFeed
         $page = max((int) $request->query('page', 1), 1);
 
         $hasDateRange = $request->filled('date_from') || $request->filled('date_to');
-        if ($hasDateRange && filter_var(config('booking_calendar.website_bookings_list.aggregate_when_date_filtered', true), FILTER_VALIDATE_BOOL)) {
+        $aggregateDates = $hasDateRange && filter_var(config('booking_calendar.website_bookings_list.aggregate_when_date_filtered', true), FILTER_VALIDATE_BOOL);
+        $searchQInit = $request->filled('search') ? trim((string) $request->search) : '';
+        $aggregateSearch = $searchQInit !== ''
+            && filter_var(config('booking_calendar.website_bookings_list.aggregate_when_search_filtered', true), FILTER_VALIDATE_BOOL);
+
+        if ($aggregateDates || $aggregateSearch) {
             return $this->fetchWebsiteBookingsListAggregatedWithDateFilter($request, $page, $perPage);
         }
 
@@ -478,12 +484,134 @@ class BookingCalendarExternalFeed
             $normalized[] = $norm;
         }
 
+        $statusFilter = $this->resolveWebsiteBookingsListApiStatus($request->status);
+        $normalized = $this->filterNormalizedRowsByWebsiteStatusCode($normalized, $statusFilter);
+        $normalized = $this->filterNormalizedRowsByWebsiteSearchText($normalized, $searchQInit !== '' ? $searchQInit : null);
+
         $meta = $this->extractPaginationMetaFromWebsiteApi($json, count($normalized), $page, $perPage);
 
         return [
             'rows' => $normalized,
             'meta' => $meta,
         ];
+    }
+
+    /**
+     * Summary counts for /booking/appointments KPI cards (same public API as the data table).
+     *
+     * @return array{pending: int, paid: int, confirmed: int, today: int, total: int}
+     */
+    public function fetchWebsiteBookingsKpiStats(): array
+    {
+        $rows = $this->fetchAllNormalizedWebsiteBookingsUnfiltered();
+
+        return $this->aggregateWebsiteBookingsKpiStatsFromRows($rows);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     * @return array{pending: int, paid: int, confirmed: int, today: int, total: int}
+     */
+    protected function aggregateWebsiteBookingsKpiStatsFromRows(array $rows): array
+    {
+        $tz = config('app.timezone') ?: 'UTC';
+        $todayStart = Carbon::today($tz);
+
+        $stats = [
+            'pending' => 0,
+            'paid' => 0,
+            'confirmed' => 0,
+            'today' => 0,
+            'total' => count($rows),
+        ];
+
+        foreach ($rows as $norm) {
+            $code = isset($norm['website_status_code']) ? (int) $norm['website_status_code'] : null;
+            $isPaid = (bool) ($norm['is_paid'] ?? false);
+
+            // "Payment Pending" card: generic pending (0) + payment-pending (9) on the public API scale.
+            if ($code === 0 || $code === 9) {
+                $stats['pending']++;
+            }
+
+            if ($isPaid || $code === 10 || $code === 2) {
+                $stats['paid']++;
+            }
+
+            if ($code === 1) {
+                $stats['confirmed']++;
+            }
+
+            try {
+                $dt = Carbon::parse((string) $norm['appointment_datetime'], $tz);
+                if ($dt->isSameDay($todayStart)) {
+                    $stats['today']++;
+                }
+            } catch (Throwable) {
+                // ignore invalid dates for "today"
+            }
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Pull list rows from the website API (no status/search/date filters) up to configured page limit.
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function fetchAllNormalizedWebsiteBookingsUnfiltered(): array
+    {
+        $maxPages = max(1, (int) config('booking_calendar.website_bookings_list.aggregated_fetch_max_api_pages', 40));
+        $chunk = max(10, min(100, (int) config('booking_calendar.website_bookings_list.api_per_chunk', 100)));
+        $request = Request::create('/', 'GET', []);
+
+        $allRaw = [];
+
+        for ($apiPage = 1; $apiPage <= $maxPages; $apiPage++) {
+            $params = $this->buildWebsiteBookingsApiBaseParams($request, $apiPage, $chunk);
+            $json = $this->appointmentApi->getAppointments($params);
+            if (! is_array($json)) {
+                throw new \RuntimeException('Appointment API returned invalid response');
+            }
+
+            $batch = $this->extractListFromPayload($json);
+            foreach ($batch as $row) {
+                if (is_array($row)) {
+                    $allRaw[] = $row;
+                }
+            }
+
+            $metaChunk = $this->extractPaginationMetaFromWebsiteApi($json, count($batch), $apiPage, $chunk);
+            $lastPageHint = max(1, (int) ($metaChunk['last_page'] ?? 1));
+
+            if ($apiPage >= $lastPageHint || count($batch) === 0) {
+                break;
+            }
+        }
+
+        $seen = [];
+        $deduped = [];
+        foreach ($allRaw as $row) {
+            $id = $row['id'] ?? $row['appointment_id'] ?? null;
+            $key = $id !== null ? 'id:' . $id : 'h:' . md5((json_encode($row) ?: ''));
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $deduped[] = $row;
+        }
+
+        $normalized = [];
+        foreach ($deduped as $row) {
+            $norm = $this->normalizeApiRowForBookingsList($row);
+            if (empty($norm['appointment_datetime'])) {
+                continue;
+            }
+            $normalized[] = $norm;
+        }
+
+        return $normalized;
     }
 
     /**
@@ -506,17 +634,200 @@ class BookingCalendarExternalFeed
         if ($request->filled('consultant_id')) {
             $params['consultant_id'] = $request->consultant_id;
         }
-        if ($request->filled('search')) {
-            $params['search'] = $request->search;
-        }
+        $this->applyWebsiteBookingsSearchParamsToApiQuery($request, $params);
         if ($request->filled('status')) {
-            $apiStatus = $this->mapCrmStatusSlugToWebsiteApiStatus((string) $request->status);
+            $apiStatus = $this->resolveWebsiteBookingsListApiStatus($request->status);
             if ($apiStatus !== null) {
                 $params['status'] = $apiStatus;
             }
         }
 
         return $params;
+    }
+
+    /**
+     * @param  array<string, mixed>  $params
+     */
+    protected function applyWebsiteBookingsSearchParamsToApiQuery(Request $request, array &$params): void
+    {
+        if (! $request->filled('search')) {
+            return;
+        }
+        $q = trim((string) $request->search);
+        if ($q === '') {
+            return;
+        }
+
+        $primary = (string) config('booking_calendar.website_bookings_list.api_search_param', 'search');
+        $params[$primary] = $q;
+        $params['search'] = $q;
+        $params['q'] = $q;
+        $params['query'] = $q;
+        $params['keyword'] = $q;
+        $params['term'] = $q;
+    }
+
+    /**
+     * Website bookings filter sends integer codes 0–11 (public /appointments API).
+     * Legacy query values (e.g. ?status=pending from older CRM links) are mapped here.
+     */
+    protected function resolveWebsiteBookingsListApiStatus(mixed $raw): ?int
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+        if (is_numeric($raw)) {
+            $i = (int) $raw;
+
+            return ($i >= 0 && $i <= 11) ? $i : null;
+        }
+        if (is_string($raw)) {
+            $s = strtolower(str_replace(['-', ' '], '_', trim($raw)));
+            $legacy = [
+                'pending' => 0,
+                'approved' => 1,
+                'completed' => 2,
+                'rejected' => 3,
+                'n/p' => 4,
+                'np' => 4,
+                'in_progress' => 5,
+                'inprogress' => 5,
+                'did_not_come' => 6,
+                'dnc' => 6,
+                'cancelled' => 7,
+                'canceled' => 7,
+                'missed' => 8,
+                'payment_pending' => 9,
+                'pending_payment' => 9,
+                'pending_with_payment_pending' => 9,
+                'pending_with_payment_success' => 10,
+                'pending_with_payment_failed' => 11,
+            ];
+            if (isset($legacy[$s])) {
+                return $legacy[$s];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Normalized status for the bookings list status filter (empty string = all).
+     */
+    public function websiteBookingsListResolvedStatusForUi(mixed $raw): string
+    {
+        $i = $this->resolveWebsiteBookingsListApiStatus($raw);
+
+        return $i === null ? '' : (string) $i;
+    }
+
+    /**
+     * Human labels for website appointment status codes (filter + display).
+     *
+     * @return array<int, string>
+     */
+    public static function websiteBookingsStatusLabels(): array
+    {
+        return [
+            0 => 'Pending',
+            1 => 'Approved',
+            2 => 'Completed',
+            3 => 'Rejected',
+            4 => 'N/P',
+            5 => 'In Progress',
+            6 => 'Did Not Come',
+            7 => 'Cancelled',
+            8 => 'Missed',
+            9 => 'Pending With Payment Pending',
+            10 => 'Pending With Payment Success',
+            11 => 'Pending With Payment Failed',
+        ];
+    }
+
+    /**
+     * @return array{slug: string, label: string, badge: string}|null
+     */
+    protected function websiteListStatusDisplayMeta(mixed $raw): ?array
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+        if (! is_numeric($raw)) {
+            return null;
+        }
+        $i = (int) $raw;
+        $labels = self::websiteBookingsStatusLabels();
+        if ($i < 0 || $i > 11 || ! isset($labels[$i])) {
+            return null;
+        }
+
+        $badge = match ($i) {
+            0, 9 => 'warning',
+            1 => 'success',
+            2, 5 => 'info',
+            3, 7, 11 => 'danger',
+            4 => 'secondary',
+            6, 8 => 'dark',
+            10 => 'primary',
+            default => 'secondary',
+        };
+
+        return [
+            'slug' => 'website_status_' . $i,
+            'label' => $labels[$i],
+            'badge' => $badge,
+        ];
+    }
+
+    /**
+     * When a status filter is applied, drop rows whose API code is known and differs (API may ignore query).
+     *
+     * @param  list<array<string, mixed>>  $normalized
+     * @return list<array<string, mixed>>
+     */
+    protected function filterNormalizedRowsByWebsiteStatusCode(array $normalized, ?int $statusFilter): array
+    {
+        if ($statusFilter === null) {
+            return $normalized;
+        }
+
+        return array_values(array_filter($normalized, function (array $norm) use ($statusFilter) {
+            $code = $norm['website_status_code'] ?? null;
+            if ($code === null) {
+                return true;
+            }
+
+            return (int) $code === $statusFilter;
+        }));
+    }
+
+    /**
+     * Search / client reference box: match name, email, phone, enquiry text, service labels (substring, case-insensitive).
+     *
+     * @param  list<array<string, mixed>>  $normalized
+     * @return list<array<string, mixed>>
+     */
+    protected function filterNormalizedRowsByWebsiteSearchText(array $normalized, ?string $search): array
+    {
+        $q = $search !== null ? trim($search) : '';
+        if ($q === '') {
+            return $normalized;
+        }
+        $needle = Str::lower($q);
+
+        return array_values(array_filter($normalized, function (array $norm) use ($needle) {
+            $hay = Str::lower(trim(
+                ($norm['client_name'] ?? '') . ' ' .
+                ($norm['client_email'] ?? '') . ' ' .
+                ($norm['client_phone'] ?? '') . ' ' .
+                ($norm['enquiry_details'] ?? '') . ' ' .
+                ($norm['service_type'] ?? '') . ' ' .
+                ($norm['enquiry_type'] ?? '') . ' ' .
+                ($norm['website_search_extra'] ?? '')
+            ));
+
+            return $hay !== '' && str_contains($hay, $needle);
+        }));
     }
 
     /**
@@ -608,6 +919,12 @@ class BookingCalendarExternalFeed
             $normalized[] = $norm;
         }
 
+        $statusFilter = $this->resolveWebsiteBookingsListApiStatus($request->status);
+        $normalized = $this->filterNormalizedRowsByWebsiteStatusCode($normalized, $statusFilter);
+
+        $searchQAgg = $request->filled('search') ? trim((string) $request->search) : '';
+        $normalized = $this->filterNormalizedRowsByWebsiteSearchText($normalized, $searchQAgg !== '' ? $searchQAgg : null);
+
         usort($normalized, function (array $a, array $b): int {
             $da = (string) ($a['appointment_datetime'] ?? '');
             $db = (string) ($b['appointment_datetime'] ?? '');
@@ -685,24 +1002,6 @@ class BookingCalendarExternalFeed
     }
 
     /**
-     * Map CRM filter dropdown values to the website /appointments API status parameter (often numeric).
-     */
-    protected function mapCrmStatusSlugToWebsiteApiStatus(string $slug): int|string|null
-    {
-        $s = strtolower(trim($slug));
-
-        return match ($s) {
-            'pending' => 1,
-            'paid' => 2,
-            'confirmed' => 3,
-            'completed' => 4,
-            'cancelled' => 5,
-            'no_show' => 6,
-            default => null,
-        };
-    }
-
-    /**
      * @param  array<string, mixed>  $item
      * @return array<string, mixed>
      */
@@ -730,6 +1029,39 @@ class BookingCalendarExternalFeed
         if ($this->isMeaningfulApiScalar($tf)) {
             $base['timeslot_full'] = trim((string) $tf);
         }
+
+        $rawStatus = $item['status'] ?? null;
+        if (is_numeric($rawStatus)) {
+            $code = (int) $rawStatus;
+            if ($code >= 0 && $code <= 11) {
+                $base['website_status_code'] = $code;
+            }
+        }
+
+        $meta = $this->websiteListStatusDisplayMeta($rawStatus);
+        if ($meta !== null) {
+            $base['status'] = $meta['slug'];
+            $base['status_label'] = $meta['label'];
+            $base['status_badge_class'] = $meta['badge'];
+        }
+
+        $refBits = [];
+        foreach ([
+            'order_hash',
+            'booking_reference',
+            'client_reference',
+            'reference',
+            'matter_no',
+            'client_unique_matter_no',
+            'matter_number',
+            'ref',
+        ] as $key) {
+            $v = Arr::get($item, $key);
+            if ($this->isMeaningfulApiScalar($v)) {
+                $refBits[] = trim((string) $v);
+            }
+        }
+        $base['website_search_extra'] = $refBits !== [] ? implode(' ', $refBits) : '';
 
         return $base;
     }

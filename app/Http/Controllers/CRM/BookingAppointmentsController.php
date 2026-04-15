@@ -15,6 +15,7 @@ use App\Services\Booking\BookingCalendarExternalFeed;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -324,7 +325,7 @@ class BookingAppointmentsController extends Controller
         $statsBase = BookingAppointment::query();
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($statsBase);
 
-        $stats = [
+        $localStats = [
             'pending' => (clone $statsBase)->where('status', 'pending')->where('is_paid', 1)->count(),
             'paid' => (clone $statsBase)->where('status', 'paid')->where('is_paid', 1)->count(),
             'confirmed' => (clone $statsBase)->where('status', 'confirmed')->count(),
@@ -332,7 +333,32 @@ class BookingAppointmentsController extends Controller
             'total' => (clone $statsBase)->count(),
         ];
 
-        return view('crm.booking.appointments.index', compact('consultants', 'stats'));
+        $stats = $localStats;
+        $bearer = config('services.appointment_api.bearer_token');
+        $service = config('services.appointment_api.service_token');
+        if (! empty($bearer) || ! empty($service)) {
+            $ttl = max(0, (int) config('booking_calendar.website_bookings_list.kpi_cache_ttl_seconds', 90));
+            try {
+                if ($ttl > 0) {
+                    $stats = Cache::remember(
+                        'booking.website_appointments_kpi_stats',
+                        $ttl,
+                        fn () => $this->calendarExternalFeed->fetchWebsiteBookingsKpiStats()
+                    );
+                } else {
+                    $stats = $this->calendarExternalFeed->fetchWebsiteBookingsKpiStats();
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Website bookings KPI stats: using local DB counts', [
+                    'error' => $e->getMessage(),
+                ]);
+                $stats = $localStats;
+            }
+        }
+
+        $bookingListStatusForSelect = $this->calendarExternalFeed->websiteBookingsListResolvedStatusForUi(request('status'));
+
+        return view('crm.booking.appointments.index', compact('consultants', 'stats', 'bookingListStatusForSelect'));
     }
 
     /**
@@ -427,15 +453,17 @@ class BookingAppointmentsController extends Controller
         }
 
         $status = (string) ($norm['status'] ?? 'pending');
-        $statusBadge = match ($status) {
-            'pending' => 'warning',
-            'paid' => 'primary',
-            'confirmed' => 'success',
-            'completed' => 'info',
-            'cancelled' => 'danger',
-            'no_show' => 'dark',
-            default => 'secondary',
-        };
+        $statusBadge = isset($norm['status_badge_class']) && is_string($norm['status_badge_class'])
+            ? $norm['status_badge_class']
+            : match ($status) {
+                'pending' => 'warning',
+                'paid' => 'primary',
+                'confirmed' => 'success',
+                'completed' => 'info',
+                'cancelled' => 'danger',
+                'no_show' => 'dark',
+                default => 'secondary',
+            };
 
         $statusLabel = $norm['status_label'] ?? ucwords(str_replace('_', ' ', $status));
 
