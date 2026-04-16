@@ -745,23 +745,18 @@ class BookingCalendarExternalFeed
     }
 
     /**
-     * @return array{slug: string, label: string, badge: string}|null
+     * Label + Bootstrap badge class for a website booking status code (0–11).
+     *
+     * @return array{label: string, badge: string}|null
      */
-    protected function websiteListStatusDisplayMeta(mixed $raw): ?array
+    public static function websiteStatusCodeDisplayMeta(int $code): ?array
     {
-        if ($raw === null || $raw === '') {
-            return null;
-        }
-        if (! is_numeric($raw)) {
-            return null;
-        }
-        $i = (int) $raw;
         $labels = self::websiteBookingsStatusLabels();
-        if ($i < 0 || $i > 11 || ! isset($labels[$i])) {
+        if ($code < 0 || $code > 11 || ! isset($labels[$code])) {
             return null;
         }
 
-        $badge = match ($i) {
+        $badge = match ($code) {
             0, 9 => 'warning',
             1 => 'success',
             2, 5 => 'info',
@@ -773,9 +768,32 @@ class BookingCalendarExternalFeed
         };
 
         return [
-            'slug' => 'website_status_' . $i,
-            'label' => $labels[$i],
+            'label' => $labels[$code],
             'badge' => $badge,
+        ];
+    }
+
+    /**
+     * @return array{slug: string, label: string, badge: string}|null
+     */
+    protected function websiteListStatusDisplayMeta(mixed $raw): ?array
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+        if (! is_numeric($raw)) {
+            return null;
+        }
+        $i = (int) $raw;
+        $inner = self::websiteStatusCodeDisplayMeta($i);
+        if ($inner === null) {
+            return null;
+        }
+
+        return [
+            'slug' => 'website_status_' . $i,
+            'label' => $inner['label'],
+            'badge' => $inner['badge'],
         ];
     }
 

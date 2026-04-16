@@ -48,6 +48,10 @@ Route::controller(BookingAppointmentsController::class)
             ->name('appointments.update-meeting-type')
             ->whereNumber('id');
 
+        Route::get('/appointments/{id}/update-meeting-type', function (int|string $id) {
+            return redirect()->route('booking.appointments.show', ['id' => $id]);
+        })->whereNumber('id');
+
         Route::post('/appointments/{id}/update-datetime', 'update')
             ->name('appointments.update-datetime')
             ->whereNumber('id');

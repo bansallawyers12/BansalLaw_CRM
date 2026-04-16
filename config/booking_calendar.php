@@ -14,6 +14,15 @@ return [
     */
     'data_source' => env('BOOKING_CALENDAR_DATA_SOURCE', 'local'),
 
+    /*
+    | Calendar types that always load from booking_appointments only (never external API / merge extras).
+    | Value = consultant_id on booking_appointments (e.g. Ajay row in appointment_consultants).
+    */
+    'local_consultant_id_by_calendar_type' => [
+        'ajay' => (int) env('BOOKING_CALENDAR_AJAY_CONSULTANT_ID', 2),
+        'kunal' => (int) env('BOOKING_CALENDAR_KUNAL_CONSULTANT_ID', 1),
+    ],
+
     /**
      * When true, the calendar JSON feed includes appointments in FullCalendar’s visible [start, end) window
      * even if they are before “today” (e.g. earlier days in the current month). When false (default),

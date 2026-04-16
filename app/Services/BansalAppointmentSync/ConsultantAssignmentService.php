@@ -47,41 +47,46 @@ class ConsultantAssignmentService
     {
         $location = $appointment['location'] ?? null;
         $inpersonAddress = $appointment['inperson_address'] ?? null;
-        $noeId = $appointment['noe_id'] ?? null;
+        $noeId = (int) ($appointment['noe_id'] ?? 0);
         $serviceId = $appointment['service_id'] ?? null;
-        
-        // Map location string to inperson_address if needed
+        $scheme = $appointment['noe_scheme'] ?? 'immigration';
+
         if ($location === 'adelaide' || $inpersonAddress == 1) {
             return 'adelaide';
         }
 
-        // Melbourne calendars (based on noe_id and service_id)
-        if ($location === 'melbourne' || $inpersonAddress == 2 || empty($inpersonAddress)) {
-            
-            // Education: noe_id=5, service_id=2 (Free)  OR 1 (Paid) OR 3 (Paid Overseas)
-            if ($noeId == 5 && ($serviceId == 2 || $serviceId == 1 || $serviceId == 3)) {
+        if (! ($location === 'melbourne' || $inpersonAddress == 2 || empty($inpersonAddress))) {
+            return null;
+        }
+
+        $validService = in_array($serviceId, [1, 2, 3], true);
+
+        if ($scheme === 'crm') {
+            if ($noeId === 11 && $validService) {
                 return 'education';
             }
-
-            // JRP: noe_id in [2,3], service_id=2 (Free)
-            if (in_array($noeId, [2, 3]) && $serviceId == 2) {
-                return 'jrp';
-            }
-
-            // Tourist: noe_id=4, service_id=2 (Free) OR 1 (Paid) OR 3 (Paid Overseas)
-            if ($noeId == 4 && ($serviceId == 2 || $serviceId == 1 || $serviceId == 3)) {
+            if ($noeId === 12 && $validService) {
                 return 'tourist';
             }
 
-            // Others/Paid:
-            // - service_id=1 (Paid) or 3 (Paid Overseas) with any noe_id in [1,2,3,6,7,8]
-            // - OR service_id=2 (Free) with noe_id in [1,6,7]
-            if ( ( $serviceId == 1 || $serviceId == 3 )&& in_array($noeId, [1, 2, 3, 6, 7, 8])) {
-                return 'paid';
-            }
-            if ($serviceId == 2 && in_array($noeId, [1, 6, 7])) {
-                return 'paid';
-            }
+            return 'paid';
+        }
+
+        // Immigration / website booking (noe_id 1–8)
+        if ($noeId == 5 && $validService) {
+            return 'education';
+        }
+        if (in_array($noeId, [2, 3], true) && $serviceId == 2) {
+            return 'jrp';
+        }
+        if ($noeId == 4 && $validService) {
+            return 'tourist';
+        }
+        if (($serviceId == 1 || $serviceId == 3) && in_array($noeId, [1, 2, 3, 6, 7, 8], true)) {
+            return 'paid';
+        }
+        if ($serviceId == 2 && in_array($noeId, [1, 6, 7], true)) {
+            return 'paid';
         }
 
         return null;

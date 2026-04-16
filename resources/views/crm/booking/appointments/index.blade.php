@@ -1,5 +1,5 @@
 @extends('layouts.crm_client_detail')
-@section('title', 'Website Bookings')
+@section('title', 'Bookings')
 
 @section('content')
 
@@ -358,9 +358,9 @@
             <div class="card">
                 <div class="card-header">
                     <h4>
-                        <i class="fas fa-globe mr-2"></i> 
-                        Website Bookings 
-                        <small class="text-muted">(Live list from {{ rtrim(config('services.appointment_api.url'), '/') }}/appointments)</small>
+                        <i class="fas fa-calendar-check mr-2"></i>
+                        Bookings
+                        <small class="text-muted">(Leads &amp; clients, appointments, and consultants from CRM)</small>
                     </h4>
                     <div class="card-header-action">
                         @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))

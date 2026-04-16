@@ -15,7 +15,6 @@ use App\Services\Booking\BookingCalendarExternalFeed;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -63,6 +62,41 @@ class BookingAppointmentsController extends Controller
     protected function calendarIncludePastInVisibleRange(): bool
     {
         return (bool) config('booking_calendar.include_past_in_visible_range', false);
+    }
+
+    /**
+     * When set, this calendar type uses only CRM rows with the given consultant_id (no public API).
+     */
+    protected function calendarLocalConsultantIdForType(?string $type): ?int
+    {
+        if ($type === null || $type === '') {
+            return null;
+        }
+        $map = config('booking_calendar.local_consultant_id_by_calendar_type', []);
+        if (! array_key_exists($type, $map)) {
+            return null;
+        }
+        $id = (int) $map[$type];
+
+        return $id > 0 ? $id : null;
+    }
+
+    protected function calendarTypeUsesLocalDbOnly(?string $type): bool
+    {
+        return $this->calendarLocalConsultantIdForType($type) !== null;
+    }
+
+    protected function applyBookingCalendarTypeScope(Builder $query, string $type): void
+    {
+        $localId = $this->calendarLocalConsultantIdForType($type);
+        if ($localId !== null) {
+            $query->where('consultant_id', $localId);
+
+            return;
+        }
+        $query->whereHas('consultant', function ($q) use ($type) {
+            $q->where('calendar_type', $type);
+        });
     }
 
     /**
@@ -127,6 +161,10 @@ class BookingAppointmentsController extends Controller
     protected function buildCalendarFeedResponse(Request $request, Builder $query): array
     {
         $source = config('booking_calendar.data_source', 'local');
+        $reqType = (string) $request->get('type', '');
+        if ($reqType !== '' && $this->calendarTypeUsesLocalDbOnly($reqType)) {
+            $source = 'local';
+        }
         $startOfToday = Carbon::today(config('app.timezone'));
         $currentDateTime = Carbon::now(config('app.timezone'));
         $includePast = $this->calendarIncludePastInVisibleRange();
@@ -316,7 +354,7 @@ class BookingAppointmentsController extends Controller
     }
 
     /**
-     * Display appointment list (table rows load from live website API via /booking/api/appointments?format=list).
+     * Display appointment list (table rows load from CRM DB via POST /booking/api/appointments format=list).
      */
     public function index()
     {
@@ -325,36 +363,13 @@ class BookingAppointmentsController extends Controller
         $statsBase = BookingAppointment::query();
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($statsBase);
 
-        $localStats = [
+        $stats = [
             'pending' => (clone $statsBase)->where('status', 'pending')->where('is_paid', 1)->count(),
             'paid' => (clone $statsBase)->where('status', 'paid')->where('is_paid', 1)->count(),
             'confirmed' => (clone $statsBase)->where('status', 'confirmed')->count(),
             'today' => (clone $statsBase)->whereDate('appointment_datetime', today())->count(),
             'total' => (clone $statsBase)->count(),
         ];
-
-        $stats = $localStats;
-        $bearer = config('services.appointment_api.bearer_token');
-        $service = config('services.appointment_api.service_token');
-        if (! empty($bearer) || ! empty($service)) {
-            $ttl = max(0, (int) config('booking_calendar.website_bookings_list.kpi_cache_ttl_seconds', 90));
-            try {
-                if ($ttl > 0) {
-                    $stats = Cache::remember(
-                        'booking.website_appointments_kpi_stats',
-                        $ttl,
-                        fn () => $this->calendarExternalFeed->fetchWebsiteBookingsKpiStats()
-                    );
-                } else {
-                    $stats = $this->calendarExternalFeed->fetchWebsiteBookingsKpiStats();
-                }
-            } catch (\Throwable $e) {
-                Log::warning('Website bookings KPI stats: using local DB counts', [
-                    'error' => $e->getMessage(),
-                ]);
-                $stats = $localStats;
-            }
-        }
 
         $bookingListStatusForSelect = $this->calendarExternalFeed->websiteBookingsListResolvedStatusForUi(request('status'));
 
@@ -433,6 +448,126 @@ class BookingAppointmentsController extends Controller
     }
 
     /**
+     * Paginated bookings list for /booking/appointments — reads booking_appointments with client (admins) and consultants.
+     */
+    protected function crmBookingsListFromDatabase(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $perPage = max(1, min(100, (int) $request->input('per_page', 20)));
+        $page = max(1, (int) $request->input('page', 1));
+
+        $query = BookingAppointment::query()->with(['client', 'consultant']);
+        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('consultant_id')) {
+            $query->where('consultant_id', $request->consultant_id);
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('appointment_datetime', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('appointment_datetime', '<=', $request->date_to);
+        }
+        if ($request->filled('search') && trim((string) $request->search) !== '') {
+            $raw = trim((string) $request->search);
+            $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $raw) . '%';
+            $query->where(function (Builder $q) use ($like, $raw) {
+                $q->where('client_name', 'like', $like)
+                    ->orWhere('client_email', 'like', $like)
+                    ->orWhere('client_phone', 'like', $like)
+                    ->orWhere('enquiry_details', 'like', $like)
+                    ->orWhere('service_type', 'like', $like);
+                if (ctype_digit($raw)) {
+                    $id = (int) $raw;
+                    $q->orWhere('id', $id)
+                        ->orWhere('bansal_appointment_id', $id);
+                }
+            });
+        }
+
+        $query->orderByDesc('appointment_datetime');
+
+        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+
+        $clientIds = $paginator->getCollection()->pluck('client_id')->filter()->unique();
+        $clientMatterRefs = [];
+        if ($clientIds->isNotEmpty()) {
+            $clientMatterRefs = ClientMatter::whereIn('client_id', $clientIds)
+                ->select('client_id', 'client_unique_matter_no')
+                ->orderByDesc('id')
+                ->get()
+                ->unique('client_id')
+                ->pluck('client_unique_matter_no', 'client_id')
+                ->toArray();
+        }
+
+        $data = [];
+        foreach ($paginator->items() as $appointment) {
+            $norm = $this->bookingAppointmentToNormArrayForList($appointment);
+            $data[] = $this->serializeWebsiteApiRowForBookingTable($norm, $appointment, $clientMatterRefs);
+        }
+
+        return response()->json([
+            'data' => $data,
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+            ],
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function bookingAppointmentToNormArrayForList(BookingAppointment $a): array
+    {
+        $dt = $a->appointment_datetime;
+
+        $norm = [
+            'appointment_datetime' => $dt ? $dt->toIso8601String() : now()->toIso8601String(),
+            'status' => $a->status,
+            'status_label' => ucwords(str_replace('_', ' ', (string) $a->status)),
+            'is_paid' => (bool) $a->is_paid,
+            'final_amount' => $a->final_amount,
+            'client_name' => $a->client_name,
+            'client_email' => $a->client_email,
+            'client_phone' => $a->client_phone,
+            'enquiry_details' => $a->enquiry_details,
+            'service_type' => $a->service_type,
+            'enquiry_type' => $a->enquiry_type,
+            'timeslot_full' => $a->timeslot_full,
+            'location' => $a->location,
+            'bansal_appointment_id' => $a->bansal_appointment_id,
+            'consultant' => $a->consultant ? ['name' => $a->consultant->name] : null,
+        ];
+
+        $websiteCode = $a->website_status_code;
+        if ($websiteCode === null
+            && $a->status === 'paid'
+            && $a->is_paid
+            && ($a->payment_status ?? null) === 'completed') {
+            $websiteCode = 10;
+        }
+
+        if ($websiteCode !== null) {
+            $meta = BookingCalendarExternalFeed::websiteStatusCodeDisplayMeta((int) $websiteCode);
+            if ($meta !== null) {
+                $norm['website_status_code'] = (int) $websiteCode;
+                $norm['status_label'] = $meta['label'];
+                $norm['status_badge_class'] = $meta['badge'];
+            }
+        }
+
+        return $norm;
+    }
+
+    /**
      * @param  array<string, mixed>  $norm
      * @param  array<int, string>  $clientMatterRefs
      * @return array<string, mixed>
@@ -501,6 +636,7 @@ class BookingAppointmentsController extends Controller
             'id' => $displayId,
             'crm_appointment_id' => $crmId,
             'website_appointment_id' => $websiteId,
+            'website_status_code' => $norm['website_status_code'] ?? $local?->website_status_code,
             'client_name' => $local ? $local->client_name : ($norm['client_name'] ?? ''),
             'client_email' => $local ? $local->client_email : ($norm['client_email'] ?? ''),
             'client_phone' => $local ? $local->client_phone : ($norm['client_phone'] ?? ''),
@@ -532,17 +668,15 @@ class BookingAppointmentsController extends Controller
     public function getAppointments(Request $request)
     {
         if ($request->get('format') === 'list') {
-            return $this->websiteBookingsListFromPublicApi($request);
+            return $this->crmBookingsListFromDatabase($request);
         }
 
         $query = BookingAppointment::with(['client', 'consultant']);
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
 
-        // Filter by calendar type (consultant type)
+        // Filter by calendar type (consultant type), or explicit consultant_id for local-only calendars (e.g. ajay → id 2)
         if ($request->filled('type')) {
-            $query->whereHas('consultant', function($q) use ($request) {
-                $q->where('calendar_type', $request->type);
-            });
+            $this->applyBookingCalendarTypeScope($query, (string) $request->type);
         }
 
         // Filter by status
@@ -652,15 +786,17 @@ class BookingAppointmentsController extends Controller
     protected function calendarHeaderStatsForType(string $type): array
     {
         $calendarStatsBase = function () use ($type) {
-            $q = BookingAppointment::query()->whereHas('consultant', function ($q2) use ($type) {
-                $q2->where('calendar_type', $type);
-            });
+            $q = BookingAppointment::query();
+            $this->applyBookingCalendarTypeScope($q, $type);
             StaffClientVisibility::restrictBookingAppointmentEloquentQuery($q);
 
             return $q;
         };
 
         $calendarSource = config('booking_calendar.data_source', 'local');
+        if ($this->calendarTypeUsesLocalDbOnly($type)) {
+            $calendarSource = 'local';
+        }
         $apiStatus = $this->calendarApiStatusQueryValue();
 
         if ($calendarSource === 'external') {
@@ -722,12 +858,18 @@ class BookingAppointmentsController extends Controller
             abort(404);
         }
 
-        $appointmentsQuery = BookingAppointment::with(['client', 'consultant'])
-            ->where(function ($query) use ($type) {
+        $localConsultantId = $this->calendarLocalConsultantIdForType($type);
+        $appointmentsQuery = BookingAppointment::with(['client', 'consultant']);
+        if ($localConsultantId !== null) {
+            $appointmentsQuery->where('consultant_id', $localConsultantId);
+        } else {
+            $appointmentsQuery->where(function ($query) use ($type) {
                 $query->whereHas('consultant', function ($q) use ($type) {
                     $q->where('calendar_type', $type);
                 })->orWhereNull('consultant_id');
-            })
+            });
+        }
+        $appointmentsQuery
             ->where('appointment_datetime', '>', Carbon::now(config('app.timezone')))
             ->orderBy('appointment_datetime');
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($appointmentsQuery);

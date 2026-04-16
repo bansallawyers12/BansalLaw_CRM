@@ -204,6 +204,8 @@ $consultantsArray = $consultants->groupBy('id')->map(function($group) {
 })->values()->toArray();
 @endphp
 const consultantsData = @json($consultantsArray);
+/** Base URL for /booking routes (works when app lives in a subdirectory, e.g. /BansalLaw_CRM/public). */
+const BOOKING_WEB_BASE = @json(rtrim(url('/booking'), '/'));
 
 function sleepMs(ms) {
     return new Promise(function (resolve) { setTimeout(resolve, ms); });
@@ -673,7 +675,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const vfd = document.getElementById('viewFullDetails');
             if (canManage) {
                 vfd.classList.remove('d-none');
-                vfd.href = '/booking/appointments/' + manageId;
+                vfd.href = BOOKING_WEB_BASE + '/appointments/' + manageId;
             } else {
                 vfd.classList.add('d-none');
             }
@@ -836,7 +838,7 @@ document.addEventListener('DOMContentLoaded', function() {
             requestData.send_cancellation_confirmation = true;
         }
 
-        fetch(`/booking/appointments/${appointmentId}/update-status`, {
+        fetch(`${BOOKING_WEB_BASE}/appointments/${appointmentId}/update-status`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -901,7 +903,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalValue = select.value;
         select.disabled = true;
         
-        fetch(`/booking/appointments/${crmAppointmentId}/update-consultant`, {
+        fetch(`${BOOKING_WEB_BASE}/appointments/${crmAppointmentId}/update-consultant`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1060,7 +1062,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('meeting_type', meetingType);
         formData.append('preferred_language', preferredLanguage);
         
-        fetch(`/booking/appointments/${crmAppointmentId}`, {
+        fetch(`${BOOKING_WEB_BASE}/appointments/${crmAppointmentId}`, {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -1192,7 +1194,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalSelectHtml = select.innerHTML;
         select.innerHTML = '<option>Updating...</option>';
         
-        fetch(`/booking/appointments/${crmAppointmentId}/update-meeting-type`, {
+        fetch(`${BOOKING_WEB_BASE}/appointments/${crmAppointmentId}/update-meeting-type`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -158,6 +158,7 @@ class AppointmentSyncService
             'service_id' => $serviceId,
             'noe_id' => $noeId,
             'inperson_address' => $inpersonAddress,
+            'noe_scheme' => 'immigration',
         ]);
 
         // Assign consultant (now has access to service_id and noe_id)

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Models\BookingAppointment;
 use App\Models\Admin;
+use App\Models\AppointmentConsultant;
 use App\Models\AppointmentPayment;
 use App\Models\ClientContact;
 use App\Models\ClientEmail;
@@ -192,7 +193,22 @@ class PublicBookingController extends BaseController
                         'includes_video_call' => true,
                         'available_for_overseas' => true
                     ]
-                ]
+                ],
+                'consultants' => AppointmentConsultant::query()
+                    ->where('is_active', true)
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'email', 'calendar_type', 'location'])
+                    ->map(static function (AppointmentConsultant $c) {
+                        return [
+                            'id' => $c->id,
+                            'name' => $c->name,
+                            'email' => $c->email,
+                            'calendar_type' => $c->calendar_type,
+                            'location' => $c->location,
+                        ];
+                    })
+                    ->values()
+                    ->all(),
             ];
 
             return $this->sendResponse($result, 'Appointment variable lists retrieved successfully');
@@ -582,6 +598,7 @@ class PublicBookingController extends BaseController
                 'service_id' => $serviceId,
                 'location' => $location,
                 'inperson_address' => $requestData['inperson_address'],
+                'noe_scheme' => 'immigration',
             ];
             $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
 
@@ -935,6 +952,7 @@ class PublicBookingController extends BaseController
                 'service_id' => $serviceId,
                 'location' => $location,
                 'inperson_address' => $requestData['inperson_address'],
+                'noe_scheme' => 'immigration',
             ];
             $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
 

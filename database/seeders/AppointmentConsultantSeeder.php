@@ -85,8 +85,8 @@ class AppointmentConsultantSeeder extends Seeder
                 'is_active' => true,
             ],
             [
-                'name' => 'Ajay Calendar',
-                'email' => 'ajay@bansallawyers.com.au',
+                'name' => 'Ajay',
+                'email' => 'ajay@bansalmigration.com',
                 'calendar_type' => 'ajay',
                 'location' => 'melbourne',
                 'specializations' => json_encode([]), // Transfer-only calendar, no specializations needed

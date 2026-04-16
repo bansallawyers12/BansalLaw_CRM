@@ -41,6 +41,7 @@ class BookingAppointment extends Model
         'service_type',
         'enquiry_details',
         'status',
+        'website_status_code',
         'confirmed_at',
         'completed_at',
         'cancelled_at',

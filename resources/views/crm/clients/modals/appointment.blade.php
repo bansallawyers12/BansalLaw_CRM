@@ -35,17 +35,12 @@
 							<div class="form-group row align-items-center">
 								<label for="noe_id" class="col-sm-3 col-form-label">Nature of Enquiry<span class="span_req">*</span></label>
                                 <div class="col-sm-9">
-                                    <select class="form-control enquiry_item" name="noe_id" data-valid="required">
-                                        <option value="">Select</option>
-										<option value="1">Permanent Residency Appointment</option>
-										<option value="2">Temporary Residency Appointment</option>
-										<option value="3">JRP/Skill Assessment</option>
-										<option value="4">Tourist Visa</option>
-										<option value="5">Education/Course Change/Student Visa/Student Dependent Visa (for education selection only)</option>
-										<option value="6">Complex matters: AAT, Protection visa, Federal Case</option>
-										<option value="7">Visa Cancellation/ NOICC/ Visa refusals</option>
-										<option value="8">INDIA/UK/CANADA/EUROPE TO AUSTRALIA</option>
-									</select>
+                                    <select class="form-control enquiry_item modern-select" name="noe_id" data-valid="required">
+                                        <option value="">Select Nature of Enquiry</option>
+                                        @foreach (config('booking_nature_of_enquiry.crm') as $noe)
+                                            <option value="{{ $noe['id'] }}">{{ $noe['label'] }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
 						</div>
@@ -883,31 +878,9 @@ document.addEventListener('DOMContentLoaded', function() {
 			if (selectedValue) {
 				document.getElementById('services').style.display = 'block';
 				
-				// Hide Free Consultation if Nature of Enquiry is "INDIA/UK/CANADA/EUROPE TO AUSTRALIA" (value="8")
-				// Show Free Consultation for all other options
 				const freeConsultationService = document.querySelector('.service-free-consultation');
 				if (freeConsultationService) {
-					if (selectedValue === '8') {
-						// Hide Free Consultation for INDIA/UK/CANADA/EUROPE TO AUSTRALIA
-						freeConsultationService.style.display = 'none';
-						// Uncheck Free Consultation if it was selected
-						const freeConsultationRadio = document.getElementById('service_1');
-						if (freeConsultationRadio && freeConsultationRadio.checked) {
-							freeConsultationRadio.checked = false;
-							document.getElementById('service_id').value = '';
-							// Remove selected class from Free Consultation card
-							const freeConsultationCard = freeConsultationService.querySelector('.service-card-compact');
-							if (freeConsultationCard) {
-								freeConsultationCard.classList.remove('selected');
-							}
-							// Hide appointment details if Free Consultation was selected
-							document.getElementById('appointment_details').style.display = 'none';
-							document.getElementById('info').style.display = 'none';
-						}
-					} else {
-						// Show Free Consultation for all other options
-						freeConsultationService.style.display = 'block';
-					}
+					freeConsultationService.style.display = 'block';
 				}
 			} else {
 				document.getElementById('services').style.display = 'none';

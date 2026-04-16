@@ -6890,9 +6890,11 @@ class ClientsController extends Controller
             $requestData = $request->all();
             
             // Validate required fields
+            $crmNoeIds = array_column(config('booking_nature_of_enquiry.crm'), 'id');
+
             $validator = Validator::make($requestData, [
                 'client_id' => 'required|exists:admins,id',
-                'noe_id' => 'required|integer|in:1,2,3,4,5,6,7,8',
+                'noe_id' => ['required', 'integer', Rule::in($crmNoeIds)],
                 'service_id' => 'required|integer|in:1,2,3',
                 'appoint_date' => 'required|string', // Accept string format (dd/mm/yyyy), validate after conversion
                 'appoint_time' => 'required|string',
@@ -6938,19 +6940,10 @@ class ClientsController extends Controller
             ];
             $serviceId = $serviceIdMap[$requestData['service_id']] ?? 2;
 
-            // Map NOE ID to service_type/enquiry_type
-            // Note: enquiry_type values must match what Bansal API expects (e.g., 'pr_complex' not 'pr')
-            $noeToServiceType = [
-                1 => ['service_type' => 'Permanent Residency', 'enquiry_type' => 'pr_complex'],  // API expects 'pr_complex'
-                2 => ['service_type' => 'Temporary Residency', 'enquiry_type' => 'tr'],
-                3 => ['service_type' => 'JRP/Skill Assessment', 'enquiry_type' => 'jrp'],
-                4 => ['service_type' => 'Tourist Visa', 'enquiry_type' => 'tourist'],
-                5 => ['service_type' => 'Education/Student Visa', 'enquiry_type' => 'education'],
-                6 => ['service_type' => 'Complex Matters (AAT, Protection visa, Federal Case)', 'enquiry_type' => 'complex'],
-                7 => ['service_type' => 'Visa Cancellation/NOICC/Refusals', 'enquiry_type' => 'cancellation'],
-                8 => ['service_type' => 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA', 'enquiry_type' => 'international'],
-            ];
-            $serviceTypeMapping = $noeToServiceType[$requestData['noe_id']] ?? ['service_type' => 'Other', 'enquiry_type' => 'pr_complex']; // Default to pr_complex
+            $noeRow = collect(config('booking_nature_of_enquiry.crm'))->firstWhere('id', (int) $requestData['noe_id']);
+            $serviceTypeMapping = $noeRow
+                ? ['service_type' => $noeRow['service_type'], 'enquiry_type' => $noeRow['enquiry_type']]
+                : ['service_type' => 'Other', 'enquiry_type' => 'general'];
 
             // Map location
             $locationMap = [1 => 'adelaide', 2 => 'melbourne'];
@@ -7028,6 +7021,7 @@ class ClientsController extends Controller
                 'service_id' => $serviceId,
                 'location' => $location,
                 'inperson_address' => $requestData['inperson_address'],
+                'noe_scheme' => 'crm',
             ];
             $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
 
@@ -7411,9 +7405,16 @@ class ClientsController extends Controller
         return $html;
     }
 
+    protected function getNatureOfEnquiryLabelFromConfig(int $noeId): string
+    {
+        $row = collect(config('booking_nature_of_enquiry.crm'))->firstWhere('id', $noeId);
+
+        return $row['label'] ?? 'Appointment';
+    }
+
     /**
      * Create detailed activity log for booking appointment (manual creation from CRM)
-     * 
+     *
      * @param BookingAppointment $appointment
      * @param int $serviceId
      * @param int $noeId
@@ -7436,25 +7437,7 @@ class ClientsController extends Controller
             $serviceTitle = 'Overseas Applicant Enquiry';
         }
 
-        // Determine enquiry title based on noe_id
-        $enquiryTitle = 'Appointment';
-        if ($noeId == 1) {
-            $enquiryTitle = 'Permanent Residency Appointment';
-        } elseif ($noeId == 2) {
-            $enquiryTitle = 'Temporary Residency Appointment';
-        } elseif ($noeId == 3) {
-            $enquiryTitle = 'JRP/Skill Assessment';
-        } elseif ($noeId == 4) {
-            $enquiryTitle = 'Tourist Visa';
-        } elseif ($noeId == 5) {
-            $enquiryTitle = 'Education/Course Change/Student Visa/Student Dependent Visa';
-        } elseif ($noeId == 6) {
-            $enquiryTitle = 'Complex matters: AAT, Protection visa, Federal Case';
-        } elseif ($noeId == 7) {
-            $enquiryTitle = 'Visa Cancellation/ NOICC/ Visa refusals';
-        } elseif ($noeId == 8) {
-            $enquiryTitle = 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA';
-        }
+        $enquiryTitle = $this->getNatureOfEnquiryLabelFromConfig($noeId);
 
         // Format meeting type
         $appointmentDetails = '';

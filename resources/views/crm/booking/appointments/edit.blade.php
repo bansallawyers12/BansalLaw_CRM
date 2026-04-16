@@ -108,19 +108,10 @@
                                 <label class="font-weight-bold">Nature of Enquiry</label>
                                 <p class="mb-0">
                                     @php
-                                        $noeMap = [
-                                            1 => 'Permanent Residency Appointment',
-                                            2 => 'Temporary Residency Appointment',
-                                            3 => 'JRP/Skill Assessment',
-                                            4 => 'Tourist Visa',
-                                            5 => 'Education/Course Change/Student Visa/Student Dependent Visa',
-                                            6 => 'Complex matters: AAT, Protection visa, Federal Case',
-                                            7 => 'Visa Cancellation/ NOICC/ Visa refusals',
-                                            8 => 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA',
-                                        ];
-                                        $noeDisplay = $appointment->noe_id ? ($noeMap[$appointment->noe_id] ?? 'N/A') : 'N/A';
+                                        $noeDisplay = $appointment->service_type
+                                            ?: (collect(config('booking_nature_of_enquiry.crm'))->firstWhere('id', (int) $appointment->noe_id)['label'] ?? 'N/A');
                                     @endphp
-                                    {{ $noeDisplay }}
+                                    {{ $noeDisplay ?: 'N/A' }}
                                 </p>
                             </div>
                             <div class="form-group col-md-4">

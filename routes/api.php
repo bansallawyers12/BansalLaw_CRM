@@ -8,6 +8,7 @@ use App\Http\Controllers\API\StaffApiAuthController;
 use App\Http\Controllers\API\PublicListingController;
 use App\Http\Controllers\API\PublicBookingController;
 use App\Http\Controllers\API\OthersController;
+use App\Http\Controllers\API\LeadBookingApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,6 +24,9 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::get('/countries', [PublicListingController::class, 'getCountries']);
+
+Route::post('/leads', [LeadBookingApiController::class, 'storeLead']);
+Route::post('/booking-appointments', [LeadBookingApiController::class, 'storeBookingAppointment']);
 
 Route::get('/appointment-variable-lists', [PublicBookingController::class, 'getAppointmentVariableLists']);
 
