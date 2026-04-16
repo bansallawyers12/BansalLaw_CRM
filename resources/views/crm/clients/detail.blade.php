@@ -29,6 +29,14 @@ use App\Http\Controllers\Controller;
                 if ($clientDetailBackMatterRef !== null && $clientDetailBackMatterRef !== '') {
                     $clientDetailBackEditUrl .= '&matter_ref='.rawurlencode($clientDetailBackMatterRef);
                 }
+                $clientDetailDemoParams = array_filter([
+                    'client_id' => $encodeId,
+                    'client_unique_matter_ref_no' => $id1,
+                    'tab' => $activeTab ?? null,
+                ], function ($v) {
+                    return $v !== null && $v !== '';
+                });
+                $clientDetailDemoUrl = route('clients.detail.demo_newdesign', $clientDetailDemoParams);
             @endphp
             <div class="sidebar-header-toolbar">
                 {{-- Single-quoted onclick: @json() emits double quotes; double-quoted onclick would truncate the attribute --}}
@@ -37,6 +45,10 @@ use App\Http\Controllers\Controller;
                     <i class="fas fa-arrow-left" aria-hidden="true"></i>
                     <span class="client-detail-back-btn__text">Back</span>
                 </button>
+                <a href="{{ $clientDetailDemoUrl }}" class="client-detail-newdesign-demo-link" title="Open new layout preview for this client (same record and tab)">
+                    <i class="fas fa-paint-brush" aria-hidden="true"></i>
+                    <span class="client-detail-newdesign-demo-link__label">New layout</span>
+                </a>
                 <button type="button" id="sidebar-toggle" class="sidebar-toggle-btn" title="Hide Sidebar">
                     <i class="fas fa-chevron-left" aria-hidden="true"></i>
                 </button>
