@@ -1034,6 +1034,7 @@
                         ])
                     @endif
 
+                    @unless($suppressPersonalDetailsTagCard ?? false)
                     <div class="card">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h3><i class="fas fa-address-card"></i> Tag(s):</h3>
@@ -1192,6 +1193,7 @@
                         }
 
                     </style>
+                    @endunless
 
                 </div>
 

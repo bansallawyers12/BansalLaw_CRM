@@ -110,14 +110,55 @@ use App\Http\Controllers\Controller;
                 $cdnWorkflowStageLabel = $cdnWs->name ?? null;
             }
 
+            // Match personal_details tag resolution: comma list may be numeric IDs and/or legacy names; exclude red tags from hero chips.
             $cdnHeroTagNames = collect();
             $cdnHeroTagMore = 0;
             if (! empty($fetchedData->tagname)) {
-                $rawT = array_filter(array_map('trim', explode(',', $fetchedData->tagname)));
-                $idsT = array_values(array_filter(array_map('intval', $rawT)));
-                if (! empty($idsT)) {
-                    $cdnHeroTagNames = \App\Models\Tag::normal()->whereIn('id', $idsT)->orderBy('name')->pluck('name');
+                $rs = explode(',', $fetchedData->tagname);
+                $tagIdsBulk = [];
+                $tagNamesBulk = [];
+                foreach ($rs as $r) {
+                    $r = trim((string) $r);
+                    if ($r === '') {
+                        continue;
+                    }
+                    if (is_numeric($r) && (int) $r > 0) {
+                        $tagIdsBulk[] = (int) $r;
+                    } else {
+                        $tagNamesBulk[] = $r;
+                    }
                 }
+                $tagsByIds = [];
+                if (! empty($tagIdsBulk)) {
+                    $tagsByIds = \App\Models\Tag::whereIn('id', $tagIdsBulk)->get()->keyBy('id');
+                }
+                $tagsByNames = [];
+                if (! empty($tagNamesBulk)) {
+                    $tagsByNames = \App\Models\Tag::whereIn('name', $tagNamesBulk)->get()->keyBy('name');
+                }
+                $seenNormalIds = [];
+                $normalNamesOrdered = [];
+                foreach ($rs as $r) {
+                    $r = trim((string) $r);
+                    if ($r === '') {
+                        continue;
+                    }
+                    $stag = null;
+                    if (is_numeric($r) && (int) $r > 0) {
+                        $stag = $tagsByIds[(int) $r] ?? null;
+                    }
+                    if (! $stag) {
+                        $stag = $tagsByNames[$r] ?? null;
+                    }
+                    if ($stag && (string) ($stag->tag_type ?? '') !== (string) \App\Models\Tag::TYPE_RED) {
+                        if (isset($seenNormalIds[$stag->id])) {
+                            continue;
+                        }
+                        $seenNormalIds[$stag->id] = true;
+                        $normalNamesOrdered[] = (string) $stag->name;
+                    }
+                }
+                $cdnHeroTagNames = collect($normalNamesOrdered)->values();
                 if ($cdnHeroTagNames->count() > 4) {
                     $cdnHeroTagMore = $cdnHeroTagNames->count() - 4;
                     $cdnHeroTagNames = $cdnHeroTagNames->take(4);
@@ -159,16 +200,18 @@ use App\Http\Controllers\Controller;
                             @endif
                             <button type="button" class="btn cdn-client-hero__matter-btn" id="cdn-focus-matter-select" title="Change matter">Change Matter</button>
                         </div>
-                        @if($cdnHeroTagNames->isNotEmpty())
-                            <div class="cdn-client-hero__tags">
-                                @foreach($cdnHeroTagNames as $tname)
-                                    <span class="cdn-client-hero__tag">{{ $tname }}</span>
-                                @endforeach
-                                @if($cdnHeroTagMore > 0)
-                                    <span class="cdn-client-hero__tag cdn-client-hero__tag--more">+{{ $cdnHeroTagMore }} more</span>
-                                @endif
-                            </div>
-                        @endif
+                        <div class="cdn-client-hero__tags" aria-label="Tags">
+                            @foreach($cdnHeroTagNames as $tname)
+                                <span class="cdn-client-hero__tag">{{ $tname }}</span>
+                            @endforeach
+                            @if($cdnHeroTagMore > 0)
+                                <span class="cdn-client-hero__tag cdn-client-hero__tag--more">+{{ $cdnHeroTagMore }} more</span>
+                            @endif
+                            <span class="cdn-client-hero__tag-actions">
+                                <button type="button" class="cdn-client-hero__tag-add cdn-client-hero__tag-add--red openredtagspopup" data-id="{{ $fetchedData->id }}" title="Add red tag (hidden by default on profile)" aria-label="Add red tag">+</button>
+                                <button type="button" class="cdn-client-hero__tag-add cdn-client-hero__tag-add--blue opentagspopup" data-id="{{ $fetchedData->id }}" title="Add or edit tags" aria-label="Add or edit tags">+</button>
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <div class="cdn-client-hero__actions">
@@ -557,7 +600,7 @@ use App\Http\Controllers\Controller;
         <div class="main-content-with-tabs">
             <!-- Tab Contents -->
             <div class="tab-content" id="tab-content">
-            @include('crm.clients.tabs.personal_details')
+            @include('crm.clients.tabs.personal_details', ['suppressPersonalDetailsTagCard' => true])
             
             @include('crm.clients.tabs.activityfeed_tab')
             

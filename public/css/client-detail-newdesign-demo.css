@@ -240,6 +240,61 @@
   color: #475569;
 }
 
+.client-detail-newdesign-demo-shell .cdn-client-hero__tag-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 4px;
+}
+
+.client-detail-newdesign-demo-shell .cdn-client-hero__tag-add {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  font-weight: 700;
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+
+.client-detail-newdesign-demo-shell .cdn-client-hero__tag-add:focus-visible {
+  outline: 2px solid var(--cdn-primary);
+  outline-offset: 2px;
+}
+
+.client-detail-newdesign-demo-shell .cdn-client-hero__tag-add--blue {
+  background: var(--cdn-primary);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(29, 78, 216, 0.35);
+}
+
+.client-detail-newdesign-demo-shell .cdn-client-hero__tag-add--blue:hover {
+  background: #1e40af;
+  transform: scale(1.05);
+}
+
+.client-detail-newdesign-demo-shell .cdn-client-hero__tag-add--red {
+  background: #dc2626;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.35);
+}
+
+.client-detail-newdesign-demo-shell .cdn-client-hero__tag-add--red:focus-visible {
+  outline-color: #dc2626;
+}
+
+.client-detail-newdesign-demo-shell .cdn-client-hero__tag-add--red:hover {
+  background: #b91c1c;
+  transform: scale(1.05);
+}
+
 .client-detail-newdesign-demo-shell .cdn-client-hero__actions {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
