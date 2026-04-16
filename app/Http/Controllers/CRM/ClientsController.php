@@ -2063,6 +2063,8 @@ class ClientsController extends Controller
             $knownTabNames = [
                 'personaldetails', 'companydetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments',
                 'emails', 'client_portal', 'legalforms',
+                // Demo layout aliases (new-design preview)
+                'overview', 'documents', 'clientaction',
                 // Legacy removed tab slugs - keep as reserved so they are not treated as matter IDs
                 'formgenerations', 'formgenerationsl',
                 'workflow', 'checklists', 'account', 'notuseddocuments',
@@ -2107,6 +2109,26 @@ class ClientsController extends Controller
             $activeTab = $tab ?? 'personaldetails';
             if (strtolower((string) $activeTab) === 'client_portal') {
                 $activeTab = 'workflow';
+            }
+            // Demo new-design view: URL aliases + hide removed tabs
+            if ($detailView === 'crm.clients.detail_newdesign_demo') {
+                $atn = strtolower((string) $activeTab);
+                if ($atn === 'overview') {
+                    $activeTab = 'personaldetails';
+                } elseif ($atn === 'documents') {
+                    $activeTab = 'personaldocuments';
+                } elseif (in_array($atn, ['workflow', 'checklists'], true)) {
+                    $activeTab = 'clientaction';
+                }
+                if (strtolower((string) $activeTab) === 'matterdocuments') {
+                    $mcDemo = \App\Models\ClientMatter::query()
+                        ->where('client_id', (int) $id)
+                        ->where('matter_status', 1)
+                        ->count();
+                    if ($mcDemo < 1) {
+                        $activeTab = 'personaldetails';
+                    }
+                }
             }
 
             // Banking matters (BANK_1, …): hide Matter Documents tab — remap stale /matterdocuments URLs.

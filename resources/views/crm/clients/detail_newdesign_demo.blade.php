@@ -41,7 +41,7 @@ use App\Http\Controllers\Controller;
     <!-- Client Navigation Sidebar -->
     <aside class="client-navigation-sidebar" id="client-sidebar">
         @php
-            $clientDetailBackTabSlugs = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments', 'emails', 'legalforms', 'formgenerations', 'formgenerationsl', 'application', 'workflow', 'checklists', 'account', 'notuseddocuments', 'companydetails'];
+            $clientDetailBackTabSlugs = ['personaldetails', 'overview', 'activityfeed', 'clientaction', 'noteterm', 'personaldocuments', 'matterdocuments', 'documents', 'nominationdocuments', 'emails', 'legalforms', 'formgenerations', 'formgenerationsl', 'application', 'account', 'notuseddocuments', 'companydetails'];
 
             $cdnFn = trim((string) ($fetchedData->first_name ?? ''));
             $cdnLn = trim((string) ($fetchedData->last_name ?? ''));
@@ -210,7 +210,7 @@ use App\Http\Controllers\Controller;
                     <a href="javascript:;" class="btn cdn-client-hero__action-btn clientemail" data-id="{{ @$fetchedData->id }}" data-email="{{ @$fetchedData->email }}" data-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Compose Mail">Send Email</a>
                     <a href="javascript:;" class="btn cdn-client-hero__action-btn send-sms-btn" data-client-id="{{ @$fetchedData->id }}" data-client-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Send SMS">Send SMS</a>
                     <a href="javascript:;" class="btn cdn-client-hero__action-btn" data-bs-toggle="modal" data-bs-target="#create_appoint" title="Schedule appointment">Appointment</a>
-                    <button type="button" class="btn cdn-client-hero__action-btn cdn-client-hero__action-btn--primary" id="cdn-open-workflow-tab" title="Open workflow tab">Update Stage</button>
+                    <button type="button" class="btn cdn-client-hero__action-btn cdn-client-hero__action-btn--primary" id="cdn-open-action-tab" title="Open Action tab">Update Stage</button>
                 </div>
             </div>
         </section>
@@ -356,7 +356,7 @@ use App\Http\Controllers\Controller;
             
             // Match ClientsController::detail() known tab slugs so $id1 is not misclassified as a matter ref.
             $validTabNames = [
-                'personaldetails', 'companydetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments',
+                'personaldetails', 'overview', 'companydetails', 'activityfeed', 'clientaction', 'noteterm', 'personaldocuments', 'matterdocuments', 'documents', 'nominationdocuments',
                 'emails', 'client_portal', 'legalforms',
                 'formgenerations', 'formgenerationsl',
                 'application', 'workflow', 'checklists', 'account', 'notuseddocuments',
@@ -368,52 +368,44 @@ use App\Http\Controllers\Controller;
 
             $hideMatterDocumentsForBankMatter = isset($id1) && $id1 !== ''
                 && preg_match('/^bank_/i', (string) $id1) === 1;
+
+            $cdnShowMattersDocSubtab = ($matter_cnt > 0) && !($hideMatterDocumentsForBankMatter ?? false);
             
             // Show client menu if: valid matter ID in URL OR client has any matters
             if( $isMatterIdInUrl || $matter_cnt > 0 )
             {  //if client unique reference id is present in url
             ?>
                 <button class="client-nav-button active" data-tab="personaldetails">
-                    <i class="fas fa-user"></i>
-                    <span>Personal Details</span>
+                    <i class="fas fa-th-large"></i>
+                    <span>Overview</span>
                 </button>
                 <button class="client-nav-button" data-tab="activityfeed">
                     <i class="fas fa-history"></i>
                     <span>Activity</span>
                 </button>
+                <button class="client-nav-button" data-tab="clientaction">
+                    <i class="fas fa-bolt"></i>
+                    <span>Action</span>
+                </button>
                 <button class="client-nav-button" data-tab="noteterm">
                     <i class="fas fa-sticky-note"></i>
                     <span>Notes</span>
                 </button>
-                <button class="client-nav-button" data-tab="personaldocuments">
+                <button class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments">
                     <i class="fas fa-folder-open"></i>
-                    <span>Personal Documents</span>
+                    <span>Document</span>
                 </button>
-                @if(!$hideMatterDocumentsForBankMatter)
-                <button class="client-nav-button" data-tab="matterdocuments">
-                    <i class="fas fa-file-contract"></i>
-                    <span>Matter Documents</span>
-                </button>
-                @endif
                 <button class="client-nav-button" data-tab="legalforms">
                     <i class="fas fa-file-signature"></i>
                     <span>Legal Forms</span>
-                </button>
-                <button class="client-nav-button" data-tab="account">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                    <span>Account</span>
                 </button>
                 <button class="client-nav-button" data-tab="emails">
                     <i class="fas fa-inbox"></i>
                     <span>Emails</span>
                 </button>
-                <button class="client-nav-button" data-tab="checklists">
-                    <i class="fas fa-tasks"></i>
-                    <span>Checklists</span>
-                </button>
-                <button class="client-nav-button" data-tab="workflow">
-                    <i class="fas fa-stream"></i>
-                    <span>Workflow</span>
+                <button class="client-nav-button" data-tab="account">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>Accounts</span>
                 </button>
                 <?php
                 // Get last updated date for the client record
@@ -430,26 +422,27 @@ use App\Http\Controllers\Controller;
             }
             else
             {  //If no matter is exist
+                $cdnShowMattersDocSubtab = false;
             ?>
                 <button class="client-nav-button active" data-tab="personaldetails">
-                    <i class="fas fa-user"></i>
-                    <span>Personal Details</span>
+                    <i class="fas fa-th-large"></i>
+                    <span>Overview</span>
                 </button>
                 <button class="client-nav-button" data-tab="activityfeed">
                     <i class="fas fa-history"></i>
                     <span>Activity</span>
                 </button>
+                <button class="client-nav-button" data-tab="clientaction">
+                    <i class="fas fa-bolt"></i>
+                    <span>Action</span>
+                </button>
                 <button class="client-nav-button" data-tab="noteterm">
                     <i class="fas fa-sticky-note"></i>
                     <span>Notes</span>
                 </button>
-                <button class="client-nav-button" data-tab="personaldocuments">
+                <button class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments">
                     <i class="fas fa-folder-open"></i>
-                    <span>Personal Documents</span>
-                </button>
-                <button class="client-nav-button" data-tab="checklists">
-                    <i class="fas fa-tasks"></i>
-                    <span>Checklists</span>
+                    <span>Document</span>
                 </button>
             <?php
             }
@@ -466,11 +459,19 @@ use App\Http\Controllers\Controller;
         </div>
         <!-- Main Content Container with Vertical Tabs -->
         <div class="main-content-with-tabs">
+            <div id="cdn-doc-subtab-strip" class="cdn-doc-subtab-strip" role="tablist" aria-label="Document scope">
+                <button type="button" class="cdn-doc-subtab-btn active" data-doc-sub="personaldocuments">Personal</button>
+                @if(!empty($cdnShowMattersDocSubtab))
+                <button type="button" class="cdn-doc-subtab-btn" data-doc-sub="matterdocuments">Matters</button>
+                @endif
+            </div>
             <!-- Tab Contents -->
             <div class="tab-content" id="tab-content">
             @include('crm.clients.tabs.personal_details', ['suppressPersonalDetailsTagCard' => true])
             
             @include('crm.clients.tabs.activityfeed_tab')
+
+            @include('crm.clients.tabs.client_action_tab')
             
             @include('crm.clients.tabs.notes')
             
@@ -491,10 +492,6 @@ use App\Http\Controllers\Controller;
                 @include('crm.clients.tabs.legal_forms')
                 @include('crm.clients.tabs.account')
                 @include('crm.clients.tabs.emails')
-                @include('crm.clients.tabs.checklists')
-                @include('crm.clients.tabs.workflow')
-            @else
-                @include('crm.clients.tabs.checklists')
             @endif
             
             @include('crm.clients.tabs.not_used_documents')
@@ -1390,6 +1387,7 @@ $(document).ready(function() {
         encodeId: @json(($encodeId ?? '')),
         matterId: @json(($id1 ?? '')),
         activeTab: @json(($activeTab ?? 'personaldetails')),
+        cdnShowMattersDocSubtab: @json(!empty($cdnShowMattersDocSubtab)),
         matterRefNo: @json(($id1 ?? '')),
         clientFirstName: @json(($fetchedData->first_name ?? 'client')),
         notPickedCallSmsDefault: @json($notPickedCallSmsDefault ?? ''),
@@ -1603,8 +1601,63 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/modules/appointments.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/subtabs.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/ledger-dragdrop.js') }}"></script>
+<script>
+(function () {
+    try {
+        var t = localStorage.getItem('activeTab');
+        if (t === 'workflow' || t === 'checklists') {
+            localStorage.removeItem('activeTab');
+        }
+    } catch (e) {}
+})();
+</script>
 {{-- Main detail page JavaScript --}}
 <script src="{{ URL::asset('js/crm/clients/detail-main.js') }}?v={{ time() }}"></script>
+<script>
+(function ($) {
+    $(function () {
+        function applyDocStripVisibility(tabId) {
+            var $strip = $('#cdn-doc-subtab-strip');
+            if (!$strip.length) {
+                return;
+            }
+            if (tabId === 'personaldocuments' || tabId === 'matterdocuments') {
+                $strip.css({ display: 'flex' });
+                $('.client-nav-button').removeClass('active');
+                $('.cdn-demo-doc-nav').addClass('active');
+                $strip.find('.cdn-doc-subtab-btn').removeClass('active');
+                var $match = $strip.find('.cdn-doc-subtab-btn[data-doc-sub="' + tabId + '"]');
+                if (!$match.length && tabId === 'matterdocuments') {
+                    window.SidebarTabs.activateTab('personaldocuments');
+                    return;
+                }
+                $match.addClass('active');
+            } else {
+                $strip.css({ display: 'none' });
+            }
+        }
+        setTimeout(function () {
+            if (!window.SidebarTabs || typeof window.SidebarTabs.activateTab !== 'function') {
+                return;
+            }
+            var orig = window.SidebarTabs.activateTab;
+            window.SidebarTabs.activateTab = function (tabId) {
+                orig.call(window.SidebarTabs, tabId);
+                applyDocStripVisibility(tabId);
+            };
+            var initial = (window.ClientDetailConfig && window.ClientDetailConfig.activeTab) || '';
+            applyDocStripVisibility(initial);
+        }, 0);
+    });
+    $(document).on('click', '.cdn-doc-subtab-btn', function () {
+        var sub = $(this).data('doc-sub');
+        if (!sub || !window.SidebarTabs) {
+            return;
+        }
+        window.SidebarTabs.activateTab(sub);
+    });
+})(window.jQuery);
+</script>
 
 {{-- Sidebar Toggle JavaScript --}}
 <script>
@@ -1984,14 +2037,11 @@ $(function () {
                 }
             });
         }
-        var wfBtn = document.getElementById('cdn-open-workflow-tab');
+        var wfBtn = document.getElementById('cdn-open-action-tab');
         if (wfBtn) {
             wfBtn.addEventListener('click', function () {
-                if (window.jQuery) {
-                    var $w = window.jQuery('.client-nav-button[data-tab="workflow"]');
-                    if ($w.length) {
-                        $w.trigger('click');
-                    }
+                if (window.jQuery && window.SidebarTabs && typeof window.SidebarTabs.activateTab === 'function') {
+                    window.SidebarTabs.activateTab('clientaction');
                 }
             });
         }

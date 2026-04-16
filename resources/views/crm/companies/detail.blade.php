@@ -81,7 +81,7 @@ use App\Http\Controllers\Controller;
                 </div>
             </div>
             
-            <!-- Lead status badge (conversion action is handled in Checklist tab) -->
+            <!-- Lead status badge (display only) -->
             @if(($fetchedData->type ?? '') === 'lead')
             <div class="sidebar-client-lead-buttons">
                 <span class="status-btn status-btn-lead lead-status-badge active">Lead</span>
@@ -308,10 +308,6 @@ use App\Http\Controllers\Controller;
                     <i class="fas fa-inbox"></i>
                     <span>Emails</span>
                 </button>
-                <button class="client-nav-button" data-tab="checklists">
-                    <i class="fas fa-tasks"></i>
-                    <span>Checklists</span>
-                </button>
                 <button class="client-nav-button" data-tab="workflow">
                     <i class="fas fa-stream"></i>
                     <span>Workflow</span>
@@ -347,10 +343,6 @@ use App\Http\Controllers\Controller;
                 <button class="client-nav-button" data-tab="personaldocuments">
                     <i class="fas fa-folder-open"></i>
                     <span>Company Documents</span>
-                </button>
-                <button class="client-nav-button" data-tab="checklists">
-                    <i class="fas fa-tasks"></i>
-                    <span>Checklists</span>
                 </button>
             <?php
             }
@@ -388,10 +380,7 @@ use App\Http\Controllers\Controller;
                 @include('crm.companies.tabs.nomination_documents')
                 @include('crm.clients.tabs.account')
                 @include('crm.clients.tabs.emails')
-                @include('crm.clients.tabs.checklists')
                 @include('crm.clients.tabs.workflow')
-            @else
-                @include('crm.clients.tabs.checklists')
             @endif
             
             @include('crm.clients.tabs.not_used_documents')

@@ -673,7 +673,7 @@ function customValidate(formName, savetype = '')
 								var msg = (obj.message != null && obj.message !== '') ? obj.message : (obj.status ? 'Cost assignment saved successfully.' : 'An error occurred. Please try again.');
 								$('#costAssignmentCreateFormModelLead').modal('hide');
 								$('.popuploader').hide();
-								localStorage.setItem('activeTab', 'checklists');
+								localStorage.setItem('activeTab', 'account');
 								if(obj.status){
 									$('.custom-error-msg').html('<span class="alert alert-success">'+msg+'</span>');
 								}else{

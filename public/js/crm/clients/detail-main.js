@@ -4234,7 +4234,7 @@ success: function(response) {
                         if ($modal.length && $modal.hasClass('show')) {
                             $modal.modal('hide');
                         }
-                        localStorage.setItem('activeTab', 'checklists');
+                        localStorage.setItem('activeTab', 'account');
                         setTimeout(function() { location.reload(); }, 500);
                     }
                 },
@@ -4336,7 +4336,7 @@ success: function(response) {
                     var obj = safeParseJsonResponse(response);
                     if (obj && obj.status) {
                         $('#costAssignmentCreateFormModelLead').modal('hide');
-                        localStorage.setItem('activeTab', 'checklists');
+                        localStorage.setItem('activeTab', 'account');
                         setTimeout(function() { location.reload(); }, 500);
                     }
                 },

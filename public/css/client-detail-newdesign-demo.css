@@ -572,6 +572,43 @@
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
+/* Document tab: Personal / Matters sub-tabs (demo) */
+.client-detail-newdesign-demo-shell .cdn-doc-subtab-strip {
+  display: none;
+  flex-wrap: wrap;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid var(--cdn-border);
+  border-radius: 10px;
+}
+
+.client-detail-newdesign-demo-shell .cdn-doc-subtab-btn {
+  border-radius: 999px;
+  border: 1px solid var(--cdn-border);
+  background: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  color: #334155;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.client-detail-newdesign-demo-shell .cdn-doc-subtab-btn:hover {
+  border-color: #bfd7ff;
+  background: #f8fafc;
+}
+
+.client-detail-newdesign-demo-shell .cdn-doc-subtab-btn.active {
+  border-color: var(--cdn-primary);
+  color: var(--cdn-primary);
+  background: var(--cdn-primary-soft);
+}
+
 .client-detail-newdesign-demo-shell .sidebar-toggle-btn,
 .client-detail-newdesign-demo-shell .client-detail-back-btn {
   border-radius: 10px;
