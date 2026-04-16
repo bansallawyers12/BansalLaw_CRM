@@ -712,59 +712,86 @@
 
                     <?php
                     $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
-                    //dd($matter_cnt);
-                    if($matter_cnt >0)
-                    {
+                    if ($matter_cnt > 0 && $detailHasMatterRefs) {
                         $matter_dis_ref_info_arr = null;
-                        if ($detailHasMatterRefs) {
-                            if ($id1) {
-                                $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')->where('client_id', $fetchedData->id)->where('client_unique_matter_no', $id1)->first();
-                            } else {
-                                $matter_cnt_inner = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->where('matter_status', 1)->count();
-                                if ($matter_cnt_inner > 0) {
-                                    $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')->where('client_id', $fetchedData->id)->where('matter_status', 1)->orderBy('id', 'desc')->first();
-                                }
-                            }
+                        if ($id1) {
+                            $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')
+                                ->where('client_id', $fetchedData->id)
+                                ->where('client_unique_matter_no', $id1)
+                                ->first();
                         }
-
-                        if(
-                            $matter_dis_ref_info_arr
-                            && (
-                                ($matter_dis_ref_info_arr->department_reference ?? '') != ''
-                                || ($matter_dis_ref_info_arr->other_reference ?? '') != ''
-                            )
-                        )
-                        { ?>
-                            <div class="card">
-                                <h3><i class="fas fa-user"></i> Reference Information</h3>
+                        if (!$matter_dis_ref_info_arr) {
+                            $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')
+                                ->where('client_id', $fetchedData->id)
+                                ->where('matter_status', 1)
+                                ->orderBy('id', 'desc')
+                                ->first();
+                        }
+                    if ($matter_dis_ref_info_arr) {
+                    ?>
+                            <div class="card" id="matter-reference-info-card">
+                                <h3><i class="fas fa-bookmark"></i> Reference Information</h3>
+                                <p class="text-muted small mb-3" style="margin-top: -6px;">Matter-level references (also used in search).</p>
                                 <div class="field-group">
-                                    <span class="field-label">Department Reference</span>
-                                    <span class="field-value">
-                                        <?php
-                                        if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->department_reference != '') {
-                                            echo $matter_dis_ref_info_arr->department_reference;
-                                        } else {
-                                            echo 'N/A';
-                                        }?>
-
-                                    </span>
+                                    <label class="field-label" for="department_reference">Department Reference</label>
+                                    <input type="text" id="department_reference" name="department_reference" class="form-control form-control-sm" maxlength="255" autocomplete="off"
+                                           value="{{ old('department_reference', $matter_dis_ref_info_arr->department_reference ?? '') }}">
                                 </div>
                                 <div class="field-group">
-                                    <span class="field-label">Other Reference</span>
-                                    <span class="field-value">
-                                        <?php
-                                        if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->other_reference != ''){
-                                            echo $matter_dis_ref_info_arr->other_reference;
-                                        } else {
-                                            echo 'N/A';
-                                        } ?>
-                                    </span>
+                                    <label class="field-label" for="other_reference">Other Reference</label>
+                                    <input type="text" id="other_reference" name="other_reference" class="form-control form-control-sm" maxlength="255" autocomplete="off"
+                                           value="{{ old('other_reference', $matter_dis_ref_info_arr->other_reference ?? '') }}">
                                 </div>
+                                <button type="button" class="btn btn-primary btn-sm" id="btn-save-matter-references">
+                                    <i class="fas fa-save"></i> Save references
+                                </button>
                             </div>
-                        <?php
-                        }
+                    <?php
+                    }
                     }
                     ?>
+                    <script>
+                    (function () {
+                        $(document).on('click', '#btn-save-matter-references', function () {
+                            if (!window.ClientDetailConfig || !window.ClientDetailConfig.urls || !window.ClientDetailConfig.urls.referencesStore) {
+                                alert('Page configuration is missing; please refresh.');
+                                return;
+                            }
+                            var $btn = $(this);
+                            $btn.prop('disabled', true);
+                            $.ajax({
+                                url: window.ClientDetailConfig.urls.referencesStore,
+                                type: 'POST',
+                                data: {
+                                    department_reference: ($('#department_reference').val() || '').trim(),
+                                    other_reference: ($('#other_reference').val() || '').trim(),
+                                    client_id: window.ClientDetailConfig.clientId,
+                                    client_matter_id: $('#sel_matter_id_client_detail').val() || null,
+                                    client_unique_matter_no: window.ClientDetailConfig.matterId || null,
+                                    _token: window.ClientDetailConfig.csrfToken
+                                }
+                            }).done(function (res) {
+                                if (typeof iziToast !== 'undefined') {
+                                    iziToast.success({ title: 'Saved', message: (res && res.message) ? res.message : 'References updated.', position: 'topRight', timeout: 2500 });
+                                } else {
+                                    alert('References saved.');
+                                }
+                            }).fail(function (xhr) {
+                                var msg = 'Error saving references.';
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    msg = xhr.responseJSON.message;
+                                }
+                                if (typeof iziToast !== 'undefined') {
+                                    iziToast.error({ title: 'Error', message: msg, position: 'topRight', timeout: 4000 });
+                                } else {
+                                    alert(msg);
+                                }
+                            }).always(function () {
+                                $btn.prop('disabled', false);
+                            });
+                        });
+                    })();
+                    </script>
 
                     <?php
                     $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();

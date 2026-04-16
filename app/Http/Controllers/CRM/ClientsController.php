@@ -5296,6 +5296,97 @@ class ClientsController extends Controller
         }
     }
 
+    /**
+     * Persist department / other reference on the active client matter (Personal Details & company detail tabs).
+     */
+    public function savereferences(Request $request)
+    {
+        $request->validate([
+            'client_id' => 'required|integer|exists:admins,id',
+            'department_reference' => 'nullable|string|max:255',
+            'other_reference' => 'nullable|string|max:255',
+            'client_matter_id' => 'nullable|integer|exists:client_matters,id',
+            'client_unique_matter_no' => 'nullable|string|max:255',
+        ]);
+
+        $matter = null;
+        $lookupMethod = '';
+        $clientId = (int) $request->client_id;
+
+        if ($request->filled('client_unique_matter_no')) {
+            $matter = \App\Models\ClientMatter::where('client_id', $clientId)
+                ->where('client_unique_matter_no', $request->client_unique_matter_no)
+                ->first();
+            $lookupMethod = 'client_unique_matter_no: ' . $request->client_unique_matter_no;
+        } elseif ($request->filled('client_matter_id')) {
+            $matter = \App\Models\ClientMatter::where('client_id', $clientId)
+                ->where('id', (int) $request->client_matter_id)
+                ->first();
+            $lookupMethod = 'client_matter_id: ' . $request->client_matter_id;
+        } else {
+            $matter = \App\Models\ClientMatter::where('client_id', $clientId)
+                ->where('matter_status', 1)
+                ->orderBy('id', 'desc')
+                ->first();
+            $lookupMethod = 'latest active matter';
+        }
+
+        if (!$matter) {
+            Log::error('References save - Matter not found', [
+                'client_id' => $clientId,
+                'client_unique_matter_no' => $request->client_unique_matter_no ?? 'not provided',
+                'client_matter_id' => $request->client_matter_id ?? 'not provided',
+                'lookup_method' => $lookupMethod,
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Record not found for given client_id and matter information.',
+            ], 404);
+        }
+
+        if ((int) $matter->client_id !== $clientId) {
+            Log::error('References save - Security violation: Matter does not belong to client', [
+                'matter_id' => $matter->id,
+                'matter_client_id' => $matter->client_id,
+                'requested_client_id' => $clientId,
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Security violation: Matter does not belong to the specified client.',
+            ], 403);
+        }
+
+        $deptRefInput = $request->input('department_reference', '');
+        $otherRefInput = $request->input('other_reference', '');
+        $deptRef = $deptRefInput !== null && trim((string) $deptRefInput) !== '' ? trim((string) $deptRefInput) : null;
+        $otherRef = $otherRefInput !== null && trim((string) $otherRefInput) !== '' ? trim((string) $otherRefInput) : null;
+
+        $matter->department_reference = $deptRef;
+        $matter->other_reference = $otherRef;
+
+        if (!$matter->save()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to save references.',
+            ], 500);
+        }
+
+        $matter->refresh();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'References updated successfully.',
+            'data' => [
+                'matter_id' => $matter->id,
+                'client_unique_matter_no' => $matter->client_unique_matter_no,
+                'department_reference' => $matter->department_reference,
+                'other_reference' => $matter->other_reference,
+            ],
+        ]);
+    }
+
     //Check star client
     public function checkStarClient(Request $request)
     {

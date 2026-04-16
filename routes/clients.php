@@ -332,6 +332,7 @@ Route::post('/api/crm/matter-checklist-update-document-status', [ClientMatterHub
 Route::post('/check-email', [ClientsController::class, 'checkEmail'])->name('check.email');
 Route::post('/check.phone', [ClientsController::class, 'checkContact'])->name('check.phone');
 Route::post('/save_tag', [ClientsController::class, 'save_tag']);
+Route::post('/save-references', [ClientsController::class, 'savereferences'])->name('references.store');
 Route::post('/check-star-client', [ClientsController::class, 'checkStarClient'])->name('check.star.client');
 Route::post('/merge_records', [ClientsController::class, 'merge_records'])->name('client.merge_records');
 

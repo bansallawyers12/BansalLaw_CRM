@@ -215,13 +215,13 @@ use App\Http\Controllers\Controller;
             </div>
         </section>
 
-        {{-- Off-screen matter select for detail-main.js (Back, matter bar, stage pill; visible reference UI removed on demo). --}}
-        <div class="client-detail-demo-hidden-matter" aria-hidden="true">
+        {{-- Off-screen matter select for detail-main.js (sidebar chrome removed on demo). Hidden ref fields keep matter-change payload aligned with detail-main.js. --}}
+        <div class="client-detail-demo-hidden-matter">
             <div class="sidebar-matter-selection">
                 <?php
                 $assign_info_arr = \App\Models\Admin::select('type')->where('id',@$fetchedData->id)->first();
                 ?>
-                @if($assign_info_arr->type)
+                @if($assign_info_arr && $assign_info_arr->type)
                     <?php 
                     if($id1)
                     {
@@ -348,18 +348,50 @@ use App\Http\Controllers\Controller;
                     ?>
                 @endif
             </div>
+                <?php
+                $matter__ref_info_arr = null;
+                if (\Illuminate\Support\Facades\Schema::hasTable('client_matters')
+                    && \Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'department_reference')
+                    && \Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'other_reference')) {
+                    if ($id1) {
+                        $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')
+                            ->where('client_id', $fetchedData->id)
+                            ->where('client_unique_matter_no', $id1)
+                            ->first();
+                    } else {
+                        $matter_cnt_ref = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->where('matter_status', 1)->count();
+                        if ($matter_cnt_ref > 0) {
+                            $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')
+                                ->where('client_id', $fetchedData->id)
+                                ->where('matter_status', 1)
+                                ->orderBy('id', 'desc')
+                                ->first();
+                        }
+                    }
+                }
+                ?>
+                <input type="hidden"
+                       id="department_reference"
+                       name="department_reference"
+                       value="<?php echo e($matter__ref_info_arr ? ($matter__ref_info_arr->department_reference ?? '') : ''); ?>">
+                <input type="hidden"
+                       id="other_reference"
+                       name="other_reference"
+                       value="<?php echo e($matter__ref_info_arr ? ($matter__ref_info_arr->other_reference ?? '') : ''); ?>">
         </div>
         <div class="cdn-tabs-strip" role="navigation" aria-label="Client record sections">
         <nav class="client-sidebar-nav">
             <?php
             $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
             
-            // Valid tab names that should NOT be treated as matter IDs
-            $validTabNames = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments',
-                              'emails', 'legalforms',
-                              // Legacy removed tab slugs
-                              'formgenerations', 'formgenerationsl',
-                              'application', 'workflow', 'checklists'];
+            // Match ClientsController::detail() known tab slugs so $id1 is not misclassified as a matter ref.
+            $validTabNames = [
+                'personaldetails', 'companydetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments',
+                'emails', 'client_portal', 'legalforms',
+                'formgenerations', 'formgenerationsl',
+                'application', 'workflow', 'checklists', 'account', 'notuseddocuments',
+                'visadocuments',
+            ];
             
             // Check if $id1 is a valid matter ID (not a tab name)
             $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array(strtolower($id1), array_map('strtolower', $validTabNames));
@@ -921,13 +953,49 @@ use App\Http\Controllers\Controller;
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
 								<label for="tags_modal_container">Tags</label>
-								<?php 
-								$tagIdsForModal = [];
+								<?php
+								// Same resolution as personal_details: comma-separated IDs and/or legacy names; preserve order; dedupe by tag id.
 								$tagNamesForModal = [];
-								if(!empty($fetchedData->tagname)){
-									$tagIdsForModal = array_filter(array_map('intval', explode(',', $fetchedData->tagname)));
-									if(!empty($tagIdsForModal)){
-										$tagNamesForModal = \App\Models\Tag::whereIn('id', $tagIdsForModal)->pluck('name')->toArray();
+								if (! empty($fetchedData->tagname)) {
+									$rs = explode(',', $fetchedData->tagname);
+									$tagIdsBulk = [];
+									$tagNamesBulk = [];
+									foreach ($rs as $r) {
+										$r = trim((string) $r);
+										if ($r === '') {
+											continue;
+										}
+										if (is_numeric($r) && (int) $r > 0) {
+											$tagIdsBulk[] = (int) $r;
+										} else {
+											$tagNamesBulk[] = $r;
+										}
+									}
+									$tagsByIds = [];
+									if (! empty($tagIdsBulk)) {
+										$tagsByIds = \App\Models\Tag::whereIn('id', $tagIdsBulk)->get()->keyBy('id');
+									}
+									$tagsByNames = [];
+									if (! empty($tagNamesBulk)) {
+										$tagsByNames = \App\Models\Tag::whereIn('name', $tagNamesBulk)->get()->keyBy('name');
+									}
+									$seenModalIds = [];
+									foreach ($rs as $r) {
+										$r = trim((string) $r);
+										if ($r === '') {
+											continue;
+										}
+										$stag = null;
+										if (is_numeric($r) && (int) $r > 0) {
+											$stag = $tagsByIds[(int) $r] ?? null;
+										}
+										if (! $stag) {
+											$stag = $tagsByNames[$r] ?? null;
+										}
+										if ($stag && ! isset($seenModalIds[$stag->id])) {
+											$seenModalIds[$stag->id] = true;
+											$tagNamesForModal[] = (string) $stag->name;
+										}
 									}
 								}
 								?>
@@ -1378,6 +1446,7 @@ $(document).ready(function() {
             clientLedgerBalance: '{{ URL::to("/clients/clientLedgerBalanceAmount") }}',
             getInvoicesByMatter: '{{ URL::to("/get-invoices-by-matter") }}',
             updateNoteDatetime: '{{ URL::to("/update-note-datetime") }}',
+            referencesStore: '{{ route("references.store") }}',
             updateClientFundsLedger: '{{ route("clients.update-client-funds-ledger") }}',
             createIntakeUrl: '{{ url("/clients/store-application-doc-via-form") }}',
             enhanceMail: '{{ route("mail.enhance") }}',

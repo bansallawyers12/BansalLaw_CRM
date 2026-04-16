@@ -69,6 +69,94 @@
             </div>
         </div>
 
+        @php
+            $cdnHasMatterRefs = \Illuminate\Support\Facades\Schema::hasTable('client_matters')
+                && \Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'department_reference')
+                && \Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'other_reference');
+            $cdnMatterCnt = $cdnHasMatterRefs
+                ? \App\Models\ClientMatter::where('client_id', $fetchedData->id)->where('matter_status', 1)->count()
+                : 0;
+            $cdnMatterRefRow = null;
+            if ($cdnMatterCnt > 0 && $cdnHasMatterRefs) {
+                if (!empty($id1)) {
+                    $cdnMatterRefRow = \App\Models\ClientMatter::select('department_reference', 'other_reference')
+                        ->where('client_id', $fetchedData->id)
+                        ->where('client_unique_matter_no', $id1)
+                        ->first();
+                }
+                if (!$cdnMatterRefRow) {
+                    $cdnMatterRefRow = \App\Models\ClientMatter::select('department_reference', 'other_reference')
+                        ->where('client_id', $fetchedData->id)
+                        ->where('matter_status', 1)
+                        ->orderBy('id', 'desc')
+                        ->first();
+                }
+            }
+        @endphp
+        @if($cdnMatterRefRow)
+            <div class="card" style="margin-bottom: 20px;" id="matter-reference-info-card">
+                <h3><i class="fas fa-bookmark"></i> Reference Information</h3>
+                <p class="text-muted small mb-3" style="margin-top: -6px;">Matter-level references (also used in search).</p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+                    <div class="field-group">
+                        <label class="field-label" for="department_reference">Department Reference</label>
+                        <input type="text" id="department_reference" name="department_reference" class="form-control form-control-sm" maxlength="255" autocomplete="off"
+                               value="{{ old('department_reference', $cdnMatterRefRow->department_reference ?? '') }}">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label" for="other_reference">Other Reference</label>
+                        <input type="text" id="other_reference" name="other_reference" class="form-control form-control-sm" maxlength="255" autocomplete="off"
+                               value="{{ old('other_reference', $cdnMatterRefRow->other_reference ?? '') }}">
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm mt-2" id="btn-save-matter-references">
+                    <i class="fas fa-save"></i> Save references
+                </button>
+            </div>
+            <script>
+            (function () {
+                $(document).on('click', '#btn-save-matter-references', function () {
+                    if (!window.ClientDetailConfig || !window.ClientDetailConfig.urls || !window.ClientDetailConfig.urls.referencesStore) {
+                        alert('Page configuration is missing; please refresh.');
+                        return;
+                    }
+                    var $btn = $(this);
+                    $btn.prop('disabled', true);
+                    $.ajax({
+                        url: window.ClientDetailConfig.urls.referencesStore,
+                        type: 'POST',
+                        data: {
+                            department_reference: ($('#department_reference').val() || '').trim(),
+                            other_reference: ($('#other_reference').val() || '').trim(),
+                            client_id: window.ClientDetailConfig.clientId,
+                            client_matter_id: $('#sel_matter_id_client_detail').val() || null,
+                            client_unique_matter_no: window.ClientDetailConfig.matterId || null,
+                            _token: window.ClientDetailConfig.csrfToken
+                        }
+                    }).done(function (res) {
+                        if (typeof iziToast !== 'undefined') {
+                            iziToast.success({ title: 'Saved', message: (res && res.message) ? res.message : 'References updated.', position: 'topRight', timeout: 2500 });
+                        } else {
+                            alert('References saved.');
+                        }
+                    }).fail(function (xhr) {
+                        var msg = 'Error saving references.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+                        if (typeof iziToast !== 'undefined') {
+                            iziToast.error({ title: 'Error', message: msg, position: 'topRight', timeout: 4000 });
+                        } else {
+                            alert(msg);
+                        }
+                    }).always(function () {
+                        $btn.prop('disabled', false);
+                    });
+                });
+            })();
+            </script>
+        @endif
+
         {{-- Sponsorship Card(s) --}}
         @if($comp && $comp->sponsorships->isNotEmpty())
             @foreach($comp->sponsorships as $idx => $s)

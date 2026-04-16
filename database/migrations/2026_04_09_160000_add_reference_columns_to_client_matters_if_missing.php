@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * client_matters.department_reference / other_reference are used on client detail and accounts UI.
+ * client_matters.department_reference / other_reference are used on Personal Details / company detail and search.
  * Stub PostgreSQL schema omitted them; add when missing.
  */
 return new class extends Migration
