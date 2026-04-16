@@ -172,10 +172,10 @@ use App\Http\Controllers\Controller;
                     </div>
                 </div>
                 <div class="cdn-client-hero__actions">
-                    <button type="button" class="btn cdn-client-hero__action-btn create_note_d" datatype="note" title="Log a note or call in the activity record">Log Call</button>
+                    <button type="button" class="btn cdn-client-hero__action-btn create_note_d" datatype="note" title="Add a note">Add Notes</button>
                     <a href="javascript:;" class="btn cdn-client-hero__action-btn clientemail" data-id="{{ @$fetchedData->id }}" data-email="{{ @$fetchedData->email }}" data-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Compose Mail">Send Email</a>
                     <a href="javascript:;" class="btn cdn-client-hero__action-btn send-sms-btn" data-client-id="{{ @$fetchedData->id }}" data-client-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Send SMS">Send SMS</a>
-                    <a href="javascript:;" class="btn cdn-client-hero__action-btn" data-bs-toggle="modal" data-bs-target="#create_appoint" title="Add Appointment">Add Action</a>
+                    <a href="javascript:;" class="btn cdn-client-hero__action-btn" data-bs-toggle="modal" data-bs-target="#create_appoint" title="Schedule appointment">Appointment</a>
                     <button type="button" class="btn cdn-client-hero__action-btn cdn-client-hero__action-btn--primary" id="cdn-open-workflow-tab" title="Open workflow tab">Update Stage</button>
                 </div>
             </div>

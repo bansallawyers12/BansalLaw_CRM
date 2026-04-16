@@ -241,12 +241,17 @@
 }
 
 .client-detail-newdesign-demo-shell .cdn-client-hero__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  flex: 0 1 380px;
+  flex: 0 1 400px;
+  align-content: start;
+  justify-items: stretch;
+}
+
+/* Row 2: Appointment + primary Update Stage (primary spans two columns) */
+.client-detail-newdesign-demo-shell .cdn-client-hero__actions .cdn-client-hero__action-btn:nth-child(4) {
+  grid-column: 1;
 }
 
 .client-detail-newdesign-demo-shell .cdn-client-hero__action-btn {
@@ -269,6 +274,10 @@
   background: #f8fafc;
   color: var(--cdn-text);
   text-decoration: none;
+}
+
+.client-detail-newdesign-demo-shell .cdn-client-hero__actions .cdn-client-hero__action-btn--primary {
+  grid-column: 2 / -1;
 }
 
 .client-detail-newdesign-demo-shell .cdn-client-hero__action-btn--primary {
@@ -549,5 +558,23 @@
     grid-template-areas:
       "cdn-topbar"
       "cdn-feed";
+  }
+}
+
+@media (max-width: 640px) {
+  .client-detail-newdesign-demo-shell .cdn-client-hero__inner {
+    flex-direction: column;
+  }
+
+  .client-detail-newdesign-demo-shell .cdn-client-hero__actions {
+    grid-template-columns: 1fr;
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: none;
+  }
+
+  .client-detail-newdesign-demo-shell .cdn-client-hero__actions .cdn-client-hero__action-btn:nth-child(4),
+  .client-detail-newdesign-demo-shell .cdn-client-hero__actions .cdn-client-hero__action-btn--primary {
+    grid-column: auto;
   }
 }
