@@ -215,7 +215,7 @@ use App\Http\Controllers\Controller;
             </div>
         </section>
 
-        {{-- Off-screen matter select for detail-main.js (sidebar chrome removed on demo). Hidden ref fields keep matter-change payload aligned with detail-main.js. --}}
+        {{-- Off-screen matter select for detail-main.js (sidebar chrome removed on demo). --}}
         <div class="client-detail-demo-hidden-matter">
             <div class="sidebar-matter-selection">
                 <?php
@@ -348,36 +348,6 @@ use App\Http\Controllers\Controller;
                     ?>
                 @endif
             </div>
-                <?php
-                $matter__ref_info_arr = null;
-                if (\Illuminate\Support\Facades\Schema::hasTable('client_matters')
-                    && \Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'department_reference')
-                    && \Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'other_reference')) {
-                    if ($id1) {
-                        $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')
-                            ->where('client_id', $fetchedData->id)
-                            ->where('client_unique_matter_no', $id1)
-                            ->first();
-                    } else {
-                        $matter_cnt_ref = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->where('matter_status', 1)->count();
-                        if ($matter_cnt_ref > 0) {
-                            $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')
-                                ->where('client_id', $fetchedData->id)
-                                ->where('matter_status', 1)
-                                ->orderBy('id', 'desc')
-                                ->first();
-                        }
-                    }
-                }
-                ?>
-                <input type="hidden"
-                       id="department_reference"
-                       name="department_reference"
-                       value="<?php echo e($matter__ref_info_arr ? ($matter__ref_info_arr->department_reference ?? '') : ''); ?>">
-                <input type="hidden"
-                       id="other_reference"
-                       name="other_reference"
-                       value="<?php echo e($matter__ref_info_arr ? ($matter__ref_info_arr->other_reference ?? '') : ''); ?>">
         </div>
         <div class="cdn-tabs-strip" role="navigation" aria-label="Client record sections">
         <nav class="client-sidebar-nav">
@@ -1446,7 +1416,6 @@ $(document).ready(function() {
             clientLedgerBalance: '{{ URL::to("/clients/clientLedgerBalanceAmount") }}',
             getInvoicesByMatter: '{{ URL::to("/get-invoices-by-matter") }}',
             updateNoteDatetime: '{{ URL::to("/update-note-datetime") }}',
-            referencesStore: '{{ route("references.store") }}',
             updateClientFundsLedger: '{{ route("clients.update-client-funds-ledger") }}',
             createIntakeUrl: '{{ url("/clients/store-application-doc-via-form") }}',
             enhanceMail: '{{ route("mail.enhance") }}',
