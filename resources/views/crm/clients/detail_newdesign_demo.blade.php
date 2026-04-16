@@ -42,15 +42,6 @@ use App\Http\Controllers\Controller;
     <aside class="client-navigation-sidebar" id="client-sidebar">
         @php
             $clientDetailBackTabSlugs = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments', 'emails', 'legalforms', 'formgenerations', 'formgenerationsl', 'application', 'workflow', 'checklists', 'account', 'notuseddocuments', 'companydetails'];
-            $clientDetailBackMatterRef = null;
-            if (! empty($id1) && ! in_array(strtolower((string) $id1), array_map('strtolower', $clientDetailBackTabSlugs), true)) {
-                $clientDetailBackMatterRef = (string) $id1;
-            }
-            $clientDetailBackEditUrl = route('clients.edit', base64_encode(convert_uuencode($fetchedData->id)));
-            $clientDetailBackEditUrl .= '?edit_tab=matter_case';
-            if ($clientDetailBackMatterRef !== null && $clientDetailBackMatterRef !== '') {
-                $clientDetailBackEditUrl .= '&matter_ref='.rawurlencode($clientDetailBackMatterRef);
-            }
 
             $cdnFn = trim((string) ($fetchedData->first_name ?? ''));
             $cdnLn = trim((string) ($fetchedData->last_name ?? ''));
@@ -224,30 +215,8 @@ use App\Http\Controllers\Controller;
             </div>
         </section>
 
-        <div class="sidebar-header">
-            <div class="sidebar-header-toolbar">
-                <button type="button" class="client-detail-back-btn" id="client-detail-back-btn" title="Back to client edit — Matter and case details"
-                    onclick='window.location.href = @json($clientDetailBackEditUrl);'>
-                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
-                    <span class="client-detail-back-btn__text">Back</span>
-                </button>
-                <button type="button" id="sidebar-toggle" class="sidebar-toggle-btn" title="Hide Sidebar">
-                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
-                </button>
-            </div>
-            
-            <!-- Client/Lead status badge (display only, no click action) -->
-            @if(($fetchedData->type ?? '') === 'lead')
-            <div class="sidebar-client-lead-buttons">
-                <span class="status-btn status-btn-lead lead-status-badge active">Lead</span>
-            </div>
-            @elseif(($fetchedData->type ?? '') === 'client')
-            <div class="sidebar-client-lead-buttons">
-                <span class="status-btn status-btn-client client-status-badge active">Client</span>
-            </div>
-            @endif
-            
-            <!-- Matter Selection Dropdown in Sidebar -->
+        {{-- Off-screen matter select for detail-main.js (Back, matter bar, stage pill; visible reference UI removed on demo). --}}
+        <div class="client-detail-demo-hidden-matter" aria-hidden="true">
             <div class="sidebar-matter-selection">
                 <?php
                 $assign_info_arr = \App\Models\Admin::select('type')->where('id',@$fetchedData->id)->first();
@@ -378,109 +347,6 @@ use App\Http\Controllers\Controller;
                     }
                     ?>
                 @endif
-            </div>
-            
-            <div class="matter-status-badge">
-                <?php
-                // Get the current workflow stage for this client matter
-                $workflow_stage_arr = null;
-                
-                if ($id1) {
-                    // If client unique reference id is present in url
-                    $workflow_stage_arr = DB::table('client_matters')
-                        ->join('workflow_stages', 'client_matters.workflow_stage_id', '=', 'workflow_stages.id')
-                        ->select('workflow_stages.name')
-                        ->where('client_id', $fetchedData->id)
-                        ->where('client_unique_matter_no', $id1)
-                        ->first();
-                } else {
-                    // Get the most recent active matter
-                    $clientMatterInfo = DB::table('client_matters')
-                        ->select('client_unique_matter_no')
-                        ->where('client_id', $fetchedData->id)
-                        ->where('matter_status', 1)
-                        ->orderBy('id', 'desc')
-                        ->first();
-
-                    if ($clientMatterInfo) {
-                        $workflow_stage_arr = DB::table('client_matters')
-                            ->join('workflow_stages', 'client_matters.workflow_stage_id', '=', 'workflow_stages.id')
-                            ->select('workflow_stages.name')
-                            ->where('client_id', $fetchedData->id)
-                            ->where('client_unique_matter_no', $clientMatterInfo->client_unique_matter_no)
-                            ->first();
-                    }
-                }
-
-                // Display the workflow stage name or default to N/A
-                if ($workflow_stage_arr && $workflow_stage_arr->name) {
-                    echo $workflow_stage_arr->name;
-                } else {
-                    echo "N/A";
-                }
-                ?>
-            </div>
-            
-            <!-- Matter References Section -->
-            <div class="sidebar-references">
-                <div class="sidebar-references-label" style="font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Reference</div>
-                <?php
-                // Load reference values - SAME LOGIC AS ACCOUNTS TAB
-                $matter__ref_info_arr = null;
-                if (\Illuminate\Support\Facades\Schema::hasTable('client_matters')
-                    && \Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'department_reference')
-                    && \Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'other_reference')) {
-                    if ($id1) {
-                        $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')
-                            ->where('client_id', $fetchedData->id)
-                            ->where('client_unique_matter_no', $id1)
-                            ->first();
-                    } else {
-                        $matter_cnt_ref = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->where('matter_status', 1)->count();
-                        if ($matter_cnt_ref > 0) {
-                            $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')
-                                ->where('client_id', $fetchedData->id)
-                                ->where('matter_status', 1)
-                                ->orderBy('id', 'desc')
-                                ->first();
-                        }
-                    }
-                }
-                ?>
-                
-                <!-- Hidden inputs - SAME IDs AS ORIGINAL -->
-                <input type="hidden" 
-                       id="department_reference" 
-                       name="department_reference" 
-                       value="<?php echo e($matter__ref_info_arr ? ($matter__ref_info_arr->department_reference ?? '') : ''); ?>">
-                
-                <input type="hidden" 
-                       id="other_reference" 
-                       name="other_reference" 
-                       value="<?php echo e($matter__ref_info_arr ? ($matter__ref_info_arr->other_reference ?? '') : ''); ?>">
-                
-                <!-- Reference Chips Container -->
-                <div id="references-container" class="references-chips-container">
-                    <!-- Dynamically generated chips -->
-                </div>
-                
-                <!-- Input Container (hidden by default) -->
-                <div id="reference-input-container" class="reference-input-wrapper" style="display: none;">
-                    <input type="text" 
-                           id="reference-input" 
-                           class="form-control form-control-sm reference-input" 
-                           placeholder="Type and press Enter..."
-                           maxlength="50"
-                           autocomplete="off">
-                    <button class="btn-cancel-input" type="button" title="Cancel (Esc)">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                
-                <!-- Add Button -->
-                <button id="btn-add-reference" class="btn-add-reference-chip" type="button">
-                    <i class="fas fa-plus"></i> Add Reference
-                </button>
             </div>
         </div>
         <div class="cdn-tabs-strip" role="navigation" aria-label="Client record sections">
@@ -1512,7 +1378,6 @@ $(document).ready(function() {
             clientLedgerBalance: '{{ URL::to("/clients/clientLedgerBalanceAmount") }}',
             getInvoicesByMatter: '{{ URL::to("/get-invoices-by-matter") }}',
             updateNoteDatetime: '{{ URL::to("/update-note-datetime") }}',
-            referencesStore: '{{ route("references.store") }}',
             updateClientFundsLedger: '{{ route("clients.update-client-funds-ledger") }}',
             createIntakeUrl: '{{ url("/clients/store-application-doc-via-form") }}',
             enhanceMail: '{{ route("mail.enhance") }}',
@@ -1689,7 +1554,6 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/utils/editor-helpers.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/utils/dom-helpers.js') }}"></script>
 {{-- Phase 3 modules --}}
-<script src="{{ URL::asset('js/crm/clients/modules/references.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/send-to-client.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/notes.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/checklist.js') }}"></script>
@@ -1711,24 +1575,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const collapsedToggle = document.getElementById('collapsed-toggle');
     const sidebar = document.getElementById('client-sidebar');
     const container = document.querySelector('.crm-container');
-    
-    // Check if sidebar state is saved in localStorage
+    if (! sidebar || ! container || ! collapsedToggle) {
+        return;
+    }
     const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-    
-    // Apply initial state
     if (isCollapsed) {
         sidebar.classList.add('collapsed');
         container.classList.add('sidebar-collapsed');
     }
-    
-    // Hide sidebar functionality
-    sidebarToggle.addEventListener('click', function() {
-        sidebar.classList.add('collapsed');
-        container.classList.add('sidebar-collapsed');
-        localStorage.setItem('sidebarCollapsed', 'true');
-    });
-    
-    // Show sidebar functionality
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.add('collapsed');
+            container.classList.add('sidebar-collapsed');
+            localStorage.setItem('sidebarCollapsed', 'true');
+        });
+    }
     collapsedToggle.addEventListener('click', function() {
         sidebar.classList.remove('collapsed');
         container.classList.remove('sidebar-collapsed');

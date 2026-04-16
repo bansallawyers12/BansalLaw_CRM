@@ -290,68 +290,6 @@ use App\Http\Controllers\Controller;
                 }
                 ?>
             </div>
-            
-            <!-- Matter References Section -->
-            <div class="sidebar-references">
-                <div class="sidebar-references-label" style="font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Reference</div>
-                <?php
-                // Load reference values - SAME LOGIC AS ACCOUNTS TAB
-                $matter__ref_info_arr = null;
-                if (\Illuminate\Support\Facades\Schema::hasTable('client_matters')
-                    && \Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'department_reference')
-                    && \Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'other_reference')) {
-                    if ($id1) {
-                        $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')
-                            ->where('client_id', $fetchedData->id)
-                            ->where('client_unique_matter_no', $id1)
-                            ->first();
-                    } else {
-                        $matter_cnt_ref = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->where('matter_status', 1)->count();
-                        if ($matter_cnt_ref > 0) {
-                            $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')
-                                ->where('client_id', $fetchedData->id)
-                                ->where('matter_status', 1)
-                                ->orderBy('id', 'desc')
-                                ->first();
-                        }
-                    }
-                }
-                ?>
-                
-                <!-- Hidden inputs - SAME IDs AS ORIGINAL -->
-                <input type="hidden" 
-                       id="department_reference" 
-                       name="department_reference" 
-                       value="<?php echo e($matter__ref_info_arr ? ($matter__ref_info_arr->department_reference ?? '') : ''); ?>">
-                
-                <input type="hidden" 
-                       id="other_reference" 
-                       name="other_reference" 
-                       value="<?php echo e($matter__ref_info_arr ? ($matter__ref_info_arr->other_reference ?? '') : ''); ?>">
-                
-                <!-- Reference Chips Container -->
-                <div id="references-container" class="references-chips-container">
-                    <!-- Dynamically generated chips -->
-                </div>
-                
-                <!-- Input Container (hidden by default) -->
-                <div id="reference-input-container" class="reference-input-wrapper" style="display: none;">
-                    <input type="text" 
-                           id="reference-input" 
-                           class="form-control form-control-sm reference-input" 
-                           placeholder="Type and press Enter..."
-                           maxlength="50"
-                           autocomplete="off">
-                    <button class="btn-cancel-input" type="button" title="Cancel (Esc)">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                
-                <!-- Add Button -->
-                <button id="btn-add-reference" class="btn-add-reference-chip" type="button">
-                    <i class="fas fa-plus"></i> Add Reference
-                </button>
-            </div>
         </div>
         <nav class="client-sidebar-nav">
             <?php
@@ -1379,7 +1317,6 @@ $(document).ready(function() {
             clientLedgerBalance: '{{ URL::to("/clients/clientLedgerBalanceAmount") }}',
             getInvoicesByMatter: '{{ URL::to("/get-invoices-by-matter") }}',
             updateNoteDatetime: '{{ URL::to("/update-note-datetime") }}',
-            referencesStore: '{{ route("references.store") }}',
             updateClientFundsLedger: '{{ route("clients.update-client-funds-ledger") }}',
             createIntakeUrl: '{{ url("/clients/store-application-doc-via-form") }}',
             enhanceMail: '{{ route("mail.enhance") }}',
@@ -1556,7 +1493,6 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/utils/editor-helpers.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/utils/dom-helpers.js') }}"></script>
 {{-- Phase 3 modules --}}
-<script src="{{ URL::asset('js/crm/clients/modules/references.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/send-to-client.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/notes.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/checklist.js') }}"></script>

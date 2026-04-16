@@ -347,6 +347,19 @@
 }
 
 /* Second row: section tabs (was vertical sidebar list) */
+/* Visually hidden matter select + ref fields (demo: sidebar chrome removed; IDs kept for detail-main.js) */
+.client-detail-newdesign-demo-shell .client-detail-demo-hidden-matter {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .client-detail-newdesign-demo-shell .cdn-tabs-strip {
   background: var(--cdn-card);
   border: 1px solid var(--cdn-border);
@@ -502,16 +515,6 @@
   background: #f1f5f9;
   border: 1px solid var(--cdn-border);
   color: #334155;
-}
-
-.client-detail-newdesign-demo-shell .sidebar-references {
-  flex: 1 1 280px;
-  min-width: 200px;
-  max-width: 100%;
-}
-
-.client-detail-newdesign-demo-shell .sidebar-references-label {
-  margin-bottom: 4px !important;
 }
 
 .client-detail-newdesign-demo-shell .client-id {
