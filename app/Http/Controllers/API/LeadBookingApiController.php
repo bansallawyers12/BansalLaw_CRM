@@ -7,6 +7,7 @@ use App\Models\BookingAppointment;
 use App\Models\ClientContact;
 use App\Models\ClientEmail;
 use App\Services\ClientReferenceService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -47,10 +48,7 @@ class LeadBookingApiController extends BaseController
             ->first();
 
         if ($existing) {
-            return $this->sendError('A client or lead with this email already exists.', [
-                'existing_admin_id' => $existing->id,
-                'client_reference' => $existing->client_id,
-            ], 422);
+            return $this->leadStoreJsonResponse($existing, true);
         }
 
         if ($hasFullName) {
@@ -133,11 +131,23 @@ class LeadBookingApiController extends BaseController
             return $this->sendError('Could not create lead.', [], 500);
         }
 
-        return response()->json([
+        return $this->leadStoreJsonResponse($lead, false);
+    }
+
+    /**
+     * Same JSON shape for POST /api/leads whether the row was just created or already existed (by email).
+     */
+    private function leadStoreJsonResponse(Admin $lead, bool $alreadyExists): JsonResponse
+    {
+        $payload = [
             'success' => true,
-            'message' => 'Lead created successfully.',
+            'message' => $alreadyExists
+                ? 'Lead already exists; returning existing record.'
+                : 'Lead created successfully.',
+            'lead_id' => $lead->id,
             'data' => [
                 'id' => $lead->id,
+                'lead_id' => $lead->id,
                 'client_reference' => $lead->client_id,
                 'type' => $lead->type,
                 'first_name' => $lead->first_name,
@@ -145,7 +155,9 @@ class LeadBookingApiController extends BaseController
                 'email' => $lead->email,
                 'phone' => $lead->phone,
             ],
-        ], 201);
+        ];
+
+        return response()->json($payload, $alreadyExists ? 200 : 201);
     }
 
     /**
