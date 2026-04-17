@@ -1,9 +1,6 @@
 <div class="tab-pane active" id="personaldetails-tab">
                 @php
                     $__sch = \Illuminate\Support\Facades\Schema::class;
-                    $detailHasMatterRefs = $__sch::hasTable('client_matters')
-                        && $__sch::hasColumn('client_matters', 'department_reference')
-                        && $__sch::hasColumn('client_matters', 'other_reference');
                     $detailHasMatterTeam = $__sch::hasTable('client_matters')
                         && $__sch::hasColumn('client_matters', 'sel_legal_practitioner');
                     $detailHasClientAddressCols = $__sch::hasTable('client_addresses')
@@ -715,62 +712,6 @@
                     //dd($matter_cnt);
                     if($matter_cnt >0)
                     {
-                        $matter_dis_ref_info_arr = null;
-                        if ($detailHasMatterRefs) {
-                            if ($id1) {
-                                $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')->where('client_id', $fetchedData->id)->where('client_unique_matter_no', $id1)->first();
-                            } else {
-                                $matter_cnt_inner = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->where('matter_status', 1)->count();
-                                if ($matter_cnt_inner > 0) {
-                                    $matter_dis_ref_info_arr = \App\Models\ClientMatter::select('department_reference', 'other_reference')->where('client_id', $fetchedData->id)->where('matter_status', 1)->orderBy('id', 'desc')->first();
-                                }
-                            }
-                        }
-
-                        if(
-                            $matter_dis_ref_info_arr
-                            && (
-                                ($matter_dis_ref_info_arr->department_reference ?? '') != ''
-                                || ($matter_dis_ref_info_arr->other_reference ?? '') != ''
-                            )
-                        )
-                        { ?>
-                            <div class="card">
-                                <h3><i class="fas fa-user"></i> Reference Information</h3>
-                                <div class="field-group">
-                                    <span class="field-label">Department Reference</span>
-                                    <span class="field-value">
-                                        <?php
-                                        if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->department_reference != '') {
-                                            echo $matter_dis_ref_info_arr->department_reference;
-                                        } else {
-                                            echo 'N/A';
-                                        }?>
-
-                                    </span>
-                                </div>
-                                <div class="field-group">
-                                    <span class="field-label">Other Reference</span>
-                                    <span class="field-value">
-                                        <?php
-                                        if( isset($matter_dis_ref_info_arr) && !empty($matter_dis_ref_info_arr) && $matter_dis_ref_info_arr->other_reference != ''){
-                                            echo $matter_dis_ref_info_arr->other_reference;
-                                        } else {
-                                            echo 'N/A';
-                                        } ?>
-                                    </span>
-                                </div>
-                            </div>
-                        <?php
-                        }
-                    }
-                    ?>
-
-                    <?php
-                    $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
-                    //dd($matter_cnt);
-                    if($matter_cnt >0)
-                    {
                     ?>
                         <div class="card">
                             <h3><i class="fas fa-user"></i> Matter assignee
@@ -1034,6 +975,7 @@
                         ])
                     @endif
 
+                    @unless($suppressPersonalDetailsTagCard ?? false)
                     <div class="card">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h3><i class="fas fa-address-card"></i> Tag(s):</h3>
@@ -1192,6 +1134,7 @@
                         }
 
                     </style>
+                    @endunless
 
                 </div>
 

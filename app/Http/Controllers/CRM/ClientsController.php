@@ -2063,6 +2063,8 @@ class ClientsController extends Controller
             $knownTabNames = [
                 'personaldetails', 'companydetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments',
                 'emails', 'client_portal', 'legalforms',
+                // Demo layout aliases (new-design preview)
+                'overview', 'documents', 'clientaction',
                 // Legacy removed tab slugs - keep as reserved so they are not treated as matter IDs
                 'formgenerations', 'formgenerationsl',
                 'workflow', 'checklists', 'account', 'notuseddocuments',
@@ -2107,6 +2109,26 @@ class ClientsController extends Controller
             $activeTab = $tab ?? 'personaldetails';
             if (strtolower((string) $activeTab) === 'client_portal') {
                 $activeTab = 'workflow';
+            }
+            // Demo new-design view: URL aliases + hide removed tabs
+            if ($detailView === 'crm.clients.detail_newdesign_demo') {
+                $atn = strtolower((string) $activeTab);
+                if ($atn === 'overview') {
+                    $activeTab = 'personaldetails';
+                } elseif ($atn === 'documents') {
+                    $activeTab = 'personaldocuments';
+                } elseif (in_array($atn, ['workflow', 'checklists'], true)) {
+                    $activeTab = 'clientaction';
+                }
+                if (strtolower((string) $activeTab) === 'matterdocuments') {
+                    $mcDemo = \App\Models\ClientMatter::query()
+                        ->where('client_id', (int) $id)
+                        ->where('matter_status', 1)
+                        ->count();
+                    if ($mcDemo < 1) {
+                        $activeTab = 'personaldetails';
+                    }
+                }
             }
 
             // Banking matters (BANK_1, …): hide Matter Documents tab — remap stale /matterdocuments URLs.
@@ -2592,10 +2614,9 @@ class ClientsController extends Controller
         if ($squery != '') {
             $results = [];
 
-            // First: search department_reference or other_reference in client_matters
+            // First: search client_unique_matter_no in client_matters
             $matterMatches = DB::table('client_matters')
-                ->where('department_reference', 'LIKE', "%{$squery}%")
-                ->orWhere('other_reference', 'LIKE', "%{$squery}%")
+                ->where('client_unique_matter_no', 'LIKE', "%{$squery}%")
                 ->get();
 
             foreach ($matterMatches as $matter) {
@@ -2665,10 +2686,9 @@ class ClientsController extends Controller
         $squery = $request->q;
         if ($squery != '') {
             $results = [];
-            // First: search department_reference or other_reference in client_matters
+            // First: search client_unique_matter_no in client_matters
             $matterMatches = DB::table('client_matters')
-                ->where('department_reference', 'LIKE', "%{$squery}%")
-                ->orWhere('other_reference', 'LIKE', "%{$squery}%")
+                ->where('client_unique_matter_no', 'LIKE', "%{$squery}%")
                 ->get();
 
             foreach ($matterMatches as $matter) {
@@ -2809,7 +2829,7 @@ class ClientsController extends Controller
             }
             
             /**
-             * 2. Search in client_matters by department_reference / other_reference / client_unique_matter_no
+             * 2. Search in client_matters by client_unique_matter_no
              * Optimized: Use JOIN to fetch client data in single query
              */
             $matterMatches = DB::table('client_matters')
@@ -2822,11 +2842,7 @@ class ClientsController extends Controller
                 ->tap(function ($q) {
                     StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
                 })
-                ->where(function($query) use ($squery) {
-                    $query->where('client_matters.department_reference', 'LIKE', "%{$squery}%")
-                          ->orWhere('client_matters.other_reference', 'LIKE', "%{$squery}%")
-                          ->orWhere('client_matters.client_unique_matter_no', 'LIKE', "%{$squery}%");
-                })
+                ->where('client_matters.client_unique_matter_no', 'LIKE', "%{$squery}%")
                 ->select(
                     'admins.id as client_id',
                     'admins.first_name',
@@ -5294,124 +5310,6 @@ class ClientsController extends Controller
                 'message' => 'Failed to delete cost agreement'
             ]);
         }
-    }
-
-    //save reference
-    public function savereferences(Request $request)
-    { 
-        // Step 1: Validate required fields - client_id is mandatory
-        $validated = $request->validate([
-            'client_id' => 'required|integer|exists:admins,id',
-            'department_reference' => 'nullable|string|max:255',
-            'other_reference' => 'nullable|string|max:255',
-            'client_matter_id' => 'nullable|integer|exists:client_matters,id',
-            'client_unique_matter_no' => 'nullable|string|max:255',
-        ]);
-
-        // Step 2: Find the matter - ALWAYS filter by client_id first for security
-        // Priority: 1) Use client_unique_matter_no from URL (id1), 2) Use client_matter_id from dropdown, 3) Get latest active matter
-        $matter = null;
-        $lookupMethod = '';
-        $clientId = (int)$request->client_id; // Ensure integer type
-        
-        if ($request->has('client_unique_matter_no') && !empty($request->client_unique_matter_no)) {
-            // Priority 1: Use client_unique_matter_no from URL (id1) - MUST match client_id
-            $matter = \App\Models\ClientMatter::where('client_id', $clientId)
-                ->where('client_unique_matter_no', $request->client_unique_matter_no)
-                ->first();
-            $lookupMethod = 'client_unique_matter_no: ' . $request->client_unique_matter_no;
-        } elseif ($request->has('client_matter_id') && !empty($request->client_matter_id)) {
-            // Priority 2: Use the matter ID from dropdown - MUST match client_id
-            $matter = \App\Models\ClientMatter::where('client_id', $clientId)
-                ->where('id', (int)$request->client_matter_id)
-                ->first();
-            $lookupMethod = 'client_matter_id: ' . $request->client_matter_id;
-        } else {
-            // Priority 3: Fallback - Get latest active matter - MUST match client_id
-            $matter = \App\Models\ClientMatter::where('client_id', $clientId)
-                ->where('matter_status', 1)
-                ->orderBy('id', 'desc')
-                ->first();
-            $lookupMethod = 'latest active matter';
-        }
-
-        // Step 3: Verify matter exists and belongs to the client_id (double security check)
-        if (!$matter) {
-            Log::error('References save - Matter not found', [
-                'client_id' => $clientId,
-                'client_unique_matter_no' => $request->client_unique_matter_no ?? 'not provided',
-                'client_matter_id' => $request->client_matter_id ?? 'not provided',
-                'lookup_method' => $lookupMethod
-            ]);
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Record not found for given client_id and matter information.'
-            ], 404);
-        }
-        
-        // Additional security check: Ensure the found matter actually belongs to the client_id
-        if ($matter->client_id != $clientId) {
-            Log::error('References save - Security violation: Matter does not belong to client', [
-                'matter_id' => $matter->id,
-                'matter_client_id' => $matter->client_id,
-                'requested_client_id' => $clientId
-            ]);
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Security violation: Matter does not belong to the specified client.'
-            ], 403);
-        }
-        
-        Log::info('References save - Matter found', [
-            'matter_id' => $matter->id,
-            'client_id' => $matter->client_id,
-            'client_unique_matter_no' => $matter->client_unique_matter_no,
-            'lookup_method' => $lookupMethod,
-            'current_department_reference' => $matter->department_reference,
-            'current_other_reference' => $matter->other_reference
-        ]);
-
-        // Step 3: Perform the update - convert empty strings to null
-        $deptRefInput = $request->input('department_reference', '');
-        $otherRefInput = $request->input('other_reference', '');
-        $deptRef = !empty($deptRefInput) && trim($deptRefInput) !== '' ? trim($deptRefInput) : null;
-        $otherRef = !empty($otherRefInput) && trim($otherRefInput) !== '' ? trim($otherRefInput) : null;
-        
-        // Direct assignment and save (fields are in fillable, so this is safe)
-        $matter->department_reference = $deptRef;
-        $matter->other_reference = $otherRef;
-        $saved = $matter->save();
-        
-        if (!$saved) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to save references.'
-            ], 500);
-        }
-        
-        // Refresh to get latest values from database
-        $matter->refresh();
-
-        // Log for debugging
-        Log::info('References saved', [
-            'matter_id' => $matter->id,
-            'client_id' => $request->client_id,
-            'client_unique_matter_no' => $matter->client_unique_matter_no,
-            'department_reference' => $matter->department_reference,
-            'other_reference' => $matter->other_reference,
-            'saved' => $saved
-        ]);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'References updated successfully.',
-            'data' => [
-                'matter_id' => $matter->id,
-                'client_unique_matter_no' => $matter->client_unique_matter_no,
-                'department_reference' => $matter->department_reference,
-                'other_reference' => $matter->other_reference
-            ]
-        ]);
     }
 
     //Check star client

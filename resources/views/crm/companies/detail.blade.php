@@ -81,7 +81,7 @@ use App\Http\Controllers\Controller;
                 </div>
             </div>
             
-            <!-- Lead status badge (conversion action is handled in Checklist tab) -->
+            <!-- Lead status badge (display only) -->
             @if(($fetchedData->type ?? '') === 'lead')
             <div class="sidebar-client-lead-buttons">
                 <span class="status-btn status-btn-lead lead-status-badge active">Lead</span>
@@ -261,65 +261,6 @@ use App\Http\Controllers\Controller;
                 }
                 ?>
             </div>
-            
-            <!-- Matter References Section -->
-            <div class="sidebar-references">
-                <div class="sidebar-references-label" style="font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Reference</div>
-                <?php
-                // Load reference values - SAME LOGIC AS ACCOUNTS TAB
-                $matter__ref_info_arr = [];
-                if($id1) {
-                    // If client unique reference id is present in url
-                    $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference','other_reference')
-                        ->where('client_id', $fetchedData->id)
-                        ->where('client_unique_matter_no', $id1)
-                        ->first();
-                } else {
-                    $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->where('matter_status', 1)->count();
-                    if($matter_cnt > 0) {
-                        $matter__ref_info_arr = \App\Models\ClientMatter::select('department_reference','other_reference')
-                            ->where('client_id', $fetchedData->id)
-                            ->where('matter_status', 1)
-                            ->orderBy('id', 'desc')
-                            ->first();
-                    }
-                }
-                ?>
-                
-                <!-- Hidden inputs - SAME IDs AS ORIGINAL -->
-                <input type="hidden" 
-                       id="department_reference" 
-                       name="department_reference" 
-                       value="<?php if(isset($matter__ref_info_arr) && !empty($matter__ref_info_arr) && $matter__ref_info_arr->department_reference != ''){ echo $matter__ref_info_arr->department_reference; } ?>">
-                
-                <input type="hidden" 
-                       id="other_reference" 
-                       name="other_reference" 
-                       value="<?php if(isset($matter__ref_info_arr) && !empty($matter__ref_info_arr) && $matter__ref_info_arr->other_reference != ''){ echo $matter__ref_info_arr->other_reference; } ?>">
-                
-                <!-- Reference Chips Container -->
-                <div id="references-container" class="references-chips-container">
-                    <!-- Dynamically generated chips -->
-                </div>
-                
-                <!-- Input Container (hidden by default) -->
-                <div id="reference-input-container" class="reference-input-wrapper" style="display: none;">
-                    <input type="text" 
-                           id="reference-input" 
-                           class="form-control form-control-sm reference-input" 
-                           placeholder="Type and press Enter..."
-                           maxlength="50"
-                           autocomplete="off">
-                    <button class="btn-cancel-input" type="button" title="Cancel (Esc)">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                
-                <!-- Add Button -->
-                <button id="btn-add-reference" class="btn-add-reference-chip" type="button">
-                    <i class="fas fa-plus"></i> Add Reference
-                </button>
-            </div>
         </div>
         <nav class="client-sidebar-nav">
             <?php
@@ -367,10 +308,6 @@ use App\Http\Controllers\Controller;
                     <i class="fas fa-inbox"></i>
                     <span>Emails</span>
                 </button>
-                <button class="client-nav-button" data-tab="checklists">
-                    <i class="fas fa-tasks"></i>
-                    <span>Checklists</span>
-                </button>
                 <button class="client-nav-button" data-tab="workflow">
                     <i class="fas fa-stream"></i>
                     <span>Workflow</span>
@@ -406,10 +343,6 @@ use App\Http\Controllers\Controller;
                 <button class="client-nav-button" data-tab="personaldocuments">
                     <i class="fas fa-folder-open"></i>
                     <span>Company Documents</span>
-                </button>
-                <button class="client-nav-button" data-tab="checklists">
-                    <i class="fas fa-tasks"></i>
-                    <span>Checklists</span>
                 </button>
             <?php
             }
@@ -447,10 +380,7 @@ use App\Http\Controllers\Controller;
                 @include('crm.companies.tabs.nomination_documents')
                 @include('crm.clients.tabs.account')
                 @include('crm.clients.tabs.emails')
-                @include('crm.clients.tabs.checklists')
                 @include('crm.clients.tabs.workflow')
-            @else
-                @include('crm.clients.tabs.checklists')
             @endif
             
             @include('crm.clients.tabs.not_used_documents')
@@ -1319,7 +1249,6 @@ $(document).ready(function() {
             clientLedgerBalance: '{{ URL::to("/clients/clientLedgerBalanceAmount") }}',
             getInvoicesByMatter: '{{ URL::to("/get-invoices-by-matter") }}',
             updateNoteDatetime: '{{ URL::to("/update-note-datetime") }}',
-            referencesStore: '{{ route("references.store") }}',
             updateClientFundsLedger: '{{ route("clients.update-client-funds-ledger") }}',
             createIntakeUrl: '{{ url("/clients/store-application-doc-via-form") }}',
             enhanceMail: '{{ route("mail.enhance") }}',
@@ -1496,7 +1425,6 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/utils/editor-helpers.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/utils/dom-helpers.js') }}"></script>
 {{-- Phase 3 modules --}}
-<script src="{{ URL::asset('js/crm/clients/modules/references.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/send-to-client.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/notes.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/checklist.js') }}"></script>

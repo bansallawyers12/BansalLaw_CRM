@@ -761,10 +761,48 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 .client-navigation-sidebar .sidebar-header-toolbar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 10px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
     margin: 0 0 12px 0;
     padding: 0 1px;
+}
+
+/* New layout demo — opens detail-demo-newdesign for this client/matter/tab */
+.client-navigation-sidebar .client-detail-newdesign-demo-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #1e40af;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 16px;
+    text-decoration: none;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.client-navigation-sidebar .client-detail-newdesign-demo-link:hover {
+    color: #1e3a8a;
+    background: #dbeafe;
+    border-color: #93c5fd;
+    text-decoration: none;
+}
+.client-navigation-sidebar .client-detail-newdesign-demo-link:focus {
+    outline: none;
+}
+.client-navigation-sidebar .client-detail-newdesign-demo-link:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+.client-navigation-sidebar .client-detail-newdesign-demo-link i {
+    font-size: 11px;
+    opacity: 0.9;
 }
 
 /* Back — same grey language as collapse control, pill shape, no default browser border */
@@ -812,6 +850,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 .client-navigation-sidebar .sidebar-header-toolbar .sidebar-toggle-btn {
     position: static;
     flex-shrink: 0;
+    margin-left: auto;
     background: #6c757d;
     color: #fff;
     border: none !important;
@@ -1266,188 +1305,6 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 /* Hidden by default - shown via filter */
 .feed-item.activity {
     display: block;
-}
-
-/* ============================================
-   SIDEBAR REFERENCES - Chip Style
-   ============================================ */
-
-/* Sidebar References Section */
-.sidebar-references {
-    padding: 0;
-    background: transparent;
-    margin-bottom: 12px;
-    position: relative;
-}
-
-/* References Chips Container */
-.references-chips-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 6px;
-    min-height: 0;
-}
-
-/* Individual Reference Chip */
-.reference-chip {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 8px;
-    background: #e9ecef;
-    color: #495057;
-    border-radius: 10px;
-    font-size: 10px;
-    font-weight: 500;
-    cursor: pointer;
-    box-shadow: none;
-    position: relative;
-    user-select: none;
-    border: 1px solid #dee2e6;
-}
-
-.reference-chip:hover {
-    background: #dee2e6;
-    border-color: #adb5bd;
-    transform: none;
-    box-shadow: none;
-}
-
-.reference-chip:active {
-}
-
-/* Type indicator on chip */
-.reference-chip::before {
-    content: attr(data-label);
-    font-size: 8px;
-    opacity: 0.85;
-    margin-right: 3px;
-    text-transform: uppercase;
-}
-
-/* Reference chip when being edited */
-.reference-chip.editing {
-    opacity: 0.5;
-    pointer-events: none;
-}
-
-/* Different colors for reference types */
-.reference-chip[data-type="department_reference"] {
-    background: #e7f1ff;
-    color: #0d6efd;
-    border-color: #b6d4fe;
-}
-
-.reference-chip[data-type="department_reference"]:hover {
-    background: #cfe2ff;
-    border-color: #9ec5fe;
-}
-
-.reference-chip[data-type="other_reference"] {
-    background: #f8d7da;
-    color: #842029;
-    border-color: #f1aeb5;
-}
-
-.reference-chip[data-type="other_reference"]:hover {
-    background: #f5c2c7;
-    border-color: #ea868f;
-}
-
-/* Input Wrapper */
-.reference-input-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-bottom: 6px;
-}
-
-/* Removed slideDown animation */
-
-.reference-input {
-    flex: 1;
-    font-size: 11px;
-    padding: 4px 8px;
-    border: 1px solid #9ca3af;
-    border-radius: 4px;
-    height: 26px;
-    color: #1f2937;
-}
-
-.reference-input::placeholder {
-    color: #6b7280;
-}
-
-.reference-input:focus {
-    outline: none;
-    border-color: #86b7fe;
-    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
-}
-
-.btn-cancel-input {
-    background: none;
-    border: none;
-    color: #dc3545;
-    cursor: pointer;
-    padding: 4px 6px;
-    font-size: 12px;
-    flex-shrink: 0;
-}
-
-.btn-cancel-input:hover {
-    color: #b02a37;
-}
-
-/* Add Reference Button */
-.btn-add-reference-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    background: #f3f4f6;
-    border: 1px solid #9ca3af;
-    border-radius: 4px;
-    color: #374151;
-    font-size: 10px;
-    font-weight: 500;
-    cursor: pointer;
-    width: 100%;
-    justify-content: center;
-}
-
-.btn-add-reference-chip:hover {
-    background: #e5e7eb;
-    color: #1f2937;
-    border-color: #6b7280;
-    border-style: solid;
-}
-
-.btn-add-reference-chip:focus {
-    outline: none;
-    box-shadow: none;
-}
-
-.btn-add-reference-chip i {
-    font-size: 9px;
-}
-
-/* Hide add button when not needed */
-.btn-add-reference-chip.hidden {
-    display: none;
-}
-
-/* Disabled state during save */
-.sidebar-references.saving {
-    pointer-events: none;
-    opacity: 0.6;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .reference-chip {
-        font-size: 9px;
-        padding: 2px 6px;
-    }
 }
 
 /* --------------------------------------------------------------------------

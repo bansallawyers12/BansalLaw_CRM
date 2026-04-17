@@ -316,10 +316,11 @@
             tabId = 'emails';
         }
         
-        // Legacy support: Form Generation tab removed — redirect to checklists
+        // Legacy: Checklists tab removed — open Account instead
+        // Legacy: Form Generation tab removed — same redirect (was Checklists)
         const normalizedTabId = (tabId || '').toLowerCase();
-        if (normalizedTabId === 'formgenerations' || normalizedTabId === 'formgenerationsl') {
-            tabId = 'checklists';
+        if (normalizedTabId === 'checklists' || normalizedTabId === 'formgenerations' || normalizedTabId === 'formgenerationsl') {
+            tabId = 'account';
         }
 
         // "Default" tabs: the Blade template already marks the pane and button as active.
