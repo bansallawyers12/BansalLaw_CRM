@@ -722,10 +722,59 @@ class BookingCalendarExternalFeed
     }
 
     /**
+     * Bookings list status filter: CRM slug (pending, paid, …) or '' for all.
+     * Accepts calendar legend slugs; legacy 0–11 / website string codes map to the closest CRM status.
+     */
+    public function crmBookingsListStatusFilterResolvedSlug(mixed $raw): string
+    {
+        $allowed = ['pending', 'paid', 'confirmed', 'completed', 'cancelled', 'no_show'];
+        if ($raw === null || $raw === '') {
+            return '';
+        }
+        if (is_string($raw)) {
+            $s = strtolower(trim($raw));
+            if (in_array($s, $allowed, true)) {
+                return $s;
+            }
+        }
+        $i = $this->resolveWebsiteBookingsListApiStatus($raw);
+        if ($i === null) {
+            return '';
+        }
+
+        return match ($i) {
+            0, 9, 11 => 'pending',
+            10 => 'paid',
+            1, 5 => 'confirmed',
+            2 => 'completed',
+            7, 3 => 'cancelled',
+            6, 8 => 'no_show',
+            default => '',
+        };
+    }
+
+    /**
      * Human labels for website appointment status codes (filter + display).
      *
      * @return array<int, string>
      */
+    /**
+     * CRM booking_appointments.status slug → label shown on the booking calendar legend.
+     */
+    public static function crmCalendarLegendStatusLabel(string $crmStatus): string
+    {
+        return match ($crmStatus) {
+            'pending' => 'Payment Pending',
+            'paid' => 'Paid',
+            'confirmed' => 'Confirmed',
+            'completed' => 'Completed',
+            'cancelled' => 'Cancelled',
+            'no_show' => 'No Show',
+            'rescheduled' => 'Rescheduled',
+            default => ucwords(str_replace('_', ' ', $crmStatus)),
+        };
+    }
+
     public static function websiteBookingsStatusLabels(): array
     {
         return [
@@ -1418,16 +1467,27 @@ class BookingCalendarExternalFeed
             return $this->scalarForCalendar($apiLabel);
         }
 
-        return ucwords(str_replace('_', ' ', $normalizedStatus));
+        return self::crmCalendarLegendStatusLabel($normalizedStatus);
+    }
+
+    /**
+     * Same rule as calendar modal "Payment:" badge text (calendarPayloadFromModel payment_status).
+     */
+    public static function calendarPaymentDisplayLabel(?string $paymentType, bool $isPaid): string
+    {
+        if ($paymentType !== null) {
+            $s = trim($paymentType);
+            if ($s !== '' && strcasecmp($s, 'null') !== 0 && strcasecmp($s, 'undefined') !== 0) {
+                return $s;
+            }
+        }
+
+        return $isPaid ? 'Paid' : 'Free';
     }
 
     protected function paymentDisplayLabel(?string $paymentType, bool $isPaid): string
     {
-        if ($paymentType !== null && $this->scalarForCalendar($paymentType) !== '') {
-            return $this->scalarForCalendar($paymentType);
-        }
-
-        return $isPaid ? 'Paid' : 'Free';
+        return self::calendarPaymentDisplayLabel($paymentType, $isPaid);
     }
 
     /**
