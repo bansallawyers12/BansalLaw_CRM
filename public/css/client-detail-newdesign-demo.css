@@ -553,7 +553,7 @@
    Must explicitly cancel all layout-level overrides on .client-nav-button:
    width:100%, margin-bottom:2px, border:none, text-align:left */
 .client-detail-newdesign-demo-shell .cdn-main-tab-bar .client-nav-button {
-  border-radius: 999px;
+  border-radius: 9px;
   padding: 8px 18px;
   font-size: 13px;
   line-height: 1.2;
