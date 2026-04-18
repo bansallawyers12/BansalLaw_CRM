@@ -346,7 +346,7 @@
   color: #fff;
 }
 
-/* Second row: section tabs (was vertical sidebar list) */
+/* Section tabs: horizontal pill row inside main card */
 /* Visually hidden matter select + ref fields (demo: sidebar chrome removed; IDs kept for detail-main.js) */
 .client-detail-newdesign-demo-shell .client-detail-demo-hidden-matter {
   position: absolute;
@@ -360,21 +360,16 @@
   border: 0;
 }
 
-.client-detail-newdesign-demo-shell .cdn-tabs-strip {
-  background: var(--cdn-card);
-  border: 1px solid var(--cdn-border);
-  border-radius: var(--cdn-radius);
-  box-shadow: var(--cdn-shadow);
-  margin-top: 12px;
-  overflow: hidden;
+/* Primary tab row lives inside .main-content (matches clientdetailnewdesign.html main-card tabs). */
+.client-detail-newdesign-demo-shell .cdn-tabs-strip.cdn-main-tab-bar {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  margin: 0;
+  overflow: visible;
 }
 
-.client-detail-newdesign-demo-shell .cdn-tabs-strip .client-sidebar-nav {
-  border-top: none;
-  background: #fafcff;
-}
-
-/* Layout: top bar (ex-sidebar) full width, then main + activity feed in two columns */
+/* Layout: top bar (hero only), then main + activity feed in two columns */
 .client-detail-newdesign-demo-shell .crm-container {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
@@ -392,7 +387,7 @@
   gap: 16px;
 }
 
-/* Top stack: hero + matter tools + tabs (no outer chrome — inner blocks are cards) */
+/* Top stack: hero + hidden matter controls (tabs are inside .main-content) */
 .client-detail-newdesign-demo-shell .client-navigation-sidebar {
   position: relative;
   grid-area: cdn-topbar;
@@ -530,6 +525,14 @@
   background: #fafcff;
 }
 
+.client-detail-newdesign-demo-shell .cdn-main-tab-bar .client-sidebar-nav {
+  padding: 0 0 12px;
+  margin: 0 0 14px;
+  border-top: none;
+  border-bottom: 1px solid var(--cdn-border);
+  background: transparent;
+}
+
 .client-detail-newdesign-demo-shell .client-nav-button {
   flex: 0 0 auto;
   border-radius: 9px;
@@ -541,6 +544,18 @@
   white-space: nowrap;
   padding: 7px 10px;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+/* Design-page pills: full radius, text-only (icons hidden). */
+.client-detail-newdesign-demo-shell .cdn-main-tab-bar .client-nav-button {
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.client-detail-newdesign-demo-shell .cdn-main-tab-bar .client-nav-button i {
+  display: none;
 }
 
 .client-detail-newdesign-demo-shell .client-nav-button i {
@@ -566,6 +581,16 @@
   text-align: left !important;
   border-top: 1px dashed var(--cdn-border) !important;
   background: transparent !important;
+}
+
+.client-detail-newdesign-demo-shell .cdn-tab-last-updated {
+  margin-top: 4px !important;
+  padding: 6px 0 0 !important;
+  text-align: left !important;
+  border-top: none !important;
+  color: var(--cdn-muted) !important;
+  font-size: 13px !important;
+  font-weight: 500;
 }
 
 .client-detail-newdesign-demo-shell .main-content-with-tabs {

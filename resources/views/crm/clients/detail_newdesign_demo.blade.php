@@ -349,8 +349,16 @@ use App\Http\Controllers\Controller;
                 @endif
             </div>
         </div>
-        <div class="cdn-tabs-strip" role="navigation" aria-label="Client record sections">
-        <nav class="client-sidebar-nav">
+    </aside>
+
+    <main class="main-content" id="main-content">
+        <div class="server-error">
+            @include('../Elements/flash-message')
+        </div>
+        <div class="custom-error-msg">
+        </div>
+        <div class="cdn-tabs-strip cdn-main-tab-bar">
+        <nav class="client-sidebar-nav" role="tablist" aria-label="Client record sections">
             <?php
             $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
             
@@ -375,46 +383,44 @@ use App\Http\Controllers\Controller;
             if( $isMatterIdInUrl || $matter_cnt > 0 )
             {  //if client unique reference id is present in url
             ?>
-                <button class="client-nav-button active" data-tab="personaldetails">
-                    <i class="fas fa-th-large"></i>
+                <button type="button" role="tab" class="client-nav-button active" data-tab="personaldetails">
+                    <i class="fas fa-th-large" aria-hidden="true"></i>
                     <span>Overview</span>
                 </button>
-                <button class="client-nav-button" data-tab="activityfeed">
-                    <i class="fas fa-history"></i>
-                    <span>Activity</span>
+                <button type="button" role="tab" class="client-nav-button" data-tab="activityfeed">
+                    <i class="fas fa-history" aria-hidden="true"></i>
+                    <span>Timeline</span>
                 </button>
-                <button class="client-nav-button" data-tab="clientaction">
-                    <i class="fas fa-bolt"></i>
-                    <span>Action</span>
+                <button type="button" role="tab" class="client-nav-button" data-tab="clientaction">
+                    <i class="fas fa-bolt" aria-hidden="true"></i>
+                    <span>Actions</span>
                 </button>
-                <button class="client-nav-button" data-tab="noteterm">
-                    <i class="fas fa-sticky-note"></i>
+                <button type="button" role="tab" class="client-nav-button" data-tab="noteterm">
+                    <i class="fas fa-sticky-note" aria-hidden="true"></i>
                     <span>Notes</span>
                 </button>
-                <button class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments">
-                    <i class="fas fa-folder-open"></i>
-                    <span>Document</span>
+                <button type="button" role="tab" class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments">
+                    <i class="fas fa-folder-open" aria-hidden="true"></i>
+                    <span>Documents</span>
                 </button>
-                <button class="client-nav-button" data-tab="legalforms">
-                    <i class="fas fa-file-signature"></i>
+                <button type="button" role="tab" class="client-nav-button" data-tab="legalforms">
+                    <i class="fas fa-file-signature" aria-hidden="true"></i>
                     <span>Legal Forms</span>
                 </button>
-                <button class="client-nav-button" data-tab="emails">
-                    <i class="fas fa-inbox"></i>
+                <button type="button" role="tab" class="client-nav-button" data-tab="emails">
+                    <i class="fas fa-inbox" aria-hidden="true"></i>
                     <span>Emails</span>
                 </button>
-                <button class="client-nav-button" data-tab="account">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                    <span>Accounts</span>
+                <button type="button" role="tab" class="client-nav-button" data-tab="account">
+                    <i class="fas fa-file-invoice-dollar" aria-hidden="true"></i>
+                    <span>Billing</span>
                 </button>
                 <?php
-                // Get last updated date for the client record
                 if (isset($fetchedData->updated_at) && $fetchedData->updated_at) {
                     try {
                         $updatedDate = \Carbon\Carbon::parse($fetchedData->updated_at);
-                        echo '<div class="sidebar-last-updated" style="margin-top: 15px; padding: 10px 15px; color: #374151; font-size: 0.85em; text-align: center; border-top: 1px solid #e2e8f0;">Last update on ' . $updatedDate->format('d/m/Y') . '</div>';
+                        echo '<div class="sidebar-last-updated cdn-tab-last-updated" role="note">Last update on ' . $updatedDate->format('d/m/Y') . '</div>';
                     } catch (\Exception $e) {
-                        // Silently fail if date parsing fails
                     }
                 }
                 ?>
@@ -424,40 +430,32 @@ use App\Http\Controllers\Controller;
             {  //If no matter is exist
                 $cdnShowMattersDocSubtab = false;
             ?>
-                <button class="client-nav-button active" data-tab="personaldetails">
-                    <i class="fas fa-th-large"></i>
+                <button type="button" role="tab" class="client-nav-button active" data-tab="personaldetails">
+                    <i class="fas fa-th-large" aria-hidden="true"></i>
                     <span>Overview</span>
                 </button>
-                <button class="client-nav-button" data-tab="activityfeed">
-                    <i class="fas fa-history"></i>
-                    <span>Activity</span>
+                <button type="button" role="tab" class="client-nav-button" data-tab="activityfeed">
+                    <i class="fas fa-history" aria-hidden="true"></i>
+                    <span>Timeline</span>
                 </button>
-                <button class="client-nav-button" data-tab="clientaction">
-                    <i class="fas fa-bolt"></i>
-                    <span>Action</span>
+                <button type="button" role="tab" class="client-nav-button" data-tab="clientaction">
+                    <i class="fas fa-bolt" aria-hidden="true"></i>
+                    <span>Actions</span>
                 </button>
-                <button class="client-nav-button" data-tab="noteterm">
-                    <i class="fas fa-sticky-note"></i>
+                <button type="button" role="tab" class="client-nav-button" data-tab="noteterm">
+                    <i class="fas fa-sticky-note" aria-hidden="true"></i>
                     <span>Notes</span>
                 </button>
-                <button class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments">
-                    <i class="fas fa-folder-open"></i>
-                    <span>Document</span>
+                <button type="button" role="tab" class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments">
+                    <i class="fas fa-folder-open" aria-hidden="true"></i>
+                    <span>Documents</span>
                 </button>
             <?php
             }
             ?>
         </nav>
         </div>
-    </aside>
-
-    <main class="main-content" id="main-content">
-        <div class="server-error">
-            @include('../Elements/flash-message')
-        </div>
-        <div class="custom-error-msg">
-        </div>
-        <!-- Main Content Container with Vertical Tabs -->
+        <!-- Main content: tab panels (same SidebarTabs behaviour as production) -->
         <div class="main-content-with-tabs">
             <div id="cdn-doc-subtab-strip" class="cdn-doc-subtab-strip" role="tablist" aria-label="Document scope">
                 <button type="button" class="cdn-doc-subtab-btn active" data-doc-sub="personaldocuments">Personal</button>
