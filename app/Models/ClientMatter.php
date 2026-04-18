@@ -144,6 +144,14 @@ class ClientMatter extends Model
     }
 
     /**
+     * Per-matter checklist items (Actions tab — staff-defined tasks).
+     */
+    public function tasks()
+    {
+        return $this->hasMany(ClientMatterTask::class, 'client_matter_id');
+    }
+
+    /**
      * Get the receipts/financial transactions for this matter.
      */
     public function receipts()

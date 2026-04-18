@@ -1,16 +1,23 @@
-{{-- Demo-only: client detail new design — Action tab (stage changes via header Update Stage only). --}}
-<div class="tab-pane" id="clientaction-tab">
-    <div class="card full-width">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
-            <h3 class="mb-0"><i class="fas fa-bolt"></i> Action</h3>
-        </div>
-        <p class="text-muted mb-3">
-            Log follow-ups and matter-related actions.
-        </p>
-        <div class="d-flex flex-wrap gap-2 mt-2">
-            <button type="button" class="btn btn-primary create_note_d" datatype="note">
-                <i class="fas fa-plus"></i> Add note / action
-            </button>
+{{-- Demo-only: client detail new design — Tasks tab (stage changes via header Update Stage only). Internal slug remains clientaction for routing/JS. --}}
+<div class="tab-pane" id="clientaction-tab" role="tabpanel" aria-labelledby="cdn-tab-clientaction">
+    <div class="card full-width cdn-tasks-tab-card">
+        <div class="card-body cdn-tasks-tab-card__body">
+            <h2 class="cdn-tasks-tab-title">
+                <span class="cdn-tasks-tab-title__icon" aria-hidden="true"><i class="fas fa-tasks"></i></span>
+                <span>Tasks</span>
+            </h2>
+
+            <div id="cdn-matter-tasks" class="cdn-matter-tasks">
+                <div class="cdn-matter-task__list" aria-live="polite" aria-relevant="additions text"></div>
+
+                <div class="cdn-matter-task-composer">
+                    <label class="visually-hidden" for="cdn-matter-task-title">Add a task</label>
+                    <input type="text" class="form-control cdn-matter-task-composer__input" id="cdn-matter-task-title" maxlength="500" placeholder="Add a task…" autocomplete="off">
+                    <button type="button" class="btn btn-primary cdn-matter-task-composer__btn" id="cdn-matter-task-add">
+                        <i class="fas fa-plus" aria-hidden="true"></i> Add
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
