@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CRM\ClientsController;
 use App\Http\Controllers\CRM\ClientAccountsController;
 use App\Http\Controllers\CRM\Clients\ClientNotesController;
+use App\Http\Controllers\CRM\Clients\ClientMatterTaskController;
 use App\Http\Controllers\CRM\Clients\ClientDocumentsController;
 use App\Http\Controllers\CRM\ClientPersonalDetailsController;
 use App\Http\Controllers\CRM\PhoneVerificationController;
@@ -129,6 +130,11 @@ Route::get('/viewapplicationnote', [ClientNotesController::class, 'viewapplicati
 // REMOVED: saveonlineform routes - OnlineForm model deleted, no frontend calls these routes
 Route::get('/get-notes', [ClientNotesController::class, 'getnotes'])->name('clients.getnotes');
 Route::get('/pinnote', [ClientNotesController::class, 'pinnote']);
+
+Route::get('/clients/matter-tasks', [ClientMatterTaskController::class, 'index'])->name('clients.matterTask.index');
+Route::post('/clients/matter-tasks', [ClientMatterTaskController::class, 'store'])->name('clients.matterTask.store');
+Route::post('/clients/matter-tasks/{task}/update', [ClientMatterTaskController::class, 'update'])->name('clients.matterTask.update');
+Route::post('/clients/matter-tasks/{task}/delete', [ClientMatterTaskController::class, 'destroy'])->name('clients.matterTask.destroy');
 
 Route::post('/convert-activity-to-note', [ClientsController::class, 'convertActivityToNote'])->name('clients.convertActivityToNote');
 

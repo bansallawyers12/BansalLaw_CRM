@@ -659,8 +659,21 @@
   line-height: 1.4;
 }
 
+/* Stack subtab strip above tab panes. Base layout uses row flex (vertical nav + content);
+   demo has no side nav here — row layout put the strip beside .tab-content and the strip’s
+   calc(100% + …) width collapsed the content column to ~0, hiding documents. */
 .client-detail-newdesign-demo-shell .main-content-with-tabs {
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.client-detail-newdesign-demo-shell .main-content-with-tabs > .tab-content {
+  flex: 1 1 auto;
   width: 100%;
   min-width: 0;
 }
@@ -769,4 +782,28 @@
   .client-detail-newdesign-demo-shell .cdn-client-hero__actions .cdn-client-hero__action-btn--primary {
     grid-column: auto;
   }
+}
+
+/* Tasks tab — matter task list */
+.client-detail-newdesign-demo-shell .cdn-matter-task__ul {
+  border: 1px solid var(--cdn-border, #e2e8f0);
+  border-radius: var(--cdn-radius, 12px);
+  padding: 4px 12px;
+  background: var(--cdn-card, #fff);
+}
+
+.client-detail-newdesign-demo-shell .cdn-matter-task__row:last-child {
+  border-bottom: none !important;
+}
+
+.client-detail-newdesign-demo-shell .cdn-matter-task__label.is-done {
+  text-decoration: line-through;
+  color: var(--cdn-muted, #64748b);
+}
+
+.client-detail-newdesign-demo-shell .cdn-matter-task__del {
+  line-height: 1;
+  min-width: 2rem;
+  font-size: 1.25rem;
+  text-decoration: none;
 }

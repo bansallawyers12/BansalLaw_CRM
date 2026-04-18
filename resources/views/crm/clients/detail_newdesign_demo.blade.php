@@ -210,7 +210,7 @@ use App\Http\Controllers\Controller;
                     <a href="javascript:;" class="btn cdn-client-hero__action-btn clientemail" data-id="{{ @$fetchedData->id }}" data-email="{{ @$fetchedData->email }}" data-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Compose Mail">Send Email</a>
                     <a href="javascript:;" class="btn cdn-client-hero__action-btn send-sms-btn" data-client-id="{{ @$fetchedData->id }}" data-client-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Send SMS">Send SMS</a>
                     <a href="javascript:;" class="btn cdn-client-hero__action-btn" data-bs-toggle="modal" data-bs-target="#create_appoint" title="Schedule appointment">Appointment</a>
-                    <button type="button" class="btn cdn-client-hero__action-btn cdn-client-hero__action-btn--primary" id="cdn-open-action-tab" data-bs-toggle="modal" data-bs-target="#cdn-update-stage-modal" title="Update workflow stage">Update Stage</button>
+                    <button type="button" class="btn cdn-client-hero__action-btn cdn-client-hero__action-btn--primary" id="cdn-open-update-stage" data-bs-toggle="modal" data-bs-target="#cdn-update-stage-modal" title="Update workflow stage">Update Stage</button>
                 </div>
             </div>
         </section>
@@ -386,8 +386,8 @@ use App\Http\Controllers\Controller;
                     <span>Timeline</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-clientaction" class="client-nav-button" data-tab="clientaction" aria-selected="false" aria-controls="clientaction-tab">
-                    <i class="fas fa-bolt" aria-hidden="true"></i>
-                    <span>Actions</span>
+                    <i class="fas fa-tasks" aria-hidden="true"></i>
+                    <span>Tasks</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-noteterm" class="client-nav-button" data-tab="noteterm" aria-selected="false" aria-controls="noteterm-tab">
                     <i class="fas fa-sticky-note" aria-hidden="true"></i>
@@ -424,8 +424,8 @@ use App\Http\Controllers\Controller;
                     <span>Timeline</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-clientaction" class="client-nav-button" data-tab="clientaction" aria-selected="false" aria-controls="clientaction-tab">
-                    <i class="fas fa-bolt" aria-hidden="true"></i>
-                    <span>Actions</span>
+                    <i class="fas fa-tasks" aria-hidden="true"></i>
+                    <span>Tasks</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-noteterm" class="client-nav-button" data-tab="noteterm" aria-selected="false" aria-controls="noteterm-tab">
                     <i class="fas fa-sticky-note" aria-hidden="true"></i>
@@ -1485,6 +1485,9 @@ $(document).ready(function() {
             listAllMatters: '{{ URL::to("/clients/listAllMattersWRTSelClient") }}',
             getActivities: '{{ route("clients.activities") }}',
             getNotes: '{{ URL::to("/get-notes") }}',
+            matterTaskIndex: '{{ route("clients.matterTask.index") }}',
+            matterTaskStore: '{{ route("clients.matterTask.store") }}',
+            matterTaskBase: '{{ url("/clients/matter-tasks") }}',
             updatePersonalCategory: '{{ route("clients.documents.updatePersonalDocCategory") }}',
             updateVisaCategory: '{{ route("clients.documents.updateVisaDocCategory") }}',
             updateNominationCategory: '{{ route("clients.documents.updateNominationDocCategory") }}',
@@ -1615,6 +1618,7 @@ $(document).ready(function() {
 {{-- Phase 3 modules --}}
 <script src="{{ URL::asset('js/crm/clients/modules/send-to-client.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/notes.js') }}"></script>
+<script src="{{ URL::asset('js/crm/clients/modules/matter-tasks.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/checklist.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/documents.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/accounts.js') }}"></script>
