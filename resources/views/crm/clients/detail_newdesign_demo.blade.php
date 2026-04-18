@@ -901,13 +901,13 @@ use App\Http\Controllers\Controller;
 								<div id="tags_modal_container" class="tags-modal-container form-control">
 									<div class="tags-pills-inner">
 										@foreach($__modalNormal as $tagName)
-										<span class="tag-pill" data-tag-name="{{ htmlspecialchars($tagName) }}" data-tag-red="0">
+										<span class="tag-pill" data-tag-name="{{ $tagName }}" data-tag-red="0">
 											<span class="tag-pill-text">{{ $tagName }}</span>
 											<button type="button" class="tag-pill-remove" aria-label="Remove tag">&times;</button>
 										</span>
 										@endforeach
 										@foreach($__modalRed as $tagName)
-										<span class="tag-pill tag-pill--red" data-tag-name="{{ htmlspecialchars($tagName) }}" data-tag-red="1">
+										<span class="tag-pill tag-pill--red" data-tag-name="{{ $tagName }}" data-tag-red="1">
 											<span class="tag-pill-text">{{ $tagName }}</span>
 											<button type="button" class="tag-pill-remove" aria-label="Remove tag">&times;</button>
 										</span>

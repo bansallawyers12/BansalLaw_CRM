@@ -6300,25 +6300,25 @@ class ClientsController extends Controller
      */
     public function save_tag(Request $request)
     {
+        $request->validate([
+            'client_id' => 'required|integer',
+            'tag_normal' => 'nullable|array',
+            'tag_normal.*' => 'nullable|string|max:255',
+            'tag_red' => 'nullable|array',
+            'tag_red.*' => 'nullable|string|max:255',
+        ]);
+
+        $clientId = (int) $request->input('client_id');
+        $normal = ClientTagStorage::normalizeList(array_filter(
+            (array) $request->input('tag_normal', []),
+            static fn ($v) => $v !== null && $v !== ''
+        ));
+        $red = ClientTagStorage::normalizeList(array_filter(
+            (array) $request->input('tag_red', []),
+            static fn ($v) => $v !== null && $v !== ''
+        ));
+
         try {
-            $request->validate([
-                'client_id' => 'required|integer',
-                'tag_normal' => 'nullable|array',
-                'tag_normal.*' => 'nullable|string|max:255',
-                'tag_red' => 'nullable|array',
-                'tag_red.*' => 'nullable|string|max:255',
-            ]);
-
-            $clientId = (int) $request->input('client_id');
-            $normal = ClientTagStorage::normalizeList(array_filter(
-                (array) $request->input('tag_normal', []),
-                static fn ($v) => $v !== null && $v !== ''
-            ));
-            $red = ClientTagStorage::normalizeList(array_filter(
-                (array) $request->input('tag_red', []),
-                static fn ($v) => $v !== null && $v !== ''
-            ));
-
             $client = Admin::where('id', $clientId)
                 ->whereIn('type', ['client', 'lead'])
                 ->first();
@@ -6327,13 +6327,18 @@ class ClientsController extends Controller
                 return redirect()->back()->with('error', 'Client not found');
             }
 
+            if (! StaffClientVisibility::canAccessClientOrLead($clientId, Auth::user())) {
+                return redirect()->back()->with('error', config('constants.unauthorized'));
+            }
+
             $client->tagname = ClientTagStorage::encode($normal, $red);
             $client->save();
 
             return redirect()->back()->with('success', 'Tags saved successfully');
 
-        } catch (\Exception $e) {
-            Log::error('Error saving tags: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Error saving tags: ' . $e->getMessage(), ['exception' => $e]);
+
             return redirect()->back()->with('error', 'An error occurred while saving tags');
         }
     }

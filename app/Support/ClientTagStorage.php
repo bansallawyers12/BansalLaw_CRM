@@ -90,6 +90,8 @@ final class ClientTagStorage
     {
         $n = self::normalizeList($normal);
         $r = self::normalizeList($red);
+        // Same label in both lists: keep it as normal only (UI sends separate arrays; this avoids duplicates).
+        $r = array_values(array_filter($r, static fn (string $t) => ! in_array($t, $n, true)));
         if ($n === [] && $r === []) {
             return null;
         }

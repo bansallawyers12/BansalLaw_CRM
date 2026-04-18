@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
+use App\Support\ClientTagStorage;
 
 class ClientImportService
 {
@@ -164,12 +165,16 @@ class ClientImportService
                 'relevant_work_exp_aus', 'relevant_work_exp_over',
                 'naati_py', 'total_points',
                 'service', 'assignee', 'lead_quality', 'comments_note', 'married_partner',
-                'tagname', 'related_files',
+                'related_files',
             ];
             foreach ($bansalOptional as $field) {
                 if (Schema::hasColumn('admins', $field) && array_key_exists($field, $clientData)) {
                     $client->{$field} = $clientData[$field];
                 }
+            }
+            if (Schema::hasColumn('admins', 'tagname') && array_key_exists('tagname', $clientData)) {
+                [$n, $r] = ClientTagStorage::decode(trim((string) ($clientData['tagname'] ?? '')));
+                $client->tagname = ClientTagStorage::encode($n, $r);
             }
             if (Schema::hasColumn('admins', 'visa_type') && array_key_exists('visa_type', $clientData)) {
                 $client->visa_type = $clientData['visa_type'];
