@@ -100,7 +100,7 @@ class HomeController extends Controller
     public function getdatetimebackend(Request $request)
     {
         // Get new input parameters
-        $id = $request->id; // 1=>consultation, 2=>paid-consultation, 3=>overseas-enquiry
+        $id = $request->id; // 1=>consultation, 2=>paid-consultation, 3=>overseas-enquiry; promo_free|paid (client modal)
         $enquiry_item = $request->enquiry_item; // 1=>permanent-residency, 2=>temporary-residency, etc.
         $inperson_address = $request->inperson_address; // 1=>Adelaide, 2=>melbourne
         $slot_overwrite = $request->slot_overwrite ?? 0; // 0 or 1
@@ -112,11 +112,13 @@ class HomeController extends Controller
             'slot_overwrite' => $slot_overwrite
         ]);
         
-        // Map id to specific_service
+        // Map id to specific_service (numeric legacy + client modal slugs)
         $specific_service_map = [
             1 => 'consultation',
             2 => 'paid-consultation',
-            3 => 'overseas-enquiry'
+            3 => 'overseas-enquiry',
+            'promo_free' => 'consultation',
+            'paid' => 'paid-consultation',
         ];
         $specific_service = $specific_service_map[$id] ?? 'consultation';
         
@@ -233,7 +235,7 @@ class HomeController extends Controller
     public function getdisableddatetime(Request $request)
     {
         // Get input parameters
-        $service_id = $request->service_id; // 1=>consultation, 2=>paid-consultation, 3=>overseas-enquiry
+        $service_id = $request->service_id; // legacy 1–3; promo_free|paid from client modal
         $enquiry_item = $request->enquiry_item; // 1=>permanent-residency, 2=>temporary-residency, etc.
         $inperson_address = $request->inperson_address; // 1=>Adelaide, 2=>melbourne
         $sel_date = $request->sel_date; // Date in dd/mm/yyyy format
@@ -247,11 +249,12 @@ class HomeController extends Controller
             'slot_overwrite' => $slot_overwrite
         ]);
         
-        // Map service_id to specific_service
         $specific_service_map = [
             1 => 'consultation',
             2 => 'paid-consultation',
-            3 => 'overseas-enquiry'
+            3 => 'overseas-enquiry',
+            'promo_free' => 'consultation',
+            'paid' => 'paid-consultation',
         ];
         $specific_service = $specific_service_map[$service_id] ?? 'consultation';
         

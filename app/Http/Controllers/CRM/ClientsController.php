@@ -6793,13 +6793,13 @@ class ClientsController extends Controller
             $validator = Validator::make($requestData, [
                 'client_id' => 'required|exists:admins,id',
                 'noe_id' => ['required', 'integer', Rule::in($crmNoeIds)],
-                'service_id' => 'required|integer|in:1,2,3',
+                'service_id' => 'required|string|in:promo_free,paid',
                 'appoint_date' => 'required|string', // Accept string format (dd/mm/yyyy), validate after conversion
                 'appoint_time' => 'required|string',
                 'description' => 'required|string',
                 'appointment_details' => 'required|in:phone,in_person,video_call',
                 'preferred_language' => 'required|string',
-                'inperson_address' => 'required|in:1,2',
+                'inperson_address' => 'required|in:2',
                 'send_confirmation_email' => 'nullable|boolean',
             ]);
 
@@ -6828,13 +6828,10 @@ class ClientsController extends Controller
                 ], 422);
             }
             
-            // Map service_id from form to actual service_id
-            // Form: 1=Free Consultation, 2=Comprehensive Migration Advice, 3=Overseas Applicant Enquiry
-            // DB: 1=Paid, 2=Free, 3=Paid Overseas
+            // Form slugs: promo_free -> DB 2 (free), paid -> DB 1 (paid consultation)
             $serviceIdMap = [
-                1 => 2, // Free Consultation -> Free
-                2 => 1, // Comprehensive Migration Advice -> Paid
-                3 => 3, // Overseas Applicant Enquiry -> Paid Overseas
+                'promo_free' => 2,
+                'paid' => 1,
             ];
             $serviceId = $serviceIdMap[$requestData['service_id']] ?? 2;
 
@@ -6908,9 +6905,8 @@ class ClientsController extends Controller
                 }
             }
 
-            // Calculate duration based on service
-            // Service 1 (Free Consultation) = 15 min, Service 2/3 (Paid) = 30 min
-            $durationMinutes = $requestData['service_id'] == 1 ? 15 : 30;
+            // promo_free = 15 min, paid = 30 min
+            $durationMinutes = ($requestData['service_id'] === 'promo_free') ? 15 : 30;
 
             // Use ConsultantAssignmentService to assign consultant
             $consultantAssigner = app(\App\Services\BansalAppointmentSync\ConsultantAssignmentService::class);
@@ -6942,11 +6938,11 @@ class ClientsController extends Controller
                 ]);
             }
 
-            // Map service_id to specific_service for Bansal API
+            // Map internal service_id to Bansal specific_service (1=paid, 2=free)
             $specificServiceMap = [
-                1 => 'paid-consultation',  // Paid Migration Advice
-                2 => 'consultation',        // Free Consultation
-                3 => 'overseas-enquiry',    // Overseas Applicant Enquiry
+                1 => 'paid-consultation',
+                2 => 'consultation',
+                3 => 'overseas-enquiry',
             ];
             $specificService = $specificServiceMap[$serviceId] ?? 'consultation';
 
@@ -7326,10 +7322,10 @@ class ClientsController extends Controller
         
         if ($serviceId == 2) {
             $subject = 'scheduled an free appointment';
-            $serviceTitle = 'Free Consultation';
+            $serviceTitle = 'Promo — free consultation';
         } elseif ($serviceId == 1) {
             $subject = 'scheduled an paid appointment';
-            $serviceTitle = 'Comprehensive Migration Advice';
+            $serviceTitle = 'Paid consultation';
         } elseif ($serviceId == 3) {
             $subject = 'scheduled an paid appointment';
             $serviceTitle = 'Overseas Applicant Enquiry';

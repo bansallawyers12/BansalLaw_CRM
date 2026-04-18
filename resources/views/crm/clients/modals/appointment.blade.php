@@ -49,14 +49,13 @@
 							<div class="form-group">
 								<label for="service_id" class="font-weight-bold text-dark mb-3">Services <span class="text-danger">*</span></label>
 								<div class="row">
-									
-									<div class="col-md-6 mb-3 service-free-consultation">
-										<div class="service-card-compact" style="border: 1.5px solid #dee2e6; border-radius: 8px; padding: 14px; background-color: #ffffff; cursor: pointer;" data-service-id="1">
+									<div class="col-md-6 mb-3 service-promo-free">
+										<div class="service-card-compact" style="border: 1.5px solid #dee2e6; border-radius: 8px; padding: 14px; background-color: #ffffff; cursor: pointer;" data-service-id="promo_free">
 											<div class="d-flex align-items-center">
-												<input type="radio" class="services_item mt-1" name="radioGroup" value="1" id="service_1">
+												<input type="radio" class="services_item mt-1" name="radioGroup" value="promo_free" id="service_promo_free">
 												<div class="ml-3 flex-grow-1 d-flex justify-content-between align-items-center">
 													<div>
-														<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Free Consultation</h6>
+														<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Promo — free consultation</h6>
 														<small style="color: #6c757d; font-size: 13px;">15 minutes</small>
 													</div>
 													<span class="badge badge-success font-weight-bold ml-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">Free</span>
@@ -64,38 +63,20 @@
 											</div>
 										</div>
 									</div>
-
-										<div class="col-md-6 mb-3">
-											<div class="service-card-compact" style="border: 1.5px solid #dee2e6; border-radius: 8px; padding: 14px; background-color: #ffffff; cursor: pointer;" data-service-id="2">
-												<div class="d-flex align-items-center">
-													<input type="radio" class="services_item mt-1" name="radioGroup" value="2" id="service_2">
-													<div class="ml-3 flex-grow-1 d-flex justify-content-between align-items-center">
-														<div>
-															<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Comprehensive Migration Advice</h6>
-															<small style="color: #6c757d; font-size: 13px;">30 minutes</small>
-														</div>
-														<span class="badge badge-success font-weight-bold ml-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">$150</span>
+									<div class="col-md-6 mb-3">
+										<div class="service-card-compact" style="border: 1.5px solid #dee2e6; border-radius: 8px; padding: 14px; background-color: #ffffff; cursor: pointer;" data-service-id="paid">
+											<div class="d-flex align-items-center">
+												<input type="radio" class="services_item mt-1" name="radioGroup" value="paid" id="service_paid">
+												<div class="ml-3 flex-grow-1 d-flex justify-content-between align-items-center">
+													<div>
+														<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Paid consultation</h6>
+														<small style="color: #6c757d; font-size: 13px;">30 minutes</small>
 													</div>
+													<span class="badge badge-success font-weight-bold ml-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">$150</span>
 												</div>
 											</div>
 										</div>
-
-
-										<div class="col-md-6 mb-3">
-											<div class="service-card-compact" style="border: 1.5px solid #dee2e6; border-radius: 8px; padding: 14px; background-color: #ffffff; cursor: pointer;" data-service-id="3">
-												<div class="d-flex align-items-center">
-													<input type="radio" class="services_item mt-1" name="radioGroup" value="3" id="service_3">
-													<div class="ml-3 flex-grow-1 d-flex justify-content-between align-items-center">
-														<div>
-															<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Overseas Applicant Enquiry</h6>
-															<small style="color: #6c757d; font-size: 13px;">30 minutes</small>
-														</div>
-														<span class="badge badge-success font-weight-bold ml-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">$150</span>
-													</div>
-												</div>
-											</div>
-										</div>
-									
+									</div>
 								</div>
                                 <input type="hidden" id="service_id" name="service_id" value="">
                             </div>
@@ -104,16 +85,9 @@
                         <div class="col-12 col-md-12 col-lg-12 appointment_row" id="appointment_details" style="display: none;">
                             <div class="form-group inperson_address_cls">
                                 <label for="inperson_address" class="heading_title">Location</label>
-                                <div class="inperson_address_header" id="inperson_address_1">
+                                <div class="inperson_address_header" id="inperson_address_wrap">
                                     <label class="inperson_address_title">
-                                        <input type="radio" class="inperson_address" name="inperson_address" data-val="1" value="1">
-                                        <div class="inperson_address_title_span">
-                                            ADELAIDE<br/><span style="font-size: 10px;">(Unit 5 5/55 Gawler Pl, Adelaide SA 5000)</span>
-                                        </div>
-                                    </label>
-
-                                    <label class="inperson_address_title">
-                                        <input type="radio" class="inperson_address" name="inperson_address" data-val="2" value="2">
+                                        <input type="radio" class="inperson_address" name="inperson_address" data-val="2" value="2" checked>
                                         <div class="inperson_address_title_span">
                                             MELBOURNE<br/><span style="font-size: 10px;">(Next to Flight Center, Level 8/278 Collins St, Melbourne VIC 3000, Australia)</span>
                                         </div>
@@ -148,7 +122,7 @@
                                 </style>
                             </div>
 
-                            <div class="form-group row align-items-center appointment_details_cls" style="display: none;">
+                            <div class="form-group row align-items-center appointment_details_cls">
                                 <div class="col-12 col-md-6 col-lg-6">
                                     <label for="appointment_details" class="heading_title">Appointment details <span class="span_req">*</span></label>
                                     <select class="form-control appointment_item" name="appointment_details" data-valid="required">
@@ -750,7 +724,8 @@ function selectService(serviceId) {
 	event.currentTarget.classList.add('selected');
 	
 	// Check the radio button
-	document.getElementById('service_' + serviceId).checked = true;
+	var el = document.getElementById('service_' + serviceId);
+	if (el) el.checked = true;
 	document.getElementById('service_id').value = serviceId;
 	
 	// Show appointment details section
@@ -767,18 +742,13 @@ function toggleVideoCallOption(serviceId) {
 	const appointmentDetailsSelect = document.querySelector('.appointment_item');
 	
 	if (videoCallOption && appointmentDetailsSelect) {
-		// Service ID 1 = Free Consultation - hide Video Call
-		// Service ID 2 = Comprehensive Migration Advice - show Video Call
-		// Service ID 3 = Overseas Applicant Enquiry - show Video Call
-		if (serviceId == '1') {
-			// Hide Video Call option for Free Consultation
+		// promo_free = free slot — hide Video Call; paid = show Video Call
+		if (serviceId === 'promo_free') {
 			videoCallOption.style.display = 'none';
-			// If Video Call is currently selected, reset to empty
 			if (appointmentDetailsSelect.value === 'video_call') {
 				appointmentDetailsSelect.value = '';
 			}
-		} else if (serviceId == '2' || serviceId == '3') {
-			// Show Video Call option for Comprehensive Migration Advice and Overseas Applicant Enquiry
+		} else if (serviceId === 'paid') {
 			videoCallOption.style.display = 'block';
 		}
 	}
@@ -803,9 +773,9 @@ document.addEventListener('DOMContentLoaded', function() {
 			enquirySelect.value = '';
 		}
 		// Show Free Consultation service by default when modal opens
-		const freeConsultationService = document.querySelector('.service-free-consultation');
-		if (freeConsultationService) {
-			freeConsultationService.style.display = 'block';
+		const promoFreeService = document.querySelector('.service-promo-free');
+		if (promoFreeService) {
+			promoFreeService.style.display = 'block';
 		}
 		// Reset service selection
 		document.querySelectorAll('.services_item').forEach(radio => {
@@ -830,9 +800,9 @@ document.addEventListener('DOMContentLoaded', function() {
 	// Reset form when modal is hidden
 	$(document).on('hidden.bs.modal', '#create_appoint', function() {
 		// Show Free Consultation service by default when modal is closed (for next open)
-		const freeConsultationService = document.querySelector('.service-free-consultation');
-		if (freeConsultationService) {
-			freeConsultationService.style.display = 'block';
+		const promoFreeService = document.querySelector('.service-promo-free');
+		if (promoFreeService) {
+			promoFreeService.style.display = 'block';
 		}
 	});
 	
@@ -856,6 +826,12 @@ document.addEventListener('DOMContentLoaded', function() {
 			if (radio) {
 				radio.checked = true;
 				document.getElementById('service_id').value = radio.value;
+				// Programmatic check does not fire change in many browsers — jQuery handlers never run (calendar/slots won't load).
+				if (typeof jQuery !== 'undefined') {
+					jQuery(radio).trigger('change');
+				} else {
+					radio.dispatchEvent(new Event('change', { bubbles: true }));
+				}
 			}
 				
 				// Toggle Video Call option visibility based on service
@@ -878,9 +854,9 @@ document.addEventListener('DOMContentLoaded', function() {
 			if (selectedValue) {
 				document.getElementById('services').style.display = 'block';
 				
-				const freeConsultationService = document.querySelector('.service-free-consultation');
-				if (freeConsultationService) {
-					freeConsultationService.style.display = 'block';
+				const promoFreeService = document.querySelector('.service-promo-free');
+				if (promoFreeService) {
+					promoFreeService.style.display = 'block';
 				}
 			} else {
 				document.getElementById('services').style.display = 'none';

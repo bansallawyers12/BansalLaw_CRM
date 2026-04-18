@@ -422,6 +422,17 @@
 
                                 });
 
+                                // Modal was hidden during init — refresh inline calendar so it paints (Bootstrap datepicker)
+                                $('.info_row').show();
+                                setTimeout(function () {
+                                    var $cal = $('#datetimepicker');
+                                    if ($cal.length && $cal.data('datepicker')) {
+                                        try {
+                                            $cal.datepicker('update');
+                                        } catch (ignore) {}
+                                    }
+                                }, 150);
+
                             if(id != ""){
 
                                 var v = 'appointment_details';
@@ -535,10 +546,12 @@
             $('.confirm_row').hide();
 
             $("input[name='inperson_address']").prop("checked", false);
+            var $locRadios = $("input[name='inperson_address']");
+            if ($locRadios.length === 1) {
+                $locRadios.first().prop("checked", true).trigger("change");
+            }
 
             $('.appointment_item').val("");
-
-            $('.appointment_details_cls').hide();
 
 
 
@@ -550,6 +563,12 @@
 
             var id = $(this).val();
 
+            if (id !== "") {
+                $('.appointment_details_cls').show();
+            } else {
+                $('.appointment_details_cls').hide();
+            }
+
             if ($("input[name='radioGroup'][value='" + id + "']").prop("checked")) {
 
                 $('#service_id').val(id);
@@ -558,13 +577,13 @@
 
             //console.log($('#service_id').val());
 
-            if( $('#service_id').val() == 1 ){ //paid
+            if( $('#service_id').val() === 'paid' ){
 
                 $('.submitappointment_paid').show();
 
                 $('.submitappointment').hide();
 
-            } else { //free
+            } else {
 
                 $('.submitappointment').show();
 
@@ -578,7 +597,7 @@
 
                 var v = 'appointment_details';
 
-                if( id == 1 ){ //paid service
+                if( id === 'paid' ){
 
                     // Show the "Zoom / Google Meeting" option
 
@@ -833,13 +852,13 @@
 
 
 
-                if(  $("input[name='radioGroup']:checked").val() == 1 ){ //paid
+                if(  $("input[name='radioGroup']:checked").val() === 'paid' ){
 
                     $('.submitappointment_paid').show();
 
                     $('.submitappointment').hide();
 
-                } else { //free
+                } else {
 
                     $('.submitappointment').show();
 
@@ -867,7 +886,7 @@
 
             var fromtime = $(this).attr('data-fromtime');
 
-            if(service_id_val == 2){ //15 min service
+            if(service_id_val === 'promo_free'){
 
                 var fromtime11 = parseTimeLatest(fromtime);
 
