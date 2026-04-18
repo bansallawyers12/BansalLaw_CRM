@@ -784,12 +784,108 @@
   }
 }
 
+/* Tasks tab — single-purpose layout */
+.client-detail-newdesign-demo-shell .cdn-tasks-tab-card {
+  border: 1px solid var(--cdn-border, #e2e8f0);
+  border-radius: var(--cdn-radius, 12px);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.client-detail-newdesign-demo-shell .cdn-tasks-tab-card__body {
+  padding: 1.25rem 1.35rem 1.35rem;
+}
+
+.client-detail-newdesign-demo-shell .cdn-tasks-tab-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--cdn-text, #0f172a);
+}
+
+.client-detail-newdesign-demo-shell .cdn-tasks-tab-title__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 10px;
+  /* Fallback when color-mix() is unsupported */
+  background: rgba(30, 58, 95, 0.12);
+  background: color-mix(in srgb, var(--cdn-primary, #1e3a5f) 12%, transparent);
+  color: var(--cdn-primary, #1e3a5f);
+  font-size: 0.95rem;
+}
+
+.client-detail-newdesign-demo-shell .cdn-matter-tasks {
+  margin-bottom: 0;
+}
+
+.client-detail-newdesign-demo-shell .cdn-matter-tasks--locked .cdn-matter-task-composer {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.client-detail-newdesign-demo-shell .cdn-matter-task__list > .cdn-matter-task__status {
+  margin-bottom: 0;
+  padding: 0.35rem 0;
+  line-height: 1.45;
+}
+
+.client-detail-newdesign-demo-shell .cdn-matter-task-composer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.65rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--cdn-border, #e2e8f0);
+}
+
+.client-detail-newdesign-demo-shell .cdn-matter-task-composer__input {
+  flex: 1 1 12rem;
+  min-width: 10rem;
+  border-radius: 10px;
+  border-color: var(--cdn-border, #e2e8f0);
+}
+
+.client-detail-newdesign-demo-shell .cdn-matter-task-composer__btn {
+  flex-shrink: 0;
+  border-radius: 10px;
+  font-weight: 600;
+  padding-left: 1.1rem;
+  padding-right: 1.1rem;
+}
+
 /* Tasks tab — matter task list */
 .client-detail-newdesign-demo-shell .cdn-matter-task__ul {
   border: 1px solid var(--cdn-border, #e2e8f0);
   border-radius: var(--cdn-radius, 12px);
   padding: 4px 12px;
   background: var(--cdn-card, #fff);
+}
+
+.client-detail-newdesign-demo-shell .cdn-matter-task__row {
+  gap: 0.75rem;
+}
+
+/* Checkbox + label are flex siblings; avoid Bootstrap .form-check float/negative-margin overlap */
+.client-detail-newdesign-demo-shell .cdn-matter-task__row .cdn-matter-task__cb {
+  float: none;
+  margin: 0.35rem 0 0;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.client-detail-newdesign-demo-shell .cdn-matter-task__row .cdn-matter-task__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.45;
+  cursor: pointer;
+  padding-top: 0.2rem;
 }
 
 .client-detail-newdesign-demo-shell .cdn-matter-task__row:last-child {

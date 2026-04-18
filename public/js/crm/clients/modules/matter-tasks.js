@@ -54,6 +54,38 @@
         return n > 0 ? n : null;
     }
 
+    /**
+     * Enable add-task field only when client + matter + store URL exist.
+     */
+    function syncComposerLock() {
+        var $wrap = $('#cdn-matter-tasks');
+        if (!$wrap.length) {
+            return;
+        }
+        var $inp = $('#cdn-matter-task-title');
+        var $btn = $('#cdn-matter-task-add');
+        if (!$inp.length || !$btn.length) {
+            return;
+        }
+        var cid = clientId();
+        var mid = matterId();
+        var storeUrl = urlMap().matterTaskStore;
+        var unlocked = !!(cid && mid && storeUrl);
+        $inp.prop('disabled', !unlocked);
+        $btn.prop('disabled', !unlocked);
+        $wrap.toggleClass('cdn-matter-tasks--locked', !unlocked);
+    }
+
+    function statusPara(kind, text) {
+        var cls = 'cdn-matter-task__status small mb-0';
+        if (kind === 'error') {
+            cls += ' text-danger';
+        } else {
+            cls += ' text-muted';
+        }
+        return '<p class="' + cls + '">' + $('<div>').text(text).html() + '</p>';
+    }
+
     function reload() {
         var $wrap = $('#cdn-matter-tasks');
         if (!$wrap.length) {
@@ -65,29 +97,36 @@
         var $list = $wrap.find('.cdn-matter-task__list');
 
         if (!cid || !mid) {
-            $list.html('<p class="text-muted mb-0 small">Select a matter above to view and edit its tasks.</p>');
+            $list.html(statusPara('muted', 'Select a matter above to view and edit its tasks.'));
+            syncComposerLock();
             return;
         }
 
         var indexUrl = urlMap().matterTaskIndex;
         if (!indexUrl) {
-            $list.html('<p class="text-danger small">Task list is not configured.</p>');
+            $list.html(statusPara('error', 'Task list is not configured.'));
+            syncComposerLock();
             return;
         }
+
+        syncComposerLock();
 
         $.ajax({
             url: indexUrl,
             type: 'GET',
             dataType: 'json',
             data: { client_id: cid, matter_id: mid },
+            complete: function () {
+                syncComposerLock();
+            },
             success: function (res) {
                 if (!res || !res.status) {
-                    $list.html('<p class="text-danger small">Could not load tasks.</p>');
+                    $list.html(statusPara('error', 'Could not load tasks.'));
                     return;
                 }
                 var rows = res.data || [];
                 if (rows.length === 0) {
-                    $list.html('<p class="text-muted mb-0 small">No tasks yet. Add items for this matter below.</p>');
+                    $list.html(statusPara('muted', 'No tasks yet. Add one below.'));
                     return;
                 }
                 var html = '<ul class="list-unstyled cdn-matter-task__ul mb-0">';
@@ -99,10 +138,8 @@
                     }
                     var done = it.is_done === true;
                     var title = $('<div>').text(it.title || '').html();
-                    html += '<li class="cdn-matter-task__row d-flex align-items-start gap-2 py-2 border-bottom" data-id="' + rowId + '">';
-                    html += '<div class="form-check mt-1 flex-shrink-0">';
+                    html += '<li class="cdn-matter-task__row d-flex align-items-start py-2 border-bottom" data-id="' + rowId + '">';
                     html += '<input type="checkbox" class="form-check-input cdn-matter-task__cb" id="cdn-mtask-' + rowId + '"' + (done ? ' checked' : '') + ' />';
-                    html += '</div>';
                     html += '<label class="form-check-label flex-grow-1 mb-0 cdn-matter-task__label' + (done ? ' is-done' : '') + '" for="cdn-mtask-' + rowId + '">' + title + '</label>';
                     html += '<button type="button" class="btn btn-link btn-sm text-danger p-0 flex-shrink-0 cdn-matter-task__del" title="Remove task" aria-label="Remove task">&times;</button>';
                     html += '</li>';
@@ -115,7 +152,7 @@
                 if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
                     msg = xhr.responseJSON.message;
                 }
-                $list.html('<p class="text-danger small">' + $('<div>').text(msg).html() + '</p>');
+                $list.html(statusPara('error', msg));
             }
         });
     }
@@ -180,6 +217,9 @@
                     if (res && res.status) {
                         $inp.val('');
                         reload();
+                        setTimeout(function () {
+                            $inp.trigger('focus');
+                        }, 0);
                     } else {
                         notifyError(res && res.message ? res.message : null);
                     }
