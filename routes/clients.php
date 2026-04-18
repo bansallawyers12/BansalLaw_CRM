@@ -173,6 +173,7 @@ Route::post('/documents/not-used', [ClientDocumentsController::class, 'notuseddo
 Route::post('/documents/rename-checklist', [ClientDocumentsController::class, 'renamechecklistdoc'])->name('clients.documents.renamechecklistdoc');
 Route::post('/documents/delete-checklist', [ClientDocumentsController::class, 'deleteChecklist'])->name('clients.documents.deleteChecklist');
 Route::post('/documents/back-to-doc', [ClientDocumentsController::class, 'backtodoc'])->name('clients.documents.backtodoc');
+Route::get('/documents/preview/{id}', [ClientDocumentsController::class, 'preview_document'])->name('clients.documents.preview');
 Route::post('/documents/download', [ClientDocumentsController::class, 'download_document'])->name('clients.documents.download');
 Route::post('/documents/add-personal-category', [ClientDocumentsController::class, 'addPersonalDocCategory'])->name('clients.documents.addPersonalDocCategory');
 Route::post('/documents/update-personal-category', [ClientDocumentsController::class, 'updatePersonalDocCategory'])->name('clients.documents.updatePersonalDocCategory');

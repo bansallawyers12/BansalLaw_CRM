@@ -132,14 +132,8 @@
                                                     <?php
                                                     $admin = $fetch->staff;
                                                     
-                                                    // Ensure $fileUrl is always a valid full URL
-                                                    if (!empty($fetch->myfile) && strpos($fetch->myfile, 'http') === 0) {
-                                                        // Already a full URL
-                                                        $fileUrl = $fetch->myfile;
-                                                    } else {
-                                                        // Legacy format or relative path - construct full URL
-                                                        $fileUrl = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $clientId . '/personal/' . $fetch->myfile;
-                                                    }
+                                                    // Private S3: use app preview route (presigned redirect), not a direct bucket URL
+                                                    $previewUrl = url('/documents/preview/' . $fetch->id);
                                                     ?>
                                                     <tr class="drow" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
@@ -159,8 +153,8 @@
                                                         </td>
                                                         <td style="white-space: initial;">
                                                             <?php if ($fetch->file_name): ?>
-                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu="showFileContextMenu(event, <?= $fetch->id ?>, '<?= htmlspecialchars($fetch->filetype) ?>', '<?= $fileUrl ?>', '<?= $id ?>', '<?= $fetch->status ?? 'draft' ?>'); return false;">
-                                                                    <a href="javascript:void(0);" onclick="previewFile('<?= $fetch->filetype ?>','<?= $fileUrl ?>','preview-container-<?= $id ?>')">
+                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu="showFileContextMenu(event, <?= $fetch->id ?>, <?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, '<?= $id ?>', '<?= $fetch->status ?? 'draft' ?>'); return false;">
+                                                                    <a href="javascript:void(0);" onclick="previewFile(<?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, <?= json_encode('preview-container-' . $id) ?>)">
                                                                         <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) ?></span>
                                                                     </a>
                                                                 </div>
@@ -201,7 +195,7 @@
                                                             <?php if ($fetch->myfile): ?>
                                                                 <a class="renamechecklist" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
                                                                 <a class="renamedoc" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
-                                                                <a class="download-file" data-filelink="<?= $fileUrl ?>" data-filename="<?= $fetch->myfile_key ?: basename($fetch->myfile) ?>" data-id="<?= $fetch->id ?>" href="#" style="display: none;"></a>
+                                                                <a class="download-file" data-filelink="" data-document-id="<?= $fetch->id ?>" data-filename="<?= htmlspecialchars($fetch->myfile_key ?: basename(parse_url($fetch->myfile, PHP_URL_PATH) ?: $fetch->myfile)) ?>" data-id="<?= $fetch->id ?>" href="#" style="display: none;"></a>
                                                                 <a class="notuseddoc" data-id="<?= $fetch->id ?>" data-doctype="personal" data-doccategory="<?= $catVal->title ?>" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                                             <?php endif; ?>
                                                         </td>
@@ -214,6 +208,10 @@
                                     <div class="grid_data griddata_<?= $id ?>">
                                         <?php foreach ($documents as $fetch): ?>
                                             <?php if ($fetch->myfile): ?>
+                                                <?php
+                                                $previewUrlGrid = url('/documents/preview/' . $fetch->id);
+                                                $dlFilenameGrid = $fetch->myfile_key ?: basename(parse_url((string) $fetch->myfile, PHP_URL_PATH) ?: (string) $fetch->myfile);
+                                                ?>
                                                 <div class="grid_list" id="gid_<?= $fetch->id ?>">
                                                     <div class="grid_col">
                                                         <div class="grid_icon">
@@ -224,8 +222,8 @@
                                                             <div class="dropdown d-inline dropdown_ellipsis_icon">
                                                                 <a class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                                                                 <div class="dropdown-menu">
-                                                                    <a target="_blank" class="dropdown-item" href="<?= $fetch->myfile ?>">Preview</a>
-                                                                    <a href="#" class="dropdown-item download-file" data-filelink="<?= $fetch->myfile ?>" data-filename="<?= $fetch->myfile_key ?>">Download</a>
+                                                                    <a target="_blank" class="dropdown-item" href="<?= $previewUrlGrid ?>">Preview</a>
+                                                                    <a href="#" class="dropdown-item download-file" data-document-id="<?= $fetch->id ?>" data-filename="<?= htmlspecialchars($dlFilenameGrid) ?>">Download</a>
                                                                     <a data-id="<?= $fetch->id ?>" class="dropdown-item notuseddoc" data-doctype="personal" data-doccategory="<?= $catVal->title ?>" data-href="notuseddoc" href="javascript:;">Not Used</a>
                                                                 </div>
                                                             </div>
@@ -483,11 +481,13 @@
                                             
                                             var row = $('#id_' + fileid);
                                             var docNameWithoutExt = ress.filename.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").toLowerCase();
+                                            var previewUrl = ress.preview_url || ress.fileurl;
+                                            var docId = ress.document_id || fileid;
                                             
                                             var uploadTd = row.find('td').eq(1);
                                             uploadTd.html(
-                                                '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: Admin" oncontextmenu="showFileContextMenu(event, ' + fileid + ', \'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'' + doccategory + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
-                                                    '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'preview-container-' + doccategory + '\')">' +
+                                                '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: Admin" oncontextmenu="showFileContextMenu(event, ' + fileid + ', ' + JSON.stringify(ress.filetype) + ', ' + JSON.stringify(previewUrl) + ', ' + JSON.stringify(String(doccategory)) + ', ' + JSON.stringify(ress.status_value || 'draft') + '); return false;">' +
+                                                    '<a href="javascript:void(0);" onclick="previewFile(' + JSON.stringify(ress.filetype) + ', ' + JSON.stringify(previewUrl) + ', ' + JSON.stringify('preview-container-' + doccategory) + ')">' +
                                                         '<i class="fas fa-file-image"></i> <span>' + ress.filename + '</span>' +
                                                     '</a>' +
                                                 '</div>'
@@ -497,7 +497,7 @@
                                             actionTd.html(
                                                 '<a class="renamechecklist" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
                                                 '<a class="renamedoc" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
-                                                '<a class="download-file" data-filelink="' + ress.fileurl + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
+                                                '<a class="download-file" data-document-id="' + docId + '" data-id="' + docId + '" data-filename="' + String(ress.filekey || '').replace(/"/g, '&quot;') + '" href="#" style="display: none;"></a>' +
                                                 '<a class="notuseddoc" data-id="' + fileid + '" data-doctype="' + ress.doctype + '" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
                                             );
                                             
@@ -672,12 +672,14 @@
                                         
                                         var row = $('#id_' + fileid);
                                         var docNameWithoutExt = ress.filename.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").toLowerCase();
+                                        var previewUrl = ress.preview_url || ress.fileurl;
+                                        var docId = ress.document_id || fileid;
                                         
                                         // Replace upload TD content (Column 1 = File Name)
                                         var uploadTd = row.find('td').eq(1);
                                         uploadTd.html(
-                                            '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: Admin" oncontextmenu="showFileContextMenu(event, ' + fileid + ', \'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'' + doccategory + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
-                                                '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'preview-container-' + doccategory + '\')">' +
+                                            '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: Admin" oncontextmenu="showFileContextMenu(event, ' + fileid + ', ' + JSON.stringify(ress.filetype) + ', ' + JSON.stringify(previewUrl) + ', ' + JSON.stringify(String(doccategory)) + ', ' + JSON.stringify(ress.status_value || 'draft') + '); return false;">' +
+                                                '<a href="javascript:void(0);" onclick="previewFile(' + JSON.stringify(ress.filetype) + ', ' + JSON.stringify(previewUrl) + ', ' + JSON.stringify('preview-container-' + doccategory) + ')">' +
                                                     '<i class="fas fa-file-image"></i> <span>' + ress.filename + '</span>' +
                                                 '</a>' +
                                             '</div>'
@@ -688,7 +690,7 @@
                                         actionTd.html(
                                             '<a class="renamechecklist" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
                                             '<a class="renamedoc" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
-                                            '<a class="download-file" data-filelink="' + ress.fileurl + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
+                                            '<a class="download-file" data-document-id="' + docId + '" data-id="' + docId + '" data-filename="' + String(ress.filekey || '').replace(/"/g, '&quot;') + '" href="#" style="display: none;"></a>' +
                                             '<a class="notuseddoc" data-id="' + fileid + '" data-doctype="' + ress.doctype + '" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
                                         );
                                         
@@ -847,11 +849,10 @@
                             window.open(pdfUrl, '_blank');
                             break;
                         case 'download':
-                            // Try to find download button by filelink (multiple elements may exist - table + grid; trigger only first to avoid multiple tabs)
-                            let $downloadBtn = $('.download-file[data-filelink="' + currentContextData.fileUrl + '"]');
+                            // Prefer document ID (private S3); fallback to legacy filelink match
+                            let $downloadBtn = $('.download-file[data-id="' + currentContextFile + '"]');
                             if ($downloadBtn.length === 0) {
-                                // Fallback: try finding by document ID
-                                $downloadBtn = $('.download-file[data-id="' + currentContextFile + '"]');
+                                $downloadBtn = $('.download-file[data-filelink="' + currentContextData.fileUrl + '"]');
                             }
                             if ($downloadBtn.length > 0) {
                                 $downloadBtn.first().click();

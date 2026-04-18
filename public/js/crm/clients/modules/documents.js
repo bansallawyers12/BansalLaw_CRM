@@ -200,7 +200,7 @@
                     var obj = (typeof result === 'object' && result !== null) ? result : (typeof result === 'string' && result.trim() ? (function(){ try { return JSON.parse(result); } catch(e) { return null; } })() : null);
                     if (!obj) return;
                     if (obj.status) {
-                        var previewUrl = obj.fileurl;
+                        var previewUrl = obj.preview_url || obj.fileurl;
                         var filetype = obj.filetype;
                         var folderName = obj.folder_name;
                         var fileName = obj.filename + '.' + obj.filetype;
@@ -222,11 +222,15 @@
                         }
                         var $row = $(parent).closest('.drow');
                         var dropdownMenu = $row.find('.dropdown-menu');
-                        dropdownMenu.find('.dropdown-item[href^="http"]').filter(function() {
+                        dropdownMenu.find('.dropdown-item').filter(function() {
                             return $(this).text().trim() === 'Preview';
                         }).attr('href', previewUrl);
-                        // Update all download links in the row (hidden + dropdown) so context menu and download use new URL after rename
-                        $row.find('.download-file').attr('data-filelink', previewUrl).attr('data-filename', fileName);
+                        $row.find('.download-file').attr('data-filename', fileName);
+                        if (obj.document_id || obj.Id) {
+                            $row.find('.download-file').attr('data-document-id', obj.document_id || obj.Id).attr('data-id', obj.document_id || obj.Id).removeAttr('data-filelink');
+                        } else {
+                            $row.find('.download-file').attr('data-filelink', previewUrl);
+                        }
                     } else {
                         parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
                         parent.append($('<div class="invalid-feedback">' + obj.message + '</div>'));
@@ -307,7 +311,7 @@
                     var obj = (typeof result === 'object' && result !== null) ? result : (typeof result === 'string' && result.trim() ? (function(){ try { return JSON.parse(result); } catch(e) { return null; } })() : null);
                     if (!obj) return;
                     if (obj.status) {
-                        var previewUrl = obj.fileurl;
+                        var previewUrl = obj.preview_url || obj.fileurl;
                         var filetype = obj.filetype;
                         var folderName = obj.folder_name;
                         var fileName = obj.filename + '.' + obj.filetype;
@@ -329,11 +333,15 @@
                         }
                         var $row = $(parent).closest('.drow');
                         var dropdownMenu = $row.find('.dropdown-menu');
-                        dropdownMenu.find('.dropdown-item[href^="http"]').filter(function() {
+                        dropdownMenu.find('.dropdown-item').filter(function() {
                             return $(this).text().trim() === 'Preview';
                         }).attr('href', previewUrl);
-                        // Update all download links in the row (hidden + dropdown) so context menu and download use new URL after rename
-                        $row.find('.download-file').attr('data-filelink', previewUrl).attr('data-filename', fileName);
+                        $row.find('.download-file').attr('data-filename', fileName);
+                        if (obj.document_id || obj.Id) {
+                            $row.find('.download-file').attr('data-document-id', obj.document_id || obj.Id).attr('data-id', obj.document_id || obj.Id).removeAttr('data-filelink');
+                        } else {
+                            $row.find('.download-file').attr('data-filelink', previewUrl);
+                        }
                     } else {
                         parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
                         parent.append($('<div class="invalid-feedback">' + obj.message + '</div>'));
@@ -355,10 +363,11 @@
             e.stopPropagation();
             var $this = $(this);
             // Read from current DOM attributes so updated values after rename are used (jQuery .data() caches and would return old URL)
+            var documentId = $this.attr('data-document-id') || $this.data('documentId');
             var filelink = $this.attr('data-filelink') || $this.data('filelink');
             var filename = $this.attr('data-filename') || $this.data('filename');
-            if (!filelink || !filename) {
-                console.error('Missing file info - filelink:', filelink, 'filename:', filename);
+            if ((!documentId && !filelink) || !filename) {
+                console.error('Missing file info - documentId:', documentId, 'filelink:', filelink, 'filename:', filename);
                 alert('Missing file info. Please try again.');
                 return false;
             }
@@ -378,7 +387,11 @@
                 return false;
             }
             form.append($('<input>', { type: 'hidden', name: '_token', value: token }));
-            form.append($('<input>', { type: 'hidden', name: 'filelink', value: filelink }));
+            if (documentId) {
+                form.append($('<input>', { type: 'hidden', name: 'document_id', value: documentId }));
+            } else {
+                form.append($('<input>', { type: 'hidden', name: 'filelink', value: filelink }));
+            }
             form.append($('<input>', { type: 'hidden', name: 'filename', value: filename }));
             $('body').append(form);
             try {

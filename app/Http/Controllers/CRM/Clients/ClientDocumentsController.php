@@ -540,6 +540,8 @@ class ClientDocumentsController extends Controller
                             $response['filetype'] = $extension;
                             $response['fileurl'] = $fileUrl;
                             $response['filekey'] = $name;
+                            $response['document_id'] = $obj->id;
+                            $response['preview_url'] = url('/documents/preview/' . $obj->id);
                             $response['doccategory'] = $checklistName;
                             $response['uploaded_by'] = Auth::user()->first_name ?? 'Staff';
                             $response['uploaded_at'] = $obj->created_at ? $obj->created_at->format('d/m/Y H:i') : now()->format('d/m/Y H:i');
@@ -1551,6 +1553,8 @@ class ClientDocumentsController extends Controller
                 $response['status'] = true;
                 $response['data'] = 'Document saved successfully';
                 $response['Id'] = $id;
+                $response['document_id'] = $id;
+                $response['preview_url'] = url('/documents/preview/' . $id);
                 $response['filename'] = $filename;
                 $response['filetype'] = $doc->filetype ?? '';
 
@@ -2240,58 +2244,180 @@ class ClientDocumentsController extends Controller
     }
 
     /**
+     * Preview document in browser: redirects to a short-lived S3 presigned URL (inline).
+     */
+    public function preview_document(int $id)
+    {
+        $document = Document::findOrFail($id);
+        if (! StaffClientVisibility::canAccessClientOrLead((int) $document->client_id)) {
+            abort(403);
+        }
+
+        $s3Key = $this->resolveS3KeyForDocument($document);
+        if ($s3Key === null) {
+            abort(404, 'File not found in S3');
+        }
+
+        $filename = basename($s3Key);
+        $mime = $this->mimeTypeForS3Key($s3Key);
+
+        try {
+            $tempUrl = $this->s3Disk()->temporaryUrl(
+                $s3Key,
+                now()->addMinutes(10),
+                [
+                    'ResponseContentDisposition' => 'inline; filename="' . str_replace('"', '\\"', $filename) . '"',
+                    'ResponseContentType' => $mime,
+                ]
+            );
+
+            return redirect()->away($tempUrl);
+        } catch (\Exception $e) {
+            Log::error('S3 preview error: ' . $e->getMessage(), ['document_id' => $id]);
+
+            return abort(500, 'Error generating preview link');
+        }
+    }
+
+    /**
+     * Resolve S3 object key for a document (full URL in myfile, or legacy path via Admin.client_id).
+     */
+    private function resolveS3KeyForDocument(Document $document): ?string
+    {
+        $myfile = (string) ($document->myfile ?? '');
+        if ($myfile !== '' && str_starts_with($myfile, 'http')) {
+            $parsed = parse_url($myfile);
+            if (! isset($parsed['path'])) {
+                return null;
+            }
+            $s3Key = ltrim(urldecode((string) $parsed['path']), '/');
+        } else {
+            $admin = Admin::query()->select('client_id')->where('id', $document->client_id)->first();
+            if (! $admin || $admin->client_id === null || $admin->client_id === '') {
+                return null;
+            }
+            $uniqueId = (string) $admin->client_id;
+            $fileName = $document->myfile_key ?? $document->myfile;
+            if ($fileName === null || $fileName === '') {
+                return null;
+            }
+            $docType = (string) ($document->doc_type ?? '');
+            if ($docType === 'migration') {
+                $s3Key = $uniqueId . '/' . $document->folder_name . '/' . $fileName;
+            } else {
+                $s3Key = $uniqueId . '/' . $docType . '/' . $fileName;
+            }
+        }
+
+        if ($s3Key === '') {
+            return null;
+        }
+
+        if ($this->s3Disk()->exists($s3Key)) {
+            return $s3Key;
+        }
+        if (str_contains($s3Key, '/matter/')) {
+            $altKey = str_replace('/matter/', '/visa/', $s3Key);
+            if ($this->s3Disk()->exists($altKey)) {
+                return $altKey;
+            }
+        }
+
+        return null;
+    }
+
+    private function mimeTypeForS3Key(string $s3Key): string
+    {
+        $ext = strtolower((string) pathinfo($s3Key, PATHINFO_EXTENSION));
+
+        return match ($ext) {
+            'pdf' => 'application/pdf',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            'bmp' => 'image/bmp',
+            'tif', 'tiff' => 'image/tiff',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls' => 'application/vnd.ms-excel',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'ppt' => 'application/vnd.ms-powerpoint',
+            'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'txt' => 'text/plain',
+            default => 'application/octet-stream',
+        };
+    }
+
+    /**
      * Download Document (S3 Temporary URL)
      */
     public function download_document(Request $request) {
-        $fileUrl = $request->input('filelink');
+        $documentId = $request->input('document_id');
         $filename = $request->input('filename', 'downloaded.pdf');
-
-        if (!$fileUrl) {
-            return abort(400, 'Missing file URL');
-        }
+        $s3Key = null;
 
         try {
-            // Extract S3 key from the URL
-            $parsed = parse_url($fileUrl);
-            if (!isset($parsed['path'])) {
-                return abort(400, 'Invalid S3 URL format');
-            }
+            if ($documentId) {
+                $document = Document::find($documentId);
+                if (! $document) {
+                    return abort(404, 'Document not found');
+                }
+                if (! StaffClientVisibility::canAccessClientOrLead((int) $document->client_id)) {
+                    return abort(403);
+                }
+                $s3Key = $this->resolveS3KeyForDocument($document);
+                if ($s3Key === null) {
+                    return abort(404, 'File not found in S3');
+                }
+                $filename = $document->myfile_key ? basename((string) $document->myfile_key) : basename($s3Key);
+                if (str_contains($s3Key, 'personal/')) {
+                    $filename = $this->normalizePersonalDownloadFilename($filename);
+                }
+            } else {
+                $fileUrl = $request->input('filelink');
+                if (! $fileUrl) {
+                    return abort(400, 'Missing file URL or document ID');
+                }
 
-            // Personal documents only: if a legacy key starts with a unique numeric prefix,
-            // move that number to the end for download filename display.
-            $path = (string) $parsed['path'];
-            if (strpos($path, '/personal/') !== false) {
-                $filename = $this->normalizePersonalDownloadFilename($filename);
-            }
-            
-            $s3Key = ltrim(urldecode($parsed['path']), '/');
-            
-            // Check if file exists in S3
-            if (! $this->s3Disk()->exists($s3Key) && str_contains($s3Key, '/matter/')) {
-                $altKey = str_replace('/matter/', '/visa/', $s3Key);
-                if ($this->s3Disk()->exists($altKey)) {
-                    $s3Key = $altKey;
+                $parsed = parse_url($fileUrl);
+                if (! isset($parsed['path'])) {
+                    return abort(400, 'Invalid S3 URL format');
+                }
+
+                $path = (string) $parsed['path'];
+                if (strpos($path, '/personal/') !== false) {
+                    $filename = $this->normalizePersonalDownloadFilename($filename);
+                }
+
+                $s3Key = ltrim(urldecode($parsed['path']), '/');
+
+                if (! $this->s3Disk()->exists($s3Key) && str_contains($s3Key, '/matter/')) {
+                    $altKey = str_replace('/matter/', '/visa/', $s3Key);
+                    if ($this->s3Disk()->exists($altKey)) {
+                        $s3Key = $altKey;
+                    }
+                }
+                if (! $this->s3Disk()->exists($s3Key)) {
+                    return abort(404, 'File not found in S3');
                 }
             }
-            if (! $this->s3Disk()->exists($s3Key)) {
-                return abort(404, 'File not found in S3');
-            }
-            
-            // Generate temporary URL with proper headers
+
+            $mime = $this->mimeTypeForS3Key($s3Key);
+
             $tempUrl = $this->s3Disk()->temporaryUrl(
                 $s3Key,
-                now()->addMinutes(5), // 5 minutes expiration
+                now()->addMinutes(5),
                 [
-                    'ResponseContentDisposition' => 'attachment; filename="' . $filename . '"',
-                    'ResponseContentType' => 'application/pdf'
+                    'ResponseContentDisposition' => 'attachment; filename="' . str_replace('"', '\\"', $filename) . '"',
+                    'ResponseContentType' => $mime,
                 ]
             );
-            
-            // Redirect to S3 temporary URL
+
             return redirect($tempUrl);
-            
         } catch (\Exception $e) {
             Log::error('S3 download error: ' . $e->getMessage());
+
             return abort(500, 'Error generating download link');
         }
     }
