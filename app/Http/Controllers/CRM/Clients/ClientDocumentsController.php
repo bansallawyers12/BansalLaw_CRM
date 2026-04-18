@@ -44,6 +44,14 @@ class ClientDocumentsController extends Controller
         return Storage::disk('s3');
     }
 
+    /**
+     * When AWS_BUCKET is unset, the "s3" disk falls back to local storage, which cannot create presigned URLs.
+     */
+    private function documentsDiskUsesS3Driver(): bool
+    {
+        return (string) config('filesystems.disks.s3.driver', '') === 's3';
+    }
+
     private function denyJsonUnlessStaffClientAccess(int $clientId): ?JsonResponse
     {
         if (! StaffClientVisibility::isRestrictedPersonAssisting(Auth::user())) {
@@ -2261,6 +2269,12 @@ class ClientDocumentsController extends Controller
         $filename = basename($s3Key);
         $mime = $this->mimeTypeForS3Key($s3Key);
 
+        if (! $this->documentsDiskUsesS3Driver()) {
+            return $this->s3Disk()->response($s3Key, $filename, [
+                'Content-Type' => $mime,
+            ], 'inline');
+        }
+
         try {
             $tempUrl = $this->s3Disk()->temporaryUrl(
                 $s3Key,
@@ -2405,6 +2419,12 @@ class ClientDocumentsController extends Controller
 
             $mime = $this->mimeTypeForS3Key($s3Key);
 
+            if (! $this->documentsDiskUsesS3Driver()) {
+                return $this->s3Disk()->download($s3Key, $filename, [
+                    'Content-Type' => $mime,
+                ]);
+            }
+
             $tempUrl = $this->s3Disk()->temporaryUrl(
                 $s3Key,
                 now()->addMinutes(5),
@@ -2414,7 +2434,7 @@ class ClientDocumentsController extends Controller
                 ]
             );
 
-            return redirect($tempUrl);
+            return redirect()->away($tempUrl);
         } catch (\Exception $e) {
             Log::error('S3 download error: ' . $e->getMessage());
 
