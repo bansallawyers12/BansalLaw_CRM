@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\AdminConsole\MatterController;
-use App\Http\Controllers\AdminConsole\TagController;
 use App\Http\Controllers\AdminConsole\WorkflowController;
 use App\Http\Controllers\AdminConsole\EmailController;
 use App\Http\Controllers\AdminConsole\CrmEmailTemplateController;
@@ -45,13 +44,6 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::post('/matter/store', [MatterController::class, 'store'])->name('matter.store');
         Route::get('/matter/edit/{id}', [MatterController::class, 'edit'])->name('matter.edit');
         Route::put('/matter/{id}', [MatterController::class, 'update'])->name('matter.update');
-        
-        // Tags routes
-        Route::get('/tags', [TagController::class, 'index'])->name('tags.index');
-        Route::get('/tags/create', [TagController::class, 'create'])->name('tags.create');
-        Route::post('/tags/store', [TagController::class, 'store'])->name('tags.store');
-        Route::get('/tags/edit/{id}', [TagController::class, 'edit'])->name('tags.edit');
-        Route::put('/tags/{id}', [TagController::class, 'update'])->name('tags.update');
         
         // Email Labels routes
         Route::get('/email-labels', [EmailLabelController::class, 'index'])->name('emaillabels.index');

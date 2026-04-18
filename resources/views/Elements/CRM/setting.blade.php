@@ -21,8 +21,6 @@
 ?>
 <div class="custom_nav_setting">
     <ul>
-		<li class="{{(Route::currentRouteName() == 'adminconsole.features.tags.index' || Route::currentRouteName() == 'adminconsole.features.tags.create' || Route::currentRouteName() == 'adminconsole.features.tags.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.tags.index')}}">Tags</a></li>
-		
 		<li class="{{(Route::currentRouteName() == 'adminconsole.features.emaillabels.index' || Route::currentRouteName() == 'adminconsole.features.emaillabels.create' || Route::currentRouteName() == 'adminconsole.features.emaillabels.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.emaillabels.index')}}">Email Labels</a></li>
 
         <li class="{{(str_starts_with(Route::currentRouteName() ?? '', 'adminconsole.features.workflow.')) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.workflow.index')}}">Workflows</a></li>

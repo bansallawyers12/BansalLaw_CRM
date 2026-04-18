@@ -895,56 +895,19 @@ use App\Http\Controllers\Controller;
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
 								<label for="tags_modal_container">Tags</label>
-								<?php
-								// Same resolution as personal_details: comma-separated IDs and/or legacy names; preserve order; dedupe by tag id.
-								$tagNamesForModal = [];
-								if (! empty($fetchedData->tagname)) {
-									$rs = explode(',', $fetchedData->tagname);
-									$tagIdsBulk = [];
-									$tagNamesBulk = [];
-									foreach ($rs as $r) {
-										$r = trim((string) $r);
-										if ($r === '') {
-											continue;
-										}
-										if (is_numeric($r) && (int) $r > 0) {
-											$tagIdsBulk[] = (int) $r;
-										} else {
-											$tagNamesBulk[] = $r;
-										}
-									}
-									$tagsByIds = [];
-									if (! empty($tagIdsBulk)) {
-										$tagsByIds = \App\Models\Tag::whereIn('id', $tagIdsBulk)->get()->keyBy('id');
-									}
-									$tagsByNames = [];
-									if (! empty($tagNamesBulk)) {
-										$tagsByNames = \App\Models\Tag::whereIn('name', $tagNamesBulk)->get()->keyBy('name');
-									}
-									$seenModalIds = [];
-									foreach ($rs as $r) {
-										$r = trim((string) $r);
-										if ($r === '') {
-											continue;
-										}
-										$stag = null;
-										if (is_numeric($r) && (int) $r > 0) {
-											$stag = $tagsByIds[(int) $r] ?? null;
-										}
-										if (! $stag) {
-											$stag = $tagsByNames[$r] ?? null;
-										}
-										if ($stag && ! isset($seenModalIds[$stag->id])) {
-											$seenModalIds[$stag->id] = true;
-											$tagNamesForModal[] = (string) $stag->name;
-										}
-									}
-								}
-								?>
+								@php
+									[$__modalNormal, $__modalRed] = \App\Support\ClientTagStorage::decode($fetchedData->tagname ?? '');
+								@endphp
 								<div id="tags_modal_container" class="tags-modal-container form-control">
 									<div class="tags-pills-inner">
-										@foreach($tagNamesForModal as $tagName)
-										<span class="tag-pill" data-tag-name="{{ htmlspecialchars($tagName) }}">
+										@foreach($__modalNormal as $tagName)
+										<span class="tag-pill" data-tag-name="{{ htmlspecialchars($tagName) }}" data-tag-red="0">
+											<span class="tag-pill-text">{{ $tagName }}</span>
+											<button type="button" class="tag-pill-remove" aria-label="Remove tag">&times;</button>
+										</span>
+										@endforeach
+										@foreach($__modalRed as $tagName)
+										<span class="tag-pill tag-pill--red" data-tag-name="{{ htmlspecialchars($tagName) }}" data-tag-red="1">
 											<span class="tag-pill-text">{{ $tagName }}</span>
 											<button type="button" class="tag-pill-remove" aria-label="Remove tag">&times;</button>
 										</span>
@@ -952,7 +915,7 @@ use App\Http\Controllers\Controller;
 										<input type="text" id="tag_input" class="tag-input-inline" placeholder="Type and press comma or Enter to add" autocomplete="off">
 									</div>
 								</div>
-								<input type="hidden" id="tags_validation" value="{{ count($tagNamesForModal) > 0 ? '1' : '' }}" aria-hidden="true">
+								<input type="hidden" id="tags_validation" value="{{ (count($__modalNormal) + count($__modalRed)) > 0 ? '1' : '' }}" aria-hidden="true">
 								<small class="form-text text-muted">Separate tags with commas or press Enter to add.</small>
 							</div>
 						</div>
@@ -972,6 +935,7 @@ use App\Http\Controllers\Controller;
 .tags-modal-container { min-height: 42px; padding: 6px 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .tags-pills-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex: 1; }
 .tag-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background-color: #6A60E3; color: #fff; border-radius: 6px; font-size: 13px; }
+.tag-pill.tag-pill--red { background-color: #dc3545; }
 .tag-pill-text { white-space: nowrap; }
 .tag-pill-remove { background: none; border: none; color: #fff; cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px; opacity: 0.8; }
 .tag-pill-remove:hover { opacity: 1; }

@@ -43,14 +43,6 @@ class AdminConsoleRoutesTest extends TestCase
     }
 
     /** @test */
-    public function admin_can_access_adminconsole_features_tags_index()
-    {
-        $this->actingAs($this->admin, 'admin')
-             ->get('/adminconsole/features/tags')
-             ->assertStatus(200);
-    }
-
-    /** @test */
     public function admin_can_access_adminconsole_features_workflow_index()
     {
         $this->actingAs($this->admin, 'admin')

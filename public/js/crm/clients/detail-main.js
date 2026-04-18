@@ -657,7 +657,11 @@ $(document).ready(function() {
 
                         var esc = $('<div>').text(tagName).html();
 
-                        var $pill = $('<span class="tag-pill" data-tag-name="' + esc + '"><span class="tag-pill-text">' + esc + '</span><button type="button" class="tag-pill-remove" aria-label="Remove tag">&times;</button></span>');
+                        var isRed = ($('#tags_clients #create_new_as_red').val() === '1');
+
+                        var redClass = isRed ? ' tag-pill--red' : '';
+
+                        var $pill = $('<span class="tag-pill' + redClass + '" data-tag-name="' + esc + '" data-tag-red="' + (isRed ? '1' : '0') + '"><span class="tag-pill-text">' + esc + '</span><button type="button" class="tag-pill-remove" aria-label="Remove tag">&times;</button></span>');
 
                         $pill.insertBefore($input);
 
@@ -705,7 +709,13 @@ $(document).ready(function() {
 
                 existing.push(tagName);
 
-                var $pill = $('<span class="tag-pill" data-tag-name="' + $('<div>').text(tagName).html() + '"><span class="tag-pill-text">' + $('<div>').text(tagName).html() + '</span><button type="button" class="tag-pill-remove" aria-label="Remove tag">&times;</button></span>');
+                var isRed = ($('#tags_clients #create_new_as_red').val() === '1');
+
+                var redClass = isRed ? ' tag-pill--red' : '';
+
+                var esc = $('<div>').text(tagName).html();
+
+                var $pill = $('<span class="tag-pill' + redClass + '" data-tag-name="' + esc + '" data-tag-red="' + (isRed ? '1' : '0') + '"><span class="tag-pill-text">' + esc + '</span><button type="button" class="tag-pill-remove" aria-label="Remove tag">&times;</button></span>');
 
                 $pill.insertBefore($input);
 
@@ -749,21 +759,21 @@ $(document).ready(function() {
 
             e.preventDefault();
 
-            var tags = [];
+            $form.find('input[name="tag_normal[]"]').remove();
+
+            $form.find('input[name="tag_red[]"]').remove();
 
             $container.find('.tag-pill').each(function(){
 
                 var n = $(this).attr('data-tag-name');
 
-                if (n) tags.push(n);
+                if (!n) return;
 
-            });
+                var isRed = $(this).attr('data-tag-red') === '1';
 
-            $form.find('input[name="tag[]"]').remove();
+                var nm = isRed ? 'tag_red[]' : 'tag_normal[]';
 
-            tags.forEach(function(tag){
-
-                $('<input type="hidden" name="tag[]">').val(tag).appendTo($form);
+                $('<input type="hidden">').attr('name', nm).val(n).appendTo($form);
 
             });
 

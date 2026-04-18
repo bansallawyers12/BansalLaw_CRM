@@ -221,7 +221,7 @@ class EmailLabelController extends Controller
     }
 
     /**
-     * Decode string ID (following pattern from TagController)
+     * Decode string ID (following pattern from other admin feature controllers)
      */
     public function decodeString($string = null)
     {

@@ -2637,16 +2637,18 @@ function customValidate(formName, savetype = '')
 					{
 						var $form = $("form[name="+formName+"]");
 						var $container = $form.find('#tags_modal_container');
-						var tags = [];
+						var fd = new FormData($form[0]);
+						fd.delete('tag[]');
+						fd.delete('tag_normal[]');
+						fd.delete('tag_red[]');
 						if ($container.length) {
 							$container.find('.tag-pill').each(function(){
 								var n = $(this).attr('data-tag-name');
-								if (n) tags.push(n);
+								if (!n) return;
+								var isRed = $(this).attr('data-tag-red') === '1';
+								fd.append(isRed ? 'tag_red[]' : 'tag_normal[]', n);
 							});
 						}
-						var fd = new FormData($form[0]);
-						fd.delete('tag[]');
-						tags.forEach(function(tag){ fd.append('tag[]', tag); });
 						$.ajax({
 							type: 'post',
 							url: $form.attr('action'),
@@ -2665,7 +2667,7 @@ function customValidate(formName, savetype = '')
 								if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
 								else if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
 									var errs = xhr.responseJSON.errors;
-									msg = (errs.client_id && errs.client_id[0]) || (errs.tag && errs.tag[0]) || msg;
+									msg = (errs.client_id && errs.client_id[0]) || (errs.tag_normal && errs.tag_normal[0]) || (errs.tag_red && errs.tag_red[0]) || msg;
 								}
 								$('.custom-error-msg').html('<span class="alert alert-danger">'+msg+'</span>');
 							}
