@@ -141,7 +141,8 @@
     function activateTab(tabId) {
         // Remove active class from all sidebar buttons and panes
         $('.client-nav-button').removeClass('active');
-        $('.tab-pane').removeClass('active');
+        // Do not clear panes inside Bootstrap modals (e.g. workflow in Update Stage modal)
+        $('.tab-pane').not('.modal .tab-pane').removeClass('active');
         
         // Add active class to the clicked button - use exact match with filter to ensure precision
         $('.client-nav-button').filter(function() {

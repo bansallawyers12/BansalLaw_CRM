@@ -461,10 +461,14 @@ use App\Http\Controllers\Controller;
         <div class="custom-error-msg">
         </div>
         <div class="main-content-with-tabs">
-            <div id="cdn-doc-subtab-strip" class="cdn-doc-subtab-strip" role="tablist" aria-label="Document scope">
-                <button type="button" class="cdn-doc-subtab-btn active" data-doc-sub="personaldocuments">Personal</button>
+            @php
+                $cdnDocStripTab = strtolower((string) ($activeTab ?? ''));
+                $cdnDocStripVisibleDemo = in_array($cdnDocStripTab, ['personaldocuments', 'matterdocuments'], true);
+            @endphp
+            <div id="cdn-doc-subtab-strip" class="cdn-doc-subtab-strip{{ $cdnDocStripVisibleDemo ? ' is-visible' : '' }}" role="tablist" aria-label="Personal documents or matter documents">
+                <button type="button" class="cdn-doc-subtab-btn{{ $cdnDocStripTab === 'matterdocuments' ? '' : ' active' }}" data-doc-sub="personaldocuments">Personal documents</button>
                 @if(!empty($cdnShowMattersDocSubtab))
-                <button type="button" class="cdn-doc-subtab-btn" data-doc-sub="matterdocuments">Matters</button>
+                <button type="button" class="cdn-doc-subtab-btn{{ $cdnDocStripTab === 'matterdocuments' ? ' active' : '' }}" data-doc-sub="matterdocuments">Matter documents</button>
                 @endif
             </div>
             <!-- Tab Contents -->
@@ -1641,7 +1645,7 @@ $(document).ready(function() {
                 return;
             }
             if (tabId === 'personaldocuments' || tabId === 'matterdocuments') {
-                $strip.css({ display: 'flex' });
+                $strip.addClass('is-visible');
                 $('.client-nav-button').removeClass('active');
                 $('.cdn-demo-doc-nav').addClass('active');
                 $strip.find('.cdn-doc-subtab-btn').removeClass('active');
@@ -1652,7 +1656,7 @@ $(document).ready(function() {
                 }
                 $match.addClass('active');
             } else {
-                $strip.css({ display: 'none' });
+                $strip.removeClass('is-visible');
             }
         }
 

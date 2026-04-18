@@ -12,11 +12,13 @@
   --cdn-primary-soft: #dbeafe;
   --cdn-radius: 14px;
   --cdn-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+  /* Must match .main-content horizontal padding — subtab strip full-bleed uses this */
+  --cdn-main-content-pad-x: 18px;
   box-sizing: border-box;
   width: 100%;
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 16px 16px 24px;
+  max-width: none;
+  margin: 0;
+  padding: 12px 0 24px;
   background: var(--cdn-bg);
   min-height: calc(100vh - 120px);
 }
@@ -42,13 +44,13 @@
   overflow-y: auto;
 }
 
-/* Demo notice */
+/* Demo notice — side inset so content does not touch the viewport edge */
 .cdn-demo-banner {
   background: var(--cdn-card);
   border: 1px solid var(--cdn-border);
   border-radius: var(--cdn-radius);
   box-shadow: var(--cdn-shadow);
-  margin-bottom: 16px;
+  margin: 0 16px 16px;
   padding: 12px 16px;
 }
 
@@ -405,7 +407,11 @@
   gap: 16px;
   align-items: start;
   width: 100%;
+  max-width: none !important;
   background: transparent;
+  /* Layout adds padding to .crm-container; keep vertical breathing room, horizontal gutter */
+  padding: 16px !important;
+  box-sizing: border-box;
 }
 
 .client-detail-newdesign-demo-shell .crm-container.sidebar-collapsed {
@@ -468,7 +474,7 @@
   border: 1px solid var(--cdn-border);
   border-radius: var(--cdn-radius);
   box-shadow: var(--cdn-shadow);
-  padding: 16px 18px 20px;
+  padding: 16px var(--cdn-main-content-pad-x) 20px;
 }
 
 .client-detail-newdesign-demo-shell .crm-container > aside.activity-feed {
@@ -479,10 +485,10 @@
 
 /* Activity-only tab: feed spans full width below top bar */
 .client-detail-newdesign-demo-shell .crm-container.crm-container--activity-tab {
+  grid-template-columns: 1fr;
   grid-template-areas:
-    "cdn-topbar cdn-topbar"
-    "cdn-feed cdn-feed";
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+    "cdn-topbar"
+    "cdn-feed";
 }
 
 .client-detail-newdesign-demo-shell .crm-container.crm-container--activity-tab > aside.activity-feed {
@@ -655,9 +661,13 @@
 
 .client-detail-newdesign-demo-shell .main-content-with-tabs {
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  width: 100%;
+  min-width: 0;
 }
 
-/* Document tab: Personal / Matters sub-tabs (demo) */
+/* Document tab: Personal / Matter documents sub-tabs (demo).
+   Hidden by default; .is-visible is set from Blade on first paint for /personaldocuments URLs
+   so the row appears even if JS is slow or fails. */
 .client-detail-newdesign-demo-shell .cdn-doc-subtab-strip {
   display: none;
   flex-wrap: wrap;
@@ -665,10 +675,22 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 14px;
-  padding: 8px 10px;
+  padding: 10px var(--cdn-main-content-pad-x);
   background: #f8fafc;
   border: 1px solid var(--cdn-border);
   border-radius: 10px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.client-detail-newdesign-demo-shell .cdn-doc-subtab-strip.is-visible {
+  display: flex !important;
+  /* Span full width of the main panel (cancel .main-content horizontal padding) */
+  width: calc(100% + 2 * var(--cdn-main-content-pad-x));
+  max-width: none;
+  margin-left: calc(-1 * var(--cdn-main-content-pad-x));
+  margin-right: calc(-1 * var(--cdn-main-content-pad-x));
+  margin-bottom: 16px;
 }
 
 .client-detail-newdesign-demo-shell .cdn-doc-subtab-btn {
@@ -710,8 +732,9 @@
 }
 
 @media (max-width: 1024px) {
+  /* Keep horizontal flush with viewport; gutter comes from .crm-container + banner margins */
   .client-detail-newdesign-demo-shell {
-    padding: 12px;
+    padding: 12px 0 20px;
   }
 
   .client-detail-newdesign-demo-shell .crm-container {
@@ -723,6 +746,7 @@
   }
 
   .client-detail-newdesign-demo-shell .crm-container.crm-container--activity-tab {
+    grid-template-columns: 1fr;
     grid-template-areas:
       "cdn-topbar"
       "cdn-feed";
