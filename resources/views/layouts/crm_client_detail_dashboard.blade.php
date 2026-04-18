@@ -1509,6 +1509,16 @@
             },5000);
             
             // Teams-like notification functionality
+            function crmEscapeTemplateLiteral(s) {
+                if (s == null || s === undefined) {
+                    return '';
+                }
+                return String(s)
+                    .replace(/\\/g, '\\\\')
+                    .replace(/`/g, '\\`')
+                    .replace(/\$\{/g, '\\${');
+            }
+
             function loadOfficeVisitNotifications() {
                 $.ajax({
                     url: "{{URL::to('/fetch-office-visit-notifications')}}",
@@ -1529,6 +1539,10 @@
                     return;
                 }
                 
+                var timeLine = typeof formatDisplayDateTime === 'function'
+                    ? formatDisplayDateTime(notification.created_at)
+                    : (notification.created_at || '');
+                
                 var notificationHtml = `
                     <div class="teams-notification" id="teams-notification-${notification.id}">
                         <div class="teams-notification-header">
@@ -1548,14 +1562,14 @@
                         <div class="teams-notification-body">
                             <div class="teams-notification-sender">
                                 <div class="teams-notification-sender-info">
-                                    <div class="teams-notification-sender-name">${notification.sender_name}</div>
-                                    <div class="teams-notification-message">${notification.message}</div>
+                                    <div class="teams-notification-sender-name">${crmEscapeTemplateLiteral(notification.sender_name)}</div>
+                                    <div class="teams-notification-message">${crmEscapeTemplateLiteral(notification.message)}</div>
                                 </div>
                             </div>
                             <div class="teams-notification-message">
-                                <strong>Client:</strong> ${notification.client_name}<br>
-                                <strong>Purpose:</strong> ${notification.visit_purpose}<br>
-                                <strong>Time:</strong> ${typeof formatDisplayDateTime === 'function' ? formatDisplayDateTime(notification.created_at) : (notification.created_at || '')}
+                                <strong>Client:</strong> ${crmEscapeTemplateLiteral(notification.client_name)}<br>
+                                <strong>Purpose:</strong> ${crmEscapeTemplateLiteral(notification.visit_purpose)}<br>
+                                <strong>Time:</strong> ${crmEscapeTemplateLiteral(timeLine)}
                             </div>
                             <div class="teams-notification-actions">
                                 <button class="teams-notification-action-btn primary" onclick="attendSession(${notification.checkin_id}, ${notification.id})">
