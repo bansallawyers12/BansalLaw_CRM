@@ -173,6 +173,9 @@
 								<thead>
 									<tr>
 										<th>Matter Name</th>
+										@if(\Illuminate\Support\Facades\Schema::hasColumn('matters', 'stream'))
+										<th>Stream</th>
+										@endif
 										<th class="text-end">Action</th>
 									</tr>
 								</thead>
@@ -182,6 +185,9 @@
 								@foreach (@$lists as $list)
 									<tr id="id_{{@$list->id}}">
 										<td>{{ @$list->title == "" ? config('constants.empty') : Str::limit(@$list->title, '50', '...') }}</td>
+										@if(\Illuminate\Support\Facades\Schema::hasColumn('matters', 'stream'))
+										<td class="text-muted small">{{ $list->stream ? \Illuminate\Support\Arr::get(config('matter_streams.streams', []), $list->stream, $list->stream) : '—' }}</td>
+										@endif
 										<td class="text-nowrap text-end">
 											<div class="dropdown d-inline-block">
 												<button class="btn btn-primary dropdown-toggle matter-action-dropdown-toggle" type="button" id="matterAction_{{ $list->id }}"

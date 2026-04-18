@@ -31,6 +31,9 @@ use App\Models\ClientTravelInformation;
 use App\Models\ClientCharacter;
 use App\Models\ClientRelationship;
 use App\Models\ClientMatter;
+use App\Models\ClientMatterOpposingParty;
+use App\Models\Matter;
+use App\Support\MatterStreamHelper;
 use App\Models\Company;
 use App\Models\CompanyDirector;
 use App\Models\CompanyNomination;
@@ -740,24 +743,57 @@ class ClientPersonalDetailsController extends Controller
     public function fetchClientMatterAssignee(Request $request)
     {
         $requestData = $request->all();
-        if (!empty($requestData['client_matter_id'])) {
-            $clientId = DB::table('client_matters')->where('id', $requestData['client_matter_id'])->value('client_id');
+        $cmId = (int) ($requestData['client_matter_id'] ?? 0);
+        if ($cmId > 0) {
+            $clientId = DB::table('client_matters')->where('id', $cmId)->value('client_id');
             if ($clientId) {
                 $this->ensureCrmRecordAccess((int) $clientId);
             }
         }
-        $matter_info = DB::table('client_matters')->where('id',$requestData['client_matter_id'])->first();
-        //dd($matter_info);
-        if(!empty($matter_info)) {
-            $response['matter_info'] = $matter_info;
-            $response['status'] 	= 	true;
-            $response['message']	=	'Record is exist';
-        }else{
-            $response['matter_info'] 	= array();
-            $response['status'] 	= 	false;
-            $response['message']	=	'Record is not exist.Please try again';
+        $matter_info = DB::table('client_matters')->where('id', $cmId)->first();
+        if (! empty($matter_info)) {
+            $response = [
+                'matter_info' => $matter_info,
+                'status' => true,
+                'message' => 'Record is exist',
+                'opposing_parties' => [],
+                'matter_stream' => null,
+            ];
+            if (Schema::hasTable('client_matter_opposing_parties')) {
+                $response['opposing_parties'] = ClientMatterOpposingParty::query()
+                    ->where('client_matter_id', $cmId)
+                    ->orderBy('sort_order')
+                    ->orderBy('id')
+                    ->get(['id', 'name', 'party_role', 'sort_order'])
+                    ->toArray();
+            }
+            $selMatterId = (int) ($matter_info->sel_matter_id ?? 0);
+            if ($selMatterId > 0) {
+                $m = Matter::query()->find($selMatterId);
+                $response['matter_stream'] = $m && $m->stream ? (string) $m->stream : 'general';
+            }
+            $clientAdmin = Admin::query()->find((int) $matter_info->client_id);
+            $response['matter_options'] = [];
+            if ($clientAdmin) {
+                $response['matter_options'] = Matter::query()
+                    ->select('id', 'title', 'stream')
+                    ->where('status', 1)
+                    ->forClientType((bool) $clientAdmin->is_company)
+                    ->orderBy('title')
+                    ->get()
+                    ->toArray();
+            }
+
+            return response()->json($response);
         }
-        echo json_encode($response);
+
+        return response()->json([
+            'matter_info' => [],
+            'status' => false,
+            'message' => 'Record is not exist.Please try again',
+            'opposing_parties' => [],
+            'matter_options' => [],
+        ]);
     }
 
     public function updateClientMatterAssignee(Request $request){
@@ -773,48 +809,143 @@ class ClientPersonalDetailsController extends Controller
             return response()->json($response);
         }
 
-        if (ClientMatter::where('id', '=', $requstData['selectedMatterLM'])->exists()) {
-            $obj = ClientMatter::find($requstData['selectedMatterLM']);
-            $obj->sel_legal_practitioner = $requstData['legal_practitioner'];
-            $obj->sel_person_responsible = $requstData['person_responsible'];
-            $obj->sel_person_assisting = $requstData['person_assisting'];
-            $obj->user_id = $requstData['user_id'];
-
-            if (isset($requstData['office_id']) && $requstData['office_id'] !== '') {
-                $obj->office_id = $requstData['office_id'];
-            }
-
-            if (Schema::hasColumn('client_matters', 'incidence_type')) {
-                $incidenceType = isset($requstData['incidence_type']) ? trim((string) $requstData['incidence_type']) : '';
-                $obj->incidence_type = $incidenceType !== '' ? $incidenceType : null;
-            }
-            if (Schema::hasColumn('client_matters', 'date_of_incidence')) {
-                $doi = $requstData['date_of_incidence'] ?? null;
-                $obj->date_of_incidence = ($doi !== null && $doi !== '') ? $doi : null;
-            }
-            if (Schema::hasColumn('client_matters', 'case_detail')) {
-                $caseDetail = isset($requstData['case_detail']) ? trim((string) $requstData['case_detail']) : '';
-                $obj->case_detail = $caseDetail !== '' ? $caseDetail : null;
-            }
-
-            $saved = $obj->save();
-            if ($saved) {
-                $objs = new \App\Models\ActivitiesLog;
-                $objs->client_id = $requstData['client_id'];
-                $objs->created_by = Auth::user()->id;
-                $objs->description = '';
-                $objs->subject = 'updated client matter details';
-                $objs->task_status = 0;
-                $objs->pin = 0;
-                $objs->save();
-
-                $response['status'] = true;
-                $response['message'] = 'Matter details updated successfully.';
-            } else {
-                $response['message'] = 'Record could not be updated. Please try again.';
-            }
-        } else {
+        if (! ClientMatter::where('id', '=', $requstData['selectedMatterLM'])->exists()) {
             $response['message'] = 'Matter not found. Please try again.';
+
+            return response()->json($response);
+        }
+
+        $obj = ClientMatter::find($requstData['selectedMatterLM']);
+        $postedClientId = (int) ($requstData['client_id'] ?? 0);
+        if ((int) $obj->client_id !== $postedClientId) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Matter does not belong to this client.',
+            ], 403);
+        }
+
+        $clientAdmin = Admin::query()->find($postedClientId);
+
+        $newMatterTypeId = isset($requstData['sel_matter_id']) ? (int) $requstData['sel_matter_id'] : 0;
+        if ($newMatterTypeId > 0 && $newMatterTypeId !== (int) $obj->sel_matter_id) {
+            if (! Matter::query()->whereKey($newMatterTypeId)->exists()) {
+                $response['message'] = 'Invalid law matter type.';
+
+                return response()->json($response, 422);
+            }
+            if (! $clientAdmin || ! Matter::allowedForClientIsCompany($newMatterTypeId, (bool) $clientAdmin->is_company)) {
+                $response['message'] = 'That law matter type is not valid for this client.';
+
+                return response()->json($response, 422);
+            }
+            $obj->sel_matter_id = $newMatterTypeId;
+        }
+
+        $obj->sel_legal_practitioner = $requstData['legal_practitioner'];
+        $obj->sel_person_responsible = $requstData['person_responsible'];
+        $obj->sel_person_assisting = $requstData['person_assisting'];
+        $obj->user_id = $requstData['user_id'];
+
+        if (isset($requstData['office_id']) && $requstData['office_id'] !== '') {
+            $obj->office_id = $requstData['office_id'];
+        }
+
+        if (Schema::hasColumn('client_matters', 'incidence_type')) {
+            $incidenceType = isset($requstData['incidence_type']) ? trim((string) $requstData['incidence_type']) : '';
+            $obj->incidence_type = $incidenceType !== '' ? $incidenceType : null;
+        }
+        if (Schema::hasColumn('client_matters', 'date_of_incidence')) {
+            $doi = $requstData['date_of_incidence'] ?? null;
+            $obj->date_of_incidence = ($doi !== null && $doi !== '') ? $doi : null;
+        }
+        if (Schema::hasColumn('client_matters', 'case_detail')) {
+            $caseDetail = isset($requstData['case_detail']) ? trim((string) $requstData['case_detail']) : '';
+            $obj->case_detail = $caseDetail !== '' ? $caseDetail : null;
+        }
+
+        if (Schema::hasColumn('client_matters', 'our_party_role')) {
+            $ourRole = isset($requstData['our_party_role']) ? trim((string) $requstData['our_party_role']) : '';
+            $matterForStream = Matter::query()->find((int) $obj->sel_matter_id);
+            $stream = $matterForStream && $matterForStream->stream
+                ? (string) $matterForStream->stream
+                : 'general';
+            if ($ourRole !== '' && ! MatterStreamHelper::isValidPartyRole($stream, $ourRole)) {
+                $response['message'] = 'Invalid party role for this matter stream.';
+
+                return response()->json($response, 422);
+            }
+            $obj->our_party_role = $ourRole !== '' ? $ourRole : null;
+        }
+
+        $decodedOpposing = [];
+        if (Schema::hasTable('client_matter_opposing_parties')) {
+            $rawOpp = isset($requstData['opposing_parties_json']) ? trim((string) $requstData['opposing_parties_json']) : '';
+            if ($rawOpp !== '') {
+                $decodedOpposing = json_decode($rawOpp, true);
+                if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decodedOpposing)) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Other parties data must be valid JSON.',
+                    ], 422);
+                }
+            }
+        }
+
+        $saved = false;
+        try {
+            DB::transaction(function () use ($obj, $decodedOpposing) {
+                $obj->save();
+                if (! Schema::hasTable('client_matter_opposing_parties')) {
+                    return;
+                }
+                ClientMatterOpposingParty::query()->where('client_matter_id', $obj->id)->delete();
+                $i = 0;
+                foreach ($decodedOpposing as $row) {
+                    if (! is_array($row)) {
+                        continue;
+                    }
+                    $n = isset($row['name']) ? trim((string) $row['name']) : '';
+                    if ($n === '') {
+                        continue;
+                    }
+                    ClientMatterOpposingParty::create([
+                        'client_matter_id' => $obj->id,
+                        'name' => $n,
+                        'party_role' => isset($row['party_role']) && trim((string) $row['party_role']) !== ''
+                            ? trim((string) $row['party_role'])
+                            : null,
+                        'sort_order' => $i,
+                    ]);
+                    $i++;
+                    if ($i >= 20) {
+                        break;
+                    }
+                }
+            });
+            $saved = true;
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Could not save matter details.',
+            ], 500);
+        }
+
+        if ($saved) {
+            $objs = new \App\Models\ActivitiesLog;
+            $objs->client_id = $requstData['client_id'];
+            $objs->created_by = Auth::user()->id;
+            $objs->description = '';
+            $objs->subject = 'updated client matter details';
+            $objs->task_status = 0;
+            $objs->pin = 0;
+            $objs->save();
+
+            $response['status'] = true;
+            $response['message'] = 'Matter details updated successfully.';
+        } else {
+            $response['message'] = 'Record could not be updated. Please try again.';
         }
 
         return response()->json($response);

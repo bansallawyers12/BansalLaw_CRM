@@ -112,7 +112,7 @@ class ClientEditService
     protected function getMattersForSubject(bool $isCompany)
     {
         return Matter::query()
-            ->select('id', 'title', 'nick_name')
+            ->select('id', 'title', 'nick_name', 'stream')
             ->where('status', 1)
             ->forClientType($isCompany)
             ->orderBy('title')
@@ -317,7 +317,7 @@ class ClientEditService
      */
     protected function getAllMatters()
     {
-        return Matter::select('id', 'title', 'nick_name')
+        return Matter::select('id', 'title', 'nick_name', 'stream')
             ->where('status', 1)
             ->orderBy('title')
             ->get();

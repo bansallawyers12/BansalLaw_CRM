@@ -16,6 +16,7 @@ use App\Models\Lead;
 use App\Models\ActivitiesLog;
 // use App\Models\OnlineForm; // REMOVED: OnlineForm model has been deleted
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Barryvdh\DomPDF\Facade as PDF;
 use App\Models\CheckinLog;
 use App\Models\Note;
@@ -25,7 +26,9 @@ use App\Models\AccountClientReceipt;
 
 use App\Models\Matter;
 use App\Models\ClientMatter;
+use App\Models\ClientMatterOpposingParty;
 use App\Models\Branch;
+use App\Support\MatterStreamHelper;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -5452,6 +5455,8 @@ class ClientsController extends Controller
             'case_detail' => 'nullable|string|max:5000',
             'date_of_incidence' => 'nullable|date',
             'incidence_type' => 'nullable|string|max:255',
+            'our_party_role' => 'nullable|string|max:64',
+            'opposing_parties_json' => 'nullable|string|max:65535',
         ]);
 
         $admin = Admin::query()->find((int) $validated['client_id']);
@@ -5477,6 +5482,46 @@ class ClientsController extends Controller
             ], 422);
         }
 
+        $matterRow = Matter::query()->find($matterId);
+        $stream = $matterRow && $matterRow->stream
+            ? (string) $matterRow->stream
+            : 'general';
+
+        $ourRole = isset($validated['our_party_role']) ? trim((string) $validated['our_party_role']) : '';
+        if ($ourRole !== '' && ! MatterStreamHelper::isValidPartyRole($stream, $ourRole)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid party role for this matter stream.',
+            ], 422);
+        }
+
+        $opposingParties = [];
+        if (! empty($validated['opposing_parties_json'])) {
+            $decoded = json_decode((string) $validated['opposing_parties_json'], true);
+            if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Other parties data must be valid JSON.',
+                ], 422);
+            }
+            foreach ($decoded as $row) {
+                if (! is_array($row)) {
+                    continue;
+                }
+                $n = isset($row['name']) ? trim((string) $row['name']) : '';
+                if ($n === '') {
+                    continue;
+                }
+                $opposingParties[] = [
+                    'name' => $n,
+                    'party_role' => isset($row['party_role']) ? trim((string) $row['party_role']) : '',
+                ];
+                if (count($opposingParties) >= 20) {
+                    break;
+                }
+            }
+        }
+
         $row = new ClientMatter();
         $row->user_id = Auth::id();
         $row->client_id = (int) $admin->id;
@@ -5490,6 +5535,9 @@ class ClientsController extends Controller
         $row->date_of_incidence = $validated['date_of_incidence'] ?? null;
         $incidenceType = isset($validated['incidence_type']) ? trim((string) $validated['incidence_type']) : '';
         $row->incidence_type = $incidenceType !== '' ? $incidenceType : null;
+        if (Schema::hasColumn('client_matters', 'our_party_role')) {
+            $row->our_party_role = $ourRole !== '' ? $ourRole : null;
+        }
 
         $countForType = DB::table('client_matters')
             ->where('sel_matter_id', $matterId)
@@ -5529,7 +5577,30 @@ class ClientsController extends Controller
         $row->workflow_id = $workflowId;
         $row->workflow_stage_id = $firstStageId;
         $row->matter_status = 1;
-        $row->save();
+
+        try {
+            DB::transaction(function () use ($row, $opposingParties) {
+                $row->save();
+                if (! Schema::hasTable('client_matter_opposing_parties') || $opposingParties === []) {
+                    return;
+                }
+                foreach ($opposingParties as $i => $party) {
+                    ClientMatterOpposingParty::create([
+                        'client_matter_id' => $row->id,
+                        'name' => $party['name'],
+                        'party_role' => $party['party_role'] !== '' ? $party['party_role'] : null,
+                        'sort_order' => $i,
+                    ]);
+                }
+            });
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not create matter. Please try again.',
+            ], 500);
+        }
 
         return response()->json([
             'success' => true,

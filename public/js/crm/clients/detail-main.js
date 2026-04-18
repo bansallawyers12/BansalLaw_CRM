@@ -606,7 +606,68 @@ $(document).ready(function() {
 
     });
 
+    window.changeMatterAppendOpposingRow = function (name, role) {
+        var $c = $('#change_matter_opposing_parties_container');
+        if (!$c.length) { return; }
+        var $row = $('<div class="row mb-2 cm-opp-row align-items-end"></div>');
+        var $n = $('<input type="text" class="form-control cm-opp-name" maxlength="500">').val(name || '');
+        var $r = $('<input type="text" class="form-control cm-opp-role" maxlength="255" placeholder="Role (e.g. co-defendant)">').val(role || '');
+        $row.append($('<div class="col-md-5"/>').append('<label class="small mb-0 d-block">Name</label>').append($n));
+        $row.append($('<div class="col-md-5"/>').append('<label class="small mb-0 d-block">Their role</label>').append($r));
+        var $rm = $('<button type="button" class="btn btn-sm btn-outline-danger w-100">Remove</button>');
+        $rm.on('click', function () { $row.remove(); });
+        $row.append($('<div class="col-md-2"/>').append('<label class="small mb-0 d-block">&nbsp;</label>').append($rm));
+        $c.append($row);
+    };
 
+    window.changeMatterRebuildPartyRoleSelect = function () {
+        var $mt = $('#change_sel_matter_id');
+        var opt = $mt.find('option:selected');
+        var stream = (opt.attr('data-stream') || 'general').toString();
+        var map = window.MATTER_PARTY_ROLES_BY_STREAM || {};
+        var roles = map[stream] || map.general || {};
+        var $pr = $('#change_matter_our_party_role');
+        if (!$pr.length) { return; }
+        var cur = $pr.val();
+        $pr.empty().append($('<option/>').val('').text('\u2014'));
+        Object.keys(roles).forEach(function (k) {
+            $pr.append($('<option/>').val(k).text(roles[k]));
+        });
+        if (cur) {
+            $pr.val(cur);
+        }
+    };
+
+    window.prepareChangeMatterAssigneeSubmit = function () {
+        var rows = [];
+        $('#change_matter_opposing_parties_container .cm-opp-row').each(function () {
+            var name = $.trim($(this).find('.cm-opp-name').val() || '');
+            var party_role = $.trim($(this).find('.cm-opp-role').val() || '');
+            if (name !== '') { rows.push({ name: name, party_role: party_role }); }
+        });
+        $('#change_matter_opposing_parties_json').val(JSON.stringify(rows));
+        var init = $('#change_matter_initial_sel_matter_id').val();
+        var now = $('#change_sel_matter_id').val();
+        if (init && now && String(init) !== String(now)) {
+            if (!window.confirm('You are changing the law matter type. The existing matter reference will not change automatically. Continue?')) {
+                return;
+            }
+        }
+        customValidate('change_matter_assignee');
+    };
+
+    $(document).on('change', '#change_sel_matter_id', function () {
+        if (typeof window.changeMatterRebuildPartyRoleSelect === 'function') {
+            window.changeMatterRebuildPartyRoleSelect();
+        }
+    });
+
+    $(document).on('click', '#change_matter_add_opposing_btn', function (e) {
+        e.preventDefault();
+        if (typeof window.changeMatterAppendOpposingRow === 'function') {
+            window.changeMatterAppendOpposingRow('', '');
+        }
+    });
 
     // Change Matter Assignee: open modal and pre-populate with current assignee
 
@@ -680,6 +741,47 @@ $(document).ready(function() {
 
                 if ($('#change_matter_case_detail').length) {
                     $('#change_matter_case_detail').val(m.case_detail ? String(m.case_detail) : '');
+                }
+
+                var matterOpts = info.matter_options || [];
+                var $mtSel = $('#change_sel_matter_id');
+                if ($mtSel.length) {
+                    $mtSel.empty();
+                    $mtSel.append($('<option/>').val('').text('\u2014 Select law matter type \u2014'));
+                    matterOpts.forEach(function (o) {
+                        var opt = $('<option/>').val(String(o.id)).text(o.title || '');
+                        if (o.stream) { opt.attr('data-stream', o.stream); }
+                        $mtSel.append(opt);
+                    });
+                    if (m.sel_matter_id) {
+                        $mtSel.val(String(m.sel_matter_id));
+                    }
+                    $('#change_matter_initial_sel_matter_id').val(m.sel_matter_id ? String(m.sel_matter_id) : '');
+                }
+
+                if (typeof window.changeMatterRebuildPartyRoleSelect === 'function') {
+                    window.changeMatterRebuildPartyRoleSelect();
+                }
+
+                if ($('#change_matter_our_party_role').length) {
+                    $('#change_matter_our_party_role').val(m.our_party_role ? String(m.our_party_role) : '');
+                }
+
+                var opp = info.opposing_parties || [];
+                var $oppC = $('#change_matter_opposing_parties_container');
+                if ($oppC.length) {
+                    $oppC.empty();
+                    if (opp.length === 0) {
+                        if (typeof window.changeMatterAppendOpposingRow === 'function') {
+                            window.changeMatterAppendOpposingRow('', '');
+                        }
+                    } else {
+                        opp.forEach(function (p) {
+                            if (typeof window.changeMatterAppendOpposingRow === 'function') {
+                                window.changeMatterAppendOpposingRow(p.name || '', p.party_role || '');
+                            }
+                        });
+                    }
                 }
 
             }

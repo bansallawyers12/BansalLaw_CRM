@@ -879,11 +879,42 @@
                             </div>
                         </div>
 
+                        <div class="col-12 col-md-12 col-lg-12">
+                            <div class="form-group">
+                                <label for="change_sel_matter_id">Law matter type</label>
+                                <select class="form-control" name="sel_matter_id" id="change_sel_matter_id">
+                                    <option value="">— Loading —</option>
+                                </select>
+                                <small class="form-text text-muted">Changing type may not match the matter reference prefix; update details if needed.</small>
+                            </div>
+                        </div>
+                        <input type="hidden" id="change_matter_initial_sel_matter_id" value="">
+
+                        @if(\Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'our_party_role'))
+                        <div class="col-12 col-md-6">
+                            <div class="form-group">
+                                <label for="change_matter_our_party_role">Our client&rsquo;s role</label>
+                                <select class="form-control" name="our_party_role" id="change_matter_our_party_role">
+                                    <option value="">—</option>
+                                </select>
+                            </div>
+                        </div>
+                        @endif
+
+                        <div class="col-12">
+                            <label>Other parties <small class="text-muted">(optional)</small></label>
+                            <div id="change_matter_opposing_parties_container" class="mb-2"></div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="change_matter_add_opposing_btn">
+                                <i class="fas fa-plus"></i> Add other party
+                            </button>
+                            <input type="hidden" name="opposing_parties_json" id="change_matter_opposing_parties_json" value="[]">
+                        </div>
+
                         @if(\Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'incidence_type'))
                         <div class="col-12">
                             <div class="form-group">
-                                <label for="change_matter_incidence_type">Incidence type</label>
-                                <input type="text" class="form-control" name="incidence_type" id="change_matter_incidence_type" maxlength="255" placeholder="e.g. workplace, refusal, relationship breakdown" autocomplete="off">
+                                <label for="change_matter_incidence_type">Matter subtype</label>
+                                <input type="text" class="form-control" name="incidence_type" id="change_matter_incidence_type" maxlength="255" placeholder="e.g. Money recovery, parenting application" autocomplete="off">
                             </div>
                         </div>
                         @endif
@@ -905,7 +936,7 @@
                         @endif
 
                         <div class="col-9 col-md-9 col-lg-9 text-right">
-                            <button onclick="customValidate('change_matter_assignee')" type="button" class="btn btn-primary">Save</button>
+                            <button onclick="if(typeof window.prepareChangeMatterAssigneeSubmit === 'function') { window.prepareChangeMatterAssigneeSubmit(); } else { customValidate('change_matter_assignee'); }" type="button" class="btn btn-primary">Save</button>
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
                     </div>
@@ -915,3 +946,6 @@
 	</div>
 </div>
 
+<script>
+window.MATTER_PARTY_ROLES_BY_STREAM = @json(config('matter_streams.party_roles_by_stream', []));
+</script>

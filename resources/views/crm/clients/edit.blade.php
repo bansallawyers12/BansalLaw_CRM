@@ -1487,7 +1487,8 @@
                     @foreach($allMattersList->sortBy('id') as $mt)
                       <option value="{{ $mt->id }}"
                         data-nick="{{ $mt->nick_name }}"
-                        data-title="{{ $mt->title }}">
+                        data-title="{{ $mt->title }}"
+                        data-stream="{{ $mt->stream ?? '' }}">
                         {{ $loop->iteration }}. {{ $mt->title }}
                       </option>
                     @endforeach
@@ -1531,6 +1532,18 @@
 
           {{-- Dynamic sub-type selector + matter-specific fields (all rendered by JS) --}}
           <div id="matterSpecificFields"></div>
+
+          <div id="dynLegalPartySection" class="form-group" style="margin-top:1rem;padding:1rem;background:#fafbfc;border:1px solid #e9ecef;border-radius:8px;">
+            <label for="dyn_our_party_role" style="font-weight:600;">Our client&rsquo;s role <small class="text-muted">(optional)</small></label>
+            <select class="form-control" id="dyn_our_party_role" style="max-width:420px;">
+              <option value="">—</option>
+            </select>
+            <label style="margin-top:0.9rem;font-weight:600;">Other parties <small class="text-muted">(optional)</small></label>
+            <div id="dyn_opposing_parties_wrap"></div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="dyn_add_opposing_party_btn" style="margin-top:6px;">
+              <i class="fas fa-plus"></i> Add other party
+            </button>
+          </div>
 
           {{-- Case detail (common) --}}
           <div class="form-group" style="margin-top:0.5rem;">
@@ -2335,8 +2348,8 @@
                     </div>
                     <div class="col-md-6 add-matter-modal__field">
                         <div class="form-group">
-                            <label for="edit_add_matter_incidence_type">Incident Type <small class="text-muted">(optional)</small></label>
-                            <input type="text" class="form-control" id="edit_add_matter_incidence_type" name="incidence_type" maxlength="255" placeholder="e.g. workplace, refusal, relationship breakdown">
+                            <label for="edit_add_matter_incidence_type">Matter subtype <small class="text-muted">(optional)</small></label>
+                            <input type="text" class="form-control" id="edit_add_matter_incidence_type" name="incidence_type" maxlength="255" placeholder="e.g. parenting application, money recovery">
                         </div>
                     </div>
                 </div>
@@ -2611,8 +2624,64 @@
     // =====================================================
     // Matter Type Selector — Dynamic Form
     // =====================================================
+    window.MATTER_PARTY_ROLES_BY_STREAM = @json(config('matter_streams.party_roles_by_stream', []));
     var selectedMatterTypeId = null;
     var selectedMatterTypeNick = null;
+
+    function getDynMatterStream() {
+        var sel = document.getElementById('matterTypeDropdown');
+        if (!sel) return 'general';
+        var opt = sel.options[sel.selectedIndex];
+        var s = opt && opt.getAttribute('data-stream');
+        return (s && String(s).trim() !== '') ? String(s).trim() : 'general';
+    }
+
+    function rebuildDynOurPartyRole() {
+        var map = window.MATTER_PARTY_ROLES_BY_STREAM || {};
+        var stream = getDynMatterStream();
+        var roles = map[stream] || map['general'] || {};
+        var pr = document.getElementById('dyn_our_party_role');
+        if (!pr) return;
+        var cur = pr.value;
+        pr.innerHTML = '';
+        var o0 = document.createElement('option');
+        o0.value = '';
+        o0.textContent = '\u2014';
+        pr.appendChild(o0);
+        Object.keys(roles).forEach(function (k) {
+            var o = document.createElement('option');
+            o.value = k;
+            o.textContent = roles[k];
+            pr.appendChild(o);
+        });
+        if (cur) { pr.value = cur; }
+    }
+
+    function dynAppendOpposingRow(name, role) {
+        var wrap = document.getElementById('dyn_opposing_parties_wrap');
+        if (!wrap) return;
+        var row = document.createElement('div');
+        row.className = 'row mb-2 dyn-opp-row';
+        row.style.alignItems = 'flex-end';
+        row.innerHTML =
+            '<div class="col-md-5"><label class="small mb-0 d-block">Name</label>' +
+            '<input type="text" class="form-control dyn-opp-name" maxlength="500" value=""></div>' +
+            '<div class="col-md-5"><label class="small mb-0 d-block">Their role</label>' +
+            '<input type="text" class="form-control dyn-opp-role" maxlength="255" placeholder="e.g. co-defendant" value=""></div>' +
+            '<div class="col-md-2"><label class="small mb-0 d-block">&nbsp;</label>' +
+            '<button type="button" class="btn btn-sm btn-outline-danger w-100 dyn-opp-remove">Remove</button></div>';
+        row.querySelector('.dyn-opp-name').value = name || '';
+        row.querySelector('.dyn-opp-role').value = role || '';
+        row.querySelector('.dyn-opp-remove').addEventListener('click', function () { row.remove(); });
+        wrap.appendChild(row);
+    }
+
+    document.addEventListener('click', function (e) {
+        if (e.target && e.target.id === 'dyn_add_opposing_party_btn') {
+            e.preventDefault();
+            dynAppendOpposingRow('', '');
+        }
+    });
 
     var matterSpecificFieldsConfig = {
         'CIV': {
@@ -3309,6 +3378,11 @@
         labelEl.textContent = matterTitle;
         preview.style.display = 'flex';
         cta.style.display     = 'block';
+
+        var dynSec = document.getElementById('matterDynamicFormSection');
+        if (dynSec && dynSec.style.display !== 'none' && typeof rebuildDynOurPartyRole === 'function') {
+            rebuildDynOurPartyRole();
+        }
     }
 
     function openMatterFormFromDropdown() {
@@ -3347,6 +3421,13 @@
 
         // Build matter-specific fields
         buildMatterSpecificFields(matterNick);
+
+        var wrap = document.getElementById('dyn_opposing_parties_wrap');
+        if (wrap) {
+            wrap.innerHTML = '';
+            dynAppendOpposingRow('', '');
+        }
+        rebuildDynOurPartyRole();
 
         // Show the dynamic form
         document.getElementById('matterDynamicFormSection').style.display = '';
@@ -3442,6 +3523,10 @@
         document.getElementById('matterDynamicFormSection').style.display = 'none';
         document.getElementById('matterSpecificFields').innerHTML = '';
         document.getElementById('editAddMatterMsg2').innerHTML = '';
+        var wrap = document.getElementById('dyn_opposing_parties_wrap');
+        if (wrap) wrap.innerHTML = '';
+        var pr = document.getElementById('dyn_our_party_role');
+        if (pr) { pr.innerHTML = '<option value="">\u2014</option>'; }
     }
 
     async function submitDynamicMatter() {
@@ -3467,36 +3552,16 @@
 
         var lpEl = document.getElementById('dyn_legal_practitioner');
 
-        var specificLines = [];
-        if (config) {
-            if (subTypeEl && subTypeEl.value) {
-                specificLines.push(config.subType.label + ': ' + subTypeEl.value);
-            }
-            (config.commonFields || []).forEach(function(f) {
-                if (f.id === 'dyn_date_of_incidence') return;
-                var el = document.getElementById(f.id);
-                if (el && el.value.trim()) {
-                    specificLines.push(f.label + ': ' + el.value.trim());
-                }
-            });
-            var selectedSubType = subTypeEl ? subTypeEl.value : '';
-            var stFields = (config.subTypeFields || {})[selectedSubType] || [];
-            stFields.forEach(function(f) {
-                var el = document.getElementById(f.id);
-                if (el && el.value.trim()) {
-                    specificLines.push(f.label + ': ' + el.value.trim());
-                }
-            });
-        }
+        var baseCaseDetail = document.getElementById('dyn_case_detail') ? document.getElementById('dyn_case_detail').value.trim() : '';
 
-        var baseCaseDetail = document.getElementById('dyn_case_detail').value.trim();
-        var combinedCaseDetail = '';
-        if (specificLines.length > 0) {
-            combinedCaseDetail = specificLines.join('\n');
-            if (baseCaseDetail) combinedCaseDetail += '\n\n' + baseCaseDetail;
-        } else {
-            combinedCaseDetail = baseCaseDetail;
-        }
+        var oppRows = [];
+        document.querySelectorAll('#dyn_opposing_parties_wrap .dyn-opp-row').forEach(function (row) {
+            var n = row.querySelector('.dyn-opp-name');
+            var r = row.querySelector('.dyn-opp-role');
+            var name = n ? n.value.trim() : '';
+            var prole = r ? r.value.trim() : '';
+            if (name !== '') oppRows.push({ name: name, party_role: prole });
+        });
 
         var fd = new FormData();
         fd.append('_token', window.editClientConfig.csrfToken);
@@ -3507,7 +3572,10 @@
         var doi = document.getElementById('dyn_date_of_incidence');
         if (doi && doi.value) fd.append('date_of_incidence', doi.value);
         if (subTypeEl && subTypeEl.value) fd.append('incidence_type', subTypeEl.value);
-        if (combinedCaseDetail) fd.append('case_detail', combinedCaseDetail);
+        if (baseCaseDetail) fd.append('case_detail', baseCaseDetail);
+        var opr = document.getElementById('dyn_our_party_role');
+        if (opr && opr.value) fd.append('our_party_role', opr.value);
+        fd.append('opposing_parties_json', JSON.stringify(oppRows));
 
         btn.disabled = true;
         try {
