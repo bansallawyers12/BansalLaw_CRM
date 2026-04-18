@@ -12,6 +12,7 @@
         clientId: '',
         matterId: '',
         selectedMatter: '',
+        detailBaseUrl: '/clients/detail',
         initialized: false
     };
 
@@ -31,6 +32,53 @@
     }
 
     /**
+     * Map pane slug → which main-nav data-tab should show selected (Documents shares Personal + Matter panes).
+     */
+    function mainNavTabIdForSelection(activeTabId) {
+        if (activeTabId === 'matterdocuments' || activeTabId === 'notuseddocuments') {
+            return 'personaldocuments';
+        }
+        return activeTabId;
+    }
+
+    /**
+     * Keep tablist ARIA in sync. Only main sidebar nav buttons (not e.g. in-tab shortcuts
+     * that reuse .client-nav-button inside document panes).
+     */
+    function syncAriaForTabs(activeTabId) {
+        var navSelectedId = mainNavTabIdForSelection(activeTabId);
+        var $mainNavBtns = $('.client-sidebar-nav .client-nav-button');
+        if ($mainNavBtns.length) {
+            $mainNavBtns.each(function() {
+                var $b = $(this);
+                var id = $b.data('tab');
+                $b.attr('aria-selected', id === navSelectedId ? 'true' : 'false');
+            });
+        } else {
+            $('.client-nav-button[role="tab"]').each(function() {
+                var $b = $(this);
+                var id = $b.data('tab');
+                $b.attr('aria-selected', id === navSelectedId ? 'true' : 'false');
+            });
+        }
+
+        $('.tab-pane').each(function() {
+            var $p = $(this);
+            // Skip panes that live inside a Bootstrap modal — they are not part of the main tab list.
+            if ($p.closest('.modal').length) {
+                return;
+            }
+            var paneId = $p.attr('id');
+            if (!paneId || paneId.length < 5 || paneId.slice(-4) !== '-tab') {
+                return;
+            }
+            var slug = paneId.slice(0, -4);
+            var isActive = slug === activeTabId;
+            $p.attr('aria-hidden', isActive ? 'false' : 'true');
+        });
+    }
+
+    /**
      * Initialize sidebar tabs
      * NOTE: This should be called from within $(document).ready() - don't wrap it again
      */
@@ -42,6 +90,9 @@
         SidebarTabs.clientId = config.clientId;
         SidebarTabs.matterId = config.matterId;
         SidebarTabs.selectedMatter = config.selectedMatter || '';
+        if (config.detailBaseUrl) {
+            SidebarTabs.detailBaseUrl = config.detailBaseUrl;
+        }
         
         // Setup event handlers immediately (caller ensures DOM is ready)
         setupTabClickHandlers();
@@ -127,6 +178,8 @@
             $('#activity-feed').hide();
             setMainColumnForTab(tabId);
         }
+
+        syncAriaForTabs(tabId);
         
         // Store active tab
         localStorage.setItem('activeTab', tabId);
@@ -136,7 +189,7 @@
      * Update URL without reloading page
      */
     function updateUrl(tabId) {
-        let newUrl = '/clients/detail/' + SidebarTabs.clientId;
+        let newUrl = SidebarTabs.detailBaseUrl + '/' + SidebarTabs.clientId;
         if (SidebarTabs.matterId && SidebarTabs.matterId !== '') {
             newUrl += '/' + SidebarTabs.matterId;
         }
@@ -340,6 +393,7 @@
                 $('#activity-feed').hide();
                 setMainColumnForTab(tabId);
             }
+            syncAriaForTabs(tabId);
             return;
         }
 
@@ -372,6 +426,7 @@
     window.SidebarTabs = {
         init: init,
         activateTab: activateTab,
+        syncAriaForTabs: syncAriaForTabs,
         ensureAllTabActive: ensureAllTabActive,
         filterNotesByMatter: filterNotesByMatter,
         filtermatterdocumentsByMatter: filtermatterdocumentsByMatter,

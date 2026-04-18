@@ -891,7 +891,9 @@ $(document).ready(function() {
 
                 activeTab: window.ClientDetailConfig.activeTab,
 
-                selectedMatter: ''
+                selectedMatter: '',
+
+                detailBaseUrl: window.ClientDetailConfig.detailBaseUrl || undefined
 
             });
 

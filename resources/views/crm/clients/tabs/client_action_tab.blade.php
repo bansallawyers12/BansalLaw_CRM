@@ -5,15 +5,15 @@
             <h3 class="mb-0"><i class="fas fa-bolt"></i> Action</h3>
         </div>
         <p class="text-muted mb-3">
-            Log follow-ups, tasks, and matter-related actions. Full workflow stage controls remain on the production client record.
+            Log follow-ups and matter-related actions. Use <strong>Update stage</strong> in the header to change workflow stages (same as production workflow tab).
         </p>
         <div class="d-flex flex-wrap gap-2 mt-2">
             <button type="button" class="btn btn-primary create_note_d" datatype="note">
                 <i class="fas fa-plus"></i> Add note / action
             </button>
-            <a href="{{ route('clients.detail', array_filter(['client_id' => $encodeId ?? null, 'client_unique_matter_ref_no' => $id1 ?? null, 'tab' => 'workflow'], fn ($v) => $v !== null && $v !== '')) }}" class="btn btn-outline-secondary">
-                <i class="fas fa-stream"></i> Workflow (production)
-            </a>
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#cdn-update-stage-modal">
+                <i class="fas fa-stream"></i> Update stage
+            </button>
         </div>
     </div>
 </div>

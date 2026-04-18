@@ -210,7 +210,7 @@ use App\Http\Controllers\Controller;
                     <a href="javascript:;" class="btn cdn-client-hero__action-btn clientemail" data-id="{{ @$fetchedData->id }}" data-email="{{ @$fetchedData->email }}" data-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Compose Mail">Send Email</a>
                     <a href="javascript:;" class="btn cdn-client-hero__action-btn send-sms-btn" data-client-id="{{ @$fetchedData->id }}" data-client-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Send SMS">Send SMS</a>
                     <a href="javascript:;" class="btn cdn-client-hero__action-btn" data-bs-toggle="modal" data-bs-target="#create_appoint" title="Schedule appointment">Appointment</a>
-                    <button type="button" class="btn cdn-client-hero__action-btn cdn-client-hero__action-btn--primary" id="cdn-open-action-tab" title="Open Action tab">Update Stage</button>
+                    <button type="button" class="btn cdn-client-hero__action-btn cdn-client-hero__action-btn--primary" id="cdn-open-action-tab" data-bs-toggle="modal" data-bs-target="#cdn-update-stage-modal" title="Update workflow stage">Update Stage</button>
                 </div>
             </div>
         </section>
@@ -349,8 +349,10 @@ use App\Http\Controllers\Controller;
                 @endif
             </div>
         </div>
-        <div class="cdn-tabs-strip" role="navigation" aria-label="Client record sections">
-        <nav class="client-sidebar-nav">
+
+        {{-- Tab strip lives in the aside (cdn-topbar) so it is NEVER hidden when activityfeed tab fires setMainColumnForTab(). --}}
+        <div class="cdn-tabs-strip cdn-main-tab-bar">
+        <nav class="client-sidebar-nav" role="tablist" aria-label="Client record sections">
             <?php
             $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
             
@@ -375,79 +377,80 @@ use App\Http\Controllers\Controller;
             if( $isMatterIdInUrl || $matter_cnt > 0 )
             {  //if client unique reference id is present in url
             ?>
-                <button class="client-nav-button active" data-tab="personaldetails">
-                    <i class="fas fa-th-large"></i>
+                <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button active" data-tab="personaldetails" aria-selected="true" aria-controls="personaldetails-tab">
+                    <i class="fas fa-th-large" aria-hidden="true"></i>
                     <span>Overview</span>
                 </button>
-                <button class="client-nav-button" data-tab="activityfeed">
-                    <i class="fas fa-history"></i>
-                    <span>Activity</span>
+                <button type="button" role="tab" id="cdn-tab-activityfeed" class="client-nav-button" data-tab="activityfeed" aria-selected="false" aria-controls="activityfeed-tab">
+                    <i class="fas fa-history" aria-hidden="true"></i>
+                    <span>Timeline</span>
                 </button>
-                <button class="client-nav-button" data-tab="clientaction">
-                    <i class="fas fa-bolt"></i>
-                    <span>Action</span>
+                <button type="button" role="tab" id="cdn-tab-clientaction" class="client-nav-button" data-tab="clientaction" aria-selected="false" aria-controls="clientaction-tab">
+                    <i class="fas fa-bolt" aria-hidden="true"></i>
+                    <span>Actions</span>
                 </button>
-                <button class="client-nav-button" data-tab="noteterm">
-                    <i class="fas fa-sticky-note"></i>
+                <button type="button" role="tab" id="cdn-tab-noteterm" class="client-nav-button" data-tab="noteterm" aria-selected="false" aria-controls="noteterm-tab">
+                    <i class="fas fa-sticky-note" aria-hidden="true"></i>
                     <span>Notes</span>
                 </button>
-                <button class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments">
-                    <i class="fas fa-folder-open"></i>
-                    <span>Document</span>
+                <button type="button" role="tab" id="cdn-tab-personaldocuments" class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments" aria-selected="false" aria-controls="personaldocuments-tab">
+                    <i class="fas fa-folder-open" aria-hidden="true"></i>
+                    <span>Documents</span>
                 </button>
-                <button class="client-nav-button" data-tab="legalforms">
-                    <i class="fas fa-file-signature"></i>
+                <button type="button" role="tab" id="cdn-tab-legalforms" class="client-nav-button" data-tab="legalforms" aria-selected="false" aria-controls="legalforms-tab">
+                    <i class="fas fa-file-signature" aria-hidden="true"></i>
                     <span>Legal Forms</span>
                 </button>
-                <button class="client-nav-button" data-tab="emails">
-                    <i class="fas fa-inbox"></i>
+                <button type="button" role="tab" id="cdn-tab-emails" class="client-nav-button" data-tab="emails" aria-selected="false" aria-controls="emails-tab">
+                    <i class="fas fa-inbox" aria-hidden="true"></i>
                     <span>Emails</span>
                 </button>
-                <button class="client-nav-button" data-tab="account">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                    <span>Accounts</span>
+                <button type="button" role="tab" id="cdn-tab-account" class="client-nav-button" data-tab="account" aria-selected="false" aria-controls="account-tab">
+                    <i class="fas fa-file-invoice-dollar" aria-hidden="true"></i>
+                    <span>Billing</span>
                 </button>
-                <?php
-                // Get last updated date for the client record
-                if (isset($fetchedData->updated_at) && $fetchedData->updated_at) {
-                    try {
-                        $updatedDate = \Carbon\Carbon::parse($fetchedData->updated_at);
-                        echo '<div class="sidebar-last-updated" style="margin-top: 15px; padding: 10px 15px; color: #374151; font-size: 0.85em; text-align: center; border-top: 1px solid #e2e8f0;">Last update on ' . $updatedDate->format('d/m/Y') . '</div>';
-                    } catch (\Exception $e) {
-                        // Silently fail if date parsing fails
-                    }
-                }
-                ?>
             <?php
             }
             else
             {  //If no matter is exist
                 $cdnShowMattersDocSubtab = false;
             ?>
-                <button class="client-nav-button active" data-tab="personaldetails">
-                    <i class="fas fa-th-large"></i>
+                <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button active" data-tab="personaldetails" aria-selected="true" aria-controls="personaldetails-tab">
+                    <i class="fas fa-th-large" aria-hidden="true"></i>
                     <span>Overview</span>
                 </button>
-                <button class="client-nav-button" data-tab="activityfeed">
-                    <i class="fas fa-history"></i>
-                    <span>Activity</span>
+                <button type="button" role="tab" id="cdn-tab-activityfeed" class="client-nav-button" data-tab="activityfeed" aria-selected="false" aria-controls="activityfeed-tab">
+                    <i class="fas fa-history" aria-hidden="true"></i>
+                    <span>Timeline</span>
                 </button>
-                <button class="client-nav-button" data-tab="clientaction">
-                    <i class="fas fa-bolt"></i>
-                    <span>Action</span>
+                <button type="button" role="tab" id="cdn-tab-clientaction" class="client-nav-button" data-tab="clientaction" aria-selected="false" aria-controls="clientaction-tab">
+                    <i class="fas fa-bolt" aria-hidden="true"></i>
+                    <span>Actions</span>
                 </button>
-                <button class="client-nav-button" data-tab="noteterm">
-                    <i class="fas fa-sticky-note"></i>
+                <button type="button" role="tab" id="cdn-tab-noteterm" class="client-nav-button" data-tab="noteterm" aria-selected="false" aria-controls="noteterm-tab">
+                    <i class="fas fa-sticky-note" aria-hidden="true"></i>
                     <span>Notes</span>
                 </button>
-                <button class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments">
-                    <i class="fas fa-folder-open"></i>
-                    <span>Document</span>
+                <button type="button" role="tab" id="cdn-tab-personaldocuments" class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments" aria-selected="false" aria-controls="personaldocuments-tab">
+                    <i class="fas fa-folder-open" aria-hidden="true"></i>
+                    <span>Documents</span>
                 </button>
             <?php
             }
             ?>
         </nav>
+        @if(($isMatterIdInUrl || $matter_cnt > 0) && !empty($fetchedData->updated_at))
+            @php
+                $cdnMainTabLastUpdated = null;
+                try {
+                    $cdnMainTabLastUpdated = \Carbon\Carbon::parse($fetchedData->updated_at)->format('d/m/Y');
+                } catch (\Throwable $e) {
+                }
+            @endphp
+            @if($cdnMainTabLastUpdated)
+                <p class="cdn-tab-last-updated">Last update on {{ $cdnMainTabLastUpdated }}</p>
+            @endif
+        @endif
         </div>
     </aside>
 
@@ -457,7 +460,6 @@ use App\Http\Controllers\Controller;
         </div>
         <div class="custom-error-msg">
         </div>
-        <!-- Main Content Container with Vertical Tabs -->
         <div class="main-content-with-tabs">
             <div id="cdn-doc-subtab-strip" class="cdn-doc-subtab-strip" role="tablist" aria-label="Document scope">
                 <button type="button" class="cdn-doc-subtab-btn active" data-doc-sub="personaldocuments">Personal</button>
@@ -510,6 +512,22 @@ use App\Http\Controllers\Controller;
 @include('crm.clients.modals.edit-matter-office')
 @include('crm.clients.modals.client-management')
 
+{{-- Update Stage: same workflow UI + routes as production workflow tab (Admin Console–defined stages). --}}
+<div class="modal fade" id="cdn-update-stage-modal" tabindex="-1" aria-labelledby="cdnUpdateStageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cdnUpdateStageModalLabel">Update stage</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body cdn-update-stage-modal-body p-2">
+                @include('crm.clients.tabs.workflow')
+            </div>
+        </div>
+    </div>
+</div>
 
 
 
@@ -1391,6 +1409,7 @@ $(document).ready(function() {
         matterRefNo: @json(($id1 ?? '')),
         clientFirstName: @json(($fetchedData->first_name ?? 'client')),
         notPickedCallSmsDefault: @json($notPickedCallSmsDefault ?? ''),
+        detailBaseUrl: '{{ url("/clients/detail-demo-newdesign") }}',
         // SMS Template Variables
         staffName: @json(($staffName ?? '')),
         matterNumber: @json(($matterNumber ?? '')),
@@ -1636,18 +1655,19 @@ $(document).ready(function() {
                 $strip.css({ display: 'none' });
             }
         }
-        setTimeout(function () {
-            if (!window.SidebarTabs || typeof window.SidebarTabs.activateTab !== 'function') {
-                return;
-            }
+
+        /* Wrap activateTab immediately — detail-main.js $(ready) runs first,
+           so SidebarTabs is already initialised by the time we get here. */
+        if (window.SidebarTabs && typeof window.SidebarTabs.activateTab === 'function') {
             var orig = window.SidebarTabs.activateTab;
             window.SidebarTabs.activateTab = function (tabId) {
                 orig.call(window.SidebarTabs, tabId);
                 applyDocStripVisibility(tabId);
             };
-            var initial = (window.ClientDetailConfig && window.ClientDetailConfig.activeTab) || '';
-            applyDocStripVisibility(initial);
-        }, 0);
+        }
+        /* Apply correct strip state for whichever tab was loaded from the URL. */
+        var initial = (window.ClientDetailConfig && window.ClientDetailConfig.activeTab) || '';
+        applyDocStripVisibility(initial);
     });
     $(document).on('click', '.cdn-doc-subtab-btn', function () {
         var sub = $(this).data('doc-sub');
@@ -2037,14 +2057,7 @@ $(function () {
                 }
             });
         }
-        var wfBtn = document.getElementById('cdn-open-action-tab');
-        if (wfBtn) {
-            wfBtn.addEventListener('click', function () {
-                if (window.jQuery && window.SidebarTabs && typeof window.SidebarTabs.activateTab === 'function') {
-                    window.SidebarTabs.activateTab('clientaction');
-                }
-            });
-        }
+        /* Update Stage opens #cdn-update-stage-modal (data-bs-toggle); no JS needed */
     });
 })();
 </script>
