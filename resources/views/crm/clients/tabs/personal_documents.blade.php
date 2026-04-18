@@ -1364,7 +1364,7 @@
                 
                 let bulkUploadFiles = {};
                 let currentCategoryId = null;
-                let currentClientId = <?= $clientId ?>;
+                let currentClientId = @json($clientId ?? null);
                 
                 // Toggle bulk upload dropzone
                 $(document).on('click', '.bulk-upload-toggle-btn', function() {
