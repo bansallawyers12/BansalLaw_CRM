@@ -12,6 +12,7 @@
         clientId: '',
         matterId: '',
         selectedMatter: '',
+        detailBaseUrl: '/clients/detail',
         initialized: false
     };
 
@@ -63,6 +64,10 @@
 
         $('.tab-pane').each(function() {
             var $p = $(this);
+            // Skip panes that live inside a Bootstrap modal — they are not part of the main tab list.
+            if ($p.closest('.modal').length) {
+                return;
+            }
             var paneId = $p.attr('id');
             if (!paneId || paneId.length < 5 || paneId.slice(-4) !== '-tab') {
                 return;
@@ -85,6 +90,9 @@
         SidebarTabs.clientId = config.clientId;
         SidebarTabs.matterId = config.matterId;
         SidebarTabs.selectedMatter = config.selectedMatter || '';
+        if (config.detailBaseUrl) {
+            SidebarTabs.detailBaseUrl = config.detailBaseUrl;
+        }
         
         // Setup event handlers immediately (caller ensures DOM is ready)
         setupTabClickHandlers();
@@ -181,7 +189,7 @@
      * Update URL without reloading page
      */
     function updateUrl(tabId) {
-        let newUrl = '/clients/detail/' + SidebarTabs.clientId;
+        let newUrl = SidebarTabs.detailBaseUrl + '/' + SidebarTabs.clientId;
         if (SidebarTabs.matterId && SidebarTabs.matterId !== '') {
             newUrl += '/' + SidebarTabs.matterId;
         }

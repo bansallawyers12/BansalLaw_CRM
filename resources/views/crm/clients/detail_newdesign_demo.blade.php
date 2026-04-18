@@ -210,7 +210,7 @@ use App\Http\Controllers\Controller;
                     <a href="javascript:;" class="btn cdn-client-hero__action-btn clientemail" data-id="{{ @$fetchedData->id }}" data-email="{{ @$fetchedData->email }}" data-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Compose Mail">Send Email</a>
                     <a href="javascript:;" class="btn cdn-client-hero__action-btn send-sms-btn" data-client-id="{{ @$fetchedData->id }}" data-client-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Send SMS">Send SMS</a>
                     <a href="javascript:;" class="btn cdn-client-hero__action-btn" data-bs-toggle="modal" data-bs-target="#create_appoint" title="Schedule appointment">Appointment</a>
-                    <button type="button" class="btn cdn-client-hero__action-btn cdn-client-hero__action-btn--primary" id="cdn-open-action-tab" title="Open Action tab">Update Stage</button>
+                    <button type="button" class="btn cdn-client-hero__action-btn cdn-client-hero__action-btn--primary" id="cdn-open-action-tab" data-bs-toggle="modal" data-bs-target="#cdn-update-stage-modal" title="Update workflow stage">Update Stage</button>
                 </div>
             </div>
         </section>
@@ -512,6 +512,22 @@ use App\Http\Controllers\Controller;
 @include('crm.clients.modals.edit-matter-office')
 @include('crm.clients.modals.client-management')
 
+{{-- Update Stage: same workflow UI + routes as production workflow tab (Admin Console–defined stages). --}}
+<div class="modal fade" id="cdn-update-stage-modal" tabindex="-1" aria-labelledby="cdnUpdateStageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cdnUpdateStageModalLabel">Update stage</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body cdn-update-stage-modal-body p-2">
+                @include('crm.clients.tabs.workflow')
+            </div>
+        </div>
+    </div>
+</div>
 
 
 
@@ -1393,6 +1409,7 @@ $(document).ready(function() {
         matterRefNo: @json(($id1 ?? '')),
         clientFirstName: @json(($fetchedData->first_name ?? 'client')),
         notPickedCallSmsDefault: @json($notPickedCallSmsDefault ?? ''),
+        detailBaseUrl: '{{ url("/clients/detail-demo-newdesign") }}',
         // SMS Template Variables
         staffName: @json(($staffName ?? '')),
         matterNumber: @json(($matterNumber ?? '')),
@@ -1638,18 +1655,19 @@ $(document).ready(function() {
                 $strip.css({ display: 'none' });
             }
         }
-        setTimeout(function () {
-            if (!window.SidebarTabs || typeof window.SidebarTabs.activateTab !== 'function') {
-                return;
-            }
+
+        /* Wrap activateTab immediately — detail-main.js $(ready) runs first,
+           so SidebarTabs is already initialised by the time we get here. */
+        if (window.SidebarTabs && typeof window.SidebarTabs.activateTab === 'function') {
             var orig = window.SidebarTabs.activateTab;
             window.SidebarTabs.activateTab = function (tabId) {
                 orig.call(window.SidebarTabs, tabId);
                 applyDocStripVisibility(tabId);
             };
-            var initial = (window.ClientDetailConfig && window.ClientDetailConfig.activeTab) || '';
-            applyDocStripVisibility(initial);
-        }, 0);
+        }
+        /* Apply correct strip state for whichever tab was loaded from the URL. */
+        var initial = (window.ClientDetailConfig && window.ClientDetailConfig.activeTab) || '';
+        applyDocStripVisibility(initial);
     });
     $(document).on('click', '.cdn-doc-subtab-btn', function () {
         var sub = $(this).data('doc-sub');
@@ -2039,14 +2057,7 @@ $(function () {
                 }
             });
         }
-        var wfBtn = document.getElementById('cdn-open-action-tab');
-        if (wfBtn) {
-            wfBtn.addEventListener('click', function () {
-                if (window.jQuery && window.SidebarTabs && typeof window.SidebarTabs.activateTab === 'function') {
-                    window.SidebarTabs.activateTab('clientaction');
-                }
-            });
-        }
+        /* Update Stage opens #cdn-update-stage-modal (data-bs-toggle); no JS needed */
     });
 })();
 </script>
