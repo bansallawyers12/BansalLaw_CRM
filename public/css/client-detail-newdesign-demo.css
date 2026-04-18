@@ -547,22 +547,52 @@
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-/* Design-page pills: full radius, text-only (icons hidden). */
+/* Design-page pills: full radius, text-only (icons hidden).
+   Must explicitly cancel all layout-level overrides on .client-nav-button:
+   width:100%, margin-bottom:2px, border:none, text-align:left */
 .client-detail-newdesign-demo-shell .cdn-main-tab-bar .client-nav-button {
   border-radius: 999px;
   padding: 8px 18px;
   font-size: 13px;
   line-height: 1.2;
+  width: auto !important;
+  min-width: 0;
+  max-width: none;
+  margin-bottom: 0 !important;
+  text-align: center;
+  border: 1px solid var(--cdn-border) !important;
+  background: #fff !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
 }
 
 .client-detail-newdesign-demo-shell .cdn-main-tab-bar .client-nav-button i {
   display: none;
 }
 
+/* Cancel the translateX nudge the layout adds */
+.client-detail-newdesign-demo-shell .cdn-main-tab-bar .client-nav-button:hover {
+  border-color: #bfd7ff !important;
+  background: #f8fafc !important;
+  color: #334155 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Active: full border reset (layout active uses border-left:3px solid) */
+.client-detail-newdesign-demo-shell .cdn-main-tab-bar .client-nav-button.active {
+  border: 1px solid var(--cdn-primary) !important;
+  color: var(--cdn-primary) !important;
+  background: var(--cdn-primary-soft) !important;
+  box-shadow: none !important;
+}
+
 .client-detail-newdesign-demo-shell .client-nav-button i {
   margin-right: 6px;
 }
 
+/* General non-pill buttons (used in sidebar-style fallback if ever needed) */
 .client-detail-newdesign-demo-shell .client-nav-button:hover {
   border-color: #bfd7ff;
   background: #f8fafc;
@@ -572,6 +602,8 @@
   border-color: var(--cdn-primary);
   color: var(--cdn-primary);
   background: var(--cdn-primary-soft);
+  box-shadow: none;
+  border-left-width: 1px;   /* cancel layout's border-left:3px */
 }
 
 .client-detail-newdesign-demo-shell .cdn-main-tab-bar .client-nav-button:focus {
