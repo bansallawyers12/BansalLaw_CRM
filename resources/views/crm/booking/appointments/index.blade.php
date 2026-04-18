@@ -469,18 +469,12 @@
                                     <label>Status</label>
                                     <select class="form-control" name="status" id="filter-status">
                                         <option value="" {{ ($bookingListStatusForSelect ?? '') === '' ? 'selected' : '' }}>All Status</option>
-                                        <option value="0" {{ ($bookingListStatusForSelect ?? '') === '0' ? 'selected' : '' }}>Pending</option>
-                                        <option value="1" {{ ($bookingListStatusForSelect ?? '') === '1' ? 'selected' : '' }}>Approved</option>
-                                        <option value="2" {{ ($bookingListStatusForSelect ?? '') === '2' ? 'selected' : '' }}>Completed</option>
-                                        <option value="3" {{ ($bookingListStatusForSelect ?? '') === '3' ? 'selected' : '' }}>Rejected</option>
-                                        <option value="4" {{ ($bookingListStatusForSelect ?? '') === '4' ? 'selected' : '' }}>N/P</option>
-                                        <option value="5" {{ ($bookingListStatusForSelect ?? '') === '5' ? 'selected' : '' }}>In Progress</option>
-                                        <option value="6" {{ ($bookingListStatusForSelect ?? '') === '6' ? 'selected' : '' }}>Did Not Come</option>
-                                        <option value="7" {{ ($bookingListStatusForSelect ?? '') === '7' ? 'selected' : '' }}>Cancelled</option>
-                                        <option value="8" {{ ($bookingListStatusForSelect ?? '') === '8' ? 'selected' : '' }}>Missed</option>
-                                        <option value="9" {{ ($bookingListStatusForSelect ?? '') === '9' ? 'selected' : '' }}>Pending With Payment Pending</option>
-                                        <option value="10" {{ ($bookingListStatusForSelect ?? '') === '10' ? 'selected' : '' }}>Pending With Payment Success</option>
-                                        <option value="11" {{ ($bookingListStatusForSelect ?? '') === '11' ? 'selected' : '' }}>Pending With Payment Failed</option>
+                                        <option value="pending" {{ ($bookingListStatusForSelect ?? '') === 'pending' ? 'selected' : '' }}>Payment Pending</option>
+                                        <option value="paid" {{ ($bookingListStatusForSelect ?? '') === 'paid' ? 'selected' : '' }}>Paid</option>
+                                        <option value="confirmed" {{ ($bookingListStatusForSelect ?? '') === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
+                                        <option value="completed" {{ ($bookingListStatusForSelect ?? '') === 'completed' ? 'selected' : '' }}>Completed</option>
+                                        <option value="cancelled" {{ ($bookingListStatusForSelect ?? '') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                                        <option value="no_show" {{ ($bookingListStatusForSelect ?? '') === 'no_show' ? 'selected' : '' }}>No Show</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3">
@@ -664,9 +658,14 @@ function buildAppointmentRowHtml(row) {
     const badgeClass = escapeHtml(row.status_badge_class || 'secondary');
     const statusLabel = escapeHtml(row.status_label || '');
     const amt = Number(row.final_amount);
-    const paymentCell = row.is_paid
-        ? ('<span class="badge badge-primary">Paid</span><br><small>$' + escapeHtml(amt.toFixed(2)) + '</small>')
-        : '<span class="badge badge-secondary">Free</span>';
+    const payBadge = escapeHtml(row.payment_badge_class || (row.is_paid ? 'success' : 'secondary'));
+    const payText = escapeHtml(row.payment_status != null && String(row.payment_status).trim() !== ''
+        ? String(row.payment_status)
+        : (row.is_paid ? 'Paid' : 'Free'));
+    let paymentCell = '<span class="badge badge-' + payBadge + '">' + payText + '</span>';
+    if (row.is_paid && amt > 0) {
+        paymentCell += '<br><small><strong>Amount:</strong> $' + escapeHtml(amt.toFixed(2)) + '</small>';
+    }
 
     const idDisp = escapeHtml(String(row.id != null ? row.id : ''));
     const showUrl = row.show_url || '';

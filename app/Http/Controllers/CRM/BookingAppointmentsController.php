@@ -371,7 +371,7 @@ class BookingAppointmentsController extends Controller
             'total' => (clone $statsBase)->count(),
         ];
 
-        $bookingListStatusForSelect = $this->calendarExternalFeed->websiteBookingsListResolvedStatusForUi(request('status'));
+        $bookingListStatusForSelect = $this->calendarExternalFeed->crmBookingsListStatusFilterResolvedSlug(request('status'));
 
         return view('crm.booking.appointments.index', compact('consultants', 'stats', 'bookingListStatusForSelect'));
     }
@@ -458,8 +458,9 @@ class BookingAppointmentsController extends Controller
         $query = BookingAppointment::query()->with(['client', 'consultant']);
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        $listStatusFilter = $this->calendarExternalFeed->crmBookingsListStatusFilterResolvedSlug($request->input('status'));
+        if ($listStatusFilter !== '') {
+            $query->where('status', $listStatusFilter);
         }
         if ($request->filled('consultant_id')) {
             $query->where('consultant_id', $request->consultant_id);
@@ -532,7 +533,7 @@ class BookingAppointmentsController extends Controller
         $norm = [
             'appointment_datetime' => $dt ? $dt->toIso8601String() : now()->toIso8601String(),
             'status' => $a->status,
-            'status_label' => ucwords(str_replace('_', ' ', (string) $a->status)),
+            'status_label' => BookingCalendarExternalFeed::crmCalendarLegendStatusLabel((string) $a->status),
             'is_paid' => (bool) $a->is_paid,
             'final_amount' => $a->final_amount,
             'client_name' => $a->client_name,
@@ -544,6 +545,7 @@ class BookingAppointmentsController extends Controller
             'timeslot_full' => $a->timeslot_full,
             'location' => $a->location,
             'bansal_appointment_id' => $a->bansal_appointment_id,
+            'payment_method' => $a->payment_method,
             'consultant' => $a->consultant ? ['name' => $a->consultant->name] : null,
         ];
 
@@ -556,12 +558,7 @@ class BookingAppointmentsController extends Controller
         }
 
         if ($websiteCode !== null) {
-            $meta = BookingCalendarExternalFeed::websiteStatusCodeDisplayMeta((int) $websiteCode);
-            if ($meta !== null) {
-                $norm['website_status_code'] = (int) $websiteCode;
-                $norm['status_label'] = $meta['label'];
-                $norm['status_badge_class'] = $meta['badge'];
-            }
+            $norm['website_status_code'] = (int) $websiteCode;
         }
 
         return $norm;
@@ -587,20 +584,21 @@ class BookingAppointmentsController extends Controller
             $clientReference = $local->client?->client_id;
         }
 
-        $status = (string) ($norm['status'] ?? 'pending');
-        $statusBadge = isset($norm['status_badge_class']) && is_string($norm['status_badge_class'])
-            ? $norm['status_badge_class']
-            : match ($status) {
-                'pending' => 'warning',
-                'paid' => 'primary',
-                'confirmed' => 'success',
-                'completed' => 'info',
-                'cancelled' => 'danger',
-                'no_show' => 'dark',
-                default => 'secondary',
-            };
+        $crmStatusSlug = (string) ($norm['status'] ?? 'pending');
+        /** Badge class: match calendar-v6 getStatusClass() (not Bootstrap “primary” for paid). */
+        $statusBadge = match ($crmStatusSlug) {
+            'pending' => 'warning',
+            'paid' => 'info',
+            'confirmed' => 'success',
+            'completed' => 'info',
+            'cancelled' => 'danger',
+            'no_show' => 'dark',
+            'rescheduled' => 'primary',
+            default => 'secondary',
+        };
 
-        $statusLabel = $norm['status_label'] ?? ucwords(str_replace('_', ' ', $status));
+        /** Same text as calendar popup (calendarPayloadFromModel → statusLabelForCalendar → crmCalendarLegendStatusLabel). */
+        $statusLabel = BookingCalendarExternalFeed::crmCalendarLegendStatusLabel($crmStatusSlug);
 
         $consultantName = null;
         if ($local && $local->consultant) {
@@ -611,6 +609,12 @@ class BookingAppointmentsController extends Controller
 
         $isPaid = (bool) ($norm['is_paid'] ?? false);
         $finalAmount = $norm['final_amount'] ?? 0;
+        $paymentMethod = $local?->payment_method ?? ($norm['payment_method'] ?? null);
+        $paymentStatusLabel = BookingCalendarExternalFeed::calendarPaymentDisplayLabel(
+            $paymentMethod !== null ? (string) $paymentMethod : null,
+            $isPaid
+        );
+        $paymentBadgeClass = $isPaid ? 'success' : 'secondary';
 
         $enquiryDetails = $norm['enquiry_details'] ?? null;
         $enquiryDetailsShort = $enquiryDetails ? Str::limit((string) $enquiryDetails, 100) : null;
@@ -652,10 +656,13 @@ class BookingAppointmentsController extends Controller
             'enquiry_details' => $enquiryDetails,
             'enquiry_details_short' => $enquiryDetailsShort,
             'consultant_name' => $consultantName,
-            'status' => $status,
+            'crm_status' => $crmStatusSlug,
+            'status' => $statusLabel,
             'status_label' => $statusLabel,
             'status_badge_class' => $statusBadge,
             'is_paid' => $isPaid,
+            'payment_status' => $paymentStatusLabel,
+            'payment_badge_class' => $paymentBadgeClass,
             'final_amount' => $finalAmount,
             'show_url' => $showUrl,
             'edit_url' => $editUrl,
