@@ -29,6 +29,7 @@ use App\Models\ClientMatter;
 use App\Models\ClientMatterOpposingParty;
 use App\Models\Branch;
 use App\Support\MatterStreamHelper;
+use App\Support\ClientTagStorage;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -6300,65 +6301,33 @@ class ClientsController extends Controller
     public function save_tag(Request $request)
     {
         try {
-            // Validate required fields
             $request->validate([
                 'client_id' => 'required|integer',
-                'tag' => 'nullable|array',
+                'tag_normal' => 'nullable|array',
+                'tag_normal.*' => 'nullable|string|max:255',
+                'tag_red' => 'nullable|array',
+                'tag_red.*' => 'nullable|string|max:255',
             ]);
 
-            $clientId = $request->input('client_id');
-            $tags = $request->input('tag', []);
-            $createNewAsRed = filter_var($request->input('create_new_as_red', false), FILTER_VALIDATE_BOOLEAN);
+            $clientId = (int) $request->input('client_id');
+            $normal = ClientTagStorage::normalizeList(array_filter(
+                (array) $request->input('tag_normal', []),
+                static fn ($v) => $v !== null && $v !== ''
+            ));
+            $red = ClientTagStorage::normalizeList(array_filter(
+                (array) $request->input('tag_red', []),
+                static fn ($v) => $v !== null && $v !== ''
+            ));
 
-            // Find the client
-            $client = \App\Models\Admin::where('id', $clientId)
+            $client = Admin::where('id', $clientId)
                 ->whereIn('type', ['client', 'lead'])
                 ->first();
 
-            if (!$client) {
+            if (! $client) {
                 return redirect()->back()->with('error', 'Client not found');
             }
 
-            // Process tags - create new ones if they don't exist, get IDs for existing ones
-            $tagIds = [];
-            if (!empty($tags) && is_array($tags)) {
-                foreach ($tags as $tagValue) {
-                    if (!empty($tagValue)) {
-                        // Check if tag exists by name first
-                        $existingTag = \App\Models\Tag::where('name', $tagValue)->first();
-                        
-                        if ($existingTag) {
-                            // Tag exists, use its ID
-                            $tagIds[] = $existingTag->id;
-                        } else {
-                            // Check if it's an ID (numeric)
-                            if (is_numeric($tagValue)) {
-                                $tagById = \App\Models\Tag::find($tagValue);
-                                if ($tagById) {
-                                    $tagIds[] = $tagById->id;
-                                }
-                            } else {
-                                // Create new tag (as normal or red based on create_new_as_red flag)
-                                $newTag = new \App\Models\Tag();
-                                $newTag->name = $tagValue;
-                                $newTag->created_by = Auth::id();
-                                if ($createNewAsRed) {
-                                    $newTag->tag_type = \App\Models\Tag::TYPE_RED;
-                                    $newTag->is_hidden = true;
-                                } else {
-                                    $newTag->tag_type = \App\Models\Tag::TYPE_NORMAL;
-                                    $newTag->is_hidden = false;
-                                }
-                                $newTag->save();
-                                $tagIds[] = $newTag->id;
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Update the client's tagname field with tag IDs
-            $client->tagname = implode(',', $tagIds);
+            $client->tagname = ClientTagStorage::encode($normal, $red);
             $client->save();
 
             return redirect()->back()->with('success', 'Tags saved successfully');

@@ -377,89 +377,26 @@
            
 
             <div class="" style="overflow-wrap: break-word; word-wrap: break-word; max-width: 100%;">
-                <?php 
-                $normalTags = [];
-                $redTags = [];
-                $redTagCount = 0;
-                
-                if($fetchedData->tagname != ''){
-                    $rs = explode(',', $fetchedData->tagname);
-                    
-                    // Separate IDs and names for bulk query optimization
-                    $tagIds = [];
-                    $tagNames = [];
-                    
-                    foreach($rs as $key=>$r){
-                        $r = trim($r);
-                        if (empty($r)) continue;
-                        
-                        // Separate numeric IDs from tag names
-                        if (is_numeric($r) && $r > 0) {
-                            $tagIds[] = (int)$r;
-                        } else {
-                            $tagNames[] = $r;
-                        }
-                    }
-                    
-                    // Bulk fetch tags by IDs (single query for all IDs)
-                    $tagsByIds = [];
-                    if (!empty($tagIds)) {
-                        $tagsByIds = \App\Models\Tag::whereIn('id', $tagIds)->get()->keyBy('id');
-                    }
-                    
-                    // Bulk fetch tags by names (single query for all names)
-                    $tagsByNames = [];
-                    if (!empty($tagNames)) {
-                        $tagsByNames = \App\Models\Tag::whereIn('name', $tagNames)->get()->keyBy('name');
-                    }
-                    
-                    // Process all tags and categorize them
-                    foreach($rs as $key=>$r){
-                        $r = trim($r);
-                        if (empty($r)) continue;
-                        
-                        $stagd = null;
-                        
-                        // Try to get tag by ID first
-                        if (is_numeric($r) && $r > 0) {
-                            $stagd = $tagsByIds[(int)$r] ?? null;
-                        }
-                        
-                        // If not found by ID, try by name
-                        if (!$stagd) {
-                            $stagd = $tagsByNames[$r] ?? null;
-                        }
-                        
-                        // Categorize tag if found
-                        if($stagd) {
-                            if($stagd->tag_type == 'red') {
-                                $redTags[] = $stagd;
-                                $redTagCount++;
-                            } else {
-                                $normalTags[] = $stagd;
-                            }
-                        }
-                    }
-                }
-                
-                // Display normal tags
-                foreach($normalTags as $tag) { ?>
+                @php
+                    [$normalTags, $redTags] = \App\Support\ClientTagStorage::decode($fetchedData->tagname ?? '');
+                    $redTagCount = count($redTags);
+                @endphp
+                @foreach($normalTags as $tagName)
                     <span class="ui label tag-normal ag-flex ag-align-center ag-space-between" style="display: inline-flex; margin: 5px 5px 5px 0;">
-                        <span class="col-hr-1" style="font-size: 12px;">{{@$tag->name}}</span>
+                        <span class="col-hr-1" style="font-size: 12px;">{{ $tagName }}</span>
                     </span>
-                <?php }
+                @endforeach
                 
-                // Display red tags section (hidden by default)
-                if($redTagCount > 0) { ?>
+                @if($redTagCount > 0)
                     <div class="red-tags-section" style="display: none; margin-top: 10px;">
                         <div style="margin-bottom: 5px; font-size: 11px; color: #dc3545; font-weight: bold;">
                             <i class="fas fa-exclamation-triangle"></i> Red Tags:
                         </div>
-                        <?php foreach($redTags as $tag) { ?>
+                        @foreach($redTags as $tagName)
                             <span class="ui label tag-red ag-flex ag-align-center ag-space-between" style="display: inline-flex; margin: 5px 5px 5px 0; background-color: #dc3545; border: 1px solid #c82333;">
-                                <span class="col-hr-1" style="font-size: 12px;">{{@$tag->name}}</span>
+                                <span class="col-hr-1" style="font-size: 12px;">{{ $tagName }}</span>
                             </span>
-                        <?php } ?>
+                        @endforeach
                     </div>
                     
                     <div style="margin-top: 10px;">
@@ -467,8 +404,7 @@
                             <i class="fas fa-eye"></i>
                         </a>
                     </div>
-                <?php }
-                ?>
+                @endif
             </div>
         </div>
         <style>

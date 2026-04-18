@@ -1179,18 +1179,8 @@
         outline: 0;
     }
     
-    /* Final overflow prevention */
-    /*body > * {
-        max-width: 100vw;
-        overflow-x: hidden;
-    }*/
-    
-    /* Ensure no horizontal scroll on the page */
-    /*.main-wrapper {
-        overflow-x: hidden;
-        max-width: 100vw;
-    }*/
-    
+    /* Final overflow prevention rules removed (redundant — handled by top-level styles) */
+
     /* Flatpickr z-index fix to appear above popovers */
     .flatpickr-calendar {
         z-index: 99999 !important;
@@ -1374,6 +1364,7 @@ $(function () {
                         <option value="Query" ${taskGroup == 'Query' ? 'selected' : ''}>❓ Query</option>
                         <option value="Urgent" ${taskGroup == 'Urgent' ? 'selected' : ''}>🔥 Urgent</option>
                         <option value="Personal Action" ${taskGroup == 'Personal Action' ? 'selected' : ''}>👤 Personal Action</option>
+                        <option value="Follow up" ${taskGroup == 'Follow up' || taskGroup == 'follow_up' ? 'selected' : ''}>📅 Follow up</option>
                     </select>
                     <div id="task-group-error" class="error-message"></div>
                 </div>
@@ -1488,53 +1479,36 @@ $(function () {
                     $clientSelect.select2('destroy');
                 }
 
-                try {
-                    $clientSelect.select2({
-                        closeOnSelect: true,
-                        placeholder: 'Search client...',
-                        allowClear: true,
-                        width: '100%',
-                        dropdownParent: $(document.body),
-                        ajax: {
-                            url: '{{URL::to('/clients/get-allclients')}}',
-                            dataType: 'json',
-                            delay: 250,
-                            processResults: function (data) {
-                                if (!data || typeof data !== 'object') {
-                                    return { results: [] };
+                    try {
+                        $clientSelect.select2({
+                            closeOnSelect: true,
+                            placeholder: 'Search client...',
+                            allowClear: true,
+                            width: '100%',
+                            dropdownParent: $(document.body),
+                            ajax: {
+                                url: '{{URL::to('/clients/get-allclients')}}',
+                                dataType: 'json',
+                                delay: 250,
+                                processResults: function (data) {
+                                    if (!data || typeof data !== 'object') {
+                                        return { results: [] };
+                                    }
+                                    return {
+                                        results: data.items || []
+                                    };
+                                },
+                                cache: true,
+                                error: function(xhr, status, error) {
+                                    console.error('Error fetching clients:', error);
                                 }
-                                return {
-                                    results: data.items || []
-                                };
                             },
-                            cache: true,
-                            error: function(xhr, status, error) {
-                                console.error('Error fetching clients:', error);
-                            }
-                        },
-                        templateResult: formatRepomainMYTask,
-                        templateSelection: formatRepoSelectionmainMYTask,
-                        minimumInputLength: 1
-                    });
-
-                    // Handle change event for client selection
-                    /*$clientSelect.off('change.select2client').on('change.select2client', function () {
-                        var v = $(this).val(); 
-                        console.log('Client selected:', v);
-                        var s = v.split('/');
-                        if(s[1] == 'Matter' && s[2] != ''){
-                            window.location = '{{URL::to('/clients/detail/')}}/'+s[0]+'/'+s[2];
-                        } else {
-                            if(s[1] == 'Client'){
-                                window.location = '{{URL::to('/clients/detail/')}}/'+s[0];
-                            } else {
-                                window.location = '{{URL::to('/leads/history/')}}/'+s[0];
-                            }
-                        }
-                        return false;
-                    });*/
-                    
-                    return true;
+                            templateResult: formatRepomainMYTask,
+                            templateSelection: formatRepoSelectionmainMYTask,
+                            minimumInputLength: 1
+                        });
+                        
+                        return true;
                 } catch (error) {
                     console.error('Error initializing Select2:', error);
                     return false;
@@ -1556,7 +1530,7 @@ $(function () {
         }
 
         var $container = $(
-            "<div dataid="+(repo.cid || '')+" class='selectclient select2-result-repository ag-flex ag-space-between ag-align-center')'>" +
+            "<div data-id='" + String(repo.cid || '').replace(/'/g, '&#39;').replace(/&/g, '&amp;') + "' class='selectclient select2-result-repository ag-flex ag-space-between ag-align-center'>" +
 
             "<div  class='ag-flex ag-align-start'>" +
                 "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
@@ -1589,8 +1563,7 @@ $(function () {
 
     // Initialize Update Task popover
     $(document).on('shown.bs.popover', '.update_task', function() {
-        //$('.assigneeselect2').select2();
-        //$('.summernote-simple').summernote();
+        // placeholder — assigneeselect2 initialised on-demand by update handler
     });
 
     // Update badge counts
@@ -1744,10 +1717,19 @@ $(function () {
             success: function(response) {
                 $('.update_task').popover('hide');
                 table.draw(false);
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.success({ title: 'Updated', message: 'Task updated successfully.', position: 'topRight', timeout: 3000 });
+                }
             },
             error: function(xhr) {
                 console.error('Error updating task:', xhr.responseText);
-                alert('An error occurred while updating the task. Please check the console for details.');
+                var msg = 'An error occurred while updating the task.';
+                try { var r = JSON.parse(xhr.responseText); if (r.message) msg = r.message; } catch(e) {}
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ title: 'Error', message: msg, position: 'topRight', timeout: 5000 });
+                } else {
+                    alert(msg);
+                }
             }
         });
     });
@@ -1776,8 +1758,20 @@ $(function () {
                 type: 'DELETE',
                 dataType: 'json',
                 data: {method: '_DELETE', submit: true}
-            }).always(function(data) {
+            }).done(function(data) {
                 table.draw(false);
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.success({ title: 'Deleted', message: 'Task deleted.', position: 'topRight', timeout: 2500 });
+                }
+            }).fail(function(xhr) {
+                console.error('Error deleting task:', xhr.responseText);
+                var msg = 'Could not delete task. Please try again.';
+                try { var r = JSON.parse(xhr.responseText); if (r.message) msg = r.message; } catch(e) {}
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ title: 'Error', message: msg, position: 'topRight', timeout: 5000 });
+                } else {
+                    alert(msg);
+                }
             });
         }
     });
@@ -1842,15 +1836,20 @@ $(function () {
                 // Reload table
                 table.draw(false);
                 
-                // Show success message (optional)
-                if (response.message) {
-                    // You can add a toast notification here if you have one
-                    console.log('Success:', response.message);
+                // Show success notification
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.success({ title: 'Done', message: response.message || 'Task completed successfully.', position: 'topRight', timeout: 3000 });
                 }
             },
             error: function(xhr) {
                 console.error('Error completing task:', xhr.responseText);
-                alert('An error occurred while completing the task.');
+                var msg = 'An error occurred while completing the task.';
+                try { var r = JSON.parse(xhr.responseText); if (r.message) msg = r.message; } catch(e) {}
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ title: 'Error', message: msg, position: 'topRight', timeout: 5000 });
+                } else {
+                    alert(msg);
+                }
                 
                 // Reset button
                 $button.prop('disabled', false).html('<i class="fa fa-check"></i> Complete Task');

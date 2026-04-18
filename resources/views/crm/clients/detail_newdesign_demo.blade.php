@@ -101,59 +101,12 @@ use App\Http\Controllers\Controller;
                 $cdnWorkflowStageLabel = $cdnWs->name ?? null;
             }
 
-            // Match personal_details tag resolution: comma list may be numeric IDs and/or legacy names; exclude red tags from hero chips.
-            $cdnHeroTagNames = collect();
+            [$cdnHeroNormal, $cdnHeroRedIgnored] = \App\Support\ClientTagStorage::decode($fetchedData->tagname ?? '');
+            $cdnHeroTagNames = collect($cdnHeroNormal)->values();
             $cdnHeroTagMore = 0;
-            if (! empty($fetchedData->tagname)) {
-                $rs = explode(',', $fetchedData->tagname);
-                $tagIdsBulk = [];
-                $tagNamesBulk = [];
-                foreach ($rs as $r) {
-                    $r = trim((string) $r);
-                    if ($r === '') {
-                        continue;
-                    }
-                    if (is_numeric($r) && (int) $r > 0) {
-                        $tagIdsBulk[] = (int) $r;
-                    } else {
-                        $tagNamesBulk[] = $r;
-                    }
-                }
-                $tagsByIds = [];
-                if (! empty($tagIdsBulk)) {
-                    $tagsByIds = \App\Models\Tag::whereIn('id', $tagIdsBulk)->get()->keyBy('id');
-                }
-                $tagsByNames = [];
-                if (! empty($tagNamesBulk)) {
-                    $tagsByNames = \App\Models\Tag::whereIn('name', $tagNamesBulk)->get()->keyBy('name');
-                }
-                $seenNormalIds = [];
-                $normalNamesOrdered = [];
-                foreach ($rs as $r) {
-                    $r = trim((string) $r);
-                    if ($r === '') {
-                        continue;
-                    }
-                    $stag = null;
-                    if (is_numeric($r) && (int) $r > 0) {
-                        $stag = $tagsByIds[(int) $r] ?? null;
-                    }
-                    if (! $stag) {
-                        $stag = $tagsByNames[$r] ?? null;
-                    }
-                    if ($stag && (string) ($stag->tag_type ?? '') !== (string) \App\Models\Tag::TYPE_RED) {
-                        if (isset($seenNormalIds[$stag->id])) {
-                            continue;
-                        }
-                        $seenNormalIds[$stag->id] = true;
-                        $normalNamesOrdered[] = (string) $stag->name;
-                    }
-                }
-                $cdnHeroTagNames = collect($normalNamesOrdered)->values();
-                if ($cdnHeroTagNames->count() > 4) {
-                    $cdnHeroTagMore = $cdnHeroTagNames->count() - 4;
-                    $cdnHeroTagNames = $cdnHeroTagNames->take(4);
-                }
+            if ($cdnHeroTagNames->count() > 4) {
+                $cdnHeroTagMore = $cdnHeroTagNames->count() - 4;
+                $cdnHeroTagNames = $cdnHeroTagNames->take(4);
             }
 
             $cdnClientMatterKey = (string) $fetchedData->client_id;
@@ -1638,6 +1591,8 @@ $(document).ready(function() {
     } catch (e) {}
 })();
 </script>
+{{-- Edit matter details modal (must load before detail-main.js) --}}
+<script src="{{ URL::asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ time() }}"></script>
 {{-- Main detail page JavaScript --}}
 <script src="{{ URL::asset('js/crm/clients/detail-main.js') }}?v={{ time() }}"></script>
 <script>

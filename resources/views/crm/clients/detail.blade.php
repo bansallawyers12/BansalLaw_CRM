@@ -849,20 +849,19 @@ use App\Http\Controllers\Controller;
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
 								<label for="tags_modal_container">Tags</label>
-								<?php 
-								$tagIdsForModal = [];
-								$tagNamesForModal = [];
-								if(!empty($fetchedData->tagname)){
-									$tagIdsForModal = array_filter(array_map('intval', explode(',', $fetchedData->tagname)));
-									if(!empty($tagIdsForModal)){
-										$tagNamesForModal = \App\Models\Tag::whereIn('id', $tagIdsForModal)->pluck('name')->toArray();
-									}
-								}
-								?>
+								@php
+									[$__modalNormal, $__modalRed] = \App\Support\ClientTagStorage::decode($fetchedData->tagname ?? '');
+								@endphp
 								<div id="tags_modal_container" class="tags-modal-container form-control">
 									<div class="tags-pills-inner">
-										@foreach($tagNamesForModal as $tagName)
-										<span class="tag-pill" data-tag-name="{{ htmlspecialchars($tagName) }}">
+										@foreach($__modalNormal as $tagName)
+										<span class="tag-pill" data-tag-name="{{ htmlspecialchars($tagName) }}" data-tag-red="0">
+											<span class="tag-pill-text">{{ $tagName }}</span>
+											<button type="button" class="tag-pill-remove" aria-label="Remove tag">&times;</button>
+										</span>
+										@endforeach
+										@foreach($__modalRed as $tagName)
+										<span class="tag-pill tag-pill--red" data-tag-name="{{ htmlspecialchars($tagName) }}" data-tag-red="1">
 											<span class="tag-pill-text">{{ $tagName }}</span>
 											<button type="button" class="tag-pill-remove" aria-label="Remove tag">&times;</button>
 										</span>
@@ -870,7 +869,7 @@ use App\Http\Controllers\Controller;
 										<input type="text" id="tag_input" class="tag-input-inline" placeholder="Type and press comma or Enter to add" autocomplete="off">
 									</div>
 								</div>
-								<input type="hidden" id="tags_validation" value="{{ count($tagNamesForModal) > 0 ? '1' : '' }}" aria-hidden="true">
+								<input type="hidden" id="tags_validation" value="{{ (count($__modalNormal) + count($__modalRed)) > 0 ? '1' : '' }}" aria-hidden="true">
 								<small class="form-text text-muted">Separate tags with commas or press Enter to add.</small>
 							</div>
 						</div>
@@ -890,6 +889,7 @@ use App\Http\Controllers\Controller;
 .tags-modal-container { min-height: 42px; padding: 6px 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .tags-pills-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex: 1; }
 .tag-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background-color: #6A60E3; color: #fff; border-radius: 6px; font-size: 13px; }
+.tag-pill.tag-pill--red { background-color: #dc3545; }
 .tag-pill-text { white-space: nowrap; }
 .tag-pill-remove { background: none; border: none; color: #fff; cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px; opacity: 0.8; }
 .tag-pill-remove:hover { opacity: 1; }
@@ -1493,6 +1493,8 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/modules/appointments.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/subtabs.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/ledger-dragdrop.js') }}"></script>
+{{-- Edit matter details modal (must load before detail-main.js) --}}
+<script src="{{ URL::asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ time() }}"></script>
 {{-- Main detail page JavaScript --}}
 <script src="{{ URL::asset('js/crm/clients/detail-main.js') }}?v={{ time() }}"></script>
 

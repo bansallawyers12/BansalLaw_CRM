@@ -1199,7 +1199,11 @@ class LeadController extends Controller
             $lead->passport_number = $requestData['passport_no'] ?? null;
             $lead->visa_type = $requestData['visa_type'] ?? null;
             $lead->visaExpiry = $visa_expiry_date;
-            $lead->tagname = $requestData['tags_label'] ?? null;
+            $tagCsv = trim((string) ($requestData['tags_label'] ?? ''));
+            $normal = $tagCsv !== ''
+                ? array_filter(array_map('trim', explode(',', $tagCsv)))
+                : [];
+            $lead->tagname = \App\Support\ClientTagStorage::encode($normal, []);
             
             // Extract LAST phone from array (following ClientPersonalDetailsController pattern)
             $lastPhone = null;

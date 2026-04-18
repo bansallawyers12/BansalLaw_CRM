@@ -1586,7 +1586,7 @@
                               <th>Status</th>
                               <th>Date of Incident</th>
                               <th>Case Detail</th>
-                              <th></th>
+                              <th class="text-end">Actions</th>
                           </tr>
                       </thead>
                       <tbody>
@@ -1633,7 +1633,10 @@
                                           <span class="text-muted">—</span>
                                       @endif
                                   </td>
-                                  <td>
+                                  <td class="text-nowrap text-end">
+                                      <button type="button" class="btn btn-xs btn-primary changeMatterAssignee" data-client-matter-id="{{ $cmatter->id }}" title="Edit matter details">
+                                          <i class="fas fa-pen"></i>
+                                      </button>
                                       <a href="{{ $detailUrl }}" class="btn btn-xs btn-default" title="View full matter details">
                                           <i class="fas fa-external-link-alt"></i>
                                       </a>
@@ -2415,7 +2418,15 @@
         </div>
     </div>
 
+    @include('crm.clients.modals.change-matter-assignee-modal')
+
     @push('scripts')
+    <script>
+        window.ClientDetailConfig = window.ClientDetailConfig || {};
+        window.ClientDetailConfig.urls = window.ClientDetailConfig.urls || {};
+        window.ClientDetailConfig.urls.fetchClientMatterAssignee = @json(url('/clients/fetchClientMatterAssignee'));
+    </script>
+    <script src="{{ asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ time() }}"></script>
     <script>
         // Pass countries data to JavaScript
         window.countriesData = @json($countries);

@@ -4007,34 +4007,13 @@
                             </div>
                             <div class="col-sm-3">
                                 <div class="form-group">
-                                    <label for="tags_label">Tags/Label </label>
-                                    <?php
-                                    $explodee = [];
-                                    if($fetchedData->tagname != ''){
-                                        $explodee = explode(',', $fetchedData->tagname);
-                                    }
-                                    
-                                    // Separate normal and red tags
-                                    $normalTags = \App\Models\Tag::normal()->orderBy('name')->get();
-                                    $redTags = \App\Models\Tag::red()->orderBy('name')->get();
-                                    ?>
-                                    <select multiple class="form-control select2" name="tagname[]">
-                                        <option value="">-- Search & Select tag --</option>
-                                        @if($normalTags->count() > 0)
-                                            <optgroup label="Normal Tags">
-                                                @foreach($normalTags as $tags)
-                                                    <option <?php if(in_array($tags->id, $explodee)){ echo 'selected'; } ?> value="{{$tags->id}}">{{$tags->name}}</option>
-                                                @endforeach
-                                            </optgroup>
-                                        @endif
-                                        @if($redTags->count() > 0)
-                                            <optgroup label="Red Tags (Hidden)">
-                                                @foreach($redTags as $tags)
-                                                    <option <?php if(in_array($tags->id, $explodee)){ echo 'selected'; } ?> value="{{$tags->id}}" style="color: #dc3545;">{{$tags->name}} <i class="fas fa-exclamation-triangle"></i></option>
-                                                @endforeach
-                                            </optgroup>
-                                        @endif
-                                    </select>
+                                    @php
+                                        [$__tagsN, $__tagsR] = \App\Support\ClientTagStorage::decode($fetchedData->tagname ?? '');
+                                    @endphp
+                                    <label for="tags_normal_csv">Tags (normal)</label>
+                                    <input type="text" class="form-control" name="tags_normal_csv" id="tags_normal_csv" value="{{ e(implode(', ', $__tagsN)) }}" autocomplete="off" placeholder="Comma-separated">
+                                    <label for="tags_red_csv" class="mt-2">Tags (red, hidden by default)</label>
+                                    <input type="text" class="form-control" name="tags_red_csv" id="tags_red_csv" value="{{ e(implode(', ', $__tagsR)) }}" autocomplete="off" placeholder="Comma-separated">
                                     <small class="form-text text-muted">
                                         <i class="fas fa-info-circle"></i> Red tags are hidden by default on client detail pages.
                                     </small>

@@ -1031,16 +1031,11 @@ class ClientPersonalDetailsController extends Controller
         $obj->py_date = $pyTest ? ($requestData['py_date'] ?? null) : null;
         $obj->related_files	=	rtrim($related_files,',');
         
-        // Handle tags/tagname
-        if (isset($requestData['tagname']) && is_array($requestData['tagname'])) {
-            // Filter out empty values and convert to comma-separated string
-            $tagIds = array_filter($requestData['tagname'], function($value) {
-                return !empty($value);
-            });
-            $obj->tagname = !empty($tagIds) ? implode(',', $tagIds) : null;
-        } else {
-            // If no tags are selected, set to null
-            $obj->tagname = null;
+        // Tags stored as JSON on admins.tagname (normal / red lists)
+        if (array_key_exists('tags_normal_csv', $requestData) || array_key_exists('tags_red_csv', $requestData)) {
+            $n = array_filter(array_map('trim', explode(',', (string) ($requestData['tags_normal_csv'] ?? ''))));
+            $r = array_filter(array_map('trim', explode(',', (string) ($requestData['tags_red_csv'] ?? ''))));
+            $obj->tagname = \App\Support\ClientTagStorage::encode($n, $r);
         }
         
         $obj->save(); //Finally, save the object
