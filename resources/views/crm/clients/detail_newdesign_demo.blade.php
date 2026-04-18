@@ -383,70 +383,61 @@ use App\Http\Controllers\Controller;
             if( $isMatterIdInUrl || $matter_cnt > 0 )
             {  //if client unique reference id is present in url
             ?>
-                <button type="button" role="tab" class="client-nav-button active" data-tab="personaldetails">
+                <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button active" data-tab="personaldetails" aria-selected="true" aria-controls="personaldetails-tab">
                     <i class="fas fa-th-large" aria-hidden="true"></i>
                     <span>Overview</span>
                 </button>
-                <button type="button" role="tab" class="client-nav-button" data-tab="activityfeed">
+                <button type="button" role="tab" id="cdn-tab-activityfeed" class="client-nav-button" data-tab="activityfeed" aria-selected="false" aria-controls="activityfeed-tab">
                     <i class="fas fa-history" aria-hidden="true"></i>
                     <span>Timeline</span>
                 </button>
-                <button type="button" role="tab" class="client-nav-button" data-tab="clientaction">
+                <button type="button" role="tab" id="cdn-tab-clientaction" class="client-nav-button" data-tab="clientaction" aria-selected="false" aria-controls="clientaction-tab">
                     <i class="fas fa-bolt" aria-hidden="true"></i>
                     <span>Actions</span>
                 </button>
-                <button type="button" role="tab" class="client-nav-button" data-tab="noteterm">
+                <button type="button" role="tab" id="cdn-tab-noteterm" class="client-nav-button" data-tab="noteterm" aria-selected="false" aria-controls="noteterm-tab">
                     <i class="fas fa-sticky-note" aria-hidden="true"></i>
                     <span>Notes</span>
                 </button>
-                <button type="button" role="tab" class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments">
+                <button type="button" role="tab" id="cdn-tab-personaldocuments" class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments" aria-selected="false" aria-controls="personaldocuments-tab">
                     <i class="fas fa-folder-open" aria-hidden="true"></i>
                     <span>Documents</span>
                 </button>
-                <button type="button" role="tab" class="client-nav-button" data-tab="legalforms">
+                <button type="button" role="tab" id="cdn-tab-legalforms" class="client-nav-button" data-tab="legalforms" aria-selected="false" aria-controls="legalforms-tab">
                     <i class="fas fa-file-signature" aria-hidden="true"></i>
                     <span>Legal Forms</span>
                 </button>
-                <button type="button" role="tab" class="client-nav-button" data-tab="emails">
+                <button type="button" role="tab" id="cdn-tab-emails" class="client-nav-button" data-tab="emails" aria-selected="false" aria-controls="emails-tab">
                     <i class="fas fa-inbox" aria-hidden="true"></i>
                     <span>Emails</span>
                 </button>
-                <button type="button" role="tab" class="client-nav-button" data-tab="account">
+                <button type="button" role="tab" id="cdn-tab-account" class="client-nav-button" data-tab="account" aria-selected="false" aria-controls="account-tab">
                     <i class="fas fa-file-invoice-dollar" aria-hidden="true"></i>
                     <span>Billing</span>
                 </button>
-                <?php
-                if (isset($fetchedData->updated_at) && $fetchedData->updated_at) {
-                    try {
-                        $updatedDate = \Carbon\Carbon::parse($fetchedData->updated_at);
-                        echo '<div class="sidebar-last-updated cdn-tab-last-updated" role="note">Last update on ' . $updatedDate->format('d/m/Y') . '</div>';
-                    } catch (\Exception $e) {
-                    }
-                }
-                ?>
             <?php
             }
             else
             {  //If no matter is exist
                 $cdnShowMattersDocSubtab = false;
             ?>
-                <button type="button" role="tab" class="client-nav-button active" data-tab="personaldetails">
+                <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button active" data-tab="personaldetails" aria-selected="true" aria-controls="personaldetails-tab">
                     <i class="fas fa-th-large" aria-hidden="true"></i>
                     <span>Overview</span>
                 </button>
-                <button type="button" role="tab" class="client-nav-button" data-tab="activityfeed">
+                <button type="button" role="tab" id="cdn-tab-activityfeed" class="client-nav-button" data-tab="activityfeed" aria-selected="false" aria-controls="activityfeed-tab">
                     <i class="fas fa-history" aria-hidden="true"></i>
                     <span>Timeline</span>
                 </button>
-                <button type="button" role="tab" class="client-nav-button" data-tab="clientaction">
+                <button type="button" role="tab" id="cdn-tab-clientaction" class="client-nav-button" data-tab="clientaction" aria-selected="false" aria-controls="clientaction-tab">
                     <i class="fas fa-bolt" aria-hidden="true"></i>
                     <span>Actions</span>
                 </button>
-                <button type="button" role="tab" class="client-nav-button" data-tab="noteterm">
+                <button type="button" role="tab" id="cdn-tab-noteterm" class="client-nav-button" data-tab="noteterm" aria-selected="false" aria-controls="noteterm-tab">
                     <i class="fas fa-sticky-note" aria-hidden="true"></i>
                     <span>Notes</span>
                 </button>
-                <button type="button" role="tab" class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments">
+                <button type="button" role="tab" id="cdn-tab-personaldocuments" class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments" aria-selected="false" aria-controls="personaldocuments-tab">
                     <i class="fas fa-folder-open" aria-hidden="true"></i>
                     <span>Documents</span>
                 </button>
@@ -454,6 +445,18 @@ use App\Http\Controllers\Controller;
             }
             ?>
         </nav>
+        @if(($isMatterIdInUrl || $matter_cnt > 0) && !empty($fetchedData->updated_at))
+            @php
+                $cdnMainTabLastUpdated = null;
+                try {
+                    $cdnMainTabLastUpdated = \Carbon\Carbon::parse($fetchedData->updated_at)->format('d/m/Y');
+                } catch (\Throwable $e) {
+                }
+            @endphp
+            @if($cdnMainTabLastUpdated)
+                <p class="cdn-tab-last-updated">Last update on {{ $cdnMainTabLastUpdated }}</p>
+            @endif
+        @endif
         </div>
         <!-- Main content: tab panels (same SidebarTabs behaviour as production) -->
         <div class="main-content-with-tabs">

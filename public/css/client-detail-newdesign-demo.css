@@ -404,17 +404,18 @@
   gap: 0;
 }
 
+/* Collapsing must not hide the hero: aside now only holds identity + matter controls. */
 .client-detail-newdesign-demo-shell .client-navigation-sidebar.collapsed {
   transform: none !important;
-  max-height: 0 !important;
+  max-height: none !important;
   min-height: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
   border: none !important;
   box-shadow: none !important;
-  opacity: 0 !important;
-  overflow: hidden !important;
-  pointer-events: none !important;
+  opacity: 1 !important;
+  overflow: visible !important;
+  pointer-events: auto !important;
 }
 
 .client-detail-newdesign-demo-shell .crm-container > .collapsed-toggle-btn {
@@ -573,6 +574,15 @@
   background: var(--cdn-primary-soft);
 }
 
+.client-detail-newdesign-demo-shell .cdn-main-tab-bar .client-nav-button:focus {
+  outline: none;
+}
+
+.client-detail-newdesign-demo-shell .cdn-main-tab-bar .client-nav-button:focus-visible {
+  outline: 2px solid var(--cdn-primary);
+  outline-offset: 2px;
+}
+
 .client-detail-newdesign-demo-shell .sidebar-last-updated {
   flex-basis: 100%;
   width: 100%;
@@ -584,13 +594,15 @@
 }
 
 .client-detail-newdesign-demo-shell .cdn-tab-last-updated {
-  margin-top: 4px !important;
-  padding: 6px 0 0 !important;
+  margin: 0;
+  margin-top: 2px !important;
+  padding: 8px 0 0 !important;
   text-align: left !important;
   border-top: none !important;
   color: var(--cdn-muted) !important;
   font-size: 13px !important;
   font-weight: 500;
+  line-height: 1.4;
 }
 
 .client-detail-newdesign-demo-shell .main-content-with-tabs {
