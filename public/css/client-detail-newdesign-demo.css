@@ -360,13 +360,23 @@
   border: 0;
 }
 
-/* Primary tab row lives inside .main-content (matches clientdetailnewdesign.html main-card tabs). */
+/* Primary tab row lives in the aside (cdn-topbar) so it is always visible,
+   even when #main-content is hidden by the activityfeed tab's setMainColumnForTab(). */
 .client-detail-newdesign-demo-shell .cdn-tabs-strip.cdn-main-tab-bar {
-  background: transparent;
-  border: none;
-  box-shadow: none;
+  background: var(--cdn-card);
+  border: 1px solid var(--cdn-border);
+  border-radius: var(--cdn-radius);
+  box-shadow: var(--cdn-shadow);
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.client-detail-newdesign-demo-shell .cdn-main-tab-bar .client-sidebar-nav {
+  padding: 12px 14px 14px;
   margin: 0;
-  overflow: visible;
+  border-top: none;
+  border-bottom: none;
+  background: transparent;
 }
 
 /* Layout: top bar (hero only), then main + activity feed in two columns */
@@ -526,14 +536,6 @@
   background: #fafcff;
 }
 
-.client-detail-newdesign-demo-shell .cdn-main-tab-bar .client-sidebar-nav {
-  padding: 0 0 12px;
-  margin: 0 0 14px;
-  border-top: none;
-  border-bottom: 1px solid var(--cdn-border);
-  background: transparent;
-}
-
 .client-detail-newdesign-demo-shell .client-nav-button {
   flex: 0 0 auto;
   border-radius: 9px;
@@ -627,12 +629,11 @@
 
 .client-detail-newdesign-demo-shell .cdn-tab-last-updated {
   margin: 0;
-  margin-top: 2px !important;
-  padding: 8px 0 0 !important;
+  padding: 0 14px 10px !important;
   text-align: left !important;
   border-top: none !important;
   color: var(--cdn-muted) !important;
-  font-size: 13px !important;
+  font-size: 12px !important;
   font-weight: 500;
   line-height: 1.4;
 }

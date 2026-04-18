@@ -349,14 +349,8 @@ use App\Http\Controllers\Controller;
                 @endif
             </div>
         </div>
-    </aside>
 
-    <main class="main-content" id="main-content">
-        <div class="server-error">
-            @include('../Elements/flash-message')
-        </div>
-        <div class="custom-error-msg">
-        </div>
+        {{-- Tab strip lives in the aside (cdn-topbar) so it is NEVER hidden when activityfeed tab fires setMainColumnForTab(). --}}
         <div class="cdn-tabs-strip cdn-main-tab-bar">
         <nav class="client-sidebar-nav" role="tablist" aria-label="Client record sections">
             <?php
@@ -458,7 +452,14 @@ use App\Http\Controllers\Controller;
             @endif
         @endif
         </div>
-        <!-- Main content: tab panels (same SidebarTabs behaviour as production) -->
+    </aside>
+
+    <main class="main-content" id="main-content">
+        <div class="server-error">
+            @include('../Elements/flash-message')
+        </div>
+        <div class="custom-error-msg">
+        </div>
         <div class="main-content-with-tabs">
             <div id="cdn-doc-subtab-strip" class="cdn-doc-subtab-strip" role="tablist" aria-label="Document scope">
                 <button type="button" class="cdn-doc-subtab-btn active" data-doc-sub="personaldocuments">Personal</button>
