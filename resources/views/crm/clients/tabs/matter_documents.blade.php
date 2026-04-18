@@ -96,10 +96,10 @@
                         <!-- Matter document type subtabs container -->
                         <div class="subtab-header-container">
                             <nav class="subtabs6" style="display: flex; gap: 5px; flex-wrap: wrap; flex: 1;">
-                                <?php foreach ($visaDocCatList as $catVal): ?>
+                                <?php foreach ($visaDocCatList as $catIdx => $catVal): ?>
                                     <?php
                                     $id = $catVal->id;
-                                    $isActive = $id == 1 ? 'active' : '';
+                                    $isActive = ($catIdx === 0) ? 'active' : '';
                                     $folderName = $id;
                                     $isClientGenerated = $catVal->client_matter_id !== null;
                                     ?>
@@ -128,9 +128,9 @@
 
                         <!-- Subtab6 Contents -->
                         <div class="subtab6-content">
-                            <?php foreach ($visaDocCatList as $catVal):
+                            <?php foreach ($visaDocCatList as $catIdx => $catVal):
                                 $id = $catVal->id;
-                                $isActive = $id == 1 ? 'active' : '';
+                                $isActive = ($catIdx === 0) ? 'active' : '';
                                 $folderName = $id;
                                 ?>
                                 <div class="subtab6-pane <?= $isActive ?>" id="<?= $id ?>-subtab6">

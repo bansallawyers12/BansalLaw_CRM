@@ -188,7 +188,7 @@
                         <div class="col-12">
 							<div class="modal-footer-buttons">
 								<button type="button" class="btn btn-primary btn-lg btn-create-action" data-container="body" data-role="popover" data-placement="bottom" data-html="true">
-									<i class="fas fa-cog mr-2"></i>Create Action
+									<i class="fas fa-cog mr-2"></i>Create Task
 								</button>
 								<button onclick="customValidate('notetermform_n')" type="button" class="btn btn-primary btn-lg btn-create-note">
 									<i class="fas fa-save mr-2"></i>Create Note

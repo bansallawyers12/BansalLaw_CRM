@@ -377,6 +377,13 @@
             tabId = 'account';
         }
 
+        // Matter documents: no top-nav button uses data-tab="matterdocuments" (shared with Personal
+        // under the Documents nav). Activate the pane directly so /…/matterdocuments loads correctly.
+        if (tabId === 'matterdocuments') {
+            activateTab('matterdocuments');
+            return;
+        }
+
         // "Default" tabs: the Blade template already marks the pane and button as active.
         // Apply side-effects directly to avoid an unwanted pushState entry.
         const defaultTabs = ['personaldetails', 'companydetails'];
