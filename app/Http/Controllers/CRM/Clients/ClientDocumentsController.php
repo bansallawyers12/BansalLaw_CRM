@@ -25,6 +25,7 @@ use App\Traits\ClientHelpers;
 use App\Traits\LogsClientActivity;
 use App\Support\StaffClientVisibility;
 use Illuminate\Http\JsonResponse;
+use League\Flysystem\UnableToCheckFileExistence;
 
 class ClientDocumentsController extends Controller
 {
@@ -50,6 +51,31 @@ class ClientDocumentsController extends Controller
     private function documentsDiskUsesS3Driver(): bool
     {
         return (string) config('filesystems.disks.s3.driver', '') === 's3';
+    }
+
+    /**
+     * S3 exists() can throw UnableToCheckFileExistence (IAM, endpoint, network). Treat that as "unknown, assume present"
+     * so preview/download still attempt a presigned URL (GetObject may succeed when HeadObject cannot).
+     */
+    private function s3ObjectExistsLenient(string $key): bool
+    {
+        try {
+            return $this->s3Disk()->exists($key);
+        } catch (UnableToCheckFileExistence $e) {
+            Log::warning('S3 exists() could not verify key; assuming object present for preview/download', [
+                'key' => $key,
+                'error' => $e->getMessage(),
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('S3 exists() failed; assuming object present for preview/download', [
+                'key' => $key,
+                'error' => $e->getMessage(),
+            ]);
+
+            return true;
+        }
     }
 
     private function denyJsonUnlessStaffClientAccess(int $clientId): ?JsonResponse
@@ -653,7 +679,7 @@ class ClientDocumentsController extends Controller
                             $mf = (string) $fetch->myfile;
                             $keyM = $cuid . '/matter/' . $mf;
                             $keyV = $cuid . '/visa/' . $mf;
-                            $key = $this->s3Disk()->exists($keyM) ? $keyM : ($this->s3Disk()->exists($keyV) ? $keyV : $keyM);
+                            $key = $this->s3ObjectExistsLenient($keyM) ? $keyM : ($this->s3ObjectExistsLenient($keyV) ? $keyV : $keyM);
                             $fileUrl = $this->s3Disk()->url($key);
                         }
                         
@@ -2327,12 +2353,12 @@ class ClientDocumentsController extends Controller
             return null;
         }
 
-        if ($this->s3Disk()->exists($s3Key)) {
+        if ($this->s3ObjectExistsLenient($s3Key)) {
             return $s3Key;
         }
         if (str_contains($s3Key, '/matter/')) {
             $altKey = str_replace('/matter/', '/visa/', $s3Key);
-            if ($this->s3Disk()->exists($altKey)) {
+            if ($this->s3ObjectExistsLenient($altKey)) {
                 return $altKey;
             }
         }
@@ -2406,13 +2432,13 @@ class ClientDocumentsController extends Controller
 
                 $s3Key = ltrim(urldecode($parsed['path']), '/');
 
-                if (! $this->s3Disk()->exists($s3Key) && str_contains($s3Key, '/matter/')) {
+                if (! $this->s3ObjectExistsLenient($s3Key) && str_contains($s3Key, '/matter/')) {
                     $altKey = str_replace('/matter/', '/visa/', $s3Key);
-                    if ($this->s3Disk()->exists($altKey)) {
+                    if ($this->s3ObjectExistsLenient($altKey)) {
                         $s3Key = $altKey;
                     }
                 }
-                if (! $this->s3Disk()->exists($s3Key)) {
+                if (! $this->s3ObjectExistsLenient($s3Key)) {
                     return abort(404, 'File not found in S3');
                 }
             }
