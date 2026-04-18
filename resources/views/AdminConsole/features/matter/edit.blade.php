@@ -59,6 +59,22 @@
 													</div>
 												</div>
 											</div>
+											@if(\Illuminate\Support\Facades\Schema::hasColumn('matters', 'stream'))
+											<div class="row">
+												<div class="col-12 col-md-6 col-lg-6">
+													<div class="form-group">
+														<label for="stream">Matter stream / forum</label>
+														<select name="stream" id="stream" class="form-control">
+															<option value="">— Not set —</option>
+															@foreach(config('matter_streams.streams', []) as $key => $label)
+																<option value="{{ $key }}" {{ old('stream', $fetchedData->stream ?? '') === $key ? 'selected' : '' }}>{{ $label }}</option>
+															@endforeach
+														</select>
+														<small class="form-text text-muted">Used for party-role labels (e.g. plaintiff/defendant, applicant/respondent) when creating client matters.</small>
+													</div>
+												</div>
+											</div>
+											@endif
 											
 											<div class="row">
 												<div class="col-12 col-md-6 col-lg-6">

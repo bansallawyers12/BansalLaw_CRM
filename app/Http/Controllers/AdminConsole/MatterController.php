@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Schema;
 use App\Models\Matter;
+use Illuminate\Validation\Rule;
 
 class MatterController extends Controller
 {
@@ -50,15 +51,22 @@ class MatterController extends Controller
         if ($request->isMethod('post'))
         {
             // Validation rules with unique check for nick_name and optional fields
+            $streamKeys = array_keys(config('matter_streams.streams', []));
             $this->validate($request, [
                 'title' => 'required|max:255',
                 'nick_name' => 'required|max:255|unique:matters,nick_name',
+                'stream' => ['nullable', 'string', 'max:64', Rule::in($streamKeys)],
             ]);
 
             $requestData = $request->all();
             $obj = new Matter;
             $obj->title = $requestData['title'];
             $obj->nick_name = $requestData['nick_name'];
+            if (Schema::hasColumn('matters', 'stream')) {
+                $obj->stream = isset($requestData['stream']) && $requestData['stream'] !== ''
+                    ? $requestData['stream']
+                    : null;
+            }
             $obj->workflow_id = $requestData['workflow_id'] ?? null;
             $obj->status = $requestData['status'] ?? 1;
             $obj->is_for_company = $requestData['is_for_company'] ?? 0;
@@ -121,9 +129,11 @@ class MatterController extends Controller
     public function update(Request $request, $id)
     {
         $requestData = $request->all();
+        $streamKeys = array_keys(config('matter_streams.streams', []));
         $this->validate($request, [
             'title' => 'required|max:255',
             'nick_name' => 'required|max:255|unique:matters,nick_name,'.$id,
+            'stream' => ['nullable', 'string', 'max:64', Rule::in($streamKeys)],
         ]);
 
         $obj = Matter::find($id);
@@ -133,6 +143,11 @@ class MatterController extends Controller
 
         $obj->title = $requestData['title'];
         $obj->nick_name = $requestData['nick_name'];
+        if (Schema::hasColumn('matters', 'stream')) {
+            $obj->stream = isset($requestData['stream']) && $requestData['stream'] !== ''
+                ? $requestData['stream']
+                : null;
+        }
         $obj->workflow_id = $requestData['workflow_id'] ?: null;
         $obj->is_for_company = $requestData['is_for_company'] ?? $obj->is_for_company ?? 0;
 

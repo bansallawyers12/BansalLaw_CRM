@@ -11,7 +11,7 @@ class Matter extends Model
 	protected $table = 'matters';
 	
 	protected $fillable = [
-		'id', 'title', 'nick_name', 'workflow_id', 'is_for_company', 'created_at', 'updated_at'
+		'id', 'title', 'nick_name', 'stream', 'workflow_id', 'is_for_company', 'created_at', 'updated_at'
 	];
 
 	/**

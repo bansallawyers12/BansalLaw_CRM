@@ -44,6 +44,7 @@ class ClientMatter extends Model
         'case_detail',
         'date_of_incidence',
         'incidence_type',
+        'our_party_role',
         'updated_at_type',
     ];
 
@@ -149,6 +150,14 @@ class ClientMatter extends Model
     public function tasks()
     {
         return $this->hasMany(ClientMatterTask::class, 'client_matter_id');
+    }
+
+    /**
+     * Other parties (opposing side) for this matter.
+     */
+    public function opposingParties()
+    {
+        return $this->hasMany(ClientMatterOpposingParty::class, 'client_matter_id')->orderBy('sort_order');
     }
 
     /**
