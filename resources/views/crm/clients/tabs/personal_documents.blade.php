@@ -153,8 +153,8 @@
                                                         </td>
                                                         <td style="white-space: initial;">
                                                             <?php if ($fetch->file_name): ?>
-                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu="showFileContextMenu(event, <?= $fetch->id ?>, <?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, '<?= $id ?>', '<?= $fetch->status ?? 'draft' ?>'); return false;">
-                                                                    <a href="javascript:void(0);" onclick="previewFile(<?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, <?= json_encode('preview-container-' . $id) ?>)">
+                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu='showFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
+                                                                    <a href="javascript:void(0);" onclick='previewFile(<?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, <?= json_encode('preview-container-' . $id) ?>)'>
                                                                         <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) ?></span>
                                                                     </a>
                                                                 </div>
@@ -486,8 +486,8 @@
                                             
                                             var uploadTd = row.find('td').eq(1);
                                             uploadTd.html(
-                                                '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: Admin" oncontextmenu="showFileContextMenu(event, ' + fileid + ', ' + JSON.stringify(ress.filetype) + ', ' + JSON.stringify(previewUrl) + ', ' + JSON.stringify(String(doccategory)) + ', ' + JSON.stringify(ress.status_value || 'draft') + '); return false;">' +
-                                                    '<a href="javascript:void(0);" onclick="previewFile(' + JSON.stringify(ress.filetype) + ', ' + JSON.stringify(previewUrl) + ', ' + JSON.stringify('preview-container-' + doccategory) + ')">' +
+                                                '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: Admin" oncontextmenu=\'showFileContextMenu(event, ' + fileid + ', ' + JSON.stringify(ress.filetype) + ', ' + JSON.stringify(previewUrl) + ', ' + JSON.stringify(String(doccategory)) + ', ' + JSON.stringify(ress.status_value || 'draft') + '); return false;\'>' +
+                                                    '<a href="javascript:void(0);" onclick=\'previewFile(' + JSON.stringify(ress.filetype) + ', ' + JSON.stringify(previewUrl) + ', ' + JSON.stringify('preview-container-' + doccategory) + ')\'>' +
                                                         '<i class="fas fa-file-image"></i> <span>' + ress.filename + '</span>' +
                                                     '</a>' +
                                                 '</div>'
@@ -678,8 +678,8 @@
                                         // Replace upload TD content (Column 1 = File Name)
                                         var uploadTd = row.find('td').eq(1);
                                         uploadTd.html(
-                                            '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: Admin" oncontextmenu="showFileContextMenu(event, ' + fileid + ', ' + JSON.stringify(ress.filetype) + ', ' + JSON.stringify(previewUrl) + ', ' + JSON.stringify(String(doccategory)) + ', ' + JSON.stringify(ress.status_value || 'draft') + '); return false;">' +
-                                                '<a href="javascript:void(0);" onclick="previewFile(' + JSON.stringify(ress.filetype) + ', ' + JSON.stringify(previewUrl) + ', ' + JSON.stringify('preview-container-' + doccategory) + ')">' +
+                                            '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: Admin" oncontextmenu=\'showFileContextMenu(event, ' + fileid + ', ' + JSON.stringify(ress.filetype) + ', ' + JSON.stringify(previewUrl) + ', ' + JSON.stringify(String(doccategory)) + ', ' + JSON.stringify(ress.status_value || 'draft') + '); return false;\'>' +
+                                                '<a href="javascript:void(0);" onclick=\'previewFile(' + JSON.stringify(ress.filetype) + ', ' + JSON.stringify(previewUrl) + ', ' + JSON.stringify('preview-container-' + doccategory) + ')\'>' +
                                                     '<i class="fas fa-file-image"></i> <span>' + ress.filename + '</span>' +
                                                 '</a>' +
                                             '</div>'
