@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Client/lead tags are stored on admins.tagname as JSON: {"n":["Normal"],"r":["Red"]}.
+ * Tags table has been removed; all tag data lives on admins.tagname as JSON only.
  */
 final class ClientTagStorage
 {
