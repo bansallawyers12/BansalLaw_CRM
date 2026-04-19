@@ -107,6 +107,7 @@ phases:
         sudo -u $APP_USER mkdir -p bootstrap/cache
 
         echo "Rebuilding caches..."
+        sudo -u $APP_USER php artisan view:clear
         sudo -u $APP_USER php artisan config:cache
         sudo -u $APP_USER php artisan route:cache
         sudo -u $APP_USER php artisan event:cache
