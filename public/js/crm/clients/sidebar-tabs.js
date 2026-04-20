@@ -16,6 +16,30 @@
         initialized: false
     };
 
+    /**
+     * Matter ref for URLs: must be a non-empty string. PHP/JSON can surface [] or odd values;
+     * treating [] as truthy caused .../encodeId//tab (404).
+     */
+    function normalizeMatterId(raw) {
+        if (raw == null) {
+            return '';
+        }
+        if (Array.isArray(raw)) {
+            if (raw.length === 0) {
+                return '';
+            }
+            raw = raw[0];
+        }
+        if (typeof raw === 'object') {
+            return '';
+        }
+        var s = String(raw).trim();
+        if (s === '' || s === 'null' || s === 'undefined') {
+            return '';
+        }
+        return s;
+    }
+
     /** Tabs where the right-rail activity feed should be visible (details tabs + dedicated Activity nav). */
     function isActivityFeedTab(tabId) {
         return tabId === 'personaldetails' || tabId === 'companydetails' || tabId === 'activityfeed';
@@ -87,8 +111,8 @@
             return;
         }
 
-        SidebarTabs.clientId = config.clientId;
-        SidebarTabs.matterId = config.matterId;
+        SidebarTabs.clientId = config.clientId == null ? '' : String(config.clientId);
+        SidebarTabs.matterId = normalizeMatterId(config.matterId);
         SidebarTabs.selectedMatter = config.selectedMatter || '';
         if (config.detailBaseUrl) {
             SidebarTabs.detailBaseUrl = config.detailBaseUrl;
@@ -191,8 +215,9 @@
      */
     function updateUrl(tabId) {
         let newUrl = SidebarTabs.detailBaseUrl + '/' + SidebarTabs.clientId;
-        if (SidebarTabs.matterId && SidebarTabs.matterId !== '') {
-            newUrl += '/' + SidebarTabs.matterId;
+        var matterSeg = normalizeMatterId(SidebarTabs.matterId);
+        if (matterSeg !== '') {
+            newUrl += '/' + matterSeg;
         }
         newUrl += '/' + tabId;
         
