@@ -1398,7 +1398,7 @@ class PublicBookingController extends BaseController
                 
                 if (empty($apiToken)) {
                     Log::error('Bansal API token not configured');
-                    return $this->sendError('Bansal API token not configured. Set the BANSAL_API_TOKEN environment variable.', [], 500);
+                    return $this->sendError('Bansal API token not configured. Set APPOINTMENT_API_BEARER_TOKEN or BANSAL_API_TOKEN in the environment.', [], 500);
                 }
                 
                 // Make API call to external Bansal API

@@ -31,6 +31,29 @@ use Stripe;
 
 class HomeController extends Controller
 {
+    /**
+     * Default appointment calendar config when Bansal API is unavailable and fallback is allowed.
+     *
+     * @return array<string, mixed>
+     */
+    private function defaultDatetimeBackendPayload(): array
+    {
+        return [
+            'success' => true,
+            'duration' => 30,
+            'weeks' => [0, 6],
+            'start_time' => '09:00',
+            'end_time' => '17:00',
+            'disabledtimeslotes' => [],
+            'disabledatesarray' => [],
+        ];
+    }
+
+    private function bansalDatetimeFallbackEnabled(): bool
+    {
+        return (bool) config('services.bansal_api.fallback_datetime', false);
+    }
+
 	public function __construct(Request $request)
     {
         // Share safe defaults instead of WebsiteSetting
@@ -151,80 +174,96 @@ class HomeController extends Controller
         ];
         
         try {
-            // Get API configuration
             $baseUrl = rtrim(config('services.bansal_api.url'), '/');
             $apiToken = config('services.bansal_api.token');
             $timeout = config('services.bansal_api.timeout', 30);
-            
+
             if (empty($apiToken)) {
-                Log::error('Bansal API token not configured');
-                return json_encode([
+                Log::warning('Bansal API token not configured for getdatetimebackend');
+                if ($this->bansalDatetimeFallbackEnabled()) {
+                    return response()->json($this->defaultDatetimeBackendPayload());
+                }
+
+                return response()->json([
                     'success' => false,
-                    'message' => 'Bansal API token not configured. Set the BANSAL_API_TOKEN environment variable.'
-                ]);
+                    'message' => 'Bansal API token not configured. Set APPOINTMENT_API_BEARER_TOKEN or BANSAL_API_TOKEN in the environment.',
+                ], 503);
             }
-            
-            // Make API call to external Bansal API
+
             $response = Http::timeout($timeout)
                 ->withToken($apiToken)
                 ->acceptJson()
                 ->post("{$baseUrl}/appointments/get-datetime-backend", $requestData);
-            
+
             if ($response->failed()) {
                 Log::error('Bansal API get-datetime-backend Error', [
                     'method' => 'getdatetimebackend',
                     'status' => $response->status(),
                     'body' => $response->body(),
-                    'request_data' => $requestData
+                    'request_data' => $requestData,
                 ]);
-                
-                return json_encode([
+
+                if ($this->bansalDatetimeFallbackEnabled()) {
+                    Log::warning('getdatetimebackend: using default hours (API HTTP error)');
+
+                    return response()->json($this->defaultDatetimeBackendPayload());
+                }
+
+                return response()->json([
                     'success' => false,
                     'message' => 'Failed to fetch datetime backend from external API',
-                    'error' => $response->status() === 404 ? 'Endpoint not found' : 'API request failed'
-                ]);
+                    'error' => $response->status() === 404 ? 'Endpoint not found' : 'API request failed',
+                ], 502);
             }
-            
-            $data = $response->json();
-            
-            // Return the response from external API
-            return json_encode($data);
-            
+
+            return response()->json($response->json());
         } catch (RequestException $e) {
             $response = $e->response;
             $responseBody = $response?->json();
             $message = null;
-            
+
             if (is_array($responseBody)) {
                 $message = $responseBody['message']
                     ?? ($responseBody['error']['message'] ?? null);
             }
-            
+
             $message = $message ?: $response?->body() ?: $e->getMessage();
-            
+
             Log::error('Bansal API get-datetime-backend Request Error', [
                 'method' => 'getdatetimebackend',
                 'message' => $message,
                 'request_data' => $requestData,
-                'exception' => $e->getMessage()
+                'exception' => $e->getMessage(),
             ]);
-            
-            return json_encode([
+
+            if ($this->bansalDatetimeFallbackEnabled()) {
+                Log::warning('getdatetimebackend: using default hours (RequestException)');
+
+                return response()->json($this->defaultDatetimeBackendPayload());
+            }
+
+            return response()->json([
                 'success' => false,
-                'message' => 'API request failed: ' . $message
-            ]);
+                'message' => 'API request failed: '.$message,
+            ], 502);
         } catch (\Exception $e) {
             Log::error('Bansal API get-datetime-backend Exception', [
                 'method' => 'getdatetimebackend',
                 'message' => $e->getMessage(),
                 'request_data' => $requestData,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
-            return json_encode([
+
+            if ($this->bansalDatetimeFallbackEnabled()) {
+                Log::warning('getdatetimebackend: using default hours (exception)');
+
+                return response()->json($this->defaultDatetimeBackendPayload());
+            }
+
+            return response()->json([
                 'success' => false,
-                'message' => 'An error occurred: ' . $e->getMessage()
-            ]);
+                'message' => 'An error occurred: '.$e->getMessage(),
+            ], 500);
         }
     }
 
@@ -278,9 +317,18 @@ class HomeController extends Controller
         ];
         $location = $location_map[$inperson_address] ?? 'adelaide';
         
+        $apiClient = new \App\Services\BansalAppointmentSync\BansalApiClient();
+
+        if (! $apiClient->isConfigured() && $this->bansalDatetimeFallbackEnabled()) {
+            Log::info('getdisableddatetime: token missing, returning empty disabled slots (fallback)');
+
+            return response()->json([
+                'success' => true,
+                'disabledtimeslotes' => [],
+            ]);
+        }
+
         try {
-            // Use BansalApiClient to call the website API
-            $apiClient = new \App\Services\BansalAppointmentSync\BansalApiClient();
             $response = $apiClient->getDisabledDateTime(
                 $specific_service,
                 $service_type,
@@ -288,10 +336,8 @@ class HomeController extends Controller
                 $sel_date,
                 $slot_overwrite
             );
-            
-            // Return the response from external API
-            return json_encode($response);
-            
+
+            return response()->json($response);
         } catch (\Exception $e) {
             Log::error('Bansal API get-disabled-datetime Exception', [
                 'method' => 'getdisableddatetime',
@@ -301,14 +347,23 @@ class HomeController extends Controller
                 'inperson_address' => $inperson_address,
                 'sel_date' => $sel_date,
                 'slot_overwrite' => $slot_overwrite,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
-            return json_encode([
+
+            if ($this->bansalDatetimeFallbackEnabled()) {
+                Log::warning('getdisableddatetime: using empty disabled slots (fallback)');
+
+                return response()->json([
+                    'success' => true,
+                    'disabledtimeslotes' => [],
+                ]);
+            }
+
+            return response()->json([
                 'success' => false,
-                'message' => 'An error occurred: ' . $e->getMessage(),
-                'disabledtimeslotes' => []
-            ]);
+                'message' => 'An error occurred: '.$e->getMessage(),
+                'disabledtimeslotes' => [],
+            ], 500);
         }
     }
 

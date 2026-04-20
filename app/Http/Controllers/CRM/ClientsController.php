@@ -6846,6 +6846,7 @@ class ClientsController extends Controller
                 'preferred_language' => 'required|string',
                 'inperson_address' => 'required|in:2',
                 'send_confirmation_email' => 'nullable|boolean',
+                'consultant_id' => 'nullable|integer|exists:appointment_consultants,id',
             ]);
 
             if ($validator->fails()) {
@@ -6953,7 +6954,6 @@ class ClientsController extends Controller
             // promo_free = 15 min, paid = 30 min
             $durationMinutes = ($requestData['service_id'] === 'promo_free') ? 15 : 30;
 
-            // Use ConsultantAssignmentService to assign consultant
             $consultantAssigner = app(\App\Services\BansalAppointmentSync\ConsultantAssignmentService::class);
             $appointmentDataForConsultant = [
                 'noe_id' => $requestData['noe_id'],
@@ -6962,25 +6962,48 @@ class ClientsController extends Controller
                 'inperson_address' => $requestData['inperson_address'],
                 'noe_scheme' => 'crm',
             ];
-            $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
 
-            // Prevent new bookings from being assigned to Ajay calendar (transfer-only calendar)
-            if ($consultant && $consultant->calendar_type === 'ajay') {
-                return response()->json([
-                    'status' => false,
-                    'success' => false,
-                    'message' => 'New bookings cannot be created in Ajay Calendar. Only transfers from other calendars are allowed.'
-                ], 422);
-            }
+            $consultant = null;
+            if (! empty($requestData['consultant_id'])) {
+                $picked = AppointmentConsultant::query()
+                    ->where('id', (int) $requestData['consultant_id'])
+                    ->where('is_active', true)
+                    ->first();
+                if (! $picked) {
+                    return response()->json([
+                        'status' => false,
+                        'success' => false,
+                        'message' => 'The selected consultant is invalid or inactive.',
+                    ], 422);
+                }
+                if ($picked->calendar_type === 'ajay') {
+                    return response()->json([
+                        'status' => false,
+                        'success' => false,
+                        'message' => 'New bookings cannot be created in Ajay Calendar. Only transfers from other calendars are allowed.',
+                    ], 422);
+                }
+                $consultant = $picked;
+            } else {
+                $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
 
-            // Consultant is nullable, but log if not found
-            if (!$consultant) {
-                Log::warning('No consultant assigned for appointment', [
-                    'noe_id' => $requestData['noe_id'],
-                    'service_id' => $serviceId,
-                    'location' => $location,
-                    'inperson_address' => $requestData['inperson_address']
-                ]);
+                // Prevent new bookings from being assigned to Ajay calendar (transfer-only calendar)
+                if ($consultant && $consultant->calendar_type === 'ajay') {
+                    return response()->json([
+                        'status' => false,
+                        'success' => false,
+                        'message' => 'New bookings cannot be created in Ajay Calendar. Only transfers from other calendars are allowed.',
+                    ], 422);
+                }
+
+                if (! $consultant) {
+                    Log::warning('No consultant assigned for appointment', [
+                        'noe_id' => $requestData['noe_id'],
+                        'service_id' => $serviceId,
+                        'location' => $location,
+                        'inperson_address' => $requestData['inperson_address'],
+                    ]);
+                }
             }
 
             // Map internal service_id to Bansal specific_service (1=paid, 2=free)

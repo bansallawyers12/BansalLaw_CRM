@@ -11,6 +11,13 @@
 				</button>
 			</div>
 			<div class="modal-body">
+				@php
+					$__crmAppointmentConsultants = \App\Models\AppointmentConsultant::query()
+						->where('is_active', true)
+						->orderBy('name')
+						->get()
+						->unique('id');
+				@endphp
 				<form method="post" action="{{URL::to('/add-appointment-book')}}" name="appointform" id="appointform" autocomplete="off" enctype="multipart/form-data">
 				    @csrf
 				    <input type="hidden" name="client_id" value="{{$fetchedData->id}}">
@@ -83,6 +90,19 @@
 						</div>
 
                         <div class="col-12 col-md-12 col-lg-12 appointment_row" id="appointment_details" style="display: none;">
+                            <div class="form-group consultant-select-cls mb-3">
+                                <label for="add_appointment_consultant_id" class="heading_title">Consultant</label>
+                                <select class="form-control" name="consultant_id" id="add_appointment_consultant_id">
+                                    <option value="">Select Consultant...</option>
+                                    @foreach ($__crmAppointmentConsultants as $consultant)
+                                        <option value="{{ $consultant->id }}">{{ $consultant->name }} ({{ $consultant->calendar_type }})</option>
+                                    @endforeach
+                                </select>
+                                <small class="form-text text-muted d-block mt-2">
+                                    <i class="fas fa-info-circle"></i>
+                                    Optional. Choose who this booking belongs to; it uses that consultant&rsquo;s calendar. Leave empty to assign automatically. New bookings cannot use Ajay&rsquo;s calendar—pick another consultant.
+                                </small>
+                            </div>
                             <div class="form-group inperson_address_cls">
                                 <label for="inperson_address" class="heading_title">Location</label>
                                 <div class="inperson_address_header" id="inperson_address_wrap">
@@ -766,6 +786,10 @@ document.addEventListener('DOMContentLoaded', function() {
 		const appointmentDetailsSelect = document.querySelector('.appointment_item');
 		if (appointmentDetailsSelect) {
 			appointmentDetailsSelect.value = '';
+		}
+		const consultantSelect = document.getElementById('add_appointment_consultant_id');
+		if (consultantSelect) {
+			consultantSelect.value = '';
 		}
 		// Reset Nature of Enquiry and show all services by default
 		const enquirySelect = document.querySelector('.enquiry_item');

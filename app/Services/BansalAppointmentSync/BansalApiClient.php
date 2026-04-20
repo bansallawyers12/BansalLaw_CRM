@@ -37,7 +37,7 @@ class BansalApiClient
     protected function assertTokenConfigured(): void
     {
         if (empty($this->apiToken)) {
-            throw new Exception('Bansal API token not configured. Set the BANSAL_API_TOKEN environment variable.');
+            throw new Exception('Bansal API token not configured. Set APPOINTMENT_API_BEARER_TOKEN or BANSAL_API_TOKEN in the environment.');
         }
     }
 
@@ -384,18 +384,24 @@ class BansalApiClient
     }
 
     /**
-     * Get disabled date/time slots from Bansal API.
-     * 
+     * Get disabled date/time slots from Bansal website API.
+     *
+     * POST {@see config('services.bansal_api.disabled_datetime_url')} with Bearer
+     * {@see config('services.bansal_api.token')} (APPOINTMENT_API_BEARER_TOKEN, else BANSAL_API_TOKEN).
+     *
      * @param string $specificService Service type: 'consultation', 'paid-consultation', 'overseas-enquiry'
      * @param string $serviceType Enquiry type: 'permanent-residency', 'temporary-residency', etc.
      * @param string $location Location: 'adelaide' or 'melbourne'
      * @param string $selectedDate Selected date in dd/mm/yyyy format
      * @param int $slotOverwrite If 1, disabledtimeslotes will be blank (allows booking on blocked slots)
      * @return array API response with disabledtimeslotes array
+     *
+     * Request body includes service_id from config services.bansal_api.disabled_datetime_service_id (default 1).
      */
     public function getDisabledDateTime(string $specificService, string $serviceType, string $location, string $selectedDate, int $slotOverwrite = 0): array
     {
         $payload = [
+            'service_id' => (int) config('services.bansal_api.disabled_datetime_service_id', 1),
             'specific_service' => $specificService,
             'service_type' => $serviceType,
             'location' => $location,
@@ -404,19 +410,53 @@ class BansalApiClient
         ];
 
         try {
-            $response = $this->client()->post("{$this->baseUrl}/appointments/get-disabled-datetime", $payload);
-            $data = $response->json();
+            $this->assertTokenConfigured();
 
-            if (!($data['success'] ?? false)) {
+            $url = rtrim((string) config(
+                'services.bansal_api.disabled_datetime_url',
+                'http://www.bansallawyers.com.au/api/getdisableddatetimenewapi'
+            ), '/');
+
+            $response = Http::timeout($this->timeout)
+                ->withToken($this->apiToken)
+                ->acceptJson()
+                ->throw()
+                ->post($url, $payload);
+
+            $data = $response->json() ?? [];
+
+            if (($data['success'] ?? null) === false) {
                 $message = $data['message'] ?? 'Unable to fetch disabled date/time slots. Please try again.';
 
                 Log::warning('Bansal API getDisabledDateTime returned unsuccessful response', [
                     'method' => 'getDisabledDateTime',
+                    'url' => $url,
                     'payload' => $payload,
                     'response' => $data,
                 ]);
 
                 throw new Exception($message);
+            }
+
+            // New API may omit success when slots are present
+            if (! ($data['success'] ?? false) && ! isset($data['disabledtimeslotes'])) {
+                $message = $data['message'] ?? 'Unable to fetch disabled date/time slots. Please try again.';
+
+                Log::warning('Bansal API getDisabledDateTime unexpected response shape', [
+                    'method' => 'getDisabledDateTime',
+                    'url' => $url,
+                    'payload' => $payload,
+                    'response' => $data,
+                ]);
+
+                throw new Exception($message);
+            }
+
+            if (! isset($data['success'])) {
+                $data['success'] = true;
+            }
+            if (! isset($data['disabledtimeslotes'])) {
+                $data['disabledtimeslotes'] = [];
             }
 
             return $data;
