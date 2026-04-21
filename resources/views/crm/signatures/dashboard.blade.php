@@ -717,7 +717,7 @@
                         <td>
                             @if(($doc->client_id && $doc->client) || ($doc->lead_id && $doc->lead))
                                 @if($doc->client_id && $doc->client)
-                                <a href="{{ route('clients.detail', $doc->client_id) }}" class="association-chip">
+                                <a href="{{ route('clients.detail', base64_encode(convert_uuencode($doc->client_id))) }}" class="association-chip">
                                     <i class="fas fa-user"></i>
                                     Client: {{ $doc->client->first_name }} {{ $doc->client->last_name }}
                                 </a>
