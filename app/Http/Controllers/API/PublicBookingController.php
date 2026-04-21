@@ -18,6 +18,7 @@ use Illuminate\Http\Client\RequestException;
 use Carbon\Carbon;
 use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\Payment\StripePaymentService;
+use App\Support\BansalDatetimeBackendHelper;
 
 class PublicBookingController extends BaseController
 {
@@ -1319,11 +1320,23 @@ class PublicBookingController extends BaseController
     }
 
     /**
-     * Map meeting type from various formats to database format
-     * 
-     * @param string $meetingType
-     * @return string
+     * Normalize Bansal get-datetime-backend JSON (or fallback payload) for API consumers.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
      */
+    private function mapDatetimeBackendPayloadToResult(array $data): array
+    {
+        return [
+            'success' => $data['success'] ?? true,
+            'disabledatesarray' => $data['disabledatesarray'] ?? [],
+            'duration' => $data['duration'] ?? 15,
+            'start_time' => $data['start_time'] ?? '10:45',
+            'end_time' => $data['end_time'] ?? '16:00',
+            'weeks' => $data['weeks'] ?? [],
+        ];
+    }
+
     /**
      * Get disabled dates from calendar
      * 
@@ -1397,7 +1410,16 @@ class PublicBookingController extends BaseController
                 $timeout = config('services.bansal_api.timeout', 30);
                 
                 if (empty($apiToken)) {
+                    if (BansalDatetimeBackendHelper::fallbackEnabled()) {
+                        Log::warning('getDisabledDateFromCalendar: token missing, using default calendar (fallback)');
+
+                        return $this->sendResponse(
+                            $this->mapDatetimeBackendPayloadToResult(BansalDatetimeBackendHelper::defaultPayload()),
+                            'Disabled dates retrieved successfully (fallback)'
+                        );
+                    }
                     Log::error('Bansal API token not configured');
+
                     return $this->sendError('Bansal API token not configured. Set APPOINTMENT_API_BEARER_TOKEN or BANSAL_API_TOKEN in the environment.', [], 500);
                 }
                 
@@ -1414,25 +1436,26 @@ class PublicBookingController extends BaseController
                         'body' => $response->body(),
                         'request_data' => $requestData
                     ]);
-                    
+                    if (BansalDatetimeBackendHelper::fallbackEnabled()) {
+                        Log::warning('getDisabledDateFromCalendar: API HTTP error, using default calendar (fallback)');
+
+                        return $this->sendResponse(
+                            $this->mapDatetimeBackendPayloadToResult(BansalDatetimeBackendHelper::defaultPayload()),
+                            'Disabled dates retrieved successfully (fallback)'
+                        );
+                    }
+
                     return $this->sendError('Failed to fetch datetime backend from external API', [
                         'error' => $response->status() === 404 ? 'Endpoint not found' : 'API request failed'
                     ], $response->status());
                 }
                 
                 $data = $response->json();
-                
-                // Format response to match expected output
-                $result = [
-                    'success' => $data['success'] ?? true,
-                    'disabledatesarray' => $data['disabledatesarray'] ?? [],
-                    'duration' => $data['duration'] ?? 15,
-                    'start_time' => $data['start_time'] ?? '10:45',
-                    'end_time' => $data['end_time'] ?? '16:00',
-                    'weeks' => $data['weeks'] ?? []
-                ];
-                
-                return $this->sendResponse($result, 'Disabled dates retrieved successfully');
+
+                return $this->sendResponse(
+                    $this->mapDatetimeBackendPayloadToResult(is_array($data) ? $data : []),
+                    'Disabled dates retrieved successfully'
+                );
                 
             } catch (RequestException $e) {
                 $response = $e->response;
@@ -1452,7 +1475,15 @@ class PublicBookingController extends BaseController
                     'request_data' => $requestData,
                     'exception' => $e->getMessage()
                 ]);
-                
+                if (BansalDatetimeBackendHelper::fallbackEnabled()) {
+                    Log::warning('getDisabledDateFromCalendar: RequestException, using default calendar (fallback)');
+
+                    return $this->sendResponse(
+                        $this->mapDatetimeBackendPayloadToResult(BansalDatetimeBackendHelper::defaultPayload()),
+                        'Disabled dates retrieved successfully (fallback)'
+                    );
+                }
+
                 return $this->sendError('API request failed: ' . $message, [], 500);
             } catch (\Exception $e) {
                 Log::error('Bansal API get-datetime-backend Exception', [
@@ -1461,7 +1492,15 @@ class PublicBookingController extends BaseController
                     'request_data' => $requestData,
                     'trace' => $e->getTraceAsString()
                 ]);
-                
+                if (BansalDatetimeBackendHelper::fallbackEnabled()) {
+                    Log::warning('getDisabledDateFromCalendar: exception, using default calendar (fallback)');
+
+                    return $this->sendResponse(
+                        $this->mapDatetimeBackendPayloadToResult(BansalDatetimeBackendHelper::defaultPayload()),
+                        'Disabled dates retrieved successfully (fallback)'
+                    );
+                }
+
                 return $this->sendError('An error occurred: ' . $e->getMessage(), [], 500);
             }
             

@@ -28,31 +28,11 @@ use Helper;
 
 use Stripe;
 
+use App\Support\BansalDatetimeBackendHelper;
+
 
 class HomeController extends Controller
 {
-    /**
-     * Default appointment calendar config when Bansal API is unavailable and fallback is allowed.
-     *
-     * @return array<string, mixed>
-     */
-    private function defaultDatetimeBackendPayload(): array
-    {
-        return [
-            'success' => true,
-            'duration' => 30,
-            'weeks' => [0, 6],
-            'start_time' => '09:00',
-            'end_time' => '17:00',
-            'disabledtimeslotes' => [],
-            'disabledatesarray' => [],
-        ];
-    }
-
-    private function bansalDatetimeFallbackEnabled(): bool
-    {
-        return (bool) config('services.bansal_api.fallback_datetime', false);
-    }
 
 	public function __construct(Request $request)
     {
@@ -180,8 +160,8 @@ class HomeController extends Controller
 
             if (empty($apiToken)) {
                 Log::warning('Bansal API token not configured for getdatetimebackend');
-                if ($this->bansalDatetimeFallbackEnabled()) {
-                    return response()->json($this->defaultDatetimeBackendPayload());
+                if (BansalDatetimeBackendHelper::fallbackEnabled()) {
+                    return response()->json(BansalDatetimeBackendHelper::defaultPayload());
                 }
 
                 return response()->json([
@@ -203,10 +183,10 @@ class HomeController extends Controller
                     'request_data' => $requestData,
                 ]);
 
-                if ($this->bansalDatetimeFallbackEnabled()) {
+                if (BansalDatetimeBackendHelper::fallbackEnabled()) {
                     Log::warning('getdatetimebackend: using default hours (API HTTP error)');
 
-                    return response()->json($this->defaultDatetimeBackendPayload());
+                    return response()->json(BansalDatetimeBackendHelper::defaultPayload());
                 }
 
                 return response()->json([
@@ -236,10 +216,10 @@ class HomeController extends Controller
                 'exception' => $e->getMessage(),
             ]);
 
-            if ($this->bansalDatetimeFallbackEnabled()) {
+            if (BansalDatetimeBackendHelper::fallbackEnabled()) {
                 Log::warning('getdatetimebackend: using default hours (RequestException)');
 
-                return response()->json($this->defaultDatetimeBackendPayload());
+                return response()->json(BansalDatetimeBackendHelper::defaultPayload());
             }
 
             return response()->json([
@@ -254,10 +234,10 @@ class HomeController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            if ($this->bansalDatetimeFallbackEnabled()) {
+            if (BansalDatetimeBackendHelper::fallbackEnabled()) {
                 Log::warning('getdatetimebackend: using default hours (exception)');
 
-                return response()->json($this->defaultDatetimeBackendPayload());
+                return response()->json(BansalDatetimeBackendHelper::defaultPayload());
             }
 
             return response()->json([
@@ -319,7 +299,7 @@ class HomeController extends Controller
         
         $apiClient = new \App\Services\BansalAppointmentSync\BansalApiClient();
 
-        if (! $apiClient->isConfigured() && $this->bansalDatetimeFallbackEnabled()) {
+        if (! $apiClient->isConfigured() && BansalDatetimeBackendHelper::fallbackEnabled()) {
             Log::info('getdisableddatetime: token missing, returning empty disabled slots (fallback)');
 
             return response()->json([
@@ -350,7 +330,7 @@ class HomeController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            if ($this->bansalDatetimeFallbackEnabled()) {
+            if (BansalDatetimeBackendHelper::fallbackEnabled()) {
                 Log::warning('getdisableddatetime: using empty disabled slots (fallback)');
 
                 return response()->json([
