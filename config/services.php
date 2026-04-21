@@ -162,7 +162,7 @@ return [
         'disabled_datetime_service_id' => (int) env('BANSAL_API_DISABLED_DATETIME_SERVICE_ID', 1),
         'timeout' => (int) env('BANSAL_API_TIMEOUT', 30),
         /** When true, appointment datetime endpoints use default office hours if the API is missing token or unreachable. Defaults to on when APP_ENV=local. */
-        'fallback_datetime' => env('BANSAL_API_FALLBACK_DATETIME', env('APP_ENV') === 'local'),
+        'fallback_datetime' => env('BANSAL_API_FALLBACK_DATETIME', true),
     ],
 
     'appointment_api' => [
