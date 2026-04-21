@@ -152,7 +152,7 @@ return [
 
     'bansal_api' => [
         'url' => rtrim(env('BANSAL_API_BASE_URL', env('BANSAL_API_URL', 'https://www.bansallawyers.com.au/')), '/'),
-        'token' => env('APPOINTMENT_API_BEARER_TOKEN', env('BANSAL_API_TOKEN')),
+        'token' => env('APPOINTMENT_API_BEARER_TOKEN'),
         /** Full POST URL; Bearer token = APPOINTMENT_API_BEARER_TOKEN (or BANSAL_API_TOKEN) */
         'disabled_datetime_url' => env(
             'BANSAL_API_DISABLED_DATETIME_URL',
