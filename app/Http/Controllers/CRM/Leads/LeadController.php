@@ -374,8 +374,7 @@ class LeadController extends Controller
     }
 
     /**
-     * Display the specified lead's details
-     * Shows comprehensive view of a single lead
+     * Lead detail URL entry point: redirects to the unified client detail (same as clients; supports type=lead).
      */
     public function detail(Request $request, $id = null)
     {

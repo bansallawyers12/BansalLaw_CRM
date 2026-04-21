@@ -13,7 +13,7 @@
 <?php
 use App\Http\Controllers\Controller;
 ?>
-<div class="crm-container" data-client-id="{{ $fetchedData->id }}">
+<div class="crm-container crm-container--unified" data-client-id="{{ $fetchedData->id }}">
     <!-- Collapsed Toggle Button (shown when sidebar is collapsed) -->
     <button id="collapsed-toggle" class="collapsed-toggle-btn" title="Show Sidebar">
         ☰
