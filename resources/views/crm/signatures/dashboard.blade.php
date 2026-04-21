@@ -722,7 +722,7 @@
                                     Client: {{ $doc->client->first_name }} {{ $doc->client->last_name }}
                                 </a>
                                 @elseif($doc->lead_id && $doc->lead)
-                                <a href="{{ route('leads.detail', $doc->lead_id) }}" class="association-chip">
+                                <a href="{{ route('clients.detail', base64_encode(convert_uuencode($doc->lead_id))) }}" class="association-chip">
                                     <i class="fas fa-user-tag"></i>
                                     Lead: {{ $doc->lead->first_name }} {{ $doc->lead->last_name }}
                                 </a>

@@ -1388,7 +1388,7 @@ class PublicDocumentController extends Controller
                     
                     if ($associatedEntity) {
                         $entityType = 'lead';
-                        $notificationUrl = url("/leads/detail/{$associatedEntity->id}");
+                        $notificationUrl = url("/clients/detail/" . base64_encode(convert_uuencode($associatedEntity->id)));
                         $responsiblePersonId = $document->created_by ?? null;
                         
                         $this->createActivityAndNotification(

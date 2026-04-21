@@ -5,6 +5,10 @@
 @php \App\Support\EnsureDummyMatterStaff::ensure(); @endphp
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="stylesheet" href="{{ URL::asset('css/client-detail.css') }}">
+<style>
+.lead-actions-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 18px; background: #f0f4ff; border-bottom: 1px solid #c7d7fa; }
+.lead-actions-bar__history { color: #fff; }
+</style>
 
 <?php
 use App\Http\Controllers\Controller;
@@ -17,112 +21,141 @@ use App\Http\Controllers\Controller;
     
     <!-- Client Navigation Sidebar -->
     <aside class="client-navigation-sidebar" id="client-sidebar">
-        <div class="sidebar-header">
-            @php
-                $clientDetailBackTabSlugs = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments', 'emails', 'legalforms', 'formgenerations', 'formgenerationsl', 'application', 'workflow', 'account', 'notuseddocuments', 'companydetails'];
-                $clientDetailBackMatterRef = null;
-                if (! empty($id1) && ! in_array(strtolower((string) $id1), array_map('strtolower', $clientDetailBackTabSlugs), true)) {
-                    $clientDetailBackMatterRef = (string) $id1;
+        @php
+            $clientDetailBackTabSlugs = ['personaldetails', 'overview', 'activityfeed', 'clientaction', 'noteterm', 'personaldocuments', 'matterdocuments', 'documents', 'nominationdocuments', 'emails', 'legalforms', 'formgenerations', 'formgenerationsl', 'application', 'account', 'notuseddocuments', 'companydetails'];
+
+            $cdnFn = trim((string) ($fetchedData->first_name ?? ''));
+            $cdnLn = trim((string) ($fetchedData->last_name ?? ''));
+            $cdnInitials = strtoupper(mb_substr($cdnFn, 0, 1) . mb_substr($cdnLn, 0, 1));
+            if ($cdnInitials === '') {
+                $cid = (string) ($fetchedData->client_id ?? '');
+                $cdnInitials = strtoupper(mb_substr($cid !== '' ? $cid : 'C', 0, 2));
+            }
+
+            $cdnAssigneeName = null;
+            if (! empty($fetchedData->user_id)) {
+                $cdnStaffRow = ($assignableStaff ?? collect())->firstWhere('id', (int) $fetchedData->user_id)
+                    ?? \App\Models\Staff::find($fetchedData->user_id);
+                if ($cdnStaffRow) {
+                    $cdnAssigneeName = trim(($cdnStaffRow->first_name ?? '') . ' ' . ($cdnStaffRow->last_name ?? ''));
                 }
-                $clientDetailBackEditUrl = route('clients.edit', base64_encode(convert_uuencode($fetchedData->id)));
-                $clientDetailBackEditUrl .= '?edit_tab=matter_case';
-                if ($clientDetailBackMatterRef !== null && $clientDetailBackMatterRef !== '') {
-                    $clientDetailBackEditUrl .= '&matter_ref='.rawurlencode($clientDetailBackMatterRef);
+            }
+
+            $cdnUpdatedHuman = null;
+            if (! empty($fetchedData->updated_at)) {
+                try {
+                    $cdnUpdatedHuman = \Carbon\Carbon::parse($fetchedData->updated_at)->diffForHumans();
+                } catch (\Throwable $e) {
                 }
-                $clientDetailDemoParams = array_filter([
-                    'client_id' => $encodeId,
-                    'client_unique_matter_ref_no' => $id1,
-                    'tab' => $activeTab ?? null,
-                ], function ($v) {
-                    return $v !== null && $v !== '';
-                });
-                $clientDetailDemoUrl = route('clients.detail.demo_newdesign', $clientDetailDemoParams);
-            @endphp
-            <div class="sidebar-header-toolbar">
-                {{-- Single-quoted onclick: @json() emits double quotes; double-quoted onclick would truncate the attribute --}}
-                <button type="button" class="client-detail-back-btn" id="client-detail-back-btn" title="Back to client edit — Matter and case details"
-                    onclick='window.location.href = @json($clientDetailBackEditUrl);'>
-                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
-                    <span class="client-detail-back-btn__text">Back</span>
-                </button>
-                <a href="{{ $clientDetailDemoUrl }}" class="client-detail-newdesign-demo-link" title="Open new layout preview for this client (same record and tab)">
-                    <i class="fas fa-paint-brush" aria-hidden="true"></i>
-                    <span class="client-detail-newdesign-demo-link__label">New layout</span>
-                </a>
-                <button type="button" id="sidebar-toggle" class="sidebar-toggle-btn" title="Hide Sidebar">
-                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
-                </button>
-            </div>
-            <div class="client-info">
-                <h3 class="client-id">
-                    <?php
-                    if($id1) { //if client unique reference id is present in url
-                        $matter_info_arr = \App\Models\ClientMatter::select('client_unique_matter_no')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
-                    ?>
-                        {{$fetchedData->client_id}}-{{$matter_info_arr ? $matter_info_arr->client_unique_matter_no : 'N/A'}}
-                    <?php
-                    } else {
-                        $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
-                        if($matter_cnt >0){
-                            $matter_info_arr = \App\Models\ClientMatter::select('client_unique_matter_no')->where('client_id',$fetchedData->id)->where('matter_status',1)->orderBy('id', 'desc')->first();
-                        ?>
-                            {{$fetchedData->client_id}}-{{$matter_info_arr ? $matter_info_arr->client_unique_matter_no : 'N/A'}}
-                        <?php
-                        } else {
-                        ?>
-                            {{$fetchedData->client_id}}
-                        <?php
-                        }
-                    } ?>
-                </h3>
-                {{-- Personal Lead Display --}}
-                <p class="client-name">
-                    {{$fetchedData->first_name}} {{$fetchedData->last_name}} 
-                    <a href="{{route('clients.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Client Details Form" class="client-name-edit">
-                        <i class="fas fa-id-card"></i>
-                    </a>
-                </p>
-                
-                <!-- Action icons -->
-                <div class="sidebar-actions-row">
-                    <!-- Action Icons -->
-                    <div class="client-actions">
-                        <a href="javascript:;" class="create_note_d" datatype="note" title="Add Notes"><i class="fas fa-plus"></i></a>
-                        <a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
-                        @php
-                            $googleReviewTemplate = \App\Models\EmailTemplate::crm()
-                                ->where(function ($q) {
-                                    $q->where('alias', 'google_review')->orWhere('name', 'like', '%Google Review%');
-                                })
-                                ->orderBy('id')
-                                ->first();
-                        @endphp
-                        <a href="javascript:;" class="send-google-review" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" data-template-id="{{ optional($googleReviewTemplate)->id ?? '' }}" title="Send Google Review"><i class="fab fa-google"></i></a>
-                        <a href="javascript:;" class="send-sms-btn" data-client-id="{{@$fetchedData->id}}" data-client-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" title="Send SMS"><i class="fas fa-sms"></i></a>
-                        <a href="javascript:;" datatype="not_picked_call" class="not_picked_call" title="Not Picked Call"><i class="fas fa-mobile-alt"></i></a>
-                        <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#create_appoint" title="Add Appointment"><i class="fas fa-calendar-plus"></i></a>
+            }
+
+            $cdnMatterRow = null;
+            $cdnMatterRefLabel = null;
+            if (! empty($id1) && ! in_array(strtolower((string) $id1), array_map('strtolower', $clientDetailBackTabSlugs), true)) {
+                $cdnMatterRefLabel = (string) $id1;
+                $cdnMatterRow = \App\Models\ClientMatter::where('client_id', $fetchedData->id)
+                    ->where('client_unique_matter_no', $id1)
+                    ->where('matter_status', 1)
+                    ->with('matter')
+                    ->first();
+            } else {
+                $cdnMatterRow = \App\Models\ClientMatter::where('client_id', $fetchedData->id)
+                    ->where('matter_status', 1)
+                    ->orderByDesc('id')
+                    ->with('matter')
+                    ->first();
+                $cdnMatterRefLabel = $cdnMatterRow?->client_unique_matter_no;
+            }
+            $cdnMatterChipTitle = 'General Matter';
+            if ($cdnMatterRow && (int) $cdnMatterRow->sel_matter_id !== 1 && $cdnMatterRow->matter && ! empty($cdnMatterRow->matter->title)) {
+                $cdnMatterChipTitle = $cdnMatterRow->matter->title;
+            }
+
+            $cdnWorkflowStageLabel = null;
+            if ($cdnMatterRefLabel) {
+                $cdnWs = DB::table('client_matters')
+                    ->leftJoin('workflow_stages', 'client_matters.workflow_stage_id', '=', 'workflow_stages.id')
+                    ->select('workflow_stages.name')
+                    ->where('client_matters.client_id', $fetchedData->id)
+                    ->where('client_matters.client_unique_matter_no', $cdnMatterRefLabel)
+                    ->first();
+                $cdnWorkflowStageLabel = $cdnWs->name ?? null;
+            }
+
+            [$cdnHeroNormal, $cdnHeroRedIgnored] = \App\Support\ClientTagStorage::decode($fetchedData->tagname ?? '');
+            $cdnHeroTagNames = collect($cdnHeroNormal)->values();
+            $cdnHeroTagMore = 0;
+            if ($cdnHeroTagNames->count() > 4) {
+                $cdnHeroTagMore = $cdnHeroTagNames->count() - 4;
+                $cdnHeroTagNames = $cdnHeroTagNames->take(4);
+            }
+
+            $cdnClientMatterKey = (string) $fetchedData->client_id;
+            if ($cdnMatterRefLabel) {
+                $cdnClientMatterKey .= ' / ' . $cdnMatterRefLabel;
+            }
+        @endphp
+
+        <section class="cdn-client-hero" aria-label="Client summary">
+            <div class="cdn-client-hero__inner">
+                <div class="cdn-client-hero__identity">
+                    <div class="cdn-client-hero__avatar" aria-hidden="true">{{ $cdnInitials }}</div>
+                    <div class="cdn-client-hero__text">
+                        <h1 class="cdn-client-hero__name">
+                            {{ $cdnFn }} {{ $cdnLn }}
+                            <a href="{{ route('clients.edit', base64_encode(convert_uuencode(@$fetchedData->id))) }}" class="cdn-client-hero__edit" title="Client Details Form"><i class="fas fa-id-card" aria-hidden="true"></i></a>
+                        </h1>
+                        <div class="cdn-client-hero__meta">
+                            <span class="cdn-client-hero__meta-item">{{ $cdnClientMatterKey }}</span>
+                            @if($cdnAssigneeName)
+                                <span class="cdn-client-hero__meta-item">{{ $cdnAssigneeName }}</span>
+                            @endif
+                            @if($cdnUpdatedHuman)
+                                <span class="cdn-client-hero__meta-item">Last update {{ $cdnUpdatedHuman }}</span>
+                            @endif
+                            @if($cdnWorkflowStageLabel)
+                                <span class="cdn-client-hero__meta-item">Stage: {{ $cdnWorkflowStageLabel }}</span>
+                            @endif
+                        </div>
+                        <div class="cdn-client-hero__matter-row">
+                            @if($cdnMatterRefLabel)
+                                <span class="cdn-client-hero__matter-chip">{{ $cdnMatterChipTitle }} ({{ $cdnMatterRefLabel }})</span>
+                            @else
+                                <span class="cdn-client-hero__matter-chip">No active matter</span>
+                            @endif
+                            <button type="button" class="btn cdn-client-hero__matter-btn" id="cdn-focus-matter-select" title="Change matter">Change Matter</button>
+                        </div>
+                        <div class="cdn-client-hero__tags" aria-label="Tags">
+                            @foreach($cdnHeroTagNames as $tname)
+                                <span class="cdn-client-hero__tag">{{ $tname }}</span>
+                            @endforeach
+                            @if($cdnHeroTagMore > 0)
+                                <span class="cdn-client-hero__tag cdn-client-hero__tag--more">+{{ $cdnHeroTagMore }} more</span>
+                            @endif
+                            <span class="cdn-client-hero__tag-actions">
+                                <button type="button" class="cdn-client-hero__tag-add cdn-client-hero__tag-add--red openredtagspopup" data-id="{{ $fetchedData->id }}" title="Add red tag (hidden by default on profile)" aria-label="Add red tag">+</button>
+                                <button type="button" class="cdn-client-hero__tag-add cdn-client-hero__tag-add--blue opentagspopup" data-id="{{ $fetchedData->id }}" title="Add or edit tags" aria-label="Add or edit tags">+</button>
+                            </span>
+                        </div>
                     </div>
-                    
+                </div>
+                <div class="cdn-client-hero__actions">
+                    <button type="button" class="btn cdn-client-hero__action-btn create_note_d" datatype="note" title="Add a note">Add Notes</button>
+                    <a href="javascript:;" class="btn cdn-client-hero__action-btn clientemail" data-id="{{ @$fetchedData->id }}" data-email="{{ @$fetchedData->email }}" data-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Compose Mail">Send Email</a>
+                    <a href="javascript:;" class="btn cdn-client-hero__action-btn send-sms-btn" data-client-id="{{ @$fetchedData->id }}" data-client-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Send SMS">Send SMS</a>
+                    <a href="javascript:;" class="btn cdn-client-hero__action-btn" data-bs-toggle="modal" data-bs-target="#create_appoint" title="Schedule appointment">Appointment</a>
+                    <button type="button" class="btn cdn-client-hero__action-btn cdn-client-hero__action-btn--primary" id="cdn-open-update-stage" data-bs-toggle="modal" data-bs-target="#cdn-update-stage-modal" title="Update workflow stage">Update Stage</button>
                 </div>
             </div>
-            
-            <!-- Client/Lead status badge (display only, no click action) -->
-            @if(($fetchedData->type ?? '') === 'lead')
-            <div class="sidebar-client-lead-buttons">
-                <span class="status-btn status-btn-lead lead-status-badge active">Lead</span>
-            </div>
-            @elseif(($fetchedData->type ?? '') === 'client')
-            <div class="sidebar-client-lead-buttons">
-                <span class="status-btn status-btn-client client-status-badge active">Client</span>
-            </div>
-            @endif
-            
-            <!-- Matter Selection Dropdown in Sidebar -->
+        </section>
+
+        {{-- Off-screen matter select for detail-main.js (sidebar chrome removed on demo). --}}
+        <div class="client-detail-demo-hidden-matter">
             <div class="sidebar-matter-selection">
                 <?php
                 $assign_info_arr = \App\Models\Admin::select('type')->where('id',@$fetchedData->id)->first();
                 ?>
-                @if($assign_info_arr->type)
+                @if($assign_info_arr && $assign_info_arr->type)
                     <?php 
                     if($id1)
                     {
@@ -249,143 +282,110 @@ use App\Http\Controllers\Controller;
                     ?>
                 @endif
             </div>
-            
-            <div class="matter-status-badge">
-                <?php
-                // Get the current workflow stage for this client matter
-                $workflow_stage_arr = null;
-                
-                if ($id1) {
-                    // If client unique reference id is present in url
-                    $workflow_stage_arr = DB::table('client_matters')
-                        ->join('workflow_stages', 'client_matters.workflow_stage_id', '=', 'workflow_stages.id')
-                        ->select('workflow_stages.name')
-                        ->where('client_id', $fetchedData->id)
-                        ->where('client_unique_matter_no', $id1)
-                        ->first();
-                } else {
-                    // Get the most recent active matter
-                    $clientMatterInfo = DB::table('client_matters')
-                        ->select('client_unique_matter_no')
-                        ->where('client_id', $fetchedData->id)
-                        ->where('matter_status', 1)
-                        ->orderBy('id', 'desc')
-                        ->first();
-
-                    if ($clientMatterInfo) {
-                        $workflow_stage_arr = DB::table('client_matters')
-                            ->join('workflow_stages', 'client_matters.workflow_stage_id', '=', 'workflow_stages.id')
-                            ->select('workflow_stages.name')
-                            ->where('client_id', $fetchedData->id)
-                            ->where('client_unique_matter_no', $clientMatterInfo->client_unique_matter_no)
-                            ->first();
-                    }
-                }
-
-                // Display the workflow stage name or default to N/A
-                if ($workflow_stage_arr && $workflow_stage_arr->name) {
-                    echo $workflow_stage_arr->name;
-                } else {
-                    echo "N/A";
-                }
-                ?>
-            </div>
         </div>
-        <nav class="client-sidebar-nav">
+
+        {{-- Tab strip lives in the aside (cdn-topbar) so it is NEVER hidden when activityfeed tab fires setMainColumnForTab(). --}}
+        <div class="cdn-tabs-strip cdn-main-tab-bar">
+        <nav class="client-sidebar-nav" role="tablist" aria-label="Client record sections">
             <?php
             $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
             
-            // Valid tab names that should NOT be treated as matter IDs
-            $validTabNames = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments',
-                              'emails', 'legalforms',
-                              // Legacy removed tab slugs
-                              'formgenerations', 'formgenerationsl',
-                              'application', 'workflow', 'checklists'];
+            // Match ClientsController::detail() known tab slugs so $id1 is not misclassified as a matter ref.
+            $validTabNames = [
+                'personaldetails', 'overview', 'companydetails', 'activityfeed', 'clientaction', 'noteterm', 'personaldocuments', 'matterdocuments', 'documents', 'nominationdocuments',
+                'emails', 'client_portal', 'legalforms',
+                'formgenerations', 'formgenerationsl',
+                'application', 'workflow', 'checklists', 'account', 'notuseddocuments',
+                'visadocuments',
+            ];
             
             // Check if $id1 is a valid matter ID (not a tab name)
             $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array(strtolower($id1), array_map('strtolower', $validTabNames));
 
             $hideMatterDocumentsForBankMatter = isset($id1) && $id1 !== ''
                 && preg_match('/^bank_/i', (string) $id1) === 1;
+
+            $cdnShowMattersDocSubtab = ($matter_cnt > 0) && !($hideMatterDocumentsForBankMatter ?? false);
             
             // Show client menu if: valid matter ID in URL OR client has any matters
             if( $isMatterIdInUrl || $matter_cnt > 0 )
             {  //if client unique reference id is present in url
             ?>
-                <button class="client-nav-button active" data-tab="personaldetails">
-                    <i class="fas fa-user"></i>
-                    <span>Personal Details</span>
+                <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button active" data-tab="personaldetails" aria-selected="true" aria-controls="personaldetails-tab">
+                    <i class="fas fa-th-large" aria-hidden="true"></i>
+                    <span>Overview</span>
                 </button>
-                <button class="client-nav-button" data-tab="activityfeed">
-                    <i class="fas fa-history"></i>
-                    <span>Activity</span>
+                <button type="button" role="tab" id="cdn-tab-activityfeed" class="client-nav-button" data-tab="activityfeed" aria-selected="false" aria-controls="activityfeed-tab">
+                    <i class="fas fa-history" aria-hidden="true"></i>
+                    <span>Timeline</span>
                 </button>
-                <button class="client-nav-button" data-tab="noteterm">
-                    <i class="fas fa-sticky-note"></i>
+                <button type="button" role="tab" id="cdn-tab-clientaction" class="client-nav-button" data-tab="clientaction" aria-selected="false" aria-controls="clientaction-tab">
+                    <i class="fas fa-tasks" aria-hidden="true"></i>
+                    <span>Tasks</span>
+                </button>
+                <button type="button" role="tab" id="cdn-tab-noteterm" class="client-nav-button" data-tab="noteterm" aria-selected="false" aria-controls="noteterm-tab">
+                    <i class="fas fa-sticky-note" aria-hidden="true"></i>
                     <span>Notes</span>
                 </button>
-                <button class="client-nav-button" data-tab="personaldocuments">
-                    <i class="fas fa-folder-open"></i>
-                    <span>Personal Documents</span>
+                <button type="button" role="tab" id="cdn-tab-personaldocuments" class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments" aria-selected="false" aria-controls="personaldocuments-tab">
+                    <i class="fas fa-folder-open" aria-hidden="true"></i>
+                    <span>Documents</span>
                 </button>
-                @if(!$hideMatterDocumentsForBankMatter)
-                <button class="client-nav-button" data-tab="matterdocuments">
-                    <i class="fas fa-file-contract"></i>
-                    <span>Matter Documents</span>
-                </button>
-                @endif
-                <button class="client-nav-button" data-tab="legalforms">
-                    <i class="fas fa-file-signature"></i>
+                <button type="button" role="tab" id="cdn-tab-legalforms" class="client-nav-button" data-tab="legalforms" aria-selected="false" aria-controls="legalforms-tab">
+                    <i class="fas fa-file-signature" aria-hidden="true"></i>
                     <span>Legal Forms</span>
                 </button>
-                <button class="client-nav-button" data-tab="account">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                    <span>Account</span>
-                </button>
-                <button class="client-nav-button" data-tab="emails">
-                    <i class="fas fa-inbox"></i>
+                <button type="button" role="tab" id="cdn-tab-emails" class="client-nav-button" data-tab="emails" aria-selected="false" aria-controls="emails-tab">
+                    <i class="fas fa-inbox" aria-hidden="true"></i>
                     <span>Emails</span>
                 </button>
-                <button class="client-nav-button" data-tab="workflow">
-                    <i class="fas fa-stream"></i>
-                    <span>Workflow</span>
+                <button type="button" role="tab" id="cdn-tab-account" class="client-nav-button" data-tab="account" aria-selected="false" aria-controls="account-tab">
+                    <i class="fas fa-file-invoice-dollar" aria-hidden="true"></i>
+                    <span>Billing</span>
                 </button>
-                <?php
-                // Get last updated date for the client record
-                if (isset($fetchedData->updated_at) && $fetchedData->updated_at) {
-                    try {
-                        $updatedDate = \Carbon\Carbon::parse($fetchedData->updated_at);
-                        echo '<div class="sidebar-last-updated" style="margin-top: 15px; padding: 10px 15px; color: #374151; font-size: 0.85em; text-align: center; border-top: 1px solid #e2e8f0;">Last update on ' . $updatedDate->format('d/m/Y') . '</div>';
-                    } catch (\Exception $e) {
-                        // Silently fail if date parsing fails
-                    }
-                }
-                ?>
             <?php
             }
             else
             {  //If no matter is exist
+                $cdnShowMattersDocSubtab = false;
             ?>
-                <button class="client-nav-button active" data-tab="personaldetails">
-                    <i class="fas fa-user"></i>
-                    <span>Personal Details</span>
+                <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button active" data-tab="personaldetails" aria-selected="true" aria-controls="personaldetails-tab">
+                    <i class="fas fa-th-large" aria-hidden="true"></i>
+                    <span>Overview</span>
                 </button>
-                <button class="client-nav-button" data-tab="activityfeed">
-                    <i class="fas fa-history"></i>
-                    <span>Activity</span>
+                <button type="button" role="tab" id="cdn-tab-activityfeed" class="client-nav-button" data-tab="activityfeed" aria-selected="false" aria-controls="activityfeed-tab">
+                    <i class="fas fa-history" aria-hidden="true"></i>
+                    <span>Timeline</span>
                 </button>
-                <button class="client-nav-button" data-tab="noteterm">
-                    <i class="fas fa-sticky-note"></i>
+                <button type="button" role="tab" id="cdn-tab-clientaction" class="client-nav-button" data-tab="clientaction" aria-selected="false" aria-controls="clientaction-tab">
+                    <i class="fas fa-tasks" aria-hidden="true"></i>
+                    <span>Tasks</span>
+                </button>
+                <button type="button" role="tab" id="cdn-tab-noteterm" class="client-nav-button" data-tab="noteterm" aria-selected="false" aria-controls="noteterm-tab">
+                    <i class="fas fa-sticky-note" aria-hidden="true"></i>
                     <span>Notes</span>
                 </button>
-                <button class="client-nav-button" data-tab="personaldocuments">
-                    <i class="fas fa-folder-open"></i>
-                    <span>Personal Documents</span>
+                <button type="button" role="tab" id="cdn-tab-personaldocuments" class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments" aria-selected="false" aria-controls="personaldocuments-tab">
+                    <i class="fas fa-folder-open" aria-hidden="true"></i>
+                    <span>Documents</span>
                 </button>
             <?php
             }
             ?>
         </nav>
+        @if(($isMatterIdInUrl || $matter_cnt > 0) && !empty($fetchedData->updated_at))
+            @php
+                $cdnMainTabLastUpdated = null;
+                try {
+                    $cdnMainTabLastUpdated = \Carbon\Carbon::parse($fetchedData->updated_at)->format('d/m/Y');
+                } catch (\Throwable $e) {
+                }
+            @endphp
+            @if($cdnMainTabLastUpdated)
+                <p class="cdn-tab-last-updated">Last update on {{ $cdnMainTabLastUpdated }}</p>
+            @endif
+        @endif
+        </div>
     </aside>
 
     <main class="main-content" id="main-content">
@@ -394,13 +394,47 @@ use App\Http\Controllers\Controller;
         </div>
         <div class="custom-error-msg">
         </div>
-        <!-- Main Content Container with Vertical Tabs -->
         <div class="main-content-with-tabs">
+            @php
+                $cdnDocStripTab = strtolower((string) ($activeTab ?? ''));
+                $cdnDocStripVisibleDemo = in_array($cdnDocStripTab, ['personaldocuments', 'matterdocuments'], true);
+            @endphp
+            <div id="cdn-doc-subtab-strip" class="cdn-doc-subtab-strip{{ $cdnDocStripVisibleDemo ? ' is-visible' : '' }}" role="tablist" aria-label="Personal documents or matter documents">
+                <button type="button" class="cdn-doc-subtab-btn{{ $cdnDocStripTab === 'matterdocuments' ? '' : ' active' }}" data-doc-sub="personaldocuments">Personal documents</button>
+                @if(!empty($cdnShowMattersDocSubtab))
+                <button type="button" class="cdn-doc-subtab-btn{{ $cdnDocStripTab === 'matterdocuments' ? ' active' : '' }}" data-doc-sub="matterdocuments">Matter documents</button>
+                @endif
+            </div>
             <!-- Tab Contents -->
             <div class="tab-content" id="tab-content">
-            @include('crm.clients.tabs.personal_details')
+            @if(($fetchedData->type ?? '') === 'lead')
+            <div class="lead-actions-bar">
+                <a href="{{ route('leads.edit', base64_encode(convert_uuencode($fetchedData->id))) }}" class="btn btn-sm btn-secondary">
+                    <i class="fa fa-edit"></i> Edit Lead
+                </a>
+                <a href="{{ route('leads.history', base64_encode(convert_uuencode($fetchedData->id))) }}" class="btn btn-sm btn-warning lead-actions-bar__history">
+                    <i class="fa fa-history"></i> View History
+                </a>
+                @if(($fetchedData->converted ?? 0) == 0)
+                <form method="POST" action="{{ route('leads.convert_single') }}" style="display:inline;">
+                    @csrf
+                    <input type="hidden" name="lead_id" value="{{ base64_encode(convert_uuencode($fetchedData->id)) }}">
+                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Are you sure you want to convert this lead to a client?')">
+                        <i class="fa fa-user"></i> Convert To Client
+                    </button>
+                </form>
+                @else
+                <span class="btn btn-sm btn-secondary disabled">
+                    <i class="fa fa-check"></i> Converted to Client
+                </span>
+                @endif
+            </div>
+            @endif
+            @include('crm.clients.tabs.personal_details', ['suppressPersonalDetailsTagCard' => true])
             
             @include('crm.clients.tabs.activityfeed_tab')
+
+            @include('crm.clients.tabs.client_action_tab')
             
             @include('crm.clients.tabs.notes')
             
@@ -421,7 +455,6 @@ use App\Http\Controllers\Controller;
                 @include('crm.clients.tabs.legal_forms')
                 @include('crm.clients.tabs.account')
                 @include('crm.clients.tabs.emails')
-                @include('crm.clients.tabs.workflow')
             @endif
             
             @include('crm.clients.tabs.not_used_documents')
@@ -439,6 +472,22 @@ use App\Http\Controllers\Controller;
 @include('crm.clients.modals.edit-matter-office')
 @include('crm.clients.modals.client-management')
 
+{{-- Update Stage: same workflow UI + routes as production workflow tab (Admin Console–defined stages). --}}
+<div class="modal fade" id="cdn-update-stage-modal" tabindex="-1" aria-labelledby="cdnUpdateStageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cdnUpdateStageModalLabel">Update stage</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body cdn-update-stage-modal-body p-2">
+                @include('crm.clients.tabs.workflow')
+            </div>
+        </div>
+    </div>
+</div>
 
 
 
@@ -1280,9 +1329,11 @@ $(document).ready(function() {
         encodeId: @json(($encodeId ?? '')),
         matterId: @json(($id1 ?? '')),
         activeTab: @json(($activeTab ?? 'personaldetails')),
+        cdnShowMattersDocSubtab: @json(!empty($cdnShowMattersDocSubtab)),
         matterRefNo: @json(($id1 ?? '')),
         clientFirstName: @json(($fetchedData->first_name ?? 'client')),
         notPickedCallSmsDefault: @json($notPickedCallSmsDefault ?? ''),
+        detailBaseUrl: '{{ url("/clients/detail") }}',
         // SMS Template Variables
         staffName: @json(($staffName ?? '')),
         matterNumber: @json(($matterNumber ?? '')),
@@ -1354,6 +1405,9 @@ $(document).ready(function() {
             listAllMatters: '{{ URL::to("/clients/listAllMattersWRTSelClient") }}',
             getActivities: '{{ route("clients.activities") }}',
             getNotes: '{{ URL::to("/get-notes") }}',
+            matterTaskIndex: '{{ route("clients.matterTask.index") }}',
+            matterTaskStore: '{{ route("clients.matterTask.store") }}',
+            matterTaskBase: '{{ url("/clients/matter-tasks") }}',
             updatePersonalCategory: '{{ route("clients.documents.updatePersonalDocCategory") }}',
             updateVisaCategory: '{{ route("clients.documents.updateVisaDocCategory") }}',
             updateNominationCategory: '{{ route("clients.documents.updateNominationDocCategory") }}',
@@ -1484,6 +1538,7 @@ $(document).ready(function() {
 {{-- Phase 3 modules --}}
 <script src="{{ URL::asset('js/crm/clients/modules/send-to-client.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/notes.js') }}"></script>
+<script src="{{ URL::asset('js/crm/clients/modules/matter-tasks.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/checklist.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/documents.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/accounts.js') }}"></script>
@@ -1493,10 +1548,66 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/modules/appointments.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/subtabs.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/ledger-dragdrop.js') }}"></script>
+<script>
+(function () {
+    try {
+        var t = localStorage.getItem('activeTab');
+        if (t === 'workflow' || t === 'checklists') {
+            localStorage.removeItem('activeTab');
+        }
+    } catch (e) {}
+})();
+</script>
 {{-- Edit matter details modal (must load before detail-main.js) --}}
 <script src="{{ URL::asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ time() }}"></script>
 {{-- Main detail page JavaScript --}}
 <script src="{{ URL::asset('js/crm/clients/detail-main.js') }}?v={{ time() }}"></script>
+<script>
+(function ($) {
+    $(function () {
+        function applyDocStripVisibility(tabId) {
+            var $strip = $('#cdn-doc-subtab-strip');
+            if (!$strip.length) {
+                return;
+            }
+            if (tabId === 'personaldocuments' || tabId === 'matterdocuments') {
+                $strip.addClass('is-visible');
+                $('.client-nav-button').removeClass('active');
+                $('.cdn-demo-doc-nav').addClass('active');
+                $strip.find('.cdn-doc-subtab-btn').removeClass('active');
+                var $match = $strip.find('.cdn-doc-subtab-btn[data-doc-sub="' + tabId + '"]');
+                if (!$match.length && tabId === 'matterdocuments') {
+                    window.SidebarTabs.activateTab('personaldocuments');
+                    return;
+                }
+                $match.addClass('active');
+            } else {
+                $strip.removeClass('is-visible');
+            }
+        }
+
+        /* Wrap activateTab immediately — detail-main.js $(ready) runs first,
+           so SidebarTabs is already initialised by the time we get here. */
+        if (window.SidebarTabs && typeof window.SidebarTabs.activateTab === 'function') {
+            var orig = window.SidebarTabs.activateTab;
+            window.SidebarTabs.activateTab = function (tabId) {
+                orig.call(window.SidebarTabs, tabId);
+                applyDocStripVisibility(tabId);
+            };
+        }
+        /* Apply correct strip state for whichever tab was loaded from the URL. */
+        var initial = (window.ClientDetailConfig && window.ClientDetailConfig.activeTab) || '';
+        applyDocStripVisibility(initial);
+    });
+    $(document).on('click', '.cdn-doc-subtab-btn', function () {
+        var sub = $(this).data('doc-sub');
+        if (!sub || !window.SidebarTabs) {
+            return;
+        }
+        window.SidebarTabs.activateTab(sub);
+    });
+})(window.jQuery);
+</script>
 
 {{-- Sidebar Toggle JavaScript --}}
 <script>
@@ -1505,24 +1616,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const collapsedToggle = document.getElementById('collapsed-toggle');
     const sidebar = document.getElementById('client-sidebar');
     const container = document.querySelector('.crm-container');
-    
-    // Check if sidebar state is saved in localStorage
+    if (! sidebar || ! container || ! collapsedToggle) {
+        return;
+    }
     const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-    
-    // Apply initial state
     if (isCollapsed) {
         sidebar.classList.add('collapsed');
         container.classList.add('sidebar-collapsed');
     }
-    
-    // Hide sidebar functionality
-    sidebarToggle.addEventListener('click', function() {
-        sidebar.classList.add('collapsed');
-        container.classList.add('sidebar-collapsed');
-        localStorage.setItem('sidebarCollapsed', 'true');
-    });
-    
-    // Show sidebar functionality
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.add('collapsed');
+            container.classList.add('sidebar-collapsed');
+            localStorage.setItem('sidebarCollapsed', 'true');
+        });
+    }
     collapsedToggle.addEventListener('click', function() {
         sidebar.classList.remove('collapsed');
         container.classList.remove('sidebar-collapsed');
@@ -1863,4 +1971,24 @@ $(function () {
 </script>
 @endif
 
+<script>
+(function () {
+    document.addEventListener('DOMContentLoaded', function () {
+        var matterBtn = document.getElementById('cdn-focus-matter-select');
+        if (matterBtn) {
+            matterBtn.addEventListener('click', function () {
+                var $el = window.jQuery && window.jQuery('#sel_matter_id_client_detail');
+                if ($el && $el.length) {
+                    if ($el.hasClass('select2-hidden-accessible')) {
+                        $el.select2('open');
+                    } else {
+                        $el.trigger('focus');
+                    }
+                }
+            });
+        }
+        /* Update Stage opens #cdn-update-stage-modal (data-bs-toggle); no JS needed */
+    });
+})();
+</script>
 @endpush
