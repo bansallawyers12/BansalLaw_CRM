@@ -753,6 +753,8 @@ $(document).ready(function() {
 
         var $form = $(this);
 
+        $form.find('#tag_input').trigger('blur');
+
         var $container = $form.find('#tags_modal_container');
 
         if ($container.length) {

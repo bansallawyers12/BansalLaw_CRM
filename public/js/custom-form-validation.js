@@ -2635,9 +2635,28 @@ function customValidate(formName, savetype = '')
 					}
 					else if(formName == 'stags_matter')
 					{
-						var $form = $("form[name="+formName+"]");
+						var $form = $('#stags_matter');
+						if (!$form.length) {
+							$form = $("form[name="+formName+"]");
+						}
+						if (!$form.length || !$form[0]) {
+							$('.popuploader').hide();
+							$('.custom-error-msg').html('<span class="alert alert-danger">Tags form not found. Please refresh the page.</span>');
+							return false;
+						}
+						// Turn any typed-but-not-submitted text into pills (blur handler in detail-main.js)
+						$form.find('#tag_input').trigger('blur');
+						var $cid = $form.find('input[name="client_id"]');
+						var cidVal = ($cid.val() || '').trim();
+						if (!cidVal && typeof window.ClientDetailConfig !== 'undefined' && window.ClientDetailConfig.clientId) {
+							$cid.val(String(window.ClientDetailConfig.clientId));
+						}
 						var $container = $form.find('#tags_modal_container');
 						var fd = new FormData($form[0]);
+						var csrfToken = $('meta[name="csrf-token"]').attr('content');
+						if (csrfToken) {
+							fd.set('_token', csrfToken);
+						}
 						fd.delete('tag[]');
 						fd.delete('tag_normal[]');
 						fd.delete('tag_red[]');
@@ -2655,7 +2674,11 @@ function customValidate(formName, savetype = '')
 							processData: false,
 							contentType: false,
 							data: fd,
-							headers: { 'X-Requested-With': 'XMLHttpRequest' },
+							headers: {
+								'X-Requested-With': 'XMLHttpRequest',
+								'Accept': 'application/json',
+								'X-CSRF-TOKEN': csrfToken || ''
+							},
 							success: function(){
 								$('.popuploader').hide();
 								$('#tags_clients').modal('hide');
@@ -2664,8 +2687,13 @@ function customValidate(formName, savetype = '')
 							error: function(xhr){
 								$('.popuploader').hide();
 								var msg = 'Failed to save tags. Please try again.';
-								if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
-								else if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+								if (xhr.status === 419) {
+									msg = 'Security token expired. Refresh the page and try again.';
+								} else if (xhr.status === 401) {
+									msg = 'Your session has expired. Refresh the page and try again.';
+								} else if (xhr.responseJSON && xhr.responseJSON.message) {
+									msg = xhr.responseJSON.message;
+								} else if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
 									var errs = xhr.responseJSON.errors;
 									msg = (errs.client_id && errs.client_id[0]) || (errs.tag_normal && errs.tag_normal[0]) || (errs.tag_red && errs.tag_red[0]) || msg;
 								}

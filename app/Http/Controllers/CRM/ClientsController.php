@@ -6307,7 +6307,7 @@ class ClientsController extends Controller
             (array) $request->input('tag_red', []),
             static fn ($v) => $v !== null && $v !== ''
         ));
-
+       
         try {
             $client = Admin::where('id', $clientId)
                 ->whereIn('type', ['client', 'lead'])
