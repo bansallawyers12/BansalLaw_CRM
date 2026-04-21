@@ -1,5 +1,5 @@
 /**
- * Matter-scoped task list on client detail Tasks tab (new design demo).
+ * Matter-scoped task list on client detail Tasks tab.
  * Requires: jQuery, ClientDetailConfig.urls.matterTask*, clientId, csrfToken
  */
 (function ($) {

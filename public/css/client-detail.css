@@ -1918,3 +1918,827 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     border-color: var(--sidebar-active, #3a6fa8) !important;
 }
 
+
+/* =============================================================================
+   Unified client detail layout (de-scoped from former client-detail-newdesign-demo.css)
+   ============================================================================= */
+.crm-container {
+  --cdn-bg: #f5f7fb;
+  --cdn-card: #ffffff;
+  --cdn-text: #0f172a;
+  --cdn-muted: #64748b;
+  --cdn-border: #e2e8f0;
+  --cdn-primary: #1d4ed8;
+  --cdn-primary-soft: #dbeafe;
+  --cdn-radius: 14px;
+  --cdn-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+  /* Must match .main-content horizontal padding ΓÇö subtab strip full-bleed uses this */
+  --cdn-main-content-pad-x: 18px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 12px 0 24px;
+  background: var(--cdn-bg);
+  min-height: calc(100vh - 120px);
+}
+
+.crm-container *,
+.crm-container *::before,
+.crm-container *::after {
+  box-sizing: inherit;
+}
+
+/* Update Stage modal lives outside (Bootstrap portal-friendly). */
+#cdn-update-stage-modal #workflow-tab.tab-pane {
+  display: block !important;
+}
+
+#cdn-update-stage-modal .workflow-tab-container .card.full-width {
+  border: none;
+  box-shadow: none;
+}
+
+#cdn-update-stage-modal .cdn-update-stage-modal-body {
+  max-height: min(78vh, 900px);
+  overflow-y: auto;
+}
+
+/* ΓÇöΓÇö Hero card (client identity + actions) ΓÇöΓÇö */
+.cdn-client-hero {
+  background: var(--cdn-card);
+  border: 1px solid var(--cdn-border);
+  border-radius: var(--cdn-radius);
+  box-shadow: var(--cdn-shadow);
+  margin-bottom: 0;
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.cdn-client-hero__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 24px;
+  padding: 18px 18px;
+}
+
+.cdn-client-hero__identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+  flex: 1 1 320px;
+}
+
+.cdn-client-hero__avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--cdn-primary-soft);
+  color: #1e3a8a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.cdn-client-hero__text {
+  min-width: 0;
+}
+
+.cdn-client-hero__name {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--cdn-text);
+  line-height: 1.2;
+}
+
+.cdn-client-hero__edit {
+  margin-left: 6px;
+  color: var(--cdn-muted);
+  font-size: 1rem;
+  vertical-align: middle;
+}
+.cdn-client-hero__edit:hover {
+  color: var(--cdn-primary);
+}
+
+.cdn-client-hero__meta {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: 13px;
+  color: var(--cdn-muted);
+  font-weight: 600;
+}
+
+.cdn-client-hero__meta-item {
+  color: #475569;
+}
+
+.cdn-client-hero__matter-row {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.cdn-client-hero__matter-chip {
+  border: 1px solid var(--cdn-border);
+  background: #f8fafc;
+  color: #334155;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+}
+
+.cdn-client-hero__matter-btn {
+  border: 1px solid #bfd7ff;
+  background: var(--cdn-primary-soft);
+  color: #1e40af;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 6px 12px;
+}
+.cdn-client-hero__matter-btn:hover {
+  background: #bfdbfe;
+  color: #1e3a8a;
+}
+
+.cdn-client-hero__tags {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.cdn-client-hero__tag {
+  border: 1px solid #cfe0ff;
+  background: #eef4ff;
+  color: #1e3a8a;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  line-height: 1.2;
+}
+
+.cdn-client-hero__tag--more {
+  border-color: var(--cdn-border);
+  background: #f8fafc;
+  color: #475569;
+}
+
+.cdn-client-hero__tag-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 4px;
+}
+
+.cdn-client-hero__tag-add {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  font-weight: 700;
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+
+.cdn-client-hero__tag-add:focus-visible {
+  outline: 2px solid var(--cdn-primary);
+  outline-offset: 2px;
+}
+
+.cdn-client-hero__tag-add--blue {
+  background: var(--cdn-primary);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(29, 78, 216, 0.35);
+}
+
+.cdn-client-hero__tag-add--blue:hover {
+  background: #1e40af;
+  transform: scale(1.05);
+}
+
+.cdn-client-hero__tag-add--red {
+  background: #dc2626;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.35);
+}
+
+.cdn-client-hero__tag-add--red:focus-visible {
+  outline-color: #dc2626;
+}
+
+.cdn-client-hero__tag-add--red:hover {
+  background: #b91c1c;
+  transform: scale(1.05);
+}
+
+.cdn-client-hero__actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  flex: 0 1 400px;
+  align-content: start;
+  justify-items: stretch;
+}
+
+/* Row 2: Appointment + primary Update Stage (primary spans two columns) */
+.cdn-client-hero__actions .cdn-client-hero__action-btn:nth-child(4) {
+  grid-column: 1;
+}
+
+.cdn-client-hero__action-btn {
+  border: 1px solid var(--cdn-border);
+  background: #fff;
+  color: var(--cdn-text);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 9px 12px;
+  text-decoration: none;
+  cursor: pointer;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cdn-client-hero__action-btn:hover {
+  background: #f8fafc;
+  color: var(--cdn-text);
+  text-decoration: none;
+}
+
+.cdn-client-hero__actions .cdn-client-hero__action-btn--primary {
+  grid-column: 2 / -1;
+}
+
+.cdn-client-hero__action-btn--primary {
+  background: var(--cdn-primary);
+  border-color: var(--cdn-primary);
+  color: #fff;
+}
+.cdn-client-hero__action-btn--primary:hover {
+  background: #1e40af;
+  border-color: #1e40af;
+  color: #fff;
+}
+
+/* Section tabs: horizontal pill row inside main card */
+/* Visually hidden matter select + ref fields (demo: sidebar chrome removed; IDs kept for detail-main.js) */
+.client-detail-demo-hidden-matter {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Primary tab row lives in the aside (cdn-topbar) so it is always visible,
+   even when #main-content is hidden by the activityfeed tab's setMainColumnForTab(). */
+.cdn-tabs-strip.cdn-main-tab-bar {
+  background: var(--cdn-card);
+  border: 1px solid var(--cdn-border);
+  border-radius: var(--cdn-radius);
+  box-shadow: var(--cdn-shadow);
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.cdn-main-tab-bar .client-sidebar-nav {
+  padding: 12px 14px 14px;
+  margin: 0;
+  border-top: none;
+  border-bottom: none;
+  background: transparent;
+}
+
+/* Layout: top bar (hero only), then main + activity feed in two columns */
+.crm-container {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    "cdn-topbar cdn-topbar"
+    "cdn-main cdn-feed";
+  gap: 16px;
+  align-items: start;
+  width: 100%;
+  max-width: none !important;
+  background: transparent;
+  /* Layout adds padding to .crm-container; keep vertical breathing room, horizontal gutter */
+  padding: 16px !important;
+  box-sizing: border-box;
+}
+
+.crm-container.sidebar-collapsed {
+  gap: 16px;
+}
+
+/* Top stack: hero + hidden matter controls (tabs are inside .main-content) */
+.client-navigation-sidebar {
+  position: relative;
+  grid-area: cdn-topbar;
+  display: flex;
+  flex-direction: column;
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: unset !important;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+  gap: 0;
+}
+
+/* Collapsing must not hide the hero: aside now only holds identity + matter controls. */
+.client-navigation-sidebar.collapsed {
+  transform: none !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  overflow: visible !important;
+  pointer-events: auto !important;
+}
+
+.crm-container > .collapsed-toggle-btn {
+  grid-area: cdn-topbar;
+  position: relative;
+  justify-self: start;
+  align-self: start;
+  margin: 10px 0 0 10px;
+  z-index: 3;
+}
+
+.crm-container.sidebar-collapsed > .collapsed-toggle-btn {
+  position: relative;
+  top: auto;
+  left: auto;
+}
+
+.main-content {
+  grid-area: cdn-main;
+  min-width: 0;
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  background: var(--cdn-card);
+  border: 1px solid var(--cdn-border);
+  border-radius: var(--cdn-radius);
+  box-shadow: var(--cdn-shadow);
+  padding: 16px var(--cdn-main-content-pad-x) 20px;
+}
+
+.crm-container > aside.activity-feed {
+  grid-area: cdn-feed;
+  min-width: 0;
+  align-self: stretch;
+}
+
+/* Activity-only tab: feed spans full width below top bar */
+.crm-container.crm-container--activity-tab {
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "cdn-topbar"
+    "cdn-feed";
+}
+
+.crm-container.crm-container--activity-tab > aside.activity-feed {
+  grid-area: cdn-feed;
+  width: 100%;
+  max-width: none;
+}
+
+.sidebar-header-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-client-lead-buttons {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.sidebar-matter-selection {
+  flex: 1 1 220px;
+  min-width: 180px;
+  max-width: 100%;
+}
+
+.sidebar-matter-selection .select2-container {
+  width: 100% !important;
+  max-width: 420px;
+}
+
+.matter-status-badge {
+  flex: 0 0 auto;
+  align-self: center;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  background: #f1f5f9;
+  border: 1px solid var(--cdn-border);
+  color: #334155;
+}
+
+.client-id {
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  color: var(--cdn-muted);
+  font-weight: 600;
+}
+
+.client-name {
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--cdn-text);
+}
+
+.client-sidebar-nav {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  margin: 0;
+  border-top: 1px solid var(--cdn-border);
+  background: #fafcff;
+}
+
+.client-nav-button {
+  flex: 0 0 auto;
+  border-radius: 9px;
+  border: 1px solid var(--cdn-border);
+  background: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  color: #334155;
+  white-space: nowrap;
+  padding: 7px 10px;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+/* Design-page pills: full radius, text-only (icons hidden).
+   Must explicitly cancel all layout-level overrides on .client-nav-button:
+   width:100%, margin-bottom:2px, border:none, text-align:left */
+.cdn-main-tab-bar .client-nav-button {
+  border-radius: 9px;
+  padding: 8px 18px;
+  font-size: 13px;
+  line-height: 1.2;
+  width: auto !important;
+  min-width: 0;
+  max-width: none;
+  margin-bottom: 0 !important;
+  text-align: center;
+  border: 1px solid var(--cdn-border) !important;
+  background: #fff !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.cdn-main-tab-bar .client-nav-button i {
+  display: none;
+}
+
+/* Cancel the translateX nudge the layout adds */
+.cdn-main-tab-bar .client-nav-button:hover {
+  border-color: #bfd7ff !important;
+  background: #f8fafc !important;
+  color: #334155 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Active: full border reset (layout active uses border-left:3px solid) */
+.cdn-main-tab-bar .client-nav-button.active {
+  border: 1px solid var(--cdn-primary) !important;
+  color: var(--cdn-primary) !important;
+  background: var(--cdn-primary-soft) !important;
+  box-shadow: none !important;
+}
+
+.client-nav-button i {
+  margin-right: 6px;
+}
+
+/* General non-pill buttons (used in sidebar-style fallback if ever needed) */
+.client-nav-button:hover {
+  border-color: #bfd7ff;
+  background: #f8fafc;
+}
+
+.client-nav-button.active {
+  border-color: var(--cdn-primary);
+  color: var(--cdn-primary);
+  background: var(--cdn-primary-soft);
+  box-shadow: none;
+  border-left-width: 1px;   /* cancel layout's border-left:3px */
+}
+
+.cdn-main-tab-bar .client-nav-button:focus {
+  outline: none;
+}
+
+.cdn-main-tab-bar .client-nav-button:focus-visible {
+  outline: 2px solid var(--cdn-primary);
+  outline-offset: 2px;
+}
+
+.sidebar-last-updated {
+  flex-basis: 100%;
+  width: 100%;
+  margin-top: 4px !important;
+  padding: 8px 12px !important;
+  text-align: left !important;
+  border-top: 1px dashed var(--cdn-border) !important;
+  background: transparent !important;
+}
+
+.cdn-tab-last-updated {
+  margin: 0;
+  padding: 0 14px 10px !important;
+  text-align: left !important;
+  border-top: none !important;
+  color: var(--cdn-muted) !important;
+  font-size: 12px !important;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Stack subtab strip above tab panes. Base layout uses row flex (vertical nav + content);
+   demo has no side nav here ΓÇö row layout put the strip beside .tab-content and the stripΓÇÖs
+   calc(100% + ΓÇª) width collapsed the content column to ~0, hiding documents. */
+.main-content-with-tabs {
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.main-content-with-tabs > .tab-content {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Document tab: Personal / Matter documents sub-tabs (demo).
+   Hidden by default; .is-visible is set from Blade on first paint for /personaldocuments URLs
+   so the row appears even if JS is slow or fails. */
+.cdn-doc-subtab-strip {
+  display: none;
+  flex-wrap: wrap;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px var(--cdn-main-content-pad-x);
+  background: #f8fafc;
+  border: 1px solid var(--cdn-border);
+  border-radius: 10px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.cdn-doc-subtab-strip.is-visible {
+  display: flex !important;
+  /* Span full width of the main panel (cancel .main-content horizontal padding) */
+  width: calc(100% + 2 * var(--cdn-main-content-pad-x));
+  max-width: none;
+  margin-left: calc(-1 * var(--cdn-main-content-pad-x));
+  margin-right: calc(-1 * var(--cdn-main-content-pad-x));
+  margin-bottom: 16px;
+}
+
+.cdn-doc-subtab-btn {
+  border-radius: 999px;
+  border: 1px solid var(--cdn-border);
+  background: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  color: #334155;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.cdn-doc-subtab-btn:hover {
+  border-color: #bfd7ff;
+  background: #f8fafc;
+}
+
+.cdn-doc-subtab-btn.active {
+  border-color: var(--cdn-primary);
+  color: var(--cdn-primary);
+  background: var(--cdn-primary-soft);
+}
+
+.sidebar-toggle-btn,
+.client-detail-back-btn {
+  border-radius: 10px;
+}
+
+.collapsed-toggle-btn {
+  border-radius: 12px;
+  background: var(--cdn-primary);
+  box-shadow: var(--cdn-shadow);
+}
+
+#sidebar-toggle .fa-chevron-left {
+  transform: rotate(-90deg);
+}
+
+@media (max-width: 1024px) {
+  /* Keep horizontal flush with viewport; gutter comes from .crm-container */
+  .crm-container {
+    padding: 12px 0 20px;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "cdn-topbar"
+      "cdn-main"
+      "cdn-feed";
+  }
+
+  .crm-container.crm-container--activity-tab {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "cdn-topbar"
+      "cdn-feed";
+  }
+}
+
+@media (max-width: 640px) {
+  .cdn-client-hero__inner {
+    flex-direction: column;
+  }
+
+  .cdn-client-hero__actions {
+    grid-template-columns: 1fr;
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: none;
+  }
+
+  .cdn-client-hero__actions .cdn-client-hero__action-btn:nth-child(4),
+  .cdn-client-hero__actions .cdn-client-hero__action-btn--primary {
+    grid-column: auto;
+  }
+}
+
+/* Tasks tab ΓÇö single-purpose layout */
+.cdn-tasks-tab-card {
+  border: 1px solid var(--cdn-border, #e2e8f0);
+  border-radius: var(--cdn-radius, 12px);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.cdn-tasks-tab-card__body {
+  padding: 1.25rem 1.35rem 1.35rem;
+}
+
+.cdn-tasks-tab-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--cdn-text, #0f172a);
+}
+
+.cdn-tasks-tab-title__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 10px;
+  /* Fallback when color-mix() is unsupported */
+  background: rgba(30, 58, 95, 0.12);
+  background: color-mix(in srgb, var(--cdn-primary, #1e3a5f) 12%, transparent);
+  color: var(--cdn-primary, #1e3a5f);
+  font-size: 0.95rem;
+}
+
+.cdn-matter-tasks {
+  margin-bottom: 0;
+}
+
+.cdn-matter-tasks--locked .cdn-matter-task-composer {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.cdn-matter-task__list > .cdn-matter-task__status {
+  margin-bottom: 0;
+  padding: 0.35rem 0;
+  line-height: 1.45;
+}
+
+.cdn-matter-task-composer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.65rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--cdn-border, #e2e8f0);
+}
+
+.cdn-matter-task-composer__input {
+  flex: 1 1 12rem;
+  min-width: 10rem;
+  border-radius: 10px;
+  border-color: var(--cdn-border, #e2e8f0);
+}
+
+.cdn-matter-task-composer__btn {
+  flex-shrink: 0;
+  border-radius: 10px;
+  font-weight: 600;
+  padding-left: 1.1rem;
+  padding-right: 1.1rem;
+}
+
+/* Tasks tab ΓÇö matter task list */
+.cdn-matter-task__ul {
+  border: 1px solid var(--cdn-border, #e2e8f0);
+  border-radius: var(--cdn-radius, 12px);
+  padding: 4px 12px;
+  background: var(--cdn-card, #fff);
+}
+
+.cdn-matter-task__row {
+  gap: 0.75rem;
+}
+
+/* Checkbox + label are flex siblings; avoid Bootstrap .form-check float/negative-margin overlap */
+.cdn-matter-task__row .cdn-matter-task__cb {
+  float: none;
+  margin: 0.35rem 0 0;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.cdn-matter-task__row .cdn-matter-task__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.45;
+  cursor: pointer;
+  padding-top: 0.2rem;
+}
+
+.cdn-matter-task__row:last-child {
+  border-bottom: none !important;
+}
+
+.cdn-matter-task__label.is-done {
+  text-decoration: line-through;
+  color: var(--cdn-muted, #64748b);
+}
+
+.cdn-matter-task__del {
+  line-height: 1;
+  min-width: 2rem;
+  font-size: 1.25rem;
+  text-decoration: none;
+}
+
