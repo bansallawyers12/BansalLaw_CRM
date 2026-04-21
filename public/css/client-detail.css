@@ -768,43 +768,6 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     padding: 0 1px;
 }
 
-/* New layout demo — opens detail-demo-newdesign for this client/matter/tab */
-.client-navigation-sidebar .client-detail-newdesign-demo-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    min-height: 32px;
-    padding: 0 12px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    color: #1e40af;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    border-radius: 16px;
-    text-decoration: none;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-.client-navigation-sidebar .client-detail-newdesign-demo-link:hover {
-    color: #1e3a8a;
-    background: #dbeafe;
-    border-color: #93c5fd;
-    text-decoration: none;
-}
-.client-navigation-sidebar .client-detail-newdesign-demo-link:focus {
-    outline: none;
-}
-.client-navigation-sidebar .client-detail-newdesign-demo-link:focus-visible {
-    outline: 2px solid #2563eb;
-    outline-offset: 2px;
-}
-.client-navigation-sidebar .client-detail-newdesign-demo-link i {
-    font-size: 11px;
-    opacity: 0.9;
-}
-
 /* Back — same grey language as collapse control, pill shape, no default browser border */
 .client-navigation-sidebar .client-detail-back-btn {
     display: inline-flex;

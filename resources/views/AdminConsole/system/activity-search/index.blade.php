@@ -220,7 +220,7 @@
                                                             </td>
                                                             <td>
                                                                 @if($activity->client_first_name)
-                                                                    <a href="{{ route('crm.clients.detail', $activity->client_id) }}" target="_blank">
+                                                                    <a href="{{ route('clients.detail', base64_encode(convert_uuencode($activity->client_id))) }}" target="_blank">
                                                                         {{ $activity->client_first_name }} {{ $activity->client_last_name }}
                                                                     </a>
                                                                 @else
@@ -268,7 +268,7 @@
                                                                     <i class="fas fa-eye"></i>
                                                                 </button>
                                                                 @if($activity->client_id)
-                                                                    <a href="{{ route('crm.clients.detail', $activity->client_id) }}" 
+                                                                    <a href="{{ route('clients.detail', base64_encode(convert_uuencode($activity->client_id))) }}" 
                                                                        target="_blank" 
                                                                        rel="noopener"
                                                                        class="btn btn-sm btn-primary"

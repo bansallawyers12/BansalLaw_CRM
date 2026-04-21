@@ -720,7 +720,7 @@
                     Client: {{ $document->client->first_name }} {{ $document->client->last_name }}
                 </a>
                 @elseif($document->lead_id && $document->lead)
-                <a href="{{ route('leads.detail', $document->lead_id) }}">
+                <a href="{{ route('clients.detail', base64_encode(convert_uuencode($document->lead_id))) }}">
                     Lead: {{ $document->lead->first_name }} {{ $document->lead->last_name }}
                 </a>
                 @endif

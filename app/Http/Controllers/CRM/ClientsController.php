@@ -2046,7 +2046,7 @@ class ClientsController extends Controller
         }
     }
 
-    public function detail(Request $request, $id = NULL, $id1 = NULL, $tab = NULL, string $detailView = 'crm.clients.detail')
+    public function detail(Request $request, $id = NULL, $id1 = NULL, $tab = NULL)
     {
 
         if (isset($request->t)) {
@@ -2067,7 +2067,7 @@ class ClientsController extends Controller
             $knownTabNames = [
                 'personaldetails', 'companydetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments',
                 'emails', 'client_portal', 'legalforms',
-                // Demo layout aliases (new-design preview)
+                // Shorter tab slugs / legacy bookmarks
                 'overview', 'documents', 'clientaction',
                 // Legacy removed tab slugs - keep as reserved so they are not treated as matter IDs
                 'formgenerations', 'formgenerationsl',
@@ -2100,7 +2100,7 @@ class ClientsController extends Controller
                     'cid' => (int) $id,
                     'name' => $displayName,
                     'record_type' => (string) ($targetRecord->type ?? 'client'),
-                    // Return user to the exact URL they opened (production detail, demo detail, query string, etc.).
+                    // Return user to the exact URL they opened (including query string).
                     'redirect_to' => $request->fullUrl(),
                 ];
 
@@ -2114,24 +2114,22 @@ class ClientsController extends Controller
             if (strtolower((string) $activeTab) === 'client_portal') {
                 $activeTab = 'workflow';
             }
-            // Demo new-design view: URL aliases + hide removed tabs
-            if ($detailView === 'crm.clients.detail_newdesign_demo') {
-                $atn = strtolower((string) $activeTab);
-                if ($atn === 'overview') {
+            // URL tab aliases (legacy bookmarks / shorter slugs)
+            $atn = strtolower((string) $activeTab);
+            if ($atn === 'overview') {
+                $activeTab = 'personaldetails';
+            } elseif ($atn === 'documents') {
+                $activeTab = 'personaldocuments';
+            } elseif (in_array($atn, ['workflow', 'checklists'], true)) {
+                $activeTab = 'clientaction';
+            }
+            if (strtolower((string) $activeTab) === 'matterdocuments') {
+                $mcMatterDoc = \App\Models\ClientMatter::query()
+                    ->where('client_id', (int) $id)
+                    ->where('matter_status', 1)
+                    ->count();
+                if ($mcMatterDoc < 1) {
                     $activeTab = 'personaldetails';
-                } elseif ($atn === 'documents') {
-                    $activeTab = 'personaldocuments';
-                } elseif (in_array($atn, ['workflow', 'checklists'], true)) {
-                    $activeTab = 'clientaction';
-                }
-                if (strtolower((string) $activeTab) === 'matterdocuments') {
-                    $mcDemo = \App\Models\ClientMatter::query()
-                        ->where('client_id', (int) $id)
-                        ->where('matter_status', 1)
-                        ->count();
-                    if ($mcDemo < 1) {
-                        $activeTab = 'personaldetails';
-                    }
                 }
             }
 
@@ -2252,7 +2250,7 @@ class ClientsController extends Controller
                 $showGoogleReviewReminderModal = $this->shouldShowGoogleReviewReminderModal($fetchedData);
 
                 //Return the view with all data
-                return view($detailView, compact(
+                return view('crm.clients.detail', compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
                     'experiences', 'testScores', 'visaCountries', 'clientOccupations','ClientPoints', 'clientSpouseDetail',
                     'encodeId', 'id1','clientFamilyDetails', 'activeTab',
@@ -2266,14 +2264,6 @@ class ClientsController extends Controller
         } else {
             return redirect()->route('clients.index')->with('error', config('constants.unauthorized'));
         }
-    }
-
-    /**
-     * Same behaviour as {@see detail()} but renders the duplicated Blade used for new-design QA (does not replace production).
-     */
-    public function detailNewDesignDemo(Request $request, $id = NULL, $id1 = NULL, $tab = NULL)
-    {
-        return $this->detail($request, $id, $id1, $tab, 'crm.clients.detail_newdesign_demo');
     }
 
     protected function googleReviewCrmTemplateExists(): bool

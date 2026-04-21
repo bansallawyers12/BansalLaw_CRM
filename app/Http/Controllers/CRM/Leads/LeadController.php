@@ -394,7 +394,9 @@ class LeadController extends Controller
             $fetchedData = Lead::withArchived()->with('assignedTo')->where('id', $id)->first();
             
             if ($fetchedData) {
-                return view('crm.leads.detail', compact('fetchedData'));
+                $encodedId = base64_encode(convert_uuencode($fetchedData->id));
+
+                return redirect()->route('clients.detail', [$encodedId]);
             } else {
                 return Redirect::to('/leads')->with('error', 'Lead does not exist');
             }
