@@ -2443,6 +2443,17 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   box-shadow: none !important;
 }
 
+/* Layout crm_client_detail.blade.php sets .client-nav-button.active span { color: white } for the
+   vertical sidebar (dark gradient active state). The horizontal pill strip uses a LIGHT background;
+   without this, span/i keep white and are unreadable. */
+.crm-container.crm-container--unified .cdn-main-tab-bar .client-nav-button.active span,
+.crm-container.crm-container--unified .cdn-main-tab-bar .client-nav-button.active i,
+.cdn-main-tab-bar .client-nav-button.active span,
+.cdn-main-tab-bar .client-nav-button.active i {
+  color: #1d4ed8 !important;
+  opacity: 1 !important;
+}
+
 .crm-container.crm-container--unified .client-nav-button i {
   margin-right: 6px;
 }
