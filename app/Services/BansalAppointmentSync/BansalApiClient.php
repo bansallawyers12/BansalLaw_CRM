@@ -414,7 +414,7 @@ class BansalApiClient
 
             $url = rtrim((string) config(
                 'services.bansal_api.disabled_datetime_url',
-                'http://www.bansallawyers.com.au/api/getdisableddatetimenewapi'
+                'https://www.bansallawyers.com.au/api/getdisableddatetimenewapi'
             ), '/');
 
             $response = Http::timeout($this->timeout)

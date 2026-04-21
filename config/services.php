@@ -137,8 +137,8 @@ return [
     | Set these in the environment (e.g. server env or secrets manager), not
     | necessarily in .env, if you prefer to keep secrets out of files.
     |
-    | - BANSAL_API_BASE_URL or BANSAL_API_URL: API root (no trailing slash). Default: http://www.bansallawyers.com.au
-    |   If your CRM routes live under /api/crm, set e.g. http://www.bansallawyers.com.au/api/crm
+    | - BANSAL_API_BASE_URL or BANSAL_API_URL: API root (trailing slash optional; stripped). Default: https://www.bansallawyers.com.au/
+    |   If your CRM routes live under /api/crm, set e.g. https://www.bansallawyers.com.au/api/crm
     | - Bearer token: APPOINTMENT_API_BEARER_TOKEN (primary), with BANSAL_API_TOKEN as fallback.
     | - BANSAL_API_DISABLED_DATETIME_URL: Full URL for getDisabledDateTime (default: /api/getdisableddatetimenewapi on same host).
     | - BANSAL_API_DISABLED_DATETIME_SERVICE_ID: service_id field for that POST (default 1).
@@ -151,12 +151,12 @@ return [
     */
 
     'bansal_api' => [
-        'url' => rtrim(env('BANSAL_API_BASE_URL', env('BANSAL_API_URL', 'http://www.bansallawyers.com.au')), '/'),
+        'url' => rtrim(env('BANSAL_API_BASE_URL', env('BANSAL_API_URL', 'https://www.bansallawyers.com.au/')), '/'),
         'token' => env('APPOINTMENT_API_BEARER_TOKEN', env('BANSAL_API_TOKEN')),
         /** Full POST URL; Bearer token = APPOINTMENT_API_BEARER_TOKEN (or BANSAL_API_TOKEN) */
         'disabled_datetime_url' => env(
             'BANSAL_API_DISABLED_DATETIME_URL',
-            'http://www.bansallawyers.com.au/api/getdisableddatetimenewapi'
+            'https://www.bansallawyers.com.au/api/getdisableddatetimenewapi'
         ),
         /** Sent as service_id on POST to getdisableddatetimenewapi (default 1). */
         'disabled_datetime_service_id' => (int) env('BANSAL_API_DISABLED_DATETIME_SERVICE_ID', 1),
