@@ -13,7 +13,7 @@
 <?php
 use App\Http\Controllers\Controller;
 ?>
-<div class="crm-container" data-client-id="{{ $fetchedData->id }}">
+<div class="crm-container crm-container--unified" data-client-id="{{ $fetchedData->id }}">
     <!-- Collapsed Toggle Button (shown when sidebar is collapsed) -->
     <button id="collapsed-toggle" class="collapsed-toggle-btn" title="Show Sidebar">
         ☰
@@ -465,6 +465,7 @@ use App\Http\Controllers\Controller;
 
     <!-- Activity Feed (Personal Details, Activity nav, etc.) -->
     @include('crm.clients.tabs.activity_feed')
+</div>
 </div>
 
 @include('crm.clients.addclientmodal')
@@ -1033,11 +1034,10 @@ use App\Http\Controllers\Controller;
 				<button type="button" class="btn btn-primary" onclick="customValidate('sent-email-reassign-to-client-matter')">
 					<i class="fa fa-save"></i> Re-assign Sent Email
 				</button>
-			</div>
-			</form>
+		</div>
+		</form>
 		</div>
 	</div>
-</div>
 
 <div class="modal fade" id="sent_mail_preview_modal">
 	<div class="modal-dialog modal-lg">

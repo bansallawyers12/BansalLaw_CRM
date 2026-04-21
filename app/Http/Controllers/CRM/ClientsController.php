@@ -2067,7 +2067,7 @@ class ClientsController extends Controller
             $knownTabNames = [
                 'personaldetails', 'companydetails', 'activityfeed', 'noteterm', 'personaldocuments', 'matterdocuments', 'nominationdocuments',
                 'emails', 'client_portal', 'legalforms',
-                // Demo layout aliases (new-design preview)
+                // Shorter tab slugs / legacy bookmarks
                 'overview', 'documents', 'clientaction',
                 // Legacy removed tab slugs - keep as reserved so they are not treated as matter IDs
                 'formgenerations', 'formgenerationsl',
@@ -2100,7 +2100,7 @@ class ClientsController extends Controller
                     'cid' => (int) $id,
                     'name' => $displayName,
                     'record_type' => (string) ($targetRecord->type ?? 'client'),
-                    // Return user to the exact URL they opened (production detail, demo detail, query string, etc.).
+                    // Return user to the exact URL they opened (including query string).
                     'redirect_to' => $request->fullUrl(),
                 ];
 
@@ -2114,7 +2114,7 @@ class ClientsController extends Controller
             if (strtolower((string) $activeTab) === 'client_portal') {
                 $activeTab = 'workflow';
             }
-            // Tab aliases for the new layout
+            // URL tab aliases (legacy bookmarks / shorter slugs)
             $atn = strtolower((string) $activeTab);
             if ($atn === 'overview') {
                 $activeTab = 'personaldetails';
@@ -2124,11 +2124,11 @@ class ClientsController extends Controller
                 $activeTab = 'clientaction';
             }
             if (strtolower((string) $activeTab) === 'matterdocuments') {
-                $mcCheck = \App\Models\ClientMatter::query()
+                $mcMatterDoc = \App\Models\ClientMatter::query()
                     ->where('client_id', (int) $id)
                     ->where('matter_status', 1)
                     ->count();
-                if ($mcCheck < 1) {
+                if ($mcMatterDoc < 1) {
                     $activeTab = 'personaldetails';
                 }
             }

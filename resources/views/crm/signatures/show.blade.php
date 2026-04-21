@@ -716,7 +716,7 @@
             <div>
                 <strong><i class="fas fa-link"></i> Associated with:</strong>
                 @if($document->client_id && $document->client)
-                <a href="{{ route('clients.detail', $document->client_id) }}">
+                <a href="{{ route('clients.detail', base64_encode(convert_uuencode($document->client_id))) }}">
                     Client: {{ $document->client->first_name }} {{ $document->client->last_name }}
                 </a>
                 @elseif($document->lead_id && $document->lead)

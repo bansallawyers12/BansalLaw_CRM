@@ -1315,7 +1315,7 @@ class PublicDocumentController extends Controller
                     $associatedEntity = \App\Models\Admin::find($clientMatter->client_id);
                     $responsiblePersonId = $clientMatter->sel_person_responsible;
                     $entityType = 'client';
-                    $notificationUrl = url("/clients/detail/{$clientMatter->client_id}");
+                    $notificationUrl = url('/clients/detail/' . base64_encode(convert_uuencode($clientMatter->client_id)));
                     
                     if ($associatedEntity) {
                         $this->createActivityAndNotification(
@@ -1337,7 +1337,7 @@ class PublicDocumentController extends Controller
                 
                 if ($associatedEntity) {
                     $entityType = ($associatedEntity->type === 'lead') ? 'lead' : 'client';
-                    $notificationUrl = url("/clients/detail/{$associatedEntity->id}");
+                    $notificationUrl = url('/clients/detail/' . base64_encode(convert_uuencode($associatedEntity->id)));
                     
                     // For direct client associations, try to find responsible person
                     // You can set this to a default admin or get from document creator
@@ -1361,7 +1361,7 @@ class PublicDocumentController extends Controller
                     
                     if ($associatedEntity) {
                         $entityType = ($associatedEntity->type === 'lead') ? 'lead' : 'client';
-                        $notificationUrl = url("/clients/detail/{$associatedEntity->id}");
+                        $notificationUrl = url('/clients/detail/' . base64_encode(convert_uuencode($associatedEntity->id)));
                         $responsiblePersonId = $document->created_by ?? null;
                         $matterRef = null;
                         
@@ -1388,7 +1388,7 @@ class PublicDocumentController extends Controller
                     
                     if ($associatedEntity) {
                         $entityType = 'lead';
-                        $notificationUrl = url("/clients/detail/" . base64_encode(convert_uuencode($associatedEntity->id)));
+                        $notificationUrl = url('/clients/detail/' . base64_encode(convert_uuencode($associatedEntity->id)));
                         $responsiblePersonId = $document->created_by ?? null;
                         
                         $this->createActivityAndNotification(

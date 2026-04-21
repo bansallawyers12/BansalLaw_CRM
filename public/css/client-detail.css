@@ -768,7 +768,6 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     padding: 0 1px;
 }
 
-
 /* Back — same grey language as collapse control, pill shape, no default browser border */
 .client-navigation-sidebar .client-detail-back-btn {
     display: inline-flex;
@@ -879,11 +878,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     width: 0;
 }
 
-/* Main content expansion when sidebar is collapsed */
-.crm-container {
-    display: flex;
-    width: 100%;
-}
+/* .crm-container display uses grid in the unified layout section at end of file */
 
 .crm-container.sidebar-collapsed {
     gap: 0;
@@ -1919,12 +1914,11 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     border-color: var(--sidebar-active, #3a6fa8) !important;
 }
 
-/* === New layout styles (canonical) === */
 
-/**
- * Canonical client detail page styles.
- */
-:root {
+/* =============================================================================
+   Unified client detail layout (de-scoped from former client-detail-newdesign-demo.css)
+   ============================================================================= */
+.crm-container.crm-container--unified {
   --cdn-bg: #f5f7fb;
   --cdn-card: #ffffff;
   --cdn-text: #0f172a;
@@ -1945,9 +1939,9 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   min-height: calc(100vh - 120px);
 }
 
-*,
-*::before,
-*::after {
+.crm-container.crm-container--unified *,
+.crm-container.crm-container--unified *::before,
+.crm-container.crm-container--unified *::after {
   box-sizing: inherit;
 }
 
@@ -1964,85 +1958,6 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 #cdn-update-stage-modal .cdn-update-stage-modal-body {
   max-height: min(78vh, 900px);
   overflow-y: auto;
-}
-
-/* Demo notice — side inset so content does not touch the viewport edge */
-.cdn-demo-banner {
-  background: var(--cdn-card);
-  border: 1px solid var(--cdn-border);
-  border-radius: var(--cdn-radius);
-  box-shadow: var(--cdn-shadow);
-  margin: 0 16px 16px;
-  padding: 12px 16px;
-}
-
-.cdn-demo-banner__inner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 14px;
-  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
-  font-size: 14px;
-  color: var(--cdn-text);
-}
-
-.cdn-demo-banner__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.cdn-demo-banner__badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fcd34d;
-}
-
-.cdn-demo-banner__text {
-  flex: 1 1 220px;
-  color: #334155;
-  line-height: 1.45;
-}
-
-.cdn-demo-banner__link {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 12px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: none;
-  color: #1e40af;
-  background: var(--cdn-primary-soft);
-  border: 1px solid #bfd7ff;
-}
-
-.cdn-demo-banner__link:hover {
-  background: #bfdbfe;
-  color: #1e3a8a;
-}
-
-.cdn-demo-banner__link:focus-visible {
-  outline: 2px solid var(--cdn-primary);
-  outline-offset: 2px;
-}
-
-.cdn-demo-banner__link--muted {
-  background: #fff;
-  color: #475569;
-  border-color: var(--cdn-border);
-}
-
-.cdn-demo-banner__link--muted:hover {
-  background: #f8fafc;
-  color: #1e293b;
 }
 
 /* —— Hero card (client identity + actions) —— */
@@ -2319,7 +2234,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 /* Layout: top bar (hero only), then main + activity feed in two columns */
-.crm-container {
+.crm-container.crm-container--unified {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
   grid-template-rows: auto minmax(0, 1fr);
@@ -2330,18 +2245,19 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   align-items: start;
   width: 100%;
   max-width: none !important;
-  background: transparent;
-  /* Layout adds padding to .crm-container; keep vertical breathing room, horizontal gutter */
+  /* Keep page tint from first .crm-container.crm-container--unified block (tokens); cards stay white inside panes */
+  background: var(--cdn-bg);
+  /* Layout adds padding to .crm-container.crm-container--unified; keep vertical breathing room, horizontal gutter */
   padding: 16px !important;
   box-sizing: border-box;
 }
 
-.crm-container.sidebar-collapsed {
+.crm-container.crm-container--unified.sidebar-collapsed {
   gap: 16px;
 }
 
 /* Top stack: hero + hidden matter controls (tabs are inside .main-content) */
-.client-navigation-sidebar {
+.crm-container.crm-container--unified .client-navigation-sidebar {
   position: relative;
   grid-area: cdn-topbar;
   display: flex;
@@ -2358,7 +2274,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 /* Collapsing must not hide the hero: aside now only holds identity + matter controls. */
-.client-navigation-sidebar.collapsed {
+.crm-container.crm-container--unified .client-navigation-sidebar.collapsed {
   transform: none !important;
   max-height: none !important;
   min-height: 0 !important;
@@ -2371,22 +2287,25 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   pointer-events: auto !important;
 }
 
-.crm-container > .collapsed-toggle-btn {
+.crm-container.crm-container--unified > .collapsed-toggle-btn {
   grid-area: cdn-topbar;
   position: relative;
   justify-self: start;
   align-self: start;
   margin: 10px 0 0 10px;
   z-index: 3;
+  border-radius: 12px;
+  background: var(--cdn-primary);
+  box-shadow: var(--cdn-shadow);
 }
 
-.crm-container.sidebar-collapsed > .collapsed-toggle-btn {
+.crm-container.crm-container--unified.sidebar-collapsed > .collapsed-toggle-btn {
   position: relative;
   top: auto;
   left: auto;
 }
 
-.main-content {
+.crm-container.crm-container--unified > .main-content {
   grid-area: cdn-main;
   min-width: 0;
   width: 100% !important;
@@ -2399,50 +2318,45 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   padding: 16px var(--cdn-main-content-pad-x) 20px;
 }
 
-.crm-container > aside.activity-feed {
+.crm-container.crm-container--unified > aside.activity-feed {
   grid-area: cdn-feed;
   min-width: 0;
   align-self: stretch;
 }
 
 /* Activity-only tab: feed spans full width below top bar */
-.crm-container.crm-container--activity-tab {
+.crm-container.crm-container--unified.crm-container--activity-tab {
   grid-template-columns: 1fr;
   grid-template-areas:
     "cdn-topbar"
     "cdn-feed";
 }
 
-.crm-container.crm-container--activity-tab > aside.activity-feed {
+.crm-container.crm-container--unified.crm-container--activity-tab > aside.activity-feed {
   grid-area: cdn-feed;
   width: 100%;
   max-width: none;
 }
-
-.sidebar-header-toolbar {
+.crm-container.crm-container--unified .sidebar-header-toolbar {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 8px;
 }
-
-.sidebar-client-lead-buttons {
+.crm-container.crm-container--unified .sidebar-client-lead-buttons {
   flex: 0 0 auto;
   margin: 0;
 }
-
-.sidebar-matter-selection {
+.crm-container.crm-container--unified .sidebar-matter-selection {
   flex: 1 1 220px;
   min-width: 180px;
   max-width: 100%;
 }
-
-.sidebar-matter-selection .select2-container {
+.crm-container.crm-container--unified .sidebar-matter-selection .select2-container {
   width: 100% !important;
   max-width: 420px;
 }
-
-.matter-status-badge {
+.crm-container.crm-container--unified .matter-status-badge {
   flex: 0 0 auto;
   align-self: center;
   border-radius: 999px;
@@ -2453,21 +2367,18 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   border: 1px solid var(--cdn-border);
   color: #334155;
 }
-
-.client-id {
+.crm-container.crm-container--unified .client-id {
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   color: var(--cdn-muted);
   font-weight: 600;
 }
-
-.client-name {
+.crm-container.crm-container--unified .client-name {
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--cdn-text);
 }
-
-.client-sidebar-nav {
+.crm-container.crm-container--unified .client-sidebar-nav {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -2478,8 +2389,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   border-top: 1px solid var(--cdn-border);
   background: #fafcff;
 }
-
-.client-nav-button {
+.crm-container.crm-container--unified .client-nav-button {
   flex: 0 0 auto;
   border-radius: 9px;
   border: 1px solid var(--cdn-border);
@@ -2533,17 +2443,17 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   box-shadow: none !important;
 }
 
-.client-nav-button i {
+.crm-container.crm-container--unified .client-nav-button i {
   margin-right: 6px;
 }
 
 /* General non-pill buttons (used in sidebar-style fallback if ever needed) */
-.client-nav-button:hover {
+.crm-container.crm-container--unified .client-nav-button:hover {
   border-color: #bfd7ff;
   background: #f8fafc;
 }
 
-.client-nav-button.active {
+.crm-container.crm-container--unified .client-nav-button.active {
   border-color: var(--cdn-primary);
   color: var(--cdn-primary);
   background: var(--cdn-primary-soft);
@@ -2559,8 +2469,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   outline: 2px solid var(--cdn-primary);
   outline-offset: 2px;
 }
-
-.sidebar-last-updated {
+.crm-container.crm-container--unified .sidebar-last-updated {
   flex-basis: 100%;
   width: 100%;
   margin-top: 4px !important;
@@ -2582,9 +2491,9 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 /* Stack subtab strip above tab panes. Base layout uses row flex (vertical nav + content);
-   demo has no side nav here — row layout put the strip beside .tab-content and the strip’s
+   this layout has no side nav here — row layout put the strip beside .tab-content and the strip's
    calc(100% + …) width collapsed the content column to ~0, hiding documents. */
-.main-content-with-tabs {
+.crm-container.crm-container--unified .main-content-with-tabs {
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   display: flex;
   flex-direction: column;
@@ -2593,14 +2502,13 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   width: 100%;
   min-width: 0;
 }
-
-.main-content-with-tabs > .tab-content {
+.crm-container.crm-container--unified .main-content-with-tabs > .tab-content {
   flex: 1 1 auto;
   width: 100%;
   min-width: 0;
 }
 
-/* Document tab: Personal / Matter documents sub-tabs (demo).
+/* Document tab: Personal / Matter documents sub-tabs.
    Hidden by default; .is-visible is set from Blade on first paint for /personaldocuments URLs
    so the row appears even if JS is slow or fails. */
 .cdn-doc-subtab-strip {
@@ -2651,28 +2559,19 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   background: var(--cdn-primary-soft);
 }
 
-.sidebar-toggle-btn,
-.client-detail-back-btn {
+.crm-container.crm-container--unified .sidebar-toggle-btn,
+.crm-container.crm-container--unified .client-detail-back-btn {
   border-radius: 10px;
 }
 
-.collapsed-toggle-btn {
-  border-radius: 12px;
-  background: var(--cdn-primary);
-  box-shadow: var(--cdn-shadow);
-}
-
-#sidebar-toggle .fa-chevron-left {
+.crm-container.crm-container--unified #sidebar-toggle .fa-chevron-left {
   transform: rotate(-90deg);
 }
 
 @media (max-width: 1024px) {
-  /* Keep horizontal flush with viewport; gutter comes from .crm-container + banner margins */
-  :root {
+  /* Keep horizontal flush with viewport; gutter comes from .crm-container.crm-container--unified */
+  .crm-container.crm-container--unified {
     padding: 12px 0 20px;
-  }
-
-  .crm-container {
     grid-template-columns: 1fr;
     grid-template-areas:
       "cdn-topbar"
@@ -2680,7 +2579,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
       "cdn-feed";
   }
 
-  .crm-container.crm-container--activity-tab {
+  .crm-container.crm-container--unified.crm-container--activity-tab {
     grid-template-columns: 1fr;
     grid-template-areas:
       "cdn-topbar"
