@@ -125,7 +125,7 @@
                 
                 <!-- Back Button in Sidebar -->
                 <div class="sidebar-actions">
-                    <button class="nav-item summary-nav back-btn" onclick="goBackWithRefresh()">
+                    <button type="button" class="nav-item summary-nav back-btn" onclick="goBackWithRefresh()">
                         <i class="fas fa-arrow-left"></i>
                         <span>Back</span>
                     </button>
