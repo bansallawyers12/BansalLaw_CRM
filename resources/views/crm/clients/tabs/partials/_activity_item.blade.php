@@ -1,24 +1,21 @@
 @php
-    // Determine note type for specific styling
     $noteTypeClass = '';
     $noteIcon = 'fa-sticky-note';
-    
-    if($activity->activity_type === 'note') {
+    if ($activity->activity_type === 'note') {
         $subject = strtolower($activity->subject ?? '');
-        
-        if(str_contains($subject, 'call')) {
+        if (str_contains($subject, 'call')) {
             $noteTypeClass = 'activity-type-note-call';
             $noteIcon = 'fa-phone';
-        } elseif(str_contains($subject, 'email')) {
+        } elseif (str_contains($subject, 'email')) {
             $noteTypeClass = 'activity-type-note-email';
             $noteIcon = 'fa-envelope';
-        } elseif(str_contains($subject, 'in-person')) {
+        } elseif (str_contains($subject, 'in-person')) {
             $noteTypeClass = 'activity-type-note-in-person';
             $noteIcon = 'fa-user-friends';
-        } elseif(str_contains($subject, 'attention')) {
+        } elseif (str_contains($subject, 'attention')) {
             $noteTypeClass = 'activity-type-note-attention';
             $noteIcon = 'fa-exclamation-triangle';
-        } elseif(str_contains($subject, 'others')) {
+        } elseif (str_contains($subject, 'others')) {
             $noteTypeClass = 'activity-type-note-others';
             $noteIcon = 'fa-ellipsis-h';
         } else {
@@ -26,10 +23,49 @@
             $noteIcon = 'fa-sticky-note';
         }
     }
-@endphp
 
-<li class="feed-item feed-item--{{ $activity->activity_type === 'stage' ? 'stage' : 'email' }} activity {{ $activity->activity_type ? 'activity-type-' . $activity->activity_type : '' }} {{ $noteTypeClass }}" id="activity_{{ $activity->id }}" data-created-at="{{ $activity->created_at ? \Carbon\Carbon::parse($activity->created_at)->format('Y-m-d') : '' }}">
-    <span class="feed-icon {{ $activity->activity_type === 'sms' ? 'feed-icon-sms' : '' }} {{ $activity->activity_type === 'activity' ? 'feed-icon-activity' : '' }} {{ $activity->activity_type === 'stage' ? 'feed-icon-stage' : '' }} {{ $activity->activity_type === 'financial' ? 'feed-icon-accounting' : '' }} {{ $activity->activity_type === 'signature' ? 'feed-icon-signature' : '' }} {{ $activity->activity_type === 'note' ? 'feed-icon-note ' . str_replace('activity-type-', 'feed-icon-', $noteTypeClass) : '' }}">
+    $subjectOnly = \App\Models\ActivitiesLog::displaySubjectWithoutStaffPrefix($activity->activity_type ?? null, $activity->subject ?? null);
+    $headlineText = $subjectOnly
+        ? (string) ($activity->subject ?? '')
+        : trim((string) ($admin->first_name ?? 'NA') . '  ' . (string) ($activity->subject ?? ''));
+    $staffName = trim((string) ($admin->first_name ?? '') . ' ' . (string) (isset($admin->last_name) ? $admin->last_name : ''));
+    if ($staffName === '' || $staffName === 'NA') {
+        $staffName = 'Staff';
+    }
+    $compactTime = $activity->created_at ? date('d M Y, g:i A', strtotime($activity->created_at)) : '';
+    if ($activity->activity_type === 'stage') {
+        $summaryLine = 'Stage' . ' · ' . $staffName . ' · ' . $compactTime;
+    } else {
+        $summaryLine = $subjectOnly
+            ? trim($headlineText . ' · ' . $staffName . ' · ' . $compactTime)
+            : trim($headlineText . ' · ' . $compactTime);
+    }
+    $descDisplay = $activity->description != ''
+        ? \App\Support\NoteDescriptionHtml::forDisplay($activity->description)
+        : '';
+    $bodyPlain = trim(strip_tags($descDisplay));
+    $canConvert = str_contains($activity->subject ?? '', 'added a note') || str_contains($activity->subject ?? '', 'updated a note');
+    $hasTaskInfo = trim((string) ($activity->task_group ?? '')) !== '' || $activity->followup_date;
+    if ($activity->activity_type === 'stage') {
+        $isExpandable = $bodyPlain !== '';
+    } else {
+        $isExpandable = $bodyPlain !== '' || $canConvert || $hasTaskInfo;
+    }
+    $followupDisplay = '';
+    if (! empty($activity->followup_date)) {
+        try {
+            $followupDisplay = \Carbon\Carbon::parse($activity->followup_date)->format('d M Y, g:i A');
+        } catch (\Throwable $e) {
+            $followupDisplay = (string) $activity->followup_date;
+        }
+    }
+    $detailId = 'feed-detail-' . (int) $activity->id;
+@endphp
+<li class="feed-item feed-item--{{ $activity->activity_type === 'stage' ? 'stage' : 'email' }}{{ $isExpandable ? '' : ' feed-item--no-expand' }} activity {{ $activity->activity_type ? 'activity-type-' . $activity->activity_type : '' }} {{ $noteTypeClass ?? '' }}"
+    id="activity_{{ $activity->id }}"
+    data-created-at="{{ $activity->created_at ? \Carbon\Carbon::parse($activity->created_at)->format('Y-m-d') : '' }}">
+    <span
+        class="feed-icon {{ $activity->activity_type === 'sms' ? 'feed-icon-sms' : '' }} {{ $activity->activity_type === 'activity' ? 'feed-icon-activity' : '' }} {{ $activity->activity_type === 'stage' ? 'feed-icon-stage' : '' }} {{ $activity->activity_type === 'financial' ? 'feed-icon-accounting' : '' }} {{ $activity->activity_type === 'signature' ? 'feed-icon-signature' : '' }} {{ $activity->activity_type === 'note' ? 'feed-icon-note ' . str_replace('activity-type-', 'feed-icon-', $noteTypeClass) : '' }}">
         @if($activity->activity_type === 'sms')
             <i class="fas fa-sms"></i>
         @elseif($activity->activity_type === 'note')
@@ -40,14 +76,16 @@
             <i class="fas fa-tasks" aria-hidden="true"></i>
         @elseif($activity->activity_type === 'financial')
             <i class="fas fa-dollar-sign"></i>
-        @elseif(str_contains(strtolower($activity->subject ?? ''), "invoice") || 
-                str_contains(strtolower($activity->subject ?? ''), "receipt") || 
-                str_contains(strtolower($activity->subject ?? ''), "ledger") || 
+        @elseif($activity->activity_type === 'signature')
+            <i class="fas fa-file-signature"></i>
+        @elseif($activity->activity_type === 'document')
+            <i class="fas fa-file-alt"></i>
+        @elseif(str_contains(strtolower($activity->subject ?? ''), "invoice") ||
+                str_contains(strtolower($activity->subject ?? ''), "receipt") ||
+                str_contains(strtolower($activity->subject ?? ''), "ledger") ||
                 str_contains(strtolower($activity->subject ?? ''), "payment") ||
                 str_contains(strtolower($activity->subject ?? ''), "account"))
             <i class="fas fa-dollar-sign"></i>
-        @elseif($activity->activity_type === 'signature')
-            <i class="fas fa-file-signature"></i>
         @elseif(str_contains($activity->subject ?? '', "document"))
             <i class="fas fa-file-alt"></i>
         @else
@@ -55,41 +93,58 @@
         @endif
     </span>
     <div class="feed-content">
-        @if($activity->activity_type === 'stage')
-            <div class="feed-item-stage">
-                <div class="feed-item-stage-header">
-                    <span class="feed-item-staff">{{ $admin->first_name ?? 'NA' }}{{ isset($admin->last_name) ? ' ' . $admin->last_name : '' }}</span>
-                    <span class="feed-timestamp">{{ date('d M Y, H:i', strtotime($activity->created_at)) }}</span>
-                </div>
-                <div class="feed-item-stage-body">
-                    {!! \App\Support\NoteDescriptionHtml::forDisplay($activity->description ?? '') !!}
-                </div>
+        @if($isExpandable)
+            <button type="button" class="feed-item-summary" data-feed-toggle
+                aria-expanded="false" aria-controls="{{ $detailId }}"
+                aria-label="Show or hide full activity content">
+                <span class="feed-item-summary-text">{{ $summaryLine }}</span>
+                <span class="feed-item-summary-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
+            </button>
+            <div class="feed-item-detail" id="{{ $detailId }}" hidden>
+                @if($activity->activity_type === 'stage')
+                    <div class="feed-item-body-outer" data-clampable="1">
+                        <div class="feed-item-body-chunk">
+                            {!! $descDisplay !!}
+                        </div>
+                        <button type="button" class="feed-item-body-more btn btn-link btn-sm p-0" hidden>Show more</button>
+                    </div>
+                @else
+                    <p class="feed-item-full-headline mb-0">
+                        @if($subjectOnly)
+                            <strong>{{ $activity->subject ?? '' }}</strong>
+                        @else
+                            <strong>{{ $admin->first_name ?? 'NA' }}{{ $activity->subject ? '  ' . $activity->subject : '' }}</strong>
+                        @endif
+                        @if($canConvert)
+                            <i class="fas fa-ellipsis-v convert-activity-to-note" style="margin-left: 5px; cursor: pointer;"
+                                title="Convert to Note" data-activity-id="{{ $activity->id }}"
+                                data-activity-subject="{{ $activity->subject }}"
+                                data-activity-description="{{ $activity->description }}"
+                                data-activity-created-by="{{ $activity->created_by }}"
+                                data-activity-created-at="{{ $activity->created_at }}"
+                                data-client-id="{{ $clientId }}"></i>
+                        @endif
+                    </p>
+                    @if($activity->description != '')
+                        <div class="feed-item-body-outer" data-clampable="1">
+                            <div class="feed-item-body-chunk">
+                                {!! $descDisplay !!}
+                            </div>
+                            <button type="button" class="feed-item-body-more btn btn-link btn-sm p-0" hidden>Show more</button>
+                        </div>
+                    @endif
+                    @if(trim((string) ($activity->task_group ?? '')) !== '')
+                        <p class="mb-0 mt-1 small text-muted feed-item-task-meta">{{ $activity->task_group }}</p>
+                    @endif
+                    @if($followupDisplay !== '')
+                        <p class="mb-0 mt-1 small text-muted feed-item-task-meta">{{ $followupDisplay }}</p>
+                    @endif
+                @endif
             </div>
         @else
-            <p>
-                @if(\App\Models\ActivitiesLog::displaySubjectWithoutStaffPrefix($activity->activity_type ?? null, $activity->subject ?? null))
-                <strong>{{ $activity->subject ?? '' }}</strong>
-                @else
-                <strong>{{ $admin->first_name ?? 'NA' }}  {{ $activity->subject ?? '' }}</strong>
-                @endif
-                @if(str_contains($activity->subject ?? '', 'added a note') || str_contains($activity->subject ?? '', 'updated a note'))
-                    <i class="fas fa-ellipsis-v convert-activity-to-note" 
-                       style="margin-left: 5px; cursor: pointer;" 
-                       title="Convert to Note"
-                       data-activity-id="{{ $activity->id }}"
-                       data-activity-subject="{{ $activity->subject }}"
-                       data-activity-description="{{ $activity->description }}"
-                       data-activity-created-by="{{ $activity->created_by }}"
-                       data-activity-created-at="{{ $activity->created_at }}"
-                       data-client-id="{{ $clientId }}"></i>
-                @endif
-                -
-                @if($activity->description != '')
-                    {!! \App\Support\NoteDescriptionHtml::forDisplay($activity->description) !!}
-                @endif
-            </p>
-            <span class="feed-timestamp">{{ date('d M Y, H:i A', strtotime($activity->created_at)) }}</span>
+            <div class="feed-item-summary feed-item-summary--static" role="none">
+                <span class="feed-item-summary-text">{{ $summaryLine }}</span>
+            </div>
         @endif
     </div>
 </li>
-
