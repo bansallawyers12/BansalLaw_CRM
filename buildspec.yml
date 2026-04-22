@@ -52,6 +52,7 @@ phases:
         echo "Starting Deployment..."
         echo "======================================"
 
+        # Maintenance returns 503 for most routes; /up stays 200 (see AppServiceProvider + routes/web.php) so the ALB stays healthy.
         echo "Enabling maintenance mode..."
         sudo -u $APP_USER php artisan down --retry=60 || true
 
