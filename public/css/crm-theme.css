@@ -3938,6 +3938,24 @@ body.sidebar-mini #create_note_d .create-note-header .close:focus {
   color: #fff !important;
 }
 
+/* Legal Forms modal (client detail tab) — global body.sidebar-mini h5 { navy } made title invisible on dark header */
+body.sidebar-mini #legalFormModal .legal-form-modal-header,
+body.sidebar-mini #legalFormModal .modal-header.legal-form-modal-header {
+  background: var(--navy) !important;
+  background-image: none !important;
+  border-bottom: 3px solid var(--accent-gold) !important;
+  color: #fff !important;
+  padding: 16px 20px !important;
+}
+
+body.sidebar-mini #legalFormModal .legal-form-modal-header .modal-title,
+body.sidebar-mini #legalFormModal .legal-form-modal-header h5,
+body.sidebar-mini #legalFormModal .modal-header .modal-title {
+  color: #fff !important;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+}
+
 /*
  * Client detail — Documents: body.sidebar-mini .main-content sets color: var(--text-dark) !important
  * (see block ~line 48). It beats .subtab2-button { color: #fff } in cascade for *inherited* text on

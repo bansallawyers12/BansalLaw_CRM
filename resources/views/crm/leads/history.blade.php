@@ -288,20 +288,22 @@
 				<button type="button" class="close" data-bs-dismiss="modal">&times;</button>
 				
 			</div>
-			<form action="#" method="POST" name="add-note" autocomplete="off" enctype="multipart/form-data" id="addnoteform">
+			<form action="{{ url('/create-note') }}" method="POST" name="add-note" autocomplete="off" enctype="multipart/form-data" id="addnoteform">
 				@csrf
 			<div class="modal-body">
 				<div class="customerror"></div> 
 				<div class="form-group row">
 					<div class="col-sm-12">
-						<input id="note_type" name="note_type" type="hidden" value="">
-						<input name="lead_id" type="hidden" value="{{base64_encode(convert_uuencode(@$fetchedData->id))}}">
-						<textarea id="description" name="description" class="form-control summernote-simple" placeholder="Add note" style=""></textarea>
+						<input id="task_group" name="task_group" type="hidden" value="Others">
+						<input type="hidden" name="vtype" value="lead">
+						<input type="hidden" name="client_id" value="{{ (int) $fetchedData->id }}">
+						<input type="hidden" name="lead_id" value="{{ (int) $fetchedData->id }}">
+						<textarea id="description" name="description" class="form-control summernote-simple" placeholder="Add note" data-valid="required"></textarea>
 					</div>
 				</div>
 			</div>
 			<div class="modal-footer">
-				<button type="submit" class="btn btn-primary" onClick="customValidate('add-note')"><i class="fa fa-save"></i> Save</button>
+				<button type="button" class="btn btn-primary" onclick="return customValidate('add-note');"><i class="fa fa-save"></i> Save</button>
 			</div>
 			</form>
 		</div>
@@ -333,7 +335,7 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form action="{{ route('clients.sendmail') }}" method="POST" name="add-compose" autocomplete="off" enctype="multipart/form-data" id="addnoteform">
+				<form action="{{ route('clients.sendmail') }}" method="POST" name="add-compose" autocomplete="off" enctype="multipart/form-data" id="lead_history_email_compose">
 					@csrf
 				<input name="type" type="hidden" value="lead">
 				<input name="mail_type" type="hidden" value="1">
@@ -437,6 +439,7 @@
 <script> 
 
 var lead_id = '{{base64_encode(convert_uuencode(@$fetchedData->id))}}';
+window.crmLeadHistoryNoteEncodedId = lead_id;
 jQuery(document).ready(function($){
 	
 	$('.attach_more').on('click', function(){
@@ -666,7 +669,11 @@ $(document).delegate('.opennotepopup', 'click', function(){
 		var notename = $.trim($(this).attr('data-notename'));
 			var notetype = $.trim($(this).attr('data-notetype'));
 		$('#myAddnotes .modal-title').html(notename);
-		$('#myAddnotes #note_type').val(notetype);
+		// createnote expects task_group (e.g. "Others"); data-notetype is "others"
+		var taskGroup = notetype
+			? (notetype.charAt(0).toUpperCase() + notetype.slice(1).toLowerCase())
+			: 'Others';
+		$('#myAddnotes #task_group').val(taskGroup);
 		$('#myAddnotes').modal('show');
 	});
 $(document).delegate('#setreminder','click', function(){

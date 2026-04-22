@@ -413,7 +413,7 @@ use App\Http\Controllers\Controller;
             <div class="tab-content" id="tab-content">
             @if(($fetchedData->type ?? '') === 'lead')
             <div class="lead-actions-bar">
-                <a href="{{ route('leads.edit', base64_encode(convert_uuencode($fetchedData->id))) }}" class="btn btn-sm btn-secondary">
+                <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}" class="btn btn-sm btn-secondary">
                     <i class="fa fa-edit"></i> Edit Lead
                 </a>
                 <a href="{{ route('leads.history', base64_encode(convert_uuencode($fetchedData->id))) }}" class="btn btn-sm btn-warning lead-actions-bar__history">

@@ -24,6 +24,12 @@ use App\Support\StaffClientVisibility;
 use App\Services\LeadFollowUpNoteService;
 use App\Models\Staff;
 use App\Models\ClientAddress;
+use App\Models\ClientQualification;
+use App\Models\ClientExperience;
+use App\Models\ClientTestScore;
+use App\Models\ClientOccupation;
+use App\Models\ClientCharacter;
+use App\Models\ClientRelationship;
 
 class LeadController extends Controller
 {
@@ -991,6 +997,29 @@ class LeadController extends Controller
         $clientTravels = \App\Models\ClientTravelInformation::where('client_id', $id)
             ->orderByRaw('travel_arrival_date DESC NULLS LAST, created_at DESC')
             ->get() ?? collect();
+
+        $qualifications = Schema::hasTable('client_qualifications')
+            ? ClientQualification::where('client_id', $id)->orderByRaw('finish_date DESC NULLS LAST')->get()
+            : collect();
+        $experiences = Schema::hasTable('client_experiences')
+            ? ClientExperience::where('client_id', $id)->orderByRaw('job_finish_date DESC NULLS LAST')->get()
+            : collect();
+        $testScores = Schema::hasTable('client_testscore')
+            ? ClientTestScore::where('client_id', $id)->get()
+            : collect();
+
+        $clientOccupations = Schema::hasTable('client_occupations')
+            ? ClientOccupation::where('client_id', $id)->get()
+            : collect();
+        $clientCharacters = Schema::hasTable('client_characters')
+            ? ClientCharacter::where('client_id', $id)->get()
+            : collect();
+        $clientPartners = Schema::hasTable('client_relationships')
+            ? ClientRelationship::where('client_id', $id)
+                ->with(['relatedClient:id,first_name,last_name,email,phone,client_id'])
+                ->get()
+            : collect();
+
         $visaTypes = \App\Models\Matter::where('title', 'not like', '%skill assessment%')
             ->where('status', 1)
             ->orderBy('title', 'ASC')
@@ -1011,7 +1040,9 @@ class LeadController extends Controller
         return view('crm.leads.edit', compact(
             'fetchedData', 'countries', 'clientContacts', 'emails',
             'visaCountries', 'clientPassports', 'clientAddresses', 'clientTravels', 'visaTypes',
-            'assignableStaff', 'leadStageLabels'
+            'assignableStaff', 'leadStageLabels',
+            'qualifications', 'experiences', 'testScores',
+            'clientOccupations', 'clientCharacters', 'clientPartners'
         ));
     }
 

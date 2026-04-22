@@ -226,17 +226,25 @@ function customValidate(formName, savetype = '')
 					alert('Unexpected server response. Please try again.');
 					return;
 				}
-								if(obj.success){
+								// createnote returns { status: true }; legacy may use success
+								var ok = obj.success || obj.status;
+								if(ok){
 									$('#myAddnotes .modal-title').html('');
-									$('#myAddnotes #note_type').html('');
+									$('#myAddnotes #task_group').val('');
 									$('#myAddnotes').modal('hide');
-									myfollowuplist(obj.leadid);
+									var forFollowup = (typeof obj.leadid !== 'undefined' && obj.leadid)
+										? obj.leadid
+										: (typeof window.crmLeadHistoryNoteEncodedId !== 'undefined' ? window.crmLeadHistoryNoteEncodedId : null);
+									if (typeof myfollowuplist === 'function' && forFollowup) {
+										myfollowuplist(forFollowup);
+									}
 								}else{
-									$('#myAddnotes .customerror').html('<span class="alert alert-danger">'+obj.message+'</span>');
+									$('#myAddnotes .customerror').html('<span class="alert alert-danger">'+(obj.message || 'Could not save note.')+'</span>');
 
 								}
 							}
 						});
+						return false;
 					}else if(formName == 'edit-note')
 					{
 						var myform = document.getElementById('editnoteform');

@@ -34,7 +34,7 @@
 <div class="modal fade" id="legalFormModal" tabindex="-1" aria-labelledby="legalFormModalLabel" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header" style="background: #1a3a5c; color: #fff;">
+            <div class="modal-header legal-form-modal-header">
                 <h5 class="modal-title" id="legalFormModalLabel">Create Legal Form</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -278,6 +278,9 @@
 (function() {
     'use strict';
 
+    /** App may be served from a subdirectory (e.g. /BansalLaw_CRM/public); never use root-relative /legal-forms */
+    var LF_BASE = @json(rtrim(url('legal-forms'), '/'));
+
     const FORM_TYPE_LABELS = {
         'short_costs_disclosure': 'Short Costs Disclosure',
         'cost_agreement': 'Cost Agreement',
@@ -376,7 +379,7 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
 
         $.ajax({
-            url: '/legal-forms',
+            url: LF_BASE,
             method: 'POST',
             data: formData,
             processData: false,
@@ -420,7 +423,7 @@
         listEl.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Loading forms...</div>';
 
         $.ajax({
-            url: '/legal-forms/client-forms',
+            url: LF_BASE + '/client-forms',
             method: 'GET',
             data: { client_id: clientId, matter_id: matterId },
             success: function(response) {
@@ -463,7 +466,7 @@
             html += '</div>';
             html += '</div>';
             html += '<div class="legal-form-card-actions">';
-            html += '<a href="/legal-forms/' + form.id + '/download" class="btn btn-sm btn-outline-success" title="Download Word Document"><i class="fas fa-file-word"></i> Download</a>';
+            html += '<a href="' + LF_BASE + '/' + form.id + '/download" class="btn btn-sm btn-outline-success" title="Download Word Document"><i class="fas fa-file-word"></i> Download</a>';
             html += '<button class="btn btn-sm btn-outline-danger" onclick="deleteLegalForm(' + form.id + ')" title="Delete"><i class="fas fa-trash"></i></button>';
             html += '</div>';
             html += '</div>';
@@ -499,7 +502,7 @@
         textarea.style.opacity = '0.5';
 
         $.ajax({
-            url: '/legal-forms/generate-scope-ai',
+            url: LF_BASE + '/generate-scope-ai',
             method: 'POST',
             data: {
                 client_id: clientId,
@@ -539,7 +542,7 @@
         if (!confirm('Are you sure you want to delete this form? This action cannot be undone.')) return;
 
         $.ajax({
-            url: '/legal-forms/' + formId,
+            url: LF_BASE + '/' + formId,
             method: 'DELETE',
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function(response) {
