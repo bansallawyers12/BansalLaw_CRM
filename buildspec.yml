@@ -11,7 +11,7 @@ phases:
   install:
     runtime-versions:
       php: 8.2
-      nodejs: 24
+      nodejs: 20
     commands:
       # Provide a minimal .env so Composer's post-install hook (package:discover) can run.
       # CodeBuild has no production .env; ext-sodium is skipped here (production EC2 has it).
@@ -218,6 +218,11 @@ phases:
         VALIDATEEOF
 
       - chmod +x scripts/deploy.sh scripts/validate.sh
+
+cache:
+  paths:
+    - 'node_modules/**/*'
+    - '/root/.composer/cache/**/*'
 
 artifacts:
   files:
