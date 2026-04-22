@@ -140,11 +140,15 @@ use App\Http\Controllers\Controller;
                     </div>
                 </div>
                 <div class="cdn-client-hero__actions">
-                    <button type="button" class="btn cdn-client-hero__action-btn create_note_d" datatype="note" title="Add a note">Add Notes</button>
-                    <a href="javascript:;" class="btn cdn-client-hero__action-btn clientemail" data-id="{{ @$fetchedData->id }}" data-email="{{ @$fetchedData->email }}" data-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Compose Mail">Send Email</a>
-                    <a href="javascript:;" class="btn cdn-client-hero__action-btn send-sms-btn" data-client-id="{{ @$fetchedData->id }}" data-client-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Send SMS">Send SMS</a>
-                    <a href="javascript:;" class="btn cdn-client-hero__action-btn" data-bs-toggle="modal" data-bs-target="#create_appoint" title="Schedule appointment">Appointment</a>
-                    <button type="button" class="btn cdn-client-hero__action-btn cdn-client-hero__action-btn--primary" id="cdn-open-update-stage" data-bs-toggle="modal" data-bs-target="#cdn-update-stage-modal" title="Update workflow stage">Update Stage</button>
+                    <div class="cdn-client-hero__actions-top" role="group" aria-label="Scheduling and workflow">
+                        <button type="button" class="btn cdn-client-hero__action-btn" data-bs-toggle="modal" data-bs-target="#create_appoint" title="Schedule appointment">Appointment</button>
+                        <button type="button" class="btn cdn-client-hero__action-btn cdn-client-hero__action-btn--primary" id="cdn-open-update-stage" data-bs-toggle="modal" data-bs-target="#cdn-update-stage-modal" title="Update workflow stage">Update Stage</button>
+                    </div>
+                    <div class="cdn-client-hero__actions-bottom" role="group" aria-label="Contact actions">
+                        <button type="button" class="btn cdn-client-hero__action-btn create_note_d" datatype="note" title="Add a note">Add Notes</button>
+                        <button type="button" class="btn cdn-client-hero__action-btn clientemail" data-id="{{ @$fetchedData->id }}" data-email="{{ @$fetchedData->email }}" data-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Compose mail">Send Email</button>
+                        <button type="button" class="btn cdn-client-hero__action-btn send-sms-btn" data-client-id="{{ @$fetchedData->id }}" data-client-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Send SMS">Send SMS</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -1427,90 +1431,14 @@ $(document).ready(function() {
             data: { id: window.ClientDetailConfig.clientId },
             success: function(response) {
                 if (response.status && response.data) {
-                    // Escape template literal special characters to prevent syntax errors
-                    function escapeTemplateLiteral(str) {
-                        if (!str) return '';
-                        return String(str)
-                            .replace(/\\/g, '\\\\')
-                            .replace(/`/g, '\\`')
-                            .replace(/\$\{/g, '\\${');
-                    }
-                    
-                    var html = '';
-                    
-                    $.each(response.data, function (k, v) {
-                        // Determine icon based on activity type
-                        var activityType = v.activity_type ?? 'note';
-                        var subjectIcon;
-                        var iconClass = '';
-                        var subject = escapeTemplateLiteral(v.subject ?? '');
-                        var subjectLower = subject.toLowerCase();
-                        
-                        if (activityType === 'sms') {
-                            subjectIcon = '<i class="fas fa-sms"></i>';
-                            iconClass = 'feed-icon-sms';
-                        } else if (activityType === 'activity') {
-                            subjectIcon = '<i class="fas fa-bolt"></i>';
-                            iconClass = 'feed-icon-activity';
-                        } else if (activityType === 'stage') {
-                            subjectIcon = '<i class="fas fa-route"></i>';
-                            iconClass = 'feed-icon-stage';
-                        } else if (activityType === 'financial' || 
-                                   subjectLower.includes('invoice') || 
-                                   subjectLower.includes('receipt') || 
-                                   subjectLower.includes('ledger') || 
-                                   subjectLower.includes('payment') ||
-                                   subjectLower.includes('account')) {
-                            subjectIcon = '<i class="fas fa-dollar-sign"></i>';
-                            iconClass = activityType === 'financial' ? 'feed-icon-accounting' : '';
-                        } else if (subjectLower.includes('document')) {
-                            subjectIcon = '<i class="fas fa-file-alt"></i>';
-                        } else {
-                            subjectIcon = '<i class="fas fa-sticky-note"></i>';
-                        }
-                        
-                        var description = escapeTemplateLiteral(v.message ?? '');
-                        var taskGroup = escapeTemplateLiteral(v.task_group ?? '');
-                        var followupDate = escapeTemplateLiteral(v.followup_date ?? '');
-                        var date = escapeTemplateLiteral(v.date ?? '');
-                        var fullName = escapeTemplateLiteral(v.name ?? '');
-                        var activityTypeClass = activityType ? 'activity-type-' + activityType : '';
-
-                        // Build HTML parts to avoid nested template literal issues
-                        var descriptionHtml = description !== '' ? '<p>' + description + '</p>' : '';
-                        var taskGroupHtml = taskGroup !== '' ? '<p>' + taskGroup + '</p>' : '';
-                        var followupDateHtml = followupDate !== '' ? '<p>' + followupDate + '</p>' : '';
-
-                        var feedItemClass = activityType === 'stage' ? 'feed-item--stage' : 'feed-item--email';
-                        var contentHtml;
-                        if (activityType === 'stage') {
-                            contentHtml = '<div class="feed-item-stage">' +
-                                '<div class="feed-item-stage-header">' +
-                                    '<span class="feed-item-staff">' + fullName + '</span>' +
-                                    '<span class="feed-timestamp">' + date + '</span>' +
-                                '</div>' +
-                                '<div class="feed-item-stage-body">' + (v.message ? v.message : '') + '</div>' +
-                            '</div>';
-                        } else {
-                            var subjectOnly = v.subject_without_staff_prefix === true;
-                            var headline = subjectOnly ? subject : (fullName + ' ' + subject);
-                            contentHtml = '<p><strong>' + headline + '</strong></p>' +
-                                descriptionHtml +
-                                taskGroupHtml +
-                                followupDateHtml +
-                                '<span class="feed-timestamp">' + date + '</span>';
-                        }
-
-                        var createdAtYmd = v.created_at_ymd || '';
-                        html += '<li class="feed-item ' + feedItemClass + ' activity ' + activityTypeClass + '" id="activity_' + v.activity_id + '" data-created-at="' + createdAtYmd + '">' +
-                            '<span class="feed-icon ' + iconClass + '">' +
-                                subjectIcon +
-                            '</span>' +
-                            '<div class="feed-content">' + contentHtml + '</div>' +
-                        '</li>';
-                    });
+                    var html = typeof window.buildActivityFeedListHtml === 'function'
+                        ? window.buildActivityFeedListHtml(response.data)
+                        : '';
 
                     $('.feed-list').html(html);
+                    if (typeof window.initActivityFeedClamps === 'function') {
+                        window.initActivityFeedClamps();
+                    }
                     
                     // Adjust Activity Feed height after content update
                     if (typeof adjustActivityFeedHeight === 'function') {

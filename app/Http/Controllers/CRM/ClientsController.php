@@ -3159,6 +3159,14 @@ class ClientsController extends Controller
 						$activit->activity_type ?? null,
 						$activit->subject ?? null
 					);
+					$followupDateDisplay = '';
+					if (! empty($activit->followup_date)) {
+						try {
+							$followupDateDisplay = \Carbon\Carbon::parse($activit->followup_date)->format('d M Y, g:i A');
+						} catch (\Throwable $e) {
+							$followupDateDisplay = (string) $activit->followup_date;
+						}
+					}
 					$data[] = array(
 						'activity_id' => $activit->id,
 						'subject' => $activit->subject ?? '',
@@ -3169,9 +3177,13 @@ class ClientsController extends Controller
 						'date' => date('d M Y, H:i A', strtotime($activit->created_at)),
 						'created_at_ymd' => $activit->created_at ? \Carbon\Carbon::parse($activit->created_at)->format('Y-m-d') : '',
 						'followup_date' => $activit->followup_date ?? '',
+						'followup_date_display' => $followupDateDisplay,
 						'task_group' => $activit->task_group ?? '',
 						'pin' => $activit->pin ?? 0,
-						'activity_type' => $activit->activity_type ?? 'note'
+						'activity_type' => $activit->activity_type ?? 'note',
+						'created_by' => $activit->created_by,
+						'raw_description' => $activit->description,
+						'raw_created_at' => $activit->created_at ? (string) $activit->created_at : '',
 					);
 				}
 
