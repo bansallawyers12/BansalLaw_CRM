@@ -31,6 +31,15 @@ use App\Http\Controllers\CRM\SuperAdminElevationController;
 */
 
 /*--------------------------------------------------
+| SECTION: Health (ALB / CodeDeploy)
+|--------------------------------------------------*/
+
+// Plain 200 for target group health checks; must work while maintenance mode is on (see AppServiceProvider).
+Route::get('/up', function () {
+    return response('OK', 200)->header('Content-Type', 'text/plain; charset=UTF-8');
+})->name('health.up');
+
+/*--------------------------------------------------
 | SECTION: Root & General Routes
 |--------------------------------------------------*/
 

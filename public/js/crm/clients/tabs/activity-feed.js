@@ -330,9 +330,272 @@
         $('.feed-item-no-results').toggle(visible === 0 && $('.feed-item.activity').length > 0);
     }
 
+    // --- Progressive disclosure: build feed HTML (shared with client + company detail AJAX) ---
+
+    function escapeHtml(s) {
+        if (s == null) return '';
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function escapeAttr(s) {
+        if (s == null) return '';
+        return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    }
+
+    function stripHtmlToText(html) {
+        if (html == null) return '';
+        var d = document.createElement('div');
+        d.innerHTML = String(html);
+        return (d.textContent || d.innerText || '').trim();
+    }
+
+    function getNoteTypeClass(subject) {
+        var s = (subject || '').toLowerCase();
+        if (s.indexOf('call') !== -1) {
+            return { li: ' activity-type-note-call', feedIcon: ' feed-icon-note-call' };
+        }
+        if (s.indexOf('email') !== -1) {
+            return { li: ' activity-type-note-email', feedIcon: ' feed-icon-note-email' };
+        }
+        if (s.indexOf('in-person') !== -1) {
+            return { li: ' activity-type-note-in-person', feedIcon: ' feed-icon-note-in-person' };
+        }
+        if (s.indexOf('attention') !== -1) {
+            return { li: ' activity-type-note-attention', feedIcon: ' feed-icon-note-attention' };
+        }
+        if (s.indexOf('others') !== -1) {
+            return { li: ' activity-type-note-others', feedIcon: ' feed-icon-note-others' };
+        }
+        return { li: ' activity-type-note', feedIcon: '' };
+    }
+
+    function getActivityIconElement(activityType, subject) {
+        var sl = (subject || '').toLowerCase();
+        if (activityType === 'sms') {
+            return { html: '<i class="fas fa-sms"></i>', cls: 'feed-icon-sms' };
+        }
+        if (activityType === 'document') {
+            return { html: '<i class="fas fa-file-alt"></i>', cls: '' };
+        }
+        if (activityType === 'signature') {
+            return { html: '<i class="fas fa-file-signature"></i>', cls: 'feed-icon-signature' };
+        }
+        if (activityType === 'financial') {
+            return { html: '<i class="fas fa-dollar-sign"></i>', cls: 'feed-icon-accounting' };
+        }
+        if (activityType === 'note') {
+            var nt = getNoteTypeClass(subject);
+            var ic = (subject || '').toLowerCase().indexOf('call') !== -1 ? 'fa-phone' : (sl.indexOf('email') !== -1 ? 'fa-envelope' : (sl.indexOf('in-person') !== -1 ? 'fa-user-friends' : (sl.indexOf('attention') !== -1 ? 'fa-exclamation-triangle' : (sl.indexOf('others') !== -1 ? 'fa-ellipsis-h' : 'fa-sticky-note'))));
+            return { html: '<i class="fas ' + ic + '"></i>', cls: 'feed-icon-note' + nt.feedIcon };
+        }
+        if (activityType === 'activity') {
+            return { html: '<i class="fas fa-bolt"></i>', cls: 'feed-icon-activity' };
+        }
+        if (activityType === 'stage') {
+            return { html: '<i class="fas fa-tasks" aria-hidden="true"></i>', cls: 'feed-icon-stage' };
+        }
+        if (sl.indexOf('invoice') !== -1 || sl.indexOf('receipt') !== -1 || sl.indexOf('ledger') !== -1 || sl.indexOf('payment') !== -1 || sl.indexOf('account') !== -1) {
+            return { html: '<i class="fas fa-dollar-sign"></i>', cls: '' };
+        }
+        if (sl.indexOf('document') !== -1) {
+            return { html: '<i class="fas fa-file-alt"></i>', cls: '' };
+        }
+        return { html: '<i class="fas fa-sticky-note"></i>', cls: '' };
+    }
+
+    /**
+     * Returns full HTML for all activity rows (replaces .feed-list contents).
+     */
+    window.buildActivityFeedListHtml = function (data) {
+        if (!data || !data.length) return '';
+        var html = '';
+        for (var k = 0; k < data.length; k++) {
+            var v = data[k];
+            if (v.activity_id == null) {
+                continue;
+            }
+            var activityType = v.activity_type || 'note';
+            var subject = v.subject || '';
+            var icon = getActivityIconElement(activityType, subject);
+            var noteAdd = (activityType === 'note' ? getNoteTypeClass(subject) : { li: '', feedIcon: '' });
+            var messageHtml = v.message != null && v.message !== undefined ? String(v.message) : '';
+            var taskGroup = v.task_group || '';
+            var followupDate = (v.followup_date_display && String(v.followup_date_display)) || v.followup_date || '';
+            var date = v.date || '';
+            var fullName = (v.name || 'Staff').trim() || 'Staff';
+            var createdAtYmd = v.created_at_ymd || '';
+            var id = v.activity_id;
+            var subjectOnly = v.subject_without_staff_prefix === true;
+            var activityTypeClass = ' activity-type-' + activityType;
+            if (activityType === 'note') {
+                activityTypeClass += noteAdd.li;
+            }
+            var feedItemClass = activityType === 'stage' ? 'feed-item--stage' : 'feed-item--email';
+
+            var bodyPlain = stripHtmlToText(messageHtml);
+            var canConvert = /added a note|updated a note/i.test(String(subject));
+            var isStage = activityType === 'stage';
+            var isExpandable;
+            if (isStage) {
+                isExpandable = stripHtmlToText(messageHtml) !== '';
+            } else {
+                isExpandable = bodyPlain !== '' || !!(taskGroup && String(taskGroup).length) || !!(followupDate && String(followupDate).length) || canConvert;
+            }
+
+            var noExpandClass = isExpandable ? '' : ' feed-item--no-expand';
+            var summaryLine;
+            if (isStage) {
+                summaryLine = 'Stage' + ' · ' + fullName + ' · ' + date;
+            } else {
+                if (subjectOnly) {
+                    summaryLine = (subject + ' · ' + fullName + ' · ' + date).trim();
+                } else {
+                    summaryLine = (fullName + ' ' + subject + ' · ' + date).trim();
+                }
+            }
+            var detailId = 'feed-detail-js-' + id;
+            var headline = subjectOnly ? escapeHtml(subject) : (escapeHtml(fullName) + '  ' + escapeHtml(subject));
+
+            var liOpen = '<li class="feed-item ' + feedItemClass + ' activity' + activityTypeClass + noExpandClass + '" id="activity_' + id + '" data-created-at="' + escapeAttr(createdAtYmd) + '">' +
+                '<span class="feed-icon ' + (icon.cls || '') + '">' + icon.html + '</span>' +
+                '<div class="feed-content">';
+
+            if (isExpandable) {
+                if (isStage) {
+                    liOpen += '<button type="button" class="feed-item-summary" data-feed-toggle aria-expanded="false" aria-controls="' + detailId + '" aria-label="Show or hide full activity content">' +
+                        '<span class="feed-item-summary-text">' + escapeHtml(summaryLine) + '</span>' +
+                        '<span class="feed-item-summary-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span></button>' +
+                        '<div class="feed-item-detail" id="' + detailId + '" hidden>' +
+                        '<div class="feed-item-body-outer" data-clampable="1">' +
+                        '<div class="feed-item-body-chunk">' + (messageHtml || '') + '</div>' +
+                        '<button type="button" class="feed-item-body-more btn btn-link btn-sm p-0" hidden>Show more</button></div></div>';
+                } else {
+                    liOpen += '<button type="button" class="feed-item-summary" data-feed-toggle aria-expanded="false" aria-controls="' + detailId + '" aria-label="Show or hide full activity content">' +
+                        '<span class="feed-item-summary-text">' + escapeHtml(summaryLine) + '</span>' +
+                        '<span class="feed-item-summary-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span></button>' +
+                        '<div class="feed-item-detail" id="' + detailId + '" hidden>' +
+                        '<p class="feed-item-full-headline mb-0"><strong>' + headline + '</strong>' +
+                        (canConvert
+                            ? '<i class="fas fa-ellipsis-v convert-activity-to-note" style="margin-left: 5px; cursor: pointer;" title="Convert to Note" data-activity-id="' + id + '" data-activity-subject="' + escapeAttr(subject) + '" data-activity-description="' + escapeAttr(v.raw_description != null ? v.raw_description : '') + '" data-activity-created-by="' + escapeAttr(v.created_by) + '" data-activity-created-at="' + escapeAttr(v.raw_created_at != null ? v.raw_created_at : '') + '" data-client-id="' + escapeAttr((window.ClientDetailConfig && window.ClientDetailConfig.clientId) || '') + '"></i>'
+                            : '') + '</p>';
+                    if (messageHtml) {
+                        liOpen += '<div class="feed-item-body-outer" data-clampable="1">' +
+                            '<div class="feed-item-body-chunk">' + messageHtml + '</div>' +
+                            '<button type="button" class="feed-item-body-more btn btn-link btn-sm p-0" hidden>Show more</button></div>';
+                    }
+                    if (taskGroup) {
+                        liOpen += '<p class="mb-0 small">' + escapeHtml(String(taskGroup)) + '</p>';
+                    }
+                    if (followupDate) {
+                        liOpen += '<p class="mb-0 small text-muted">' + escapeHtml(String(followupDate)) + '</p>';
+                    }
+                    liOpen += '</div>';
+                }
+            } else {
+                liOpen += '<div class="feed-item-summary feed-item-summary--static" role="none">' +
+                    '<span class="feed-item-summary-text">' + escapeHtml(summaryLine) + '</span></div>';
+            }
+
+            liOpen += '</div></li>';
+            html += liOpen;
+        }
+        return html;
+    };
+
+    function updateClampButtonForChunk($chunk) {
+        var el = $chunk[0];
+        if (!el) return;
+        if (el.classList.contains('feed-item-body-chunk--expanded')) {
+            return;
+        }
+        var $more = $chunk.closest('.feed-item-body-outer').find('.feed-item-body-more');
+        if (el.offsetParent === null) {
+            $more.attr('hidden', 'hidden');
+            return;
+        }
+        if (el.scrollHeight > el.clientHeight + 1) {
+            $more.removeAttr('hidden');
+        } else {
+            $more.attr('hidden', 'hidden');
+        }
+    }
+
+    function initClampsInDetail($detail) {
+        if (!$detail || !$detail.length) return;
+        $detail.find('.feed-item-body-chunk').each(function() {
+            var $c = $(this);
+            if (!$c.data('ro')) {
+                $c.data('ro', true);
+                if (window.ResizeObserver) {
+                    new window.ResizeObserver(function() { updateClampButtonForChunk($c); }).observe(this);
+                }
+            }
+            updateClampButtonForChunk($c);
+        });
+    }
+
+    window.initActivityFeedClamps = function() {
+        $('.feed-item--expanded .feed-item-detail:visible .feed-item-body-chunk').each(function() {
+            updateClampButtonForChunk($(this));
+        });
+    };
+
+    function setupProgressiveDisclosure() {
+        $(document).on('click', '.activity-feed .feed-item-summary[aria-controls]', function(e) {
+            var $btn = $(this);
+            var $li = $btn.closest('.feed-item');
+            var $detail = $li.find('.feed-item-detail');
+            var expanded = $btn.attr('aria-expanded') === 'true';
+            if (expanded) {
+                $btn.attr('aria-expanded', 'false');
+                if ($detail.length) {
+                    $detail.attr('hidden', 'hidden');
+                }
+                $li.removeClass('feed-item--expanded');
+            } else {
+                $btn.attr('aria-expanded', 'true');
+                if ($detail.length) {
+                    $detail.removeAttr('hidden');
+                }
+                $li.addClass('feed-item--expanded');
+                requestAnimationFrame(function() {
+                    initClampsInDetail($li.find('.feed-item-detail').first());
+                });
+            }
+        });
+
+        $(document).on('click', '.activity-feed .feed-item-body-more', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var $btn = $(this);
+            var $outer = $btn.closest('.feed-item-body-outer');
+            var $chunk = $outer.find('.feed-item-body-chunk');
+            if ($chunk.length === 0) {
+                return;
+            }
+            if ($chunk.hasClass('feed-item-body-chunk--expanded')) {
+                $chunk.removeClass('feed-item-body-chunk--expanded');
+                $btn.text('Show more');
+            } else {
+                $chunk.addClass('feed-item-body-chunk--expanded');
+                $btn.text('Show less');
+            }
+            if (!$chunk.hasClass('feed-item-body-chunk--expanded')) {
+                requestAnimationFrame(function() { updateClampButtonForChunk($chunk); });
+            } else {
+                $btn.removeAttr('hidden');
+            }
+        });
+    }
+
     // Initialize when DOM is ready
     $(document).ready(function() {
         init();
+        setupProgressiveDisclosure();
     });
 
     // Expose public API

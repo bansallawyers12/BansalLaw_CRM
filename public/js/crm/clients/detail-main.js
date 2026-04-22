@@ -4814,76 +4814,14 @@ success: function(response) {
                         var ress = safeParseJsonResponse(responses);
                         if (!ress) return;
 
-                    var html = '';
-
-
-
-                    $.each(ress.data, function (k, v) {
-
-                        // Determine icon based on activity type
-                        var activityType = v.activity_type ?? 'note';
-                        var subjectIcon;
-                        var iconClass = '';
-                        
-                        if (activityType === 'sms') {
-                            subjectIcon = '<i class="fas fa-sms"></i>';
-                            iconClass = 'feed-icon-sms';
-                        } else if (v.subject && v.subject.toLowerCase().includes("document")) {
-                            subjectIcon = '<i class="fas fa-file-alt"></i>';
-                        } else {
-                            subjectIcon = '<i class="fas fa-sticky-note"></i>';
-                        }
-
-                        var subject = v.subject ?? '';
-
-                        var description = v.message ?? '';
-
-                        var taskGroup = v.task_group ?? '';
-
-                        var followupDate = v.followup_date ?? '';
-
-                        var date = v.date ?? '';
-
-                        var createdBy = v.createdname ?? 'Unknown';
-
-                        var fullName = v.name ?? '';
-                        
-                        var activityTypeClass = activityType ? 'activity-type-' + activityType : '';
-                        var headline = v.subject_without_staff_prefix === true ? subject : (fullName + ' ' + subject);
-
-                        html += `
-
-                            <li class="feed-item feed-item--email activity ${activityTypeClass}" id="activity_${v.activity_id}">
-
-                                <span class="feed-icon ${iconClass}">
-
-                                    ${subjectIcon}
-
-                                </span>
-
-                                <div class="feed-content">
-
-                                    <p><strong>${headline}</strong></p>
-
-                                    ${description !== '' ? `<p>${description}</p>` : ''}
-
-                                    ${taskGroup !== '' ? `<p>${taskGroup}</p>` : ''}
-
-                                    ${followupDate !== '' ? `<p>${followupDate}</p>` : ''}
-
-                                    <span class="feed-timestamp">${date}</span>
-
-                                </div>
-
-                            </li>
-
-                        `;
-
-                    });
-
-
+                    var html = typeof window.buildActivityFeedListHtml === 'function'
+                        ? window.buildActivityFeedListHtml(ress.data)
+                        : '';
 
                     $('.feed-list').html(html);
+                    if (typeof window.initActivityFeedClamps === 'function') {
+                        window.initActivityFeedClamps();
+                    }
 
                     //$('.activities').html(html);
 

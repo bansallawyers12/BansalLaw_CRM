@@ -7,5 +7,11 @@ file_exists_behavior: OVERWRITE
 hooks:
   AfterInstall:
     - location: scripts/deploy.sh
-      timeout: 600
+      # Composer + Python venv + migrations + cache rebuild can take several minutes on a cold deploy.
+      timeout: 900
+      runas: root
+  ValidateService:
+    - location: scripts/validate.sh
+      # Polls GET /up until HTTP 200 (max 90s inside the script) then exits 0.
+      timeout: 120
       runas: root
