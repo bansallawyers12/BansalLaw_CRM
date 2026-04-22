@@ -4688,33 +4688,37 @@ $(document).ready(function() {
 });
 
 /**
- * Go back with refresh to ensure consistent information
+ * Leave client/company edit and open the unified CRM detail page (same encoded id).
+ *
+ * - Uses location.pathname only so ?query and #hash never corrupt the id (unlike splitting href).
+ * - Anchors on /clients/edit/{id} so a stray "edit" earlier in the path cannot steal the segment.
+ * - Works with subdirectory installs (e.g. /app/public/clients/edit/…).
+ * - Falls back to history.back() when the path does not match or on error.
  */
 window.goBackWithRefresh = function() {
-    // Extract client ID from current URL
-    const currentUrl = window.location.href;
-    
-    // Check if we're on an edit page
-    if (currentUrl.includes('/clients/edit/')) {
-        // Extract the client ID from the URL
-        const urlParts = currentUrl.split('/');
-        const clientId = urlParts[urlParts.indexOf('edit') + 1];
+    try {
+        var pathname = window.location.pathname || '';
+        var match = /\/clients\/edit\/([^/]+)\/?$/.exec(pathname);
+        if (!match || !match[1]) {
+            window.history.back();
+            return;
+        }
+        var clientId = match[1];
 
-        const typeInput = document.querySelector('#editCompanyForm input[name="type"]') || document.querySelector('#editClientForm input[name="type"]');
-        const clientType = (typeInput ? typeInput.value : window.currentClientType || '').toLowerCase();
-        let detailPath = '/clients/detail/' + clientId;
+        var typeInput = document.querySelector('#editCompanyForm input[name="type"]') || document.querySelector('#editClientForm input[name="type"]');
+        var clientType = (typeInput ? typeInput.value : window.currentClientType || '').toLowerCase();
+        var detailPath = '/clients/detail/' + clientId;
 
+        // Matter ref in URL matches ClientsController@detail expectations for individuals (not leads).
         if (clientType === 'client') {
-            const latestMatterRef = window.latestClientMatterRef || null;
+            var latestMatterRef = window.latestClientMatterRef || null;
             if (latestMatterRef) {
                 detailPath += '/' + encodeURIComponent(latestMatterRef);
             }
         }
 
-        // Redirect to the client detail page (respect app subdirectory)
         window.location.href = crmClientUrl(detailPath);
-    } else {
-        // Fallback to normal back navigation
+    } catch (e) {
         window.history.back();
     }
 };
