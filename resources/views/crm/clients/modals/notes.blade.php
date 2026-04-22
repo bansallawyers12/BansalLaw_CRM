@@ -78,7 +78,7 @@
 		<div class="modal-content create-note-modal">
 			<div class="modal-header create-note-header">
 				<div class="modal-title-section">
-					<i class="fas fa-sticky-note text-primary mr-2"></i>
+					<i class="fas fa-sticky-note create-note-header__icon mr-2" aria-hidden="true"></i>
 					<h5 class="modal-title mb-0" id="appliationModalLabel">Create Note</h5>
 				</div>
 				<div class="modal-actions">
@@ -316,6 +316,13 @@
 .modal-title-section .modal-title {
     font-weight: 600;
     font-size: 1.4rem;
+    /* Theme: header uses navy gradient; title must stay light (overridden by body.sidebar-mini h5 in crm-theme) */
+    color: #fff !important;
+}
+
+.create-note-header .create-note-header__icon {
+    color: rgba(255, 255, 255, 0.95) !important;
+    font-size: 1.15rem;
 }
 
 .modal-actions {

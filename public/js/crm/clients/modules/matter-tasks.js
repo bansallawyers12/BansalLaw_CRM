@@ -138,10 +138,13 @@
                     }
                     var done = it.is_done === true;
                     var title = $('<div>').text(it.title || '').html();
-                    html += '<li class="cdn-matter-task__row d-flex align-items-start py-2 border-bottom" data-id="' + rowId + '">';
-                    html += '<input type="checkbox" class="form-check-input cdn-matter-task__cb" id="cdn-mtask-' + rowId + '"' + (done ? ' checked' : '') + ' />';
-                    html += '<label class="form-check-label flex-grow-1 mb-0 cdn-matter-task__label' + (done ? ' is-done' : '') + '" for="cdn-mtask-' + rowId + '">' + title + '</label>';
-                    html += '<button type="button" class="btn btn-link btn-sm text-danger p-0 flex-shrink-0 cdn-matter-task__del" title="Remove task" aria-label="Remove task">&times;</button>';
+                    var cbId = 'cdn-mtask-' + rowId;
+                    html += '<li class="cdn-matter-task__row" data-id="' + rowId + '">';
+                    html += '<div class="cdn-matter-task__row-main">';
+                    html += '<input type="checkbox" class="cdn-matter-task__cb" id="' + cbId + '"' + (done ? ' checked' : '') + ' />';
+                    html += '<label class="cdn-matter-task__label' + (done ? ' is-done' : '') + '" for="' + cbId + '">' + title + '</label>';
+                    html += '</div>';
+                    html += '<button type="button" class="cdn-matter-task__del" title="Delete task" aria-label="Delete task"><i class="fas fa-trash-alt" aria-hidden="true"></i></button>';
                     html += '</li>';
                 }
                 html += '</ul>';

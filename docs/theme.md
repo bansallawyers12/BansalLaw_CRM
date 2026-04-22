@@ -79,6 +79,11 @@
 - Breadcrumb active: `--sidebar-active`
 - **CRM implementation:** `public/css/crm-theme.css` (linked **last** in `<head>` from `layouts/crm_client_detail.blade.php` and `layouts/crm_client_detail_dashboard.blade.php`, after `@yield('styles')` / `@stack('styles')`). Dashboard widgets also use matching tokens in `public/css/dashboard.css` `:root`.
 
+### Modals with dark (navy) headers
+- **Problem:** In `public/css/crm-theme.css`, `body.sidebar-mini h1`–`h5` are forced to `color: var(--navy) !important` for page chrome. A modal title that uses `h5.modal-title` on a **navy or gradient** header will inherit that rule and become **nearly invisible** (navy on navy).
+- **Fix:** For each such modal, add a scoped override in `crm-theme.css` after the pattern used for `#create_appoint` / `#create_note_d`: set `.modal-header` (or custom header class), `.modal-title`, `h5`, header icons, and `.close` to `color: #fff !important` (and optional `border-bottom: 3px solid var(--accent-gold)` to match the theme).
+- **Reference implementations:** `body.sidebar-mini #create_appoint...`, `body.sidebar-mini #create_note_d .create-note-header...`.
+
 ### Buttons
 - **Primary button:** background `--navy`, text `#fff`
 - **Gold button:** background `--accent-gold`, text `#fff`
@@ -93,8 +98,14 @@
 
 ### Tables
 - Header row bg: `--page-bg`
-- Row hover bg: `#EBF3FF`
+- Row hover bg: `#EBF3FF` (or `--page-bg` for hover)
 - Border: `1px solid --border`
+- Column header text: `--text-muted`, `600` weight, `uppercase`, letter-spacing (see `client-detail.css` `.checklist-table th`)
+
+### Client detail — Personal / Matter documents
+- **Category bar (General, …):** `linear-gradient(135deg, var(--navy) → var(--sidebar-active))`, bottom border `3px solid var(--accent-gold)` — `client-detail.css` `.subtab-header-container`, `.subtabs3`, `.subtabs`.
+- **In-tab “Personal / Matter documents” strip:** background `--page-bg`, border `--border`; active pill uses `--sidebar-active` + gold inset line — `.cdn-doc-subtab-strip` / `.cdn-doc-subtab-btn` (not the standalone `--cdn-primary` indigo from the old client shell).
+- **Pill text on the dark bar:** `body.sidebar-mini .main-content` forces `color: var(--text-dark) !important`, which can make category button labels (`.subtab2-button`, etc.) inherit **dark** text on a **navy** bar. `crm-theme.css` adds `body.sidebar-mini .main-content .subtab2-button` (and related) with `color: #fff !important` so all category names stay readable.
 
 ### Status Badges
 | Status | Background | Text |

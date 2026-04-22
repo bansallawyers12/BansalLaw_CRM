@@ -124,8 +124,9 @@
 /* Documents Tab CSS (tokens: docs/theme.md via crm-theme.css :root) */
 .documentalls-container { padding: 0; background-color: var(--card-bg, #fff); border-radius: 10px; box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06); border: 1px solid var(--border, #c8dcef); margin-top: 20px; }
 .subtabs, .subtabs2, .subtabs6 { display: flex; background-color: transparent; padding: 0; gap: 5px; flex-wrap: wrap; }
-.subtabs3 { display: flex; background-color: var(--sidebar-active, #3a6fa8); padding: 10px; border-radius: 8px 8px 0 0; gap: 5px; flex-wrap: wrap; border-bottom: 3px solid var(--accent-gold, #c8992a); }
-.subtab-header-container { background-color: var(--sidebar-active, #3a6fa8); padding: 10px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 3px solid var(--accent-gold, #c8992a); }
+/* Navy → active blue (docs/theme.md) + gold accent; matches appointment / note modal headers */
+.subtabs3 { display: flex; background: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%); padding: 10px; border-radius: 8px 8px 0 0; gap: 5px; flex-wrap: wrap; border-bottom: 3px solid var(--accent-gold, #c8992a); }
+.subtab-header-container { background: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%); padding: 10px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 3px solid var(--accent-gold, #c8992a); }
 .subtab-button.ml-auto { margin-left: auto; }
 .subtab-button, .subtab2-button, .subtab6-button, .subtab3-button { padding: 10px 20px; background: none; border: none; color: #fff !important; font-size: 1rem; font-weight: 500; cursor: pointer; border-radius: 5px; }
 .subtab-button:hover, .subtab2-button:hover, .subtab6-button:hover, .subtab3-button:hover { background-color: rgba(255, 255, 255, 0.18); }
@@ -149,7 +150,7 @@
     margin: 0;
     font-size: 1.5rem;
     font-weight: 600;
-    color: #333;
+    color: var(--navy, #1e3d60);
 }
 
 .subtab3-pane .form-actions {
@@ -207,10 +208,10 @@
 .checklist-table-container { flex: 1.5; overflow-x: auto; }
 .checklist-table { width: 100%; border-collapse: collapse; background: var(--card-bg, #fff); color: var(--text-dark, #1a2c40); }
 .checklist-table thead { background: var(--page-bg, #f0f6ff); }
-/* theme.md: Labels/caps + table headers — readable navy, 1px letter-spacing */
-.checklist-table th { padding: 10px 8px; text-align: left; font-weight: 700; font-size: 11.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--navy, #1e3d60); border-bottom: 1px solid var(--border, #c8dcef); }
+/* theme.md: table header row = page-bg; column titles = label/caps (muted) */
+.checklist-table th { padding: 10px 8px; text-align: left; font-weight: 600; font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted, #5e7a90); border-bottom: 1px solid var(--border, #c8dcef); }
 .checklist-table tbody tr { border-bottom: 1px solid var(--border, #c8dcef); }
-.checklist-table tbody tr:hover { background-color: #ebf3ff; }
+.checklist-table tbody tr:hover { background-color: var(--page-bg, #f0f6ff); }
 .checklist-table td { padding: 10px; color: var(--text-dark, #1a2c40); }
 .checklist-table td a.file-link { color: var(--sidebar-active, #3a6fa8); text-decoration: none; font-weight: 600; }
 .checklist-table td a.file-link:hover { color: var(--navy, #1e3d60); text-decoration: underline; }
@@ -300,11 +301,11 @@
 
 /* Emails Tab CSS (beginning) */
 .emails-container { padding: 0; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
-.subtabs { display: flex; background-color: #4a90e2; padding: 10px; border-radius: 8px 8px 0 0; }
-.subtab-button { padding: 10px 20px; background: none; border: none; color: white; font-size: 1rem; font-weight: 500; cursor: pointer; }
-.subtab-button:hover { background-color: #357ab8; border-radius: 5px; }
-.subtab-button.active { background-color: #357ab8; border-radius: 5px; }
-.subtab-content { padding: 0; background: #fff; }
+.subtabs { display: flex; background: linear-gradient(135deg, var(--navy, #1e3d60) 0%, var(--sidebar-active, #3a6fa8) 100%); padding: 10px; border-radius: 8px 8px 0 0; border-bottom: 3px solid var(--accent-gold, #c8992a); }
+.subtab-button { padding: 10px 20px; background: none; border: none; color: #fff; font-size: 1rem; font-weight: 500; cursor: pointer; }
+.subtab-button:hover { background-color: rgba(255, 255, 255, 0.18); border-radius: 5px; }
+.subtab-button.active { background-color: rgba(255, 255, 255, 0.28); border-radius: 5px; }
+.subtab-content { padding: 0; background: var(--card-bg, #fff); }
 .subtab-pane { display: none; }
 .subtab-pane.active { display: block; }
 .email-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #dee2e6; }
@@ -2530,8 +2531,8 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   gap: 8px;
   margin-bottom: 14px;
   padding: 10px var(--cdn-main-content-pad-x);
-  background: #f8fafc;
-  border: 1px solid var(--cdn-border);
+  background: var(--page-bg, #f0f6ff);
+  border: 1px solid var(--border, #c8dcef);
   border-radius: 10px;
   box-sizing: border-box;
   width: 100%;
@@ -2549,25 +2550,28 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 
 .cdn-doc-subtab-btn {
   border-radius: 999px;
-  border: 1px solid var(--cdn-border);
-  background: #fff;
+  border: 1px solid var(--border, #c8dcef);
+  background: var(--card-bg, #fff);
   font-weight: 600;
   font-size: 13px;
-  color: #334155;
+  color: var(--navy, #1e3d60);
   padding: 6px 14px;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .cdn-doc-subtab-btn:hover {
-  border-color: #bfd7ff;
-  background: #f8fafc;
+  border-color: var(--sidebar-active, #3a6fa8);
+  background: var(--sidebar-bg, #ddeaf8);
+  color: var(--navy, #1e3d60);
 }
 
+/* Active pill: theme.md sidebar active + gold line */
 .cdn-doc-subtab-btn.active {
-  border-color: var(--cdn-primary);
-  color: var(--cdn-primary);
-  background: var(--cdn-primary-soft);
+  border-color: var(--sidebar-active, #3a6fa8);
+  color: #fff;
+  background: var(--sidebar-active, #3a6fa8);
+  box-shadow: inset 0 -2px 0 0 var(--accent-gold, #c8992a);
 }
 
 .crm-container.crm-container--unified .sidebar-toggle-btn,
@@ -2692,36 +2696,77 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   padding-right: 1.1rem;
 }
 
-/* Tasks tab — matter task list */
+/* Tasks tab — matter task list
+   Do NOT use Bootstrap .form-check-input on these rows: BS uses float/negative margins that
+   break flex layout and make the label overlap the checkbox. */
 .cdn-matter-task__ul {
   border: 1px solid var(--cdn-border, #e2e8f0);
   border-radius: var(--cdn-radius, 12px);
-  padding: 4px 12px;
+  padding: 0.5rem 0.5rem 0.55rem;
   background: var(--cdn-card, #fff);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
 }
 
 .cdn-matter-task__row {
-  gap: 0.75rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem 0.25rem;
+  border: none;
+  border-bottom: none;
 }
 
-/* Checkbox + label are flex siblings; avoid Bootstrap .form-check float/negative-margin overlap */
+.cdn-matter-task__row-main {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 0.65rem;
+}
+
+/* Native checkbox; avoid BS .form-check-input (appearance: none) */
 .cdn-matter-task__row .cdn-matter-task__cb {
-  float: none;
-  margin: 0.35rem 0 0;
-  flex-shrink: 0;
+  float: none !important;
+  position: static !important;
+  flex: 0 0 auto;
+  width: 1.125rem;
+  height: 1.125rem;
+  min-width: 1.125rem;
+  min-height: 1.125rem;
+  margin: 0.2rem 0 0 0 !important;
+  margin-left: 0 !important;
+  padding: 0;
   cursor: pointer;
+  -webkit-appearance: auto;
+  -moz-appearance: auto;
+  appearance: auto;
+  accent-color: #1e3a5f;
+  vertical-align: top;
+  box-shadow: none;
+  border-radius: 0.2rem;
 }
 
 .cdn-matter-task__row .cdn-matter-task__label {
+  display: block;
   flex: 1 1 auto;
   min-width: 0;
+  margin: 0 !important;
+  padding: 0.15rem 0 0 0;
   line-height: 1.45;
+  font-size: 0.92rem;
+  font-weight: 400;
+  color: #0f172a;
   cursor: pointer;
-  padding-top: 0.2rem;
-}
-
-.cdn-matter-task__row:last-child {
-  border-bottom: none !important;
+  text-align: left;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .cdn-matter-task__label.is-done {
@@ -2730,9 +2775,29 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 .cdn-matter-task__del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 2.1rem;
+  height: 2.1rem;
+  min-width: 2.1rem;
+  min-height: 2.1rem;
+  margin: 0;
+  padding: 0;
   line-height: 1;
-  min-width: 2rem;
-  font-size: 1.25rem;
+  font-size: 0.9rem;
   text-decoration: none;
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+
+.cdn-matter-task__del:hover {
+  color: #b91c1c;
+  background: rgba(185, 28, 28, 0.08);
 }
 

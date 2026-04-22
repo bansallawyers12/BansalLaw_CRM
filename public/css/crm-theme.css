@@ -3905,6 +3905,57 @@ body.sidebar-mini #create_appoint.add_appointment .modal-header .close:focus {
   color: #fff !important;
 }
 
+/* Create Note (enhanced) #create_note_d — same as appointment modal: global h5 { navy } made title illegible on gradient header
+   (see docs/theme.md → Modals with dark headers). */
+body.sidebar-mini #create_note_d .create-note-header {
+  color: #fff !important;
+  border-bottom: 3px solid var(--accent-gold) !important;
+}
+
+body.sidebar-mini #create_note_d .create-note-header .modal-title,
+body.sidebar-mini #create_note_d .create-note-header .modal-title-section h5,
+body.sidebar-mini #create_note_d .create-note-header h5 {
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+
+body.sidebar-mini #create_note_d .create-note-header .modal-title-section i,
+body.sidebar-mini #create_note_d .create-note-header .modal-title-section .text-primary {
+  color: #fff !important;
+  opacity: 0.95 !important;
+}
+
+body.sidebar-mini #create_note_d .create-note-header .close,
+body.sidebar-mini #create_note_d .create-note-header .close span {
+  color: #fff !important;
+  opacity: 0.9 !important;
+  text-shadow: none !important;
+}
+
+body.sidebar-mini #create_note_d .create-note-header .close:hover,
+body.sidebar-mini #create_note_d .create-note-header .close:focus {
+  opacity: 1 !important;
+  color: #fff !important;
+}
+
+/*
+ * Client detail — Documents: body.sidebar-mini .main-content sets color: var(--text-dark) !important
+ * (see block ~line 48). It beats .subtab2-button { color: #fff } in cascade for *inherited* text on
+ * category pill buttons, so 2+ category names (e.g. “tesr”) appear dark on the navy/gradient bar.
+ * force light labels on the bar + pills (docs/theme.md — dark bar, white/visible copy).
+ */
+body.sidebar-mini .main-content .subtab-header-container,
+body.sidebar-mini .main-content .subtabs3 {
+  color: #fff !important;
+}
+
+body.sidebar-mini .main-content .subtab2-button,
+body.sidebar-mini .main-content .subtab3-button,
+body.sidebar-mini .main-content .subtab6-button,
+body.sidebar-mini .main-content .subtab-button {
+  color: #fff !important;
+}
+
 body.sidebar-mini #create_appoint.add_appointment .modal-body .btn.btn-primary {
   background: var(--navy) !important;
   border-color: var(--navy) !important;
