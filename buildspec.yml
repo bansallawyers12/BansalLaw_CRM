@@ -1,151 +1,223 @@
 version: 0.2
 
-# CodeBuild packages the repo; the generated scripts/deploy.sh runs on the app server
-# (e.g. via CodeDeploy / SSH) and performs: composer, migrate --force, npm build, cache, restarts.
-# Do not run migrations here in CodeBuild unless this build has DB access and the same .env as production.
+# CodeBuild packages the repo; CodeDeploy runs scripts/deploy.sh (AfterInstall)
+# and scripts/validate.sh (ValidateService) on the production EC2 instance.
 #
-# npm run dev: local Vite dev server only (HMR). CI and deploy use npm run build — do not run dev in CodeBuild
-# or deploy (it never exits). Use `composer install` in CI (locked); run `composer update` locally and commit composer.lock.
+# NEVER run migrations here — CodeBuild has no DB access or production .env.
+# NEVER run `npm run dev` — the Vite dev server never exits.
+# Use `composer install` in CI (locked); run `composer update` locally and commit composer.lock.
 
 phases:
-  # Omit this install block if your CodeBuild project uses a custom image that already provides PHP/Node/Composer.
   install:
     runtime-versions:
       php: 8.2
       nodejs: 24
     commands:
-      # CodeBuild phpenv PHP often has no loadable sodium module (ini trick fails). Composer still needs to resolve
-      # lcobucci/jwt; we only ignore ext-sodium here — production EC2 has sodium; vendor is excluded from artifacts.
-      # Laravel post-install runs `php artisan package:discover`; CodeBuild has no .env unless we create one.
+      # Provide a minimal .env so Composer's post-install hook (package:discover) can run.
+      # CodeBuild has no production .env; ext-sodium is skipped here (production EC2 has it).
       - |
         if [ ! -f .env ]; then
-          if [ -f .env.example ]; then cp .env.example .env; else printf 'APP_KEY=base64:%s\nAPP_ENV=production\n' "$(openssl rand -base64 32)" > .env; fi
+          if [ -f .env.example ]; then
+            cp .env.example .env
+          else
+            printf 'APP_KEY=base64:%s\nAPP_ENV=production\nAPP_DEBUG=false\n' \
+              "$(openssl rand -base64 32)" > .env
+          fi
         fi
+
   pre_build:
     commands:
-      - echo "composer install (locked) + npm build"
-      - composer install --no-interaction --no-dev --optimize-autoloader --ignore-platform-req=ext-sodium
+      - echo "=== composer install (locked) + npm ci + npm run build ==="
+      - composer install --no-interaction --no-dev --optimize-autoloader --ignore-platform-req=ext-sodium --quiet
       - npm ci
       - npm run build
       # npm run dev — local Vite only; never enable here (process does not exit)
+
   build:
     commands:
-      - echo "======================================"
-      - echo "Creating deploy script..."
-      - echo "======================================"
-
+      - echo "=== Generating CodeDeploy hook scripts ==="
       - mkdir -p scripts
 
+      # ── scripts/deploy.sh  (AfterInstall lifecycle hook) ─────────────────
       - |
         cat > scripts/deploy.sh << 'DEPLOYEOF'
         #!/bin/bash
-        set -e
+        set -eo pipefail
 
         PROJECT_DIR="/home/bansallawyercrm"
         APP_USER="ubuntu"
         WEB_USER="www-data"
         PHP_FPM="php8.2-fpm"
-
         SOURCE_DIR="/tmp/bansallawyercrm-build"
 
+        # Resolve PHP binary. ondrej/php PPA installs as php8.2; fallback to php.
+        if command -v php8.2 &>/dev/null; then PHP_BIN="php8.2"; else PHP_BIN="php"; fi
+
+        # Resolve Composer binary.
+        COMPOSER_BIN="/usr/local/bin/composer"
+        [ ! -x "$COMPOSER_BIN" ] && COMPOSER_BIN="$(command -v composer)"
+
         echo "======================================"
-        echo "Starting Deployment..."
+        echo "Deployment starting"
+        echo "PHP : $($PHP_BIN -r 'echo PHP_VERSION;')"
+        echo "User: $APP_USER  Dir: $PROJECT_DIR"
         echo "======================================"
 
-        echo "Enabling maintenance mode..."
-        sudo -u $APP_USER php artisan down --retry=60 || true
+        # ── [1/11] Maintenance mode ─────────────────────────────────────────
+        # /up stays HTTP 200 during maintenance (AppServiceProvider + routes/web.php)
+        # so the ALB target group health check keeps passing throughout the deploy.
+        echo "[1/11] Enabling maintenance mode..."
+        sudo -u $APP_USER $PHP_BIN artisan down --retry=60 || true
 
-        echo "Syncing source → project..."
-        rsync -av --delete \
+        # ── [2/11] Sync build artifact → project directory ──────────────────
+        echo "[2/11] Syncing source to project..."
+        rsync -a --delete \
           --exclude='.env' \
           --exclude='storage/' \
           --exclude='node_modules/' \
           --exclude='vendor/' \
           "$SOURCE_DIR/" "$PROJECT_DIR/"
 
-        echo "Fixing ownership..."
+        # ── [3/11] Ownership ────────────────────────────────────────────────
+        echo "[3/11] Fixing ownership..."
         chown -R $APP_USER:$WEB_USER "$PROJECT_DIR"
 
         cd "$PROJECT_DIR"
 
-        echo "Updating backend dependencies..."
-        sudo -u $APP_USER composer install --no-dev --optimize-autoloader --no-interaction
+        # ── [4/11] Composer ─────────────────────────────────────────────────
+        echo "[4/11] Installing Composer dependencies..."
+        sudo -u $APP_USER $COMPOSER_BIN install \
+          --no-dev --optimize-autoloader --no-interaction --quiet
 
-        # ========================================
-        # PYTHON VENV SETUP (SAFE + OPTIMIZED)
-        # Inner echo messages must use single quotes — nested " closes bash -lc "..." early.
-        # ========================================
-        echo "Setting up Python virtual environment..."
+        # ── [5/11] Python venv ──────────────────────────────────────────────
+        # Written to a temp file to avoid quoting/escaping issues with nested heredocs.
+        echo "[5/11] Setting up Python virtual environment..."
+        cat > /tmp/_setup_venv.sh << 'VENVEOF'
+        #!/bin/bash
+        set -e
+        PROJ_DIR="$1"
+        cd "$PROJ_DIR/python_services"
 
-        sudo -u $APP_USER bash -lc "
-        cd $PROJECT_DIR/python_services
+        SYS_PY=$(python3 --version 2>&1 | awk '{print $2}')
+        VENV_PY=""
+        if [ -f venv/pyvenv.cfg ]; then
+            VENV_PY=$(grep "^version = " venv/pyvenv.cfg 2>/dev/null | awk '{print $3}')
+        fi
 
-        if [ ! -d 'venv' ]; then
-            echo 'Creating new virtual environment...'
+        if [ ! -d venv ] || [ "$SYS_PY" != "$VENV_PY" ]; then
+            echo "  Recreating venv (system Python $SYS_PY, previous: ${VENV_PY:-none})..."
+            rm -rf venv
             python3 -m venv venv
         fi
 
-        echo 'Installing Python dependencies...'
-        ./venv/bin/pip install --upgrade pip >/dev/null 2>&1
+        echo "  Installing Python dependencies (Python $SYS_PY)..."
+        ./venv/bin/pip install --upgrade pip --quiet
         ./venv/bin/pip install -r requirements.txt --quiet
-        "
+        echo "  Python venv ready."
+        VENVEOF
+        sudo -u $APP_USER bash /tmp/_setup_venv.sh "$PROJECT_DIR"
+        rm -f /tmp/_setup_venv.sh
 
-        echo "Clearing config cache (so .env changes apply before migrate)..."
-        sudo -u $APP_USER php artisan config:clear
+        # ── [6/11] Clear config cache so .env changes apply before migrate ──
+        echo "[6/11] Clearing config cache..."
+        sudo -u $APP_USER $PHP_BIN artisan config:clear
 
-        echo "Running migrations..."
-        sudo -u $APP_USER php artisan migrate --force
+        # ── [7/11] Migrations ───────────────────────────────────────────────
+        echo "[7/11] Running migrations..."
+        sudo -u $APP_USER $PHP_BIN artisan migrate --force
+        # sudo -u $APP_USER $PHP_BIN artisan import:reference-master-data
 
-        # Optional: sync user_roles/branches/teams from PG_REFERENCE_* database (uncomment only if production .env has reference DB and you want this on every deploy)
-        # sudo -u $APP_USER php artisan import:reference-master-data
-
-        echo "Building frontend assets..."
-        # Assets are pre-built by CodeBuild (public/build/ is in the artifact) — no need to rebuild on the server.
-
-        echo "Ensuring required directories..."
+        # ── [8/11] Required storage / cache directories ─────────────────────
+        echo "[8/11] Ensuring required directories..."
         sudo -u $APP_USER mkdir -p storage/framework/{sessions,views,cache/data}
         sudo -u $APP_USER mkdir -p bootstrap/cache
 
-        echo "Rebuilding caches..."
-        sudo -u $APP_USER php artisan view:clear
-        sudo -u $APP_USER php artisan config:cache
-        sudo -u $APP_USER php artisan route:cache
-        sudo -u $APP_USER php artisan event:cache
-        sudo -u $APP_USER php artisan storage:link --force
+        # ── [9/11] Rebuild framework caches ────────────────────────────────
+        echo "[9/11] Rebuilding caches..."
+        sudo -u $APP_USER $PHP_BIN artisan view:clear
+        sudo -u $APP_USER $PHP_BIN artisan config:cache
+        sudo -u $APP_USER $PHP_BIN artisan route:cache
+        sudo -u $APP_USER $PHP_BIN artisan event:cache
+        sudo -u $APP_USER $PHP_BIN artisan storage:link --force
 
-        echo "Fixing permissions..."
-        chown -R $APP_USER:$WEB_USER storage
-        chown -R $APP_USER:$WEB_USER bootstrap/cache
+        # ── [10/11] Permissions ─────────────────────────────────────────────
+        echo "[10/11] Fixing permissions..."
+        chown -R $APP_USER:$WEB_USER storage bootstrap/cache
+        chmod -R 775 storage bootstrap/cache
 
-        chmod -R 775 storage
-        chmod -R 775 bootstrap/cache
+        # ── [11/11] Service restarts ────────────────────────────────────────
+        echo "[11/11] Restarting services..."
 
-        # ========================================
-        # SERVICE RESTARTS
-        # ========================================
-        echo "Restarting services..."
+        # Tell queue workers to finish their current job cleanly before the hard restart.
+        sudo -u $APP_USER $PHP_BIN artisan queue:restart || true
 
-        systemctl restart $PHP_FPM || true
-        systemctl restart bansallaw-queue || true
-        systemctl restart bansallaw-email || true
-        systemctl restart migration-python-services || true
+        RESTART_ERRORS=0
+        for SVC in $PHP_FPM bansallaw-queue bansallaw-email migration-python-services; do
+            if systemctl is-enabled --quiet "$SVC" 2>/dev/null; then
+                if systemctl restart "$SVC"; then
+                    echo "  OK   : $SVC restarted"
+                else
+                    echo "  WARN : $SVC failed to restart — check: systemctl status $SVC"
+                    RESTART_ERRORS=$((RESTART_ERRORS + 1))
+                fi
+            else
+                echo "  SKIP : $SVC is not enabled"
+            fi
+        done
 
         echo "Reloading web server..."
         if systemctl is-active --quiet apache2; then
             systemctl reload apache2
         elif systemctl is-active --quiet nginx; then
             systemctl reload nginx
+        else
+            echo "  WARN : no active web server (apache2 / nginx) found"
         fi
 
         echo "Disabling maintenance mode..."
-        sudo -u $APP_USER php artisan up
+        sudo -u $APP_USER $PHP_BIN artisan up
 
         echo "======================================"
-        echo "Deployment Complete!"
+        if [ "$RESTART_ERRORS" -gt 0 ]; then
+            echo "Deployment DONE with $RESTART_ERRORS service restart warning(s)."
+        else
+            echo "Deployment complete."
+        fi
         echo "======================================"
         DEPLOYEOF
 
-      - chmod +x scripts/deploy.sh
+      # ── scripts/validate.sh  (ValidateService lifecycle hook) ────────────
+      - |
+        cat > scripts/validate.sh << 'VALIDATEEOF'
+        #!/bin/bash
+        set -e
+
+        # Probe the /up health endpoint on the local web server.
+        # The route returns HTTP 200 even during maintenance mode (AppServiceProvider).
+        # CodeDeploy calls this hook after AfterInstall; a non-zero exit fails the deployment.
+        APP_URL="http://127.0.0.1"
+        MAX_WAIT=90
+        INTERVAL=5
+        ELAPSED=0
+
+        echo "ValidateService: waiting for $APP_URL/up to return HTTP 200 (max ${MAX_WAIT}s)..."
+        while [ "$ELAPSED" -lt "$MAX_WAIT" ]; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+                --max-time 5 --connect-timeout 3 "$APP_URL/up" 2>/dev/null || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+                echo "Health check PASSED (HTTP 200) after ${ELAPSED}s."
+                exit 0
+            fi
+            echo "  HTTP $HTTP_CODE after ${ELAPSED}s — retrying in ${INTERVAL}s..."
+            sleep "$INTERVAL"
+            ELAPSED=$((ELAPSED + INTERVAL))
+        done
+
+        echo "ERROR: /up did not return HTTP 200 within ${MAX_WAIT}s. Deployment failed."
+        exit 1
+        VALIDATEEOF
+
+      - chmod +x scripts/deploy.sh scripts/validate.sh
 
 artifacts:
   files:
@@ -155,3 +227,7 @@ artifacts:
     - 'vendor/**/*'
     - '.git/**/*'
     - 'tests/**/*'
+    - '.env'
+    - 'storage/framework/**/*'
+    - 'storage/logs/**/*'
+    - 'bootstrap/cache/**/*'

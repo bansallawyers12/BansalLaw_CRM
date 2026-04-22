@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Helpers\SortableHelper;
+use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Keep /up available during "php artisan down" so load balancer (ALB/ELB) health checks pass during CodeDeploy.
+        PreventRequestsDuringMaintenance::except(['up']);
+
         Schema::defaultStringLength(191);
         Paginator::useBootstrap();
 
