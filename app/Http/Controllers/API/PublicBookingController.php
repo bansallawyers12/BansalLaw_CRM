@@ -1615,6 +1615,94 @@ class PublicBookingController extends BaseController
     }
 
     /**
+     * Return booked appointment start times for a day as disabled slot labels (CRM database).
+     *
+     * Excludes pending, cancelled, and no_show. Times are formatted as g:i A in app timezone.
+     * Optional inperson_address (1=Adelaide, 2=Melbourne) limits by booking_appointments.location.
+     */
+    public function getBookedTimeSlotsToDisable(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'date' => ['required', 'string'],
+                'inperson_address' => ['sometimes', 'integer', 'in:1,2'],
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError('Validation Error', $validator->errors()->toArray(), 422);
+            }
+
+            $dateInput = (string) $request->input('date');
+            $date = $this->parseBookingDisabledDate($dateInput);
+
+            if (! $date) {
+                return $this->sendError('Invalid date. Use Y-m-d or dd/mm/yyyy', [], 422);
+            }
+
+            $query = BookingAppointment::query()
+                ->select(['id', 'appointment_datetime', 'timeslot_full'])
+                ->whereNotIn('status', ['pending', 'cancelled', 'no_show'])
+                ->whereDate('appointment_datetime', $date->format('Y-m-d'));
+
+            if ($request->filled('inperson_address')) {
+                $locationMap = [1 => 'adelaide', 2 => 'melbourne'];
+                $query->where('location', $locationMap[(int) $request->input('inperson_address')] ?? 'adelaide');
+            }
+
+            $rows = $query->orderBy('appointment_datetime')->get();
+
+            $tz = config('app.timezone');
+            $disabledtimeslotes = [];
+
+            foreach ($rows as $row) {
+                if (! $row->appointment_datetime) {
+                    continue;
+                }
+                if ($row->timeslot_full) {
+                    $disabledtimeslotes[] = (string) $row->timeslot_full;
+
+                    continue;
+                }
+                $disabledtimeslotes[] = $row->appointment_datetime->copy()->timezone($tz)->format('g:i A');
+            }
+
+            $disabledtimeslotes = array_values(array_unique($disabledtimeslotes));
+
+            $result = [
+                'success' => true,
+                'date' => $date->format('Y-m-d'),
+                'disabledtimeslotes' => $disabledtimeslotes,
+            ];
+
+            return $this->sendResponse($result, 'Booked time slots for disabled calendar retrieved successfully');
+        } catch (\Exception $e) {
+            Log::error('getBookedTimeSlotsToDisable Exception', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->sendError('An error occurred: ' . $e->getMessage(), [], 500);
+        }
+    }
+
+    private function parseBookingDisabledDate(string $dateInput): ?Carbon
+    {
+        if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $dateInput)) {
+            $parsed = Carbon::createFromFormat('d/m/Y', $dateInput, config('app.timezone'));
+
+            return $parsed ? $parsed->startOfDay() : null;
+        }
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateInput)) {
+            $parsed = Carbon::createFromFormat('Y-m-d', $dateInput, config('app.timezone'));
+
+            return $parsed ? $parsed->startOfDay() : null;
+        }
+
+        return null;
+    }
+
+    /**
      * Update appointment status (Cancel or Complete only)
      * 
      * Allows authenticated clients to update their appointment status.

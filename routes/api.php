@@ -34,6 +34,7 @@ Route::post('/appointments/add-appointment-without-login', [PublicBookingControl
 
 Route::post('/appointments/get-disabled-dates', [PublicBookingController::class, 'getDisabledDateFromCalendar']);
 Route::post('/appointments/get-disabled-slots', [PublicBookingController::class, 'getDisabledSlotsOfAnyDateFromCalendar']);
+Route::post('/appointments/get-booked-disabled-time-slots', [PublicBookingController::class, 'getBookedTimeSlotsToDisable']);
 
 Route::post('/appointments/record-payment-without-login', [PublicBookingController::class, 'recordAppointmentPaymentWithoutLogin']);
 Route::post('/appointments/record-payment-without-login-wallet', [PublicBookingController::class, 'recordAppointmentPaymentWithoutLoginWallet']);
