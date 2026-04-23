@@ -29,6 +29,7 @@ use Helper;
 use Stripe;
 
 use App\Support\BansalDatetimeBackendHelper;
+use App\Services\Booking\BookedTimeSlotsToDisableService;
 
 
 class HomeController extends Controller
@@ -248,26 +249,39 @@ class HomeController extends Controller
     }
 
     /**
-     * Get disabled date/time slots for selected date
-     * Uses BansalApiClient (services.bansal_api).
+     * Disabled time-slot labels for a selected date.
+     *
+     * Merges (union, de-duplicated):
+     * - Bansal: POST to {@see config('services.bansal_api.disabled_datetime_url')}
+     *   (default: https://www.bansallawyers.com.au/api/getdisableddatetimenewapi) via
+     *   {@see \App\Services\BansalAppointmentSync\BansalApiClient::getDisabledDateTime}
+     * - CRM: {@see \App\Services\Booking\BookedTimeSlotsToDisableService}
+     *   (same as POST /api/appointments/get-booked-disabled-time-slots).
+     * When slot_overwrite is 1, returns an empty disabled list (Bansal convention; no merge).
      */
     public function getdisableddatetime(Request $request)
     {
-        // Get input parameters
-        $service_id = $request->service_id; // legacy 1–3; promo_free|paid from client modal
-        $enquiry_item = $request->enquiry_item; // 1=>permanent-residency, 2=>temporary-residency, etc.
-        $inperson_address = $request->inperson_address; // 1=>Adelaide, 2=>melbourne
-        $sel_date = $request->sel_date; // Date in dd/mm/yyyy format
-        $slot_overwrite = $request->slot_overwrite ?? 0; // 0 or 1
-        
+        $service_id = $request->service_id;
+        $enquiry_item = $request->enquiry_item;
+        $inperson_address = $request->inperson_address;
+        $sel_date = $request->sel_date;
+        $slot_overwrite = (int) ($request->slot_overwrite ?? 0);
+
         Log::info('getdisableddatetime called', [
             'service_id' => $service_id,
             'enquiry_item' => $enquiry_item,
             'inperson_address' => $inperson_address,
             'sel_date' => $sel_date,
-            'slot_overwrite' => $slot_overwrite
+            'slot_overwrite' => $slot_overwrite,
         ]);
-        
+
+        if ($slot_overwrite === 1) {
+            return response()->json([
+                'success' => true,
+                'disabledtimeslotes' => [],
+            ]);
+        }
+
         $specific_service_map = [
             1 => 'consultation',
             2 => 'paid-consultation',
@@ -276,8 +290,7 @@ class HomeController extends Controller
             'paid' => 'paid-consultation',
         ];
         $specific_service = $specific_service_map[$service_id] ?? 'consultation';
-        
-        // Map enquiry_item to service_type
+
         $service_type_map = [
             1 => 'permanent-residency',
             2 => 'temporary-residency',
@@ -286,26 +299,40 @@ class HomeController extends Controller
             5 => 'education-visa',
             6 => 'complex-matters',
             7 => 'visa-cancellation',
-            8 => 'international-migration'
+            8 => 'international-migration',
         ];
         $service_type = $service_type_map[$enquiry_item] ?? 'permanent-residency';
-        
-        // Map inperson_address to location
+
         $location_map = [
             1 => 'adelaide',
-            2 => 'melbourne'
+            2 => 'melbourne',
         ];
         $location = $location_map[$inperson_address] ?? 'adelaide';
-        
+
+        $bookedSlots = app(BookedTimeSlotsToDisableService::class);
+        $dateForCrm = BookedTimeSlotsToDisableService::parseDateInput((string) $sel_date);
+        $inpersonInt = in_array((int) $inperson_address, [1, 2], true) ? (int) $inperson_address : null;
+        $crmSlotLabels = $dateForCrm
+            ? $bookedSlots->getTimeSlotLabelsForDate($dateForCrm, $inpersonInt)
+            : [];
+
         $apiClient = new \App\Services\BansalAppointmentSync\BansalApiClient();
 
-        if (! $apiClient->isConfigured() && BansalDatetimeBackendHelper::fallbackEnabled()) {
-            Log::info('getdisableddatetime: token missing, returning empty disabled slots (fallback)');
+        if (! $apiClient->isConfigured()) {
+            if (BansalDatetimeBackendHelper::fallbackEnabled()) {
+                Log::info('getdisableddatetime: Bansal token missing, returning CRM-only disabled slots (fallback)');
+
+                return response()->json([
+                    'success' => true,
+                    'disabledtimeslotes' => $crmSlotLabels,
+                ]);
+            }
 
             return response()->json([
-                'success' => true,
-                'disabledtimeslotes' => [],
-            ]);
+                'success' => false,
+                'message' => 'Bansal API token not configured. Set APPOINTMENT_API_BEARER_TOKEN or BANSAL_API_TOKEN in the environment.',
+                'disabledtimeslotes' => $crmSlotLabels,
+            ], 503);
         }
 
         try {
@@ -313,9 +340,15 @@ class HomeController extends Controller
                 $specific_service,
                 $service_type,
                 $location,
-                $sel_date,
+                (string) $sel_date,
                 $slot_overwrite
             );
+
+            $bansalSlots = $response['disabledtimeslotes'] ?? [];
+            if (! is_array($bansalSlots)) {
+                $bansalSlots = [];
+            }
+            $response['disabledtimeslotes'] = $bookedSlots->mergeTimeSlotLabelLists($bansalSlots, $crmSlotLabels);
 
             return response()->json($response);
         } catch (\Exception $e) {
@@ -331,18 +364,18 @@ class HomeController extends Controller
             ]);
 
             if (BansalDatetimeBackendHelper::fallbackEnabled()) {
-                Log::warning('getdisableddatetime: using empty disabled slots (fallback)');
+                Log::warning('getdisableddatetime: Bansal error, returning CRM disabled slots (fallback)');
 
                 return response()->json([
                     'success' => true,
-                    'disabledtimeslotes' => [],
+                    'disabledtimeslotes' => $crmSlotLabels,
                 ]);
             }
 
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred: '.$e->getMessage(),
-                'disabledtimeslotes' => [],
+                'disabledtimeslotes' => $crmSlotLabels,
             ], 500);
         }
     }
