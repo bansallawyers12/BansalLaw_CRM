@@ -603,11 +603,6 @@ class PublicBookingController extends BaseController
             ];
             $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
 
-            // Prevent new bookings from being assigned to Ajay calendar (transfer-only calendar)
-            if ($consultant && $consultant->calendar_type === 'ajay') {
-                return $this->sendError('New bookings cannot be created in Ajay Calendar. Only transfers from other calendars are allowed.', [], 422);
-            }
-
             // Consultant is nullable, but log if not found
             if (!$consultant) {
                 Log::warning('No consultant assigned for appointment', [
@@ -956,10 +951,6 @@ class PublicBookingController extends BaseController
                 'noe_scheme' => 'immigration',
             ];
             $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
-
-            if ($consultant && $consultant->calendar_type === 'ajay') {
-                return $this->sendError('New bookings cannot be created in Ajay Calendar. Only transfers from other calendars are allowed.', [], 422);
-            }
 
             if (!$consultant) {
                 Log::warning('No consultant assigned for public appointment', [

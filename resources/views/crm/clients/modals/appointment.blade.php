@@ -100,7 +100,7 @@
                                 </select>
                                 <small class="form-text text-muted d-block mt-2">
                                     <i class="fas fa-info-circle"></i>
-                                    Optional. Choose who this booking belongs to; it uses that consultant&rsquo;s calendar. Leave empty to assign automatically. New bookings cannot use Ajay&rsquo;s calendar—pick another consultant.
+                                    Optional. Choose who this booking belongs to; it uses that consultant&rsquo;s calendar. Leave empty to assign automatically.
                                 </small>
                             </div>
                             <div class="form-group inperson_address_cls">

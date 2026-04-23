@@ -130,6 +130,7 @@
 <style>
 .lead-email-notice { background: #f0f9ff; padding: 10px 15px; border-radius: 4px; font-size: 13px; color: #0369a1; }
 </style>
+<script>window.__CRM_BASE__ = @json(rtrim((string) url('/'), '/'));</script>
 <script src="{{ asset('js/emails.js') }}?v={{ file_exists(public_path('js/emails.js')) ? filemtime(public_path('js/emails.js')) : 1 }}"></script>
 
 <script>

@@ -6978,25 +6978,9 @@ class ClientsController extends Controller
                         'message' => 'The selected consultant is invalid or inactive.',
                     ], 422);
                 }
-                if ($picked->calendar_type === 'ajay') {
-                    return response()->json([
-                        'status' => false,
-                        'success' => false,
-                        'message' => 'New bookings cannot be created in Ajay Calendar. Only transfers from other calendars are allowed.',
-                    ], 422);
-                }
                 $consultant = $picked;
             } else {
                 $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
-
-                // Prevent new bookings from being assigned to Ajay calendar (transfer-only calendar)
-                if ($consultant && $consultant->calendar_type === 'ajay') {
-                    return response()->json([
-                        'status' => false,
-                        'success' => false,
-                        'message' => 'New bookings cannot be created in Ajay Calendar. Only transfers from other calendars are allowed.',
-                    ], 422);
-                }
 
                 if (! $consultant) {
                     Log::warning('No consultant assigned for appointment', [

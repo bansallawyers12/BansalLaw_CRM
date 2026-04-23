@@ -64,6 +64,7 @@ class EmailLog extends Authenticatable
         'security_issues' => 'array',
         'thread_info' => 'array',
         'processed_at' => 'datetime',
+        'fetch_mail_sent_time' => 'datetime',
         'received_date' => 'datetime',
         'last_accessed_at' => 'datetime',
         'mail_is_read' => 'boolean',

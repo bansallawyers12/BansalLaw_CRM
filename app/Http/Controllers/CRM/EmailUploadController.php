@@ -17,6 +17,7 @@ use App\Models\ActivitiesLog;
 use App\Models\ClientMatter;
 use App\Models\Admin;
 use App\Traits\LogsClientActivity;
+use Illuminate\Support\Carbon;
 
 /**
  * Modern Email Upload Controller
@@ -412,30 +413,9 @@ class EmailUploadController extends Controller
             $mailReport->uploaded_doc_id = $document->id;
             $mailReport->client_matter_id = $document->client_matter_id;
             
-            // Format sent time from Python response
+            // Sent time: store a real datetime for PostgreSQL — never locale strings like d/m/Y (DateStyle-dependent)
             if (!empty($parsedData['sent_date'])) {
-                try {
-                    // Parse the ISO date string from Python
-                    // If timezone is not specified in the string, treat it as UTC
-                    $dateString = $parsedData['sent_date'];
-                    
-                    // Check if the date string has timezone info
-                    // ISO format with timezone: "2025-11-17T18:19:00+00:00" or "2025-11-17T18:19:00Z"
-                    // ISO format without timezone: "2025-11-17T18:19:00"
-                    if (preg_match('/[+-]\d{2}:\d{2}$|Z$/', $dateString)) {
-                        // Has timezone info, parse as-is
-                        $sentDate = new \DateTime($dateString);
-                    } else {
-                        // No timezone info, assume UTC (as Python now sends UTC for naive datetimes)
-                        $sentDate = new \DateTime($dateString, new \DateTimeZone('UTC'));
-                    }
-                    
-                    // Convert to Australia/Melbourne timezone for display
-                    $sentDate->setTimezone(new \DateTimeZone('Australia/Melbourne'));
-                    $mailReport->fetch_mail_sent_time = $sentDate->format('d/m/Y h:i a');
-                } catch (\Exception $e) {
-                    $mailReport->fetch_mail_sent_time = $parsedData['sent_date'];
-                }
+                $mailReport->fetch_mail_sent_time = $this->parseEmailDateTimeForStorage($parsedData['sent_date']);
             }
             
             // NEW: Add Python AI analysis
@@ -459,21 +439,8 @@ class EmailUploadController extends Controller
             $mailReport->message_id = $parsedData['message_id'] ?? null;
             $mailReport->thread_id = $parsedData['thread_id'] ?? null;
             
-            // Handle received_date with timezone awareness
             if (!empty($parsedData['received_date'])) {
-                try {
-                    $dateString = $parsedData['received_date'];
-                    if (preg_match('/[+-]\d{2}:\d{2}$|Z$/', $dateString)) {
-                        $receivedDate = new \DateTime($dateString);
-                    } else {
-                        $receivedDate = new \DateTime($dateString, new \DateTimeZone('UTC'));
-                    }
-                    // Convert to Australia/Melbourne timezone
-                    $receivedDate->setTimezone(new \DateTimeZone('Australia/Melbourne'));
-                    $mailReport->received_date = $receivedDate;
-                } catch (\Exception $e) {
-                    $mailReport->received_date = now();
-                }
+                $mailReport->received_date = $this->parseEmailDateTimeForStorage($parsedData['received_date']);
             } else {
                 $mailReport->received_date = now();
             }
@@ -1000,6 +967,43 @@ class EmailUploadController extends Controller
         }
         
         return $sanitizedFilename;
+    }
+
+    /**
+     * Parse date strings from the Python parser into a Carbon instance for DB storage.
+     * Never pass locale display strings (e.g. d/m/Y) to PostgreSQL — server DateStyle (MDY vs DMY) differs
+     * between machines; bind proper timestamps only.
+     */
+    protected function parseEmailDateTimeForStorage(string $dateString): Carbon
+    {
+        $dateString = trim($dateString);
+        if ($dateString === '') {
+            return now();
+        }
+
+        try {
+            if (preg_match('/^\d{4}-\d{2}-\d{2}T/', $dateString) || preg_match('/[+-]\d{2}:\d{2}$|Z$/', $dateString)) {
+                return Carbon::parse($dateString)->timezone('Australia/Melbourne');
+            }
+        } catch (\Throwable $e) {
+            // fall through to explicit formats
+        }
+
+        $formats = ['d/m/Y h:i a', 'd/m/Y g:i a', 'd/m/Y H:i', 'Y-m-d H:i:s'];
+        foreach ($formats as $fmt) {
+            $dt = \DateTime::createFromFormat($fmt, $dateString, new \DateTimeZone('UTC'));
+            if ($dt !== false) {
+                return Carbon::instance($dt)->timezone('Australia/Melbourne');
+            }
+        }
+
+        try {
+            return Carbon::parse($dateString, 'UTC')->timezone('Australia/Melbourne');
+        } catch (\Throwable $e) {
+            Log::warning('Could not parse email date, using now()', ['raw' => $dateString, 'error' => $e->getMessage()]);
+
+            return now();
+        }
     }
 
     /**

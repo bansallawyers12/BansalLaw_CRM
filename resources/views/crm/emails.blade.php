@@ -165,6 +165,7 @@
 
 <!-- Include necessary CSS and JavaScript -->
 <link rel="stylesheet" href="{{ asset('css/emails.css') }}?v={{ file_exists(public_path('css/emails.css')) ? filemtime(public_path('css/emails.css')) : 1 }}">
+<script>window.__CRM_BASE__ = @json(rtrim((string) url('/'), '/'));</script>
 <script src="{{ asset('js/emails.js') }}?v={{ file_exists(public_path('js/emails.js')) ? filemtime(public_path('js/emails.js')) : 1 }}"></script>
 
 <script>

@@ -163,15 +163,6 @@ class AppointmentSyncService
 
         // Assign consultant (now has access to service_id and noe_id)
         $consultant = $this->consultantAssigner->assignConsultant($appointmentDataForConsultant);
-        
-        // Safety check: Never assign to Ajay calendar during sync (transfer-only calendar)
-        if ($consultant && $consultant->calendar_type === 'ajay') {
-            Log::warning('Prevented auto-assignment to Ajay calendar during sync', [
-                'bansal_id' => $bansalId,
-                'consultant_id' => $consultant->id
-            ]);
-            $consultant = null; // Don't assign consultant if it's Ajay calendar
-        }
 
         // Map status
         $status = $this->mapStatus($appointmentData['status'] ?? 'pending');

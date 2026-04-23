@@ -34,6 +34,24 @@
     // =========================================================================
 
     /**
+     * Resolves a path to a same-origin URL when the app is not at the site root
+     * (e.g. WAMP: /BansalLaw_CRM/public/...). Set window.__CRM_BASE__ from Blade:
+     * rtrim(url('/'), '/')
+     */
+    function crmUrl(path) {
+        if (!path) {
+            return path;
+        }
+        if (/^https?:\/\//i.test(path)) {
+            return path;
+        }
+        var p = path.charAt(0) === '/' ? path : '/' + path;
+        var base = (typeof window.__CRM_BASE__ === 'string' && window.__CRM_BASE__.length)
+            ? window.__CRM_BASE__.replace(/\/$/, '') : '';
+        return base ? (base + p) : p;
+    }
+
+    /**
      * Get client ID from the DOM (kept for backward compatibility)
      */
     function getClientId() {
@@ -557,11 +575,12 @@
             }
             formData.append('_token', csrfToken);
 
-            console.log('Uploading to:', currentMailType === 'sent' ? '/upload-sent-fetch-mail' : '/upload-fetch-mail');
+            var uploadPath = currentMailType === 'sent' ? '/upload-sent-fetch-mail' : '/upload-fetch-mail';
+            console.log('Uploading to:', crmUrl(uploadPath));
 
             // Note: Don't set Content-Type header when using FormData - browser sets it automatically with boundary
             const response = await fetch(
-                currentMailType === 'sent' ? '/upload-sent-fetch-mail' : '/upload-fetch-mail',
+                crmUrl(uploadPath),
                 {
                     method: 'POST',
                     headers: {
@@ -891,9 +910,11 @@
         updateLoadingState(true);
 
         try {
-            const endpoint = isLead 
-                ? '/clients/filter-lead-emails'
-                : (currentMailType === 'sent' ? '/clients/filter-sentemails' : '/clients/filter-emails');
+            const endpoint = crmUrl(
+                isLead
+                    ? '/clients/filter-lead-emails'
+                    : (currentMailType === 'sent' ? '/clients/filter-sentemails' : '/clients/filter-emails')
+            );
 
             const requestBody = isLead
                 ? { client_id: clientId, search: currentSearch, status: '', label_id: currentLabelId }
@@ -1333,7 +1354,7 @@
             
             // Only rewrite when file exists in storage (avoids console 404 spam)
             if (attachment && attachment.id && attachment.s3_key) {
-                const previewUrl = `/mail-attachments/${attachment.id}/preview`;
+                const previewUrl = crmUrl('/mail-attachments/' + attachment.id + '/preview');
                 return `src="${previewUrl}"`;
             }
             
@@ -1347,7 +1368,7 @@
             let attachment = cidMap[normalizedCid] || cidMap[cidValue.toLowerCase()];
             
             if (attachment && attachment.id && attachment.s3_key) {
-                const previewUrl = `/mail-attachments/${attachment.id}/preview`;
+                const previewUrl = crmUrl('/mail-attachments/' + attachment.id + '/preview');
                 return `background-image: url("${previewUrl}")`;
             }
             
@@ -1725,7 +1746,7 @@
             }
 
             // POST avoids 403 from some proxies/WAFs that block HTTP DELETE.
-            const response = await fetch(`/email-logs/${email.id}/delete`, {
+            const response = await fetch(crmUrl('/email-logs/' + email.id + '/delete'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1972,7 +1993,7 @@
      */
     async function fetchLabels() {
         try {
-            const response = await fetch('/email-labels', {
+            const response = await fetch(crmUrl('/email-labels'), {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
@@ -2026,7 +2047,7 @@
      */
     async function applyLabel(mailReportId, labelId) {
         try {
-            const response = await fetch('/email-labels/apply', {
+            const response = await fetch(crmUrl('/email-labels/apply'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2059,7 +2080,7 @@
      */
     async function removeLabel(mailReportId, labelId) {
         try {
-            const response = await fetch('/email-labels/remove', {
+            const response = await fetch(crmUrl('/email-labels/remove'), {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2096,7 +2117,7 @@
      */
     async function downloadAttachment(attachmentId, filename) {
         try {
-            const response = await fetch(`/mail-attachments/${attachmentId}/download`, {
+            const response = await fetch(crmUrl('/mail-attachments/' + attachmentId + '/download'), {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/octet-stream'
@@ -2129,7 +2150,7 @@
      */
     async function downloadAllAttachments(mailReportId, emailSubject) {
         try {
-            const response = await fetch(`/mail-attachments/email/${mailReportId}/download-all`, {
+            const response = await fetch(crmUrl('/mail-attachments/email/' + mailReportId + '/download-all'), {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/octet-stream'
@@ -2163,7 +2184,7 @@
      */
     async function previewAttachment(attachmentId, filename) {
         try {
-            const previewUrl = `/mail-attachments/${attachmentId}/preview`;
+            const previewUrl = crmUrl('/mail-attachments/' + attachmentId + '/preview');
             const modal = document.getElementById('attachmentPreviewModal');
             const frame = document.getElementById('previewFrame');
             const filenameEl = document.getElementById('previewFileName');
