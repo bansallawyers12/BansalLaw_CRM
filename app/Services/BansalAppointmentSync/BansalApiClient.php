@@ -396,15 +396,15 @@ class BansalApiClient
      * @param int $slotOverwrite If 1, disabledtimeslotes will be blank (allows booking on blocked slots)
      * @return array API response with disabledtimeslotes array
      *
-     * Request body includes service_id from config services.bansal_api.disabled_datetime_service_id (default 1).
+     * Request body includes service_id fixed to 1 for getdisableddatetimenewapi.
      */
     public function getDisabledDateTime(string $specificService, string $serviceType, string $location, string $selectedDate, int $slotOverwrite = 0): array
     {
         $payload = [
-            'service_id' => (int) config('services.bansal_api.disabled_datetime_service_id', 1),
-            'specific_service' => $specificService,
-            'service_type' => $serviceType,
-            'location' => $location,
+            'service_id' => 1,
+          //  'specific_service' => $specificService,
+            //'service_type' => $serviceType,
+            'location' => 'melbourne',
             'sel_date' => $selectedDate,
             'slot_overwrite' => $slotOverwrite,
         ];
