@@ -37,13 +37,31 @@ final class BansalDatetimeBackendHelper
     }
 
     /**
-     * Attach {@see self::labels()} as timeslot_labels (Bansal payload may omit or differ).
+     * Set timeslot_labels from the timeslot-labels API when non-empty; else {@see self::labels()}.
      *
+     * @param  list<string>|null  $apiLabels
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
-    public static function withTimeslotLabelsFromConfig(array $data): array
+    public static function withTimeslotLabelsFromApiResponse(array $data, ?array $apiLabels): array
     {
+        if (is_array($apiLabels) && $apiLabels !== []) {
+            $out = [];
+            foreach ($apiLabels as $v) {
+                if (is_string($v) || is_numeric($v)) {
+                    $s = trim((string) $v);
+                    if ($s !== '') {
+                        $out[] = $s;
+                    }
+                }
+            }
+            if ($out !== []) {
+                $data['timeslot_labels'] = array_values($out);
+
+                return $data;
+            }
+        }
+
         $data['timeslot_labels'] = self::labels();
 
         return $data;

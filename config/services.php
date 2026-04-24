@@ -142,6 +142,7 @@ return [
     | - Bearer token: APPOINTMENT_API_BEARER_TOKEN (primary), with BANSAL_API_TOKEN as fallback.
     | - BANSAL_API_DISABLED_DATETIME_URL: Full URL for getDisabledDateTime (default: /api/getdisableddatetimenewapi on same host).
     |   POST body service_id to that API is always 1 (see BansalApiClient::getDisabledDateTime).
+    | - BANSAL_API_TIMESLOT_LABELS_URL: full URL for slot labels (default: /api/appointments/timeslot-labels).
     | - BANSAL_API_TIMEOUT: HTTP timeout in seconds (default 30).
     |
     | Reconnecting: set the variables above on this CRM (e.g. production .env or server env).
@@ -157,6 +158,10 @@ return [
         'disabled_datetime_url' => env(
             'BANSAL_API_DISABLED_DATETIME_URL',
             'https://www.bansallawyers.com.au/api/getdisableddatetimenewapi'
+        ),
+        'timeslot_labels_url' => env(
+            'BANSAL_API_TIMESLOT_LABELS_URL',
+            'https://www.bansallawyers.com.au/api/appointments/timeslot-labels'
         ),
         'timeout' => (int) env('BANSAL_API_TIMEOUT', 30),
         /** When true, appointment datetime endpoints use default office hours if the API is missing token or unreachable. Defaults to on when APP_ENV=local. */

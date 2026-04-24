@@ -29,6 +29,7 @@ use Helper;
 use Stripe;
 
 use App\Support\BansalDatetimeBackendHelper;
+use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\Booking\BookedTimeSlotsToDisableService;
 
 
@@ -210,7 +211,24 @@ class HomeController extends Controller
                 'bansal_response' => $payload,
             ]);
 
-            $toClient = BansalDatetimeBackendHelper::withTimeslotLabelsFromConfig($payload);
+            $apiLabels = null;
+            try {
+                $apiLabels = (new BansalApiClient)->getTimeslotLabels(
+                    $specific_service,
+                    $service_type,
+                    $location,
+                    (int) $slot_overwrite
+                );
+                Log::info('getdatetimebackend timeslot-labels API', [
+                    'labels' => $apiLabels,
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('getdatetimebackend: timeslot-labels endpoint failed; will use static labels fallback', [
+                    'message' => $e->getMessage(),
+                ]);
+            }
+
+            $toClient = BansalDatetimeBackendHelper::withTimeslotLabelsFromApiResponse($payload, $apiLabels);
 
             Log::info('getdatetimebackend response to client', [
                 'response' => $toClient,
