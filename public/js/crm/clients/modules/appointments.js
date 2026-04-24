@@ -37,13 +37,26 @@
         return pad(hour, 2) + ':' + pad(m, 2);
     }
 
+    function isLabelInDisabledList(timeLabel, disabledList) {
+        if (!disabledList || !disabledList.length) {
+            return false;
+        }
+        var normT = String(timeLabel).replace(/\s+/g, ' ').trim().toLowerCase();
+        for (var j = 0; j < disabledList.length; j++) {
+            if (String(disabledList[j]).replace(/\s+/g, ' ').trim().toLowerCase() === normT) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function ValidateEmail(inputText) {
         var mailformat = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
         return inputText && inputText.match(mailformat);
     }
 
     $(document).ready(function() {
-        var duration, daysOfWeek, starttime, endtime, disabledtimeslotes;
+        var duration, daysOfWeek, starttime, endtime, disabledtimeslotes, timeslotLabelsFromBackend;
         var safeParse = typeof window.safeParseJsonResponse === 'function' ? window.safeParseJsonResponse : function(r) {
             if (typeof r === 'object' && r !== null) return r;
             if (typeof r === 'string' && r.trim()) { try { return JSON.parse(r); } catch (e) { return null; } }
@@ -226,6 +239,10 @@
 
                                 disabledtimeslotes = obj.disabledtimeslotes;
 
+                                timeslotLabelsFromBackend = (Array.isArray(obj.timeslot_labels) && obj.timeslot_labels.length)
+                                    ? obj.timeslot_labels.slice()
+                                    : null;
+
                                 var datesForDisable = obj.disabledatesarray;
 
                                 // Destroy existing datepicker instance if it exists (before reinitializing)
@@ -319,90 +336,61 @@
 
 
 
-                                                var objdisable = obj.disabledtimeslotes;
+                                                var objdisable = Array.isArray(obj.disabledtimeslotes) ? obj.disabledtimeslotes : [];
 
-                                               
+                                                var today_date = new Date();
+                                                today_date = today_date.toLocaleDateString('en-US');
+                                                var now = new Date();
+                                                var nowTime = new Date('1/1/1900 ' + now.toLocaleTimeString(navigator.language, {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    hour12: true
+                                                }));
+                                                var current_time = nowTime.toLocaleTimeString('en-US');
 
-                                                var start_timer = start_time;
-
-                                                for(var i = start_time; i<end_time; i = i+interval){
-
-                                                    var timeString = start_timer + interval;
-
-                                                    // Prepend any date. Use your birthday.
-
-                                                    const timeString12hr = new Date('1970-01-01T' + convertHours(start_timer) + 'Z')
-
-                                                    .toLocaleTimeString('en-US',
-
-                                                        {timeZone:'UTC',hour12:true,hour:'numeric',minute:'numeric'}
-
-                                                    );
-
-                                                    const timetoString12hr = new Date('1970-01-01T' + convertHours(timeString) + 'Z')
-
-                                                    .toLocaleTimeString('en-US',
-
-                                                        {timeZone:'UTC',hour12:true,hour:'numeric',minute:'numeric'}
-
-                                                    );
-
-
-
-                                                    var today_date = new Date();
-
-                                                    //const options = { timeZone: 'Australia/Sydney'};
-
-                                                    today_date = today_date.toLocaleDateString('en-US');
-
-
-
-                                                    // current time
-
-                                                    var now = new Date();
-
-                                                    var nowTime = new Date('1/1/1900 ' + now.toLocaleTimeString(navigator.language, {
-
-                                                        hour: '2-digit',
-
-                                                        minute: '2-digit',
-
-                                                        hour12: true
-
-                                                    }));
-
-
-
-                                                    var current_time=nowTime.toLocaleTimeString('en-US');
-
-                                                    if(objdisable.length > 0){
-
-                                                        if(jQuery.inArray(timeString12hr, objdisable) != -1  ) {
-
-
-
-                                                        } else if ((checked_date == today_date) && (current_time > timeString12hr || current_time > timetoString12hr)){
-
-                                                        } else{
-
-                                                            $('.timeslots').append('<div data-fromtime="'+timeString12hr+'" data-totime="'+timetoString12hr+'" style="cursor: pointer;" class="timeslot_col"><span>'+timeString12hr+'</span></div>');
-
-                                                        }
-
-                                                    } else{
-
-                                                        if((checked_date == today_date) && (current_time > timeString12hr || current_time > timetoString12hr)){
-
-                                                        } else {
-
-                                                            $('.timeslots').append('<div data-fromtime="'+timeString12hr+'" data-totime="'+timetoString12hr+'" style="cursor: pointer;" class="timeslot_col"><span>'+timeString12hr+'</span></div>');
-
-                                                        }
-
+                                                function tryAppendSlot(timeString12hr, timetoString12hr) {
+                                                    if (isLabelInDisabledList(timeString12hr, objdisable)) {
+                                                        return;
                                                     }
+                                                    if ((checked_date == today_date) && (current_time > timeString12hr || current_time > timetoString12hr)) {
+                                                        return;
+                                                    }
+                                                    $('.timeslots').append('<div data-fromtime="' + timeString12hr + '" data-totime="' + timetoString12hr + '" style="cursor: pointer;" class="timeslot_col"><span>' + timeString12hr + '</span></div>');
+                                                }
 
-                                                    start_timer = timeString;
-
+                                                if (timeslotLabelsFromBackend && timeslotLabelsFromBackend.length) {
+                                                    for (var tli = 0; tli < timeslotLabelsFromBackend.length; tli++) {
+                                                        var timeString12hr = String(timeslotLabelsFromBackend[tli]).replace(/\s+/g, ' ').trim();
+                                                        if (!timeString12hr) {
+                                                            continue;
+                                                        }
+                                                        var startMins = parseTimeLatest(timeString12hr);
+                                                        if (isNaN(startMins)) {
+                                                            var _try = new Date('1/1/2000 ' + timeString12hr);
+                                                            if (!isNaN(_try.getTime())) {
+                                                                startMins = _try.getHours() * 60 + _try.getMinutes();
+                                                            }
+                                                        }
+                                                        if (isNaN(startMins)) {
+                                                            continue;
+                                                        }
+                                                        var endMins = startMins + interval;
+                                                        var timeStringMins = endMins;
+                                                        var timetoString12hr = new Date('1970-01-01T' + convertHours(timeStringMins) + 'Z')
+                                                            .toLocaleTimeString('en-US', { timeZone: 'UTC', hour12: true, hour: 'numeric', minute: 'numeric' });
+                                                        tryAppendSlot(timeString12hr, timetoString12hr);
+                                                    }
+                                                } else {
+                                                    var start_timer = start_time;
+                                                    for (var i = start_time; i < end_time; i = i + interval) {
+                                                        var timeString = start_timer + interval;
+                                                        const timeString12hr = new Date('1970-01-01T' + convertHours(start_timer) + 'Z')
+                                                            .toLocaleTimeString('en-US', { timeZone: 'UTC', hour12: true, hour: 'numeric', minute: 'numeric' });
+                                                        const timetoString12hr = new Date('1970-01-01T' + convertHours(timeString) + 'Z')
+                                                            .toLocaleTimeString('en-US', { timeZone: 'UTC', hour12: true, hour: 'numeric', minute: 'numeric' });
+                                                        tryAppendSlot(timeString12hr, timetoString12hr);
+                                                        start_timer = timeString;
+                                                    }
                                                 }
 
                                             }else{

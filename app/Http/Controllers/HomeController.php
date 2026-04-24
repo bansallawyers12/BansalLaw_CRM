@@ -29,6 +29,7 @@ use Helper;
 use Stripe;
 
 use App\Support\BansalDatetimeBackendHelper;
+use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\Booking\BookedTimeSlotsToDisableService;
 
 
@@ -197,7 +198,43 @@ class HomeController extends Controller
                 ], 502);
             }
 
-            return response()->json($response->json());
+            $payload = $response->json();
+            if (! is_array($payload)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid datetime backend response',
+                ], 502);
+            }
+
+            Log::info('getdatetimebackend Bansal API raw response', [
+                'http_status' => $response->status(),
+                'bansal_response' => $payload,
+            ]);
+
+            $apiLabels = null;
+            try {
+                $apiLabels = (new BansalApiClient)->getTimeslotLabels(
+                    $specific_service,
+                    $service_type,
+                    $location,
+                    (int) $slot_overwrite
+                );
+                Log::info('getdatetimebackend timeslot-labels API', [
+                    'labels' => $apiLabels,
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('getdatetimebackend: timeslot-labels endpoint failed; will use static labels fallback', [
+                    'message' => $e->getMessage(),
+                ]);
+            }
+
+            $toClient = BansalDatetimeBackendHelper::withTimeslotLabelsFromApiResponse($payload, $apiLabels);
+
+            Log::info('getdatetimebackend response to client', [
+                'response' => $toClient,
+            ]);
+
+            return response()->json($toClient);
         } catch (RequestException $e) {
             $response = $e->response;
             $responseBody = $response?->json();
@@ -349,6 +386,14 @@ class HomeController extends Controller
                 $bansalSlots = [];
             }
             $response['disabledtimeslotes'] = $bookedSlots->mergeTimeSlotLabelLists($bansalSlots, $crmSlotLabels);
+
+            Log::info('getdisableddatetime response', [
+                'sel_date' => $sel_date,
+                'bansal_disabledtimeslotes' => $bansalSlots,
+                'crm_disabledtimeslotes' => $crmSlotLabels,
+                'merged_disabledtimeslotes' => $response['disabledtimeslotes'],
+                'bansal_response_keys' => array_keys($response),
+            ]);
 
             return response()->json($response);
         } catch (\Exception $e) {

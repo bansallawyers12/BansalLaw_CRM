@@ -384,6 +384,90 @@ class BansalApiClient
     }
 
     /**
+     * Fetch allowed time-slot start labels (12h) from Bansal.
+     * POST {@see config('services.bansal_api.timeslot_labels_url')}.
+     *
+     * @return list<string>
+     */
+    public function getTimeslotLabels(string $specificService, string $serviceType, string $location, int $slotOverwrite = 0): array
+    {
+        $payload = [
+            'specific_service' => $specificService,
+            'service_type' => $serviceType,
+            'location' => $location,
+            'slot_overwrite' => $slotOverwrite,
+        ];
+
+        $this->assertTokenConfigured();
+
+        $url = rtrim((string) config(
+            'services.bansal_api.timeslot_labels_url',
+            'https://www.bansallawyers.com.au/api/appointments/timeslot-labels'
+        ), '/');
+
+        try {
+            $response = Http::timeout($this->timeout)
+                ->withToken($this->apiToken)
+                ->acceptJson()
+                ->throw()
+                ->post($url, $payload);
+
+            $data = $response->json() ?? [];
+
+            return $this->parseTimeslotLabelsFromResponse(is_array($data) ? $data : []);
+        } catch (RequestException $e) {
+            $r = $e->response;
+            Log::warning('Bansal API getTimeslotLabels request error', [
+                'url' => $url,
+                'status' => $r?->status(),
+                'body' => $r?->body(),
+            ]);
+
+            throw new Exception($e->getMessage(), 0, $e);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return list<string>
+     */
+    private function parseTimeslotLabelsFromResponse(array $data): array
+    {
+        $raw = null;
+        if (isset($data['timeslot_labels']) && is_array($data['timeslot_labels'])) {
+            $raw = $data['timeslot_labels'];
+        } elseif (isset($data['timeslotLabels']) && is_array($data['timeslotLabels'])) {
+            $raw = $data['timeslotLabels'];
+        } elseif (isset($data['data']) && is_array($data['data'])) {
+            $inner = $data['data'];
+            if (isset($inner['timeslot_labels']) && is_array($inner['timeslot_labels'])) {
+                $raw = $inner['timeslot_labels'];
+            } elseif (isset($inner['timeslotLabels']) && is_array($inner['timeslotLabels'])) {
+                $raw = $inner['timeslotLabels'];
+            } elseif (array_is_list($inner) && $inner !== []) {
+                $raw = $inner;
+            }
+        } elseif (array_is_list($data) && $data !== [] && (isset($data[0]) && is_string($data[0]))) {
+            $raw = $data;
+        }
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($raw as $v) {
+            if (is_string($v) || is_numeric($v)) {
+                $s = trim((string) $v);
+                if ($s !== '') {
+                    $out[] = $s;
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Get disabled date/time slots from Bansal website API.
      *
      * POST {@see config('services.bansal_api.disabled_datetime_url')} with Bearer
@@ -396,15 +480,15 @@ class BansalApiClient
      * @param int $slotOverwrite If 1, disabledtimeslotes will be blank (allows booking on blocked slots)
      * @return array API response with disabledtimeslotes array
      *
-     * Request body includes service_id from config services.bansal_api.disabled_datetime_service_id (default 1).
+     * Request body includes service_id fixed to 1 for getdisableddatetimenewapi.
      */
     public function getDisabledDateTime(string $specificService, string $serviceType, string $location, string $selectedDate, int $slotOverwrite = 0): array
     {
         $payload = [
-            'service_id' => (int) config('services.bansal_api.disabled_datetime_service_id', 1),
-            'specific_service' => $specificService,
-            'service_type' => $serviceType,
-            'location' => $location,
+            'service_id' => 1,
+          //  'specific_service' => $specificService,
+            //'service_type' => $serviceType,
+            'location' => 'melbourne',
             'sel_date' => $selectedDate,
             'slot_overwrite' => $slotOverwrite,
         ];
