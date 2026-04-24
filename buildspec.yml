@@ -66,14 +66,8 @@ phases:
         # ── [1/11] Maintenance mode ─────────────────────────────────────────
         # /up stays HTTP 200 during maintenance (AppServiceProvider + routes/web.php)
         # so the ALB target group health check keeps passing throughout the deploy.
-        # Must cd into PROJECT_DIR: CodeDeploy's cwd is not the app root, and
-        # `sudo -u` may not keep the parent shell's working directory.
-        if [ -f "$PROJECT_DIR/artisan" ]; then
-          echo "[1/11] Enabling maintenance mode..."
-          sudo -u $APP_USER bash -c "cd '$PROJECT_DIR' && $PHP_BIN artisan down --retry=60" || true
-        else
-          echo "[1/11] Skipping maintenance mode (no existing deployment)..."
-        fi
+        echo "[1/11] Enabling maintenance mode..."
+        sudo -u $APP_USER $PHP_BIN artisan down --retry=60 || true
 
         # ── [2/11] Sync build artifact → project directory ──────────────────
         echo "[2/11] Syncing source to project..."
@@ -88,12 +82,12 @@ phases:
         echo "[3/11] Fixing ownership..."
         chown -R $APP_USER:$WEB_USER "$PROJECT_DIR"
 
-        # All composer/artisan runs must use explicit 'cd' — sudo -u can leave cwd in ~ubuntu
-        # so 'php artisan' in Composer scripts fails with "Could not open input file: artisan".
+        cd "$PROJECT_DIR"
+
         # ── [4/11] Composer ─────────────────────────────────────────────────
         echo "[4/11] Installing Composer dependencies..."
-        sudo -u $APP_USER bash -c "cd '$PROJECT_DIR' && $COMPOSER_BIN install \
-          --no-dev --optimize-autoloader --no-interaction --quiet"
+        sudo -u $APP_USER $COMPOSER_BIN install \
+          --no-dev --optimize-autoloader --no-interaction --quiet
 
         # ── [5/11] Python venv ──────────────────────────────────────────────
         # Written to a temp file to avoid quoting/escaping issues with nested heredocs.
@@ -126,35 +120,36 @@ phases:
 
         # ── [6/11] Clear config cache so .env changes apply before migrate ──
         echo "[6/11] Clearing config cache..."
-        sudo -u $APP_USER bash -c "cd '$PROJECT_DIR' && $PHP_BIN artisan config:clear"
+        sudo -u $APP_USER $PHP_BIN artisan config:clear
 
         # ── [7/11] Migrations ───────────────────────────────────────────────
         echo "[7/11] Running migrations..."
-        sudo -u $APP_USER bash -c "cd '$PROJECT_DIR' && $PHP_BIN artisan migrate --force"
-        # sudo -u $APP_USER bash -c "cd '$PROJECT_DIR' && $PHP_BIN artisan import:reference-master-data"
+        sudo -u $APP_USER $PHP_BIN artisan migrate --force
+        # sudo -u $APP_USER $PHP_BIN artisan import:reference-master-data
 
         # ── [8/11] Required storage / cache directories ─────────────────────
         echo "[8/11] Ensuring required directories..."
-        sudo -u $APP_USER bash -c "cd '$PROJECT_DIR' && mkdir -p storage/framework/{sessions,views,cache/data} && mkdir -p bootstrap/cache"
+        sudo -u $APP_USER mkdir -p storage/framework/{sessions,views,cache/data}
+        sudo -u $APP_USER mkdir -p bootstrap/cache
 
         # ── [9/11] Rebuild framework caches ────────────────────────────────
         echo "[9/11] Rebuilding caches..."
-        sudo -u $APP_USER bash -c "cd '$PROJECT_DIR' && $PHP_BIN artisan view:clear"
-        sudo -u $APP_USER bash -c "cd '$PROJECT_DIR' && $PHP_BIN artisan config:cache"
-        sudo -u $APP_USER bash -c "cd '$PROJECT_DIR' && $PHP_BIN artisan route:cache"
-        sudo -u $APP_USER bash -c "cd '$PROJECT_DIR' && $PHP_BIN artisan event:cache"
-        sudo -u $APP_USER bash -c "cd '$PROJECT_DIR' && $PHP_BIN artisan storage:link --force"
+        sudo -u $APP_USER $PHP_BIN artisan view:clear
+        sudo -u $APP_USER $PHP_BIN artisan config:cache
+        sudo -u $APP_USER $PHP_BIN artisan route:cache
+        sudo -u $APP_USER $PHP_BIN artisan event:cache
+        sudo -u $APP_USER $PHP_BIN artisan storage:link --force
 
         # ── [10/11] Permissions ─────────────────────────────────────────────
         echo "[10/11] Fixing permissions..."
-        chown -R $APP_USER:$WEB_USER "$PROJECT_DIR/storage" "$PROJECT_DIR/bootstrap/cache"
-        chmod -R 775 "$PROJECT_DIR/storage" "$PROJECT_DIR/bootstrap/cache"
+        chown -R $APP_USER:$WEB_USER storage bootstrap/cache
+        chmod -R 775 storage bootstrap/cache
 
         # ── [11/11] Service restarts ────────────────────────────────────────
         echo "[11/11] Restarting services..."
 
         # Tell queue workers to finish their current job cleanly before the hard restart.
-        sudo -u $APP_USER bash -c "cd '$PROJECT_DIR' && $PHP_BIN artisan queue:restart" || true
+        sudo -u $APP_USER $PHP_BIN artisan queue:restart || true
 
         RESTART_ERRORS=0
         for SVC in $PHP_FPM bansallaw-queue bansallaw-email migration-python-services; do
@@ -180,7 +175,7 @@ phases:
         fi
 
         echo "Disabling maintenance mode..."
-        sudo -u $APP_USER bash -c "cd '$PROJECT_DIR' && $PHP_BIN artisan up"
+        sudo -u $APP_USER $PHP_BIN artisan up
 
         echo "======================================"
         if [ "$RESTART_ERRORS" -gt 0 ]; then
