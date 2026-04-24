@@ -197,7 +197,15 @@ class HomeController extends Controller
                 ], 502);
             }
 
-            return response()->json($response->json());
+            $payload = $response->json();
+            if (! is_array($payload)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid datetime backend response',
+                ], 502);
+            }
+
+            return response()->json(BansalDatetimeBackendHelper::withTimeslotLabelsFromConfig($payload));
         } catch (RequestException $e) {
             $response = $e->response;
             $responseBody = $response?->json();
