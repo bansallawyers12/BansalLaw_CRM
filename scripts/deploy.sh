@@ -19,6 +19,19 @@ app_run() {
   sudo -H -u "$APP_USER" bash -lc "cd \"$PROJECT_DIR\" && $1"
 }
 
+# CodeBuild artifact excludes bootstrap/cache/**/* — rsync may leave no cache dir. Laravel needs
+# bootstrap/cache + storage writable before any artisan (maintenance, composer hooks).
+ensure_laravel_writable_dirs() {
+  mkdir -p \
+    "$PROJECT_DIR/bootstrap/cache" \
+    "$PROJECT_DIR/storage/framework/sessions" \
+    "$PROJECT_DIR/storage/framework/views" \
+    "$PROJECT_DIR/storage/framework/cache/data" \
+    "$PROJECT_DIR/storage/logs"
+  chown -R "$APP_USER:$WEB_USER" "$PROJECT_DIR/bootstrap/cache" "$PROJECT_DIR/storage"
+  chmod -R 775 "$PROJECT_DIR/bootstrap/cache" "$PROJECT_DIR/storage"
+}
+
 echo "======================================"
 echo "Deployment starting"
 echo "PHP : $($PHP_BIN -r 'echo PHP_VERSION;')"
@@ -27,6 +40,7 @@ echo "======================================"
 
 mkdir -p "$PROJECT_DIR"
 cd "$PROJECT_DIR"
+ensure_laravel_writable_dirs
 
 # ── [1/11] Maintenance mode ─────────────────────────────────────────
 # /up stays HTTP 200 during maintenance (AppServiceProvider + routes/web.php)
@@ -45,7 +59,8 @@ rsync -a --delete \
 
 # ── [3/11] Ownership ────────────────────────────────────────────────
 echo "[3/11] Fixing ownership..."
-chown -R $APP_USER:$WEB_USER "$PROJECT_DIR"
+chown -R "$APP_USER:$WEB_USER" "$PROJECT_DIR"
+ensure_laravel_writable_dirs
 
 cd "$PROJECT_DIR"
 
@@ -79,7 +94,7 @@ echo "  Installing Python dependencies (Python $SYS_PY)..."
 ./venv/bin/pip install -r requirements.txt --quiet
 echo "  Python venv ready."
 VENVEOF
-sudo -u $APP_USER bash /tmp/_setup_venv.sh "$PROJECT_DIR"
+sudo -u "$APP_USER" bash /tmp/_setup_venv.sh "$PROJECT_DIR"
 rm -f /tmp/_setup_venv.sh
 
 # ── [6/11] Clear config cache so .env changes apply before migrate ──
@@ -93,11 +108,7 @@ app_run "$PHP_BIN artisan migrate --force"
 
 # ── [8/11] Required storage / cache directories ─────────────────────
 echo "[8/11] Ensuring required directories..."
-sudo -u $APP_USER mkdir -p \
-  "$PROJECT_DIR/storage/framework/sessions" \
-  "$PROJECT_DIR/storage/framework/views" \
-  "$PROJECT_DIR/storage/framework/cache/data" \
-  "$PROJECT_DIR/bootstrap/cache"
+ensure_laravel_writable_dirs
 
 # ── [9/11] Rebuild framework caches ────────────────────────────────
 echo "[9/11] Rebuilding caches..."
@@ -109,7 +120,7 @@ app_run "$PHP_BIN artisan storage:link --force"
 
 # ── [10/11] Permissions ─────────────────────────────────────────────
 echo "[10/11] Fixing permissions..."
-chown -R $APP_USER:$WEB_USER "$PROJECT_DIR/storage" "$PROJECT_DIR/bootstrap/cache"
+chown -R "$APP_USER:$WEB_USER" "$PROJECT_DIR/storage" "$PROJECT_DIR/bootstrap/cache"
 chmod -R 775 "$PROJECT_DIR/storage" "$PROJECT_DIR/bootstrap/cache"
 
 # ── [11/11] Service restarts ────────────────────────────────────────
