@@ -18,7 +18,7 @@ return [
     /*
      * Staff login page: card heading, document title, meta author. Falls back to APP_NAME when unset.
      */
-    'login_brand' => env('LOGIN_BRAND', 'Bansal Lawyers CRm123456'),
+    'login_brand' => env('LOGIN_BRAND', 'Bansal Lawyers CRM'),
 
     /*
     |--------------------------------------------------------------------------
