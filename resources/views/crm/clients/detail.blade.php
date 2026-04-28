@@ -1903,18 +1903,49 @@ $(function () {
 (function () {
     document.addEventListener('DOMContentLoaded', function () {
         var matterBtn = document.getElementById('cdn-focus-matter-select');
-        if (matterBtn) {
-            matterBtn.addEventListener('click', function () {
-                var $el = window.jQuery && window.jQuery('#sel_matter_id_client_detail');
-                if ($el && $el.length) {
-                    if ($el.hasClass('select2-hidden-accessible')) {
-                        $el.select2('open');
-                    } else {
-                        $el.trigger('focus');
+        if (!matterBtn) {
+            return;
+        }
+
+        var sel = document.getElementById('sel_matter_id_client_detail');
+        var hasChoices = false;
+        if (sel) {
+            for (var i = 0; i < sel.options.length; i++) {
+                if (sel.options[i].value !== '') {
+                    hasChoices = true;
+                    break;
+                }
+            }
+        }
+
+        if (!hasChoices) {
+            matterBtn.classList.add('cdn-client-hero__matter-btn--no-switcher');
+            matterBtn.setAttribute('aria-disabled', 'true');
+            var noSwitcherMsg = 'No active matter to switch. Add a matter in Client Details Form (edit icon next to the client name), then return here.';
+            matterBtn.title = noSwitcherMsg;
+            matterBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (typeof iziToast !== 'undefined') {
+                    if (typeof iziToast.info === 'function') {
+                        iziToast.info({ message: noSwitcherMsg, position: 'topRight', timeout: 7000 });
+                    } else if (typeof iziToast.show === 'function') {
+                        iziToast.show({ message: noSwitcherMsg, position: 'topRight', timeout: 7000, backgroundColor: '#4a89dc' });
                     }
                 }
             });
+            return;
         }
+
+        matterBtn.addEventListener('click', function () {
+            var $el = window.jQuery && window.jQuery('#sel_matter_id_client_detail');
+            if ($el && $el.length) {
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    $el.select2('open');
+                } else {
+                    $el.trigger('focus');
+                }
+            }
+        });
         /* Update Stage opens #cdn-update-stage-modal (data-bs-toggle); no JS needed */
     });
 })();

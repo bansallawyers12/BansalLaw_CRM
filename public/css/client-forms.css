@@ -883,7 +883,9 @@ input:checked + .slider:before {
     margin-bottom: 0;
 }
 
-/* Modal Styles */
+/* Modal Styles — must be hidden when closed. A global display:flex on .modal (legacy) overrode
+   Bootstrap 5’s display:none and left hidden modals as full-screen invisible click shields
+   (e.g. #changeMatterAssigneeModal blocking client edit tabs). */
 .modal {
     position: fixed;
     z-index: 1000;
@@ -892,9 +894,19 @@ input:checked + .slider:before {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
+}
+
+.modal.show {
+    display: flex;
+}
+
+/* Bootstrap 5 fade modals: enforce closed state so nothing blocks the page (tabs, links) */
+.modal.fade:not(.show) {
+    display: none !important;
+    pointer-events: none;
 }
 
 .modal-content {

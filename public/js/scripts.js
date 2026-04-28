@@ -324,9 +324,11 @@ $(function () {
     container: "body"
   });
 
-  // Select2
+  // Select2 — skip selects inside Bootstrap modals: they are often display:none at init,
+  // which breaks positioning (dropdown can appear over unrelated UI e.g. client edit tabs).
+  // Those fields should use dropdownParent on shown.bs.modal (see matter-assignee-modal.js).
   if (jQuery().select2) {
-    $(".select2").select2();
+    $(".select2").not(".modal .select2").select2();
   }
 
   // Selectric

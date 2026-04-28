@@ -183,4 +183,13 @@
             $el.select2({ dropdownParent: $modal, minimumResultsForSearch: 0, width: '100%' });
         });
     });
+
+    $(document).on('hidden.bs.modal', '#changeMatterAssigneeModal', function () {
+        $('#change_sel_legal_practitioner_id, #change_sel_person_responsible_id, #change_sel_person_assisting_id, #change_office_id').each(function () {
+            var $el = $(this);
+            if ($el.data('select2')) {
+                try { $el.select2('close'); } catch (e) { /* no-op */ }
+            }
+        });
+    });
 })(jQuery);

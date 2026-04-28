@@ -2168,6 +2168,19 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   color: #1e3a8a;
 }
 
+.cdn-client-hero__matter-btn--no-switcher {
+  opacity: 0.55;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.cdn-client-hero__matter-btn--no-switcher:hover {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
 .cdn-client-hero__tags {
   margin-top: 10px;
   display: flex;
