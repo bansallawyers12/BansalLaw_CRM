@@ -31,17 +31,17 @@ class AppServiceProvider extends ServiceProvider
             return "<?php echo App\\Helpers\\SortableHelper::linkWithIcon($expression); ?>";
         });
         
-        // TIER 1 OPTIMIZATION: Query logging for slow query detection
-        // Only enable in local/staging environments or when debugging
-        if (config('app.debug') || env('LOG_SLOW_QUERIES', false)) {
-            DB::listen(function ($query) {
-                $slowQueryThreshold = env('SLOW_QUERY_THRESHOLD', 1000); // milliseconds
-                
+        // Slow query logger — gated behind an explicit env flag so it never
+        // fires in production accidentally. APP_DEBUG=true alone does NOT
+        // enable this; set LOG_SLOW_QUERIES=true in .env to opt in.
+        if (env('LOG_SLOW_QUERIES', false)) {
+            $slowQueryThreshold = (int) env('SLOW_QUERY_THRESHOLD', 1000);
+            DB::listen(function ($query) use ($slowQueryThreshold) {
                 if ($query->time > $slowQueryThreshold) {
                     Log::channel('daily')->warning('Slow Query Detected', [
-                        'sql' => $query->sql,
+                        'sql'      => $query->sql,
                         'bindings' => $query->bindings,
-                        'time' => $query->time . 'ms',
+                        'time'     => $query->time . 'ms',
                         'location' => $this->getQueryLocation(),
                     ]);
                 }
@@ -61,18 +61,24 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Get the location where the query was executed
+     * Walk the call stack and return the first application frame that is
+     * neither a vendor file nor this service provider itself.
      */
-    protected function getQueryLocation()
+    protected function getQueryLocation(): string
     {
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
-        
+        $self  = __FILE__;
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 20);
+
         foreach ($trace as $item) {
-            if (isset($item['file']) && !str_contains($item['file'], 'vendor')) {
+            if (
+                isset($item['file'])
+                && $item['file'] !== $self
+                && !str_contains($item['file'], DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR)
+            ) {
                 return $item['file'] . ':' . ($item['line'] ?? '?');
             }
         }
-        
+
         return 'Unknown location';
     }
 

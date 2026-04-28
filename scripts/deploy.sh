@@ -38,6 +38,24 @@ echo "PHP : $($PHP_BIN -r 'echo PHP_VERSION;')"
 echo "User: $APP_USER  Dir: $PROJECT_DIR"
 echo "======================================"
 
+# ── Pre-flight: APP_KEY must be present in the server's .env ────────
+# The .env is excluded from rsync and must be managed manually.
+# A missing APP_KEY causes every request to throw MissingAppKeyException.
+ENV_FILE="$PROJECT_DIR/.env"
+if [ -f "$ENV_FILE" ]; then
+    APP_KEY_VALUE=$(grep -E '^APP_KEY=' "$ENV_FILE" | cut -d'=' -f2-)
+    if [ -z "$APP_KEY_VALUE" ] || [ "$APP_KEY_VALUE" = '""' ] || [ "$APP_KEY_VALUE" = "''" ]; then
+        echo "FATAL: APP_KEY is not set in $ENV_FILE."
+        echo "  Run:  php artisan key:generate --force"
+        echo "  Then re-run this deployment."
+        exit 1
+    fi
+else
+    echo "FATAL: $ENV_FILE does not exist on this server."
+    echo "  Copy .env.example to .env, fill in all values, then re-run."
+    exit 1
+fi
+
 mkdir -p "$PROJECT_DIR"
 cd "$PROJECT_DIR"
 ensure_laravel_writable_dirs
