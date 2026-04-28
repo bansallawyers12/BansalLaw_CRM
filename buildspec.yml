@@ -28,7 +28,7 @@ phases:
   pre_build:
     commands:
       - echo "=== composer install (locked) + npm ci + npm run build ==="
-      - composer install --no-interaction --no-dev --optimize-autoloader --ignore-platform-reqs
+      - composer install --no-interaction --no-dev --optimize-autoloader --ignore-platform-reqs --no-scripts
       - npm ci
       - npm run build
       # npm run dev — local Vite only; never enable here (process does not exit)
