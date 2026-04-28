@@ -55,6 +55,7 @@ rsync -a --delete \
   --exclude='storage/' \
   --exclude='node_modules/' \
   --exclude='vendor/' \
+  --exclude='bootstrap/cache/' \
   "$SOURCE_DIR/" "$PROJECT_DIR/"
 
 # ── [3/11] Ownership ────────────────────────────────────────────────
