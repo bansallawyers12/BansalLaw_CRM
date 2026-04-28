@@ -71,13 +71,26 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function map()
     {
+        $this->mapHealthRoutes();
+
         $this->mapApiRoutes();
 
         $this->mapWebRoutes();
 
         $this->mapSmsRoutes();
+    }
 
-        //
+    /**
+     * Health-check routes — registered with zero middleware so /up is always
+     * reachable regardless of Redis/session state. Used by the ALB target-group
+     * health check and CodeDeploy ValidateService (scripts/validate.sh).
+     *
+     * @return void
+     */
+    protected function mapHealthRoutes()
+    {
+        Route::middleware([])
+             ->group(base_path('routes/health.php'));
     }
 
     /**
