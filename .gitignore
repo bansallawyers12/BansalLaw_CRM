@@ -21,6 +21,8 @@ yarn.lock
 # Laravel bootstrap cache files
 bootstrap/cache/*.tmp
 bootstrap/cache/config.php
+bootstrap/cache/packages.php
+bootstrap/cache/services.php
 
 old_crm_sql_dumps.sql
 bansal_law_crm_backup_*.sql
