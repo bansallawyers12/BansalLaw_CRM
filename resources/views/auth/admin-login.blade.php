@@ -22,8 +22,8 @@
 							<form action="{{URL::to('login')}}" method="post" name="admin_login">
 							<input type="hidden" name="_token" value="{{ csrf_token() }}">
 								<div class="form-group">
-									<label for="email">Email</label>
-									<input id="email" placeholder="Email" type="email" class="form-control" name="email" tabindex="1" value="{{ (Cookie::get('email') !='' && !old('email')) ? Cookie::get('email') : old('email')  }}" required autofocus>
+								<label for="email">Email Admin</label>
+								<input id="email" placeholder="Email Admin" type="email" class="form-control" name="email" tabindex="1" value="{{ (Cookie::get('email') !='' && !old('email')) ? Cookie::get('email') : old('email')  }}" required autofocus>
 									@if ($errors->has('email'))
 									<div style="color: #dc3545;">
 									 {{ $errors->first('email') }}
