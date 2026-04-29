@@ -9,6 +9,13 @@ use Kyslik\ColumnSortable\Sortable;
 class Lead extends Admin
 {
     use Notifiable, Sortable;
+
+    /**
+     * Stored values for admins.type that represent a lead (includes legacy single-char "l" and "1").
+     *
+     * @var list<string>
+     */
+    public const LEAD_TYPE_VALUES = ['lead', 'l', '1'];
     
     // Use the same table as Admin
     protected $table = 'admins';
@@ -33,7 +40,7 @@ class Lead extends Admin
     {
         // Automatically filter all queries to leads only
         static::addGlobalScope('lead', function (Builder $builder) {
-            $builder->where('type', 'lead')
+            $builder->whereIn('type', self::LEAD_TYPE_VALUES)
                     ->whereNull('is_deleted');
         });
         
@@ -53,7 +60,7 @@ class Lead extends Admin
     public function scopeWithArchived(Builder $query)
     {
         return $query->withoutGlobalScope('lead')
-                    ->where('type', 'lead')
+                    ->whereIn('type', self::LEAD_TYPE_VALUES)
                     ->whereNull('is_deleted');
     }
     
@@ -64,7 +71,7 @@ class Lead extends Admin
     public function scopeOnlyArchived(Builder $query)
     {
         return $query->withoutGlobalScope('lead')
-                    ->where('type', 'lead')
+                    ->whereIn('type', self::LEAD_TYPE_VALUES)
                     ->where('is_archived', 1)
                     ->whereNull('is_deleted');
     }

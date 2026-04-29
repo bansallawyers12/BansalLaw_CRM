@@ -160,7 +160,7 @@
                                                             </div>
                                                         </div>
                                                         <div class="checklist-summary d-flex align-items-center">
-                                                            @if(($fetchedData->type ?? '') === 'lead')
+                                                            @if(($fetchedData->type ?? null) === 1 || in_array(trim((string) ($fetchedData->type ?? '')), ['lead', 'l', '1'], true))
                                                             <button type="button" class="btn btn-sm btn-outline-primary convertLeadToClient mr-2" onclick="event.stopPropagation(); $('#convertLeadToClientModal').modal('show');" title="Convert to Client">
                                                                 <i class="fas fa-user-check mr-1"></i> Convert to Client
                                                             </button>

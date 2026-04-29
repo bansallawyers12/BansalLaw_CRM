@@ -967,7 +967,7 @@
                         }
                     </style>
 
-                    @if(($fetchedData->type ?? '') === 'lead')
+                    @if(($fetchedData->type ?? null) === 1 || in_array(trim((string) ($fetchedData->type ?? '')), ['lead', 'l', '1'], true))
                         @include('crm.clients.partials.lead_pipeline_card', [
                             'fetchedData' => $fetchedData,
                             'assignableStaff' => $assignableStaff ?? collect(),

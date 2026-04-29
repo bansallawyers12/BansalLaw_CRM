@@ -82,7 +82,7 @@ use App\Http\Controllers\Controller;
             </div>
             
             <!-- Lead status badge (display only) -->
-            @if(($fetchedData->type ?? '') === 'lead')
+            @if(($fetchedData->type ?? null) === 1 || in_array(trim((string) ($fetchedData->type ?? '')), ['lead', 'l', '1'], true))
             <div class="sidebar-client-lead-buttons">
                 <span class="status-btn status-btn-lead lead-status-badge active">Lead</span>
             </div>

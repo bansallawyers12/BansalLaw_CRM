@@ -10,7 +10,10 @@
 			</div>
 			<div class="modal-body">
 				@php
-					$leadHasMatters = isset($fetchedData) && ($fetchedData->type ?? '') === 'lead' && \DB::table('client_matters')->where('client_id', $fetchedData->id)->where('matter_status', 1)->exists();
+					$_crmLeadType = isset($fetchedData)
+						&& (($fetchedData->type ?? null) === 1
+							|| in_array(trim((string) ($fetchedData->type ?? '')), ['lead', 'l', '1'], true));
+					$leadHasMatters = $_crmLeadType && \DB::table('client_matters')->where('client_id', $fetchedData->id)->where('matter_status', 1)->exists();
 				@endphp
 				@if($leadHasMatters)
 				<div class="alert alert-info mb-3">

@@ -234,11 +234,16 @@
 										
 									</li>
 								@if($fetchedData->converted == 0)
+								@php
+									$historyLeadHasAssignedMatter = \App\Models\ClientMatter::clientHasActiveAssignedMatter((int) $fetchedData->id);
+								@endphp
 								<li class="nav-item d-sm-inline-block converclient">
-								    <form method="POST" action="{{route('leads.convert_single')}}" style="display: inline;">
+								    <form method="POST" action="{{route('leads.convert_single')}}" class="cdn-convert-lead-to-client-form" style="display: inline;"
+								          data-has-assigned-matter="{{ $historyLeadHasAssignedMatter ? '1' : '0' }}"
+								          data-edit-url="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}">
 								        @csrf
 								        <input type="hidden" name="lead_id" value="{{base64_encode(convert_uuencode($fetchedData->id))}}">
-								        <button type="submit" style="background: #54ca68;border-radius: 4px;padding: 7px 10px;font-size: 14px;line-height: 18px;color: #fff;border: 0px;cursor: pointer;" class="nav-link" onclick="return confirm('Are you sure you want to convert this lead to a client?')">
+								        <button type="submit" style="background: #54ca68;border-radius: 4px;padding: 7px 10px;font-size: 14px;line-height: 18px;color: #fff;border: 0px;cursor: pointer;" class="nav-link">
 								            <i class="fa fa-user"></i> Convert To Client
 								        </button>
 								    </form>
@@ -712,5 +717,29 @@ $(document).delegate('#setreminder','click', function(){
 		}
 	});
 });
+</script>
+
+<script>
+(function () {
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('form.cdn-convert-lead-to-client-form').forEach(function (form) {
+            form.addEventListener('submit', function (e) {
+                if (form.getAttribute('data-has-assigned-matter') !== '1') {
+                    e.preventDefault();
+                    alert('A matter must be assigned before converting this lead to a client. You will be taken to the edit page to assign a matter.');
+                    var url = form.getAttribute('data-edit-url');
+                    if (url) {
+                        window.location.href = url;
+                    }
+                    return false;
+                }
+                if (!window.confirm('Are you sure you want to convert this lead to a client?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+    });
+})();
 </script>
 @endpush

@@ -1888,7 +1888,8 @@ class ClientsController extends Controller
             if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
                 return Redirect::to('/clients')->with('error', config('constants.unauthorized'));
             }
-            if (Admin::where('id', '=', $id)->whereIn('type', ['client', 'lead'])->exists()) {
+            $crmSubjectTypes = array_merge(['client'], Lead::LEAD_TYPE_VALUES);
+            if (Admin::where('id', '=', $id)->whereIn('type', $crmSubjectTypes)->exists()) {
                 $fetchedData = Admin::with('company.contactPerson')->find($id);
                 
                 // Route to appropriate edit page
@@ -6078,10 +6079,25 @@ class ClientsController extends Controller
         if (empty($clientId)) {
             return redirect()->back()->with('error', 'Client ID is required.');
         }
-        $obj = Admin::where('id', $clientId)->whereIn('type', ['client', 'lead'])->first();
-        if (!$obj || $obj->type !== 'lead') {
+        $obj = Admin::where('id', $clientId)->first();
+        if (!$obj) {
+            return redirect()->back()->with('error', 'Record not found.');
+        }
+        $typeTrim = trim((string) ($obj->type ?? ''));
+        $isLeadRow = ($obj->type === 1)
+            || in_array($typeTrim, Lead::LEAD_TYPE_VALUES, true);
+        if (!$isLeadRow) {
             return redirect()->back()->with('error', 'Only leads can be converted.');
         }
+
+        if (! ClientMatter::clientHasActiveAssignedMatter((int) $clientId)) {
+            $encoded = base64_encode(convert_uuencode((string) $clientId));
+
+            return redirect()->route('clients.edit', $encoded)
+                ->with('matter_required_before_convert', true)
+                ->with('warning', 'Please assign an active matter before converting this lead to a client.');
+        }
+
         $obj->type = 'client';
         $obj->user_id = $request->input('user_id', Auth::user()->id);
         $obj->save();

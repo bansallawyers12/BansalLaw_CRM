@@ -73,6 +73,19 @@ class LeadConversionController extends Controller
             return redirect()->back()->with('error', config('constants.unauthorized'));
         }
 
+        // Allow conversion without a pre-existing matter row only when this request also creates a matter (matter_id + legal_practitioner).
+        $willCreateMatterInSameRequest = $request->filled('matter_id') && $request->filled('legal_practitioner');
+        if (
+            ! ClientMatter::clientHasActiveAssignedMatter((int) $lead->id)
+            && ! $willCreateMatterInSameRequest
+        ) {
+            $encoded = base64_encode(convert_uuencode((string) $lead->id));
+
+            return redirect()->route('clients.edit', $encoded)
+                ->with('matter_required_before_convert', true)
+                ->with('error', 'Assign a matter type before converting this lead to a client. Use the edit page to add an active matter, then try again.');
+        }
+
         // Start transaction
         DB::beginTransaction();
         

@@ -232,4 +232,17 @@ class ClientMatter extends Model
         return !is_null($this->office_id);
     }
 
+    /**
+     * Whether this client has at least one active matter with a matter type assigned.
+     * Matches client detail / matter switcher logic (active + sel_matter_id set).
+     */
+    public static function clientHasActiveAssignedMatter(int $clientId): bool
+    {
+        return self::query()
+            ->where('client_id', $clientId)
+            ->where('matter_status', 1)
+            ->whereNotNull('sel_matter_id')
+            ->exists();
+    }
+
 }

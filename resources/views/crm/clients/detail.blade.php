@@ -402,6 +402,10 @@ use App\Http\Controllers\Controller;
             @php
                 $cdnDocStripTab = strtolower((string) ($activeTab ?? ''));
                 $cdnDocStripVisibleDemo = in_array($cdnDocStripTab, ['personaldocuments', 'matterdocuments'], true);
+                $__ftRaw = $fetchedData->type ?? null;
+                $__ftStr = $__ftRaw === null ? '' : trim((string) $__ftRaw);
+                $__crmIsLeadType = ($__ftRaw === 1)
+                    || in_array($__ftStr, ['lead', 'l', '1'], true);
             @endphp
             <div id="cdn-doc-subtab-strip" class="cdn-doc-subtab-strip{{ $cdnDocStripVisibleDemo ? ' is-visible' : '' }}" role="tablist" aria-label="Personal documents or matter documents">
                 <button type="button" class="cdn-doc-subtab-btn{{ $cdnDocStripTab === 'matterdocuments' ? '' : ' active' }}" data-doc-sub="personaldocuments">Personal documents</button>
@@ -411,7 +415,7 @@ use App\Http\Controllers\Controller;
             </div>
             <!-- Tab Contents -->
             <div class="tab-content" id="tab-content">
-            @if(($fetchedData->type ?? '') === 'lead')
+            @if($__crmIsLeadType)
             <div class="lead-actions-bar">
                 <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}" class="btn btn-sm btn-secondary">
                     <i class="fa fa-edit"></i> Edit Lead
@@ -420,10 +424,15 @@ use App\Http\Controllers\Controller;
                     <i class="fa fa-history"></i> View History
                 </a>
                 @if(($fetchedData->converted ?? 0) == 0)
-                <form method="POST" action="{{ route('leads.convert_single') }}" style="display:inline;">
+                @php
+                    $cdnLeadHasAssignedMatter = \App\Models\ClientMatter::clientHasActiveAssignedMatter((int) $fetchedData->id);
+                @endphp
+                <form method="POST" action="{{ route('leads.convert_single') }}" class="cdn-convert-lead-to-client-form" style="display:inline;"
+                      data-has-assigned-matter="{{ $cdnLeadHasAssignedMatter ? '1' : '0' }}"
+                      data-edit-url="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}">
                     @csrf
                     <input type="hidden" name="lead_id" value="{{ base64_encode(convert_uuencode($fetchedData->id)) }}">
-                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Are you sure you want to convert this lead to a client?')">
+                    <button type="submit" class="btn btn-sm btn-success">
                         <i class="fa fa-user"></i> Convert To Client
                     </button>
                 </form>
@@ -1947,6 +1956,30 @@ $(function () {
             }
         });
         /* Update Stage opens #cdn-update-stage-modal (data-bs-toggle); no JS needed */
+    });
+})();
+</script>
+
+<script>
+(function () {
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('form.cdn-convert-lead-to-client-form').forEach(function (form) {
+            form.addEventListener('submit', function (e) {
+                if (form.getAttribute('data-has-assigned-matter') !== '1') {
+                    e.preventDefault();
+                    alert('A matter must be assigned before converting this lead to a client. You will be taken to the edit page to assign a matter.');
+                    var url = form.getAttribute('data-edit-url');
+                    if (url) {
+                        window.location.href = url;
+                    }
+                    return false;
+                }
+                if (!window.confirm('Are you sure you want to convert this lead to a client?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
     });
 })();
 </script>

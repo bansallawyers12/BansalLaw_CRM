@@ -2,7 +2,10 @@
 
 @php
     $latestMatterRefNo = null;
-    if (isset($fetchedData) && in_array($fetchedData->type, ['client', 'lead'], true)) {
+    $__crmEditLeadType = isset($fetchedData)
+        && (($fetchedData->type ?? null) === 1
+            || in_array(trim((string) ($fetchedData->type ?? '')), ['lead', 'l', '1'], true));
+    if (isset($fetchedData) && (($fetchedData->type ?? '') === 'client' || $__crmEditLeadType)) {
         $latestMatter = \App\Models\ClientMatter::where('client_id', $fetchedData->id)
             ->where('matter_status', 1)
             ->orderByDesc('id')
@@ -434,7 +437,7 @@
                         <div class="section-header">
                             <h3><i class="fas fa-funnel-dollar"></i> Lead Source &amp; Assignment</h3>
                         </div>
-                        <p class="text-muted" style="margin-top:0;margin-bottom:1rem;">Where did this {{ $fetchedData->type === 'lead' ? 'lead' : 'client' }} come from?</p>
+                        <p class="text-muted" style="margin-top:0;margin-bottom:1rem;">Where did this {{ $__crmEditLeadType ? 'lead' : 'client' }} come from?</p>
 
                         <div class="row">
                             <div class="col-md-5">
@@ -488,7 +491,7 @@
                         <div class="section-header">
                             <h3><i class="fas fa-user-friends"></i> Refer by</h3>
                         </div>
-                        <p class="text-muted" style="margin-top: 0;">Who referred this {{ $fetchedData->type === 'lead' ? 'lead' : 'client' }} (optional).</p>
+                        <p class="text-muted" style="margin-top: 0;">Who referred this {{ $__crmEditLeadType ? 'lead' : 'client' }} (optional).</p>
                         <div class="form-group">
                             <label for="client_refer_by">Refer by</label>
                             <input type="text" class="form-control" id="client_refer_by" name="refer_by" value="{{ old('refer_by', $fetchedData->refer_by ?? '') }}" maxlength="500" placeholder="e.g. name, staff member, campaign">
@@ -1566,14 +1569,14 @@
           <div class="section-header matter-tab-section__header">
             <div>
               <h3 class="matter-tab-section__title"><i class="fas fa-folder-open"></i> Existing Matters</h3>
-              <p class="matter-tab-section__subtitle text-muted">Active matters for {{ $fetchedData->first_name }} {{ $fetchedData->last_name }} ({{ $fetchedData->type === 'lead' ? 'Lead' : 'Client' }} ID: {{ $fetchedData->client_id }})</p>
+              <p class="matter-tab-section__subtitle text-muted">Active matters for {{ $fetchedData->first_name }} {{ $fetchedData->last_name }} ({{ $__crmEditLeadType ? 'Lead' : 'Client' }} ID: {{ $fetchedData->client_id }})</p>
             </div>
           </div>
           @if($editMatterList->isEmpty())
               <div class="matter-tab-empty">
                   <div class="matter-tab-empty__icon"><i class="fas fa-briefcase"></i></div>
                   <p class="matter-tab-empty__title">No matters yet</p>
-                  <p class="matter-tab-empty__hint text-muted">Select a matter type above to create the first matter for this {{ $fetchedData->type === 'lead' ? 'lead' : 'client' }}.</p>
+                  <p class="matter-tab-empty__hint text-muted">Select a matter type above to create the first matter for this {{ $__crmEditLeadType ? 'lead' : 'client' }}.</p>
               </div>
           @else
               <div class="table-responsive matter-tab-table-wrap">
@@ -2285,7 +2288,7 @@
                 <button type="button" class="close-btn add-matter-modal__close" onclick="closeAddMatterModal()" aria-label="Close">&times;</button>
             </div>
             <div class="modal-body add-matter-modal__body">
-                <p class="text-muted add-matter-modal__intro">Creates an active matter for {{ $fetchedData->first_name }} {{ $fetchedData->last_name }} ({{ $fetchedData->type === 'lead' ? 'Lead' : 'Client' }} ID: {{ $fetchedData->client_id }}).</p>
+                <p class="text-muted add-matter-modal__intro">Creates an active matter for {{ $fetchedData->first_name }} {{ $fetchedData->last_name }} ({{ $__crmEditLeadType ? 'Lead' : 'Client' }} ID: {{ $fetchedData->client_id }}).</p>
                 <div id="editAddMatterMsg" class="add-matter-modal__msg"></div>
                 <div class="row add-matter-modal__grid">
                     <div class="col-md-6 add-matter-modal__field">
@@ -2419,6 +2422,8 @@
     </div>
 
     @include('crm.clients.modals.change-matter-assignee-modal')
+
+    @include('crm.clients.partials.matter-required-before-convert-modal')
 
     @push('scripts')
     <script>
