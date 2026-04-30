@@ -25,13 +25,11 @@
     }
 
     $subjectOnly = \App\Models\ActivitiesLog::displaySubjectWithoutStaffPrefix($activity->activity_type ?? null, $activity->subject ?? null);
+    $displayCreator = $admin ? $admin->activityFeedDisplayName() : 'Staff';
     $headlineText = $subjectOnly
         ? (string) ($activity->subject ?? '')
-        : trim((string) ($admin->first_name ?? 'NA') . '  ' . (string) ($activity->subject ?? ''));
-    $staffName = trim((string) ($admin->first_name ?? '') . ' ' . (string) (isset($admin->last_name) ? $admin->last_name : ''));
-    if ($staffName === '' || $staffName === 'NA') {
-        $staffName = 'Staff';
-    }
+        : trim($displayCreator . '  ' . (string) ($activity->subject ?? ''));
+    $staffName = $displayCreator;
     $compactTime = $activity->created_at ? date('d M Y, g:i A', strtotime($activity->created_at)) : '';
     if ($activity->activity_type === 'stage') {
         $summaryLine = 'Stage' . ' · ' . $staffName . ' · ' . $compactTime;
@@ -113,7 +111,7 @@
                         @if($subjectOnly)
                             <strong>{{ $activity->subject ?? '' }}</strong>
                         @else
-                            <strong>{{ $admin->first_name ?? 'NA' }}{{ $activity->subject ? '  ' . $activity->subject : '' }}</strong>
+                            <strong>{{ $displayCreator }}{{ $activity->subject ? '  ' . $activity->subject : '' }}</strong>
                         @endif
                         @if($canConvert)
                             <i class="fas fa-ellipsis-v convert-activity-to-note" style="margin-left: 5px; cursor: pointer;"

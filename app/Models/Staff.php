@@ -153,6 +153,24 @@ class Staff extends Authenticatable
     }
 
     /**
+     * Name shown on activity feed / timeline for this staff member.
+     * Native super-admins (role 1) and staff with grant_super_admin_access show as "Super Admin".
+     */
+    public function activityFeedDisplayName(): string
+    {
+        if (app(CrmAccessService::class)->hasPermanentSuperAdminCapability($this)) {
+            return 'Super Admin';
+        }
+        $full = trim((string) ($this->first_name ?? '') . ' ' . (string) ($this->last_name ?? ''));
+        if ($full !== '') {
+            return $full;
+        }
+        $first = trim((string) ($this->first_name ?? ''));
+
+        return $first !== '' ? $first : 'Staff';
+    }
+
+    /**
      * Get avatar URL (replaces profile_img - uses static avatar.png).
      */
     public function getProfileImgAttribute(): string

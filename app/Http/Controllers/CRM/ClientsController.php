@@ -3154,8 +3154,7 @@ class ClientsController extends Controller
 				
 				foreach($activities as $activit){
 					$admin = Staff::where('id', $activit->created_by)->first();
-					$fullName = $admin ? trim(($admin->first_name ?? '') . ' ' . ($admin->last_name ?? '')) : 'Unknown';
-					if (empty(trim($fullName))) $fullName = $admin ? $admin->first_name : 'Unknown';
+					$fullName = $admin ? $admin->activityFeedDisplayName() : 'Unknown';
 					$subjectWithoutStaffPrefix = ActivitiesLog::displaySubjectWithoutStaffPrefix(
 						$activit->activity_type ?? null,
 						$activit->subject ?? null
@@ -3172,7 +3171,7 @@ class ClientsController extends Controller
 						'activity_id' => $activit->id,
 						'subject' => $activit->subject ?? '',
 						'subject_without_staff_prefix' => $subjectWithoutStaffPrefix,
-						'createdname' => $admin ? substr($admin->first_name, 0, 1) : '?',
+						'createdname' => $fullName !== '' && $fullName !== 'Unknown' ? substr($fullName, 0, 1) : '?',
 						'name' => $fullName,
 						'message' => NoteDescriptionHtml::forDisplay($activit->description ?? ''),
 						'date' => date('d M Y, H:i A', strtotime($activit->created_at)),
