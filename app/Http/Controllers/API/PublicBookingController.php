@@ -769,10 +769,9 @@ class PublicBookingController extends BaseController
             // Format and return the created appointment
             $result = $this->formatAppointmentData($appointment);
 
-            // Prepare response message
+            // Prepare response message (sync failures are logged and stored on booking_appointments.sync_error)
             $successMessage = 'Appointment created successfully';
             if ($bansalApiError) {
-                $successMessage .= '. Note: Appointment created in CRM but could not be synced to the public booking website. Error: ' . $bansalApiError;
                 Log::warning('Appointment created locally but Bansal API sync failed', [
                     'appointment_id' => $appointment->id,
                     'bansal_appointment_id' => $bansalAppointmentId,
@@ -1089,7 +1088,11 @@ class PublicBookingController extends BaseController
 
             $successMessage = 'Appointment created successfully';
             if ($bansalApiError) {
-                $successMessage .= '. Note: Appointment created in CRM but could not be synced to the public booking website. Error: ' . $bansalApiError;
+                Log::warning('Appointment created locally but Bansal API sync failed', [
+                    'appointment_id' => $appointment->id,
+                    'bansal_appointment_id' => $bansalAppointmentId,
+                    'api_error' => $bansalApiError,
+                ]);
             }
 
             return response()->json([

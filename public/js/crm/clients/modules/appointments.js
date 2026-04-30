@@ -37,6 +37,27 @@
         return pad(hour, 2) + ':' + pad(m, 2);
     }
 
+    /** 1=Adelaide, 2=Melbourne — supports radio UI or single hidden field (CRM modal). */
+    function inpersonAddressDataVal() {
+        var $checked = $("input[name='inperson_address']:radio:checked");
+        if ($checked.length) {
+            return String($checked.attr('data-val') || $checked.val() || '');
+        }
+        var $h = $("input[name='inperson_address'][type='hidden']");
+        if ($h.length) {
+            return String($h.attr('data-val') || $h.val() || '');
+        }
+        return '';
+    }
+
+    function inpersonAddressField() {
+        var $checked = $("input[name='inperson_address']:radio:checked");
+        if ($checked.length) {
+            return $checked.first();
+        }
+        return $("input[name='inperson_address'][type='hidden']").first();
+    }
+
     function isLabelInDisabledList(timeLabel, disabledList) {
         if (!disabledList || !disabledList.length) {
             return false;
@@ -147,7 +168,7 @@
 
         $(document).on('change', '.inperson_address', function() {
 
-            var id = $("input[name='inperson_address']:checked").attr('data-val'); //alert(id);
+            var id = inpersonAddressDataVal();
 
             if(id != ""){
 
@@ -189,7 +210,10 @@
 
 
 
-            $("input[name='inperson_address']:checked").val(id);
+            var $inLoc = inpersonAddressField();
+            if ($inLoc.length) {
+                $inLoc.val(id).attr('data-val', id);
+            }
 
             $('.timeslots').html('');
 
@@ -199,7 +223,7 @@
 
                 var service_id = $("input[name='radioGroup']:checked").val(); //alert(service_id);
 
-                var inperson_address = $("input[name='inperson_address']:checked").attr('data-val'); //alert(inperson_address);
+                var inperson_address = inpersonAddressDataVal();
                 
                 var slot_overwrite = $('#slot_overwrite_hidden').val() == 1 ? 1 : 0; // Get slot overwrite value
 
@@ -301,7 +325,7 @@
 
                                     var service_id = $("input[name='radioGroup']:checked").val(); //alert(service_id);
 
-                                    var inperson_address = $("input[name='inperson_address']:checked").attr('data-val'); //alert(inperson_address);
+                                    var inperson_address = inpersonAddressDataVal();
 
                                     var enquiry_item  = $('.enquiry_item').val(); //alert(enquiry_item);
 
@@ -533,10 +557,15 @@
 
             $('.confirm_row').hide();
 
-            $("input[name='inperson_address']").prop("checked", false);
-            var $locRadios = $("input[name='inperson_address']");
+            $("input[name='inperson_address']:radio").prop("checked", false);
+            var $locRadios = $("input[name='inperson_address']:radio");
             if ($locRadios.length === 1) {
                 $locRadios.first().prop("checked", true).trigger("change");
+            } else {
+                var $locHidden = $("input[name='inperson_address'][type='hidden']");
+                if ($locHidden.length) {
+                    $locHidden.first().trigger("change");
+                }
             }
 
             $('.appointment_item').val("");
@@ -655,9 +684,9 @@
             $('.timeslots').html(''); // Clear time slots
             
             // Trigger location change to reload calendar with new settings
-            var selectedLocation = $("input[name='inperson_address']:checked").attr('data-val');
-            if(selectedLocation){
-                $("input[name='inperson_address']:checked").trigger('change');
+            var selectedLocation = inpersonAddressDataVal();
+            if (selectedLocation) {
+                inpersonAddressField().trigger('change');
             }
 
         });

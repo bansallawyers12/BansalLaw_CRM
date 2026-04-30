@@ -103,44 +103,8 @@
                                     Optional. Choose who this booking belongs to; it uses that consultant&rsquo;s calendar. Leave empty to assign automatically.
                                 </small>
                             </div>
-                            <div class="form-group inperson_address_cls">
-                                <label for="inperson_address" class="heading_title">Location</label>
-                                <div class="inperson_address_header" id="inperson_address_wrap">
-                                    <label class="inperson_address_title">
-                                        <input type="radio" class="inperson_address" name="inperson_address" data-val="2" value="2" checked>
-                                        <div class="inperson_address_title_span">
-                                            MELBOURNE<br/><span style="font-size: 10px;">(Next to Flight Center, Level 8/278 Collins St, Melbourne VIC 3000, Australia)</span>
-                                        </div>
-                                    </label>
-                                </div>
-
-                                <style>
-                                    .inperson_address_header {
-                                        display: flex;
-                                        align-items: center;
-                                        gap: 20px; /* Adjust spacing between radio options */
-                                        flex-wrap: nowrap; /* Ensures everything stays in one line */
-                                    }
-
-                                    .inperson_address_title {
-                                        display: flex;
-                                        align-items: center;
-                                        gap: 8px; /* Space between radio button and text */
-                                        white-space: nowrap; /* Prevents text from breaking into multiple lines */
-                                    }
-
-                                    .inperson_address_title_span {
-                                        display: inline-block;
-                                        color: #828F9A;
-                                    }
-                                    /* Mobile Devices: Stack items vertically */
-                                    @media (max-width: 768px) {
-                                        .inperson_address_header {
-                                            display: inline;
-                                        }
-                                    }
-                                </style>
-                            </div>
+                            {{-- Location fixed to Melbourne (2); hidden so booking/slot APIs and validation stay unchanged --}}
+                            <input type="hidden" name="inperson_address" class="inperson_address" value="2" data-val="2" id="crm_appointment_inperson_address" autocomplete="off">
 
                             <div class="form-group row align-items-center appointment_details_cls">
                                 <div class="col-12 col-md-6 col-lg-6">
@@ -364,28 +328,6 @@
 	border-width: 2px;
 	background-color: #e7f3ff;
 	box-shadow: 0 2px 6px rgba(0, 86, 179, 0.2);
-}
-
-/* Location Selection */
-.inperson_address_title {
-	padding: 12px 18px;
-	border: 2px solid #dee2e6;
-	border-radius: 6px;
-	margin-right: 12px;
-	cursor: pointer;
-	transition: all 0.2s ease;
-	background-color: #ffffff;
-}
-
-.inperson_address_title:hover {
-	border-color: #0056b3;
-	background-color: #f8f9fa;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-}
-
-.inperson_address:checked + .inperson_address_title_span {
-	color: #0056b3;
-	font-weight: 600;
 }
 
 /* Form Labels */
@@ -715,15 +657,6 @@
 	
 	.timeslots-grid {
 		grid-template-columns: repeat(2, 1fr);
-	}
-	
-	.inperson_address_header {
-		flex-direction: column;
-	}
-	
-	.inperson_address_title {
-		margin-right: 0;
-		margin-bottom: 12px;
 	}
 	
 	.add_appointment .modal-body {

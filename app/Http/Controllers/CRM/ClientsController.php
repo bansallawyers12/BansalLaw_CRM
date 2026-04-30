@@ -7175,11 +7175,6 @@ class ClientsController extends Controller
             $successMessage = 'Appointment booked successfully';
             if ($confirmationEmailFailed) {
                 $successMessage = 'Appointment saved, but the confirmation email could not be sent.';
-                if ($bansalApiError) {
-                    $successMessage .= ' Note: Appointment created in CRM but could not be synced to the public booking website. Error: ' . $bansalApiError;
-                }
-            } elseif ($bansalApiError) {
-                $successMessage .= '. Note: Appointment created in CRM but could not be synced to the public booking website. Error: ' . $bansalApiError;
             }
 
             // Return JSON response matching expected format
@@ -7193,7 +7188,8 @@ class ClientsController extends Controller
                 ]);
             }
 
-            return redirect()->back()->with($bansalApiError ? 'warning' : 'success', $successMessage);
+            $flashType = $confirmationEmailFailed ? 'warning' : 'success';
+            return redirect()->back()->with($flashType, $successMessage);
             
         } catch (\Exception $e) {
             Log::error('Error creating booking appointment: ' . $e->getMessage(), [
