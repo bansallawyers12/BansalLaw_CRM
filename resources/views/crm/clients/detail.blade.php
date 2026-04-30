@@ -66,10 +66,7 @@ use App\Http\Controllers\Controller;
                     ->first();
                 $cdnMatterRefLabel = $cdnMatterRow?->client_unique_matter_no;
             }
-            $cdnMatterChipTitle = 'General Matter';
-            if ($cdnMatterRow && (int) $cdnMatterRow->sel_matter_id !== 1 && $cdnMatterRow->matter && ! empty($cdnMatterRow->matter->title)) {
-                $cdnMatterChipTitle = $cdnMatterRow->matter->title;
-            }
+            $cdnMatterChipTitle = \App\Models\Matter::displayTitleFromJoinedRow($cdnMatterRow?->matter->title ?? null);
 
             $cdnWorkflowStageLabel = null;
             if ($cdnMatterRefLabel) {
@@ -199,11 +196,7 @@ use App\Http\Controllers\Controller;
                                 <option value="">Select Matters</option>
                                 @foreach($matter_list_arr as $matterlist)
                                     @php
-                                        // If sel_matter_id is 1 or title is null, use "General Matter"
-                                        $matterName = 'General Matter';
-                                        if ($matterlist->sel_matter_id != 1 && !empty($matterlist->title)) {
-                                            $matterName = $matterlist->title;
-                                        }
+                                        $matterName = \App\Models\Matter::displayTitleFromJoinedRow($matterlist->title ?? null);
                                     @endphp
                                     <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}" data-sel-matter-id="{{@$matterlist->sel_matter_id}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
                                 @endforeach
@@ -234,11 +227,7 @@ use App\Http\Controllers\Controller;
                                     <option value="">Select Matters</option>
                                     @foreach($matter_list_arr as $matterlist)
                                         @php
-                                            // If sel_matter_id is 1 or title is null, use "General Matter"
-                                            $matterName = 'General Matter';
-                                            if ($matterlist->sel_matter_id != 1 && !empty($matterlist->title)) {
-                                                $matterName = $matterlist->title;
-                                            }
+                                            $matterName = \App\Models\Matter::displayTitleFromJoinedRow($matterlist->title ?? null);
                                         @endphp
                                         <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}" data-sel-matter-id="{{@$matterlist->sel_matter_id}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
                                     @endforeach
@@ -271,11 +260,7 @@ use App\Http\Controllers\Controller;
                                 <option value="">Select Matters</option>
                                 @foreach($matter_list_arr as $matterlist)
                                     @php
-                                        // If sel_matter_id is 1 or title is null, use "General Matter"
-                                        $matterName = 'General Matter';
-                                        if ($matterlist->sel_matter_id != 1 && !empty($matterlist->title)) {
-                                            $matterName = $matterlist->title;
-                                        }
+                                        $matterName = \App\Models\Matter::displayTitleFromJoinedRow($matterlist->title ?? null);
                                     @endphp
                                     <option value="{{$matterlist->id}}" {{ $matterlist->id == $latestClientMatterId ? 'selected' : '' }} data-clientuniquematterno="{{@$matterlist->client_unique_matter_no}}" data-sel-matter-id="{{@$matterlist->sel_matter_id}}">{{$matterName}}({{@$matterlist->client_unique_matter_no}})</option>
                                 @endforeach

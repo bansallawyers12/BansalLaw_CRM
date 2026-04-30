@@ -24,11 +24,7 @@
         }
 
         if ($workflowSelectedMatter) {
-            if ($workflowSelectedMatter->sel_matter_id == 1 || empty($workflowSelectedMatter->title)) {
-                $workflowMatterName = 'General Matter';
-            } else {
-                $workflowMatterName = $workflowSelectedMatter->title;
-            }
+            $workflowMatterName = \App\Models\Matter::displayTitleFromJoinedRow($workflowSelectedMatter->title ?? null);
             $workflowMatterNumber = $workflowSelectedMatter->client_unique_matter_no;
             $workflowCurrentStageId = $workflowSelectedMatter->workflow_stage_id;
         } else {

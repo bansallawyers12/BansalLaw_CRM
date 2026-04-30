@@ -68,7 +68,7 @@
                                                 </div>
                                             </div>
 
-                                            <!-- Select Matter (General Matter = matter id 1, first in list) -->
+                                            <!-- Select Matter (id 1 uses matters.title, e.g. Civil Law) -->
                                             <div class="col-12 col-md-12 col-lg-12">
                                                 <div class="form-group">
                                                     <label for="checklist_matter_select">Select Matter <span class="span_req">*</span></label>
@@ -79,7 +79,7 @@
                                                                 ->forClientType((bool) (isset($fetchedData) && $fetchedData->is_company));
                                                             $matterList = $matterQuery->get();
                                                         @endphp
-                                                        <option value="1" data-matter-id="1">General Matter</option>
+                                                        <option value="1" data-matter-id="1">{{ \App\Models\Matter::displayTitleFromJoinedRow(\App\Models\Matter::query()->where('id', 1)->value('title')) }}</option>
                                                         @foreach($matterList->reject(function ($m) { return (int) $m->id === 1; }) as $matterlist)
                                                             <option value="{{$matterlist->id}}" data-matter-id="{{$matterlist->id}}">{{@$matterlist->title}}</option>
                                                         @endforeach

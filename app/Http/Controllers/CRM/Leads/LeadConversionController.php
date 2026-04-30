@@ -122,14 +122,8 @@ class LeadConversionController extends Controller
                     ->count();
                     
                 $client_matters_current_no = $client_matters_cnt_per_client + 1;
-                
-                if ((int) $requestData['matter_id'] === 1) {
-                    $matter->client_unique_matter_no = 'GN_' . $client_matters_current_no;
-                } else {
-                    $matterInfo = Matter::select('nick_name')->where('id', '=', $requestData['matter_id'])->first();
-                    $prefix = ($matterInfo && $matterInfo->nick_name) ? $matterInfo->nick_name : 'Matter';
-                    $matter->client_unique_matter_no = $prefix . '_' . $client_matters_current_no;
-                }
+
+                $matter->client_unique_matter_no = Matter::clientUniqueMatterNoPrefix((int) $requestData['matter_id']) . '_' . $client_matters_current_no;
                 
                 $matterType = Matter::find($requestData['matter_id']);
                 $workflowId = $matterType && $matterType->workflow_id ? $matterType->workflow_id : \App\Models\Workflow::where('name', 'General')->value('id');

@@ -6,13 +6,10 @@
     $personResponsible = $matter->personResponsible;
     $personAssisting = $matter->personAssisting;
     
-    // Get matter name
-    if ($matter->sel_matter_id == 1) {
-        $matter_name = 'General matter';
-    } else {
-        $matterModel = $matter->matter ?? null;
-        $matter_name = $matterModel ? $matterModel->title : 'NA';
-    }
+    $matterModel = $matter->matter ?? null;
+    $matter_name = $matterModel
+        ? \App\Models\Matter::displayTitleFromJoinedRow($matterModel->title)
+        : 'NA';
     
     // Get email count
     $total_email_assign_cnt = $matter->mailReports()

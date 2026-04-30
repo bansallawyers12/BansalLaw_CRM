@@ -207,11 +207,7 @@
                             <tr role="row" data-matter-id="{{ $matter->id ?? '' }}">
                                 <td class="col-matter" style="white-space: initial;">
                                     <a href="{{ route('clients.detail', [base64_encode(convert_uuencode($matter->client_id)), $matter->client_unique_matter_no ?? '']) }}" class="matter-link">
-                                        @if($matter->sel_matter_id == 1)
-                                            General matter
-                                        @else
-                                            {{ $matter->matter->title ?? 'NA' }}
-                                        @endif
+                                        {{ \App\Models\Matter::displayTitleFromJoinedRow(optional($matter->matter)->title) }}
                                         ({{ $matter->client_unique_matter_no ?? 'N/A' }})
                                     </a>
                                     @php

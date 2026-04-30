@@ -468,13 +468,7 @@ function populateClientMatters(clientId) {
                     const option = document.createElement('option');
                     option.value = matter.id;
                     
-                    // Check if it's a general matter (starts with GN_)
-                    if (matter.client_unique_matter_no && 
-                        matter.client_unique_matter_no.startsWith('GN_')) {
-                        option.textContent = 'General Matter - ' + matter.client_unique_matter_no;
-                    } else {
-                        option.textContent = matter.display_name;
-                    }
+                    option.textContent = matter.display_name;
                     
                     select.appendChild(option);
                 });

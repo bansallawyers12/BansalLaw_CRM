@@ -5548,13 +5548,7 @@ class ClientsController extends Controller
             ->where('client_id', $admin->id)
             ->count();
         $nextNo = $countForType + 1;
-        if ($matterId === 1) {
-            $row->client_unique_matter_no = 'GN_' . $nextNo;
-        } else {
-            $matterInfo = Matter::query()->where('id', $matterId)->value('nick_name');
-            $prefix = $matterInfo ?: 'Matter';
-            $row->client_unique_matter_no = $prefix . '_' . $nextNo;
-        }
+        $row->client_unique_matter_no = Matter::clientUniqueMatterNoPrefix($matterId) . '_' . $nextNo;
 
         $matterType = Matter::find($matterId);
         $workflowId = $matterType && $matterType->workflow_id
@@ -5652,13 +5646,7 @@ class ClientsController extends Controller
             
             $client_matters_cnt_per_client = DB::table('client_matters')->select('id')->where('sel_matter_id',$requestData['matter_id'])->where('client_id',$requestData['client_id'])->count();
             $client_matters_current_no = $client_matters_cnt_per_client+1;
-            if($requestData['matter_id'] == 1) {
-                $obj5->client_unique_matter_no = 'GN_'.$client_matters_current_no;
-            } else {
-                $matterInfo = Matter::select('nick_name')->where('id', '=', $requestData['matter_id'])->first();
-                $prefix = ($matterInfo && $matterInfo->nick_name) ? $matterInfo->nick_name : 'Matter';
-                $obj5->client_unique_matter_no = $prefix."_".$client_matters_current_no;
-            }
+            $obj5->client_unique_matter_no = Matter::clientUniqueMatterNoPrefix((int) $requestData['matter_id']) . '_' . $client_matters_current_no;
             $matterType = Matter::find($requestData['matter_id']);
             $workflowId = $matterType && $matterType->workflow_id ? $matterType->workflow_id : \App\Models\Workflow::where('name', 'General')->value('id');
             $firstStageId = \App\Models\WorkflowStage::where('workflow_id', $workflowId)->orderByRaw('COALESCE(sort_order, id) ASC')->value('id')
@@ -5903,11 +5891,7 @@ class ClientsController extends Controller
 			
 			$matters = [];
 			foreach($clientMatters as $matter){
-				// If sel_matter_id is 1 or title is null, use "General Matter"
-				$matterName = 'General Matter';
-				if ($matter->sel_matter_id != 1 && !empty($matter->title)) {
-					$matterName = $matter->title;
-				}
+				$matterName = Matter::displayTitleFromJoinedRow($matter->title ?? null);
 				
 				$displayName = $matterName . ' - ' . $matter->client_unique_matter_no;
 				$matters[] = [
@@ -6006,13 +5990,7 @@ class ClientsController extends Controller
 
                     $client_matters_cnt_per_client = DB::table('client_matters')->select('id')->where('sel_matter_id',$request['matter_id'])->where('client_id',(int) $id)->count();
                     $client_matters_current_no = $client_matters_cnt_per_client+1;
-                    if($request['matter_id'] == 1) {
-                        $matter->client_unique_matter_no = 'GN_'.$client_matters_current_no;
-                    } else {
-                        $matterInfo = Matter::select('nick_name')->where('id', '=', $request['matter_id'])->first();
-                        $prefix = ($matterInfo && $matterInfo->nick_name) ? $matterInfo->nick_name : 'Matter';
-                        $matter->client_unique_matter_no = $prefix."_".$client_matters_current_no;
-                    }
+                    $matter->client_unique_matter_no = Matter::clientUniqueMatterNoPrefix((int) $request['matter_id']) . '_' . $client_matters_current_no;
                     Log::info('ConvertLeadToClient: client_unique_matter_no', ['client_unique_matter_no' => $matter->client_unique_matter_no]);
 
                     $matterType = Matter::find($request['matter_id']);

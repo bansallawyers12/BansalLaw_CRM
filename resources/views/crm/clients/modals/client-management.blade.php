@@ -95,7 +95,7 @@
                                 <label for="matter_id">Select Matter <span class="span_req">*</span></label>
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" value="1" id="general_matter_checkbox_new">
-                                    <label class="form-check-label" for="general_matter_checkbox_new">General Matter</label>
+                                    <label class="form-check-label" for="general_matter_checkbox_new">{{ \App\Models\Matter::displayTitleFromJoinedRow(\App\Models\Matter::query()->where('id', 1)->value('title')) }}</label>
                                 </div>
 
                                 <label class="form-check-label">Or Select any option</label>

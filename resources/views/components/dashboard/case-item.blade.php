@@ -25,13 +25,10 @@
     
     $daysStalledClass = $daysStalled > 14 ? 'text-danger' : ($daysStalled > 7 ? 'text-warning' : 'text-info');
     
-    // Get matter name
-    if ($case->sel_matter_id == 1) {
-        $matter_name = 'General matter';
-    } else {
-        $matter = $case->matter ?? null;
-        $matter_name = $matter ? $matter->title : 'NA';
-    }
+    $matter = $case->matter ?? null;
+    $matter_name = $matter
+        ? \App\Models\Matter::displayTitleFromJoinedRow($matter->title)
+        : 'NA';
     
     // Get latest activity information
     $latestActivity = $case->latest_activity ?? ['type' => 'default', 'date' => $case->updated_at];

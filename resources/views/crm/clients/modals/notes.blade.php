@@ -119,11 +119,7 @@
                                     ?>
 								    @foreach($matter_list_arr as $matterlist)
 	                                        @php
-	                                            // If sel_matter_id is 1 or title is null, use "General Matter"
-	                                            $matterName = 'General Matter';
-	                                            if ($matterlist->sel_matter_id != 1 && !empty($matterlist->title)) {
-	                                                $matterName = $matterlist->title;
-	                                            }
+	                                            $matterName = \App\Models\Matter::displayTitleFromJoinedRow($matterlist->title ?? null);
 	                                            
 	                                            // Concatenate matter name with client_unique_matter_no if it exists
 	                                            if (!empty($matterlist->client_unique_matter_no)) {

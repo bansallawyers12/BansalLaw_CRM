@@ -104,4 +104,58 @@ class Matter extends Model
 
 		return ! $forCompany;
 	}
+
+	/**
+	 * Prefix for client_matters.client_unique_matter_no (before underscore + sequence).
+	 * Prefers matters.nick_name; if empty, derives from title (so Civil Law → CIV without relying on nick_name).
+	 * GN only when the matter row is missing or both nick_name and title are unusable.
+	 */
+	public static function clientUniqueMatterNoPrefix(?int $matterTypeId): string
+	{
+		if ($matterTypeId === null || $matterTypeId < 1) {
+			return 'GN';
+		}
+		$matter = static::query()->where('id', $matterTypeId)->first(['nick_name', 'title']);
+		if (! $matter) {
+			return 'GN';
+		}
+		$nick = trim((string) ($matter->nick_name ?? ''));
+		if ($nick !== '') {
+			return $nick;
+		}
+		$derived = static::derivePrefixFromMatterTitle((string) ($matter->title ?? ''));
+
+		return $derived !== '' ? $derived : 'GN';
+	}
+
+	/**
+	 * Build a short ASCII prefix from a matter type title (e.g. "Civil Law" → "CIV").
+	 */
+	protected static function derivePrefixFromMatterTitle(string $title): string
+	{
+		$title = trim($title);
+		if ($title === '') {
+			return '';
+		}
+		$compact = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $title));
+		if (strlen($compact) >= 3) {
+			return substr($compact, 0, 3);
+		}
+		if (strlen($compact) >= 2) {
+			return $compact;
+		}
+
+		return '';
+	}
+
+	/**
+	 * Display label from joined matters.title (client_matters + matters).
+	 * Legacy UI forced id 1 to "General Matter"; id 1 is Civil Law in DB — use title when set.
+	 */
+	public static function displayTitleFromJoinedRow(?string $matterTitle): string
+	{
+		$t = $matterTitle !== null ? trim((string) $matterTitle) : '';
+
+		return $t !== '' ? $t : 'General Matter';
+	}
 }
