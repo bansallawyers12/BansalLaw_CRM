@@ -6,6 +6,28 @@
 (function($) {
     'use strict';
 
+    /** Match .crm-container .activity-feed .feed-item { display: grid !important } — jQuery .hide() cannot win; use this class instead. */
+    var FILTER_HIDDEN_CLASS = 'feed-item--filter-hidden';
+
+    function feedRoot() {
+        return $('#activity-feed');
+    }
+
+    /** Visible summary line (progressive rows) or legacy .feed-content strong headline */
+    function getActivityRowHeadlineText($item) {
+        var el = $item.find('.feed-item-summary-text').first();
+        var raw = el.length ? el.text() : $item.find('.feed-content strong').text();
+        return (raw || '').toLowerCase();
+    }
+
+    var FEED_NO_RESULTS_HTML = '<li class="feed-item feed-item-no-results" style="text-align: center; padding: 20px; color: #6c757d;">' +
+        '<i class="fas fa-filter" style="font-size: 1.5em; margin-bottom: 8px; opacity: 0.5;"></i>' +
+        '<p class="mb-0 small">No activities match your filters</p></li>';
+
+    var FEED_EMPTY_HTML = '<li class="feed-item feed-item--empty" style="text-align: center; padding: 20px; color: #6c757d;">' +
+        '<i class="fas fa-inbox" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>' +
+        '<p>No activities found</p></li>';
+
     /**
      * Initialize Activity Feed functionality
      */
@@ -38,10 +60,11 @@
      * Type filter works with extended filters (search, date) when they are active
      */
     function setupFilterButtons() {
-        $('.activity-filter-btn').on('click', function() {
-            $('.activity-filter-btn').removeClass('active');
+        var $root = feedRoot();
+        if (!$root.length) return;
+        $root.find('.activity-filter-btn').on('click', function() {
+            $root.find('.activity-filter-btn').removeClass('active');
             $(this).addClass('active');
-            // Use applyExtendedFilters so type + search + date are combined when filter bar is visible
             if ($('#activity-feed-filter-bar').is(':visible')) {
                 applyExtendedFilters();
             } else {
@@ -55,148 +78,131 @@
      * @param {string} filterType - The type of filter to apply (all, activity, note, document, accounting)
      */
     function filterActivities(filterType) {
+        var $root = feedRoot();
+        if (!$root.length) return;
+        var $rows = $root.find('.feed-item.activity');
+
         if (filterType === 'all') {
-            $('.feed-item.activity').show();
+            $rows.removeClass(FILTER_HIDDEN_CLASS);
         } else if (filterType === 'activity') {
-            // Show activity-type-activity, activity-type-sms, and activity-type-stage (workflow)
-            $('.feed-item.activity').hide();
-            $('.feed-item.activity-type-activity, .feed-item.activity-type-sms, .feed-item.activity-type-stage').show();
-        } else if (filterType === 'note') {
-            // Show only actual notes (exclude activity edits, SMS, documents, and accounting)
-            $('.feed-item.activity').each(function() {
+            $rows.each(function() {
                 var $item = $(this);
-                // Hide Activity edits, SMS, stage, document, and accounting activities, show everything else (notes)
-                if (!$item.hasClass('activity-type-sms') && 
+                var show = $item.hasClass('activity-type-activity') || $item.hasClass('activity-type-sms') || $item.hasClass('activity-type-stage');
+                $item.toggleClass(FILTER_HIDDEN_CLASS, !show);
+            });
+        } else if (filterType === 'note') {
+            $rows.each(function() {
+                var $item = $(this);
+                var show = !$item.hasClass('activity-type-sms') &&
                     !$item.hasClass('activity-type-activity') &&
                     !$item.hasClass('activity-type-stage') &&
-                    !$item.hasClass('activity-type-document') && 
+                    !$item.hasClass('activity-type-document') &&
                     !$item.hasClass('activity-type-signature') &&
-                    !$item.hasClass('activity-type-financial')) {
-                    $item.show();
-                } else {
-                    $item.hide();
-                }
+                    !$item.hasClass('activity-type-financial');
+                $item.toggleClass(FILTER_HIDDEN_CLASS, !show);
             });
         } else if (filterType === 'document') {
-            $('.feed-item.activity').hide();
-            // Show document activities - check both class and subject text
-            $('.feed-item.activity').each(function() {
+            var documentPatterns = [
+                'document',
+                'added.*document',
+                'updated.*document',
+                'deleted.*document',
+                'renamed.*document',
+                'added.*migration document',
+                'updated.*migration document',
+                'added.*personal document',
+                'updated.*personal document',
+                'added.*visa document',
+                'updated.*visa document',
+                'added.*matter document',
+                'updated.*matter document',
+                'added.*personal checklist',
+                'added.*visa checklist',
+                'added.*matter document checklist',
+                'placed signature fields on matter document',
+                'placed signature fields on visa document',
+                'updated.*checklist',
+                'signed document',
+                'signed cost agreement',
+                'document.*attached',
+                'document.*detached'
+            ];
+            $rows.each(function() {
                 var $item = $(this);
-                var hasDocumentClass = $item.hasClass('activity-type-document');
-                
-                // If it has the document class, show it
-                if (hasDocumentClass) {
-                    $item.show();
+                if ($item.hasClass('activity-type-document')) {
+                    $item.removeClass(FILTER_HIDDEN_CLASS);
                     return;
                 }
-                
-                // Fallback: Check subject text for document-related keywords
-                // This handles legacy activities that don't have activity_type set
-                var subject = $item.find('.feed-content strong').text().toLowerCase();
-                var subjectText = subject || '';
-                
-                // Document-related patterns to match (but exclude accounting-related receipt documents)
-                var documentPatterns = [
-                    'document',
-                    'added.*document',
-                    'updated.*document',
-                    'deleted.*document',
-                    'renamed.*document',
-                    'added.*migration document',
-                    'updated.*migration document',
-                    'added.*personal document',
-                    'updated.*personal document',
-                    'added.*visa document',
-                    'updated.*visa document',
-                    'added.*matter document',
-                    'updated.*matter document',
-                    'added.*personal checklist',
-                    'added.*visa checklist',
-                    'added.*matter document checklist',
-                    'placed signature fields on matter document',
-                    'placed signature fields on visa document',
-                    'updated.*checklist',
-                    'signed document',
-                    'signed cost agreement',
-                    'document.*attached',
-                    'document.*detached'
-                ];
-                
-                // Check if subject matches any document pattern (but not accounting receipt documents)
+                var subjectText = getActivityRowHeadlineText($item);
                 var isAccountingReceiptDoc = /(receipt document|journal receipt document|client receipt document|office receipt document)/i.test(subjectText);
                 var isDocument = !isAccountingReceiptDoc && documentPatterns.some(function(pattern) {
-                    var regex = new RegExp(pattern, 'i');
-                    return regex.test(subjectText);
+                    return new RegExp(pattern, 'i').test(subjectText);
                 });
-                
-                if (isDocument) {
-                    $item.show();
-                }
+                $item.toggleClass(FILTER_HIDDEN_CLASS, !isDocument);
             });
         } else if (filterType === 'signature') {
-            $('.feed-item.activity').hide();
-            $('.feed-item.activity-type-signature').show();
-        } else if (filterType === 'accounting') {
-            $('.feed-item.activity').hide();
-            // Show accounting activities - check both class and subject text
-            $('.feed-item.activity').each(function() {
+            $rows.each(function() {
                 var $item = $(this);
-                var hasFinancialClass = $item.hasClass('activity-type-financial');
-                
-                // If it has the financial class, show it
-                if (hasFinancialClass) {
-                    $item.show();
+                $item.toggleClass(FILTER_HIDDEN_CLASS, !$item.hasClass('activity-type-signature'));
+            });
+        } else if (filterType === 'accounting') {
+            var accountingPatterns = [
+                'invoice',
+                'added invoice',
+                'updated invoice',
+                'deleted invoice',
+                'receipt',
+                'office receipt',
+                'client receipt',
+                'journal receipt',
+                'receipt document',
+                'journal receipt document',
+                'client receipt document',
+                'office receipt document',
+                'added.*receipt',
+                'updated.*receipt',
+                'ledger',
+                'client funds ledger',
+                'fee transfer',
+                'allocation',
+                'allocated',
+                'payment',
+                'deposit',
+                'withdrawal',
+                'balance',
+                'cost agreement',
+                'account'
+            ];
+            $rows.each(function() {
+                var $item = $(this);
+                if ($item.hasClass('activity-type-financial')) {
+                    $item.removeClass(FILTER_HIDDEN_CLASS);
                     return;
                 }
-                
-                // Fallback: Check subject text for accounting-related keywords
-                // This handles legacy activities that don't have activity_type set
-                var subject = $item.find('.feed-content strong').text().toLowerCase();
-                var subjectText = subject || '';
-                
-                // Accounting-related patterns to match
-                var accountingPatterns = [
-                    'invoice',
-                    'added invoice',
-                    'updated invoice',
-                    'deleted invoice',
-                    'receipt',
-                    'office receipt',
-                    'client receipt',
-                    'journal receipt',
-                    'receipt document',
-                    'journal receipt document',
-                    'client receipt document',
-                    'office receipt document',
-                    'added.*receipt',
-                    'updated.*receipt',
-                    'ledger',
-                    'client funds ledger',
-                    'fee transfer',
-                    'allocation',
-                    'allocated',
-                    'payment',
-                    'deposit',
-                    'withdrawal',
-                    'balance',
-                    'cost agreement',
-                    'account'
-                ];
-                
-                // Check if subject matches any accounting pattern
+                var subjectText = getActivityRowHeadlineText($item);
                 var isAccounting = accountingPatterns.some(function(pattern) {
-                    var regex = new RegExp(pattern, 'i');
-                    return regex.test(subjectText);
+                    return new RegExp(pattern, 'i').test(subjectText);
                 });
-                
-                if (isAccounting) {
-                    $item.show();
-                }
+                $item.toggleClass(FILTER_HIDDEN_CLASS, !isAccounting);
             });
         } else {
-            // Show only activities with specific type (for other filters like document, accounting)
-            $('.feed-item.activity').hide();
-            $('.feed-item.activity-type-' + filterType).show();
+            $rows.each(function() {
+                var $item = $(this);
+                $item.toggleClass(FILTER_HIDDEN_CLASS, !$item.hasClass('activity-type-' + filterType));
+            });
+        }
+
+        updateEmptyState();
+    }
+
+    function reapplyFilters() {
+        var $root = feedRoot();
+        if (!$root.length) return;
+        if ($('#activity-feed-filter-bar').is(':visible')) {
+            applyExtendedFilters();
+        } else {
+            var activeType = $root.find('.activity-filter-btn.active').data('filter') || 'all';
+            filterActivities(activeType);
         }
     }
 
@@ -272,12 +278,14 @@
      * Apply search and date filters, combined with current type filter
      */
     function applyExtendedFilters() {
+        var $root = feedRoot();
+        if (!$root.length) return;
         var searchVal = ($('#activity-feed-search').val() || '').trim().toLowerCase();
         var dateFrom = ($('#activity-feed-date-from').val() || '').trim();
         var dateTo = ($('#activity-feed-date-to').val() || '').trim();
-        var activeType = $('.activity-filter-btn.active').data('filter') || 'all';
+        var activeType = $root.find('.activity-filter-btn.active').data('filter') || 'all';
 
-        $('.feed-item.activity').each(function() {
+        $root.find('.feed-item.activity').each(function() {
             var $item = $(this);
             var typeMatch = matchesTypeFilter($item, activeType);
             var searchMatch = !searchVal || $item.find('.feed-content').text().toLowerCase().indexOf(searchVal) >= 0;
@@ -287,7 +295,7 @@
                 if (dateFrom && itemDate < dateFrom) dateMatch = false;
                 if (dateTo && itemDate > dateTo) dateMatch = false;
             }
-            $item.toggle(typeMatch && searchMatch && dateMatch);
+            $item.toggleClass(FILTER_HIDDEN_CLASS, !(typeMatch && searchMatch && dateMatch));
         });
 
         updateEmptyState();
@@ -304,19 +312,23 @@
         if (filterType === 'note') {
             return !$item.hasClass('activity-type-sms') && !$item.hasClass('activity-type-activity') &&
                 !$item.hasClass('activity-type-stage') &&
-                !$item.hasClass('activity-type-document') && !$item.hasClass('activity-type-financial');
+                !$item.hasClass('activity-type-document') && !$item.hasClass('activity-type-signature') &&
+                !$item.hasClass('activity-type-financial');
         }
         if (filterType === 'document') {
             if ($item.hasClass('activity-type-document')) return true;
-            var subject = ($item.find('.feed-content strong').text() || '').toLowerCase();
+            var subject = getActivityRowHeadlineText($item);
             if (/(receipt document|journal receipt document|client receipt document|office receipt document)/i.test(subject)) return false;
             var docPatterns = ['document', 'added.*document', 'updated.*document', 'visa document', 'matter document', 'personal document', 'checklist', 'uploaded', 'signed document', 'placed signature fields on matter document', 'placed signature fields on visa document'];
             return docPatterns.some(function(p) { return new RegExp(p, 'i').test(subject); });
         }
         if (filterType === 'accounting') {
             if ($item.hasClass('activity-type-financial')) return true;
-            var subj = ($item.find('.feed-content strong').text() || '').toLowerCase();
+            var subj = getActivityRowHeadlineText($item);
             return /invoice|receipt|payment|ledger|account/.test(subj);
+        }
+        if (filterType === 'signature') {
+            return $item.hasClass('activity-type-signature');
         }
         return true;
     }
@@ -325,9 +337,13 @@
      * Show/hide empty state when no activities match
      */
     function updateEmptyState() {
-        var visible = $('.feed-item.activity:visible').length;
-        $('.feed-item--empty').toggle(visible === 0);
-        $('.feed-item-no-results').toggle(visible === 0 && $('.feed-item.activity').length > 0);
+        var $root = feedRoot();
+        if (!$root.length) return;
+        var $acts = $root.find('.feed-item.activity');
+        var total = $acts.length;
+        var visible = $acts.not('.' + FILTER_HIDDEN_CLASS).length;
+        $root.find('.feed-item--empty').toggleClass(FILTER_HIDDEN_CLASS, total > 0);
+        $root.find('.feed-item-no-results').toggleClass('feed-item-no-results--show', visible === 0 && total > 0);
     }
 
     // --- Progressive disclosure: build feed HTML (shared with client + company detail AJAX) ---
@@ -411,7 +427,9 @@
      * Returns full HTML for all activity rows (replaces .feed-list contents).
      */
     window.buildActivityFeedListHtml = function (data) {
-        if (!data || !data.length) return '';
+        if (!data || !data.length) {
+            return FEED_EMPTY_HTML;
+        }
         var html = '';
         for (var k = 0; k < data.length; k++) {
             var v = data[k];
@@ -503,7 +521,10 @@
             liOpen += '</div></li>';
             html += liOpen;
         }
-        return html;
+        if (!html) {
+            return FEED_EMPTY_HTML;
+        }
+        return html + FEED_NO_RESULTS_HTML;
     };
 
     function updateClampButtonForChunk($chunk) {
@@ -539,7 +560,7 @@
     }
 
     window.initActivityFeedClamps = function() {
-        $('.feed-item--expanded .feed-item-detail:visible .feed-item-body-chunk').each(function() {
+        $('#activity-feed .feed-item--expanded .feed-item-detail:visible .feed-item-body-chunk').each(function() {
             updateClampButtonForChunk($(this));
         });
     };
@@ -601,7 +622,8 @@
     // Expose public API
     window.ActivityFeed = {
         init: init,
-        filterActivities: filterActivities
+        filterActivities: filterActivities,
+        reapplyFilters: reapplyFilters
     };
 
 })(jQuery);

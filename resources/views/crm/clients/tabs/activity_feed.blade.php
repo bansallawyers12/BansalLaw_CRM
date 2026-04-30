@@ -129,7 +129,7 @@
                     'clientId' => $fetchedData->id
                 ])
             @endforeach
-            <li class="feed-item feed-item-no-results" style="display: none; text-align: center; padding: 20px; color: #6c757d;">
+            <li class="feed-item feed-item-no-results" style="text-align: center; padding: 20px; color: #6c757d;">
                 <i class="fas fa-filter" style="font-size: 1.5em; margin-bottom: 8px; opacity: 0.5;"></i>
                 <p class="mb-0 small">No activities match your filters</p>
             </li>

@@ -1303,14 +1303,17 @@ $(document).ready(function() {
             dataType: 'json',
             data: { id: window.ClientDetailConfig.clientId },
             success: function(response) {
-                if (response.status && response.data) {
+                if (response.status && response.data !== undefined && response.data !== null) {
                     var html = typeof window.buildActivityFeedListHtml === 'function'
                         ? window.buildActivityFeedListHtml(response.data)
                         : '';
 
-                    $('.feed-list').html(html);
+                    $('#activity-feed .feed-list').html(html);
                     if (typeof window.initActivityFeedClamps === 'function') {
                         window.initActivityFeedClamps();
+                    }
+                    if (window.ActivityFeed && typeof window.ActivityFeed.reapplyFilters === 'function') {
+                        window.ActivityFeed.reapplyFilters();
                     }
                     
                     // Adjust Activity Feed height after content update

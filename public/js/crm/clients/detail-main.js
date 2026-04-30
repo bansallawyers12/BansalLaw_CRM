@@ -4815,12 +4815,15 @@ success: function(response) {
                         if (!ress) return;
 
                     var html = typeof window.buildActivityFeedListHtml === 'function'
-                        ? window.buildActivityFeedListHtml(ress.data)
+                        ? window.buildActivityFeedListHtml(ress.data || [])
                         : '';
 
-                    $('.feed-list').html(html);
+                    $('#activity-feed .feed-list').html(html);
                     if (typeof window.initActivityFeedClamps === 'function') {
                         window.initActivityFeedClamps();
+                    }
+                    if (window.ActivityFeed && typeof window.ActivityFeed.reapplyFilters === 'function') {
+                        window.ActivityFeed.reapplyFilters();
                     }
 
                     //$('.activities').html(html);

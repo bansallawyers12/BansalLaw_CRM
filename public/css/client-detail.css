@@ -1788,6 +1788,19 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     border-bottom: none !important;
 }
 
+/* JS filters use a class because .feed-item uses display:grid !important, which overrides jQuery .hide() */
+.crm-container .activity-feed .feed-item.feed-item--filter-hidden {
+    display: none !important;
+}
+
+.crm-container .activity-feed .feed-item.feed-item-no-results:not(.feed-item-no-results--show) {
+    display: none !important;
+}
+
+.crm-container .activity-feed .feed-item.feed-item-no-results.feed-item-no-results--show {
+    display: grid !important;
+}
+
 /* Icon badge — layout’s 25px column broke FA circles */
 .crm-container .activity-feed .feed-icon {
     width: 36px !important;
@@ -1894,19 +1907,68 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     transition: transform 0.15s ease;
 }
 
+/* Summary line = primary heading; expanded detail = separate inset panel (distinct from outer .feed-content tint) */
+.crm-container .activity-feed .feed-item:not(.feed-item--no-expand):not(.feed-item--expanded) .feed-item-summary {
+    padding: 8px 10px !important;
+    margin: 0 !important;
+    border-radius: 6px !important;
+    background: rgba(255, 255, 255, 0.72) !important;
+    border: 1px solid rgba(200, 220, 239, 0.85) !important;
+    box-sizing: border-box !important;
+}
+
+.crm-container .activity-feed .feed-item--expanded:not(.feed-item--no-expand) .feed-item-summary {
+    padding: 8px 10px !important;
+    margin: 0 !important;
+    border-radius: 6px !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(200, 220, 239, 0.85) !important;
+    box-sizing: border-box !important;
+}
+
 .crm-container .activity-feed .feed-item-detail {
-    margin-top: 8px !important;
-    padding-top: 6px !important;
-    border-top: 1px solid rgba(200, 220, 239, 0.75);
+    margin-top: 10px !important;
+    padding: 0 !important;
+    border-top: none !important;
+    background: var(--card-bg, #ffffff) !important;
+    border: 1px solid rgba(200, 220, 239, 0.95) !important;
+    border-radius: 6px !important;
+    box-shadow: 0 1px 3px rgba(30, 61, 96, 0.08);
+    overflow: hidden;
+}
+
+/* Non-expandable rows: no header strip */
+.crm-container .activity-feed .feed-item--no-expand .feed-item-summary--static {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: none !important;
 }
 
 .crm-container .activity-feed .feed-item-full-headline {
-    font-size: 0.88rem !important;
+    font-size: 0.84rem !important;
+    padding: 10px 12px !important;
+    margin: 0 !important;
+    background: rgba(30, 61, 96, 0.065) !important;
+    border-bottom: 1px solid rgba(200, 220, 239, 0.85) !important;
+    color: var(--text-dark, #1a2c40) !important;
 }
 
-.crm-container .activity-feed .feed-item-body-outer {
+.crm-container .activity-feed .feed-item-detail .feed-item-body-outer {
     position: relative;
-    margin-top: 6px;
+    margin-top: 0 !important;
+    padding: 10px 12px 12px !important;
+}
+
+.crm-container .activity-feed .feed-item-detail .feed-item-full-headline + .feed-item-body-outer {
+    padding-top: 12px !important;
+}
+
+.crm-container .activity-feed .feed-item-detail .feed-item-task-meta {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    padding-bottom: 10px !important;
+    margin-top: 0 !important;
 }
 
 .crm-container .activity-feed .feed-item-body-chunk {
