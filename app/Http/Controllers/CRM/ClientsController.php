@@ -7108,6 +7108,11 @@ class ClientsController extends Controller
                 ]);
             }
 
+            $staffActorId = Auth::id();
+            $assignedByStaffId = ($staffActorId && Staff::where('id', $staffActorId)->exists())
+                ? $staffActorId
+                : null;
+
             // Create booking appointment
             $appointment = BookingAppointment::create([
                 'bansal_appointment_id' => $bansalAppointmentId,
@@ -7115,7 +7120,7 @@ class ClientsController extends Controller
                 
                 'client_id' => $client->id,
                 'consultant_id' => $consultant ? $consultant->id : null,
-                'assigned_by_admin_id' => Auth::id() ?: null,
+                'assigned_by_admin_id' => $assignedByStaffId,
                 
                 'client_name' => $clientName,
                 'client_email' => $clientEmail,

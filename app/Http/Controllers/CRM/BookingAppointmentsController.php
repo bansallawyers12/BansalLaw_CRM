@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BookingAppointment;
 use App\Models\AppointmentConsultant;
 use App\Models\Admin;
+use App\Models\Staff;
 use App\Models\ClientMatter;
 use App\Models\AppointmentSyncLog;
 use App\Models\ActivitiesLog;
@@ -1028,17 +1029,11 @@ class BookingAppointmentsController extends Controller
             $oldConsultantId = $appointment->consultant_id;
             $appointment->consultant_id = $request->consultant_id;
             
-            // Only set assigned_by_admin_id if user is authenticated and exists
-            $adminId = Auth::id();
-            if ($adminId) {
-                // Verify admin exists before assigning (prevents FK constraint violation)
-                $adminExists = Admin::where('id', $adminId)->exists();
-                if ($adminExists) {
-                    $appointment->assigned_by_admin_id = $adminId;
-                }
-                // If admin doesn't exist, leave it as null (column is nullable)
+            // assigned_by_admin_id stores CRM staff id (admin guard uses staff provider)
+            $staffId = Auth::id();
+            if ($staffId && Staff::where('id', $staffId)->exists()) {
+                $appointment->assigned_by_admin_id = $staffId;
             }
-            // If Auth::id() is null, leave assigned_by_admin_id as null (column is nullable)
             
             $appointment->save();
 

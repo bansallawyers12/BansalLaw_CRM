@@ -174,7 +174,7 @@ class LeadBookingApiController extends BaseController
             'order_hash' => ['nullable', 'string', 'max:255'],
             'client_id' => ['nullable', 'integer', 'exists:admins,id'],
             'consultant_id' => ['nullable', 'integer', 'exists:appointment_consultants,id'],
-            'assigned_by_admin_id' => ['nullable', 'integer', 'exists:admins,id'],
+            'assigned_by_admin_id' => ['nullable', 'integer', 'exists:staff,id'],
             'client_name' => ['required', 'string', 'max:255'],
             'client_email' => ['required', 'email', 'max:255'],
             'client_phone' => ['nullable', 'string', 'max:50'],
