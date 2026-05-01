@@ -283,8 +283,22 @@ use App\Http\Controllers\Controller;
         <div class="cdn-tabs-strip cdn-main-tab-bar">
         <nav class="client-sidebar-nav" role="tablist" aria-label="Client record sections">
             <?php
-            $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
-            
+            $matter_cnt = \App\Models\ClientMatter::query()
+                ->where('client_id', $fetchedData->id)
+                ->where(function ($q) {
+                    $q->where('matter_status', 1)->orWhere('matter_status', '1');
+                })
+                ->count();
+
+            // Align with $__crmIsLeadType below: leads keep Matter docs under Documents; everyone else with matters gets top-level tab.
+            $__navTypeRaw = $fetchedData->type ?? null;
+            $__navTypeStr = $__navTypeRaw === null ? '' : trim((string) $__navTypeRaw);
+            $crmDetailNavIsLead = ($__navTypeRaw === 1)
+                || in_array(strtolower($__navTypeStr), ['lead', 'l', '1'], true);
+
+            $crmShowMatterDocsForConvertedLead = ! $crmDetailNavIsLead
+                && strtolower(trim((string) ($fetchedData->lead_status ?? ''))) === 'converted';
+
             // Match ClientsController::detail() known tab slugs so $id1 is not misclassified as a matter ref.
             $validTabNames = [
                 'personaldetails', 'overview', 'companydetails', 'activityfeed', 'clientaction', 'noteterm', 'personaldocuments', 'matterdocuments', 'documents', 'nominationdocuments',
@@ -300,10 +314,12 @@ use App\Http\Controllers\Controller;
             $hideMatterDocumentsForBankMatter = isset($id1) && $id1 !== ''
                 && preg_match('/^bank_/i', (string) $id1) === 1;
 
-            $cdnShowMattersDocSubtab = ($matter_cnt > 0) && !($hideMatterDocumentsForBankMatter ?? false);
-            
-            // Show client menu if: valid matter ID in URL OR client has any matters
-            if( $isMatterIdInUrl || $matter_cnt > 0 )
+            // Leads: Matter docs under Documents (Personal | Matter). Non-leads with matters: top-level tab between Documents and Legal Forms.
+            $cdnShowMattersDocSubtab = ($matter_cnt > 0) && !($hideMatterDocumentsForBankMatter ?? false)
+                && $crmDetailNavIsLead;
+
+            // Full strip when matter ref / matters exist, or converted client still on lead workflow without matters yet.
+            if( $isMatterIdInUrl || $matter_cnt > 0 || $crmShowMatterDocsForConvertedLead )
             {  //if client unique reference id is present in url
             ?>
                 <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button active" data-tab="personaldetails" aria-selected="true" aria-controls="personaldetails-tab">
@@ -326,6 +342,12 @@ use App\Http\Controllers\Controller;
                     <i class="fas fa-folder-open" aria-hidden="true"></i>
                     <span>Documents</span>
                 </button>
+                @if(! $crmDetailNavIsLead && $matter_cnt > 0 && !($hideMatterDocumentsForBankMatter ?? false))
+                <button type="button" role="tab" id="cdn-tab-matterdocuments-top" class="client-nav-button" data-tab="matterdocuments" aria-selected="false" aria-controls="matterdocuments-tab">
+                    <i class="fas fa-file-contract" aria-hidden="true"></i>
+                    <span>Matter documents</span>
+                </button>
+                @endif
                 <button type="button" role="tab" id="cdn-tab-legalforms" class="client-nav-button" data-tab="legalforms" aria-selected="false" aria-controls="legalforms-tab">
                     <i class="fas fa-file-signature" aria-hidden="true"></i>
                     <span>Legal Forms</span>
@@ -368,7 +390,7 @@ use App\Http\Controllers\Controller;
             }
             ?>
         </nav>
-        @if(($isMatterIdInUrl || $matter_cnt > 0) && !empty($fetchedData->updated_at))
+        @if(($isMatterIdInUrl || $matter_cnt > 0 || $crmShowMatterDocsForConvertedLead) && !empty($fetchedData->updated_at))
             @php
                 $cdnMainTabLastUpdated = null;
                 try {
@@ -392,18 +414,20 @@ use App\Http\Controllers\Controller;
         <div class="main-content-with-tabs">
             @php
                 $cdnDocStripTab = strtolower((string) ($activeTab ?? ''));
-                $cdnDocStripVisibleDemo = in_array($cdnDocStripTab, ['personaldocuments', 'matterdocuments'], true);
+                // Subtab strip only for leads (Personal | Matter); clients use main-nav Matter documents tab.
+                $cdnDocStripVisibleDemo = ! empty($cdnShowMattersDocSubtab)
+                    && in_array($cdnDocStripTab, ['personaldocuments', 'matterdocuments'], true);
                 $__ftRaw = $fetchedData->type ?? null;
                 $__ftStr = $__ftRaw === null ? '' : trim((string) $__ftRaw);
                 $__crmIsLeadType = ($__ftRaw === 1)
                     || in_array($__ftStr, ['lead', 'l', '1'], true);
             @endphp
+            @if(!empty($cdnShowMattersDocSubtab))
             <div id="cdn-doc-subtab-strip" class="cdn-doc-subtab-strip{{ $cdnDocStripVisibleDemo ? ' is-visible' : '' }}" role="tablist" aria-label="Personal documents or matter documents">
                 <button type="button" class="cdn-doc-subtab-btn{{ $cdnDocStripTab === 'matterdocuments' ? '' : ' active' }}" data-doc-sub="personaldocuments">Personal documents</button>
-                @if(!empty($cdnShowMattersDocSubtab))
                 <button type="button" class="cdn-doc-subtab-btn{{ $cdnDocStripTab === 'matterdocuments' ? ' active' : '' }}" data-doc-sub="matterdocuments">Matter documents</button>
-                @endif
             </div>
+            @endif
             <!-- Tab Contents -->
             <div class="tab-content" id="tab-content">
             @if($__crmIsLeadType)
@@ -447,15 +471,17 @@ use App\Http\Controllers\Controller;
             <?php
             // Mirror the same condition used to render sidebar buttons so that
             // only panes for visible tabs are included (prevents duplicates)
-            $matter_cnt = \App\Models\ClientMatter::select('id')
-                ->where('client_id',$fetchedData->id)
-                ->where('matter_status',1)
+            $matter_cnt = \App\Models\ClientMatter::query()
+                ->where('client_id', $fetchedData->id)
+                ->where(function ($q) {
+                    $q->where('matter_status', 1)->orWhere('matter_status', '1');
+                })
                 ->count();
             ?>
-            @if(((isset($id1) && $id1 != "") || $matter_cnt > 0) && !($hideMatterDocumentsForBankMatter ?? false))
+            @if((((isset($id1) && $id1 != "") || $matter_cnt > 0) || ($crmShowMatterDocsForConvertedLead ?? false)) && !($hideMatterDocumentsForBankMatter ?? false))
                 @include('crm.clients.tabs.matter_documents')
             @endif
-            @if((isset($id1) && $id1 != "") || $matter_cnt > 0)
+            @if((isset($id1) && $id1 != "") || $matter_cnt > 0 || ($crmShowMatterDocsForConvertedLead ?? false))
                 @include('crm.clients.tabs.legal_forms')
                 @include('crm.clients.tabs.account')
                 @include('crm.clients.tabs.emails')
@@ -1623,10 +1649,6 @@ $(document).ready(function() {
                 $('.cdn-demo-doc-nav').addClass('active');
                 $strip.find('.cdn-doc-subtab-btn').removeClass('active');
                 var $match = $strip.find('.cdn-doc-subtab-btn[data-doc-sub="' + tabId + '"]');
-                if (!$match.length && tabId === 'matterdocuments') {
-                    window.SidebarTabs.activateTab('personaldocuments');
-                    return;
-                }
                 $match.addClass('active');
             } else {
                 $strip.removeClass('is-visible');

@@ -59,9 +59,17 @@
      * Map pane slug → which main-nav data-tab should show selected (Documents shares Personal + Matter panes).
      */
     function mainNavTabIdForSelection(activeTabId) {
-        if (activeTabId === 'matterdocuments' || activeTabId === 'notuseddocuments') {
+        if (activeTabId === 'notuseddocuments') {
             return 'personaldocuments';
         }
+        if (activeTabId === 'matterdocuments') {
+            if ($('.client-sidebar-nav .client-nav-button[data-tab="matterdocuments"]').length) {
+                return 'matterdocuments';
+            }
+
+            return 'personaldocuments';
+        }
+
         return activeTabId;
     }
 
@@ -402,11 +410,12 @@
             tabId = 'account';
         }
 
-        // Matter documents: no top-nav button uses data-tab="matterdocuments" (shared with Personal
-        // under the Documents nav). Activate the pane directly so /…/matterdocuments loads correctly.
+        // Matter documents: usually under Documents via subtabs; converted clients may have a top-level nav button.
         if (tabId === 'matterdocuments') {
-            activateTab('matterdocuments');
-            return;
+            if (!$('.client-sidebar-nav .client-nav-button[data-tab="matterdocuments"]').length) {
+                activateTab('matterdocuments');
+                return;
+            }
         }
 
         // "Default" tabs: the Blade template already marks the pane and button as active.

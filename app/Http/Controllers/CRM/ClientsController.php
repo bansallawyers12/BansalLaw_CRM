@@ -2130,7 +2130,16 @@ class ClientsController extends Controller
                     ->where('matter_status', 1)
                     ->count();
                 if ($mcMatterDoc < 1) {
-                    $activeTab = 'personaldetails';
+                    // Lead converted to client keeps lead_status=converted — still allow Matter documents tab
+                    // so UI matches full client (may show empty state until a matter exists).
+                    $convertedClientKeepsMatterDocsTab = Admin::query()
+                        ->where('id', (int) $id)
+                        ->where('type', 'client')
+                        ->where('lead_status', 'converted')
+                        ->exists();
+                    if (! $convertedClientKeepsMatterDocsTab) {
+                        $activeTab = 'personaldetails';
+                    }
                 }
             }
 
