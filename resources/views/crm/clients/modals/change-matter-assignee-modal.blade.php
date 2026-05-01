@@ -69,7 +69,7 @@
                         <div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
                                 <label for="change_sel_matter_id">Law matter type</label>
-                                <select class="form-control" name="sel_matter_id" id="change_sel_matter_id">
+                                <select class="form-select" name="sel_matter_id" id="change_sel_matter_id">
                                     <option value="">— Loading —</option>
                                 </select>
                                 <small class="form-text text-muted">Changing type may not match the matter reference prefix; update details if needed.</small>
@@ -78,10 +78,10 @@
                         <input type="hidden" id="change_matter_initial_sel_matter_id" value="">
 
                         @if(\Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'our_party_role'))
-                        <div class="col-12 col-md-6">
+                        <div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
                                 <label for="change_matter_our_party_role">Our client&rsquo;s role</label>
-                                <select class="form-control" name="our_party_role" id="change_matter_our_party_role">
+                                <select class="form-select" name="our_party_role" id="change_matter_our_party_role">
                                     <option value="">—</option>
                                 </select>
                             </div>

@@ -3956,6 +3956,114 @@ body.sidebar-mini #legalFormModal .modal-header .modal-title {
   font-size: 1.1rem !important;
 }
 
+/* Edit matter details — docs/theme.md § Modals with dark headers; h5.modal-title was navy-on-navy */
+body.sidebar-mini #changeMatterAssigneeModal.custom_modal .modal-content,
+body.sidebar-mini #changeMatterAssigneeModal .modal-content {
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(30, 61, 96, 0.12) !important;
+}
+
+body.sidebar-mini #changeMatterAssigneeModal .modal-header {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%) !important;
+  border-bottom: 3px solid var(--accent-gold) !important;
+  color: #fff !important;
+  padding: 18px 22px !important;
+}
+
+body.sidebar-mini #changeMatterAssigneeModal .modal-header .modal-title,
+body.sidebar-mini #changeMatterAssigneeModal .modal-header h5.modal-title,
+body.sidebar-mini #changeMatterAssigneeModal .modal-header h5 {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-weight: 700 !important;
+  font-size: 1.125rem !important;
+  margin: 0 !important;
+  letter-spacing: -0.01em !important;
+}
+
+body.sidebar-mini #changeMatterAssigneeModal .modal-header .close,
+body.sidebar-mini #changeMatterAssigneeModal .modal-header .close span {
+  color: #fff !important;
+  opacity: 0.92 !important;
+  text-shadow: none !important;
+  font-size: 26px !important;
+  font-weight: 300 !important;
+  line-height: 1 !important;
+}
+
+body.sidebar-mini #changeMatterAssigneeModal .modal-header .close:hover,
+body.sidebar-mini #changeMatterAssigneeModal .modal-header .close:focus {
+  opacity: 1 !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #changeMatterAssigneeModal .modal-body {
+  background: var(--card-bg) !important;
+  padding: 22px 24px !important;
+}
+
+body.sidebar-mini #changeMatterAssigneeModal .modal-body .form-group > label,
+body.sidebar-mini #changeMatterAssigneeModal .modal-body .row .col-12 > label {
+  color: var(--text-dark) !important;
+  font-weight: 600 !important;
+  font-size: 0.9375rem !important;
+  line-height: 1.45 !important;
+  margin-bottom: 0.35rem !important;
+}
+
+body.sidebar-mini #changeMatterAssigneeModal .modal-body label .text-muted {
+  color: var(--text-muted) !important;
+  font-weight: 500 !important;
+  font-size: 0.875rem !important;
+}
+
+/* Native selects: global .form-control uses appearance:none without select styling; client-forms
+   .form-group select { padding: 8px 10px } strips form-select right padding → clipped text. */
+body.sidebar-mini #changeMatterAssigneeModal .modal-body .form-group select.form-select {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 0.5rem 2.25rem 0.5rem 0.75rem !important;
+  min-height: calc(1.6em + 0.75rem + 2px) !important;
+  line-height: 1.6 !important;
+  font-size: 0.9rem !important;
+  color: var(--text-dark) !important;
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0.375rem !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+body.sidebar-mini #changeMatterAssigneeModal .modal-body .btn-primary {
+  background: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #changeMatterAssigneeModal .modal-body .btn-primary:hover,
+body.sidebar-mini #changeMatterAssigneeModal .modal-body .btn-primary:focus {
+  background: var(--sidebar-active) !important;
+  border-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini #changeMatterAssigneeModal .modal-body .btn-secondary {
+  color: var(--navy) !important;
+  border: 1px solid var(--border) !important;
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini #changeMatterAssigneeModal .modal-body .btn-secondary:hover,
+body.sidebar-mini #changeMatterAssigneeModal .modal-body .btn-secondary:focus {
+  background: var(--sidebar-bg) !important;
+  border-color: var(--sidebar-active) !important;
+  color: var(--navy) !important;
+}
+
 /*
  * Client detail — Documents: body.sidebar-mini .main-content sets color: var(--text-dark) !important
  * (see block ~line 48). It beats .subtab2-button { color: #fff } in cascade for *inherited* text on

@@ -885,10 +885,11 @@ input:checked + .slider:before {
 
 /* Modal Styles — must be hidden when closed. A global display:flex on .modal (legacy) overrode
    Bootstrap 5’s display:none and left hidden modals as full-screen invisible click shields
-   (e.g. #changeMatterAssigneeModal blocking client edit tabs). */
+   (e.g. #changeMatterAssigneeModal blocking client edit tabs).
+   z-index must stay above .modal-backdrop (1050 in BS5) or the dialog sits behind the dimmer. */
 .modal {
     position: fixed;
-    z-index: 1000;
+    z-index: var(--bs-modal-zindex, 1055);
     left: 0;
     top: 0;
     width: 100%;
@@ -907,6 +908,19 @@ input:checked + .slider:before {
 .modal.fade:not(.show) {
     display: none !important;
     pointer-events: none;
+}
+
+/* Matter details editor: sit above BS5 backdrop (1050) and layout chrome (e.g. broadcast ~1100). */
+#changeMatterAssigneeModal.modal {
+    z-index: 12050 !important;
+}
+#changeMatterAssigneeModal.modal.show {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+#changeMatterAssigneeModal.modal.show .modal-dialog {
+    transform: none !important;
+    opacity: 1 !important;
 }
 
 .modal-content {

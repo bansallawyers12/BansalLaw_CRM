@@ -5,6 +5,22 @@
 (function ($) {
     'use strict';
 
+    /** Open Bootstrap 5 matter modal; move node to body so no ancestor transform/overflow hides it. */
+    function showChangeMatterAssigneeModal() {
+        var el = document.getElementById('changeMatterAssigneeModal');
+        if (!el) {
+            return;
+        }
+        if (el.parentElement !== document.body) {
+            document.body.appendChild(el);
+        }
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(el).show();
+        } else {
+            $(el).modal('show');
+        }
+    }
+
     window.changeMatterAppendOpposingRow = function (name, role) {
         var $c = $('#change_matter_opposing_parties_container');
         if (!$c.length) { return; }
@@ -172,7 +188,7 @@
             }
         });
 
-        $('#changeMatterAssigneeModal').modal('show');
+        showChangeMatterAssigneeModal();
     });
 
     $(document).on('shown.bs.modal', '#changeMatterAssigneeModal', function () {

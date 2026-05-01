@@ -3000,3 +3000,16 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   background: rgba(185, 28, 28, 0.08);
 }
 
+/* Edit matter details modal: above BS5 backdrop (1050) and layout layers (broadcast ~1100, toasts). */
+#changeMatterAssigneeModal.modal {
+  z-index: 12050 !important;
+}
+#changeMatterAssigneeModal.modal.show {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+#changeMatterAssigneeModal.modal.show .modal-dialog {
+  transform: none !important;
+  opacity: 1 !important;
+}
+
