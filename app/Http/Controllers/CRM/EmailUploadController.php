@@ -1019,9 +1019,12 @@ class EmailUploadController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'email_files' => 'required|array|min:1',
-            'email_files.*' => 'file|max:30720', // 30MB max
+            'email_files.*' => 'file|max:30720', // 30MB max (kilobytes)
             'client_id' => 'required',
-            'type' => 'required|in:client,lead'
+            'type' => 'required|in:client,lead',
+        ], [
+            'email_files.required' => 'Please choose at least one Outlook .msg file.',
+            'email_files.min' => 'Please choose at least one Outlook .msg file.',
         ]);
 
         if ($validator->fails()) {

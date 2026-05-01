@@ -611,16 +611,25 @@
                 } else if (response.status === 413) {
                     throw new Error('File too large. Maximum file size is 30MB per file.');
                 } else if (response.status === 422) {
-                    // Validation error - try to parse as JSON for better error message
+                    // Laravel validation — do not throw inside try/catch or the catch masks our message.
+                    let detail = 'Only Outlook .msg files are allowed (max 10 files, 30MB each). Check your selection and try again.';
                     try {
                         const errorData = JSON.parse(errorText);
-                        const errorMsg = errorData.message || errorData.errors ? 
-                            Object.values(errorData.errors || {}).flat().join(', ') : 
-                            'Validation failed';
-                        throw new Error(`Upload validation failed: ${errorMsg}`);
-                    } catch {
-                        throw new Error(`Upload validation failed. Please check your file format and try again.`);
+                        if (errorData.errors && typeof errorData.errors === 'object') {
+                            const flat = Object.values(errorData.errors)
+                                .flat()
+                                .map((v) => (v == null ? '' : String(v)))
+                                .filter(Boolean);
+                            if (flat.length) {
+                                detail = flat.join(' ');
+                            }
+                        } else if (errorData.message && String(errorData.message).trim() !== '' && errorData.message !== 'Validation failed') {
+                            detail = String(errorData.message);
+                        }
+                    } catch (parseErr) {
+                        console.warn('Email upload 422: response was not JSON', parseErr);
                     }
+                    throw new Error(detail);
                 } else if (response.status === 400) {
                     // Processing error - parse JSON for detailed per-file errors
                     try {

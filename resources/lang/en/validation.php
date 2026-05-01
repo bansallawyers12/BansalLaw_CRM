@@ -125,8 +125,10 @@ return [
     */
 
     'custom' => [
-        'attribute-name' => [
-            'rule-name' => 'custom-message',
+        'email_files.*' => [
+            'uploaded' => 'The email file did not finish uploading. This often means the file is larger than PHP allows (upload_max_filesize or post_max_size), the upload was interrupted, or your session expired. Try a smaller .msg file or refresh the page.',
+            'file' => 'One of the selected items is not a valid uploaded file. Refresh the page and try again.',
+            'max' => 'Each .msg file must be 30 MB or smaller.',
         ],
     ],
 
@@ -141,6 +143,9 @@ return [
     |
     */
 
-    'attributes' => [],
+    'attributes' => [
+        'email_files' => 'email files',
+        'email_files.*' => 'email file',
+    ],
 
 ];
