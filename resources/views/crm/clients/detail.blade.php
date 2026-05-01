@@ -5,6 +5,9 @@
 @php \App\Support\EnsureDummyMatterStaff::ensure(); @endphp
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="stylesheet" href="{{ URL::asset('css/client-detail.css') }}">
+@if(is_array($matterFormForLead ?? null))
+<link rel="stylesheet" href="{{ URL::asset('css/clients/edit-client-components.css') }}">
+@endif
 <style>
 .lead-actions-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 18px; background: #f0f4ff; border-bottom: 1px solid #c7d7fa; }
 .lead-actions-bar__history { color: #fff; }
@@ -121,6 +124,9 @@ use App\Http\Controllers\Controller;
                                 <span class="cdn-client-hero__matter-chip">No active matter</span>
                             @endif
                             <button type="button" class="btn cdn-client-hero__matter-btn" id="cdn-focus-matter-select" title="Change matter">Change Matter</button>
+                            @if(is_array($matterFormForLead ?? null))
+                                <button type="button" class="btn cdn-client-hero__matter-btn" id="cdn-open-add-matter" title="Add a new matter for this client" onclick="openAddMatterModal()">Add Matter</button>
+                            @endif
                         </div>
                         <div class="cdn-client-hero__tags" aria-label="Tags">
                             @foreach($cdnHeroTagNames as $tname)
@@ -470,6 +476,7 @@ use App\Http\Controllers\Controller;
 @include('crm.clients.editclientmodal')
 @include('crm.clients.modals.edit-matter-office')
 @include('crm.clients.modals.client-management')
+@include('crm.clients.partials.add-matter-modal')
 
 {{-- Update Stage: same workflow UI + routes as production workflow tab (Admin Console–defined stages). --}}
 <div class="modal fade" id="cdn-update-stage-modal" tabindex="-1" aria-labelledby="cdnUpdateStageModalLabel" aria-hidden="true">
@@ -1485,6 +1492,121 @@ $(document).ready(function() {
 </script>
 {{-- Edit matter details modal (must load before detail-main.js) --}}
 <script src="{{ URL::asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ time() }}"></script>
+@if(is_array($matterFormForLead ?? null))
+<script>
+(function () {
+    window.editClientConfig = Object.assign({}, window.editClientConfig || {}, {
+        rootUrl: @json(rtrim(url('/'), '/')),
+        visaTypesRoute: @json(route('getVisaTypes')),
+        countriesRoute: @json(route('getCountries')),
+        searchPartnerRoute: @json(route('clients.searchPartner')),
+        csrfToken: @json(csrf_token()),
+    });
+    window.currentClientId = @json((string) ($fetchedData->id ?? ''));
+    window.storeLeadMatterFromEditUrl = @json(route('clients.storeLeadMatterFromEdit'));
+    function openAddMatterModal() {
+        var el = document.getElementById('addMatterModal');
+        if (!el) return;
+        el.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    function closeAddMatterModal() {
+        var el = document.getElementById('addMatterModal');
+        if (!el) return;
+        el.style.display = 'none';
+        document.body.style.overflow = '';
+        var msg = document.getElementById('editAddMatterMsg');
+        if (msg) msg.innerHTML = '';
+        var caseDetail = document.getElementById('edit_add_matter_case_detail');
+        if (caseDetail) caseDetail.value = '';
+        var doi = document.getElementById('edit_add_matter_date_of_incidence');
+        if (doi) doi.value = '';
+        var it = document.getElementById('edit_add_matter_incidence_type');
+        if (it) it.value = '';
+    }
+    function addMatterModalBackdropClick(e) {
+        if (e.target && e.target.id === 'addMatterModal') {
+            closeAddMatterModal();
+        }
+    }
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            var m = document.getElementById('addMatterModal');
+            if (m && m.style.display === 'flex') closeAddMatterModal();
+        }
+    });
+    async function submitLeadMatterFromEdit() {
+        var msgEl = document.getElementById('editAddMatterMsg');
+        var btn = document.getElementById('editAddMatterSubmitBtn');
+        if (!msgEl || !window.storeLeadMatterFromEditUrl || !window.editClientConfig) return;
+        msgEl.innerHTML = '';
+        var matterId = document.getElementById('edit_add_matter_matter_id');
+        var agentId = document.getElementById('edit_add_matter_legal_practitioner');
+        if (!matterId || !agentId || !matterId.value || !agentId.value) {
+            msgEl.innerHTML = '<div class="alert alert-warning">Select a matter type and legal practitioner.</div>';
+            return;
+        }
+        var fd = new FormData();
+        fd.append('_token', window.editClientConfig.csrfToken);
+        var matterClientPk = (window.currentClientId != null && String(window.currentClientId).trim() !== '')
+            ? String(window.currentClientId).trim()
+            : String(@json((int) ($fetchedData->id ?? 0)));
+        fd.append('client_id', matterClientPk);
+        fd.append('matter_id', matterId.value);
+        fd.append('legal_practitioner', agentId.value);
+        var office = document.getElementById('edit_add_matter_office_id');
+        if (office && office.value) fd.append('office_id', office.value);
+        var pr = document.getElementById('edit_add_matter_person_responsible');
+        if (pr && pr.value) fd.append('person_responsible', pr.value);
+        var pa = document.getElementById('edit_add_matter_person_assisting');
+        if (pa && pa.value) fd.append('person_assisting', pa.value);
+        var caseDetailEl = document.getElementById('edit_add_matter_case_detail');
+        if (caseDetailEl && caseDetailEl.value.trim() !== '') {
+            fd.append('case_detail', caseDetailEl.value.trim());
+        }
+        var doiEl = document.getElementById('edit_add_matter_date_of_incidence');
+        if (doiEl && doiEl.value) fd.append('date_of_incidence', doiEl.value);
+        var itEl = document.getElementById('edit_add_matter_incidence_type');
+        if (itEl && itEl.value.trim() !== '') fd.append('incidence_type', itEl.value.trim());
+        btn.disabled = true;
+        try {
+            var res = await fetch(window.storeLeadMatterFromEditUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': window.editClientConfig.csrfToken
+                },
+                body: fd
+            });
+            var data = await res.json().catch(function () { return {}; });
+            if (res.ok && data.success) {
+                msgEl.innerHTML = '<div class="alert alert-success">' + (data.message || 'Matter created.') + '</div>';
+                window.setTimeout(function () {
+                    closeAddMatterModal();
+                    window.location.reload();
+                }, 600);
+                return;
+            }
+            var errText = data.message || 'Could not create matter.';
+            if (data.errors) {
+                errText += ' ' + Object.values(data.errors).flat().join(' ');
+            }
+            msgEl.innerHTML = '<div class="alert alert-danger">' + errText + '</div>';
+        } catch (e) {
+            msgEl.innerHTML = '<div class="alert alert-danger">Network error. Try again.</div>';
+        } finally {
+            btn.disabled = false;
+        }
+    }
+    window.openAddMatterModal = openAddMatterModal;
+    window.closeAddMatterModal = closeAddMatterModal;
+    window.addMatterModalBackdropClick = addMatterModalBackdropClick;
+    window.submitLeadMatterFromEdit = submitLeadMatterFromEdit;
+})();
+</script>
+@endif
 {{-- Main detail page JavaScript --}}
 <script src="{{ URL::asset('js/crm/clients/detail-main.js') }}?v={{ time() }}"></script>
 <script>

@@ -2250,6 +2250,10 @@ class ClientsController extends Controller
 
                 $showGoogleReviewReminderModal = $this->shouldShowGoogleReviewReminderModal($fetchedData);
 
+                $matterFormForLead = app(\App\Services\ClientEditService::class)->getMatterFormForAddMatter((int) $id);
+                $__crmEditLeadType = (($fetchedData->type ?? null) === 1
+                    || in_array(trim((string) ($fetchedData->type ?? '')), ['lead', 'l', '1'], true));
+
                 //Return the view with all data
                 return view('crm.clients.detail', compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
@@ -2257,7 +2261,8 @@ class ClientsController extends Controller
                     'encodeId', 'id1','clientFamilyDetails', 'activeTab',
                     'staffName', 'matterNumber', 'officePhone', 'officeCountryCode',
                     'visibleNomineeNominations', 'notPickedCallSmsDefault',
-                    'assignableStaff', 'leadStageLabels', 'showGoogleReviewReminderModal'
+                    'assignableStaff', 'leadStageLabels', 'showGoogleReviewReminderModal',
+                    'matterFormForLead', '__crmEditLeadType'
                 ));
             } else {
                 return redirect()->route('clients.index')->with('error', 'Clients Not Exist');

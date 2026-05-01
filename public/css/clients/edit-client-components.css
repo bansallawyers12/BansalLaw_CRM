@@ -394,15 +394,24 @@
 
 /* ===== ADD MATTER MODAL (client edit) ===== */
 .add-matter-modal.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
     align-items: center;
     justify-content: center;
     padding: 16px;
     box-sizing: border-box;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .add-matter-modal__content {
     width: 100%;
     max-width: 720px;
+    max-height: calc(100vh - 32px);
+    display: flex;
+    flex-direction: column;
+    margin: auto;
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
@@ -415,6 +424,7 @@
     gap: 12px;
     padding: 16px 20px;
     flex-wrap: nowrap;
+    flex-shrink: 0;
 }
 
 .add-matter-modal__title {
@@ -454,8 +464,12 @@
 }
 
 .add-matter-modal__body.modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
     padding: 20px 22px;
-    max-height: min(70vh, 640px);
 }
 
 .add-matter-modal__intro {
@@ -516,6 +530,7 @@
 }
 
 .add-matter-modal__footer.modal-footer {
+    flex-shrink: 0;
     padding: 16px 20px;
     gap: 12px;
     flex-wrap: wrap;

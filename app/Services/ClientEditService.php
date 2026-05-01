@@ -109,6 +109,19 @@ class ClientEditService
         ];
     }
 
+    /**
+     * Dropdown data for "Add matter" on client detail (same options as client edit).
+     */
+    public function getMatterFormForAddMatter(int $clientId): ?array
+    {
+        $clientData = Admin::query()->where('id', $clientId)->first(['id', 'is_company']);
+        if (! $clientData) {
+            return null;
+        }
+
+        return $this->getMatterFormOptionsForLead((bool) ($clientData->is_company ?? false));
+    }
+
     protected function getMattersForSubject(bool $isCompany)
     {
         return Matter::query()
