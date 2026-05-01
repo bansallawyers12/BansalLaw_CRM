@@ -933,6 +933,8 @@ class ClientPersonalDetailsController extends Controller
         }
 
         if ($saved) {
+            \App\Services\LeadMatterAssignedConversion::applyForAdminId($postedClientId);
+
             $objs = new \App\Models\ActivitiesLog;
             $objs->client_id = $requstData['client_id'];
             $objs->created_by = Auth::user()->id;

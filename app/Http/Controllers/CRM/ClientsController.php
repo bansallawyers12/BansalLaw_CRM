@@ -5576,9 +5576,11 @@ class ClientsController extends Controller
         $row->matter_status = 1;
 
         try {
-            DB::transaction(function () use ($row, $opposingParties) {
+            DB::transaction(function () use ($row, $opposingParties, $admin) {
                 $row->save();
                 if (! Schema::hasTable('client_matter_opposing_parties') || $opposingParties === []) {
+                    \App\Services\LeadMatterAssignedConversion::applyForAdminId((int) $admin->id);
+
                     return;
                 }
                 foreach ($opposingParties as $i => $party) {
@@ -5589,6 +5591,7 @@ class ClientsController extends Controller
                         'sort_order' => $i,
                     ]);
                 }
+                \App\Services\LeadMatterAssignedConversion::applyForAdminId((int) $admin->id);
             });
         } catch (\Throwable $e) {
             report($e);
@@ -5657,8 +5660,7 @@ class ClientsController extends Controller
             $lastInsertedId = $obj5->id; // ← This gets the last inserted ID
             if($saved5) 
             {
-                // Lead conversion is now explicit: user must click "Convert to Client" button
-                // (Convert Lead to Client modal in sidebar - no auto-conversion here)
+                \App\Services\LeadMatterAssignedConversion::applyForAdminId((int) $requestData['client_id']);
 
                 $disbursements = array_values(array_filter($requestData['disbursements'] ?? [], fn($d) => isset($d['amount']) && floatval($d['amount']) > 0));
                 $TotalDisbursements = array_sum(array_column($disbursements, 'amount'));
