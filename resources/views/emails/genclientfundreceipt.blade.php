@@ -14,7 +14,7 @@
 				margin: 0 auto;
 			}
 			.header-section {
-				border-bottom: 3px solid #3abaf4;
+				border-bottom: 3px solid #1b3a6b;
 				padding-bottom: 15px;
 				margin-bottom: 20px;
 			}
@@ -33,7 +33,7 @@
 			.document-title {
 				font-size: 28px;
 				font-weight: 700;
-				color: #3abaf4;
+				color: #1b3a6b;
 				margin: 0 0 15px 0;
 				letter-spacing: -0.5px;
 			}
@@ -77,9 +77,9 @@
 				margin: 10px 0;
 			}
 			.reference-box {
-				background: #f0f8ff;
+				background: #eef1f7;
 				padding: 10px 15px;
-				border-left: 4px solid #3abaf4;
+				border-left: 4px solid #1b3a6b;
 				margin: 10px 0;
 				font-size: 14px;
 			}
@@ -97,7 +97,7 @@
 				border-collapse: collapse;
 			}
 			.ledger-table thead {
-				background: #3abaf4;
+				background: #1b3a6b;
 			}
 			.ledger-table thead th {
 				padding: 12px 10px;
@@ -170,30 +170,28 @@
 				<tbody>
 					<tr class="header-section">
 						<td style="text-align: left; width: 50%; vertical-align: top;">
-							@php
-								$logoPath = public_path('img/logo.png');
-								$logoData = '';
-								if(file_exists($logoPath)) {
-									$logoData = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
-								}
-							@endphp
-							@if($logoData)
-								<img width="90" style="height:auto;display:block;margin-bottom:15px;" src="{{$logoData}}" alt="Logo"/>
-							@else
-								<div style="width:90px;height:60px;background:#3abaf4;display:block;margin-bottom:15px;"></div>
-							@endif
-							<div class="company-name">{{ strtoupper(config('app.name')) }}</div>
-							<div class="company-info">
-								Level 8,278 Collins Street<br/>
-								Melbourne VIC 3000<br/>
-								E-mail: {{ config('app.brand.invoice_email') }}<br/>
-								Phone: 03 96021330
-							</div>
+						@php
+							$logoPath = public_path('img/logo_new.png');
+							if(!file_exists($logoPath)) $logoPath = public_path('img/logo.png');
+							$logoData = '';
+							if(file_exists($logoPath)) {
+								$logoData = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+							}
+						@endphp
+						@if($logoData)
+							<img width="180" style="height:auto;display:block;margin-bottom:8px;" src="{{$logoData}}" alt="Bansal Lawyers"/>
+						@else
+							<div style="font-size:22px;font-weight:800;color:#1e3a5f;margin-bottom:8px;">BANSAL LAWYERS</div>
+						@endif
+						<div class="company-info">
+							Level 8, 278 Collins Street, Melbourne VIC 3000<br/>
+							Phone: 0422 905 860 &nbsp;|&nbsp; Email: Admin@bansallawyers.com.au
+						</div>
 						</td>
 						<td style="text-align: right; width: 50%; vertical-align: top;">
-							<h1 class="document-title">Client Fund Receipt</h1>
+							<h1 class="document-title">Trust Account Receipt</h1>
 							<div class="document-info">
-								<b>ABN</b> 70 958 120 428<br/>
+								<b>ABN</b> 66 677 069 439<br/>
 								<b>Receipt Date:</b> {{@$record_get->trans_date ? $record_get->trans_date : date('d/m/Y')}}<br/>
 								<b>Receipt No:</b> {{@$record_get->trans_no}}
 							</div>
@@ -277,7 +275,7 @@
                     </tr>
                     <tr>
                         <td colspan="2">
-                            <div style="text-align: right; padding: 15px; background: #f0f8ff; border-radius: 6px; margin-top: 10px;">
+                            <div style="text-align: right; padding: 15px; background: #eef1f7; border-radius: 6px; margin-top: 10px;">
                                 <div style="font-size: 13px; color: #1a1a1a; margin-bottom: 3px;">Total Amount Received</div>
                                 <div style="font-size: 20px; font-weight: 700; color: #2e7d32;">
                                     ${{number_format($record_get->deposit_amount,2)}}
@@ -287,7 +285,7 @@
                     </tr>
 					<tr>
 						<td colspan="2">
-							<div style="background: #f0f8ff; border-left: 4px solid #3abaf4; padding: 15px; margin-top: 20px; font-size: 13px; color: #1f2937;">
+							<div style="background: #eef1f7; border-left: 4px solid #1b3a6b; padding: 15px; margin-top: 20px; font-size: 13px; color: #1f2937;">
 								<p style="margin: 0;"><strong style="color: #111827;">Receipt Acknowledgement:</strong> This receipt confirms that we have received the above amount into our Client Trust Account for matter <strong>{{ $client_matter_no }}</strong>. These funds will be applied to your matter as professional fees, disbursements, and charges are incurred.</p>
 							</div>
 						</td>

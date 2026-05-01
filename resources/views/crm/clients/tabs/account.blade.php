@@ -3,29 +3,26 @@
 <?php use Illuminate\Support\Facades\Storage; ?>
 
 <div class="card full-width">
-    <div style="margin-bottom: 10px;">
-        <!-- Create Entry Buttons - Split by Receipt Type -->
-        <div style="display: inline-block; margin-right: 20px; padding: 5px; background: #f8f9fa; border-radius: 5px;">
-            <strong style="font-size: 12px; color: #666; margin-right: 10px;">Create Entry:</strong>
-            <a class="btn btn-success createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="1" style="margin-right: 5px;">
-                <i class="fas fa-wallet"></i> Client Funds Ledger
-            </a>
-            <a class="btn btn-primary createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="2" style="margin-right: 5px;">
-                <i class="fas fa-hand-holding-usd"></i> Direct Office Receipt
-            </a>
-            <a class="btn btn-info createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="3">
-                <i class="fas fa-file-invoice-dollar"></i> Invoice
-            </a>
-        </div>
+    <div style="margin-bottom: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <a class="btn btn-success btn-sm createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="1" title="Record trust money received, paid or transferred">
+            <i class="fas fa-university"></i> Trust Account Entry
+        </a>
+        <span style="color: #dee2e6; font-size: 18px;">|</span>
+        <a class="btn btn-primary btn-sm createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="2" title="Record money received directly into the office account">
+            <i class="fas fa-hand-holding-usd"></i> Office Receipt
+        </a>
+        <a class="btn btn-info btn-sm createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="3" title="Issue a tax invoice to the client">
+            <i class="fas fa-file-invoice-dollar"></i> Invoice
+        </a>
     </div>
 
     <div class="account-layout" style="overflow-x: hidden; max-width: 100%;">
-        <!-- Client Funds Ledger Section -->
+        <!-- Trust Account Ledger Section (LSBC Uniform Law Compliant) -->
         <section class="account-section client-account">
             <div class="account-section-header">
-                <h2><i class="fas fa-wallet" style="color: #28a745;"></i> Client Funds Ledger</h2>
+                <h2><i class="fas fa-university" style="color: #28a745;"></i> Trust Account Ledger</h2>
                 <div class="balance-display">
-                    <div class="balance-label">Current Funds Held</div>
+                    <div class="balance-label">Trust Balance</div>
                     <div class="balance-amount funds-held">
                         <?php
                         //echo $id1;
@@ -79,21 +76,18 @@
                     </div>
                 </div>
             </div>
-            <p style="font-size: 0.85em; color: #6c757d; margin-top: -15px; margin-bottom: 15px;">
-                Funds held in trust/client account on behalf of the client.
-            </p>
-
             <div class="transaction-table-wrapper">
                 <table class="transaction-table" id="client-ledger-table">
                     <thead>
                         <tr>
-                            <th style="text-align: left;">Date</th>
-                            <th style="text-align: left;">Type</th>
-                            <th style="text-align: left;">Method</th>
-                            <th style="text-align: left;">Description</th>
-                            <th style="text-align: center;">Reference</th>
-                            <th style="text-align: right;">Funds In (+)</th>
-                            <th style="text-align: right;">Funds Out (-)</th>
+                            <th style="text-align: left;" title="Date of trust transaction">Trans. Date</th>
+                            <th style="text-align: left;" title="Type of trust transaction (LSBC Uniform Rules r.47)">Transaction Type</th>
+                            <th style="text-align: left;" title="Payment method">Method</th>
+                            <th style="text-align: left;" title="Particulars of transaction">Particulars / Description</th>
+                            <th style="text-align: center;" title="Trust receipt or payment number">Receipt No.</th>
+                            <th style="text-align: right;" title="Trust money received into account">Trust Receipts (+)</th>
+                            <th style="text-align: right;" title="Trust money paid out of account">Trust Payments (−)</th>
+                            <th style="text-align: right;" title="Running balance of trust funds held for this client" style="background: #e8f5e9;">Balance</th>
                         </tr>
                     </thead>
                     <tbody class="productitemList">
@@ -108,8 +102,10 @@
                             })
                             ->where('client_id',$fetchedData->id)
                             ->where('receipt_type',1)
-                            ->orderBy('id', 'desc')
+                            ->orderBy('id', 'asc')
                             ->get();
+                        // Running balance for LSBC trust ledger compliance
+                        $trust_running_balance = 0;
                         //dd($receipts_lists);
                         if(!empty($receipts_lists) && count($receipts_lists)>0 )
                         {
@@ -119,7 +115,20 @@
                             $rowClass = '';
                             if(isset($rec_val->void_fee_transfer) && $rec_val->void_fee_transfer == 1){
                                 $rowClass = 'strike-through';
+                                $row_deposit = 0;
+                                $row_withdraw = 0;
+                            } else {
+                                $row_deposit = floatval($rec_val->deposit_amount ?? 0);
+                                $row_withdraw = floatval($rec_val->withdraw_amount ?? 0);
+                                $trust_running_balance += $row_deposit - $row_withdraw;
                             }
+                            // Map DB type to LSBC-compliant label
+                            $lsbc_type_map = [
+                                'Deposit'      => 'Trust Receipt',
+                                'Fee Transfer' => 'Transfer to Office Account',
+                                'Disbursement' => 'Disbursement (Trust Payment)',
+                                'Refund'       => 'Refund to Client',
+                            ];
                             ?>
                         <tr class="drow_account_ledger ledger-row {{$rowClass}}" data-type="{{$rec_val->client_fund_ledger_type}}" data-matterid="{{$rec_val->client_matter_id}}" data-trans-date="<?php echo htmlspecialchars($rec_val->trans_date, ENT_QUOTES, 'UTF-8'); ?>">
                             <td style="text-align: left; vertical-align: middle;">
@@ -136,30 +145,29 @@
 
                             <td class="type-cell" style="text-align: left; vertical-align: middle;">
                                 <?php
-                                if($rec_val->client_fund_ledger_type == 'Deposit' ){
-                                    $type_icon = 'fa-arrow-down';
-                                } else if($rec_val->client_fund_ledger_type == 'Fee Transfer' ){
-                                    $type_icon = 'fa-arrow-right-from-bracket';
-                                } else if($rec_val->client_fund_ledger_type == 'Disbursement' ){
-                                    $type_icon = 'fa-arrow-up';
-                                } else if($rec_val->client_fund_ledger_type == 'Refund' ){
-                                    $type_icon = 'fa-arrow-up';
+                                $dbType = $rec_val->client_fund_ledger_type;
+                                $lsbc_label = $lsbc_type_map[$dbType] ?? $dbType;
+                                if($dbType == 'Deposit' ){
+                                    $type_icon = 'fa-arrow-circle-down';
+                                    $type_color = '#28a745';
+                                } else if($dbType == 'Fee Transfer' ){
+                                    $type_icon = 'fa-exchange-alt';
+                                    $type_color = '#fd7e14';
+                                } else if($dbType == 'Disbursement' ){
+                                    $type_icon = 'fa-arrow-circle-up';
+                                    $type_color = '#dc3545';
+                                } else if($dbType == 'Refund' ){
+                                    $type_icon = 'fa-undo-alt';
+                                    $type_color = '#6f42c1';
                                 } else {
-                                    $type_icon = 'fa-arrow-up';
+                                    $type_icon = 'fa-arrow-circle-up';
+                                    $type_color = '#6c757d';
                                 }?>
-                                <i class="fas {{$type_icon}} type-icon" title="{{$rec_val->client_fund_ledger_type}}"></i>
+                                <i class="fas {{$type_icon}} type-icon" title="{{$lsbc_label}}" style="color: {{$type_color}};"></i>
                                 <span>
-                                    {{$rec_val->client_fund_ledger_type}}
-                                    <?php
-                                    if( isset($rec_val->extra_amount_receipt) &&  $rec_val->extra_amount_receipt == 'exceed' ) { ?>
-                                        <br/>
-                                        {{ !empty($rec_val->invoice_no) ? '('.$rec_val->invoice_no.')' : '' }}
-                                    <?php } else { ?>
-                                        <br/>
-                                        {{ !empty($rec_val->invoice_no) ? '('.$rec_val->invoice_no.')' : '' }}
-
-                                    <?php
-                                    }?>
+                                    <strong style="font-size: 0.9em;">{{$lsbc_label}}</strong>
+                                    <br/>
+                                    {!! !empty($rec_val->invoice_no) ? '<small style="color:#6c757d;">('.$rec_val->invoice_no.')</small>' : '' !!}
                                 </span>
                                 
                                 <?php
@@ -304,8 +312,24 @@
                                 </div>
                             </td>
 
-                            <td style="text-align: right; vertical-align: middle; color: #28a745; font-weight: 500;">{{ !empty($rec_val->deposit_amount) ? '$ ' . number_format($rec_val->deposit_amount, 2) : '' }}</td>
-                            <td style="text-align: right; vertical-align: middle; font-weight: 500;">{{ !empty($rec_val->withdraw_amount) ? '$ ' . number_format($rec_val->withdraw_amount, 2) : '' }}</td>
+                            <td style="text-align: right; vertical-align: middle; color: #28a745; font-weight: 500;">
+                                <?php echo !empty($rec_val->deposit_amount) ? '$ ' . number_format($rec_val->deposit_amount, 2) : ''; ?>
+                            </td>
+                            <td style="text-align: right; vertical-align: middle; color: #dc3545; font-weight: 500;">
+                                <?php echo !empty($rec_val->withdraw_amount) ? '$ ' . number_format($rec_val->withdraw_amount, 2) : ''; ?>
+                            </td>
+                            <td style="text-align: right; vertical-align: middle; font-weight: 600; background: #f0fff4; border-left: 2px solid #c3e6cb;">
+                                <?php
+                                $balance_color = $trust_running_balance >= 0 ? '#155724' : '#721c24';
+                                $balance_display = '$ ' . number_format(abs($trust_running_balance), 2);
+                                if ($trust_running_balance < 0) $balance_display = '−' . $balance_display;
+                                if (isset($rec_val->void_fee_transfer) && $rec_val->void_fee_transfer == 1) {
+                                    echo '<span style="color:#6c757d;font-style:italic;">voided</span>';
+                                } else {
+                                    echo '<span style="color:' . $balance_color . ';">' . $balance_display . '</span>';
+                                }
+                                ?>
+                            </td>
                         </tr>
                         <?php
                             } //end foreach
@@ -315,10 +339,10 @@
             </div>
         </section>
 
-        <!-- Invoicing & Office Receipts Section -->
+        <!-- Office Account Section (LSBC Compliant) -->
         <section class="account-section office-account">
             <div class="account-section-header">
-                <h2><i class="fas fa-file-invoice-dollar" style="color: #007bff;"></i> Invoicing & Office Receipts</h2>
+                <h2><i class="fas fa-building" style="color: #007bff;"></i> Office Account</h2>
                 <div class="balance-display">
                     <div class="balance-label">Outstanding Balance</div>
                     <div class="balance-amount outstanding outstanding-balance">
@@ -352,19 +376,16 @@
                     </div>
                 </div>
             </div>
-            <p style="font-size: 0.85em; color: #6c757d; margin-top: -15px; margin-bottom: 15px;">
-                Tracks invoices issued and payments received directly by the office.
-            </p>
             <div class="transaction-table-wrapper">
-                <h4 style="margin-top:0; margin-bottom: 10px; font-weight: 600;">Invoices Issued</h4>
+                <h4 style="margin-top:0; margin-bottom: 10px; font-weight: 600;"><i class="fas fa-file-invoice-dollar" style="color: #007bff;"></i> Tax Invoices Issued</h4>
                 <table class="transaction-table">
                     <thead>
                         <tr>
-                            <th style="text-align: center;">Inv #</th>
-                            <th style="text-align: left;">Date</th>
-                            <th style="text-align: left;">Description</th>
-                            <th style="text-align: right;">Amount</th>
-                            <th style="text-align: left;">Status</th>
+                            <th style="text-align: center;" title="Tax invoice number">Invoice No.</th>
+                            <th style="text-align: left;" title="Date invoice was issued">Date</th>
+                            <th style="text-align: left;" title="Description of services rendered">Services / Description</th>
+                            <th style="text-align: right;" title="Invoice amount (inc. GST where applicable)">Amount (incl. GST)</th>
+                            <th style="text-align: left;" title="Payment status">Status</th>
                         </tr>
                     </thead>
                     <tbody class="productitemList_invoice">
@@ -475,11 +496,7 @@
                                     <td style="text-align: left; vertical-align: middle;"><?php echo $inc_val->trans_date;?></td>
                                     <td style="text-align: left; vertical-align: middle;"><?php echo $inc_val->description;?></td>
                                     <td style="text-align: right; vertical-align: middle; font-weight: 500;">
-                                        @if($inc_val->invoice_status == 1 && ($inc_val->balance_amount == 0 || $inc_val->balance_amount == 0.00))
-                                            {{ !empty($inc_val->partial_paid_amount) ? '$ ' . number_format($inc_val->partial_paid_amount, 2) : '' }}
-                                        @else
-                                            {{ !empty($inc_val->balance_amount) ? '$ ' . number_format($inc_val->payment_type == 'Discount' ? abs($inc_val->balance_amount) : $inc_val->balance_amount, 2) : '' }}
-                                        @endif
+                                        {{ !empty($inc_val->withdraw_amount) ? '$ ' . number_format(abs($inc_val->withdraw_amount), 2) : '' }}
                                     </td>
                                         <?php
                                         $statusClassMap = [
@@ -522,15 +539,15 @@
                     </tbody>
                 </table>
 
-                <h4 style="margin-top:25px; margin-bottom: 10px; font-weight: 600;">Direct Office Receipts</h4>
+                <h4 style="margin-top:25px; margin-bottom: 10px; font-weight: 600;"><i class="fas fa-hand-holding-usd" style="color: #28a745;"></i> Office Receipts</h4>
                 <table class="transaction-table">
                     <thead>
                         <tr>
-                            <th style="text-align: left;">Date</th>
-                            <th colspan="2" style="text-align: left;">Method</th>
-                            <th style="text-align: left;">Description</th>
-                            <th style="text-align: center;">Reference</th>
-                            <th style="text-align: right;">Amount Received</th>
+                            <th style="text-align: left;" title="Date money was received">Date</th>
+                            <th colspan="2" style="text-align: left;" title="Payment method">Method</th>
+                            <th style="text-align: left;" title="Particulars of payment received">Particulars / Description</th>
+                            <th style="text-align: center;" title="Office receipt number">Receipt No.</th>
+                            <th style="text-align: right;" title="Amount received into office account">Amount Received</th>
                         </tr>
                     </thead>
                     <tbody class="productitemList_office">
@@ -775,9 +792,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update modal title based on receipt type
         const modalTitles = {
-            '1': '<i class="fas fa-wallet" style="color: #28a745;"></i> Create Client Funds Ledger Entry',
-            '2': '<i class="fas fa-hand-holding-usd" style="color: #007bff;"></i> Create Direct Office Receipt',
-            '3': '<i class="fas fa-file-invoice-dollar" style="color: #17a2b8;"></i> Create Invoice'
+            '1': '<i class="fas fa-university" style="color: #28a745;"></i> Trust Account Entry &mdash; <small style="font-size:0.75em;color:#6c757d;">General Trust Account (LSBC Compliant)</small>',
+            '2': '<i class="fas fa-hand-holding-usd" style="color: #007bff;"></i> Office Receipt &mdash; <small style="font-size:0.75em;color:#6c757d;">Money received directly (not trust)</small>',
+            '3': '<i class="fas fa-file-invoice-dollar" style="color: #17a2b8;"></i> Tax Invoice'
         };
         
         $modal.find('.modal-title').html(modalTitles[receiptType] || 'Create Receipt');
@@ -798,8 +815,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Select the appropriate radio button and trigger change event
         // The change handler in detail-main.js will hide all forms and show the correct one
         if (receiptType == '1') {
-            // Client Funds Ledger
-            console.log('📝 Selecting Client Funds Ledger Form');
+            // Trust Account Entry
+            console.log('📝 Selecting Trust Account Entry Form');
             
             // Set the matter ID for client ledger
             $('#client_matter_id_ledger').val(selectedMatter);

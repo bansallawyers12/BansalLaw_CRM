@@ -16,7 +16,7 @@
             padding: 8px;
         }
         .header-section {
-            border-bottom: 3px solid #3abaf4;
+            border-bottom: 3px solid #1b3a6b;
             padding-bottom: 10px;
             margin-bottom: 12px;
         }
@@ -35,7 +35,7 @@
         .document-title {
             font-size: 26px;
             font-weight: 700;
-            color: #3abaf4;
+            color: #1b3a6b;
             margin: 0 0 10px 0;
             letter-spacing: -0.5px;
         }
@@ -89,7 +89,7 @@
             border-collapse: collapse;
         }
         .ledger-table thead {
-            background: #3abaf4;
+            background: #1b3a6b;
         }
         .ledger-table thead th {
             padding: 10px 8px;
@@ -142,8 +142,8 @@
         }
         .payment-instructions {
             padding: 10px 12px;
-            background: #f0f8ff;
-            border-left: 4px solid #3abaf4;
+            background: #eef1f7;
+            border-left: 4px solid #1b3a6b;
             margin-top: 12px;
             font-size: 12px;
             color: #1f2937;
@@ -169,7 +169,8 @@
 </head>
 <body>
     @php
-        $logoPath = public_path('img/logo.png');
+        $logoPath = public_path('img/logo_new.png');
+        if(!file_exists($logoPath)) $logoPath = public_path('img/logo.png');
         $logoData = '';
         if(file_exists($logoPath)) {
             $logoData = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
@@ -181,22 +182,19 @@
             <tr class="header-section">
                 <td style="text-align: left; width: 50%; vertical-align: top;">
                     @if($logoData)
-                        <img width="85" style="height:auto;display:block;margin-bottom:10px;" src="{{$logoData}}" alt="Logo"/>
+                        <img width="180" style="height:auto;display:block;margin-bottom:8px;" src="{{$logoData}}" alt="Bansal Lawyers"/>
                     @else
-                        <div style="width:85px;height:55px;background:#3abaf4;display:block;margin-bottom:10px;"></div>
+                        <div style="font-size:22px;font-weight:800;color:#1e3a5f;margin-bottom:8px;">BANSAL LAWYERS</div>
                     @endif
-                    <div class="company-name">{{ strtoupper(config('app.name')) }}</div>
                     <div class="company-info">
-                        Level 8, 278 Collins Street<br/>
-                        Melbourne VIC 3000<br/>
-                        E-mail: {{ config('app.brand.invoice_email') }}<br/>
-                        Phone: 03 96021330
+                        Level 8, 278 Collins Street, Melbourne VIC 3000<br/>
+                        Phone: 0422 905 860 &nbsp;|&nbsp; Email: Admin@bansallawyers.com.au
                     </div>
                 </td>
                 <td style="text-align: right; width: 50%; vertical-align: top;">
                     <h1 class="document-title">Tax Invoice</h1>
                     <div class="document-info">
-                        <b>ABN</b> 70 958 120 428<br/>
+                        <b>ABN</b> 66 677 069 439<br/>
                         <b>Invoice Date:</b> 
                         @php
                             $invoiceDate = 'N/A';
@@ -327,89 +325,17 @@
                 <table class="ledger-table">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th>Unit Price</th>
-                            <th>GST Incl.</th>
-                            <th>Amount</th>
+                            <th style="width:45%">Description</th><th>Date</th><th>GST Incl.</th><th style="text-align:right">Amount (AUD)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if(!empty($record_get_Professional_Fee))
                             @foreach($record_get_Professional_Fee as $fee)
                                 <tr>
+                                                                        <td>{{@$fee->description}}</td>
                                     <td>{{@$fee->trans_date}}</td>
-                                    <td>{{@$fee->description}}</td>
-                                    <td style="text-align:right;">
-                                        @php
-                                            $amount = 0;
-                                            try {
-                                                $amount = floatval($fee->withdraw_amount ?? 0);
-                                            } catch (\Exception $e) {
-                                                $amount = 0;
-                                            }
-                                            
-                                            $unitPrice = 0;
-                                            try {
-                                                if (@$fee->gst_included === 'Yes') {
-                                                    $unitPrice = $amount - ($amount / 11);
-                                                } else {
-                                                    $unitPrice = $amount;
-                                                }
-                                            } catch (\Exception $e) {
-                                                $unitPrice = 0;
-                                            }
-                                            
-                                            // Final safety check
-                                            if (!is_numeric($unitPrice) || !is_finite($unitPrice)) {
-                                                $unitPrice = 0;
-                                            }
-                                            
-                                            $formattedUnitPrice = '0.00';
-                                            try {
-                                                $formattedUnitPrice = number_format((float)$unitPrice, 2);
-                                            } catch (\Exception $e) {
-                                                $formattedUnitPrice = '0.00';
-                                            }
-                                        @endphp
-                                        ${{ $formattedUnitPrice }}
-                                    </td>
-                                    <td>
-                                        @php
-                                            $gstIncluded = 'N/A';
-                                            try {
-                                                if (isset($fee->gst_included) && $fee->gst_included !== null && $fee->gst_included !== '') {
-                                                    $gstIncluded = (string)$fee->gst_included;
-                                                }
-                                            } catch (\Exception $e) {
-                                                $gstIncluded = 'N/A';
-                                            }
-                                        @endphp
-                                        {{ $gstIncluded }}
-                                    </td>
-                                    <td style="text-align:right;">
-                                        @php
-                                            $totalAmount = 0;
-                                            try {
-                                                $totalAmount = floatval($fee->withdraw_amount ?? 0);
-                                            } catch (\Exception $e) {
-                                                $totalAmount = 0;
-                                            }
-                                            
-                                            // Final safety check
-                                            if (!is_numeric($totalAmount) || !is_finite($totalAmount)) {
-                                                $totalAmount = 0;
-                                            }
-                                            
-                                            $formattedTotal = '0.00';
-                                            try {
-                                                $formattedTotal = number_format((float)$totalAmount, 2);
-                                            } catch (\Exception $e) {
-                                                $formattedTotal = '0.00';
-                                            }
-                                        @endphp
-                                        ${{ $formattedTotal }}
-                                    </td>
+                                    <td>{{ isset($fee->gst_included) && $fee->gst_included !== '' ? $fee->gst_included : 'N/A' }}</td>
+                                    <td style="text-align:right;">${{ number_format(floatval($fee->withdraw_amount ?? 0), 2) }}</td>
                                 </tr>
                             @endforeach
                         @endif
@@ -424,89 +350,17 @@
                 <table class="ledger-table">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th>Unit Price</th>
-                            <th>GST Incl.</th>
-                            <th>Amount</th>
+                            <th style="width:45%">Description</th><th>Date</th><th>GST Incl.</th><th style="text-align:right">Amount (AUD)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if(!empty($record_get_Department_Charges))
                             @foreach($record_get_Department_Charges as $charge)
                                 <tr>
+                                                                        <td>{{@$charge->description}}</td>
                                     <td>{{@$charge->trans_date}}</td>
-                                    <td>{{@$charge->description}}</td>
-                                    <td style="text-align:right;">
-                                        @php
-                                            $amount = 0;
-                                            try {
-                                                $amount = floatval($charge->withdraw_amount ?? 0);
-                                            } catch (\Exception $e) {
-                                                $amount = 0;
-                                            }
-                                            
-                                            $unitPrice = 0;
-                                            try {
-                                                if (@$charge->gst_included === 'Yes') {
-                                                    $unitPrice = $amount - ($amount / 11);
-                                                } else {
-                                                    $unitPrice = $amount;
-                                                }
-                                            } catch (\Exception $e) {
-                                                $unitPrice = 0;
-                                            }
-                                            
-                                            // Final safety check
-                                            if (!is_numeric($unitPrice) || !is_finite($unitPrice)) {
-                                                $unitPrice = 0;
-                                            }
-                                            
-                                            $formattedUnitPrice = '0.00';
-                                            try {
-                                                $formattedUnitPrice = number_format((float)$unitPrice, 2);
-                                            } catch (\Exception $e) {
-                                                $formattedUnitPrice = '0.00';
-                                            }
-                                        @endphp
-                                        ${{ $formattedUnitPrice }}
-                                    </td>
-                                    <td>
-                                        @php
-                                            $gstIncluded = 'N/A';
-                                            try {
-                                                if (isset($charge->gst_included) && $charge->gst_included !== null && $charge->gst_included !== '') {
-                                                    $gstIncluded = (string)$charge->gst_included;
-                                                }
-                                            } catch (\Exception $e) {
-                                                $gstIncluded = 'N/A';
-                                            }
-                                        @endphp
-                                        {{ $gstIncluded }}
-                                    </td>
-                                    <td style="text-align:right;">
-                                        @php
-                                            $totalAmount = 0;
-                                            try {
-                                                $totalAmount = floatval($charge->withdraw_amount ?? 0);
-                                            } catch (\Exception $e) {
-                                                $totalAmount = 0;
-                                            }
-                                            
-                                            // Final safety check
-                                            if (!is_numeric($totalAmount) || !is_finite($totalAmount)) {
-                                                $totalAmount = 0;
-                                            }
-                                            
-                                            $formattedTotal = '0.00';
-                                            try {
-                                                $formattedTotal = number_format((float)$totalAmount, 2);
-                                            } catch (\Exception $e) {
-                                                $formattedTotal = '0.00';
-                                            }
-                                        @endphp
-                                        ${{ $formattedTotal }}
-                                    </td>
+                                    <td>{{ isset($charge->gst_included) && $charge->gst_included !== '' ? $charge->gst_included : 'N/A' }}</td>
+                                    <td style="text-align:right;">${{ number_format(floatval($charge->withdraw_amount ?? 0), 2) }}</td>
                                 </tr>
                             @endforeach
                         @endif
@@ -521,89 +375,17 @@
                 <table class="ledger-table">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th>Unit Price</th>
-                            <th>GST Incl.</th>
-                            <th>Amount</th>
+                            <th style="width:45%">Description</th><th>Date</th><th>GST Incl.</th><th style="text-align:right">Amount (AUD)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if(!empty($record_get_Surcharge))
                             @foreach($record_get_Surcharge as $surcharge)
                                 <tr>
+                                                                        <td>{{@$surcharge->description}}</td>
                                     <td>{{@$surcharge->trans_date}}</td>
-                                    <td>{{@$surcharge->description}}</td>
-                                    <td style="text-align:right;">
-                                        @php
-                                            $amount = 0;
-                                            try {
-                                                $amount = floatval($surcharge->withdraw_amount ?? 0);
-                                            } catch (\Exception $e) {
-                                                $amount = 0;
-                                            }
-                                            
-                                            $unitPrice = 0;
-                                            try {
-                                                if (@$surcharge->gst_included === 'Yes') {
-                                                    $unitPrice = $amount - ($amount / 11);
-                                                } else {
-                                                    $unitPrice = $amount;
-                                                }
-                                            } catch (\Exception $e) {
-                                                $unitPrice = 0;
-                                            }
-                                            
-                                            // Final safety check
-                                            if (!is_numeric($unitPrice) || !is_finite($unitPrice)) {
-                                                $unitPrice = 0;
-                                            }
-                                            
-                                            $formattedUnitPrice = '0.00';
-                                            try {
-                                                $formattedUnitPrice = number_format((float)$unitPrice, 2);
-                                            } catch (\Exception $e) {
-                                                $formattedUnitPrice = '0.00';
-                                            }
-                                        @endphp
-                                        ${{ $formattedUnitPrice }}
-                                    </td>
-                                    <td>
-                                        @php
-                                            $gstIncluded = 'N/A';
-                                            try {
-                                                if (isset($surcharge->gst_included) && $surcharge->gst_included !== null && $surcharge->gst_included !== '') {
-                                                    $gstIncluded = (string)$surcharge->gst_included;
-                                                }
-                                            } catch (\Exception $e) {
-                                                $gstIncluded = 'N/A';
-                                            }
-                                        @endphp
-                                        {{ $gstIncluded }}
-                                    </td>
-                                    <td style="text-align:right;">
-                                        @php
-                                            $totalAmount = 0;
-                                            try {
-                                                $totalAmount = floatval($surcharge->withdraw_amount ?? 0);
-                                            } catch (\Exception $e) {
-                                                $totalAmount = 0;
-                                            }
-                                            
-                                            // Final safety check
-                                            if (!is_numeric($totalAmount) || !is_finite($totalAmount)) {
-                                                $totalAmount = 0;
-                                            }
-                                            
-                                            $formattedTotal = '0.00';
-                                            try {
-                                                $formattedTotal = number_format((float)$totalAmount, 2);
-                                            } catch (\Exception $e) {
-                                                $formattedTotal = '0.00';
-                                            }
-                                        @endphp
-                                        ${{ $formattedTotal }}
-                                    </td>
+                                    <td>{{ isset($surcharge->gst_included) && $surcharge->gst_included !== '' ? $surcharge->gst_included : 'N/A' }}</td>
+                                    <td style="text-align:right;">${{ number_format(floatval($surcharge->withdraw_amount ?? 0), 2) }}</td>
                                 </tr>
                             @endforeach
                         @endif
@@ -618,89 +400,17 @@
                 <table class="ledger-table">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th>Unit Price</th>
-                            <th>GST Incl.</th>
-                            <th>Amount</th>
+                            <th style="width:45%">Description</th><th>Date</th><th>GST Incl.</th><th style="text-align:right">Amount (AUD)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if(!empty($record_get_Disbursements))
                             @foreach($record_get_Disbursements as $disbursement)
                                 <tr>
+                                                                        <td>{{@$disbursement->description}}</td>
                                     <td>{{@$disbursement->trans_date}}</td>
-                                    <td>{{@$disbursement->description}}</td>
-                                    <td style="text-align:right;">
-                                        @php
-                                            $amount = 0;
-                                            try {
-                                                $amount = floatval($disbursement->withdraw_amount ?? 0);
-                                            } catch (\Exception $e) {
-                                                $amount = 0;
-                                            }
-                                            
-                                            $unitPrice = 0;
-                                            try {
-                                                if (@$disbursement->gst_included === 'Yes') {
-                                                    $unitPrice = $amount - ($amount / 11);
-                                                } else {
-                                                    $unitPrice = $amount;
-                                                }
-                                            } catch (\Exception $e) {
-                                                $unitPrice = 0;
-                                            }
-                                            
-                                            // Final safety check
-                                            if (!is_numeric($unitPrice) || !is_finite($unitPrice)) {
-                                                $unitPrice = 0;
-                                            }
-                                            
-                                            $formattedUnitPrice = '0.00';
-                                            try {
-                                                $formattedUnitPrice = number_format((float)$unitPrice, 2);
-                                            } catch (\Exception $e) {
-                                                $formattedUnitPrice = '0.00';
-                                            }
-                                        @endphp
-                                        ${{ $formattedUnitPrice }}
-                                    </td>
-                                    <td>
-                                        @php
-                                            $gstIncluded = 'N/A';
-                                            try {
-                                                if (isset($disbursement->gst_included) && $disbursement->gst_included !== null && $disbursement->gst_included !== '') {
-                                                    $gstIncluded = (string)$disbursement->gst_included;
-                                                }
-                                            } catch (\Exception $e) {
-                                                $gstIncluded = 'N/A';
-                                            }
-                                        @endphp
-                                        {{ $gstIncluded }}
-                                    </td>
-                                    <td style="text-align:right;">
-                                        @php
-                                            $totalAmount = 0;
-                                            try {
-                                                $totalAmount = floatval($disbursement->withdraw_amount ?? 0);
-                                            } catch (\Exception $e) {
-                                                $totalAmount = 0;
-                                            }
-                                            
-                                            // Final safety check
-                                            if (!is_numeric($totalAmount) || !is_finite($totalAmount)) {
-                                                $totalAmount = 0;
-                                            }
-                                            
-                                            $formattedTotal = '0.00';
-                                            try {
-                                                $formattedTotal = number_format((float)$totalAmount, 2);
-                                            } catch (\Exception $e) {
-                                                $formattedTotal = '0.00';
-                                            }
-                                        @endphp
-                                        ${{ $formattedTotal }}
-                                    </td>
+                                    <td>{{ isset($disbursement->gst_included) && $disbursement->gst_included !== '' ? $disbursement->gst_included : 'N/A' }}</td>
+                                    <td style="text-align:right;">${{ number_format(floatval($disbursement->withdraw_amount ?? 0), 2) }}</td>
                                 </tr>
                             @endforeach
                         @endif
@@ -715,89 +425,17 @@
                 <table class="ledger-table">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th>Unit Price</th>
-                            <th>GST Incl.</th>
-                            <th>Amount</th>
+                            <th style="width:45%">Description</th><th>Date</th><th>GST Incl.</th><th style="text-align:right">Amount (AUD)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if(!empty($record_get_Other_Cost))
                             @foreach($record_get_Other_Cost as $cost)
                                 <tr>
+                                                                        <td>{{@$cost->description}}</td>
                                     <td>{{@$cost->trans_date}}</td>
-                                    <td>{{@$cost->description}}</td>
-                                    <td style="text-align:right;">
-                                        @php
-                                            $amount = 0;
-                                            try {
-                                                $amount = floatval($cost->withdraw_amount ?? 0);
-                                            } catch (\Exception $e) {
-                                                $amount = 0;
-                                            }
-                                            
-                                            $unitPrice = 0;
-                                            try {
-                                                if (@$cost->gst_included === 'Yes') {
-                                                    $unitPrice = $amount - ($amount / 11);
-                                                } else {
-                                                    $unitPrice = $amount;
-                                                }
-                                            } catch (\Exception $e) {
-                                                $unitPrice = 0;
-                                            }
-                                            
-                                            // Final safety check
-                                            if (!is_numeric($unitPrice) || !is_finite($unitPrice)) {
-                                                $unitPrice = 0;
-                                            }
-                                            
-                                            $formattedUnitPrice = '0.00';
-                                            try {
-                                                $formattedUnitPrice = number_format((float)$unitPrice, 2);
-                                            } catch (\Exception $e) {
-                                                $formattedUnitPrice = '0.00';
-                                            }
-                                        @endphp
-                                        ${{ $formattedUnitPrice }}
-                                    </td>
-                                    <td>
-                                        @php
-                                            $gstIncluded = 'N/A';
-                                            try {
-                                                if (isset($cost->gst_included) && $cost->gst_included !== null && $cost->gst_included !== '') {
-                                                    $gstIncluded = (string)$cost->gst_included;
-                                                }
-                                            } catch (\Exception $e) {
-                                                $gstIncluded = 'N/A';
-                                            }
-                                        @endphp
-                                        {{ $gstIncluded }}
-                                    </td>
-                                    <td style="text-align:right;">
-                                        @php
-                                            $totalAmount = 0;
-                                            try {
-                                                $totalAmount = floatval($cost->withdraw_amount ?? 0);
-                                            } catch (\Exception $e) {
-                                                $totalAmount = 0;
-                                            }
-                                            
-                                            // Final safety check
-                                            if (!is_numeric($totalAmount) || !is_finite($totalAmount)) {
-                                                $totalAmount = 0;
-                                            }
-                                            
-                                            $formattedTotal = '0.00';
-                                            try {
-                                                $formattedTotal = number_format((float)$totalAmount, 2);
-                                            } catch (\Exception $e) {
-                                                $formattedTotal = '0.00';
-                                            }
-                                        @endphp
-                                        ${{ $formattedTotal }}
-                                    </td>
+                                    <td>{{ isset($cost->gst_included) && $cost->gst_included !== '' ? $cost->gst_included : 'N/A' }}</td>
+                                    <td style="text-align:right;">${{ number_format(floatval($cost->withdraw_amount ?? 0), 2) }}</td>
                                 </tr>
                             @endforeach
                         @endif
@@ -812,89 +450,17 @@
                 <table class="ledger-table">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th>Unit Price</th>
-                            <th>GST Incl.</th>
-                            <th>Amount</th>
+                            <th style="width:45%">Description</th><th>Date</th><th>GST Incl.</th><th style="text-align:right">Amount (AUD)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if(!empty($record_get_Discount))
                             @foreach($record_get_Discount as $discount)
                                 <tr>
+                                                                        <td>{{@$discount->description}}</td>
                                     <td>{{@$discount->trans_date}}</td>
-                                    <td>{{@$discount->description}}</td>
-                                    <td style="text-align:right;">
-                                        @php
-                                            $amount = 0;
-                                            try {
-                                                $amount = floatval($discount->withdraw_amount ?? 0);
-                                            } catch (\Exception $e) {
-                                                $amount = 0;
-                                            }
-                                            
-                                            $unitPrice = 0;
-                                            try {
-                                                if (@$discount->gst_included === 'Yes') {
-                                                    $unitPrice = $amount - ($amount / 11);
-                                                } else {
-                                                    $unitPrice = $amount;
-                                                }
-                                            } catch (\Exception $e) {
-                                                $unitPrice = 0;
-                                            }
-                                            
-                                            // Final safety check
-                                            if (!is_numeric($unitPrice) || !is_finite($unitPrice)) {
-                                                $unitPrice = 0;
-                                            }
-                                            
-                                            $formattedUnitPrice = '0.00';
-                                            try {
-                                                $formattedUnitPrice = number_format((float)$unitPrice, 2);
-                                            } catch (\Exception $e) {
-                                                $formattedUnitPrice = '0.00';
-                                            }
-                                        @endphp
-                                        ${{ $formattedUnitPrice }}
-                                    </td>
-                                    <td>
-                                        @php
-                                            $gstIncluded = 'N/A';
-                                            try {
-                                                if (isset($discount->gst_included) && $discount->gst_included !== null && $discount->gst_included !== '') {
-                                                    $gstIncluded = (string)$discount->gst_included;
-                                                }
-                                            } catch (\Exception $e) {
-                                                $gstIncluded = 'N/A';
-                                            }
-                                        @endphp
-                                        {{ $gstIncluded }}
-                                    </td>
-                                    <td style="text-align:right;">
-                                        @php
-                                            $totalAmount = 0;
-                                            try {
-                                                $totalAmount = floatval($discount->withdraw_amount ?? 0);
-                                            } catch (\Exception $e) {
-                                                $totalAmount = 0;
-                                            }
-                                            
-                                            // Final safety check
-                                            if (!is_numeric($totalAmount) || !is_finite($totalAmount)) {
-                                                $totalAmount = 0;
-                                            }
-                                            
-                                            $formattedTotal = '0.00';
-                                            try {
-                                                $formattedTotal = number_format((float)$totalAmount, 2);
-                                            } catch (\Exception $e) {
-                                                $formattedTotal = '0.00';
-                                            }
-                                        @endphp
-                                        ${{ $formattedTotal }}
-                                    </td>
+                                    <td>{{ isset($discount->gst_included) && $discount->gst_included !== '' ? $discount->gst_included : 'N/A' }}</td>
+                                    <td style="text-align:right;">${{ number_format(floatval($discount->withdraw_amount ?? 0), 2) }}</td>
                                 </tr>
                             @endforeach
                         @endif
@@ -956,10 +522,9 @@
             <p class="payment-method-highlight">Payment Method: {{ $invoice_payment_method ?? 'N/A' }}</p>
             <p>If you wish to make payment by Direct Debit, use the following details in your Electronic Funds Transfer. Please remember to quote your MATTER NO <strong>{{ $client_matter_display ?? $client_matter_no ?? 'N/A' }}</strong> and advise us by email when you have made the transfer.</p>
             <div class="bank-details">
-                <strong>Account Name:</strong> {{ config('app.name') }}<br/>
+                <strong>Account Name:</strong> Bansal Lawyers<br/>
                 <strong>BSB:</strong> 083419<br/>
-                <strong>Account Number:</strong> 362421793<br/>
-                <strong>Swift Code:</strong> ____________________
+                <strong>Account Number:</strong> 787266100
             </div>
         </div>
     </div>

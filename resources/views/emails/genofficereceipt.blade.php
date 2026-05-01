@@ -16,7 +16,7 @@
             padding: 8px;
         }
         .header-section {
-            border-bottom: 3px solid #3abaf4;
+            border-bottom: 3px solid #1b3a6b;
             padding-bottom: 10px;
             margin-bottom: 12px;
         }
@@ -35,7 +35,7 @@
         .document-title {
             font-size: 26px;
             font-weight: 700;
-            color: #3abaf4;
+            color: #1b3a6b;
             margin: 0 0 10px 0;
             letter-spacing: -0.5px;
         }
@@ -81,7 +81,7 @@
             border-collapse: collapse;
         }
         .ledger-table thead {
-            background: #3abaf4;
+            background: #1b3a6b;
         }
         .ledger-table thead th {
             padding: 10px 8px;
@@ -118,12 +118,12 @@
         }
         .total-value {
             font-weight: 700;
-            color: #3abaf4;
+            color: #1b3a6b;
             font-size: 17px;
         }
         .acknowledgement {
-            background: #f0f8ff;
-            border-left: 4px solid #3abaf4;
+            background: #eef1f7;
+            border-left: 4px solid #1b3a6b;
             padding: 10px 12px;
             margin-top: 12px;
             font-size: 12px;
@@ -140,7 +140,8 @@
 </head>
 <body>
     @php
-        $logoPath = public_path('img/logo.png');
+        $logoPath = public_path('img/logo_new.png');
+        if(!file_exists($logoPath)) $logoPath = public_path('img/logo.png');
         $logoData = '';
         if(file_exists($logoPath)) {
             $logoData = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
@@ -152,22 +153,19 @@
             <tr class="header-section">
                 <td style="text-align: left; width: 50%; vertical-align: top;">
                     @if($logoData)
-                        <img width="85" style="height:auto;display:block;margin-bottom:10px;" src="{{$logoData}}" alt="Logo"/>
+                        <img width="180" style="height:auto;display:block;margin-bottom:8px;" src="{{$logoData}}" alt="Bansal Lawyers"/>
                     @else
-                        <div style="width:85px;height:55px;background:#3abaf4;display:block;margin-bottom:10px;"></div>
+                        <div style="font-size:22px;font-weight:800;color:#1e3a5f;margin-bottom:8px;">BANSAL LAWYERS</div>
                     @endif
-                    <div class="company-name">{{ strtoupper(config('app.name')) }}</div>
                     <div class="company-info">
-                        Level 8, 278 Collins Street<br/>
-                        Melbourne VIC 3000<br/>
-                        E-mail: {{ config('app.brand.invoice_email') }}<br/>
-                        Phone: 03 96021330
+                        Level 8, 278 Collins Street, Melbourne VIC 3000<br/>
+                        Phone: 0422 905 860 &nbsp;|&nbsp; Email: Admin@bansallawyers.com.au
                     </div>
                 </td>
                 <td style="text-align: right; width: 50%; vertical-align: top;">
                     <h1 class="document-title">Office Receipt</h1>
                     <div class="document-info">
-                        <b>ABN</b> 70 958 120 428<br/>
+                        <b>ABN</b> 66 677 069 439<br/>
                         <b>Receipt Date:</b> {{@$record_get->trans_date ? $record_get->trans_date : date('d/m/Y')}}<br/>
                         <b>Receipt No:</b> {{@$record_get->trans_no}}
                     </div>
