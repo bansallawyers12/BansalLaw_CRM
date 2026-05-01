@@ -1033,12 +1033,57 @@ $(document).ready(function() {
 
     jQuery(document).ready(function($){
 
+        /** Visually hidden #sel_matter_id_client_detail breaks Select2 placement; anchor dropdown to Change Matter. */
+        function positionClientDetailMatterSwitchDropdown() {
+            var $sel = $('#sel_matter_id_client_detail');
+            var s2 = $sel.data('select2');
+            if (!s2 || !$sel.length) {
+                return;
+            }
+            var btn = document.getElementById('cdn-focus-matter-select');
+            if (!btn) {
+                return;
+            }
+            var r = btn.getBoundingClientRect();
+            var minW = 280;
+            var w = Math.max(r.width, minW);
+            var maxLeft = window.innerWidth - w - 8;
+            var left = Math.min(Math.max(8, r.left), maxLeft);
+            var $dd = (s2.$dropdown && s2.$dropdown.length) ? s2.$dropdown
+                : (s2.dropdown && s2.dropdown.$dropdown && s2.dropdown.$dropdown.length) ? s2.dropdown.$dropdown
+                : $('body > .select2-dropdown.matter-dropdown-wrap').last();
+            if ($dd && $dd.length) {
+                $dd.css({
+                    position: 'fixed',
+                    left: left + 'px',
+                    top: (r.bottom + 4) + 'px',
+                    width: w + 'px',
+                    'z-index': 10050
+                });
+            }
+        }
 
 
-        // Initialize Select2 for the matter dropdown (dropdownCssClass for wrapping long names)
-        $('#sel_matter_id_client_detail').select2({
-            dropdownCssClass: 'matter-dropdown-wrap'
-        });
+
+        // Initialize Select2 for the matter dropdown (dropdownCssClass for wrapping long names; body parent + JS position for hero button)
+        var $matterClientDetail = $('#sel_matter_id_client_detail');
+        if ($matterClientDetail.length) {
+            $matterClientDetail.select2({
+                dropdownParent: $('body'),
+                dropdownCssClass: 'matter-dropdown-wrap',
+                minimumResultsForSearch: 0,
+                width: 'resolve'
+            });
+            $(document).on('select2:open', '#sel_matter_id_client_detail', function () {
+                requestAnimationFrame(function () {
+                    positionClientDetailMatterSwitchDropdown();
+                    $(window).on('scroll.matterSwitchDd resize.matterSwitchDd', positionClientDetailMatterSwitchDropdown);
+                });
+            });
+            $(document).on('select2:close', '#sel_matter_id_client_detail', function () {
+                $(window).off('scroll.matterSwitchDd resize.matterSwitchDd');
+            });
+        }
 
 
 
