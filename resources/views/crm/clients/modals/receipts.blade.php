@@ -161,21 +161,24 @@
 		  	<div class="modal-body">
 				<!-- Radio Button Selection -->
 				<div class="form-group">
-			  		<label><strong>Select Report Type:</strong></label><br>
+			  		<label><strong>Select Entry Type:</strong></label><br>
 			  		<label class="mr-3">
-						<input type="radio" name="receipt_type" value="client_receipt" checked> Client Funds Ledger
+						<input type="radio" name="receipt_type" value="client_receipt" checked>
+						<i class="fas fa-university text-success"></i> Trust Account Entry
 			  		</label>
 
 			  		<label class="mr-3">
-						<input type="radio" name="receipt_type" value="invoice_receipt"> Invoices Issued
+						<input type="radio" name="receipt_type" value="invoice_receipt">
+						<i class="fas fa-file-invoice-dollar text-info"></i> Tax Invoice
 			  		</label>
 
 			  		<label class="mr-3">
-						<input type="radio" name="receipt_type" value="office_receipt"> Direct Office Receipts
+						<input type="radio" name="receipt_type" value="office_receipt">
+						<i class="fas fa-hand-holding-usd text-primary"></i> Office Receipt
 			  		</label>
 				</div>
 
-				<!-- Client Funds Ledger Form -->
+				<!-- Trust Account Entry Form (LSBC Uniform Law Compliant) -->
 				<form class="form-type" method="post" action="{{URL::to('/clients/saveaccountreport')}}" name="client_receipt_form" autocomplete="off" id="client_receipt_form" enctype="multipart/form-data">
 					@csrf
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
@@ -199,14 +202,14 @@
                                 <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
                                     <thead>
                                         <tr>
-                                            <th style="width:10%;color: #34395e;">Trans. Date</th>
-                                            <th style="width:10%;color: #34395e;">Entry Date</th>
-                                            <th style="width:10%;color: #34395e;">Type</th>
-                                            <th style="width:11%;color: #34395e;" title="Required when Type is Fee Transfer">Invoice</th>
-                                            <th style="width:10%;color: #34395e;">Payment method</th>
-                                            <th style="width:22%;color: #34395e;">Description</th>
-                                            <th style="width:10%;color: #34395e;">Funds In (+)</th>
-											<th style="width:10%;color: #34395e;">Funds Out (-)</th>
+                                            <th style="width:10%;color: #34395e;" title="Date trust money was received or paid">Trans. Date</th>
+                                            <th style="width:10%;color: #34395e;" title="Date entry was recorded in the ledger">Entry Date</th>
+                                            <th style="width:12%;color: #34395e;" title="LSBC Uniform Law trust transaction type">Transaction Type</th>
+                                            <th style="width:11%;color: #34395e;" title="Required when type is Transfer to Office Account">Invoice Ref.</th>
+                                            <th style="width:10%;color: #34395e;" title="How trust money was received or paid">Payment Method</th>
+                                            <th style="width:22%;color: #34395e;" title="Particulars of the trust transaction">Particulars / Description</th>
+                                            <th style="width:10%;color: #34395e;" title="Trust money received into trust account">Trust Receipts (+)</th>
+											<th style="width:10%;color: #34395e;" title="Trust money paid from trust account">Trust Payments (−)</th>
                                             <th style="width:1%;color: #34395e;"></th>
                                         </tr>
                                     </thead>
@@ -221,10 +224,10 @@
                                             <td>
                                                 <select class="form-control client_fund_ledger_type" name="client_fund_ledger_type[]" data-valid="required">
                                                     <option value="">Select</option>
-                                                    <option value="Deposit">Deposit</option>
-                                                    <option value="Fee Transfer">Fee Transfer</option>
-                                                    <option value="Disbursement">Disbursement</option>
-													<option value="Refund">Refund</option>
+                                                    <option value="Deposit" title="Money received into trust account on behalf of client">Trust Receipt</option>
+                                                    <option value="Fee Transfer" title="Transfer from trust to office account for professional fees (requires invoice)">Transfer to Office Account</option>
+                                                    <option value="Disbursement" title="Payment made from trust account on behalf of client (e.g. court fees, outlays)">Disbursement (Trust Payment)</option>
+                                                    <option value="Refund" title="Money returned to client from trust account">Refund to Client</option>
                                                 </select>
                                             </td>
                                             <td class="align-middle text-center">
@@ -236,8 +239,9 @@
                                                 <select class="form-control ledger-payment-method" name="payment_method[]">
                                                     <option value="">—</option>
                                                     <option value="Cash">Cash</option>
-                                                    <option value="Bank transfer">Bank transfer</option>
-                                                    <option value="EFTPOS">EFTPOS</option>
+                                                    <option value="Bank transfer">Bank Transfer / EFT</option>
+                                                    <option value="EFTPOS">EFTPOS / Card</option>
+                                                    <option value="Cheque">Cheque</option>
                                                     <option value="Refund">Refund</option>
                                                 </select>
                                                 <div class="ledger-eftpos-surcharge-block" style="display:none;margin-top:6px;">
@@ -323,7 +327,7 @@
                     </div>
 				</form>
 
-				<!-- Invoice Receipt Form -->
+				<!-- Tax Invoice Form (LSBC Compliant) -->
 				<form class="form-type" method="post" action="{{URL::to('/clients/saveinvoicereport')}}" name="invoice_receipt_form" autocomplete="off" id="invoice_receipt_form" style="display:none;">
 					@csrf
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
@@ -357,8 +361,8 @@
                                         <tr>
                                             <th style="width:15%;color: #34395e;">Trans. Date</th>
                                             <th style="width:15%;color: #34395e;">Entry Date</th>
-                                            <th style="width:13%;color: #34395e;">Gst Incl.</th>
-                                            <th style="width:5%;color: #34395e;">Payment Type</th>
+                                            <th style="width:13%;color: #34395e;" title="Is GST included in the amount?">GST Included</th>
+                                            <th style="width:5%;color: #34395e;" title="Type of charge being invoiced">Charge Type</th>
                                             <th style="width:25%;color: #34395e;">Description</th>
                                             <th style="width:14%;color: #34395e;">Amount</th>
                                             <th style="width:1%;color: #34395e;"></th>
@@ -481,10 +485,10 @@
                                         <tr>
                                             <th style="width:15%;color: #34395e;">Trans. Date</th>
                                             <th style="width:15%;color: #34395e;">Entry Date</th>
-                                            <th style="width:15%;color: #34395e;">Invoice No</th>
+                                            <th style="width:15%;color: #34395e;" title="Invoice number this receipt is linked to (if any)">Invoice Ref. No.</th>
                                             <th style="width:5%;color: #34395e;">Payment method</th>
                                             <th style="width:25%;color: #34395e;">Description</th>
-                                            <th style="width:14%;color: #34395e;">Received</th>
+                                            <th style="width:14%;color: #34395e;" title="Amount received into office account">Amount Received</th>
                                             <th style="width:1%;color: #34395e;"></th>
                                         </tr>
                                     </thead>
@@ -634,8 +638,8 @@
                                         <tr>
                                             <th style="width:15%;color: #34395e;">Trans. Date</th>
                                             <th style="width:15%;color: #34395e;">Entry Date</th>
-                                            <th style="width:13%;color: #34395e;">Gst Incl.</th>
-                                            <th style="width:5%;color: #34395e;">Payment Type</th>
+                                            <th style="width:13%;color: #34395e;" title="Is GST included in the amount?">GST Included</th>
+                                            <th style="width:5%;color: #34395e;" title="Type of charge being invoiced">Charge Type</th>
                                             <th style="width:25%;color: #34395e;">Description</th>
                                             <th style="width:14%;color: #34395e;">Amount</th>
                                             <th style="width:1%;color: #34395e;"></th>
@@ -891,8 +895,8 @@
                                             <th style="width:15%;color: #34395e;">Trans. Date</th>
                                             <th style="width:15%;color: #34395e;">Entry Date</th>
                                             <th style="width:15%;color: #34395e;">Trans. No</th>
-                                            <th style="width:13%;color: #34395e;">Gst Incl.</th>
-                                            <th style="width:5%;color: #34395e;">Payment Type</th>
+                                            <th style="width:13%;color: #34395e;" title="Is GST included in the amount?">GST Included</th>
+                                            <th style="width:5%;color: #34395e;" title="Type of charge being invoiced">Charge Type</th>
                                             <th style="width:25%;color: #34395e;">Description</th>
                                             <th style="width:14%;color: #34395e;">Amount</th>
                                             <th style="width:1%;color: #34395e;"></th>
@@ -1025,10 +1029,10 @@
                                             <th style="width:15%;color: #34395e;">Trans. Date</th>
                                             <th style="width:15%;color: #34395e;">Entry Date</th>
                                             <th style="width:15%;color: #34395e;">Receipt No</th>
-                                            <th style="width:15%;color: #34395e;">Invoice No</th>
+                                            <th style="width:15%;color: #34395e;" title="Invoice number this receipt is linked to (if any)">Invoice Ref. No.</th>
                                             <th style="width:5%;color: #34395e;">Payment method</th>
                                             <th style="width:25%;color: #34395e;">Description</th>
-                                            <th style="width:14%;color: #34395e;">Received</th>
+                                            <th style="width:14%;color: #34395e;" title="Amount received into office account">Amount Received</th>
                                             <th style="width:1%;color: #34395e;"></th>
                                         </tr>
                                     </thead>
