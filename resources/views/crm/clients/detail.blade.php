@@ -27,12 +27,29 @@ use App\Http\Controllers\Controller;
         @php
             $clientDetailBackTabSlugs = ['personaldetails', 'overview', 'activityfeed', 'clientaction', 'noteterm', 'personaldocuments', 'matterdocuments', 'documents', 'nominationdocuments', 'emails', 'legalforms', 'formgenerations', 'formgenerationsl', 'application', 'account', 'notuseddocuments', 'companydetails'];
 
-            $cdnFn = trim((string) ($fetchedData->first_name ?? ''));
-            $cdnLn = trim((string) ($fetchedData->last_name ?? ''));
-            $cdnInitials = strtoupper(mb_substr($cdnFn, 0, 1) . mb_substr($cdnLn, 0, 1));
-            if ($cdnInitials === '') {
-                $cid = (string) ($fetchedData->client_id ?? '');
-                $cdnInitials = strtoupper(mb_substr($cid !== '' ? $cid : 'C', 0, 2));
+            $cdnIsCompany = ! empty($fetchedData->is_company);
+            if ($cdnIsCompany) {
+                $cdnDisplayCompany = trim((string) (optional($fetchedData->company)->company_name ?? ''));
+                if ($cdnDisplayCompany === '') {
+                    $cid = (string) ($fetchedData->client_id ?? '');
+                    $cdnDisplayCompany = $cid !== '' ? $cid : 'Company';
+                }
+                $words = preg_split('/\s+/', $cdnDisplayCompany, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+                if (count($words) >= 2) {
+                    $cdnInitials = strtoupper(mb_substr($words[0], 0, 1) . mb_substr($words[count($words) - 1], 0, 1));
+                } else {
+                    $cdnInitials = strtoupper(mb_substr($cdnDisplayCompany, 0, min(2, max(1, mb_strlen($cdnDisplayCompany)))));
+                }
+                $cdnFn = $cdnDisplayCompany;
+                $cdnLn = '';
+            } else {
+                $cdnFn = trim((string) ($fetchedData->first_name ?? ''));
+                $cdnLn = trim((string) ($fetchedData->last_name ?? ''));
+                $cdnInitials = strtoupper(mb_substr($cdnFn, 0, 1) . mb_substr($cdnLn, 0, 1));
+                if ($cdnInitials === '') {
+                    $cid = (string) ($fetchedData->client_id ?? '');
+                    $cdnInitials = strtoupper(mb_substr($cid !== '' ? $cid : 'C', 0, 2));
+                }
             }
 
             $cdnAssigneeName = null;
@@ -102,7 +119,7 @@ use App\Http\Controllers\Controller;
                     <div class="cdn-client-hero__avatar" aria-hidden="true">{{ $cdnInitials }}</div>
                     <div class="cdn-client-hero__text">
                         <h1 class="cdn-client-hero__name">
-                            {{ $cdnFn }} {{ $cdnLn }}
+                            {{ trim($cdnFn . ' ' . $cdnLn) }}
                             <a href="{{ route('clients.edit', base64_encode(convert_uuencode(@$fetchedData->id))) }}" class="cdn-client-hero__edit" title="Client Details Form"><i class="fas fa-id-card" aria-hidden="true"></i></a>
                         </h1>
                         <div class="cdn-client-hero__meta">
@@ -149,8 +166,8 @@ use App\Http\Controllers\Controller;
                     </div>
                     <div class="cdn-client-hero__actions-bottom" role="group" aria-label="Contact actions">
                         <button type="button" class="btn cdn-client-hero__action-btn create_note_d" datatype="note" title="Add a note">Add Notes</button>
-                        <button type="button" class="btn cdn-client-hero__action-btn clientemail" data-id="{{ @$fetchedData->id }}" data-email="{{ @$fetchedData->email }}" data-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Compose mail">Send Email</button>
-                        <button type="button" class="btn cdn-client-hero__action-btn send-sms-btn" data-client-id="{{ @$fetchedData->id }}" data-client-name="{{ @$fetchedData->first_name }} {{ @$fetchedData->last_name }}" title="Send SMS">Send SMS</button>
+                        <button type="button" class="btn cdn-client-hero__action-btn clientemail" data-id="{{ @$fetchedData->id }}" data-email="{{ @$fetchedData->email }}" data-name="{{ trim(($cdnFn ?? '').' '.($cdnLn ?? '')) }}" title="Compose mail">Send Email</button>
+                        <button type="button" class="btn cdn-client-hero__action-btn send-sms-btn" data-client-id="{{ @$fetchedData->id }}" data-client-name="{{ trim(($cdnFn ?? '').' '.($cdnLn ?? '')) }}" title="Send SMS">Send SMS</button>
                     </div>
                 </div>
             </div>

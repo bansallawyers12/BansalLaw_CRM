@@ -22,6 +22,9 @@
                         && $__sch::hasColumn('admins', 'dob_verified_date');
                 @endphp
                 <div class="content-grid">
+                    @if(!empty($fetchedData->is_company))
+                        @include('crm.companies.partials.company_overview_unified')
+                    @else
                     <div class="card">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h3><i class="fas fa-user"></i> Personal Information</h3>
@@ -706,6 +709,7 @@
                     </div>
                     <?php
                     } ?>
+                    @endif
 
                     <?php
                     $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();

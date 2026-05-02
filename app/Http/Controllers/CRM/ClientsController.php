@@ -2158,41 +2158,10 @@ class ClientsController extends Controller
                     'company.sponsorships',
                     'companyNominationsAsNominee.company',
                 ])->find($id); //dd($fetchedData);
-                
-                // Route to company detail page if this is a company
-                if ($fetchedData && $fetchedData->is_company) {
-                    // Fetch data needed for company detail page
-                    $clientAddresses = ClientAddress::where('client_id', $id)->orderByRaw('start_date DESC NULLS LAST, created_at DESC')->get();
-                    $clientContacts = ClientContact::where('client_id', $id)->get();
-                    $emails = ClientEmail::where('client_id', $id)->get() ?? [];
-                    
-                    $matter_cnt = \App\Models\ClientMatter::select('id')
-                        ->where('client_id',$id)
-                        ->where('matter_status',1)
-                        ->count();
-                    
-                    // Get current admin user data for SMS templates
-                    $currentAdmin = Auth::user();
-                    $staffName = $currentAdmin->first_name . ' ' . $currentAdmin->last_name;
-                    $matterNumber = $id1 ?? '';
-                    $officePhone = $currentAdmin->phone ?? '';
-                    $officeCountryCode = '+61';
-                    $notPickedCallSmsDefault = $this->notPickedCallSmsDefaultForClient($fetchedData);
-                    
-                    $encodeId = base64_encode(convert_uuencode($id));
-                    $activeTab = $tab ?? 'companydetails';
-                    if (strtolower((string) $activeTab) === 'client_portal') {
-                        $activeTab = 'workflow';
-                    }
 
-                    return view('crm.companies.detail', compact(
-                        'fetchedData', 'clientAddresses', 'clientContacts', 'emails',
-                        'encodeId', 'id1', 'activeTab',
-                        'staffName', 'matterNumber', 'officePhone', 'officeCountryCode',
-                        'notPickedCallSmsDefault'
-                    ));
+                if ($fetchedData && $fetchedData->is_company && strtolower((string) $activeTab) === 'companydetails') {
+                    $activeTab = 'personaldetails';
                 }
-
 
                 //Fetch other client-related data
                 $clientAddresses = ClientAddress::where('client_id', $id)->orderByRaw('start_date DESC NULLS LAST, created_at DESC')->get();
