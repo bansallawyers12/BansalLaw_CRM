@@ -24,17 +24,33 @@ class ClientMatterTaskController extends Controller
         return ClientMatter::where('id', $matterId)->where('client_id', $clientId)->first();
     }
 
+    /**
+     * Tasks are listed per client; this picks an active matter row only to satisfy client_matter_id FK on create.
+     */
+    private function resolveDefaultMatterForClient(int $clientId): ?ClientMatter
+    {
+        if ($clientId < 1) {
+            return null;
+        }
+
+        return ClientMatter::query()
+            ->where('client_id', $clientId)
+            ->where(function ($q) {
+                $q->where('matter_status', 1)->orWhere('matter_status', '1');
+            })
+            ->orderByDesc('id')
+            ->first();
+    }
+
     public function index(Request $request)
     {
         $clientId = (int) $request->query('client_id');
-        $matterId = (int) $request->query('matter_id');
-        $matter = $this->resolveMatter($clientId, $matterId);
-        if (! $matter) {
-            return response()->json(['status' => false, 'message' => 'Matter not found'], 404);
+        if ($clientId < 1) {
+            return response()->json(['status' => false, 'message' => 'Invalid client'], 422);
         }
 
         $tasks = ClientMatterTask::query()
-            ->where('client_matter_id', $matter->id)
+            ->where('client_id', $clientId)
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
@@ -46,13 +62,20 @@ class ClientMatterTaskController extends Controller
     {
         $validated = $request->validate([
             'client_id' => 'required|integer|min:1',
-            'matter_id' => 'required|integer|min:1',
+            'matter_id' => 'nullable|integer|min:1',
             'title'     => 'required|string|max:500',
         ]);
 
-        $matter = $this->resolveMatter((int) $validated['client_id'], (int) $validated['matter_id']);
+        $clientId = (int) $validated['client_id'];
+        $matter = null;
+        if (! empty($validated['matter_id'])) {
+            $matter = $this->resolveMatter($clientId, (int) $validated['matter_id']);
+        }
         if (! $matter) {
-            return response()->json(['status' => false, 'message' => 'Matter not found'], 404);
+            $matter = $this->resolveDefaultMatterForClient($clientId);
+        }
+        if (! $matter) {
+            return response()->json(['status' => false, 'message' => 'No active matter for this client. Add a matter before creating tasks.'], 422);
         }
 
         $title = trim($validated['title']);
@@ -60,7 +83,7 @@ class ClientMatterTaskController extends Controller
             return response()->json(['status' => false, 'message' => 'Title is required'], 422);
         }
 
-        $maxSort = (int) ClientMatterTask::where('client_matter_id', $matter->id)->max('sort_order');
+        $maxSort = (int) ClientMatterTask::where('client_id', $clientId)->max('sort_order');
 
         $task = new ClientMatterTask;
         $task->client_matter_id = $matter->id;
@@ -79,11 +102,6 @@ class ClientMatterTaskController extends Controller
         $clientId = (int) $request->input('client_id');
         if ($clientId < 1 || (int) $task->client_id !== $clientId) {
             return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
-        }
-
-        $matterId = (int) $request->input('matter_id');
-        if ($matterId < 1 || (int) $task->client_matter_id !== $matterId) {
-            return response()->json(['status' => false, 'message' => 'Invalid matter'], 422);
         }
 
         $changed = false;
@@ -117,11 +135,6 @@ class ClientMatterTaskController extends Controller
         $clientId = (int) $request->input('client_id');
         if ($clientId < 1 || (int) $task->client_id !== $clientId) {
             return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
-        }
-
-        $matterId = (int) $request->input('matter_id');
-        if ($matterId < 1 || (int) $task->client_matter_id !== $matterId) {
-            return response()->json(['status' => false, 'message' => 'Invalid matter'], 422);
         }
 
         $task->delete();

@@ -1,5 +1,5 @@
 /**
- * Matter-scoped task list on client detail Tasks tab.
+ * Client-scoped task list on client detail Tasks tab (not filtered by selected matter).
  * Requires: jQuery, ClientDetailConfig.urls.matterTask*, clientId, csrfToken
  */
 (function ($) {
@@ -21,15 +21,6 @@
     function clientId() {
         var id = cfg().clientId;
         return id !== undefined && id !== null && String(id) !== '' ? String(id) : null;
-    }
-
-    function matterId() {
-        var $el = $('#sel_matter_id_client_detail');
-        if (!$el.length) {
-            return null;
-        }
-        var v = $el.val();
-        return v !== undefined && v !== null && String(v).trim() !== '' ? String(v) : null;
     }
 
     function csrf() {
@@ -55,7 +46,7 @@
     }
 
     /**
-     * Enable add-task field only when client + matter + store URL exist.
+     * Enable add-task field when client + store URL exist.
      */
     function syncComposerLock() {
         var $wrap = $('#cdn-matter-tasks');
@@ -68,9 +59,8 @@
             return;
         }
         var cid = clientId();
-        var mid = matterId();
         var storeUrl = urlMap().matterTaskStore;
-        var unlocked = !!(cid && mid && storeUrl);
+        var unlocked = !!(cid && storeUrl);
         $inp.prop('disabled', !unlocked);
         $btn.prop('disabled', !unlocked);
         $wrap.toggleClass('cdn-matter-tasks--locked', !unlocked);
@@ -93,11 +83,10 @@
         }
 
         var cid = clientId();
-        var mid = matterId();
         var $list = $wrap.find('.cdn-matter-task__list');
 
-        if (!cid || !mid) {
-            $list.html(statusPara('muted', 'Select a matter above to view and edit its tasks.'));
+        if (!cid) {
+            $list.html(statusPara('muted', 'Unable to load tasks for this record.'));
             syncComposerLock();
             return;
         }
@@ -115,7 +104,7 @@
             url: indexUrl,
             type: 'GET',
             dataType: 'json',
-            data: { client_id: cid, matter_id: mid },
+            data: { client_id: cid },
             complete: function () {
                 syncComposerLock();
             },
@@ -173,14 +162,6 @@
     $(document).ready(function () {
         reload();
 
-        $(document).on('change', '#sel_matter_id_client_detail', function () {
-            scheduleReload();
-        });
-
-        $(document).on('select2:select', '#sel_matter_id_client_detail', function () {
-            scheduleReload();
-        });
-
         $(document).on('click', '[data-tab="clientaction"]', function () {
             scheduleReload();
         });
@@ -192,10 +173,9 @@
                 return;
             }
             var cid = clientId();
-            var mid = matterId();
             var storeUrl = urlMap().matterTaskStore;
-            if (!cid || !mid || !storeUrl) {
-                notifyError('Select a matter first.');
+            if (!cid || !storeUrl) {
+                notifyError('Unable to add a task for this record.');
                 return;
             }
 
@@ -212,7 +192,6 @@
                 },
                 data: {
                     client_id: cid,
-                    matter_id: mid,
                     title: title,
                     _token: csrf()
                 },
@@ -259,9 +238,8 @@
             var $row = $(this).closest('.cdn-matter-task__row');
             var id = safeId($row.data('id'));
             var cid = clientId();
-            var mid = matterId();
             var base = taskBase();
-            if (!id || !cid || !mid || !base) {
+            if (!id || !cid || !base) {
                 return;
             }
             var checked = $(this).is(':checked');
@@ -279,7 +257,6 @@
                 },
                 data: {
                     client_id: cid,
-                    matter_id: mid,
                     is_done: checked ? 1 : 0,
                     _token: csrf()
                 },
@@ -303,9 +280,8 @@
             var $row = $(this).closest('.cdn-matter-task__row');
             var id = safeId($row.data('id'));
             var cid = clientId();
-            var mid = matterId();
             var base = taskBase();
-            if (!id || !cid || !mid || !base) {
+            if (!id || !cid || !base) {
                 return;
             }
 
@@ -320,7 +296,6 @@
                 },
                 data: {
                     client_id: cid,
-                    matter_id: mid,
                     _token: csrf()
                 },
                 success: function (res) {
