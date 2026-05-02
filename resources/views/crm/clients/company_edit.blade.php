@@ -2,7 +2,10 @@
 
 @php
     $latestMatterRefNo = null;
-    if (isset($fetchedData) && $fetchedData->type === 'client') {
+    $__companyEditIsLead = isset($fetchedData)
+        && (($fetchedData->type ?? null) === 1
+            || in_array(trim((string) ($fetchedData->type ?? '')), ['lead', 'l', '1'], true));
+    if (isset($fetchedData) && ($fetchedData->type === 'client' || $__companyEditIsLead)) {
         $latestMatter = \App\Models\ClientMatter::where('client_id', $fetchedData->id)
             ->where('matter_status', 1)
             ->orderByDesc('id')
@@ -22,9 +25,51 @@
 @endphp
 
 @push('styles')
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ asset('css/address-autocomplete.css') }}">
     <link rel="stylesheet" href="{{asset('css/client-forms.css')}}">
     <link rel="stylesheet" href="{{asset('css/clients/edit-client-components.css')}}">
+    <style>
+        .tab-content { display: block !important; }
+        tr.matter-tab-row-highlight td {
+            background-color: #ebf3ff !important;
+            transition: background-color 0.35s ease;
+        }
+        .matter-type-select {
+            border: 2px solid var(--border-color, #c8dcef) !important;
+            border-radius: 8px !important;
+            font-size: 0.97em !important;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .matter-type-select:focus {
+            border-color: var(--secondary-color, #3a6fa8) !important;
+            box-shadow: 0 0 0 3px rgba(200, 153, 42, 0.2) !important;
+            outline: none !important;
+        }
+        .dyn-select {
+            border: 1.5px solid var(--border-color, #c8dcef) !important;
+            border-radius: 6px !important;
+            height: 40px;
+            font-size: 0.94em !important;
+            color: var(--text-color, #1a2c40) !important;
+            padding: 6px 10px !important;
+        }
+        .dyn-select:focus {
+            border-color: var(--secondary-color, #3a6fa8) !important;
+            box-shadow: 0 0 0 2px rgba(200, 153, 42, 0.15) !important;
+        }
+        #matterSpecificFields .form-control {
+            border: 1.5px solid var(--border-color, #c8dcef);
+            border-radius: 6px;
+            height: 40px;
+            font-size: 0.93em;
+            color: var(--text-color, #1a2c40);
+        }
+        #matterSpecificFields select.form-control { height: 40px; }
+        .dyn-required { color: #c0392b; font-weight: bold; margin-left: 2px; }
+        @keyframes dynFadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+        #subTypeFieldsContainer > div { animation: dynFadeIn 0.3s ease; }
+    </style>
     {{-- Select2 CSS for contact person search --}}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
@@ -133,15 +178,33 @@
                 window.currentClientId = '{{ $fetchedData->id }}';
                 window.currentClientType = @json($fetchedData->type);
                 window.latestClientMatterRef = @json($latestMatterRefNo);
+
+                function showCompanyMatterTab(tabId) {
+                    if (!window.jQuery) return;
+                    $('.main-content-area .tab-pane').hide().removeClass('in active');
+                    var $pane = $('#' + tabId);
+                    if ($pane.length) {
+                        $pane.css('display', 'block').show().addClass('in active');
+                    }
+                    $('.client-edit-top-pills li').removeClass('active');
+                    $('.client-edit-top-pills a[href="#' + tabId + '"]').closest('li').addClass('active');
+                }
             </script>
 
             <!-- Main Content Area -->
             <div class="main-content-area">
+                <ul class="nav nav-pills client-edit-top-pills">
+                    <li class="active"><a href="#companyEditHome" onclick="showCompanyMatterTab('companyEditHome'); return false;"><i class="fas fa-building"></i> Company Profile</a></li>
+                    <li><a href="#menu2" onclick="showCompanyMatterTab('menu2'); return false;"><i class="fas fa-briefcase"></i> Matter Details</a></li>
+                    <li><a href="#menu4" onclick="showCompanyMatterTab('menu4'); return false;"><i class="fas fa-gavel"></i> Court Dates &amp; Hearings</a></li>
+                </ul>
+                <div class="tab-content">
                 <form id="editCompanyForm" action="{{ route('clients.update') }}" method="POST">
                     @csrf
                     <input type="hidden" name="id" value="{{ $fetchedData->id }}">
                     <input type="hidden" name="type" value="{{ $fetchedData->type }}">
 
+                <div id="companyEditHome" class="tab-pane fade in active">
                 <!-- Company Information Section -->
                 <section id="companySection" class="content-section">
                     <section class="form-section">
@@ -1012,19 +1075,40 @@
                     </section>
                 </section>
 
+                </div>
+
+                @include('crm.clients.partials.client-edit-matter-tab-pane')
+                @include('crm.clients.partials.client-edit-court-tab-pane')
+
                 </form>
+                </div>
             </div>
         </div>
     </div>
 
+    @include('crm.clients.modals.change-matter-assignee-modal')
     @include('crm.clients.partials.matter-required-before-convert-modal')
 
     @push('scripts')
     {{-- Select2 JS for contact person search --}}
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        window.ClientDetailConfig = window.ClientDetailConfig || {};
+        window.ClientDetailConfig.urls = window.ClientDetailConfig.urls || {};
+        window.ClientDetailConfig.urls.fetchClientMatterAssignee = @json(url('/clients/fetchClientMatterAssignee'));
+    </script>
+    <script src="{{ asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ time() }}"></script>
+    <script>
+        window.countriesData = @json($countries ?? []);
+        window.storeLeadMatterFromEditUrl = @json(route('clients.storeLeadMatterFromEdit'));
+    </script>
     <script src="{{asset('js/clients/edit-client.js')}}"></script>
     <script src="{{asset('js/address-autocomplete.js')}}"></script>
     <script src="{{asset('js/clients/address-regional-codes.js')}}"></script>
+    <script>
+        @include('crm.clients.partials.client-edit-matter-court-scripts')
+    </script>
     
     <script>
     $(document).ready(function() {
@@ -1307,6 +1391,26 @@
     function saveLmtInfo() { saveSection('lmt', function() { toggleEditMode('lmt'); }); }
     function saveTrainingInfo() { saveSection('training', function() { toggleEditMode('training'); }); }
     function saveNominationsInfo() { saveSection('nominations', function() { toggleEditMode('nominations'); }); }
+
+    (function () {
+        var tabMap = { matter_case: 'menu2', hearings: 'menu4', court: 'menu4' };
+        function activateCompanyEditTabFromUrl() {
+            try {
+                var qs = new URLSearchParams(window.location.search || '');
+                var editTab = qs.get('edit_tab') || '';
+                var hash = (window.location.hash || '').replace('#', '');
+                var targetId = tabMap[editTab] || hash || '';
+                if (!targetId || !['companyEditHome', 'menu2', 'menu4'].includes(targetId)) return;
+                if (typeof showCompanyMatterTab === 'function') showCompanyMatterTab(targetId);
+            } catch (e) { /* ignore */ }
+        }
+        if (window.jQuery) {
+            jQuery(function () {
+                activateCompanyEditTabFromUrl();
+                window.setTimeout(activateCompanyEditTabFromUrl, 100);
+            });
+        }
+    })();
     </script>
     @endpush
 @endsection
