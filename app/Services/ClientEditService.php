@@ -76,7 +76,7 @@ class ClientEditService
             // Dropdown data - loaded ONCE to prevent N+1 queries
             'visaTypes' => $this->getVisaTypes(),
             'countries' => $this->getCountries(),
-            'allMatters' => $this->getAllMatters(),
+            'allMatters' => $this->getAllMattersForMatterTypeSelector((bool) ($clientData->is_company ?? false)),
             'matterFormForLead' => $matterFormForLead,
         ];
     }
@@ -326,12 +326,14 @@ class ClientEditService
     }
 
     /**
-     * Get all matter types for the matter type selector
+     * Matter types for the edit-page "Law Matter Type" dropdown.
+     * Scoped with forClientType so options match Matter::allowedForClientIsCompany on save.
      */
-    protected function getAllMatters()
+    protected function getAllMattersForMatterTypeSelector(bool $isCompany)
     {
         return Matter::select('id', 'title', 'nick_name', 'stream')
             ->where('status', 1)
+            ->forClientType($isCompany)
             ->orderBy('title')
             ->get();
     }
