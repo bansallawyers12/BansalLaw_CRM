@@ -122,7 +122,53 @@ app_run "$PHP_BIN artisan config:clear"
 
 # ── [7/11] Migrations ───────────────────────────────────────────────
 echo "[7/11] Running migrations..."
-app_run "$PHP_BIN artisan migrate --force"
+
+# Laravel queue / email workers and the Python migration service each hold PostgreSQL
+# connections. Migrations need at least one free slot; otherwise Postgres returns
+# "sorry, too many clients already". Maintenance mode is already on (step 1); we
+# pause those consumers and recycle PHP-FPM workers, then restart everything in step 11.
+start_db_consuming_services() {
+  for SVC in bansallaw-queue bansallaw-email migration-python-services; do
+    if systemctl is-enabled --quiet "$SVC" 2>/dev/null; then
+      if ! systemctl start "$SVC"; then
+        echo "  WARN: systemctl start $SVC failed — check: systemctl status $SVC"
+      fi
+    fi
+  done
+}
+
+echo "  Pausing DB-heavy workers and recycling PHP-FPM before migrate..."
+app_run "$PHP_BIN artisan queue:restart || true"
+sleep 2
+
+for SVC in bansallaw-queue bansallaw-email migration-python-services; do
+  if systemctl is-enabled --quiet "$SVC" 2>/dev/null && systemctl is-active --quiet "$SVC" 2>/dev/null; then
+    systemctl stop "$SVC" || echo "  WARN: systemctl stop $SVC failed"
+  fi
+done
+
+if systemctl is-active --quiet "$PHP_FPM" 2>/dev/null; then
+  systemctl reload "$PHP_FPM" || echo "  WARN: systemctl reload $PHP_FPM failed"
+fi
+sleep 3
+
+MIGRATE_ATTEMPTS=0
+MIGRATE_MAX=5
+MIGRATE_DELAY=4
+while [ "$MIGRATE_ATTEMPTS" -lt "$MIGRATE_MAX" ]; do
+  MIGRATE_ATTEMPTS=$((MIGRATE_ATTEMPTS + 1))
+  if app_run "$PHP_BIN artisan migrate --force"; then
+    break
+  fi
+  if [ "$MIGRATE_ATTEMPTS" -ge "$MIGRATE_MAX" ]; then
+    echo "FATAL: migrate failed after $MIGRATE_MAX attempts (check PostgreSQL max_connections and connection usage)."
+    start_db_consuming_services
+    exit 1
+  fi
+  echo "  Migrate attempt $MIGRATE_ATTEMPTS failed; waiting ${MIGRATE_DELAY}s before retry..."
+  sleep "$MIGRATE_DELAY"
+  MIGRATE_DELAY=$((MIGRATE_DELAY * 2))
+done
 # app_run "$PHP_BIN artisan import:reference-master-data"
 
 # ── [8/11] Required storage / cache directories ─────────────────────
