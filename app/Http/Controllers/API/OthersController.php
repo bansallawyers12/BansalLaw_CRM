@@ -26,6 +26,55 @@ class OthersController extends Controller
     }
 
     /**
+     * Resolved outbound URL for the website blog list API (see BANSAL_API_BLOG_LIST_URL).
+     */
+    private function resolveExternalBlogListUrl(string $baseUrl): string
+    {
+        $override = config('services.bansal_api.blog_list_url');
+        if (is_string($override) && trim($override) !== '') {
+            return rtrim($this->normalizeOutboundHttpUrl(trim($override)), '/');
+        }
+
+        $path = (string) config('services.bansal_api.blog_list_path', 'blogs/list');
+        $path = trim($path, '/');
+
+        return rtrim($baseUrl, '/') . '/' . $path;
+    }
+
+    /**
+     * Resolved outbound URL for blog detail: {base}/{prefix}/{id}.
+     */
+    private function resolveExternalBlogDetailUrl(string $baseUrl, int|string $id): string
+    {
+        $template = config('services.bansal_api.blog_detail_url');
+        if (is_string($template) && trim($template) !== '') {
+            $out = str_replace('{id}', (string) $id, trim($template));
+
+            return rtrim($this->normalizeOutboundHttpUrl($out), '/');
+        }
+
+        $prefix = trim((string) config('services.bansal_api.blog_detail_path_prefix', 'blogs/detail'), '/');
+
+        return rtrim($baseUrl, '/') . '/' . $prefix . '/' . $id;
+    }
+
+    private function normalizeOutboundHttpUrl(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return '';
+        }
+        if (preg_match('#^https?://#i', $url)) {
+            return $url;
+        }
+        if (str_starts_with($url, '//')) {
+            return 'https:' . $url;
+        }
+
+        return 'https://' . $url;
+    }
+
+    /**
      * Get Blog List
      * GET /api/blogs/list
      */
@@ -63,15 +112,18 @@ class OthersController extends Controller
                 $queryParams['featured'] = $featured;
             }
 
+            $blogListUrl = $this->resolveExternalBlogListUrl($baseUrl);
+
             // Make API call to Bansal API
             $response = Http::timeout($timeout)
                 ->withToken($apiToken)
                 ->acceptJson()
-                ->get("{$baseUrl}/blogs/list", $queryParams);
+                ->get($blogListUrl, $queryParams);
 
             if ($response->failed()) {
                 Log::error('Bansal API Blog List Error', [
                     'method' => 'getBlogList',
+                    'url' => $blogListUrl,
                     'status' => $response->status(),
                     'body' => $response->body(),
                     'query_params' => $queryParams
@@ -103,6 +155,7 @@ class OthersController extends Controller
 
             Log::error('Bansal API Blog List Request Error', [
                 'method' => 'getBlogList',
+                'url' => $this->resolveExternalBlogListUrl(rtrim(config('services.bansal_api.url'), '/')),
                 'status' => $response?->status(),
                 'body' => $response?->body(),
                 'error' => $message,
@@ -122,6 +175,7 @@ class OthersController extends Controller
         } catch (Exception $e) {
             Log::error('Bansal API Blog List Error', [
                 'method' => 'getBlogList',
+                'url' => $this->resolveExternalBlogListUrl(rtrim(config('services.bansal_api.url'), '/')),
                 'error_type' => get_class($e),
                 'error' => $e->getMessage(),
                 'query_params' => [
@@ -166,15 +220,18 @@ class OthersController extends Controller
                 ], 400);
             }
 
+            $detailUrl = $this->resolveExternalBlogDetailUrl($baseUrl, $id);
+
             // Make API call to Bansal API
             $response = Http::timeout($timeout)
                 ->withToken($apiToken)
                 ->acceptJson()
-                ->get("{$baseUrl}/blogs/detail/{$id}");
+                ->get($detailUrl);
 
             if ($response->failed()) {
                 Log::error('Bansal API Blog Detail Error', [
                     'method' => 'getBlogDetail',
+                    'url' => $detailUrl,
                     'status' => $response->status(),
                     'body' => $response->body(),
                     'id' => $id
@@ -206,6 +263,7 @@ class OthersController extends Controller
 
             Log::error('Bansal API Blog Detail Request Error', [
                 'method' => 'getBlogDetail',
+                'url' => $this->resolveExternalBlogDetailUrl(rtrim(config('services.bansal_api.url'), '/'), $id),
                 'status' => $response?->status(),
                 'body' => $response?->body(),
                 'error' => $message,
