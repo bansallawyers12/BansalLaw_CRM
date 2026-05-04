@@ -124,9 +124,10 @@ app_run "$PHP_BIN artisan config:clear"
 echo "[7/11] Running migrations..."
 
 # Laravel queue / email workers and the Python migration service each hold PostgreSQL
-# connections. Migrations need at least one free slot; otherwise Postgres returns
-# "sorry, too many clients already". Maintenance mode is already on (step 1); we
-# pause those consumers and recycle PHP-FPM workers, then restart everything in step 11.
+# connections. PHP-FPM workers often hold one connection per child — a reload does not
+# always free slots fast enough. Stopping PHP-FPM during migrate drops those connections;
+# artisan still runs via CLI ($PHP_BIN). We start PHP-FPM again before cache rebuild / step 11.
+# If the ALB probes /up via PHP during this window, checks may briefly fail — keep migrate + retries as short as practical.
 start_db_consuming_services() {
   for SVC in bansallaw-queue bansallaw-email migration-python-services; do
     if systemctl is-enabled --quiet "$SVC" 2>/dev/null; then
@@ -137,7 +138,19 @@ start_db_consuming_services() {
   done
 }
 
-echo "  Pausing DB-heavy workers and recycling PHP-FPM before migrate..."
+PHP_FPM_STOPPED_FOR_MIGRATE=0
+start_php_fpm_if_we_stopped_it() {
+  if [ "${PHP_FPM_STOPPED_FOR_MIGRATE:-0}" = 1 ]; then
+    echo "  Starting $PHP_FPM (restore web / health checks)..."
+    if systemctl start "$PHP_FPM"; then
+      PHP_FPM_STOPPED_FOR_MIGRATE=0
+    else
+      echo "  WARN: systemctl start $PHP_FPM failed — check: systemctl status $PHP_FPM"
+    fi
+  fi
+}
+
+echo "  Pausing DB-heavy workers before migrate..."
 app_run "$PHP_BIN artisan queue:restart || true"
 sleep 2
 
@@ -148,27 +161,33 @@ for SVC in bansallaw-queue bansallaw-email migration-python-services; do
 done
 
 if systemctl is-active --quiet "$PHP_FPM" 2>/dev/null; then
-  systemctl reload "$PHP_FPM" || echo "  WARN: systemctl reload $PHP_FPM failed"
+  echo "  Stopping $PHP_FPM to release PostgreSQL connections (CLI still runs migrate)..."
+  systemctl stop "$PHP_FPM" || echo "  WARN: systemctl stop $PHP_FPM failed"
+  PHP_FPM_STOPPED_FOR_MIGRATE=1
 fi
-sleep 3
+sleep 5
 
 MIGRATE_ATTEMPTS=0
 MIGRATE_MAX=5
 MIGRATE_DELAY=4
 while [ "$MIGRATE_ATTEMPTS" -lt "$MIGRATE_MAX" ]; do
   MIGRATE_ATTEMPTS=$((MIGRATE_ATTEMPTS + 1))
-  if app_run "$PHP_BIN artisan migrate --force"; then
+  # Disable persistent PDO for this process only (if .env enables it, it can multiply connections).
+  if app_run "DB_PERSISTENT=false $PHP_BIN artisan migrate --force"; then
     break
   fi
   if [ "$MIGRATE_ATTEMPTS" -ge "$MIGRATE_MAX" ]; then
     echo "FATAL: migrate failed after $MIGRATE_MAX attempts (check PostgreSQL max_connections and connection usage)."
     start_db_consuming_services
+    start_php_fpm_if_we_stopped_it
     exit 1
   fi
   echo "  Migrate attempt $MIGRATE_ATTEMPTS failed; waiting ${MIGRATE_DELAY}s before retry..."
   sleep "$MIGRATE_DELAY"
   MIGRATE_DELAY=$((MIGRATE_DELAY * 2))
 done
+
+start_php_fpm_if_we_stopped_it
 # app_run "$PHP_BIN artisan import:reference-master-data"
 
 # ── [8/11] Required storage / cache directories ─────────────────────
