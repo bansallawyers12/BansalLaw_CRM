@@ -17,16 +17,38 @@ class NotificationService
     }
 
     /**
+     * Use the app default mail driver (see config/mail.php + .env MAIL_MAILER).
+     * Do not hardcode "sendgrid": it ignores local smtp/log and fails when the key is wrong or missing.
+     */
+    protected function appointmentMailerName(): string
+    {
+        $name = (string) config('mail.default', 'smtp');
+
+        if ($name === 'sendgrid' && blank(config('mail.mailers.sendgrid.password'))) {
+            Log::notice('Appointment email: SENDGRID_API_KEY empty; using log mailer', [
+                'configured_default' => $name,
+            ]);
+
+            return 'log';
+        }
+
+        return $name;
+    }
+
+    /**
      * Send detailed follow-up confirmation email
      * (This is sent AFTER customer already got instant confirmation from Bansal website)
      */
     public function sendDetailedConfirmationEmail(BookingAppointment $appointment): bool
     {
+        $mailer = null;
         try {
             // Only send if not already sent
             if ($appointment->confirmation_email_sent) {
                 return true;
             }
+
+            $mailer = $this->appointmentMailerName();
 
             $details = [
                 'client_name' => $appointment->client_name,
@@ -38,7 +60,7 @@ class NotificationService
                 'admin_notes' => $appointment->admin_notes,
             ];
 
-            Mail::mailer('sendgrid')->to($appointment->client_email)->send(
+            Mail::mailer($mailer)->to($appointment->client_email)->send(
                 new \App\Mail\AppointmentDetailedConfirmation($details)
             );
 
@@ -49,14 +71,16 @@ class NotificationService
 
             Log::info('Sent detailed confirmation email', [
                 'appointment_id' => $appointment->id,
-                'email' => $appointment->client_email
+                'email' => $appointment->client_email,
+                'mailer' => $mailer,
             ]);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Failed to send confirmation email', [
                 'appointment_id' => $appointment->id,
-                'error' => $e->getMessage()
+                'mailer' => $mailer ?? null,
+                'error' => $e->getMessage(),
             ]);
             return false;
         }
@@ -67,6 +91,7 @@ class NotificationService
      */
     public function sendCancellationConfirmationEmail(BookingAppointment $appointment, ?string $cancellationReason = null): bool
     {
+        $mailer = $this->appointmentMailerName();
         try {
             $details = [
                 'client_name' => $appointment->client_name,
@@ -78,19 +103,21 @@ class NotificationService
                 'cancellation_reason' => $cancellationReason,
             ];
 
-            Mail::mailer('sendgrid')->to($appointment->client_email)->send(
+            Mail::mailer($mailer)->to($appointment->client_email)->send(
                 new \App\Mail\AppointmentCancellation($details)
             );
 
             Log::info('Sent cancellation confirmation email', [
                 'appointment_id' => $appointment->id,
                 'email' => $appointment->client_email,
+                'mailer' => $mailer,
             ]);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Failed to send cancellation confirmation email', [
                 'appointment_id' => $appointment->id,
+                'mailer' => $mailer ?? null,
                 'error' => $e->getMessage(),
             ]);
             return false;
