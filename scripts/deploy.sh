@@ -122,7 +122,72 @@ app_run "$PHP_BIN artisan config:clear"
 
 # ── [7/11] Migrations ───────────────────────────────────────────────
 echo "[7/11] Running migrations..."
-app_run "$PHP_BIN artisan migrate --force"
+
+# Laravel queue / email workers and the Python migration service each hold PostgreSQL
+# connections. PHP-FPM workers often hold one connection per child — a reload does not
+# always free slots fast enough. Stopping PHP-FPM during migrate drops those connections;
+# artisan still runs via CLI ($PHP_BIN). We start PHP-FPM again before cache rebuild / step 11.
+# If the ALB probes /up via PHP during this window, checks may briefly fail — keep migrate + retries as short as practical.
+start_db_consuming_services() {
+  for SVC in bansallaw-queue bansallaw-email migration-python-services; do
+    if systemctl is-enabled --quiet "$SVC" 2>/dev/null; then
+      if ! systemctl start "$SVC"; then
+        echo "  WARN: systemctl start $SVC failed — check: systemctl status $SVC"
+      fi
+    fi
+  done
+}
+
+PHP_FPM_STOPPED_FOR_MIGRATE=0
+start_php_fpm_if_we_stopped_it() {
+  if [ "${PHP_FPM_STOPPED_FOR_MIGRATE:-0}" = 1 ]; then
+    echo "  Starting $PHP_FPM (restore web / health checks)..."
+    if systemctl start "$PHP_FPM"; then
+      PHP_FPM_STOPPED_FOR_MIGRATE=0
+    else
+      echo "  WARN: systemctl start $PHP_FPM failed — check: systemctl status $PHP_FPM"
+    fi
+  fi
+}
+
+echo "  Pausing DB-heavy workers before migrate..."
+app_run "$PHP_BIN artisan queue:restart || true"
+sleep 2
+
+for SVC in bansallaw-queue bansallaw-email migration-python-services; do
+  if systemctl is-enabled --quiet "$SVC" 2>/dev/null && systemctl is-active --quiet "$SVC" 2>/dev/null; then
+    systemctl stop "$SVC" || echo "  WARN: systemctl stop $SVC failed"
+  fi
+done
+
+if systemctl is-active --quiet "$PHP_FPM" 2>/dev/null; then
+  echo "  Stopping $PHP_FPM to release PostgreSQL connections (CLI still runs migrate)..."
+  systemctl stop "$PHP_FPM" || echo "  WARN: systemctl stop $PHP_FPM failed"
+  PHP_FPM_STOPPED_FOR_MIGRATE=1
+fi
+sleep 5
+
+MIGRATE_ATTEMPTS=0
+MIGRATE_MAX=5
+MIGRATE_DELAY=4
+while [ "$MIGRATE_ATTEMPTS" -lt "$MIGRATE_MAX" ]; do
+  MIGRATE_ATTEMPTS=$((MIGRATE_ATTEMPTS + 1))
+  # Disable persistent PDO for this process only (if .env enables it, it can multiply connections).
+  if app_run "DB_PERSISTENT=false $PHP_BIN artisan migrate --force"; then
+    break
+  fi
+  if [ "$MIGRATE_ATTEMPTS" -ge "$MIGRATE_MAX" ]; then
+    echo "FATAL: migrate failed after $MIGRATE_MAX attempts (check PostgreSQL max_connections and connection usage)."
+    start_db_consuming_services
+    start_php_fpm_if_we_stopped_it
+    exit 1
+  fi
+  echo "  Migrate attempt $MIGRATE_ATTEMPTS failed; waiting ${MIGRATE_DELAY}s before retry..."
+  sleep "$MIGRATE_DELAY"
+  MIGRATE_DELAY=$((MIGRATE_DELAY * 2))
+done
+
+start_php_fpm_if_we_stopped_it
 # app_run "$PHP_BIN artisan import:reference-master-data"
 
 # ── [8/11] Required storage / cache directories ─────────────────────
@@ -161,6 +226,17 @@ for SVC in $PHP_FPM bansallaw-queue bansallaw-email migration-python-services; d
         echo "  SKIP : $SVC is not enabled"
     fi
 done
+
+# ValidateService curls 127.0.0.1 — if the unit is enabled but never started, HTTP 000 results.
+echo "Ensuring web server is running..."
+if systemctl is-enabled --quiet apache2 2>/dev/null && ! systemctl is-active --quiet apache2 2>/dev/null; then
+    echo "  Starting apache2 (enabled but not active)..."
+    systemctl start apache2 || echo "  WARN: systemctl start apache2 failed — check: systemctl status apache2"
+fi
+if systemctl is-enabled --quiet nginx 2>/dev/null && ! systemctl is-active --quiet nginx 2>/dev/null; then
+    echo "  Starting nginx (enabled but not active)..."
+    systemctl start nginx || echo "  WARN: systemctl start nginx failed — check: systemctl status nginx"
+fi
 
 echo "Reloading web server..."
 if systemctl is-active --quiet apache2; then
