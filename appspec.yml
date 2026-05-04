@@ -12,6 +12,6 @@ hooks:
       runas: root
   ValidateService:
     - location: scripts/validate.sh
-      # Polls GET /up until HTTP 200 (max 90s inside the script) then exits 0.
-      timeout: 120
+      # Polls GET /up until HTTP 200 (VALIDATE_MAX_WAIT / default 100s inside the script).
+      timeout: 180
       runas: root

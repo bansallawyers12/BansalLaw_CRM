@@ -227,6 +227,17 @@ for SVC in $PHP_FPM bansallaw-queue bansallaw-email migration-python-services; d
     fi
 done
 
+# ValidateService curls 127.0.0.1 — if the unit is enabled but never started, HTTP 000 results.
+echo "Ensuring web server is running..."
+if systemctl is-enabled --quiet apache2 2>/dev/null && ! systemctl is-active --quiet apache2 2>/dev/null; then
+    echo "  Starting apache2 (enabled but not active)..."
+    systemctl start apache2 || echo "  WARN: systemctl start apache2 failed — check: systemctl status apache2"
+fi
+if systemctl is-enabled --quiet nginx 2>/dev/null && ! systemctl is-active --quiet nginx 2>/dev/null; then
+    echo "  Starting nginx (enabled but not active)..."
+    systemctl start nginx || echo "  WARN: systemctl start nginx failed — check: systemctl status nginx"
+fi
+
 echo "Reloading web server..."
 if systemctl is-active --quiet apache2; then
     systemctl reload apache2
