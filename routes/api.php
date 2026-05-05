@@ -114,6 +114,4 @@ Route::post('/payments/create-payment-intent', function (Request $request) {
     }
 });
 
-Route::get('/blogs/list', [OthersController::class, 'getBlogList']);
-
 Route::post('/service-account/generate-token', [ServiceAccountController::class, 'generateToken']);

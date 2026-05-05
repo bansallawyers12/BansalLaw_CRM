@@ -144,10 +144,8 @@ return [
     |   POST body service_id to that API is always 1 (see BansalApiClient::getDisabledDateTime).
     | - BANSAL_API_TIMESLOT_LABELS_URL: full URL for slot labels (default: /api/appointments/timeslot-labels).
     | - BANSAL_API_TIMEOUT: HTTP timeout in seconds (default 30).
-    | - Blog proxy (OthersController): builds GET {BANSAL_API_BASE_URL}/{BANSAL_API_BLOG_LIST_PATH}.
-    |   If BASE_URL includes a CRM-only prefix (e.g. .../api/crm), set BANSAL_API_BLOG_LIST_URL to the full
-    |   blog list URL on the public site (e.g. https://www.example.com/api/blogs/list or .../blogs/list).
-    | - BANSAL_API_BLOG_DETAIL_URL: optional full template with {id} (same situation as blog list).
+    | - Blog detail proxy (OthersController): BANSAL_API_BLOG_DETAIL_URL optional full template with {id};
+    |   or BANSAL_API_BLOG_DETAIL_PATH_PREFIX under BASE_URL.
     |
     | Reconnecting: set the variables above on this CRM (e.g. production .env or server env).
     | Issue the token on the website side for the /api/crm routes this app calls. Then run:
@@ -170,10 +168,6 @@ return [
         'timeout' => (int) env('BANSAL_API_TIMEOUT', 30),
         /** When true, appointment datetime endpoints use default office hours if the API is missing token or unreachable. Defaults to on when APP_ENV=local. */
         'fallback_datetime' => env('BANSAL_API_FALLBACK_DATETIME', true),
-        /** Full URL override for blog list (when BASE_URL is under /api/crm etc.). */
-        'blog_list_url' => env('BANSAL_API_BLOG_LIST_URL'),
-        /** Path segment(s) after BASE_URL for blog list; default blogs/list */
-        'blog_list_path' => trim(env('BANSAL_API_BLOG_LIST_PATH', 'blogs/list'), '/'),
         /** Full URL template with {id} placeholder; overrides blog_detail_path_prefix when set. */
         'blog_detail_url' => env('BANSAL_API_BLOG_DETAIL_URL'),
         /** Path prefix for blog detail: {base}/{prefix}/{id} */
