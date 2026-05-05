@@ -7,7 +7,6 @@ use App\Http\Controllers\API\ServiceAccountController;
 use App\Http\Controllers\API\StaffApiAuthController;
 use App\Http\Controllers\API\PublicListingController;
 use App\Http\Controllers\API\PublicBookingController;
-use App\Http\Controllers\API\OthersController;
 use App\Http\Controllers\API\LeadBookingApiController;
 
 /*
