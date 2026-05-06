@@ -7,12 +7,14 @@ use App\Models\Admin;
 use App\Models\ClientLegalForm;
 use App\Models\ClientMatter;
 use App\Models\Document;
+use App\Models\Note;
 use App\Services\LegalFormDocxService;
 use GuzzleHttp\Client;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class LegalFormsController extends Controller
@@ -241,6 +243,7 @@ class LegalFormsController extends Controller
         $request->validate([
             'client_id' => 'required|exists:admins,id',
             'client_matter_id' => 'nullable|exists:client_matters,id',
+            'matter_reference' => 'nullable|string|max:100',
             'form_type' => 'required|in:short_costs_disclosure,cost_agreement,authority_to_act',
             'field' => 'required|in:scope_of_work,authority_scope,variables_affecting_costs',
         ]);
@@ -248,32 +251,61 @@ class LegalFormsController extends Controller
         $client = Admin::find($request->client_id);
         $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
 
+        $clientMatterId = $request->client_matter_id;
+        if (! $clientMatterId && $request->filled('matter_reference')) {
+            $ref = trim((string) $request->matter_reference);
+            $resolved = ClientMatter::where('client_id', (int) $request->client_id)
+                ->where('client_unique_matter_no', $ref)
+                ->value('id');
+            if ($resolved) {
+                $clientMatterId = $resolved;
+            }
+        }
+
         $contextParts = [];
         $contextParts[] = "Client: {$clientName}";
-        if ($client->address) $contextParts[] = "Address: {$client->address}, {$client->city}, {$client->state} {$client->zip}";
-        if ($client->email) $contextParts[] = "Email: {$client->email}";
-        if ($client->phone) $contextParts[] = "Phone: {$client->phone}";
+        if ($client->address) {
+            $contextParts[] = "Address: {$client->address}, {$client->city}, {$client->state} {$client->zip}";
+        }
+        if ($client->email) {
+            $contextParts[] = "Email: {$client->email}";
+        }
+        if ($client->phone) {
+            $contextParts[] = "Phone: {$client->phone}";
+        }
 
-        $matterContext = '';
         $documents = collect();
-        if ($request->client_matter_id) {
+        if ($clientMatterId) {
             $matter = ClientMatter::with(['matter', 'personResponsible', 'legalPractitioner'])
-                ->find($request->client_matter_id);
+                ->where('client_id', (int) $request->client_id)
+                ->find($clientMatterId);
 
             if ($matter) {
                 $matterType = $matter->matter ? $matter->matter->title : '';
                 $matterNick = $matter->matter ? $matter->matter->nick_name : '';
                 $caseDetail = $matter->case_detail ?? '';
 
-                if ($matterType) $contextParts[] = "Matter Type: {$matterType}";
-                if ($matterNick) $contextParts[] = "Matter Category: {$matterNick}";
-                if ($caseDetail) $contextParts[] = "Case Details: {$caseDetail}";
-                if ($matter->client_unique_matter_no) $contextParts[] = "Matter Reference: {$matter->client_unique_matter_no}";
-                if ($matter->personResponsible) {
-                    $contextParts[] = "Person Responsible: " . trim($matter->personResponsible->first_name . ' ' . $matter->personResponsible->last_name);
+                if ($matterType) {
+                    $contextParts[] = "Matter Type: {$matterType}";
                 }
-                if ($matter->date_of_incidence) $contextParts[] = "Date of Incident: " . $matter->date_of_incidence->format('d/m/Y');
-                if ($matter->incidence_type) $contextParts[] = "Incident Type: {$matter->incidence_type}";
+                if ($matterNick) {
+                    $contextParts[] = "Matter Category: {$matterNick}";
+                }
+                if ($caseDetail) {
+                    $contextParts[] = "Case Details: {$caseDetail}";
+                }
+                if ($matter->client_unique_matter_no) {
+                    $contextParts[] = "Matter Reference: {$matter->client_unique_matter_no}";
+                }
+                if ($matter->personResponsible) {
+                    $contextParts[] = 'Person Responsible: '.trim($matter->personResponsible->first_name.' '.$matter->personResponsible->last_name);
+                }
+                if ($matter->date_of_incidence) {
+                    $contextParts[] = 'Date of Incident: '.$matter->date_of_incidence->format('d/m/Y');
+                }
+                if ($matter->incidence_type) {
+                    $contextParts[] = "Incident Type: {$matter->incidence_type}";
+                }
 
                 $documents = Document::where('client_matter_id', $matter->id)
                     ->whereNotNull('file_name')
@@ -284,8 +316,13 @@ class LegalFormsController extends Controller
                 if ($documents->isNotEmpty()) {
                     $docList = $documents->map(function ($doc) {
                         $parts = [$doc->file_name];
-                        if ($doc->doc_type) $parts[] = "({$doc->doc_type})";
-                        if ($doc->folder_name) $parts[] = "[{$doc->folder_name}]";
+                        if ($doc->doc_type) {
+                            $parts[] = "({$doc->doc_type})";
+                        }
+                        if ($doc->folder_name) {
+                            $parts[] = "[{$doc->folder_name}]";
+                        }
+
                         return implode(' ', $parts);
                     })->implode('; ');
                     $contextParts[] = "Documents uploaded: {$docList}";
@@ -293,41 +330,28 @@ class LegalFormsController extends Controller
             }
         }
 
+        $notesBlock = $this->buildMatterNotesContextForAi((int) $request->client_id, $clientMatterId ? (int) $clientMatterId : null);
+
         $contextString = implode("\n", $contextParts);
         $formTypeLabel = ClientLegalForm::FORM_TYPES[$request->form_type] ?? $request->form_type;
 
         $systemPrompts = [
-            'scope_of_work' => "You are a legal assistant at an Australian law firm (Bansal Lawyers). Based on the client and matter information provided, generate a professional Scope of Work description for a {$formTypeLabel}. The scope should clearly outline what legal services will be provided. Write in a formal, numbered list format suitable for an Australian legal costs disclosure document. Do not include any greeting or sign-off. Only output the scope text.",
-            'authority_scope' => "You are a legal assistant at an Australian law firm (Bansal Lawyers). Based on the client and matter information provided, generate a professional Authority to Act scope description. This should clearly state what the client is authorising the firm to do on their behalf. Write in formal legal language suitable for an Australian Authority to Act document. Do not include any greeting or sign-off. Only output the authority scope text.",
-            'variables_affecting_costs' => "You are a legal assistant at an Australian law firm (Bansal Lawyers). Based on the client and matter information provided, list the key variables that might affect the total legal costs. Write as a concise bullet-point list of factors. Examples include: complexity of the matter, amount of correspondence required, whether the other party cooperates, court involvement, expert reports needed, etc. Tailor the list to this specific matter type. Do not include any greeting or sign-off. Only output the variables list.",
+            'scope_of_work' => "You are a legal assistant at an Australian law firm (Bansal Lawyers). Based on the client and matter information and the CRM notes provided, generate a professional Scope of Work description for a {$formTypeLabel}. The scope should clearly outline what legal services will be provided. Use details from the notes where they are relevant. Write in a formal, numbered list format suitable for an Australian legal costs disclosure document. Do not include any greeting or sign-off. Only output the scope text.",
+            'authority_scope' => "You are a legal assistant at an Australian law firm (Bansal Lawyers). Based on the client and matter information and the CRM notes provided, generate a professional Authority to Act scope description. This should clearly state what the client is authorising the firm to do on their behalf. Use details from the notes where they are relevant. Write in formal legal language suitable for an Australian Authority to Act document. Do not include any greeting or sign-off. Only output the authority scope text.",
+            'variables_affecting_costs' => "You are a legal assistant at an Australian law firm (Bansal Lawyers). Based on the client and matter information and the CRM notes provided, list the key variables that might affect the total legal costs. Write as a concise bullet-point list of factors. Examples include: complexity of the matter, amount of correspondence required, whether the other party cooperates, court involvement, expert reports needed, etc. Tailor the list to this specific matter. Do not include any greeting or sign-off. Only output the variables list.",
         ];
 
         $systemPrompt = $systemPrompts[$request->field] ?? $systemPrompts['scope_of_work'];
 
+        $userContent = "Generate the text based on this information:\n\n{$contextString}\n\n---\n{$notesBlock}";
+
         try {
-            $openAiClient = new Client([
-                'base_uri' => 'https://api.openai.com/v1/',
-                'headers' => [
-                    'Authorization' => 'Bearer ' . config('services.openai.api_key'),
-                    'Content-Type' => 'application/json',
-                ],
-                'timeout' => config('services.openai.timeout', 30),
-            ]);
-
-            $response = $openAiClient->post('chat/completions', [
-                'json' => [
-                    'model' => 'gpt-4o-mini',
-                    'messages' => [
-                        ['role' => 'system', 'content' => $systemPrompt],
-                        ['role' => 'user', 'content' => "Generate the text based on this information:\n\n{$contextString}"],
-                    ],
-                    'temperature' => 0.7,
-                    'max_tokens' => 1000,
-                ],
-            ]);
-
-            $result = json_decode($response->getBody(), true);
-            $generatedText = $result['choices'][0]['message']['content'] ?? '';
+            $anthropicKey = config('services.anthropic.api_key');
+            if (! empty($anthropicKey)) {
+                $generatedText = $this->generateWithAnthropic($systemPrompt, $userContent);
+            } else {
+                $generatedText = $this->generateWithOpenAi($systemPrompt, $userContent);
+            }
 
             return response()->json([
                 'success' => true,
@@ -336,8 +360,128 @@ class LegalFormsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'AI generation failed: ' . $e->getMessage(),
+                'message' => 'AI generation failed: '.$e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Aggregate note text for the given client matter (notes.matter_id = client_matters.id).
+     */
+    private function buildMatterNotesContextForAi(int $clientId, ?int $clientMatterId): string
+    {
+        if (! $clientMatterId) {
+            return 'CRM notes: No matter could be resolved (select a matter on the client record or enter a Matter Reference that matches this client). Notes were not loaded.';
+        }
+
+        $notes = Note::query()
+            ->where('client_id', $clientId)
+            ->where('matter_id', $clientMatterId)
+            ->orderByDesc('created_at')
+            ->limit(150)
+            ->get(['title', 'description', 'created_at', 'is_action']);
+
+        if ($notes->isEmpty()) {
+            return 'CRM notes: No notes are linked to this matter in the CRM (matter-scoped notes only).';
+        }
+
+        $lines = [];
+        $maxChars = 120000;
+        $used = 0;
+
+        foreach ($notes as $note) {
+            $date = $note->created_at ? $note->created_at->format('Y-m-d H:i') : '';
+            $kind = ((int) $note->is_action === 1) ? 'Action' : 'Note';
+            $title = trim((string) ($note->title ?? ''));
+            $body = trim((string) ($note->description ?? ''));
+            $chunk = "[{$date}] {$kind}".($title !== '' ? ": {$title}" : '')."\n{$body}\n";
+            if ($used + strlen($chunk) > $maxChars) {
+                $lines[] = "\n[Additional older notes omitted to fit model context limit.]";
+
+                break;
+            }
+            $lines[] = $chunk;
+            $used += strlen($chunk);
+        }
+
+        return "CRM notes for this matter:\n\n".implode("\n", $lines);
+    }
+
+    private function generateWithAnthropic(string $systemPrompt, string $userContent): string
+    {
+        $verify = config('services.anthropic.http_verify');
+        $http = Http::withHeaders([
+            'x-api-key' => config('services.anthropic.api_key'),
+            'anthropic-version' => '2023-06-01',
+            'Content-Type' => 'application/json',
+        ])->timeout((int) config('services.anthropic.timeout', 90));
+
+        if ($verify === 'false' && app()->environment(['local', 'development'])) {
+            $http = $http->withoutVerifying();
+        } elseif (is_string($verify) && $verify !== '' && $verify !== 'false') {
+            $http = $http->withOptions(['verify' => $verify]);
+        }
+
+        $response = $http->post('https://api.anthropic.com/v1/messages', [
+            'model' => config('services.anthropic.model', 'claude-sonnet-4-20250514'),
+            'max_tokens' => 1500,
+            'system' => $systemPrompt,
+            'messages' => [
+                [
+                    'role' => 'user',
+                    'content' => $userContent,
+                ],
+            ],
+        ]);
+
+        if (! $response->successful()) {
+            $err = $response->json('error.message') ?? $response->body();
+
+            throw new \RuntimeException(is_string($err) ? $err : 'Anthropic request failed');
+        }
+
+        $data = $response->json();
+        $blocks = $data['content'] ?? [];
+        $text = '';
+        foreach ($blocks as $block) {
+            if (($block['type'] ?? '') === 'text' && isset($block['text'])) {
+                $text .= $block['text'];
+            }
+        }
+
+        return $text;
+    }
+
+    private function generateWithOpenAi(string $systemPrompt, string $userContent): string
+    {
+        $openAiKey = config('services.openai.api_key');
+        if (empty($openAiKey)) {
+            throw new \RuntimeException('No AI provider configured. Set ANTHROPIC_API_KEY or OPENAI_API_KEY in .env.');
+        }
+
+        $openAiClient = new Client([
+            'base_uri' => 'https://api.openai.com/v1/',
+            'headers' => [
+                'Authorization' => 'Bearer '.$openAiKey,
+                'Content-Type' => 'application/json',
+            ],
+            'timeout' => config('services.openai.timeout', 30),
+        ]);
+
+        $response = $openAiClient->post('chat/completions', [
+            'json' => [
+                'model' => 'gpt-4o-mini',
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemPrompt],
+                    ['role' => 'user', 'content' => $userContent],
+                ],
+                'temperature' => 0.7,
+                'max_tokens' => 1000,
+            ],
+        ]);
+
+        $result = json_decode($response->getBody()->getContents(), true);
+
+        return (string) ($result['choices'][0]['message']['content'] ?? '');
     }
 }
