@@ -333,6 +333,8 @@ class LegalFormsController extends Controller
         $notesBlock = $this->buildMatterNotesContextForAi((int) $request->client_id, $clientMatterId ? (int) $clientMatterId : null);
 
         $contextString = implode("\n", $contextParts);
+
+       
         $formTypeLabel = ClientLegalForm::FORM_TYPES[$request->form_type] ?? $request->form_type;
 
         $systemPrompts = [
@@ -423,9 +425,9 @@ class LegalFormsController extends Controller
         }
 
         $response = $http->post('https://api.anthropic.com/v1/messages', [
-            'model' => config('services.anthropic.model', 'claude-sonnet-4-20250514'),
-            'max_tokens' => 1500,
-            'system' => $systemPrompt,
+            'model' => config('services.anthropic.model'),
+            'max_tokens' => 1000,
+           // 'system' => $systemPrompt,
             'messages' => [
                 [
                     'role' => 'user',
@@ -434,13 +436,17 @@ class LegalFormsController extends Controller
             ],
         ]);
 
+       
         if (! $response->successful()) {
+           
             $err = $response->json('error.message') ?? $response->body();
 
             throw new \RuntimeException(is_string($err) ? $err : 'Anthropic request failed');
         }
 
         $data = $response->json();
+      
+
         $blocks = $data['content'] ?? [];
         $text = '';
         foreach ($blocks as $block) {

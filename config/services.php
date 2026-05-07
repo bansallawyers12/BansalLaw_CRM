@@ -99,7 +99,7 @@ return [
     'anthropic' => [
         'api_key' => env('ANTHROPIC_API_KEY'),
         'timeout' => (int) env('ANTHROPIC_TIMEOUT', 90),
-        'model' => env('ANTHROPIC_MODEL', 'claude-sonnet-4-20250514'),
+        'model' => env('ANTHROPIC_MODEL'),
         
     ],
 
