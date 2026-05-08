@@ -115,7 +115,7 @@
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label fw-bold mb-0" id="lf_scope_label">Scope of Work</label>
-                            <button type="button" class="btn btn-sm btn-outline-primary ai-generate-btn" onclick="generateWithAI('scope_of_work')" title="Auto-generate using AI based on client & matter info">
+                            <button type="button" class="btn btn-sm btn-outline-primary ai-generate-btn" onclick="generateWithAI('scope_of_work')" title="Auto-generate with Claude using client, matter, and CRM notes linked to this matter">
                                 <i class="fas fa-magic"></i> AI Generate
                             </button>
                         </div>
@@ -127,7 +127,7 @@
                         <div class="mb-3">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <label class="form-label fw-bold mb-0">Authority Scope</label>
-                                <button type="button" class="btn btn-sm btn-outline-primary ai-generate-btn" onclick="generateWithAI('authority_scope')" title="Auto-generate using AI based on client & matter info">
+                                <button type="button" class="btn btn-sm btn-outline-primary ai-generate-btn" onclick="generateWithAI('authority_scope')" title="Auto-generate with Claude using client, matter, and CRM notes">
                                     <i class="fas fa-magic"></i> AI Generate
                                 </button>
                             </div>
@@ -208,7 +208,7 @@
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <label class="form-label fw-bold mb-0">Variables That Might Affect Costs</label>
-                                    <button type="button" class="btn btn-sm btn-outline-primary ai-generate-btn" onclick="generateWithAI('variables_affecting_costs')" title="Auto-generate using AI based on client & matter info">
+                                    <button type="button" class="btn btn-sm btn-outline-primary ai-generate-btn" onclick="generateWithAI('variables_affecting_costs')" title="Auto-generate with Claude using client, matter, and CRM notes">
                                         <i class="fas fa-magic"></i> AI Generate
                                     </button>
                                 </div>
@@ -507,6 +507,7 @@
             data: {
                 client_id: clientId,
                 client_matter_id: matterId || null,
+                matter_reference: (document.getElementById('lf_matter_reference') && document.getElementById('lf_matter_reference').value) || '',
                 form_type: formType,
                 field: fieldName
             },
