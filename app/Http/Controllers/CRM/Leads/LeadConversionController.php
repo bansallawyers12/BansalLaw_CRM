@@ -12,6 +12,7 @@ use App\Models\Lead;
 use App\Models\Matter;
 use App\Models\Staff;
 use App\Support\StaffClientVisibility;
+use App\Services\MatterAssigneeDefaults;
 
 class LeadConversionController extends Controller
 {
@@ -132,6 +133,7 @@ class LeadConversionController extends Controller
                 $matter->workflow_id = $workflowId;
                 $matter->workflow_stage_id = $firstStageId;
                 $matter->matter_status = 1; // Active by default
+                MatterAssigneeDefaults::applyMissingToNewMatter($matter);
                 $matter->save();
             }
 

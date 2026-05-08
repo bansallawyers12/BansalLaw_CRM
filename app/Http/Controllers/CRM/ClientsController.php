@@ -35,6 +35,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Mail;
 use App\Services\ClientReferenceService;
+use App\Services\MatterAssigneeDefaults;
 use App\Support\NoteDescriptionHtml;
 use App\Support\StaffClientVisibility;
 
@@ -5558,6 +5559,8 @@ class ClientsController extends Controller
         $row->workflow_stage_id = $firstStageId;
         $row->matter_status = 1;
 
+        MatterAssigneeDefaults::applyMissingToNewMatter($row);
+
         try {
             DB::transaction(function () use ($row, $opposingParties, $admin) {
                 $row->save();
@@ -5639,6 +5642,7 @@ class ClientsController extends Controller
             $obj5->workflow_id = $workflowId;
             $obj5->workflow_stage_id = $firstStageId;
             $obj5->matter_status = 1; // Active by default
+            MatterAssigneeDefaults::applyMissingToNewMatter($obj5);
             $saved5 = $obj5->save();
             $lastInsertedId = $obj5->id; // ← This gets the last inserted ID
             if($saved5) 
@@ -5984,6 +5988,7 @@ class ClientsController extends Controller
                     $matter->workflow_id = $workflowId;
                     $matter->workflow_stage_id = $firstStageId;
                     $matter->matter_status = 1; // Active by default
+                    MatterAssigneeDefaults::applyMissingToNewMatter($matter);
                     $matter->save();
                     Log::info('ConvertLeadToClient: matter saved', ['matter_id' => $matter->id]);
 
