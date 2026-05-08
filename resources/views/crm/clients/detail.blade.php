@@ -120,7 +120,6 @@ use App\Http\Controllers\Controller;
                     <div class="cdn-client-hero__text">
                         <h1 class="cdn-client-hero__name">
                             {{ trim($cdnFn . ' ' . $cdnLn) }}
-                            <a href="{{ route('clients.edit', base64_encode(convert_uuencode(@$fetchedData->id))) }}" class="cdn-client-hero__edit" title="Client Details Form"><i class="fas fa-id-card" aria-hidden="true"></i></a>
                         </h1>
                         <div class="cdn-client-hero__meta">
                             <span class="cdn-client-hero__meta-item">{{ $cdnClientMatterKey }}</span>
@@ -447,11 +446,12 @@ use App\Http\Controllers\Controller;
             @endif
             <!-- Tab Contents -->
             <div class="tab-content" id="tab-content">
-            @if($__crmIsLeadType)
+            @if(empty($fetchedData->is_company))
             <div class="lead-actions-bar">
                 <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}" class="btn btn-sm btn-secondary">
-                    <i class="fa fa-edit"></i> Edit Lead
+                    <i class="fa fa-edit"></i> {{ $__crmIsLeadType ? 'Edit Lead' : 'Edit Client' }}
                 </a>
+                @if($__crmIsLeadType)
                 <a href="{{ route('leads.history', base64_encode(convert_uuencode($fetchedData->id))) }}" class="btn btn-sm btn-warning lead-actions-bar__history">
                     <i class="fa fa-history"></i> View History
                 </a>
@@ -472,6 +472,7 @@ use App\Http\Controllers\Controller;
                 <span class="btn btn-sm btn-secondary disabled">
                     <i class="fa fa-check"></i> Converted to Client
                 </span>
+                @endif
                 @endif
             </div>
             @endif
