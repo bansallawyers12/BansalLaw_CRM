@@ -81,31 +81,114 @@ class ClientEditService
         ];
     }
 
+    public const DEFAULT_PERSON_RESPONSIBLE_EMAIL = 'michael@bansallawyers.com.au';
+
+    /** Fallback “Person assisting” row when no staff have that role (case-insensitive email match). */
+    public const DEFAULT_PERSON_ASSISTING_EMAIL = 'Admin@bansallawyers.com.au';
+
+    /** CRM `staff.role` for “Person Responsible”. */
+    public const PERSON_RESPONSIBLE_STAFF_ROLE = 12;
+
+    /** CRM `staff.role` for “Person Assisting”. */
+    public const PERSON_ASSISTING_STAFF_ROLE = 13;
+
+    /** CRM `user_roles` id 16 = Solicitor (legal practitioner). */
+    public const SOLICITOR_STAFF_ROLE = 16;
+
     /**
-     * Dropdown data for "add matter" on lead/client edit.
-     * Loads ALL active real staff (excludes internal dummy/placeholder accounts).
+     * Legal practitioner dropdown: active staff with Solicitor role (16). If none, single fallback row
+     * for {@see DEFAULT_PERSON_RESPONSIBLE_EMAIL} when present (required-field safety).
      */
-    protected function getMatterFormOptionsForLead(bool $isCompany): array
+    public static function staffSelectableForSolicitorRole()
     {
-        // All active non-dummy staff for flexible assignment
-        $allActiveStaff = Staff::query()
+        $staff = Staff::query()
+            ->where('role', self::SOLICITOR_STAFF_ROLE)
             ->where('status', 1)
-            ->where(function ($q) {
-                $q->whereNull('email')
-                  ->orWhere('email', 'not like', '%.internal');
-            })
             ->whereNotNull('first_name')
             ->where('first_name', '!=', '')
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get(['id', 'first_name', 'last_name', 'email']);
 
+        if ($staff->isNotEmpty()) {
+            return $staff->values();
+        }
+
+        $fallback = self::staffFallbackSingleByEmail(self::DEFAULT_PERSON_RESPONSIBLE_EMAIL);
+
+        return $fallback ? collect([$fallback]) : collect();
+    }
+
+    /**
+     * Person Responsible dropdown: role {@see PERSON_RESPONSIBLE_STAFF_ROLE}; if none, Michael fallback email.
+     */
+    public static function staffSelectableForPersonResponsibleRole()
+    {
+        $staff = Staff::query()
+            ->where('role', self::PERSON_RESPONSIBLE_STAFF_ROLE)
+            ->where('status', 1)
+            ->whereNotNull('first_name')
+            ->where('first_name', '!=', '')
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get(['id', 'first_name', 'last_name', 'email']);
+
+        if ($staff->isNotEmpty()) {
+            return $staff->values();
+        }
+
+        $fallback = self::staffFallbackSingleByEmail(self::DEFAULT_PERSON_RESPONSIBLE_EMAIL);
+
+        return $fallback ? collect([$fallback]) : collect();
+    }
+
+    /**
+     * Person Assisting dropdown: role {@see PERSON_ASSISTING_STAFF_ROLE}; if none, Khushi fallback email.
+     */
+    public static function staffSelectableForPersonAssistingRole()
+    {
+        $staff = Staff::query()
+            ->where('role', self::PERSON_ASSISTING_STAFF_ROLE)
+            ->where('status', 1)
+            ->whereNotNull('first_name')
+            ->where('first_name', '!=', '')
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get(['id', 'first_name', 'last_name', 'email']);
+
+        if ($staff->isNotEmpty()) {
+            return $staff->values();
+        }
+
+        $fallback = self::staffFallbackSingleByEmail(self::DEFAULT_PERSON_ASSISTING_EMAIL);
+
+        return $fallback ? collect([$fallback]) : collect();
+    }
+
+    private static function staffFallbackSingleByEmail(string $email): ?Staff
+    {
+        $emailNorm = strtolower(trim($email));
+        if ($emailNorm === '') {
+            return null;
+        }
+
+        return Staff::query()
+            ->where('status', 1)
+            ->whereRaw('LOWER(TRIM(email)) = ?', [$emailNorm])
+            ->first(['id', 'first_name', 'last_name', 'email']);
+    }
+
+    /**
+     * Add matter: solicitors (16), person responsible (12), person assisting (13), each with role-specific fallback.
+     */
+    protected function getMatterFormOptionsForLead(bool $isCompany): array
+    {
         return [
-            'mattersForAdd'          => $this->getMattersForSubject($isCompany),
-            'legalPractitioners'     => $allActiveStaff,
-            'personResponsibleOptions' => $allActiveStaff,
-            'personAssistingOptions' => $allActiveStaff,
-            'branchOffices'          => Branch::query()->orderBy('office_name')->get(['id', 'office_name']),
+            'mattersForAdd'            => $this->getMattersForSubject($isCompany),
+            'legalPractitioners'       => static::staffSelectableForSolicitorRole(),
+            'personResponsibleOptions' => static::staffSelectableForPersonResponsibleRole(),
+            'personAssistingOptions'   => static::staffSelectableForPersonAssistingRole(),
+            'branchOffices'            => Branch::query()->orderBy('office_name')->get(['id', 'office_name']),
         ];
     }
 

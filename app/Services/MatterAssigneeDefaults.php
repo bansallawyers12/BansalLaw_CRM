@@ -28,13 +28,15 @@ final class MatterAssigneeDefaults
             }
         }
         if (self::isUnset($row->sel_person_responsible)) {
-            $id = self::staffIdByFirstLast(['Michael'], 'Saleh');
+            $id = self::staffIdByWorkEmail(ClientEditService::DEFAULT_PERSON_RESPONSIBLE_EMAIL)
+                ?? self::staffIdByFirstLast(['Michael'], 'Saleh');
             if ($id !== null) {
                 $row->sel_person_responsible = $id;
             }
         }
         if (self::isUnset($row->sel_person_assisting)) {
-            $id = self::staffIdByFirstLast(['Khushi'], 'Sangroya');
+            $id = self::staffIdByWorkEmail(ClientEditService::DEFAULT_PERSON_ASSISTING_EMAIL)
+                ?? self::staffIdByFirstLast(['Khushi'], 'Sangroya');
             if ($id !== null) {
                 $row->sel_person_assisting = $id;
             }
@@ -71,6 +73,21 @@ final class MatterAssigneeDefaults
                     $q->orWhereRaw('LOWER(TRIM(first_name)) = ?', [$fn]);
                 }
             })
+            ->orderBy('id')
+            ->value('id');
+
+        return $id !== null ? (int) $id : null;
+    }
+
+    private static function staffIdByWorkEmail(string $email): ?int
+    {
+        $norm = strtolower(trim($email));
+        if ($norm === '') {
+            return null;
+        }
+        $id = Staff::query()
+            ->where('status', 1)
+            ->whereRaw('LOWER(TRIM(email)) = ?', [$norm])
             ->orderBy('id')
             ->value('id');
 
