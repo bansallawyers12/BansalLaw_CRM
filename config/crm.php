@@ -74,6 +74,29 @@ return [
         static fn (string $k) => $k !== ''
     )),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Client list (/clients, matters tabs, client emails): module_access keys
+    |--------------------------------------------------------------------------
+    |
+    | Same issue as leads: checking only key "20" hides staff who only have
+    | 21–23 (e.g. "view assigned clients" = 23). Default 20–23 matches role UI.
+    | Row visibility still uses StaffClientVisibility. Override via
+    | CRM_CLIENT_LIST_MODULE_ACCESS_KEYS.
+    |
+    | Opening without these keys: use the same role bypasses as the lead list
+    | (lead_full_access_role_ids, lead_list_extra_role_ids,
+    | lead_list_assigned_only_role_ids) via ClientAuthorization::hasClientListModuleAccess().
+    |
+    */
+    'client_list_module_access_keys' => array_values(array_filter(
+        array_map(
+            static fn (string $k) => trim($k),
+            array_map('strval', explode(',', (string) env('CRM_CLIENT_LIST_MODULE_ACCESS_KEYS', '20,21,22,23')))
+        ),
+        static fn (string $k) => $k !== ''
+    )),
+
     'lead_list_extra_role_ids' => array_values(array_filter(array_map(
         'intval',
         explode(',', (string) env('CRM_LEAD_LIST_EXTRA_ROLE_IDS', ''))

@@ -152,7 +152,7 @@ class ClientsController extends Controller
     public function index(Request $request)
 	{
 		// Check authorization using trait
-		if ($this->hasModuleAccess('20')) {
+		if ($this->hasClientListModuleAccess()) {
 		    $query = $this->getBaseClientQuery();
             $totalData = $query->count();
             
@@ -186,7 +186,7 @@ class ClientsController extends Controller
     {
         // Check authorization using trait
         $teamMembers = collect();
-        if ($this->hasModuleAccess('20')) {
+        if ($this->hasClientListModuleAccess()) {
             $sortField = $request->get('sort', 'cm.id');
             $sortDirection = $request->get('direction', 'desc');
 
@@ -314,7 +314,7 @@ class ClientsController extends Controller
         $closedStages = ['file closed', 'withdrawn', 'refund', 'discontinued'];
 
         $teamMembers = collect();
-        if ($this->hasModuleAccess('20')) {
+        if ($this->hasClientListModuleAccess()) {
             $sortField = $request->get('sort', 'cm.id');
             $sortDirection = $request->get('direction', 'desc');
 
@@ -558,7 +558,7 @@ class ClientsController extends Controller
     public function clientsemaillist(Request $request)
     {
         // Check authorization using trait
-        if ($this->hasModuleAccess('20')) {
+        if ($this->hasClientListModuleAccess()) {
             $sortField = $request->get('sort', 'id');
             $sortDirection = $request->get('direction', 'desc');
 
