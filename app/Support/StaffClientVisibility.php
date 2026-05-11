@@ -17,9 +17,10 @@ use Illuminate\Support\Facades\DB;
 /**
  * Row-level visibility for CRM staff.
  *
- * Matter allocation: access is granted when the staff member appears on any client_matters row
- * for that CRM record (admins.id) as Legal Practitioner (sel_legal_practitioner), sel_person_responsible, or
- * sel_person_assisting — in addition to admins.user_id and active cross-access grants.
+ * Matter allocation (clients): for all non-exempt staff, visibility is limited to CRM clients where the staff
+ * appears on any client_matters row as Legal Practitioner (sel_legal_practitioner), Person Responsible,
+ * or Person Assisting — plus admins.user_id and active cross-access grants. Exempt roles/staff unchanged.
+ * Lead listing keeps its own role rules (leadFullAccessRoleIds, strict mode) in restrictLeadListQuery / userMaySeeByAllocation.
  *
  * Cross-access grants and strict allocation are controlled by config/crm_access.php
  * (CRM_ACCESS_STRICT_ALLOCATION, exempt roles, approvers, quick access).
@@ -27,6 +28,20 @@ use Illuminate\Support\Facades\DB;
 final class StaffClientVisibility
 {
     private const DEFAULT_PERSON_ASSISTING_ROLE_IDS = [13];
+
+    /**
+     * CRM requests should resolve the logged-in staff from the admin guard first (matches auth:admin).
+     */
+    private static function currentStaff(?Authenticatable $user = null): ?Authenticatable
+    {
+        if ($user !== null) {
+            return $user;
+        }
+
+        $fromAdmin = Auth::guard('admin')->user();
+
+        return $fromAdmin instanceof Authenticatable ? $fromAdmin : Auth::user();
+    }
 
     /**
      * Roles that get full lead visibility in non-strict mode.
@@ -141,7 +156,7 @@ final class StaffClientVisibility
      */
     public static function enrichGlobalSearchItem(array $item, string $recordType, ?Authenticatable $user = null): array
     {
-        $user = $user ?? Auth::user();
+        $user = self::currentStaff($user);
         $cid = (int) ($item['cid'] ?? 0);
         if ($cid <= 0 || ! $user) {
             $item['locked'] = false;
@@ -166,12 +181,8 @@ final class StaffClientVisibility
      */
     public static function restrictMatterListToAllocatedClients($query, string $cmAlias = 'cm', string $adAlias = 'ad'): void
     {
-        $user = Auth::user();
+        $user = self::currentStaff();
         if (! $user || self::isExemptFromAllocation($user)) {
-            return;
-        }
-        $strict = (bool) config('crm_access.strict_allocation', false);
-        if (! $strict && ! self::isRestrictedPersonAssisting($user)) {
             return;
         }
         $staffId = (int) $user->id;
@@ -237,7 +248,7 @@ final class StaffClientVisibility
      */
     public static function excludeSuperAdminOnlyLockedClientsFromAdminQuery($query, ?Authenticatable $viewer = null): void
     {
-        $viewer = $viewer ?? Auth::user();
+        $viewer = self::currentStaff($viewer);
         if (! $viewer || ($viewer instanceof Staff && $viewer->hasEffectiveSuperAdminPrivileges())) {
             return;
         }
@@ -268,7 +279,7 @@ final class StaffClientVisibility
      */
     public static function applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, string $adminsAlias, ?Authenticatable $viewer = null): void
     {
-        $viewer = $viewer ?? Auth::user();
+        $viewer = self::currentStaff($viewer);
         if (! $viewer || ($viewer instanceof Staff && $viewer->hasEffectiveSuperAdminPrivileges())) {
             return;
         }
@@ -300,7 +311,7 @@ final class StaffClientVisibility
      */
     public static function restrictLeadListQuery(Builder $query): void
     {
-        $user = Auth::user();
+        $user = self::currentStaff();
         if (! $user) {
             return;
         }
@@ -363,22 +374,17 @@ final class StaffClientVisibility
      */
     public static function restrictAdminEloquentQuery(Builder $query): void
     {
-        $user = Auth::user();
+        $user = self::currentStaff();
         self::excludeSuperAdminOnlyLockedClientsFromAdminQuery($query, $user);
 
         if (! $user || self::isExemptFromAllocation($user)) {
             return;
         }
 
-        $strict = (bool) config('crm_access.strict_allocation', false);
-        if (! $strict && ! self::isRestrictedPersonAssisting($user)) {
-            return;
-        }
-
         $staffId = (int) $user->id;
 
         $query->where(function (Builder $q) use ($staffId) {
-            // Allocated by matter (MA / PR / PA) or user_id
+            // Allocated by matter (LP / PR / PA) or user_id
             $q->whereExists(function ($sub) use ($staffId) {
                 $sub->select(DB::raw('1'))
                     ->from('client_matters')
@@ -400,7 +406,7 @@ final class StaffClientVisibility
 
     public static function canAccessClientOrLead(int $adminId, ?Authenticatable $user = null): bool
     {
-        $user = $user ?? Auth::user();
+        $user = self::currentStaff($user);
 
         if (! $user) {
             return false;
@@ -480,13 +486,8 @@ final class StaffClientVisibility
      */
     public static function restrictDocumentEloquentQuery(Builder $query, ?Authenticatable $user = null): void
     {
-        $user = $user ?? Auth::user();
+        $user = self::currentStaff($user);
         if (! $user || self::isExemptFromAllocation($user)) {
-            return;
-        }
-
-        $strict = (bool) config('crm_access.strict_allocation', false);
-        if (! $strict && ! self::isRestrictedPersonAssisting($user)) {
             return;
         }
 
@@ -537,13 +538,8 @@ final class StaffClientVisibility
      */
     public static function restrictBookingAppointmentEloquentQuery(Builder $query, ?Authenticatable $user = null): void
     {
-        $user = $user ?? Auth::user();
+        $user = self::currentStaff($user);
         if (! $user || self::isExemptFromAllocation($user)) {
-            return;
-        }
-
-        $strict = (bool) config('crm_access.strict_allocation', false);
-        if (! $strict && ! self::isRestrictedPersonAssisting($user)) {
             return;
         }
 
@@ -636,18 +632,7 @@ final class StaffClientVisibility
             return (int) ($row->user_id ?? 0) === $staffId;
         }
 
-        if (! $strict) {
-            if (! self::isRestrictedPersonAssisting($user)) {
-                return true;
-            }
-            $staffId = (int) $user->id;
-            if (self::clientHasAllocatingMatter($adminId, $staffId)) {
-                return true;
-            }
-
-            return (int) ($row->user_id ?? 0) === $staffId;
-        }
-
+        // CRM client (type client): same rule strict or non-strict — LP / PR / PA on any matter or record owner.
         $staffId = (int) $user->id;
         if (self::clientHasAllocatingMatter($adminId, $staffId)) {
             return true;

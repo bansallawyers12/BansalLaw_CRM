@@ -228,6 +228,8 @@ class Staff extends Authenticatable
 
     /**
      * Whether the staff role grants a CRM module key (e.g. "20" = clients).
+     *
+     * Supports JSON object keys as strings or integers, and a legacy JSON list of module ids (e.g. [20,"21"]).
      */
     public function hasCrmModule(string $moduleId = '20'): bool
     {
@@ -235,10 +237,29 @@ class Staff extends Authenticatable
         if (! $roleModel || $roleModel->module_access === null || $roleModel->module_access === '') {
             return false;
         }
-        $decoded = json_decode($roleModel->module_access);
-        $moduleAccess = is_array($decoded) ? $decoded : (array) $decoded;
+        $decoded = json_decode(trim((string) $roleModel->module_access), true);
+        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded)) {
+            return false;
+        }
 
-        return array_key_exists($moduleId, $moduleAccess);
+        $strKey = (string) $moduleId;
+        $intKey = ctype_digit($strKey) ? (int) $strKey : null;
+
+        if (array_is_list($decoded)) {
+            foreach ($decoded as $v) {
+                if ((string) $v === $strKey || ($intKey !== null && (int) $v === $intKey)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if (array_key_exists($strKey, $decoded)) {
+            return true;
+        }
+
+        return $intKey !== null && array_key_exists($intKey, $decoded);
     }
 
     /**
