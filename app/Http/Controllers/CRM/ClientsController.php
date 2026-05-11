@@ -28,6 +28,7 @@ use App\Models\Matter;
 use App\Models\ClientMatter;
 use App\Models\ClientMatterOpposingParty;
 use App\Models\Branch;
+use App\Support\CrmListingTextSearch;
 use App\Support\MatterStreamHelper;
 use App\Support\ClientTagStorage;
 
@@ -223,12 +224,7 @@ class ClientsController extends Controller
             if ($request->has('name')) {
                 $name = trim($request->input('name'));
                 if ($name != '') {
-                    $nameLower = strtolower($name);
-                    $query->where(function ($q) use ($nameLower) {
-                        $q->whereRaw('LOWER(ad.first_name) LIKE ?', ['%' . $nameLower . '%'])
-                          ->orWhereRaw('LOWER(ad.last_name) LIKE ?', ['%' . $nameLower . '%'])
-                          ->orWhereRaw("LOWER(COALESCE(ad.first_name, '') || ' ' || COALESCE(ad.last_name, '')) LIKE ?", ['%' . $nameLower . '%']);
-                    });
+                    CrmListingTextSearch::applyToClientMattersJoinQuery($query, $name);
                 }
             }
 
@@ -354,12 +350,7 @@ class ClientsController extends Controller
             if ($request->has('name')) {
                 $name = trim($request->input('name'));
                 if ($name != '') {
-                    $nameLower = strtolower($name);
-                    $query->where(function ($q) use ($nameLower) {
-                        $q->whereRaw('LOWER(ad.first_name) LIKE ?', ['%' . $nameLower . '%'])
-                            ->orWhereRaw('LOWER(ad.last_name) LIKE ?', ['%' . $nameLower . '%'])
-                            ->orWhereRaw("LOWER(COALESCE(ad.first_name, '') || ' ' || COALESCE(ad.last_name, '')) LIKE ?", ['%' . $nameLower . '%']);
-                    });
+                    CrmListingTextSearch::applyToClientMattersJoinQuery($query, $name);
                 }
             }
 
@@ -591,12 +582,7 @@ class ClientsController extends Controller
             if ($request->has('name')) {
                 $name = trim($request->input('name'));
                 if ($name != '') {
-                    $nameLower = strtolower($name);
-                    $query->where(function ($q) use ($nameLower) {
-                        $q->whereRaw('LOWER(first_name) LIKE ?', ['%' . $nameLower . '%'])
-                          ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . $nameLower . '%'])
-                          ->orWhereRaw("LOWER(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?", ['%' . $nameLower . '%']);
-                    });
+                    CrmListingTextSearch::applyToAdminsTableQuery($query, $name);
                 }
             }
 
@@ -2806,11 +2792,73 @@ class ClientsController extends Controller
                     }
                 }
             }
-            
+
+            /**
+             * 1b. Display format "CLIENT_ID / CIV_6" (client ref + matter no or matter type nick/title).
+             */
+            if (str_contains($squery, '/')) {
+                $slashTokens = preg_split('#\s*/\s*#u', trim($squery), -1, PREG_SPLIT_NO_EMPTY);
+                if (count($slashTokens) === 2) {
+                    $clientIdPart = trim($slashTokens[0]);
+                    $matterToken = trim($slashTokens[1]);
+                    if ($clientIdPart !== '' && $matterToken !== '') {
+                        $clientIdPartLower = mb_strtolower($clientIdPart, 'UTF-8');
+                        $matterTokenLower = mb_strtolower($matterToken, 'UTF-8');
+                        $likeClient = '%' . addcslashes($clientIdPartLower, '%_\\') . '%';
+                        $likeMatter = '%' . addcslashes($matterTokenLower, '%_\\') . '%';
+                        $slashResults = DB::table('admins')
+                            ->join('client_matters', 'admins.id', '=', 'client_matters.client_id')
+                            ->join('matters', 'matters.id', '=', 'client_matters.sel_matter_id')
+                            ->leftJoin('companies', 'companies.admin_id', '=', 'admins.id')
+                            ->whereIn('admins.type', ['client', 'lead'])
+                            ->whereNull('admins.is_deleted')
+                            ->where('admins.is_archived', 0)
+                            ->where('client_matters.matter_status', 1)
+                            ->whereRaw('LOWER(admins.client_id) LIKE ?', [$likeClient])
+                            ->where(function ($q) use ($likeMatter) {
+                                $q->whereRaw('LOWER(client_matters.client_unique_matter_no) LIKE ?', [$likeMatter])
+                                    ->orWhereRaw('LOWER(COALESCE(matters.nick_name, \'\')) LIKE ?', [$likeMatter])
+                                    ->orWhereRaw('LOWER(COALESCE(matters.title, \'\')) LIKE ?', [$likeMatter]);
+                            })
+                            ->tap(function ($q) {
+                                StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
+                            })
+                            ->select(
+                                'admins.id as client_id',
+                                'admins.first_name',
+                                'admins.last_name',
+                                'admins.is_company',
+                                'admins.email',
+                                'admins.is_archived',
+                                'admins.type',
+                                'companies.company_name',
+                                'client_matters.client_unique_matter_no'
+                            )
+                            ->get();
+
+                        foreach ($slashResults as $result) {
+                            $displayName = ($result->is_company && $result->company_name)
+                                ? $result->company_name
+                                : trim(($result->first_name ?? '') . ' ' . ($result->last_name ?? ''));
+                            $results[] = StaffClientVisibility::enrichGlobalSearchItem([
+                                'id' => base64_encode(convert_uuencode($result->client_id)) . '/Matter/' . $result->client_unique_matter_no,
+                                'name' => $displayName,
+                                'email' => $result->email,
+                                'status' => $result->is_archived ? 'Archived' : $result->type,
+                                'cid' => $result->client_id,
+                                'is_company' => (bool) $result->is_company,
+                                'record_type' => $result->type,
+                            ], (string) $result->type);
+                        }
+                    }
+                }
+            }
+
             /**
              * 2. Search in client_matters by client_unique_matter_no
              * Optimized: Use JOIN to fetch client data in single query
              */
+            $likeMatterOnly = '%' . addcslashes(mb_strtolower($squery, 'UTF-8'), '%_\\') . '%';
             $matterMatches = DB::table('client_matters')
                 ->join('admins', 'client_matters.client_id', '=', 'admins.id')
                 ->leftJoin('companies', 'companies.admin_id', '=', 'admins.id')
@@ -2821,7 +2869,7 @@ class ClientsController extends Controller
                 ->tap(function ($q) {
                     StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
                 })
-                ->where('client_matters.client_unique_matter_no', 'LIKE', "%{$squery}%")
+                ->whereRaw('LOWER(client_matters.client_unique_matter_no) LIKE ?', [$likeMatterOnly])
                 ->select(
                     'admins.id as client_id',
                     'admins.first_name',
@@ -2858,12 +2906,10 @@ class ClientsController extends Controller
              * Replaced correlated subqueries with LEFT JOINs
              * Replaced IN subqueries with EXISTS or LEFT JOINs
              */
+            // DOB filter: only when the whole query is dd/mm/yyyy (not "CLIENT / CIV_6").
             $d = '';
-            if (strstr($squery, '/')) {
-                $dob = explode('/', $squery);
-                if (!empty($dob) && is_array($dob)) {
-                    $d = $dob[2] . '/' . $dob[1] . '/' . $dob[0];
-                }
+            if (preg_match('#^\s*(\d{1,2})\s*/\s*(\d{1,2})\s*/\s*(\d{2,4})\s*$#', $squery, $dobMatch)) {
+                $d = $dobMatch[3] . '/' . $dobMatch[2] . '/' . $dobMatch[1];
             }
 
             // Optimized: Use LEFT JOINs instead of correlated subqueries
