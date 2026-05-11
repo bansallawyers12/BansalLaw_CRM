@@ -39,6 +39,7 @@ use App\Models\CompanyDirector;
 use App\Models\CompanyNomination;
 use App\Models\ActivitiesLog;
 use App\Models\Lead;
+use App\Models\Staff;
 use App\Services\LeadFollowUpNoteService;
 use App\Traits\LogsClientActivity;
 
@@ -782,6 +783,27 @@ class ClientPersonalDetailsController extends Controller
                     ->orderBy('title')
                     ->get()
                     ->toArray();
+            }
+
+            $assigneeIds = array_values(array_filter(array_unique([
+                (int) ($matter_info->sel_legal_practitioner ?? 0),
+                (int) ($matter_info->sel_person_responsible ?? 0),
+                (int) ($matter_info->sel_person_assisting ?? 0),
+            ]), static fn (int $id): bool => $id > 0));
+
+            $response['assignee_staff_for_modal'] = [];
+            if ($assigneeIds !== []) {
+                $response['assignee_staff_for_modal'] = Staff::query()
+                    ->whereIn('id', $assigneeIds)
+                    ->get(['id', 'first_name', 'last_name', 'email'])
+                    ->keyBy('id')
+                    ->map(static fn (Staff $s): array => [
+                        'id' => $s->id,
+                        'first_name' => $s->first_name,
+                        'last_name' => $s->last_name,
+                        'email' => $s->email,
+                    ])
+                    ->all();
             }
 
             return response()->json($response);

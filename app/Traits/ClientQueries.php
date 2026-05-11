@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Models\Admin;
+use App\Support\CrmListingTextSearch;
 use App\Support\StaffClientVisibility;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -61,12 +62,7 @@ trait ClientQueries
         if ($request->has('name')) {
             $name = trim($request->input('name'));
             if ($name != '') {
-                $nameLower = strtolower($name);
-                $query->where(function ($q) use ($nameLower) {
-                    $q->whereRaw('LOWER(first_name) LIKE ?', ['%' . $nameLower . '%'])
-                      ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . $nameLower . '%'])
-                      ->orWhereRaw("LOWER(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?", ['%' . $nameLower . '%']);
-                });
+                CrmListingTextSearch::applyToAdminsTableQuery($query, $name);
             }
         }
 

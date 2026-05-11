@@ -84,6 +84,45 @@
         }
     });
 
+    function ensureSelectOptionForValue($sel, rawVal, labelText) {
+        if (!$sel.length) {
+            return;
+        }
+        var v = rawVal != null && rawVal !== '' ? String(rawVal) : '';
+        if (v === '' || v === '0') {
+            return;
+        }
+        var exists = false;
+        $sel.find('option').each(function () {
+            if (String($(this).val()) === v) {
+                exists = true;
+                return false;
+            }
+        });
+        if (!exists && labelText) {
+            $sel.append($('<option/>').val(v).text(labelText));
+        }
+    }
+
+    function labelFromAssigneeStaffMap(staffMap, rawId) {
+        if (rawId == null || rawId === '' || rawId === 0 || rawId === '0') {
+            return '';
+        }
+        var key = String(rawId);
+        var s = staffMap[key] || staffMap[rawId];
+        if (!s) {
+            return 'Staff #' + key;
+        }
+        var parts = [];
+        if (s.first_name) { parts.push(String(s.first_name)); }
+        if (s.last_name) { parts.push(String(s.last_name)); }
+        var t = parts.join(' ').trim();
+        if (s.email) {
+            t = t ? t + ' \u2014 ' + String(s.email) : String(s.email);
+        }
+        return t || ('Staff #' + key);
+    }
+
     $(document).delegate('.changeMatterAssignee', 'click', function (e) {
         e.preventDefault();
 
@@ -112,18 +151,27 @@
             success: function (res) {
                 var info = (typeof res === 'string' ? (function () { try { return JSON.parse(res); } catch (e) { return {}; } })() : res) || {};
                 var m = info.matter_info || {};
+                var staffMap = info.assignee_staff_for_modal || {};
 
-                if (m.sel_legal_practitioner) $('#change_sel_legal_practitioner_id').val(m.sel_legal_practitioner).trigger('change');
-                else $('#change_sel_legal_practitioner_id').val('').trigger('change');
+                var $lp = $('#change_sel_legal_practitioner_id');
+                var $pr = $('#change_sel_person_responsible_id');
+                var $pa = $('#change_sel_person_assisting_id');
 
-                if (m.sel_person_responsible) $('#change_sel_person_responsible_id').val(m.sel_person_responsible).trigger('change');
-                else $('#change_sel_person_responsible_id').val('').trigger('change');
+                ensureSelectOptionForValue($lp, m.sel_legal_practitioner, labelFromAssigneeStaffMap(staffMap, m.sel_legal_practitioner));
+                ensureSelectOptionForValue($pr, m.sel_person_responsible, labelFromAssigneeStaffMap(staffMap, m.sel_person_responsible));
+                ensureSelectOptionForValue($pa, m.sel_person_assisting, labelFromAssigneeStaffMap(staffMap, m.sel_person_assisting));
 
-                if (m.sel_person_assisting) $('#change_sel_person_assisting_id').val(m.sel_person_assisting).trigger('change');
-                else $('#change_sel_person_assisting_id').val('').trigger('change');
+                if (m.sel_legal_practitioner) { $lp.val(String(m.sel_legal_practitioner)).trigger('change'); }
+                else { $lp.val('').trigger('change'); }
 
-                if (m.office_id) $('#change_office_id').val(m.office_id).trigger('change');
-                else $('#change_office_id').val('').trigger('change');
+                if (m.sel_person_responsible) { $pr.val(String(m.sel_person_responsible)).trigger('change'); }
+                else { $pr.val('').trigger('change'); }
+
+                if (m.sel_person_assisting) { $pa.val(String(m.sel_person_assisting)).trigger('change'); }
+                else { $pa.val('').trigger('change'); }
+
+                if (m.office_id) { $('#change_office_id').val(String(m.office_id)).trigger('change'); }
+                else { $('#change_office_id').val('').trigger('change'); }
 
                 if ($('#change_matter_incidence_type').length) {
                     $('#change_matter_incidence_type').val(m.incidence_type ? String(m.incidence_type) : '');
@@ -185,10 +233,17 @@
                         });
                     }
                 }
+
+                showChangeMatterAssigneeModal();
+            },
+            error: function () {
+                if (typeof iziToast !== 'undefined' && iziToast.error) {
+                    iziToast.error({ title: 'Error', message: 'Could not load matter details. Try again.', position: 'topRight' });
+                } else {
+                    alert('Could not load matter details. Try again.');
+                }
             }
         });
-
-        showChangeMatterAssigneeModal();
     });
 
     $(document).on('shown.bs.modal', '#changeMatterAssigneeModal', function () {

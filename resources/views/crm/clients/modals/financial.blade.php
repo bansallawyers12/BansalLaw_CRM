@@ -363,7 +363,7 @@
                                 <label for="legal_practitioner_lead">Legal Practitioner <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control select2" name="legal_practitioner" id="sel_legal_practitioner_id_lead">
                                     <option value="">Select responsible solicitor</option>
-                                    @foreach(\App\Models\Staff::where('role',16)->select('id','first_name','last_name','email')->where('status',1)->get() as $migAgntlist)
+                                    @foreach(\App\Services\ClientEditService::staffSelectableForSolicitorRole() as $migAgntlist)
                                         <option value="{{$migAgntlist->id}}">{{@$migAgntlist->first_name}} {{@$migAgntlist->last_name}} ({{@$migAgntlist->email}})</option>
                                     @endforeach
                                 </select>
@@ -375,7 +375,7 @@
                                 <label for="person_responsible">Select Person Responsible <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control select2" name="person_responsible" id="sel_person_responsible_id_lead">
                                     <option value="">Select Person Responsible</option>
-                                    @foreach(\App\Models\Staff::where('role',12)->select('id','first_name','last_name','email')->where('status',1)->get() as $perreslist)
+                                    @foreach(\App\Services\ClientEditService::staffSelectableForPersonResponsibleRole() as $perreslist)
                                         <option value="{{$perreslist->id}}">{{@$perreslist->first_name}} {{@$perreslist->last_name}} ({{@$perreslist->email}})</option>
                                     @endforeach
                                 </select>
@@ -387,7 +387,7 @@
                                 <label for="person_assisting">Select Person Assisting <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control select2" name="person_assisting" id="sel_person_assisting_id_lead">
                                     <option value="">Select Person Assisting</option>
-                                    @foreach(\App\Models\Staff::where('role',13)->select('id','first_name','last_name','email')->where('status',1)->get() as $perassislist)
+                                    @foreach(\App\Services\ClientEditService::staffSelectableForPersonAssistingRole() as $perassislist)
                                         <option value="{{$perassislist->id}}">{{@$perassislist->first_name}} {{@$perassislist->last_name}} ({{@$perassislist->email}})</option>
                                     @endforeach
                                 </select>
