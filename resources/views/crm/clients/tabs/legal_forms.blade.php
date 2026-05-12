@@ -119,7 +119,7 @@
                                 <i class="fas fa-magic"></i> AI Generate
                             </button>
                         </div>
-                        <textarea name="scope_of_work" id="lf_scope_of_work" class="form-control" rows="5" placeholder="Describe the work to be undertaken..."></textarea>
+                        <textarea name="scope_of_work" id="lf_scope_of_work" class="form-control lf-modal-textarea" rows="5" placeholder="Describe the work to be undertaken..."></textarea>
                     </div>
 
                     {{-- Authority to Act specific --}}
@@ -131,7 +131,7 @@
                                     <i class="fas fa-magic"></i> AI Generate
                                 </button>
                             </div>
-                            <textarea name="authority_scope" id="lf_authority_scope" class="form-control" rows="4" placeholder="Describe what you are authorising the firm to do on your behalf..."></textarea>
+                            <textarea name="authority_scope" id="lf_authority_scope" class="form-control lf-modal-textarea" rows="4" placeholder="Describe what you are authorising the firm to do on your behalf..."></textarea>
                             <small class="text-muted">If left blank, the Scope of Work text above will be used.</small>
                         </div>
                     </div>
@@ -203,7 +203,7 @@
                         <div id="lf_cost_agreement_extra" style="display:none;">
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Cost Estimate Breakdown</label>
-                                <textarea name="cost_estimate_breakdown" id="lf_cost_estimate_breakdown" class="form-control" rows="3" placeholder="Detailed breakdown of costs (optional - if blank, the estimates above will be used in a table)..."></textarea>
+                                <textarea name="cost_estimate_breakdown" id="lf_cost_estimate_breakdown" class="form-control lf-modal-textarea" rows="3" placeholder="Detailed breakdown of costs (optional - if blank, the estimates above will be used in a table)..."></textarea>
                             </div>
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
@@ -212,7 +212,7 @@
                                         <i class="fas fa-magic"></i> AI Generate
                                     </button>
                                 </div>
-                                <textarea name="variables_affecting_costs" id="lf_variables_affecting_costs" class="form-control" rows="3" placeholder="e.g. Amount of correspondence required, complexity of legal issues, whether spouse consents..."></textarea>
+                                <textarea name="variables_affecting_costs" id="lf_variables_affecting_costs" class="form-control lf-modal-textarea" rows="3" placeholder="e.g. Amount of correspondence required, complexity of legal issues, whether spouse consents..."></textarea>
                             </div>
                         </div>
 
