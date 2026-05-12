@@ -1623,6 +1623,15 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     margin-right: 3px;
 }
 
+/* Legal form modal: initial visible height for textareas (global fixed height still skipped via .lf-modal-textarea in style.css) */
+#legalFormModal textarea.lf-modal-textarea {
+    min-height: 5.75rem;
+}
+
+#legalFormModal textarea#lf_scope_of_work.lf-modal-textarea {
+    min-height: 5.5rem; /* ~100px / 3–4 lines on first paint */
+}
+
 @media (max-width: 768px) {
     .legal-forms-header {
         flex-direction: column;
