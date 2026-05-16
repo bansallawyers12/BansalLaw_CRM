@@ -309,13 +309,22 @@ class DashboardService
     }
 
     /**
-     * Get workflow stages
+     * Workflow stage dropdown options for the dashboard.
+     *
+     * Cached as plain stdClass rows (not Eloquent / Eloquent Collection) so Redis/file
+     * cache unserialize cannot produce incomplete Eloquent Collection instances.
      */
-    private function getWorkflowStages()
+    private function getWorkflowStages(): array
     {
-        return Cache::remember('workflow_stages', 3600, function () {
-            return WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')
-                ->get();
+        return Cache::remember('dashboard_workflow_stage_options_v1', 3600, function () {
+            return WorkflowStage::query()
+                ->orderByRaw('COALESCE(sort_order, id) ASC')
+                ->get(['id', 'name'])
+                ->map(static fn (WorkflowStage $stage) => (object) [
+                    'id' => (int) $stage->id,
+                    'name' => (string) $stage->name,
+                ])
+                ->all();
         });
     }
 
