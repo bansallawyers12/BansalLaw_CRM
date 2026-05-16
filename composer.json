@@ -31,7 +31,6 @@
         "salmanzafar/laravel-geocode": "^1.0",
         "spatie/laravel-activitylog": "^4.7",
         "spatie/laravel-html": "^3.12",
-        "spatie/laravel-ignition": "^2.0",
         "spatie/laravel-permission": "^6.18",
         "spatie/laravel-query-builder": "^6.0",
         "stripe/stripe-php": "*",
