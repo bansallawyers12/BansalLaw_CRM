@@ -56,8 +56,8 @@
     <td class="col-stage">
         <select class="form-select stageCls" id="stage_{{ $matter->id }}" style="height: 30px;border-color: #e0e0e0;">
             @foreach($workflowStages as $stage)
-                <option value="{{ $stage->id }}" {{ $matter->workflow_stage_id == $stage->id ? 'selected' : '' }}>
-                    {{ $stage->name }}
+                <option value="{{ $stage['id'] }}" {{ $matter->workflow_stage_id == $stage['id'] ? 'selected' : '' }}>
+                    {{ $stage['name'] }}
                 </option>
             @endforeach
         </select>

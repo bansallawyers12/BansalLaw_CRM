@@ -311,21 +311,69 @@ class DashboardService
     /**
      * Workflow stage dropdown options for the dashboard.
      *
-     * Cached as plain stdClass rows (not Eloquent / Eloquent Collection) so Redis/file
-     * cache unserialize cannot produce incomplete Eloquent Collection instances.
+     * Cached as arrays of scalars only (not objects). PHP unserialize of serialized
+     * objects can yield __PHP_Incomplete_Class rows after deploys or driver changes;
+     * plain arrays avoid that and are validated on read.
      */
     private function getWorkflowStages(): array
     {
-        return Cache::remember('dashboard_workflow_stage_options_v1', 3600, function () {
-            return WorkflowStage::query()
-                ->orderByRaw('COALESCE(sort_order, id) ASC')
-                ->get(['id', 'name'])
-                ->map(static fn (WorkflowStage $stage) => (object) [
-                    'id' => (int) $stage->id,
-                    'name' => (string) $stage->name,
-                ])
-                ->all();
-        });
+        $cacheKey = 'dashboard_workflow_stage_options_v2';
+        $raw = Cache::get($cacheKey);
+
+        if ($raw !== null) {
+            $normalized = $this->normalizeCachedWorkflowStageRows($raw);
+            if ($normalized !== null) {
+                return $normalized;
+            }
+            Cache::forget($cacheKey);
+        }
+
+        $built = $this->buildWorkflowStageOptionRows();
+        Cache::put($cacheKey, $built, 3600);
+        Cache::forget('dashboard_workflow_stage_options_v1');
+
+        return $built;
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string}>|null null = corrupt cache, should be rebuilt
+     */
+    private function normalizeCachedWorkflowStageRows(mixed $stages): ?array
+    {
+        if (! is_array($stages)) {
+            return null;
+        }
+        if ($stages === []) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($stages as $stage) {
+            if (! is_array($stage) || ! array_key_exists('id', $stage) || ! array_key_exists('name', $stage)) {
+                return null;
+            }
+            $out[] = [
+                'id' => (int) $stage['id'],
+                'name' => (string) $stage['name'],
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string}>
+     */
+    private function buildWorkflowStageOptionRows(): array
+    {
+        return WorkflowStage::query()
+            ->orderByRaw('COALESCE(sort_order, id) ASC')
+            ->get(['id', 'name'])
+            ->map(static fn (WorkflowStage $stage) => [
+                'id' => (int) $stage->id,
+                'name' => (string) $stage->name,
+            ])
+            ->all();
     }
 
     /**

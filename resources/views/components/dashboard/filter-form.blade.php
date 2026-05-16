@@ -13,9 +13,9 @@
         <select name="client_stage" class="stage-select">
             <option value="">All Stages</option>
             @foreach($workflowStages as $stage)
-                <option value="{{ $stage->id }}" 
-                        {{ (isset($filters['client_stage']) && $filters['client_stage'] == $stage->id) ? 'selected' : '' }}>
-                    {{ $stage->name }}
+                <option value="{{ $stage['id'] }}" 
+                        {{ (isset($filters['client_stage']) && $filters['client_stage'] == $stage['id']) ? 'selected' : '' }}>
+                    {{ $stage['name'] }}
                 </option>
             @endforeach
         </select>
