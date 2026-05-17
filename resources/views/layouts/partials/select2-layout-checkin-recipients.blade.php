@@ -63,6 +63,11 @@
                         var t = (item.status || 'client').toLowerCase();
                         $('#utype').val(t === 'lead' ? 'Lead' : 'Client');
                     },
+                    onItemRemove: function () {
+                        if (this.items.length === 0) {
+                            $('#utype').val('');
+                        }
+                    },
                     onClear: function () {
                         $('#utype').val('');
                     }

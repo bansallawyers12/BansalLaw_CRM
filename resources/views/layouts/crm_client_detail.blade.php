@@ -1711,7 +1711,6 @@
     <script src="{{asset('js/app.min.js')}}"></script>
     <script src="{{asset('js/datatables.min.js')}}"></script>
     <script src="{{asset('js/dataTables.bootstrap5.min.js')}}"></script>
-    <script src="https://momentjs.com/downloads/moment.js"></script>
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
     @include('components.flatpickr-scripts')

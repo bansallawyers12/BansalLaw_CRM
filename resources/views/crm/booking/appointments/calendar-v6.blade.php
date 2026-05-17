@@ -402,9 +402,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Transform appointments to FullCalendar v6 event format
                 const events = rows.map(apt => {
-                    const endTime = moment(apt.appointment_datetime)
-                        .add(apt.duration_minutes || 15, 'minutes')
-                        .toISOString();
+                    const _aptDate = apt.appointment_datetime ? new Date(apt.appointment_datetime) : null;
+                    const endTime = (_aptDate && !isNaN(_aptDate))
+                        ? new Date(_aptDate.getTime() + (apt.duration_minutes || 15) * 60_000).toISOString()
+                        : apt.appointment_datetime;
                     
                     // Format meeting_type for display (e.g., 'in_person' -> 'In Person')
                     const meetingTypeDisplay = apt.meeting_type 
