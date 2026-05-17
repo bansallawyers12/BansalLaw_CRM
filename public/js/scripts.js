@@ -324,6 +324,19 @@ $(function () {
     container: "body"
   });
 
+  // Tom Select — plain static selects migrated to Tom Select (class crm-ts-plain).
+  // Excludes selects inside Bootstrap modals (same rule as the Select2 block below).
+  if (typeof TomSelect !== 'undefined' && typeof initTS === 'function') {
+    $(".crm-ts-plain").not(".modal .crm-ts-plain").each(function () {
+      var isMultiple = $(this).prop('multiple');
+      initTS(this, {
+        plugins: isMultiple ? ['remove_button'] : ['clear_button'],
+        allowEmptyOption: !isMultiple,
+        create: false
+      });
+    });
+  }
+
   // Select2 — skip selects inside Bootstrap modals: they are often display:none at init,
   // which breaks positioning (dropdown can appear over unrelated UI e.g. client edit tabs).
   // Those fields should use dropdownParent on shown.bs.modal (see matter-assignee-modal.js).

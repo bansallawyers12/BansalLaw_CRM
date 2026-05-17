@@ -103,7 +103,7 @@
 													<div class="form-group"> 
 														<label for="country">Country</label>
 														
-														<select class="form-control  select2" name="country" >
+														<select class="form-control crm-ts-plain" name="country" >
 														<?php
 															foreach(\App\Models\Country::all() as $list){
 																?>
@@ -188,7 +188,7 @@
 												<div class="col-12 col-md-4 col-lg-4">
 													<div class="form-group"> 
 														<label for="choose_admin">Choose Admin</label>
-														<select class="form-control select2" name="choose_admin">
+														<select class="form-control crm-ts-plain" name="choose_admin">
 															<option>-- Choose Admin --</option>
 														</select>
 														@if ($errors->has('choose_admin'))

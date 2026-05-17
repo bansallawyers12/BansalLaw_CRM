@@ -28,23 +28,24 @@ window.updateNotificationBell = function (count, options = {}) {
         setTimeout(function () { parent.classList.remove('notification-bell-flash'); }, 600);
     }
     if (options.showToast !== false && newCount > prevCount) {
-        const izi = typeof window !== 'undefined' && window.iziToast;
-        if (izi && izi.show) {
-            const toastMessage = options.message || (newCount === 1 ? 'You have a new notification' : 'You have ' + (newCount - prevCount) + ' new notification(s)');
-            const toastConfig = {
-                title: 'Notification',
-                message: toastMessage,
-                position: 'topRight',
-                color: 'blue',
-                timeout: 5000,
-                closeOnClick: true
+        const toastMessage = options.message || (newCount === 1 ? 'You have a new notification' : 'You have ' + (newCount - prevCount) + ' new notification(s)');
+        const toastConfig = {
+            title: 'Notification',
+            message: toastMessage,
+            position: 'topRight',
+            color: 'blue',
+            timeout: 5000,
+            closeOnClick: true
+        };
+        if (options.url) {
+            toastConfig.onClick = function () {
+                window.location.href = options.url;
             };
-            if (options.url) {
-                toastConfig.onClick = function () {
-                    window.location.href = options.url;
-                };
-            }
-            izi.show(toastConfig);
+        }
+        if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.show === 'function') {
+            window.crmNotify.show(toastConfig);
+        } else if (typeof window !== 'undefined' && window.iziToast && window.iziToast.show) {
+            window.iziToast.show(toastConfig);
         }
     }
 };

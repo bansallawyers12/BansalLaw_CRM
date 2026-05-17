@@ -422,12 +422,6 @@ console.log(timestring);
                 });
             }
         }
-        
-        // Old datepicker code removed - using Flatpickr above
-        /* $('#embeddingDatePicker').datepicker({startDate: date,})
-            .on('changeDate', function(e) {
-                // ... old code ...
-            }); */
     });
 
 

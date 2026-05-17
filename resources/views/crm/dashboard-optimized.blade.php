@@ -1567,8 +1567,18 @@ $(function () {
 <script>
 // Enhanced Dashboard Test Page JavaScript
 
-// Toast Notification System
+// Toast: prefer crmNotify (iziToast) from layout; else DOM fallback for this page.
 window.showToast = function(message, type = 'info') {
+    if (typeof window.crmNotify !== 'undefined') {
+        var kind = type === 'danger' ? 'error' : type;
+        if (['success', 'error', 'warning', 'info'].indexOf(kind) !== -1 &&
+            typeof window.crmNotify[kind] === 'function') {
+            window.crmNotify[kind]({ message: message });
+        } else {
+            window.crmNotify.info({ message: message });
+        }
+        return;
+    }
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     

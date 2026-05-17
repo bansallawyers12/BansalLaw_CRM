@@ -1,25 +1,65 @@
-/** Prefer iziToast (CRM layouts); fallback to alert when unavailable. */
+/** Popover helpers — prefer window.crmNotify (crm-notify.js after iziToast in layouts). */
 function crmToastDismissAll() {
+    if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.destroy === 'function') {
+        window.crmNotify.destroy();
+        return;
+    }
     if (typeof iziToast !== 'undefined' && typeof iziToast.destroy === 'function') {
         iziToast.destroy();
     }
 }
 function crmToastError(message) {
+    if (typeof window.crmNotify !== 'undefined') {
+        window.crmNotify.error(typeof message === 'string' ? { message: message } : message);
+        return;
+    }
     if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
-        iziToast.error({ message: message, position: 'topRight' });
-    } else {
+        if (typeof message === 'string') {
+            iziToast.error({ message: message, position: 'topRight' });
+        } else if (message && typeof message === 'object') {
+            iziToast.error(Object.assign({ position: 'topRight' }, message));
+        } else {
+            iziToast.error({ message: String(message), position: 'topRight' });
+        }
+        return;
+    }
+    if (typeof message === 'string') {
         alert(message);
+    } else if (message && typeof message === 'object' && message.message) {
+        alert(String(message.message));
+    } else {
+        alert(String(message));
     }
 }
 function crmToastSuccess(message) {
+    if (typeof window.crmNotify !== 'undefined') {
+        window.crmNotify.success(typeof message === 'string' ? { message: message } : message);
+        return;
+    }
     if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
-        iziToast.success({ message: message, position: 'topRight' });
-    } else {
+        if (typeof message === 'string') {
+            iziToast.success({ message: message, position: 'topRight' });
+        } else if (message && typeof message === 'object') {
+            iziToast.success(Object.assign({ position: 'topRight' }, message));
+        } else {
+            iziToast.success({ message: String(message), position: 'topRight' });
+        }
+        return;
+    }
+    if (typeof message === 'string') {
         alert(message);
+    } else if (message && typeof message === 'object' && message.message) {
+        alert(String(message.message));
+    } else {
+        alert(String(message));
     }
 }
 /** Holds until crmToastDismissAll() — dismiss on AJAX complete/error. */
 function crmToastLoading(message) {
+    if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.loading === 'function') {
+        window.crmNotify.loading(message);
+        return;
+    }
     if (typeof iziToast === 'undefined') {
         return;
     }
@@ -893,16 +933,6 @@ function isNumberKey1(evt)
                             });
                         }
                     }
-                    
-                    // Old datepicker code removed - using Flatpickr above
-                    /* $('#embeddingDatePicker')
-                        .datepicker({
-                            format: 'dd/mm/yyyy',
-                            startDate: date,
-                        })
-                        .on('changeDate', function(e) {
-                            // ... old code ...
-                        }); */
                 }
             });
 		

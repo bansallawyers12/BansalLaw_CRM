@@ -751,12 +751,15 @@
     @include('components.flatpickr-scripts')
     <script src="{{asset('js/crm-flatpickr.js')}}"></script> {{-- CRM_Flatpickr helper (replaces global-datepicker/daterangepicker) --}}
     <script src="{{asset('js/select2.full.min.js')}}"></script>
+    <script src="{{asset('js/tom-select.complete.min.js')}}"></script>
+    <script src="{{asset('js/ts-init.js')}}"></script>
     <script src="{{asset('js/intlTelInput.js')}}"></script>
     <script src="{{asset('js/custom-form-validation.js')}}"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{asset('js/bootstrap5-jquery-compat.js')}}"></script>
     <script src="{{asset('js/scripts.js')}}"></script>
     <script src="{{asset('js/iziToast.min.js')}}"></script>
+    <script src="{{asset('js/crm-notify.js')}}"></script>
     <script src="{{asset('js/custom.js')}}"></script>
     @auth('admin')
     <script>window.crmLoginUrl = {!! json_encode(route('crm.login')) !!};</script>
@@ -1701,11 +1704,15 @@
                 parent.classList.add('notification-bell-flash');
                 setTimeout(function() { parent.classList.remove('notification-bell-flash'); }, 600);
             }
-            if (options.showToast !== false && newCount > prevCount && typeof iziToast !== 'undefined' && iziToast.show) {
+            if (options.showToast !== false && newCount > prevCount) {
                 var toastMsg = options.message || (newCount === 1 ? 'You have a new notification' : 'You have ' + (newCount - prevCount) + ' new notification(s)');
                 var toastOpts = { title: 'Notification', message: toastMsg, position: 'topRight', color: 'blue', timeout: 5000, closeOnClick: true };
                 if (options.url) toastOpts.onClick = function() { window.location.href = options.url; };
-                iziToast.show(toastOpts);
+                if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.show === 'function') {
+                    window.crmNotify.show(toastOpts);
+                } else if (typeof iziToast !== 'undefined' && iziToast.show) {
+                    iziToast.show(toastOpts);
+                }
             }
         };
     })();

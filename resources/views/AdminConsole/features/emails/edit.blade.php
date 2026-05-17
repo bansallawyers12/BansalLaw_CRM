@@ -69,7 +69,7 @@
 													<h4>User Sharing</h4>
 													<div class="form-group">
 														<label for="display_name">Select Users</label>
-														<select data-valid="required" multiple class="form-control select2" name="users[]">
+														<select data-valid="required" multiple class="form-control crm-ts-plain" name="users[]">
 															<option value="">Select User</option>
 															<?php
 															$userids = json_decode($fetchedData->user_id);
