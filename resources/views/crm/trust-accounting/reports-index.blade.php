@@ -13,6 +13,7 @@
                     </p>
                 </div>
                 <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                    <a href="{{ route('trust-accounting.withdrawal-authority-types.index') }}" class="btn btn-outline-primary btn-sm me-1">Rule 42 types</a>
                     <a href="{{ route('trust-accounting.bank-accounts.index') }}" class="btn btn-outline-primary btn-sm me-1">Bank accounts</a>
                     <a href="{{ route('trust-accounting.reconciliation.index') }}" class="btn btn-outline-primary btn-sm me-1">Reconciliation</a>
                     <a href="{{ route('trust-accounting.periods.index') }}" class="btn btn-outline-secondary btn-sm">Period locks</a>

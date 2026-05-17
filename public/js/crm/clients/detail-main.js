@@ -2076,6 +2076,10 @@ success: function(response) {
 
             toggleLedgerEftposSurchargeRow($newRow);
 
+            if (typeof window.updateLedgerRule42Visibility === 'function') {
+                window.updateLedgerRule42Visibility();
+            }
+
             //$('.report_entry_date_fields').last().datepicker({ format: 'dd/mm/yyyy',todayHighlight: true,autoclose: true }).datepicker('setDate', new Date());
 
         });
@@ -2097,6 +2101,10 @@ success: function(response) {
             }
 
             grandtotalAccountTab();
+
+            if (typeof window.updateLedgerRule42Visibility === 'function') {
+                window.updateLedgerRule42Visibility();
+            }
 
         });
 
@@ -2569,7 +2577,22 @@ success: function(response) {
 
             toggleLedgerEftposSurchargeRow($row);
 
+            updateLedgerRule42Visibility();
         });
+
+
+
+        function updateLedgerRule42Visibility() {
+            var any = false;
+            $('#client_receipt_form .client_fund_ledger_type').each(function () {
+                if ($(this).val() === 'Fee Transfer') {
+                    any = true;
+                }
+            });
+            $('#ledger-rule42-block').toggle(any);
+        }
+
+        window.updateLedgerRule42Visibility = updateLedgerRule42Visibility;
 
 
 

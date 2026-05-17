@@ -287,6 +287,9 @@ Route::middleware(['auth:admin'])->group(function() {
 		Route::delete('/reconciliation/lines/{line}', [TrustAccountingAdminController::class, 'reconciliationDestroyLine'])->name('reconciliation.lines.destroy');
 		Route::post('/reconciliation/match', [TrustAccountingAdminController::class, 'reconciliationMatch'])->name('reconciliation.match');
 		Route::post('/reconciliation/unmatch', [TrustAccountingAdminController::class, 'reconciliationUnmatch'])->name('reconciliation.unmatch');
+		Route::get('/rule42-withdrawal-authority-types', [TrustAccountingAdminController::class, 'withdrawalAuthorityTypesIndex'])->name('withdrawal-authority-types.index');
+		Route::post('/rule42-withdrawal-authority-types', [TrustAccountingAdminController::class, 'withdrawalAuthorityTypesStore'])->name('withdrawal-authority-types.store');
+		Route::put('/rule42-withdrawal-authority-types/{type}', [TrustAccountingAdminController::class, 'withdrawalAuthorityTypesUpdate'])->name('withdrawal-authority-types.update');
 	});
 
 	/*---------- Notifications ----------*/

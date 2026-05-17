@@ -20,6 +20,9 @@
                     <a href="{{ route('trust-accounting.reports.index') }}" class="btn btn-outline-primary btn-sm me-1">
                         <i class="fas fa-file-export me-1"></i> Reports
                     </a>
+                    <a href="{{ route('trust-accounting.withdrawal-authority-types.index') }}" class="btn btn-outline-primary btn-sm me-1">
+                        <i class="fas fa-gavel me-1"></i> Rule 42 types
+                    </a>
                     <a href="{{ route('trust-accounting.reconciliation.index') }}" class="btn btn-outline-primary btn-sm me-1">
                         <i class="fas fa-link me-1"></i> Reconciliation
                     </a>

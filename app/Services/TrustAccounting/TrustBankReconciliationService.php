@@ -3,6 +3,7 @@
 namespace App\Services\TrustAccounting;
 
 use App\Models\TrustBankStatementLine;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -20,6 +21,10 @@ class TrustBankReconciliationService
     ): int {
         if (! Schema::hasTable('trust_bank_statement_lines')) {
             throw new \RuntimeException('Bank reconciliation is not available.');
+        }
+
+        if (! DB::table('trust_bank_accounts')->where('id', $trustBankAccountId)->exists()) {
+            throw new \RuntimeException('Trust bank account not found.');
         }
 
         if (self::amountsEqual($amount, 0.0)) {
@@ -53,11 +58,13 @@ class TrustBankReconciliationService
         return $id;
     }
 
-    public static function deleteStatementLine(int $statementLineId): void
+    public static function deleteStatementLine(int $statementLineId, int $trustBankAccountId): void
     {
         if (! Schema::hasTable('trust_bank_statement_lines')) {
             throw new \RuntimeException('Bank reconciliation is not available.');
         }
+
+        self::assertLineBelongsToAccount($statementLineId, $trustBankAccountId);
 
         $line = TrustBankStatementLine::query()->find($statementLineId);
         if (! $line) {
@@ -141,68 +148,104 @@ class TrustBankReconciliationService
             ->exists();
     }
 
+    /**
+     * Ensures the statement line belongs to the practice bank account the user selected (tamper guard).
+     */
+    public static function assertLineBelongsToAccount(int $statementLineId, int $trustBankAccountId): void
+    {
+        if ($trustBankAccountId < 1) {
+            throw new \RuntimeException('Trust bank account is required.');
+        }
+
+        $accountId = DB::table('trust_bank_statement_lines')
+            ->where('id', $statementLineId)
+            ->value('trust_bank_account_id');
+
+        if ($accountId === null || (int) $accountId !== $trustBankAccountId) {
+            throw new \RuntimeException('Bank line does not belong to the selected trust bank account.');
+        }
+    }
+
     public static function matchLineToReceipt(
         int $statementLineId,
         int $receiptId,
         int $staffId,
+        int $trustBankAccountId,
         ?string $matchNotes = null
     ): void {
         if (! Schema::hasTable('trust_bank_statement_lines')) {
             throw new \RuntimeException('Bank reconciliation is not available.');
         }
 
-        DB::transaction(function () use ($statementLineId, $receiptId, $staffId, $matchNotes) {
-            $line = TrustBankStatementLine::query()->whereKey($statementLineId)->lockForUpdate()->first();
-            if (! $line) {
-                throw new \RuntimeException('Bank statement line not found.');
+        self::assertLineBelongsToAccount($statementLineId, $trustBankAccountId);
+
+        try {
+            DB::transaction(function () use ($statementLineId, $receiptId, $staffId, $matchNotes, $trustBankAccountId) {
+                self::assertLineBelongsToAccount($statementLineId, $trustBankAccountId);
+
+                $line = TrustBankStatementLine::query()->whereKey($statementLineId)->lockForUpdate()->first();
+                if (! $line) {
+                    throw new \RuntimeException('Bank statement line not found.');
+                }
+
+                if ($line->matched_account_client_receipt_id) {
+                    throw new \RuntimeException('This bank line is already matched.');
+                }
+
+                $receipt = DB::table('account_client_receipts')->where('id', $receiptId)->lockForUpdate()->first();
+                if (! $receipt) {
+                    throw new \RuntimeException('Ledger row not found.');
+                }
+
+                self::assertReceiptEligibleForMatching($receipt);
+
+                if (self::receiptAlreadyMatched($receiptId)) {
+                    throw new \RuntimeException('This ledger row is already matched to another bank line.');
+                }
+
+                self::assertAmountCompatibleWithReceipt((float) $line->amount, $receipt);
+
+                DB::table('trust_bank_statement_lines')->where('id', $line->id)->update([
+                    'matched_account_client_receipt_id' => $receiptId,
+                    'matched_at' => now(),
+                    'matched_by_staff_id' => $staffId,
+                    'match_notes' => $matchNotes,
+                    'updated_at' => now(),
+                ]);
+
+                TrustLedgerAuditLogger::logForTable(
+                    'trust_bank_statement_lines',
+                    'bank_line_matched',
+                    (int) $line->id,
+                    'matched_account_client_receipt_id',
+                    null,
+                    (string) $receiptId,
+                    'Trust ledger row TR match: receipt id ' . $receiptId . ' · staff id ' . $staffId
+                );
+            });
+        } catch (QueryException $e) {
+            $sqlState = $e->errorInfo[0] ?? '';
+            if ($sqlState === '23505' || str_contains($e->getMessage(), 'duplicate key')) {
+                throw new \RuntimeException(
+                    'This ledger row is already matched (possibly in another tab). Refresh the page and try again.'
+                );
             }
 
-            if ($line->matched_account_client_receipt_id) {
-                throw new \RuntimeException('This bank line is already matched.');
-            }
-
-            $receipt = DB::table('account_client_receipts')->where('id', $receiptId)->lockForUpdate()->first();
-            if (! $receipt) {
-                throw new \RuntimeException('Ledger row not found.');
-            }
-
-            self::assertReceiptEligibleForMatching($receipt);
-
-            if (self::receiptAlreadyMatched($receiptId)) {
-                throw new \RuntimeException('This ledger row is already matched to another bank line.');
-            }
-
-            self::assertAmountCompatibleWithReceipt((float) $line->amount, $receipt);
-
-            DB::table('trust_bank_statement_lines')->where('id', $line->id)->update([
-                'matched_account_client_receipt_id' => $receiptId,
-                'matched_at' => now(),
-                'matched_by_staff_id' => $staffId,
-                'match_notes' => $matchNotes,
-                'updated_at' => now(),
-            ]);
-
-            TrustLedgerAuditLogger::logForTable(
-                'trust_bank_statement_lines',
-                'bank_line_matched',
-                (int) $line->id,
-                'matched_account_client_receipt_id',
-                null,
-                (string) $receiptId,
-                'Trust ledger row TR match: receipt id ' . $receiptId
-            );
-        });
+            throw $e;
+        }
     }
 
-    public static function unmatchLine(int $statementLineId, int $staffId): void
+    public static function unmatchLine(int $statementLineId, int $staffId, int $trustBankAccountId): void
     {
-        unset($staffId);
-
         if (! Schema::hasTable('trust_bank_statement_lines')) {
             throw new \RuntimeException('Bank reconciliation is not available.');
         }
 
-        DB::transaction(function () use ($statementLineId) {
+        self::assertLineBelongsToAccount($statementLineId, $trustBankAccountId);
+
+        DB::transaction(function () use ($statementLineId, $staffId, $trustBankAccountId) {
+            self::assertLineBelongsToAccount($statementLineId, $trustBankAccountId);
+
             $line = TrustBankStatementLine::query()->whereKey($statementLineId)->lockForUpdate()->first();
             if (! $line) {
                 throw new \RuntimeException('Bank statement line not found.');
@@ -229,7 +272,7 @@ class TrustBankReconciliationService
                 'matched_account_client_receipt_id',
                 (string) $prevReceiptId,
                 null,
-                null
+                'Unmatched by staff id ' . $staffId
             );
         });
     }

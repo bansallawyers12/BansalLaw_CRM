@@ -141,7 +141,7 @@
                                         <tr>
                                             <td class="text-nowrap">{{ $line->value_date->format('Y-m-d') }}</td>
                                             <td class="text-end font-monospace">${{ number_format((float) $line->amount, 2) }}</td>
-                                                <td>{{ \Illuminate\Support\Str::limit($line->narrative ?? '—', 80) }}</td>
+                                            <td>{{ \Illuminate\Support\Str::limit($line->narrative ?? '—', 80) }}</td>
                                             <td class="small font-monospace">{{ $line->bank_reference ?? '—' }}</td>
                                             <td>
                                                 @if($line->matched_account_client_receipt_id)
@@ -158,6 +158,7 @@
                                                     <form method="post" action="{{ route('trust-accounting.reconciliation.lines.destroy', $line) }}" class="d-inline" onsubmit="return confirm('Delete this bank line?');">
                                                         @csrf
                                                         @method('DELETE')
+                                                        <input type="hidden" name="trust_bank_account_id" value="{{ $account->id }}">
                                                         <button type="submit" class="btn btn-outline-danger btn-sm py-0">Delete</button>
                                                     </form>
                                                 @else
@@ -192,13 +193,15 @@
                                                                     @empty
                                                                         <option value="" disabled>No unmatched deposits with this amount</option>
                                                                     @endforelse
-                                                                @else
+                                                                @elseif((float) $line->amount < 0)
                                                                     @php $opts = $unmatchedPayments->filter(fn ($r) => round((float) $r->withdraw_amount + (float) $line->amount, 2) === 0.0); @endphp
                                                                     @forelse($opts as $r)
                                                                         <option value="{{ $r->id }}">{{ $r->trans_no }} · {{ $r->trans_date }} · ref {{ $r->client_ref }} · ${{ number_format((float) $r->withdraw_amount, 2) }}</option>
                                                                     @empty
                                                                         <option value="" disabled>No unmatched payments with this amount</option>
                                                                     @endforelse
+                                                                @else
+                                                                    <option value="" disabled>Invalid line amount (must be non-zero)</option>
                                                                 @endif
                                                             </select>
                                                         </div>

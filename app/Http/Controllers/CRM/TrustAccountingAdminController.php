@@ -7,6 +7,7 @@ use App\Models\Staff;
 use App\Models\TrustBankAccount;
 use App\Models\TrustAccountingPeriod;
 use App\Models\TrustBankStatementLine;
+use App\Models\TrustWithdrawalAuthorityType;
 use App\Services\TrustAccounting\TrustBankReconciliationService;
 use App\Services\TrustAccounting\TrustLedgerAuditLogger;
 use App\Services\TrustAccounting\TrustReportQueryService;
@@ -20,7 +21,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Trust compliance: period locks, audit log (Phase 2); practice reports (Phase 3);
- * bank reconciliation (Phase 4 — Rule 48).
+ * bank reconciliation (Phase 4 — Rule 48); Rule 42 withdrawal authority types (Phase 5).
  * Super-admin effective privileges only (matches void / critical trust actions).
  */
 class TrustAccountingAdminController extends Controller
@@ -635,7 +636,7 @@ class TrustAccountingAdminController extends Controller
         $validated = $request->validate([
             'trust_bank_account_id' => 'required|integer|min:1',
             'value_date' => 'required|date',
-            'amount' => 'required|numeric|regex:/^-?[0-9]+(\.[0-9]{1,2})?$/',
+            'amount' => 'required|numeric|between:-999999999999.99,999999999999.99',
             'narrative' => 'nullable|string|max:5000',
             'bank_reference' => 'nullable|string|max:500',
             'from_date' => 'nullable|date',
@@ -663,12 +664,16 @@ class TrustAccountingAdminController extends Controller
         ])->with('success', 'Bank statement line added.');
     }
 
-    public function reconciliationDestroyLine(TrustBankStatementLine $line): RedirectResponse
+    public function reconciliationDestroyLine(Request $request, TrustBankStatementLine $line): RedirectResponse
     {
         $this->gateTrustAdmin();
 
+        $validated = $request->validate([
+            'trust_bank_account_id' => 'required|integer|min:1',
+        ]);
+
         try {
-            TrustBankReconciliationService::deleteStatementLine((int) $line->id);
+            TrustBankReconciliationService::deleteStatementLine((int) $line->id, (int) $validated['trust_bank_account_id']);
         } catch (\Throwable $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
@@ -683,8 +688,8 @@ class TrustAccountingAdminController extends Controller
         $validated = $request->validate([
             'statement_line_id' => 'required|integer|min:1',
             'receipt_id' => 'required|integer|min:1',
+            'trust_bank_account_id' => 'required|integer|min:1',
             'match_notes' => 'nullable|string|max:2000',
-            'trust_bank_account_id' => 'nullable|integer|min:1',
             'from_date' => 'nullable|date',
             'to_date' => 'nullable|date',
         ]);
@@ -694,6 +699,7 @@ class TrustAccountingAdminController extends Controller
                 (int) $validated['statement_line_id'],
                 (int) $validated['receipt_id'],
                 (int) $staff->id,
+                (int) $validated['trust_bank_account_id'],
                 $validated['match_notes'] ?? null
             );
         } catch (\Throwable $e) {
@@ -701,7 +707,7 @@ class TrustAccountingAdminController extends Controller
         }
 
         return redirect()->route('trust-accounting.reconciliation.index', [
-            'trust_bank_account_id' => $validated['trust_bank_account_id'] ?? null,
+            'trust_bank_account_id' => $validated['trust_bank_account_id'],
             'from_date' => $validated['from_date'] ?? null,
             'to_date' => $validated['to_date'] ?? null,
         ])->with('success', 'Bank line matched to trust ledger row.');
@@ -713,22 +719,90 @@ class TrustAccountingAdminController extends Controller
 
         $validated = $request->validate([
             'statement_line_id' => 'required|integer|min:1',
-            'trust_bank_account_id' => 'nullable|integer|min:1',
+            'trust_bank_account_id' => 'required|integer|min:1',
             'from_date' => 'nullable|date',
             'to_date' => 'nullable|date',
         ]);
 
         try {
-            TrustBankReconciliationService::unmatchLine((int) $validated['statement_line_id'], (int) $staff->id);
+            TrustBankReconciliationService::unmatchLine(
+                (int) $validated['statement_line_id'],
+                (int) $staff->id,
+                (int) $validated['trust_bank_account_id']
+            );
         } catch (\Throwable $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
 
         return redirect()->route('trust-accounting.reconciliation.index', [
-            'trust_bank_account_id' => $validated['trust_bank_account_id'] ?? null,
+            'trust_bank_account_id' => $validated['trust_bank_account_id'],
             'from_date' => $validated['from_date'] ?? null,
             'to_date' => $validated['to_date'] ?? null,
         ])->with('success', 'Match cleared.');
+    }
+
+    public function withdrawalAuthorityTypesIndex(): View
+    {
+        $this->gateTrustAdmin();
+
+        if (! Schema::hasTable('trust_withdrawal_authority_types')) {
+            abort(503, 'Rule 42 withdrawal authority types are not available. Run migrations.');
+        }
+
+        $types = TrustWithdrawalAuthorityType::query()
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        return view('crm.trust-accounting.withdrawal-authority-types', compact('types'));
+    }
+
+    public function withdrawalAuthorityTypesStore(Request $request): RedirectResponse
+    {
+        $this->gateTrustAdmin();
+
+        if (! Schema::hasTable('trust_withdrawal_authority_types')) {
+            abort(503);
+        }
+
+        $validated = $request->validate([
+            'label' => 'required|string|max:255',
+            'sort_order' => 'nullable|integer|min:0|max:65535',
+        ]);
+
+        TrustWithdrawalAuthorityType::query()->create([
+            'label' => $validated['label'],
+            'sort_order' => (int) ($validated['sort_order'] ?? 0),
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return redirect()
+            ->route('trust-accounting.withdrawal-authority-types.index')
+            ->with('success', 'Withdrawal authority type added.');
+    }
+
+    public function withdrawalAuthorityTypesUpdate(Request $request, TrustWithdrawalAuthorityType $type): RedirectResponse
+    {
+        $this->gateTrustAdmin();
+
+        if (! Schema::hasTable('trust_withdrawal_authority_types')) {
+            abort(503);
+        }
+
+        $validated = $request->validate([
+            'label' => 'required|string|max:255',
+            'sort_order' => 'nullable|integer|min:0|max:65535',
+        ]);
+
+        $type->update([
+            'label' => $validated['label'],
+            'sort_order' => (int) ($validated['sort_order'] ?? $type->sort_order),
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return redirect()
+            ->route('trust-accounting.withdrawal-authority-types.index')
+            ->with('success', 'Withdrawal authority type updated.');
     }
 
     /**

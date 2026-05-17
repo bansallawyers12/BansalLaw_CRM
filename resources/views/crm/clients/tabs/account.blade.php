@@ -787,7 +787,21 @@
 </div>
 
 <!-- Account Tab JavaScript -->
+@php
+    $__acctTabTrustAuthTypes = [];
+    if (\Illuminate\Support\Facades\Schema::hasTable('trust_withdrawal_authority_types')) {
+        $__acctTabTrustAuthTypes = \Illuminate\Support\Facades\DB::table('trust_withdrawal_authority_types')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get(['id', 'label'])
+            ->map(fn ($r) => ['id' => (int) $r->id, 'label' => (string) $r->label])
+            ->values()
+            ->all();
+    }
+@endphp
 <script>
+window.TRUST_WITHDRAWAL_AUTHORITY_TYPES = @json($__acctTabTrustAuthTypes);
 document.addEventListener('DOMContentLoaded', function() {
     // Improved Create Receipt Button Click Handler
     // Automatically selects the correct form based on which button was clicked
@@ -1567,6 +1581,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
         handleQuickAllocateLedgerClick(target);
     }, true);
+
+    function buildLedgerRule42FieldsHtml() {
+        var types = window.TRUST_WITHDRAWAL_AUTHORITY_TYPES || [];
+        if (!types.length) {
+            return '';
+        }
+        var opts = '<option value="">— Select authority —</option>';
+        types.forEach(function(t) {
+            opts += '<option value="' + t.id + '">' + String(t.label || '').replace(/</g, '') + '</option>';
+        });
+        return '<div class="card border-warning mb-3 mt-2">' +
+            '<div class="card-header py-2"><strong>Rule 42 — withdrawal authority</strong></div>' +
+            '<div class="card-body py-2">' +
+            '<div class="mb-2"><label class="small">Authority type *</label>' +
+            '<select id="ledger-allocate-authority-type" class="form-select form-select-sm">' + opts + '</select></div>' +
+            '<div class="mb-2"><label class="small">Date notice given</label>' +
+            '<input type="date" id="ledger-allocate-notice-date" class="form-control form-control-sm" /></div>' +
+            '<div class="mb-2"><label class="small">Notes</label>' +
+            '<input type="text" id="ledger-allocate-authority-notes" class="form-control form-control-sm" maxlength="5000" /></div>' +
+            '<div class="form-check mb-1">' +
+            '<input type="checkbox" class="form-check-input" id="ledger-allocate-override" value="1">' +
+            '<label class="form-check-label small" for="ledger-allocate-override">Supervisor override</label></div>' +
+            '<label class="small">Override reason</label>' +
+            '<textarea id="ledger-allocate-override-reason" class="form-control form-control-sm" rows="2"></textarea>' +
+            '</div></div>';
+    }
     
     function showLedgerAllocationModal(receiptId, receiptAmount, exactMatch, closeMatches, otherInvoices) {
         let modalHtml = '<div class="modal fade" id="quickAllocateLedgerModal" tabindex="-1" role="dialog">' +
@@ -1581,8 +1621,9 @@ document.addEventListener('DOMContentLoaded', function() {
             '<div class="modal-body">' +
             '<div class="alert alert-info">' +
             '<i class="fas fa-info-circle"></i> Deposit Amount: <strong>$' + receiptAmount.toFixed(2) + '</strong>' +
-            '</div>';
-        
+            '</div>' +
+            buildLedgerRule42FieldsHtml();
+
         if (exactMatch) {
             modalHtml += '<div class="alert alert-success" style="border-left: 4px solid #28a745;">' +
                 '<h6><i class="fas fa-bullseye"></i> <strong>Exact Match Found!</strong></h6>' +
@@ -1701,7 +1742,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 _token: '{{ csrf_token() }}',
                 id: receiptId,
                 client_id: '{{ $fetchedData->id }}',
-                invoice_no: invoiceNo
+                invoice_no: invoiceNo,
+                trust_withdrawal_authority_type_id: $('#ledger-allocate-authority-type').val() || '',
+                trust_notice_given_date: $('#ledger-allocate-notice-date').val() || '',
+                trust_authority_notes: $('#ledger-allocate-authority-notes').val() || '',
+                trust_rule42_supervisor_override: $('#ledger-allocate-override').is(':checked') ? 1 : '',
+                trust_rule42_override_reason: $('#ledger-allocate-override-reason').val() || ''
             },
             success: function(response) {
                 console.log('✅ Allocation response:', response);

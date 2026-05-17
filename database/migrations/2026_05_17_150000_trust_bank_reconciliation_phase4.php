@@ -58,7 +58,11 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('trust_bank_statement_lines');
-        Schema::dropIfExists('trust_bank_accounts');
+        if (Schema::hasTable('trust_bank_statement_lines')) {
+            Schema::dropIfExists('trust_bank_statement_lines');
+        }
+        if (Schema::hasTable('trust_bank_accounts')) {
+            Schema::dropIfExists('trust_bank_accounts');
+        }
     }
 };
