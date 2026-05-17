@@ -9,12 +9,24 @@ use RuntimeException;
 
 class TrustPeriodService
 {
+    /** Cached result of Schema::hasTable to avoid repeated information_schema queries. */
+    private static ?bool $tableExists = null;
+
+    private static function periodsTableExists(): bool
+    {
+        if (self::$tableExists === null) {
+            self::$tableExists = Schema::hasTable('trust_accounting_periods');
+        }
+
+        return self::$tableExists;
+    }
+
     /**
      * @throws RuntimeException if trans_date falls in a locked accounting period
      */
     public static function assertTransDateUnlocked(string $ddMmYyyy): void
     {
-        if (! Schema::hasTable('trust_accounting_periods')) {
+        if (! self::periodsTableExists()) {
             return;
         }
 
@@ -38,7 +50,11 @@ class TrustPeriodService
      */
     public static function isLockedForRow(?string $transDateDmY): bool
     {
-        if ($transDateDmY === null || $transDateDmY === '' || ! Schema::hasTable('trust_accounting_periods')) {
+        if ($transDateDmY === null || $transDateDmY === '') {
+            return false;
+        }
+
+        if (! self::periodsTableExists()) {
             return false;
         }
 

@@ -59,11 +59,16 @@ class ClientAccountsController extends Controller
 
     /**
      * Trust rows excluded from running balance (voided fee transfer flag or practice void + reversal).
+     * Static flag avoids repeated information_schema queries in loops.
      */
     protected function trustLedgerRowExcludedFromBalance(object $row): bool
     {
-        if (Schema::hasColumn('account_client_receipts', 'trust_voided_at')
-            && isset($row->trust_voided_at) && $row->trust_voided_at !== null) {
+        static $hasTrustVoidedAt = null;
+        if ($hasTrustVoidedAt === null) {
+            $hasTrustVoidedAt = Schema::hasColumn('account_client_receipts', 'trust_voided_at');
+        }
+
+        if ($hasTrustVoidedAt && isset($row->trust_voided_at) && $row->trust_voided_at !== null) {
             return true;
         }
         if (isset($row->void_fee_transfer) && (int) $row->void_fee_transfer === 1) {
@@ -110,7 +115,11 @@ class ClientAccountsController extends Controller
     /** Optional payer / banking fields per line (trust compliance). */
     protected function trustDepositMetadataAt(array $requestData, int $i): array
     {
-        if (! Schema::hasColumn('account_client_receipts', 'payer_name')) {
+        static $hasPayerName = null;
+        if ($hasPayerName === null) {
+            $hasPayerName = Schema::hasColumn('account_client_receipts', 'payer_name');
+        }
+        if (! $hasPayerName) {
             return [];
         }
 
@@ -5862,12 +5871,16 @@ public function updateClientFundsLedger(Request $request)
     }
 
     $running_balance = 0.0;
-    $ledger_entries = DB::table('account_client_receipts')
+    $ledgerBalanceQ = DB::table('account_client_receipts')
         ->where('client_id', $entry->client_id)
         ->where('receipt_type', 1)
-        ->orderBy('id', 'asc')
-        ->get();
-    foreach ($ledger_entries as $row) {
+        ->orderBy('id', 'asc');
+    if (! empty($entry->client_matter_id)) {
+        $ledgerBalanceQ->where('client_matter_id', $entry->client_matter_id);
+    } else {
+        $ledgerBalanceQ->whereNull('client_matter_id');
+    }
+    foreach ($ledgerBalanceQ->get() as $row) {
         if ($this->trustLedgerRowExcludedFromBalance($row)) {
             continue;
         }

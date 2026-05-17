@@ -9,6 +9,18 @@ use Illuminate\Support\Facades\Schema;
 
 class TrustLedgerAuditLogger
 {
+    /** Cached result of Schema::hasTable to avoid repeated information_schema queries. */
+    private static ?bool $tableExists = null;
+
+    private static function auditTableExists(): bool
+    {
+        if (self::$tableExists === null) {
+            self::$tableExists = Schema::hasTable('trust_audit_logs');
+        }
+
+        return self::$tableExists;
+    }
+
     public static function log(
         string $event,
         int $rowId,
@@ -17,7 +29,22 @@ class TrustLedgerAuditLogger
         mixed $newValue = null,
         ?string $context = null
     ): void {
-        if (! Schema::hasTable('trust_audit_logs')) {
+        self::logForTable('account_client_receipts', $event, $rowId, $fieldName, $oldValue, $newValue, $context);
+    }
+
+    /**
+     * Append-only audit row for any trust-related table (ledger rows, period locks, etc.).
+     */
+    public static function logForTable(
+        string $tableName,
+        string $event,
+        int $rowId,
+        ?string $fieldName = null,
+        mixed $oldValue = null,
+        mixed $newValue = null,
+        ?string $context = null
+    ): void {
+        if (! self::auditTableExists()) {
             return;
         }
 
@@ -29,7 +56,7 @@ class TrustLedgerAuditLogger
         }
 
         DB::table('trust_audit_logs')->insert([
-            'table_name' => 'account_client_receipts',
+            'table_name' => $tableName,
             'row_id' => $rowId,
             'event' => $event,
             'field_name' => $fieldName,

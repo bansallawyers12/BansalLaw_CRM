@@ -16,6 +16,7 @@ use App\Http\Controllers\CRM\ActiveStaffController;
 use App\Http\Controllers\CRM\BroadcastNotificationAjaxController;
 // use App\Http\Controllers\CRM\EmailTemplateController; // DISABLED: email_templates table has been deleted
 use App\Http\Controllers\CRM\AuditLogController;
+use App\Http\Controllers\CRM\TrustAccountingAdminController;
 use App\Http\Controllers\Auth\AdminLoginController;
 use App\Http\Controllers\CRM\SuperAdminElevationController;
 
@@ -268,6 +269,18 @@ Route::middleware(['auth:admin'])->group(function() {
 
 	/*---------- Audit Logs ----------*/
 	Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('auditlogs.index');
+
+	/*---------- Trust accounting (VLSB+C tooling) ----------*/
+	Route::prefix('trust-accounting')->name('trust-accounting.')->group(function () {
+		Route::get('/periods', [TrustAccountingAdminController::class, 'periodsIndex'])->name('periods.index');
+		Route::post('/periods', [TrustAccountingAdminController::class, 'periodsStore'])->name('periods.store');
+		Route::post('/periods/{period}/unlock', [TrustAccountingAdminController::class, 'periodsUnlock'])->name('periods.unlock');
+		Route::get('/audit-log', [TrustAccountingAdminController::class, 'auditLogIndex'])->name('audit-log.index');
+		Route::get('/reports', [TrustAccountingAdminController::class, 'reportsIndex'])->name('reports.index');
+		Route::get('/reports/trial-balance', [TrustAccountingAdminController::class, 'trialBalanceReport'])->name('reports.trial-balance');
+		Route::get('/reports/receipts-journal', [TrustAccountingAdminController::class, 'receiptsJournalReport'])->name('reports.receipts-journal');
+		Route::get('/reports/payments-journal', [TrustAccountingAdminController::class, 'paymentsJournalReport'])->name('reports.payments-journal');
+	});
 
 	/*---------- Notifications ----------*/
 	Route::get('/fetch-notification', [CRMUtilityController::class, 'fetchnotification']);
