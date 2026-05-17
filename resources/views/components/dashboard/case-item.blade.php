@@ -24,6 +24,8 @@
     }
     
     $daysStalledClass = $daysStalled > 14 ? 'text-danger' : ($daysStalled > 7 ? 'text-warning' : 'text-info');
+
+    $urgencyBorder = $daysStalled > 14 ? 'danger' : ($daysStalled > 7 ? 'warning' : 'info');
     
     $matter = $case->matter ?? null;
     $matter_name = $matter
@@ -100,7 +102,7 @@
     $activity = $activityConfig[$activityType] ?? $activityConfig['default'];
 @endphp
 
-<li>
+<li class="case-list-item case-urgency-border--{{ $urgencyBorder }}">
     <div class="case-details">
         <span class="client-name">
             {{ $client->first_name ?: config('constants.empty') }} {{ $client->last_name ?: config('constants.empty') }}
@@ -124,6 +126,25 @@
 </li>
 
 <style>
+.case-list-item {
+    border-left: 4px solid transparent;
+    padding-left: 10px;
+    margin-left: -2px;
+    border-radius: 4px 0 0 4px;
+}
+
+.case-urgency-border--danger {
+    border-left-color: var(--danger-color, #a83020);
+}
+
+.case-urgency-border--warning {
+    border-left-color: var(--warning-color, #c8992a);
+}
+
+.case-urgency-border--info {
+    border-left-color: var(--info-color, #3a6fa8);
+}
+
 .case-activity-badge {
     display: flex;
     align-items: center;
