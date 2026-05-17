@@ -26,6 +26,8 @@ bootstrap/cache/services.php
 
 old_crm_sql_dumps.sql
 bansal_law_crm_backup_*.sql
+crm_backup_*.dump
+*.dump
 .env.backup
 sample env need fix.txt
 pdftk_server_installer.exe

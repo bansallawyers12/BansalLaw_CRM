@@ -1,4 +1,4 @@
-/* Datepicker — docs/theme.md tokens (:root in crm-theme.css) */
+/* Listing page date inputs (class="datepicker") — tokens from crm-theme.css :root */
 .listing-container .datepicker {
     border-radius: 8px;
     border: 2px solid var(--border, #c8dcef);
@@ -19,7 +19,9 @@
     color: var(--text-muted, #5e7a90);
 }
 
-.listing-container .datepicker-dropdown {
+/* ── Flatpickr popup calendar (replaces old Bootstrap Datepicker dropdown rules) ── */
+
+.listing-container .flatpickr-calendar {
     border-radius: 10px;
     border: 1px solid var(--border, #c8dcef);
     box-shadow: 0 10px 25px rgba(30, 61, 96, 0.12);
@@ -28,22 +30,38 @@
     font-family: "Segoe UI", sans-serif;
 }
 
-.listing-container .datepicker table {
-    border-collapse: separate;
-    border-spacing: 2px;
+.listing-container .flatpickr-month {
+    background: var(--sidebar-active, #3a6fa8);
+    color: #fff;
+    border-radius: 8px 8px 0 0;
+    padding: 8px 0;
 }
 
-.listing-container .datepicker table tr td,
-.listing-container .datepicker table tr th {
-    border-radius: 8px;
-    border: none;
-    padding: 8px 10px;
-    font-size: 13px;
-    font-weight: 500;
-    transition: all 0.2s ease;
+.listing-container .flatpickr-current-month,
+.listing-container .flatpickr-current-month .numInputWrapper,
+.listing-container .flatpickr-current-month .cur-month,
+.listing-container .flatpickr-current-month .cur-year {
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
 }
 
-.listing-container .datepicker table tr th {
+.listing-container .flatpickr-prev-month,
+.listing-container .flatpickr-next-month {
+    color: #fff !important;
+    fill: #fff !important;
+}
+
+.listing-container .flatpickr-prev-month:hover,
+.listing-container .flatpickr-next-month:hover {
+    filter: brightness(1.2);
+}
+
+.listing-container .flatpickr-weekdays {
+    background: var(--page-bg, #f0f6ff);
+}
+
+.listing-container .flatpickr-weekday {
     background: var(--page-bg, #f0f6ff);
     color: var(--navy, #1e3d60);
     font-weight: 600;
@@ -52,107 +70,69 @@
     letter-spacing: 0.5px;
 }
 
-.listing-container .datepicker table tr td {
-    background: transparent;
+.listing-container .flatpickr-day {
+    border-radius: 8px;
     color: var(--text-dark, #1a2c40);
-    cursor: pointer;
-    position: relative;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
 }
 
-.listing-container .datepicker table tr td:hover {
+.listing-container .flatpickr-day:hover {
     background: var(--sidebar-hover, #c8dcef);
+    border-color: var(--sidebar-hover, #c8dcef);
     transform: scale(1.05);
 }
 
-.listing-container .datepicker table tr td.active {
-    background: var(--navy, #1e3d60) !important;
-    color: #fff !important;
-    font-weight: 600;
-    box-shadow: 0 2px 8px rgba(30, 61, 96, 0.25);
-}
-
-.listing-container .datepicker table tr td.active:hover {
-    filter: brightness(1.08);
-    transform: scale(1.05);
-}
-
-.listing-container .datepicker table tr td.old,
-.listing-container .datepicker table tr td.new {
-    color: var(--text-muted, #5e7a90);
-    background: var(--page-bg, #f0f6ff);
-}
-
-.listing-container .datepicker table tr td.old:hover,
-.listing-container .datepicker table tr td.new:hover {
-    background: var(--sidebar-hover, #c8dcef);
-    color: var(--text-muted, #5e7a90);
-}
-
-.listing-container .datepicker table tr th.datepicker-switch {
-    background: var(--sidebar-active, #3a6fa8);
+.listing-container .flatpickr-day.selected,
+.listing-container .flatpickr-day.selected:hover {
+    background: var(--navy, #1e3d60);
+    border-color: var(--navy, #1e3d60);
     color: #fff;
     font-weight: 600;
-    font-size: 14px;
-    padding: 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(30, 61, 96, 0.25);
+    transform: scale(1.05);
 }
 
-.listing-container .datepicker table tr th.datepicker-switch:hover {
-    filter: brightness(1.06);
-    transform: translateY(-1px);
-}
-
-.listing-container .datepicker table tr th.prev,
-.listing-container .datepicker table tr th.next {
-    background: var(--page-bg, #f0f6ff);
-    color: var(--navy, #1e3d60);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.listing-container .datepicker table tr th.prev:hover,
-.listing-container .datepicker table tr th.next:hover {
-    background: var(--sidebar-hover, #c8dcef);
-    color: var(--navy, #1e3d60);
-    transform: scale(1.1);
-}
-
-.listing-container .datepicker table tr td.today {
+.listing-container .flatpickr-day.today {
     background: var(--accent-light, #fefae8);
     color: var(--navy, #1e3d60);
     font-weight: 600;
     border: 2px solid var(--accent-gold, #c8992a);
-    cursor: pointer;
 }
 
-.listing-container .datepicker table tr td.today:hover {
+.listing-container .flatpickr-day.today:hover {
     background: rgba(200, 153, 42, 0.2);
     transform: scale(1.05);
 }
 
-.listing-container .datepicker table tr td.clear {
-    background: rgba(168, 48, 32, 0.1);
-    color: var(--danger, #a83020);
-    font-weight: 600;
-    cursor: pointer;
+.listing-container .flatpickr-day.prevMonthDay,
+.listing-container .flatpickr-day.nextMonthDay {
+    color: var(--text-muted, #5e7a90);
+    background: var(--page-bg, #f0f6ff);
 }
 
-.listing-container .datepicker table tr td.clear:hover {
-    background: rgba(168, 48, 32, 0.18);
-    transform: scale(1.05);
+.listing-container .flatpickr-day.prevMonthDay:hover,
+.listing-container .flatpickr-day.nextMonthDay:hover {
+    background: var(--sidebar-hover, #c8dcef);
+    color: var(--text-muted, #5e7a90);
+}
+
+.listing-container .flatpickr-day.disabled,
+.listing-container .flatpickr-day.disabled:hover {
+    color: #adb5bd;
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
 }
 
 @media (max-width: 768px) {
-    .listing-container .datepicker-dropdown {
+    .listing-container .flatpickr-calendar {
         padding: 10px;
     }
 
-    .listing-container .datepicker table tr td,
-    .listing-container .datepicker table tr th {
-        padding: 6px 8px;
+    .listing-container .flatpickr-day {
         font-size: 12px;
     }
 }

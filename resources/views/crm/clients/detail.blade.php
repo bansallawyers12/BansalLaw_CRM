@@ -1361,8 +1361,7 @@ $(document).ready(function() {
 });
 </script>
 <script src="{{URL::to('/')}}/js/popover.js"></script>
-{{-- Bootstrap-datepicker removed - already loaded in layout, migrating to Flatpickr --}}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.full.min.js"></script>
+{{-- jquery-datetimepicker removed - not used on this page --}}
 
 {{-- Activity Feed Functionality --}}
 <script src="{{ URL::asset('js/crm/clients/tabs/activity-feed.js') }}"></script>

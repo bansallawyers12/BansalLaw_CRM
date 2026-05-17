@@ -78,6 +78,7 @@
 
     $(document).ready(function() {
         var duration, daysOfWeek, starttime, endtime, disabledtimeslotes, timeslotLabelsFromBackend;
+    var _appointmentFlatpickr = null; // Flatpickr instance for #datetimepicker
         var safeParse = typeof window.safeParseJsonResponse === 'function' ? window.safeParseJsonResponse : function(r) {
             if (typeof r === 'object' && r !== null) return r;
             if (typeof r === 'string' && r.trim()) { try { return JSON.parse(r); } catch (e) { return null; } }
@@ -227,10 +228,10 @@
                 
                 var slot_overwrite = $('#slot_overwrite_hidden').val() == 1 ? 1 : 0; // Get slot overwrite value
 
-                // Initialize datepicker when location is selected
-                // Destroy existing datepicker instance if it exists
-                if ($('#datetimepicker').data('datepicker')) {
-                    $('#datetimepicker').datepicker('destroy');
+                // Destroy existing Flatpickr instance before re-init
+                if (_appointmentFlatpickr) {
+                    _appointmentFlatpickr.destroy();
+                    _appointmentFlatpickr = null;
                 }
 
                 // Fetch appointment settings from backend

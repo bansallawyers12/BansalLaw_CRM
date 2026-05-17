@@ -30,7 +30,6 @@ ClientVisaCountry.php
 Contact.php
 CostAssignmentForm.php
 Country.php
-ClientMatterReference.php
 DeviceToken.php
 Document.php
 DocumentChecklist.php
@@ -49,9 +48,6 @@ EmailLog.php
 EmailLogAttachment.php
 Matter.php
 EmailTemplate.php
-LeadMatterReference.php
-LeadReminder.php
-MatterReminder.php
 Note.php
 Notification.php
 OurService.php
