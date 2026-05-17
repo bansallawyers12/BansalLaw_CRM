@@ -463,7 +463,7 @@
                             
                             <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn" style="margin-right: 10px;"><i class="fas fa-filter"></i> Filter</a>
                             
-                            @if (Auth::user()->role == '1' && Auth::user()->email == 'celestyparmar.62@gmail.com')
+                            @if (Auth::user() instanceof \App\Models\Staff && Auth::user()->hasEffectiveSuperAdminPrivileges())
                                 <button class="btn btn-danger Delete_Receipt" style="margin-right: 10px;">
                                     <i class="fas fa-ban"></i>
                                     Void trust receipt

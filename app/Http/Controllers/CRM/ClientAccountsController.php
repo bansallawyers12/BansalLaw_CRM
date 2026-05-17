@@ -2983,7 +2983,10 @@ class ClientAccountsController extends Controller
           $finalArr = array();
           for($i=0; $i<count($requestData['trans_date']); $i++){
            $withdrawAmount = isset($requestData['withdraw_amount'][$i]) ? $requestData['withdraw_amount'][$i] : 0;
-           $journalTransNo = TrustReceiptSequenceService::nextTransNo($requestData['trans_date'][$i]);
+           $journalTransNo = TrustReceiptSequenceService::nextTransNo(
+               $requestData['trans_date'][$i],
+               TrustReceiptSequenceService::TYPE_JOURNAL
+           );
            $finalArr[$i]['trans_date'] = $requestData['trans_date'][$i];
            $finalArr[$i]['entry_date'] = $requestData['entry_date'][$i];
            $finalArr[$i]['trans_no'] = $journalTransNo;

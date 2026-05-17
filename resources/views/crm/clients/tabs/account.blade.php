@@ -215,7 +215,11 @@
                             <td style="text-align: center; vertical-align: middle;">
                                 <div class="dropdown d-inline-block">
                                     <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownReceipt{{$rec_val->id}}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
-                                        <?php echo $rec_val->trans_no;?> <i class="fas fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
+                                        <?php echo $rec_val->trans_no;?>
+                                        <?php if (!preg_match('/^(TR|TJ)-/', (string)$rec_val->trans_no)): ?>
+                                            <span class="badge bg-secondary ms-1" style="font-size:9px;vertical-align:middle;" title="Pre-migration reference number">legacy</span>
+                                        <?php endif; ?>
+                                        <i class="fas fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
                                     </span>
                                     <div class="dropdown-menu" aria-labelledby="dropdownReceipt{{$rec_val->id}}">
                                         <a class="dropdown-item" href="{{URL::to('/clients/genClientFundReceipt')}}/{{$rec_val->id}}" target="_blank">
