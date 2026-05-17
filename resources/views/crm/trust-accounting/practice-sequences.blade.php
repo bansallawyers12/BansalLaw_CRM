@@ -60,7 +60,13 @@
                                             <td class="small text-muted">{{ $typeLabel }}</td>
                                         @endif
                                         <td class="text-end font-monospace">{{ number_format((int) $row->last_sequence) }}</td>
-                                        <td class="small">{{ $row->updated_at ?? '—' }}</td>
+                                        <td class="small">
+                                            @if(! empty($row->updated_at))
+                                                {{ \Carbon\Carbon::parse($row->updated_at)->timezone(config('app.timezone'))->format('Y-m-d H:i') }}
+                                            @else
+                                                —
+                                            @endif
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>

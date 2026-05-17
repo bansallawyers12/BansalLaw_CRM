@@ -16,6 +16,9 @@
                 </div>
                 <div class="col-md-4 text-md-end mt-2 mt-md-0">
                     <a href="{{ route('trust-accounting.reports.index') }}" class="btn btn-outline-primary btn-sm me-1">Reports</a>
+                    <a href="{{ route('trust-accounting.practice-sequences.index') }}" class="btn btn-outline-secondary btn-sm me-1">
+                        <i class="fas fa-sort-numeric-down me-1"></i> Sequences
+                    </a>
                     <a href="{{ route('trust-accounting.periods.index') }}" class="btn btn-outline-secondary btn-sm">
                         <i class="fas fa-lock me-1"></i> Period locks
                     </a>

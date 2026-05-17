@@ -79,7 +79,11 @@
                 </div>
             </div>
             <div class="transaction-table-wrapper">
-                <table class="transaction-table" id="client-ledger-table">
+                @php
+                    $__ledgerRule42Col = \Illuminate\Support\Facades\Schema::hasTable('trust_withdrawal_authorities')
+                        && \Illuminate\Support\Facades\Schema::hasTable('trust_withdrawal_authority_types');
+                @endphp
+                <table class="transaction-table" id="client-ledger-table" data-rule42-column="{{ $__ledgerRule42Col ? '1' : '0' }}">
                     <thead>
                         <tr>
                             <th style="text-align: left;" title="Date of trust transaction">Trans. Date</th>
@@ -89,10 +93,6 @@
                             <th style="text-align: center;" title="Trust receipt or payment number">Receipt No.</th>
                             <th style="text-align: right;" title="Trust money received into account">Trust Receipts (+)</th>
                             <th style="text-align: right;" title="Trust money paid out of account">Trust Payments (−)</th>
-                            @php
-                                $__ledgerRule42Col = \Illuminate\Support\Facades\Schema::hasTable('trust_withdrawal_authorities')
-                                    && \Illuminate\Support\Facades\Schema::hasTable('trust_withdrawal_authority_types');
-                            @endphp
                             @if($__ledgerRule42Col)
                             <th style="text-align: left; max-width: 140px;" title="Uniform Law Rule 42 withdrawal authority captured for this transfer (if applicable)">Rule 42</th>
                             @endif

@@ -53,6 +53,10 @@ class TrustAccountingAdminController extends Controller
      */
     private static function writeCsvUtf8Bom($out): void
     {
+        if (! is_resource($out)) {
+            return;
+        }
+
         fwrite($out, "\xEF\xBB\xBF");
     }
 

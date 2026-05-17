@@ -822,6 +822,16 @@ function customValidate(formName, savetype = '')
 											let withdrawAmount = subArray.withdraw_amount ? "$" + parseFloat(subArray.withdraw_amount).toFixed(2) : '';
 											let balanceAmount = subArray.balance_amount ? "$" + parseFloat(subArray.balance_amount).toFixed(2) : '';
 
+											var rule42LedgerCol = $('#client-ledger-table').attr('data-rule42-column') === '1';
+											var rule42Cell = '';
+											if (rule42LedgerCol) {
+												var r42Inner = '<span class="text-muted">—</span>';
+												if (subArray.client_fund_ledger_type === 'Fee Transfer') {
+													r42Inner = '<span class="text-muted" title="Rule 42 authority appears after save/reload.">—</span>';
+												}
+												rule42Cell = '<td style="text-align:left;vertical-align:middle;font-size:11px;max-width:150px;">' + r42Inner + '</td>';
+											}
+
 											const pm = (subArray.payment_method && String(subArray.payment_method).trim()) ? subArray.payment_method : '—';
 											let methodCellDyn = pm;
 											if (subArray.eftpos_surcharge_amount && parseFloat(subArray.eftpos_surcharge_amount) > 0) {
@@ -838,6 +848,7 @@ function customValidate(formName, savetype = '')
 												<td><a href="#" title="View Receipt ${subArray.trans_no}">${subArray.trans_no}</a></td>
 												<td class="currency text-success">${depositAmount}</td>
 												<td class="currency">${withdrawAmount}</td>
+												${rule42Cell}
 												<td class="currency balance">${balanceAmount}</td>
 											</tr>`;
 										});
