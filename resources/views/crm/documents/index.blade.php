@@ -395,14 +395,14 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
-    <link rel="stylesheet" href="{{asset('css/dataTables_min_latest.css')}}">
+    <link rel="stylesheet" href="{{asset('css/dataTables.bootstrap5.min.css')}}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
 
     <script src="{{asset('js/datatables.min.js')}}"></script>
-    <script src="{{asset('js/dataTables.bootstrap4.js')}}"></script>
+    <script src="{{asset('js/dataTables.bootstrap5.min.js')}}"></script>
 
     <script>
     $(document).ready(function() {

@@ -278,7 +278,7 @@
                                                                     <div class="form-group row" style="margin-bottom:12px">
                                                                         <label for="assignnote" class="col-sm-3 control-label c6 f13" style="margin-top:8px">Note</label>
                                                                         <div class="col-sm-9">
-                                                                            <textarea id="assignnote" class="form-control summernote-simple f13" placeholder="Enter a note..."></textarea>
+                                                                            <textarea id="assignnote" class="form-control tinymce-editor f13" placeholder="Enter a note..."></textarea>
                                                                         </div>
                                                                     </div>
                                                                     <div class="form-group row" style="margin-bottom:12px">

@@ -739,7 +739,7 @@ jQuery(document).ready(function($){
                 var res = JSON.parse(response);
                 $('.selectedsubject').val(res.subject);
                 // Clear and set TinyMCE editor content
-                $(".summernote-simple").each(function() {
+                $(".tinymce-editor").each(function() {
                     var editorId = $(this).attr('id');
                     if (editorId && typeof tinymce !== 'undefined' && tinymce.get(editorId)) {
                         tinymce.get(editorId).setContent(res.description || '');

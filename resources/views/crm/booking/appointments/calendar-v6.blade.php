@@ -1,10 +1,12 @@
 @extends('layouts.crm_client_detail')
 @section('title', ucfirst($type) . ' Calendar - Website Bookings')
 
-@section('content')
-
-{{-- FullCalendar v6: JS/API comes from layout @vite(app.js); this entry loads themed overrides (resources/css/fullcalendar-v6.css). Legacy fullcalendar.min.* (v3) removed from layouts. --}}
+@section('styles')
+{{-- FullCalendar v6 themed overrides — scoped to .booking-calendar-page. JS globals (window.FullCalendar / FullCalendarPlugins) come from layout @vite(app.js). --}}
 @vite(['resources/css/fullcalendar-v6.css'])
+@endsection
+
+@section('content')
 
 <div class="section-body">
     <div class="booking-calendar-page">
@@ -160,10 +162,6 @@
         </div>
     </div>
 </div>
-
-<script src="{{URL::asset('js/moment.min.js')}}"></script>
-
-@vite(['resources/js/app.js'])
 
 <script>
 // Wait for FullCalendar v6 to be loaded from Vite module

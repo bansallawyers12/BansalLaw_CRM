@@ -43,7 +43,7 @@
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
 								<label for="description">Description <span class="span_req">*</span></label>
-								<textarea  class="summernote-simple" name="description" data-valid="required"></textarea>
+								<textarea  class="tinymce-editor" name="description" data-valid="required"></textarea>
 								<span class="custom-error title_error" role="alert">
 									<strong></strong>
 								</span>
@@ -173,7 +173,7 @@
 									Description <span class="text-danger">*</span>
 								</label>
 								<div class="rich-text-container">
-									<textarea class="summernote-simple enhanced-textarea" id="note_description" name="description" data-valid="required"></textarea>
+									<textarea class="tinymce-editor enhanced-textarea" id="note_description" name="description" data-valid="required"></textarea>
 								</div>
 								<span class="custom-error title_error" role="alert">
 									<strong></strong>
@@ -266,7 +266,7 @@
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
 								<label for="description">Description <span class="span_req">*</span></label>
-								<textarea class="summernote-simple" name="description" data-valid="required"></textarea>
+								<textarea class="tinymce-editor" name="description" data-valid="required"></textarea>
 								<span class="custom-error title_error" role="alert">
 									<strong></strong>
 								</span>

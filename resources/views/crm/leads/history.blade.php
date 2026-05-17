@@ -172,7 +172,7 @@
 								    <div class=&quot;form-group row&quot; style=&quot;margin-bottom:12px&quot; >
 										<label for=&quot;inputEmail3&quot; class=&quot;col-sm-3 control-label c6 f13&quot; style=&quot;margin-top:8px&quot;>Note</label>
 										<div class=&quot;col-sm-9&quot;>
-										    <textarea id=&quot;remindernote&quot; class=&quot;form-control summernote-simple f13&quot; placeholder=&quot;Enter an note....&quot; type=&quot;text&quot;></textarea>
+										    <textarea id=&quot;remindernote&quot; class=&quot;form-control tinymce-editor f13&quot; placeholder=&quot;Enter an note....&quot; type=&quot;text&quot;></textarea>
 										</div>
 										<div class=&quot;clearfix&quot;></div>
 								    </div>
@@ -303,7 +303,7 @@
 						<input type="hidden" name="vtype" value="lead">
 						<input type="hidden" name="client_id" value="{{ (int) $fetchedData->id }}">
 						<input type="hidden" name="lead_id" value="{{ (int) $fetchedData->id }}">
-						<textarea id="description" name="description" class="form-control summernote-simple" placeholder="Add note" data-valid="required"></textarea>
+						<textarea id="description" name="description" class="form-control tinymce-editor" placeholder="Add note" data-valid="required"></textarea>
 					</div>
 				</div>
 			</div>
@@ -404,7 +404,7 @@
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
 								<label for="message">Message <span class="span_req">*</span></label>
-								<textarea class="summernote-simple selectedmessage" name="message"></textarea>
+								<textarea class="tinymce-editor selectedmessage" name="message"></textarea>
 								@if ($errors->has('message'))
 									<span class="custom-error" role="alert">
 										<strong>{{ @$errors->first('message') }}</strong>
@@ -616,7 +616,7 @@ $(document).delegate('.selecttemplate', 'change', function(){
 			var res = JSON.parse(response);
 			$('.selectedsubject').val(res.subject);
 			 // Clear and set TinyMCE editor content
-                    $("#emailmodal .summernote-simple").each(function() {
+                    $("#emailmodal .tinymce-editor").each(function() {
                         var editorId = $(this).attr('id');
                         if (editorId && typeof tinymce !== 'undefined' && tinymce.get(editorId)) {
                             tinymce.get(editorId).setContent(res.description || '');
@@ -640,7 +640,7 @@ $(document).delegate('.editnote', 'click', function(){
 		    $('.showeditform').html(response);
 		 // Initialize TinyMCE editor (replacing Summernote)
             if (typeof tinymce !== 'undefined') {
-                $("#myeditnotes .summernote-simple").each(function() {
+                $("#myeditnotes .tinymce-editor").each(function() {
                     var editorId = $(this).attr('id') || 'tinymce_' + Math.random().toString(36).substr(2, 9);
                     if (!$(this).attr('id')) {
                         $(this).attr('id', editorId);

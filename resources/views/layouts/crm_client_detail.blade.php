@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="{{asset('css/style.css')}}">
     <link rel="stylesheet" href="{{asset('css/components.css')}}">
     <link rel="stylesheet" href="{{asset('css/custom.css')}}">
-    <link rel="stylesheet" href="{{asset('css/dataTables_min_latest.css')}}">
+    <link rel="stylesheet" href="{{asset('css/dataTables.bootstrap5.min.css')}}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>window.__CRM_APP_NAME__=@json(config('app.name'));</script>
@@ -1692,8 +1692,8 @@
     </script>
     <script src="{{asset('js/app.min.js')}}"></script>
     <script src="{{asset('js/datatables.min.js')}}"></script>
+    <script src="{{asset('js/dataTables.bootstrap5.min.js')}}"></script>
     <script src="https://momentjs.com/downloads/moment.js"></script>
-    <script src="{{asset('js/dataTables.bootstrap4.js')}}"></script>
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
     <script src="{{asset('js/bootstrap-timepicker.min.js')}}"></script>

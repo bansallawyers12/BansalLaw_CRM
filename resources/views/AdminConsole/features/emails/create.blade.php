@@ -87,7 +87,7 @@
 												<div class="col-12 col-md-12 col-lg-12">
 													<div class="form-group">
 														<label for="status">Company Email Signature</label><br>
-														<textarea class="form-control summernote-simple" name="email_signature"></textarea>
+														<textarea class="form-control tinymce-editor" name="email_signature"></textarea>
 													</div>
 												</div>
 											</div>

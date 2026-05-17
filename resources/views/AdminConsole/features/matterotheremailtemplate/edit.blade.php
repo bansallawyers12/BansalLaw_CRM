@@ -69,7 +69,7 @@
 												<div class="col-12 col-md-12 col-lg-12">
 													<div class="form-group">
 														<label for="description">Mail Description <span class="span_req">*</span></label>
-														<textarea class="form-control summernote-simple" name="description" data-valid="required">{{@$fetchedData->description}}</textarea>
+														<textarea class="form-control tinymce-editor" name="description" data-valid="required">{{@$fetchedData->description}}</textarea>
 														@if ($errors->has('description'))
 															<span class="custom-error" role="alert">
 																<strong>{{ @$errors->first('description') }}</strong>
