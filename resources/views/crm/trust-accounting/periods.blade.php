@@ -17,6 +17,9 @@
                     </p>
                 </div>
                 <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                    <a href="{{ route('trust-accounting.guide') }}" class="btn btn-outline-info btn-sm me-1">
+                        <i class="fas fa-book me-1"></i> Guide
+                    </a>
                     <a href="{{ route('trust-accounting.reports.index') }}" class="btn btn-outline-primary btn-sm me-1">
                         <i class="fas fa-file-export me-1"></i> Reports
                     </a>

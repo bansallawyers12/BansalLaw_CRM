@@ -15,6 +15,9 @@
                     <p class="text-muted mb-0" style="font-size: 14px;">Append-only record of trust ledger voids, Rule 42 authorities, bank reconciliation actions, and period lock/unlock. Filter and export CSV (up to 10,000 rows per download) for examinations.</p>
                 </div>
                 <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                    <a href="{{ route('trust-accounting.guide') }}" class="btn btn-outline-info btn-sm me-1">
+                        <i class="fas fa-book me-1"></i> Guide
+                    </a>
                     <a href="{{ route('trust-accounting.reports.index') }}" class="btn btn-outline-primary btn-sm me-1">Reports</a>
                     <a href="{{ route('trust-accounting.practice-sequences.index') }}" class="btn btn-outline-secondary btn-sm me-1">
                         <i class="fas fa-sort-numeric-down me-1"></i> Sequences

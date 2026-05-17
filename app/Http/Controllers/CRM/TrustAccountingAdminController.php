@@ -298,6 +298,16 @@ class TrustAccountingAdminController extends Controller
     }
 
     /**
+     * In-app user guide for the trust accounting system.
+     */
+    public function guide(): View
+    {
+        $this->gateTrustAdmin();
+
+        return view('crm.trust-accounting.guide');
+    }
+
+    /**
      * Phase 9: read-only view of practice-wide trust receipt/journal sequence counters.
      */
     public function practiceSequencesIndex(): View
