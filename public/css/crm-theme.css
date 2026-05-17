@@ -1952,18 +1952,24 @@ body.sidebar-mini .adminconsole-offices-view .office-view-table-toolbar .btn-out
   border-color: var(--border) !important;
 }
 
-/* CRM email template forms use TinyMCE (.tinymce-editor → .tox-*); legacy Summernote .note-* removed */
+/* CRM email template forms — TinyMCE 6 (.tinymce-editor → .tox-*); Summernote .note-* removed */
 body.sidebar-mini .adminconsole-crm-email-template-form .tox-tinymce {
   border: 1px solid var(--border) !important;
   border-radius: 8px !important;
   overflow: hidden !important;
 }
 
-body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-editor-header,
-body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-toolbar,
-body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-toolbar__primary {
+/* Header row (wraps toolbars) — gets the bottom divider */
+body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-editor-header {
   background: var(--page-bg) !important;
   border-bottom: 1px solid var(--border) !important;
+}
+
+/* Individual toolbar rows — background only; no double border */
+body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-toolbar,
+body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-toolbar__primary,
+body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-toolbar__overflow {
+  background: var(--page-bg) !important;
 }
 
 body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-statusbar {
@@ -1976,7 +1982,8 @@ body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-edit-area::bef
   border-color: var(--border) !important;
 }
 
-body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-edit-area iframe {
+/* TinyMCE renders content in an iframe; set background via the wrapper */
+body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-edit-area {
   background: var(--card-bg) !important;
 }
 

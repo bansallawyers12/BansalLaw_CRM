@@ -1545,18 +1545,37 @@
             z-index: 2 !important; pointer-events: none !important; color: #868e96 !important; line-height: 1 !important;
         }
         .topbar-center .topbar-search__icon i { font-size: 0.85rem !important; }
-        .topbar-center .topbar-search .select2-container { width: 100% !important; }
-        .topbar-center .topbar-search .select2-container--default .select2-selection--single {
+        /* Topbar Tom Select search */
+        .topbar-center .topbar-search .ts-wrapper { width: 100% !important; }
+        .topbar-center .topbar-search .ts-wrapper .ts-control {
             background-color: #fff !important;
             border: 1px solid #dee2e6 !important;
             border-radius: 8px !important;
-            padding-left: 2rem !important; min-height: 40px !important; height: 40px !important;
-            display: flex !important; align-items: center !important;
+            padding-left: 2rem !important;
+            min-height: 40px !important;
+            height: 40px !important;
+            display: flex !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            cursor: text !important;
+            box-shadow: none !important;
         }
-        .topbar-center .topbar-search .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 38px !important; font-size: 0.875rem !important;
+        .topbar-center .topbar-search .ts-wrapper .ts-control input {
+            font-size: 0.875rem !important;
+            padding: 0 !important;
+            min-width: 0 !important;
+            flex: 1 1 0% !important;
+            border: 0 !important;
+            background: transparent !important;
+            line-height: 1 !important;
         }
-        .topbar-center .topbar-search .select2-container--default .select2-selection--single .select2-selection__arrow { height: 38px !important; }
+        .topbar-center .topbar-search .ts-wrapper .ts-control .item {
+            font-size: 0.875rem !important;
+            line-height: 1 !important;
+            padding: 0 !important;
+        }
+        /* Hide the Bootstrap 5 theme chevron on the topbar search control */
+        .topbar-center .topbar-search .ts-wrapper.single .ts-control::after { display: none !important; }
         .topbar-center .topbar-search .form-control { border: 0 !important; background: transparent !important; width: 100% !important; }
         .topbar-right { display: flex !important; align-items: center !important; gap: 10px !important; }
         /* Dropdowns */
