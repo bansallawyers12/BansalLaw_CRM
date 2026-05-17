@@ -373,7 +373,6 @@ $(document).on('click', '.convert-activity-to-note', function() {
         // Process description: remove HTML tags and first span
         let cleanDescription = processDescription(activityDescription);
         
-        // Set value for Summernote editor
         // Set content in TinyMCE editor
         var editorId = $('#convert_note_description').attr('id');
         if (editorId && typeof tinymce !== 'undefined' && tinymce.get(editorId)) {

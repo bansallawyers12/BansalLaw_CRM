@@ -85,8 +85,10 @@
             error: function(xhr, status, error) {
                 $('.popuploader').hide();
                 console.error('[getallnotes] Failed to refresh notes:', status, error);
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('Notes refreshed but some data may be outdated. Please refresh the page.');
+                if (typeof iziToast !== 'undefined' && iziToast.error) {
+                    iziToast.error({ message: 'Notes refreshed but some data may be outdated. Please refresh the page.', position: 'topRight' });
+                } else {
+                    alert('Notes refreshed but some data may be outdated. Please refresh the page.');
                 }
             }
         });
@@ -132,9 +134,9 @@
             $('#create_note #appliationModalLabel').html('Create Note');
             $('#create_note input[name="noteid"]').val('');
             if (typeof clearEditor === 'function') {
-                clearEditor("#create_note .summernote-simple");
+                clearEditor("#create_note .tinymce-editor");
             }
-            $("#create_note .summernote-simple").val('');
+            $("#create_note .tinymce-editor").val('');
             if ($(this).attr('datatype') == 'note') {
                 $('.is_not_note').hide();
             } else {
@@ -188,9 +190,9 @@
                     var savedPhone = (res.data.mobile_number != null ? String(res.data.mobile_number) : '').trim();
 
                     $('#create_note select[name="task_group"]').val(taskGroup);
-                    $("#create_note .summernote-simple").val(res.data.description);
+                    $("#create_note .tinymce-editor").val(res.data.description);
                     if (typeof setEditorContent === 'function') {
-                        setEditorContent("#create_note .summernote-simple", res.data.description);
+                        setEditorContent("#create_note .tinymce-editor", res.data.description);
                     }
 
                     $('#create_note select[name="task_group"]').trigger('change');

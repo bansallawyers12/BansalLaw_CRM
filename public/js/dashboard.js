@@ -27,9 +27,7 @@ $(function () {
     zIndex              : 999999
   }) */
 
-  // TinyMCE - text editor (replacing Summernote)
-  // TinyMCE is initialized in scripts.js for .summernote-simple and .tinymce-editor classes
-  // $('.textarea').summernote() // Removed - using TinyMCE now
+  // TinyMCE is initialized in scripts.js for .tinymce-editor
 
   // Initialize Flatpickr for date range picker
   if (typeof flatpickr !== 'undefined' && $('.daterange').length) {

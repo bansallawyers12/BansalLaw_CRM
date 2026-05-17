@@ -36,7 +36,7 @@
             tinymce.get(elementId).setContent(content || '');
         } else {
             $element.val(content || '');
-            if ($element.hasClass('summernote-simple') || $element.hasClass('tinymce-editor')) {
+            if ($element.hasClass('tinymce-editor')) {
                 setTimeout(function() {
                     if (elementId && tinymce.get(elementId)) {
                         tinymce.get(elementId).setContent(content || '');
@@ -67,7 +67,7 @@
             return true;
         }
 
-        return $element.hasClass('summernote-simple') || $element.hasClass('tinymce-editor');
+        return $element.hasClass('tinymce-editor');
     }
 
     window.getEditorContent = getEditorContent;

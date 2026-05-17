@@ -1,3 +1,41 @@
+/** Prefer iziToast (CRM layouts); fallback to alert when unavailable. */
+function crmToastDismissAll() {
+    if (typeof iziToast !== 'undefined' && typeof iziToast.destroy === 'function') {
+        iziToast.destroy();
+    }
+}
+function crmToastError(message) {
+    if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+        iziToast.error({ message: message, position: 'topRight' });
+    } else {
+        alert(message);
+    }
+}
+function crmToastSuccess(message) {
+    if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
+        iziToast.success({ message: message, position: 'topRight' });
+    } else {
+        alert(message);
+    }
+}
+/** Holds until crmToastDismissAll() — dismiss on AJAX complete/error. */
+function crmToastLoading(message) {
+    if (typeof iziToast === 'undefined') {
+        return;
+    }
+    if (typeof iziToast.info === 'function') {
+        iziToast.info({ message: message, position: 'topRight', timeout: false, close: true });
+    } else if (typeof iziToast.show === 'function') {
+        iziToast.show({
+            message: message,
+            position: 'topRight',
+            timeout: false,
+            close: true,
+            backgroundColor: '#4a89dc'
+        });
+    }
+}
+
 function isNumberKey1(evt)
     {
         var charCode = (evt.which) ? evt.which : event.keyCode;
@@ -75,7 +113,7 @@ function isNumberKey1(evt)
             case "popoverdate":
                 if(val === "")
                 {
-                    toastr.error("Date can not be empty");
+                    crmToastError("Date can not be empty");
                     return false;
                 }
                 var valspilt = val.split("/");
@@ -86,7 +124,7 @@ function isNumberKey1(evt)
 
                     if(updatedate.setHours(0,0,0,0) < d.setHours(0,0,0,0))
                     {
-                        toastr.error("Date can not be less than today's date");
+                        crmToastError("Date can not be less than today's date");
                         return false;
                     }
                     // Update Flatpickr date programmatically
@@ -281,7 +319,7 @@ function isNumberKey1(evt)
 	    var rem_act = document.getElementById("activityReminder1").value;
 	    if(note_act == '' && rem_act == '')
 	    {
-		toastr.error("Please select option");
+		crmToastError("Please select option");
 		document.getElementById("activity_type1").focus();
 		return false;
 	    }
@@ -299,7 +337,7 @@ function isNumberKey1(evt)
 		data : {add_note : note_act ,  rem_day : rem_act , lead_id : $lead_id , user_id : $agent_id , username : $username , reminder_activity : 'reminder'},
 		success : function(data){
 // 		    console.log(data);
-		    toastr.success("Success");
+		    crmToastSuccess("Success");
         location.reload();
 		},
 		error: function(error){
@@ -323,19 +361,19 @@ function isNumberKey1(evt)
         var current = new Date();
         if(!checkvaliddate(d))
         {
-            toastr.error("Please enter a valid date");
+            crmToastError("Please enter a valid date");
             return false;
         }
         else if(d.setHours(0,0,0,0) < current.setHours(0,0,0,0))
         {
-            toastr.error("Date can not be less than today's date");
+            crmToastError("Date can not be less than today's date");
             return false;
         }
         var remiderinputtime = $("#popovertime").val();
         var regex = /([01]\d|2[0-3]):([0-5]\d)\s(am|pm)/;
         if(!regex.test(remiderinputtime))
         {
-            toastr.error("Please enter a valid reminder time");
+            crmToastError("Please enter a valid reminder time");
             return false;
         }
         ga('send', 'event','HOOK','Lead Detail','Reminder_set_button');
@@ -345,7 +383,7 @@ function isNumberKey1(evt)
             data : {add_note : remindernote ,  rem_time : remiderdate , regval_condition : regardless, lead_id : $lead_id , user_id : $agent_id , username : $username , reminder : 'reminder'},
             success : function(data){
                 console.log(data);
-                toastr.success("Success");
+                crmToastSuccess("Success");
                 $('[data-role=popover]').popover('hide');
             },
             error: function(error){
@@ -385,14 +423,14 @@ function isNumberKey1(evt)
         if($.trim($lead_email) === "" && !ValidateEmail($.trim($lead_email)) )
         {
 
-            toastr.error('Please correct traveler email');
+            crmToastError('Please correct traveler email');
 
             return false;
         }
         if($.trim($lead_subject) === "")
         {
 
-            toastr.error('Please provide subject');
+            crmToastError('Please provide subject');
 
             return false;
         }
@@ -400,7 +438,7 @@ function isNumberKey1(evt)
         if($.trim($mail_content) === "")
         {
 
-            toastr.error('Please provide mail content');
+            crmToastError('Please provide mail content');
 
             return false;
         }
@@ -415,7 +453,7 @@ function isNumberKey1(evt)
                 if(!ValidateEmail($.trim($lead_ccarray[i])))
                 {
 
-                    toastr.error('Please correct to cc email"');
+                    crmToastError('Please correct to cc email"');
 
                     return false;
                     break;
@@ -431,7 +469,7 @@ function isNumberKey1(evt)
                 if(!ValidateEmail($.trim($lead_bccarray[i])))
                 {
 
-                    toastr.error('Please correct to bcc email"');
+                    crmToastError('Please correct to bcc email"');
 
                     return false;
                     break;
@@ -443,19 +481,19 @@ function isNumberKey1(evt)
 
         if(!checkvaliddate(d))
         {
-            toastr.error("Please enter a valid date");
+            crmToastError("Please enter a valid date");
             return false;
         }
         else if(d.setHours(0,0,0,0) < current.setHours(0,0,0,0))
         {
-            toastr.error("Date can not be less than today's date");
+            crmToastError("Date can not be less than today's date");
             return false;
         }
         var remiderinputtime = $("#popovertime").val();
         var regex = /([01]\d|2[0-3]):([0-5]\d)\s(am|pm)/;
         if(!regex.test(remiderinputtime))
         {
-            toastr.error("Please enter a valid reminder time");
+            crmToastError("Please enter a valid reminder time");
             return false;
         }
 
@@ -477,7 +515,7 @@ function isNumberKey1(evt)
 
                 lead_subject : $lead_subject, lead_id : $lead_id , user_id : $agent_id , username : $username , sendlater : 'sendlater'},
             success : function(data){
-                toastr.success('Mail has been scheduled successfully');
+                crmToastSuccess('Mail has been scheduled successfully');
                 setTimeout(function(){ window.location.reload(); }, 1000);
 
             },
@@ -538,7 +576,7 @@ function isNumberKey1(evt)
 
         if (remain <= 0 && e.which !== 0 && e.charCode !== 0) {
             $(this).val((tval).substring(0, tlength - 1));
-            toastr.error("Maximum charactor count(500) ");
+            crmToastError("Maximum charactor count(500) ");
         }
     });
     function autoheight(a) {
@@ -627,19 +665,20 @@ function isNumberKey1(evt)
             },
             url  : '/ajax/unimail-ajax.php',
             beforeSend: function(jqXHR, settings) {
-                toastr.options.hideMethod = 'noop';
-                toastr.info("Requesting Payment"); // Assuming you have some kind of spinner object.
+                crmToastLoading('Requesting Payment');
             },
             success : function(data){
 
-                toastr.success('Request Sent');
+                crmToastDismissAll();
+                crmToastSuccess('Request Sent');
                 setTimeout(function(){ window.location.reload(); }, 1000);
 
 
                 //return false;
             },
             error : function(error){
-        
+                crmToastDismissAll();
+                crmToastError('Could not send payment request. Please try again.');
             }
        	 });
 	}
@@ -669,14 +708,14 @@ function isNumberKey1(evt)
         if($.trim($lead_email) === "" && !ValidateEmail($.trim($lead_email)) )
         {
 
-            toastr.error('Please correct traveler email');
+            crmToastError('Please correct traveler email');
 
             return false;
         }
         if($.trim($lead_subject) === "")
         {
 
-            toastr.error('Please provide subject');
+            crmToastError('Please provide subject');
 
             return false;
         }
@@ -684,7 +723,7 @@ function isNumberKey1(evt)
         if($.trim($mail_content) === "")
         {
 
-            toastr.error('Please provide mail content');
+            crmToastError('Please provide mail content');
 
             return false;
         }
@@ -699,7 +738,7 @@ function isNumberKey1(evt)
                 if(!ValidateEmail($.trim($lead_ccarray[i])))
                 {
 
-                    toastr.error('Please correct to cc email"');
+                    crmToastError('Please correct to cc email"');
 
                     return false;
                     break;
@@ -715,7 +754,7 @@ function isNumberKey1(evt)
                 if(!ValidateEmail($.trim($lead_bccarray[i])))
                 {
 
-                    toastr.error('Please correct to bcc email"');
+                    crmToastError('Please correct to bcc email"');
 
                     return false;
                     break;
@@ -743,12 +782,14 @@ function isNumberKey1(evt)
             },
             url  : '/ajax/unimail-ajax.php',
             beforeSend: function(jqXHR, settings) {
-                toastr.options.hideMethod = 'noop';
-                toastr.info("Sending your mail"); // Assuming you have some kind of spinner object.
+                crmToastLoading('Sending your mail');
             },
             success : function(data){
 
-                toastr.success('Mail has been sent to traveler');
+                if (typeof iziToast !== 'undefined' && iziToast.destroy) {
+                    iziToast.destroy();
+                }
+                crmToastSuccess('Mail has been sent to traveler');
                 setTimeout(function(){ window.location.reload(); }, 1000);
 
 

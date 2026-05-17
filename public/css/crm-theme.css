@@ -1952,7 +1952,7 @@ body.sidebar-mini .adminconsole-offices-view .office-view-table-toolbar .btn-out
   border-color: var(--border) !important;
 }
 
-/* Summernote (crm-email-template description, etc.) — docs/theme.md */
+/* Legacy Summernote rule — no longer active; TinyMCE is used instead */
 body.sidebar-mini .adminconsole-crm-email-template-form .note-editor.note-frame {
   border: 1px solid var(--border) !important;
   border-radius: 8px !important;
@@ -4135,15 +4135,20 @@ body.sidebar-mini .main-content .signature-dashboard a.btn-primary-custom i {
 }
 
 /* ---------- Assignee Action (/action) — DataTables pagination (docs/theme.md) ----------
-   dataTables_min_latest.css paints .paginate_button:hover black/white; reset li + theme .page-link */
-body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button {
+   DT 1.x: .dataTables_wrapper .dataTables_paginate .paginate_button
+   DT 2.x: .dt-container .dt-paging .dt-paging-button  */
+
+/* Reset li-level background that DT core/BS5 CSS paints on hover */
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button,
+body.sidebar-mini .assignee-action-page .dt-container .dt-paging .dt-paging-button {
   background: transparent !important;
   background-image: none !important;
   border: none !important;
   box-shadow: none !important;
 }
 
-body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button .page-link {
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button .page-link,
+body.sidebar-mini .assignee-action-page .dt-container .dt-paging .dt-paging-button .page-link {
   color: var(--navy) !important;
   background-color: var(--card-bg) !important;
   background-image: none !important;
@@ -4153,14 +4158,16 @@ body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate
   margin: 0 2px;
 }
 
-body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button:not(.disabled):not(.active):hover {
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button:not(.disabled):not(.active):hover,
+body.sidebar-mini .assignee-action-page .dt-container .dt-paging .dt-paging-button:not(.disabled):not(.active):hover {
   background: transparent !important;
   background-image: none !important;
   border: none !important;
   box-shadow: none !important;
 }
 
-body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button:not(.disabled):not(.active):hover .page-link {
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button:not(.disabled):not(.active):hover .page-link,
+body.sidebar-mini .assignee-action-page .dt-container .dt-paging .dt-paging-button:not(.disabled):not(.active):hover .page-link {
   color: var(--navy) !important;
   background-color: var(--sidebar-hover) !important;
   background-image: none !important;
@@ -4168,13 +4175,15 @@ body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate
   box-shadow: none !important;
 }
 
-body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button:active {
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button:active,
+body.sidebar-mini .assignee-action-page .dt-container .dt-paging .dt-paging-button:active {
   background: transparent !important;
   background-image: none !important;
   box-shadow: none !important;
 }
 
-body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button:active .page-link {
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button:active .page-link,
+body.sidebar-mini .assignee-action-page .dt-container .dt-paging .dt-paging-button:active .page-link {
   color: var(--navy) !important;
   background-color: var(--sidebar-hover) !important;
   background-image: none !important;
@@ -4183,21 +4192,25 @@ body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate
 }
 
 body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button.active .page-link,
-body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button.current .page-link {
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button.current .page-link,
+body.sidebar-mini .assignee-action-page .dt-container .dt-paging .dt-paging-button.active .page-link {
   color: #fff !important;
   background-color: var(--sidebar-active) !important;
   border-color: var(--sidebar-active) !important;
 }
 
 body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button.active:hover .page-link,
-body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover .page-link {
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover .page-link,
+body.sidebar-mini .assignee-action-page .dt-container .dt-paging .dt-paging-button.active:hover .page-link {
   color: #fff !important;
   background-color: var(--sidebar-active) !important;
   border-color: var(--sidebar-active) !important;
 }
 
 body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button.disabled .page-link,
-body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover .page-link {
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover .page-link,
+body.sidebar-mini .assignee-action-page .dt-container .dt-paging .dt-paging-button.disabled .page-link,
+body.sidebar-mini .assignee-action-page .dt-container .dt-paging .dt-paging-button.disabled:hover .page-link {
   color: var(--text-muted) !important;
   background-color: var(--card-bg) !important;
   border-color: var(--border) !important;
@@ -4206,7 +4219,9 @@ body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate
 }
 
 body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link:focus,
-body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link:focus-visible {
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link:focus-visible,
+body.sidebar-mini .assignee-action-page .dt-container .dt-paging .pagination .page-link:focus,
+body.sidebar-mini .assignee-action-page .dt-container .dt-paging .pagination .page-link:focus-visible {
   outline: none !important;
   border-color: var(--sidebar-active) !important;
   box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.22) !important;
@@ -4284,32 +4299,40 @@ body.sidebar-mini .assignee-action-page table.dataTable.hover > tbody > tr:hover
   }
 }
 
-/* Sorted column background — subtle navy tint, not Bootstrap primary blue */
+/* Sorted column background — subtle navy tint (DT 1.x: .sorting_1 / DT 2.x: .dt-ordering-1) */
 body.sidebar-mini .assignee-action-page table.dataTable.display > tbody tr > .sorting_1,
-body.sidebar-mini .assignee-action-page table.dataTable.order-column > tbody tr > .sorting_1 {
+body.sidebar-mini .assignee-action-page table.dataTable.display > tbody tr > .dt-ordering-1,
+body.sidebar-mini .assignee-action-page table.dataTable.order-column > tbody tr > .sorting_1,
+body.sidebar-mini .assignee-action-page table.dataTable.order-column > tbody tr > .dt-ordering-1 {
   box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--page-bg) 65%, var(--border) 35%) !important;
 }
 
 @supports not (color: color-mix(in srgb, red, blue)) {
   body.sidebar-mini .assignee-action-page table.dataTable.display > tbody tr > .sorting_1,
-  body.sidebar-mini .assignee-action-page table.dataTable.order-column > tbody tr > .sorting_1 {
+  body.sidebar-mini .assignee-action-page table.dataTable.display > tbody tr > .dt-ordering-1,
+  body.sidebar-mini .assignee-action-page table.dataTable.order-column > tbody tr > .sorting_1,
+  body.sidebar-mini .assignee-action-page table.dataTable.order-column > tbody tr > .dt-ordering-1 {
     box-shadow: inset 0 0 0 9999px rgba(240, 246, 255, 0.95) !important;
   }
 }
 
 body.sidebar-mini .assignee-action-page table.dataTable.display > tbody > tr:hover > .sorting_1,
-body.sidebar-mini .assignee-action-page table.dataTable.order-column.hover > tbody > tr:hover > .sorting_1 {
+body.sidebar-mini .assignee-action-page table.dataTable.display > tbody > tr:hover > .dt-ordering-1,
+body.sidebar-mini .assignee-action-page table.dataTable.order-column.hover > tbody > tr:hover > .sorting_1,
+body.sidebar-mini .assignee-action-page table.dataTable.order-column.hover > tbody > tr:hover > .dt-ordering-1 {
   box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--sidebar-hover) 38%, var(--page-bg) 62%) !important;
 }
 
 @supports not (color: color-mix(in srgb, red, blue)) {
   body.sidebar-mini .assignee-action-page table.dataTable.display > tbody > tr:hover > .sorting_1,
-  body.sidebar-mini .assignee-action-page table.dataTable.order-column.hover > tbody > tr:hover > .sorting_1 {
+  body.sidebar-mini .assignee-action-page table.dataTable.display > tbody > tr:hover > .dt-ordering-1,
+  body.sidebar-mini .assignee-action-page table.dataTable.order-column.hover > tbody > tr:hover > .sorting_1,
+  body.sidebar-mini .assignee-action-page table.dataTable.order-column.hover > tbody > tr:hover > .dt-ordering-1 {
     box-shadow: inset 0 0 0 9999px rgba(200, 220, 239, 0.55) !important;
   }
 }
 
-/* Sort arrows */
+/* Sort arrows — DT 1.x class names (th::before/after pseudo-elements) */
 body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.sorting:before,
 body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.sorting:after,
 body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.sorting_asc:before,
@@ -4326,8 +4349,28 @@ body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.sorting_
   color: var(--navy) !important;
 }
 
-/* Loading dots — theme active blue */
-body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_processing > div:last-child > div {
+/* Sort arrows — DT 2.x class names (span.dt-column-order::before/after) */
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.dt-orderable-asc span.dt-column-order:before,
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.dt-orderable-asc span.dt-column-order:after,
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.dt-orderable-desc span.dt-column-order:before,
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.dt-orderable-desc span.dt-column-order:after,
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.dt-ordering-asc span.dt-column-order:before,
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.dt-ordering-asc span.dt-column-order:after,
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.dt-ordering-desc span.dt-column-order:before,
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.dt-ordering-desc span.dt-column-order:after {
+  color: var(--text-muted) !important;
+  opacity: 0.4 !important;
+}
+
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.dt-ordering-asc span.dt-column-order:before,
+body.sidebar-mini .assignee-action-page table.dataTable thead > tr > th.dt-ordering-desc span.dt-column-order:after {
+  opacity: 0.85 !important;
+  color: var(--navy) !important;
+}
+
+/* Loading dots — theme active blue (DT 1.x + DT 2.x selectors) */
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dataTables_processing > div:last-child > div,
+body.sidebar-mini .assignee-action-page .dataTables_wrapper .dt-processing > div:last-child > div {
   background: var(--sidebar-active) !important;
 }
 

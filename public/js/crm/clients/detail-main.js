@@ -5181,14 +5181,14 @@ success: function(response) {
                         getallactivities();
                         
                         // Show success message
-                        if(typeof toastr !== 'undefined') {
-                            toastr.success('Document moved to Not Used tab');
+                        if (typeof iziToast !== 'undefined' && iziToast.success) {
+                            iziToast.success({ message: 'Document moved to Not Used tab', position: 'topRight' });
                         }
 
                     } else {
                         console.error('✗ Failed to move document to Not Used tab', res);
-                        if(typeof toastr !== 'undefined') {
-                            toastr.error(res.message || 'Failed to move document');
+                        if (typeof iziToast !== 'undefined' && iziToast.error) {
+                            iziToast.error({ message: res.message || 'Failed to move document', position: 'topRight' });
                         }
                     }
 
@@ -5197,8 +5197,8 @@ success: function(response) {
                 error: function(xhr, status, error) {
                     $('.popuploader').hide();
                     console.error('✗ AJAX error moving document to Not Used tab', {status: status, error: error});
-                    if(typeof toastr !== 'undefined') {
-                        toastr.error('Error moving document. Please try again.');
+                    if (typeof iziToast !== 'undefined' && iziToast.error) {
+                        iziToast.error({ message: 'Error moving document. Please try again.', position: 'topRight' });
                     }
                 }
 
@@ -5266,15 +5266,15 @@ success: function(response) {
                         
                         // Show success message with info
                         var docTypeLabel = res.doc_type === 'personal' ? 'Personal Documents' : 'Matter Documents';
-                        if(typeof toastr !== 'undefined') {
-                            toastr.success('Document moved back to ' + docTypeLabel + ' tab');
+                        if (typeof iziToast !== 'undefined' && iziToast.success) {
+                            iziToast.success({ message: 'Document moved back to ' + docTypeLabel + ' tab', position: 'topRight' });
                         }
                         
 
                     } else {
                         console.error('✗ Failed to move document back', res);
-                        if(typeof toastr !== 'undefined') {
-                            toastr.error(res.message || 'Failed to move document back');
+                        if (typeof iziToast !== 'undefined' && iziToast.error) {
+                            iziToast.error({ message: res.message || 'Failed to move document back', position: 'topRight' });
                         }
                     }
 
@@ -5283,8 +5283,8 @@ success: function(response) {
                 error: function(xhr, status, error) {
                     $('.popuploader').hide();
                     console.error('✗ AJAX error moving document back', {status: status, error: error});
-                    if(typeof toastr !== 'undefined') {
-                        toastr.error('Error moving document back. Please try again.');
+                    if (typeof iziToast !== 'undefined' && iziToast.error) {
+                        iziToast.error({ message: 'Error moving document back. Please try again.', position: 'topRight' });
                     }
                 }
 
@@ -5649,14 +5649,10 @@ success: function(response) {
 
                         $('.popuploader').hide();
 
-                        if (typeof toastr !== 'undefined') {
-
-                            toastr.error(response && response.message ? response.message : 'Failed to pin note');
-
+                        if (typeof iziToast !== 'undefined' && iziToast.error) {
+                            iziToast.error({ message: response && response.message ? response.message : 'Failed to pin note', position: 'topRight' });
                         } else {
-
                             alert(response && response.message ? response.message : 'Failed to pin note');
-
                         }
 
                     }
@@ -5669,14 +5665,10 @@ success: function(response) {
 
                     console.error('[PinNote] AJAX error:', status, error, xhr.responseText);
 
-                    if (typeof toastr !== 'undefined') {
-
-                        toastr.error('Failed to pin note. Please try again.');
-
+                    if (typeof iziToast !== 'undefined' && iziToast.error) {
+                        iziToast.error({ message: 'Failed to pin note. Please try again.', position: 'topRight' });
                     } else {
-
                         alert('Failed to pin note. Please try again.');
-
                     }
 
                 }
@@ -6120,11 +6112,11 @@ success: function(response) {
                     if (!res) return;
                     $('.selectedsubject').val(res.subject);
 
-                    clearEditor("#emailmodal .summernote-simple");
+                    clearEditor("#emailmodal .tinymce-editor");
 
-                    setEditorContent("#emailmodal .summernote-simple", res.description);
+                    setEditorContent("#emailmodal .tinymce-editor", res.description);
 
-                    $("#emailmodal .summernote-simple").val(res.description);
+                    $("#emailmodal .tinymce-editor").val(res.description);
 
                 }
 
@@ -6265,7 +6257,7 @@ success: function(response) {
 
                     $('.selectedsubject').val(subjct_message);
 
-                    clearEditor("#emailmodal .summernote-simple");
+                    clearEditor("#emailmodal .tinymce-editor");
 
 
 
@@ -6494,7 +6486,8 @@ success: function(response) {
             if ($(settings.nTable).attr('id') !== 'mychecklist-datatable') return true;
             var filterIds = window.composeChecklistFilterIds;
             if (filterIds === undefined || filterIds === null) return true;
-            var rowNode = settings.aoData && settings.aoData[dataIndex] ? settings.aoData[dataIndex].nTr : null;
+            var rowNode = null;
+            try { rowNode = new $.fn.dataTable.Api(settings).row(dataIndex).node(); } catch(e) {}
             if (!rowNode) return true;
             var id = $(rowNode).attr('data-checklist-id') || $(rowNode).find('.checklistfile-cb').val();
             if (!id) return true;
@@ -6513,7 +6506,7 @@ success: function(response) {
 
             "columnDefs": [
 
-            { "sortable": false, "targets": [0, 2, 3] }
+            { "orderable": false, "targets": [0, 2, 3] }
 
         ],
 

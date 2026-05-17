@@ -34,7 +34,7 @@ class NoteDescriptionHtml
     {
         if (self::$purifier === null) {
             $config = \HTMLPurifier_Config::createDefault();
-            // Match typical TinyMCE/Summernote output; balanced tree fixes malformed paste
+            // Match typical TinyMCE output; balanced tree fixes malformed paste
             $config->set('HTML.Allowed', implode(',', [
                 'p[style|class]', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del', 'ins',
                 'ul', 'ol', 'li', 'a[href|title|target|rel|name]',

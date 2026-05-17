@@ -638,7 +638,7 @@ $(document).delegate('.editnote', 'click', function(){
 		data:{id:v},
 		success: function(response){
 		    $('.showeditform').html(response);
-		 // Initialize TinyMCE editor (replacing Summernote)
+		 // Initialize TinyMCE editor
             if (typeof tinymce !== 'undefined') {
                 $("#myeditnotes .tinymce-editor").each(function() {
                     var editorId = $(this).attr('id') || 'tinymce_' + Math.random().toString(36).substr(2, 9);

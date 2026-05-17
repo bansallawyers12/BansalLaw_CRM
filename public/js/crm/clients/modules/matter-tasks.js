@@ -33,10 +33,10 @@
 
     function notifyError(message) {
         var msg = message || 'Something went wrong. Please try again.';
-        if (typeof iziToast !== 'undefined') {
+        if (typeof iziToast !== 'undefined' && iziToast.error) {
             iziToast.error({ message: msg, position: 'topRight' });
-        } else if (typeof toastr !== 'undefined') {
-            toastr.error(msg);
+        } else {
+            alert(msg);
         }
     }
 

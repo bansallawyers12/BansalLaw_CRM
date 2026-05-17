@@ -376,7 +376,7 @@ $(function () {
       "3B82F6", "Light Blue", "8B5CF6", "Light Purple", "EC4899", "Light Pink"
     ];
 
-    // Configuration for simple TinyMCE editors (replacing .summernote-simple)
+    // Configuration for simple TinyMCE editors (.tinymce-editor)
     // Optimized for quick notes with essential features
     var tinymceSimpleConfig = {
       license_key: 'gpl',
@@ -415,9 +415,7 @@ $(function () {
       }
     };
 
-    // Initialize TinyMCE for .summernote-simple (keeping class for backward compatibility during migration)
-    // Also initialize for .tinymce-editor
-    var editorsToInit = '.summernote-simple, .tinymce-editor';
+    var editorsToInit = '.tinymce-editor';
     
     // Check if editors exist and initialize them
     $(editorsToInit).each(function() {
@@ -435,7 +433,7 @@ $(function () {
       }
     });
 
-    // Configuration for full TinyMCE editors (replacing .summernote)
+    // Configuration for full TinyMCE editors (.tinymce-editor-full)
     // Enhanced for emails, templates, and longer content
     var tinymceFullConfig = {
       license_key: 'gpl',
@@ -519,8 +517,8 @@ $(function () {
       }
     };
 
-    // Initialize TinyMCE for .summernote (keeping class for backward compatibility)
-    $('.summernote').each(function() {
+    // Initialize full TinyMCE for .tinymce-editor-full
+    $('.tinymce-editor-full').each(function() {
       var editorId = $(this).attr('id') || 'tinymce_' + Math.random().toString(36).substr(2, 9);
       if (!$(this).attr('id')) {
         $(this).attr('id', editorId);

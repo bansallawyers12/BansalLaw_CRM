@@ -327,22 +327,26 @@
         border-color: var(--sidebar-active, #3a6fa8); 
     }
     
-    /* DataTables customization */
-    .dataTables_wrapper {
+    /* DataTables customization — selectors cover DT 1.x (dataTables_*) and DT 2.x (dt-*) class names */
+    .dataTables_wrapper,
+    .dt-container {
         width: 100%;
         max-width: 100%;
         overflow-x: hidden;
     }
     
-    .dataTables_wrapper .dataTables_length { 
+    .dataTables_wrapper .dataTables_length,
+    .dt-container .dt-length { 
         margin-bottom: 0; 
     }
     
-    .dataTables_wrapper .dataTables_filter { 
+    .dataTables_wrapper .dataTables_filter,
+    .dt-container .dt-search { 
         display: none; 
     }
     
-    #DataTables_Table_0_info { 
+    #DataTables_Table_0_info,
+    .dt-info { 
         margin-top: 20px; 
     }
     
@@ -360,11 +364,13 @@
         border: 1px solid var(--border, #c8dcef);
     }
     
-    .dataTables_length {
+    .dataTables_length,
+    .dt-length {
         flex-shrink: 0;
     }
     
-    .dataTables_length select {
+    .dataTables_length select,
+    .dt-length select {
         padding: 10px 15px;
         border: 2px solid var(--border, #c8dcef);
         border-radius: 8px;
@@ -374,13 +380,15 @@
         transition: all 0.3s ease;
     }
     
-    .dataTables_length select:focus {
+    .dataTables_length select:focus,
+    .dt-length select:focus {
         outline: none;
         border-color: var(--sidebar-active, #3a6fa8);
         box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
     }
     
-    .dataTables_length label {
+    .dataTables_length label,
+    .dt-length label {
         font-size: 0.9em;
         color: var(--text-muted, #5e7a90);
         display: flex;
@@ -390,7 +398,8 @@
         font-weight: 600;
     }
     
-    .dataTables_info {
+    .dataTables_info,
+    .dt-info {
         flex-grow: 1;
         text-align: center;
         font-size: 0.9em;
@@ -529,20 +538,24 @@
         border: 1px solid var(--border, #c8dcef);
     }
 
-    /* DataTables pagination — theme.md (hover/focus/active; beats Bootstrap link + #3490dc ring) */
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link {
+    /* DataTables pagination — DT 1.x + DT 2.x selectors (dataTables_paginate / dt-paging) */
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link,
+    .assignee-action-page .dt-container .dt-paging .pagination .page-link {
         color: var(--navy, #1e3d60) !important;
         background-color: var(--card-bg, #ffffff) !important;
         border-color: var(--border, #c8dcef) !important;
         box-shadow: none !important;
     }
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item:not(.active):not(.disabled) .page-link:hover {
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item:not(.active):not(.disabled) .page-link:hover,
+    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button:not(.active):not(.disabled) .page-link:hover {
         color: var(--navy, #1e3d60) !important;
         background-color: var(--sidebar-hover, #c8dcef) !important;
         border-color: var(--border, #c8dcef) !important;
     }
     .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link:focus,
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link:focus-visible {
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link:focus-visible,
+    .assignee-action-page .dt-container .dt-paging .pagination .page-link:focus,
+    .assignee-action-page .dt-container .dt-paging .pagination .page-link:focus-visible {
         color: var(--navy, #1e3d60) !important;
         background-color: var(--card-bg, #ffffff) !important;
         border-color: var(--sidebar-active, #3a6fa8) !important;
@@ -551,7 +564,8 @@
     }
     .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.active .page-link,
     .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .active > .page-link,
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link.active {
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link.active,
+    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button.active .page-link {
         color: #fff !important;
         background-color: var(--sidebar-active, #3a6fa8) !important;
         border-color: var(--sidebar-active, #3a6fa8) !important;
@@ -560,14 +574,18 @@
     .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.active .page-link:focus,
     .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.active .page-link:focus-visible,
     .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .active > .page-link:hover,
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .active > .page-link:focus {
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .active > .page-link:focus,
+    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button.active .page-link:hover,
+    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button.active .page-link:focus {
         color: #fff !important;
         background-color: var(--sidebar-active, #3a6fa8) !important;
         border-color: var(--sidebar-active, #3a6fa8) !important;
         box-shadow: none !important;
     }
     .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.disabled .page-link,
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.disabled .page-link:hover {
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.disabled .page-link:hover,
+    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button.disabled .page-link,
+    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button.disabled .page-link:hover {
         color: var(--text-muted, #5e7a90) !important;
         background-color: var(--card-bg, #ffffff) !important;
         border-color: var(--border, #c8dcef) !important;
@@ -1286,7 +1304,7 @@ $(function () {
             {data: 'note_description', name: 'note_description', orderable: true, searchable: true},
             {data: 'action', name: 'action', orderable: false, searchable: false}
         ],
-        "fnDrawCallback": function() {
+        "drawCallback": function() {
             // Initialize popovers for dynamically added elements (exclude update_task buttons which are initialized manually)
             $('[data-bs-toggle="popover"]').not('.update_task').not('.add_my_task').popover({
                 html: true,
@@ -1300,7 +1318,6 @@ $(function () {
             // Update badge counts
             updateBadgeCounts();
         },
-        "bAutoWidth": false,
         "scrollX": true,
         "scrollCollapse": true,
         "dom": 'rt<"bottom"lip><"clear">', // Move length menu (l) to bottom with info (i) and pagination (p)

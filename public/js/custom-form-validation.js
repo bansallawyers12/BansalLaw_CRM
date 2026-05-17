@@ -1500,7 +1500,7 @@ function customValidate(formName, savetype = '')
 												"searching": false,
 												"lengthChange": false,
 											  "columnDefs": [
-												{ "sortable": false, "targets": [0, 2, 3] }
+												{ "orderable": false, "targets": [0, 2, 3] }
 											  ],
 											  order: [[1, "desc"]] //column indexes is zero based
 
@@ -2340,11 +2340,11 @@ function customValidate(formName, savetype = '')
 									console.log('notetermform_n note added successfully');
 								    $('#create_note_d input[name="title"]').val('');
 								    $('#create_note_d input[name="title"]').val('');
-									$("#create_note_d .summernote-simple").val('');
-									$('#create_note_d input[name="noteid"]').val('');
-									// Clear TinyMCE editor if initialized
-									if (typeof tinymce !== 'undefined') {
-										$("#create_note_d .summernote-simple").each(function() {
+								$("#create_note_d .tinymce-editor").val('');
+								$('#create_note_d input[name="noteid"]').val('');
+								// Clear TinyMCE editor if initialized
+								if (typeof tinymce !== 'undefined') {
+									$("#create_note_d .tinymce-editor").each(function() {
 											var editorId = $(this).attr('id');
 											if (editorId && tinymce.get(editorId)) {
 												tinymce.get(editorId).setContent('');

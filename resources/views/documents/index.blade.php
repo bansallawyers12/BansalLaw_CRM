@@ -271,7 +271,7 @@
                             <div class="col-12 col-md-12 col-lg-12">
                                 <div class="form-group">
                                     <label for="message">Message <span class="span_req">*</span></label>
-                                    <textarea class="summernote-simple selectedmessage" id="compose_email_message" name="message" required></textarea>
+                                    <textarea class="tinymce-editor selectedmessage" id="compose_email_message" name="message" required></textarea>
                                     @if ($errors->has('message'))
                                         <span class="custom-error" role="alert">
                                             <strong>{{ @$errors->first('message') }}</strong>
@@ -435,7 +435,7 @@
                     .replace('{PDF_url_for_sign}', '<a href="' + PDF_url_for_sign + '" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;word-break:break-all;">'+PDF_url_for_sign+'</a>')
                     .replace('{visa_apply}', mattertitle);
 
-                    $("#preview_email_modal .summernote-simple").each(function() {
+                    $("#preview_email_modal .tinymce-editor").each(function() {
                         var editorId = $(this).attr('id');
                         if (editorId && typeof tinymce !== 'undefined' && tinymce.get(editorId)) {
                             tinymce.get(editorId).setContent(subjct_description || '');
