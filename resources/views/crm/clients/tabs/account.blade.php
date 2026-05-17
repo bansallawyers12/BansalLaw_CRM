@@ -25,26 +25,23 @@
                     <div class="balance-label">Trust Balance</div>
                     <div class="balance-amount funds-held">
                         <?php
-                        //echo $id1;
-                        $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count(); //dd($matter_cnt);
+                        $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
                         if( isset($id1) && $id1 != "" || $matter_cnt >0 )
-                        {  //dd('ifff'.$fetchedData->id);
-                            //if client unique reference id is present in url
+                        {
                             if( isset($id1) && $id1 != "") {
                                 $matter_get_id = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('client_unique_matter_no',$id1)->first();
                             } else {
                                 $matter_get_id = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->orderBy('id', 'desc')->first();
                             }
-                            //dd($matter_get_id);
                             if($matter_get_id )
                             {
                                 $client_selected_matter_id = $matter_get_id->id;
                             } else {
                                 $client_selected_matter_id = null;
-                            } //dd($client_selected_matter_id);
+                            }
                         }
                         else
-                        {  //dd('elseee');
+                        {
                             $client_selected_matter_id = null;
                         }
                         // Calculate balance from scratch by summing deposits and withdrawals
@@ -137,7 +134,6 @@
                         }
                         // Running balance for LSBC trust ledger compliance
                         $trust_running_balance = 0;
-                        //dd($receipts_lists);
                         if(!empty($receipts_lists) && count($receipts_lists)>0 )
                         {
                             foreach($receipts_lists as $rec_list=>$rec_val)
@@ -293,10 +289,6 @@
                                             data-client-id="<?php echo $fetchedData->id; ?>"
                                             data-matter-id="<?php echo $rec_val->client_matter_id; ?>">
                                             <i class="fas fa-upload"></i> <?php echo !empty($rec_val->uploaded_doc_id) ? 'Replace' : 'Upload'; ?> Receipt Document
-                                        </a>
-                                        <div class="dropdown-divider"></div>
-                                        <a class="dropdown-item send-client-fund-receipt-to-client" href="javascript:;" data-receipt-id="<?php echo $rec_val->id; ?>" data-receipt-no="<?php echo $rec_val->trans_no; ?>">
-                                            <i class="fas fa-envelope"></i> Send to Client
                                         </a>
                                         <?php if($rec_val->client_fund_ledger_type !== 'Fee Transfer'){ ?>
                                         <div class="dropdown-divider"></div>
@@ -535,19 +527,10 @@
                                                 
                                                 <?php if($inc_val->save_type == 'final') { ?>
                                                 <div class="dropdown-divider"></div>
-                                                <?php 
-                                                // Check if invoice has been sent to Hubdoc
-                                                $hubdoc_sent = DB::table('account_client_receipts')
-                                                    ->where('receipt_type', 3)
-                                                    ->where('receipt_id', $inc_val->receipt_id)
-                                                    ->value('hubdoc_sent');
-                                                
+                                                <?php
+                                                $hubdoc_sent    = $inc_val->hubdoc_sent ?? false;
+                                                $hubdoc_sent_at = $inc_val->hubdoc_sent_at ?? null;
                                                 if($hubdoc_sent) {
-                                                    // Already sent to Hubdoc
-                                                    $hubdoc_sent_at = DB::table('account_client_receipts')
-                                                        ->where('receipt_type', 3)
-                                                        ->where('receipt_id', $inc_val->receipt_id)
-                                                        ->value('hubdoc_sent_at');
                                                 ?>
                                                     <a class="dropdown-item send-to-hubdoc-btn" href="javascript:;" data-invoice-id="<?php echo $inc_val->receipt_id; ?>" data-hubdoc-sent="1" style="color: #28a745;">
                                                         <i class="fas fa-check"></i> Already Sent to Hubdoc
@@ -640,7 +623,6 @@
                             ->orderByRaw("CASE WHEN invoice_no IS NULL OR invoice_no = '' THEN 0 ELSE 1 END")
                             ->orderBy('id', 'desc')
                             ->get();
-                        //dd($receipts_lists_office);
                         if(!empty($receipts_lists_office) && count($receipts_lists_office)>0 )
                         {
                             foreach($receipts_lists_office as $off_list=>$off_val)
@@ -707,14 +689,10 @@
                                     {{$off_val->payment_method}}
                                     
 
-                                    <?php
-                                    if( isset($off_val->extra_amount_receipt) &&  $off_val->extra_amount_receipt == 'exceed' ) {
-
-                                    } else { ?>
+                                    <?php if( !isset($off_val->extra_amount_receipt) || $off_val->extra_amount_receipt !== 'exceed' ) { ?>
                                         <br/>
                                         {{ !empty($off_val->invoice_no) ? '('.$off_val->invoice_no.')' : '' }}
-                                    <?php
-                                    }?>
+                                    <?php } ?>
 
                                    </span>
                                 </td>
@@ -1059,15 +1037,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
-    // Edit Office Receipt Entry Handler - REPLACED WITH DIRECT ATTACHMENT ABOVE
-    // This delegated handler doesn't work because Bootstrap dropdown stops event propagation
-    // Keeping it commented for reference only
-    /*
-    $(document).on('click', '.edit-office-receipt-entry', function(e) {
-        // This code moved to attachEditOfficeReceiptHandlers() function above
-    });
-    */
     
     // Function to load invoices for the CREATE office receipt form
     function loadInvoicesForOfficeReceipt(matterId) {
