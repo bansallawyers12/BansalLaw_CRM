@@ -2981,7 +2981,7 @@ $(document).ready(function() {
         var fileExtension = file.name.split('.').pop().toLowerCase();
         
         if (!allowedExtensions.includes(fileExtension)) {
-            if (typeof iziToast !== 'undefined' && iziToast.error) {
+            if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                 iziToast.error({ message: 'Invalid file type. Please upload PDF, JPG, PNG, DOC, or DOCX files only.', position: 'topRight' });
             } else {
                 alert('Invalid file type. Please upload PDF, JPG, PNG, DOC, or DOCX files only.');
@@ -2992,7 +2992,7 @@ $(document).ready(function() {
         // Validate file size (10MB max)
         var maxSize = 10 * 1024 * 1024; // 10MB in bytes
         if (file.size > maxSize) {
-            if (typeof iziToast !== 'undefined' && iziToast.error) {
+            if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                 iziToast.error({ message: 'File size exceeds 10MB limit. Please choose a smaller file.', position: 'topRight' });
             } else {
                 alert('File size exceeds 10MB limit. Please choose a smaller file.');
@@ -3048,7 +3048,7 @@ $(document).ready(function() {
         // Validate file is selected
         var fileInput = $('#receipt_document_upload')[0];
         if (!fileInput.files || fileInput.files.length === 0) {
-            if (typeof iziToast !== 'undefined' && iziToast.error) {
+            if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                 iziToast.error({ message: 'Please select a file to upload.', position: 'topRight' });
             } else {
                 alert('Please select a file to upload.');
@@ -3068,7 +3068,7 @@ $(document).ready(function() {
         } else if (receiptType === 'journal') {
             uploadUrl = '{{ route("clients.uploadjournalreceiptdocument") }}';
         } else {
-            if (typeof iziToast !== 'undefined' && iziToast.error) {
+            if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                 iziToast.error({ message: 'Invalid receipt type.', position: 'topRight' });
             } else {
                 alert('Invalid receipt type.');
@@ -3099,7 +3099,7 @@ $(document).ready(function() {
             },
             success: function(response) {
                 if (response.status) {
-                    if (typeof iziToast !== 'undefined' && iziToast.success) {
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
                         iziToast.success({ message: response.message || 'Document uploaded successfully', position: 'topRight' });
                     } else {
                         alert(response.message || 'Document uploaded successfully');
@@ -3113,7 +3113,7 @@ $(document).ready(function() {
                         location.reload();
                     }, 1000);
                 } else {
-                    if (typeof iziToast !== 'undefined' && iziToast.error) {
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                         iziToast.error({ message: response.message || 'Failed to upload document', position: 'topRight' });
                     } else {
                         alert('Error: ' + (response.message || 'Failed to upload document'));
@@ -3129,7 +3129,7 @@ $(document).ready(function() {
                     errorMessage = xhr.responseJSON.message;
                 }
                 
-                if (typeof iziToast !== 'undefined' && iziToast.error) {
+                if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                     iziToast.error({ message: errorMessage, position: 'topRight' });
                 } else {
                     alert('Error: ' + errorMessage);

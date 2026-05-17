@@ -5181,14 +5181,18 @@ success: function(response) {
                         getallactivities();
                         
                         // Show success message
-                        if (typeof iziToast !== 'undefined' && iziToast.success) {
+                        if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
                             iziToast.success({ message: 'Document moved to Not Used tab', position: 'topRight' });
+                        } else {
+                            alert('Document moved to Not Used tab');
                         }
 
                     } else {
                         console.error('✗ Failed to move document to Not Used tab', res);
-                        if (typeof iziToast !== 'undefined' && iziToast.error) {
+                        if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                             iziToast.error({ message: res.message || 'Failed to move document', position: 'topRight' });
+                        } else {
+                            alert(res.message || 'Failed to move document');
                         }
                     }
 
@@ -5197,8 +5201,10 @@ success: function(response) {
                 error: function(xhr, status, error) {
                     $('.popuploader').hide();
                     console.error('✗ AJAX error moving document to Not Used tab', {status: status, error: error});
-                    if (typeof iziToast !== 'undefined' && iziToast.error) {
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                         iziToast.error({ message: 'Error moving document. Please try again.', position: 'topRight' });
+                    } else {
+                        alert('Error moving document. Please try again.');
                     }
                 }
 
@@ -5266,15 +5272,19 @@ success: function(response) {
                         
                         // Show success message with info
                         var docTypeLabel = res.doc_type === 'personal' ? 'Personal Documents' : 'Matter Documents';
-                        if (typeof iziToast !== 'undefined' && iziToast.success) {
+                        if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
                             iziToast.success({ message: 'Document moved back to ' + docTypeLabel + ' tab', position: 'topRight' });
+                        } else {
+                            alert('Document moved back to ' + docTypeLabel + ' tab');
                         }
                         
 
                     } else {
                         console.error('✗ Failed to move document back', res);
-                        if (typeof iziToast !== 'undefined' && iziToast.error) {
+                        if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                             iziToast.error({ message: res.message || 'Failed to move document back', position: 'topRight' });
+                        } else {
+                            alert(res.message || 'Failed to move document back');
                         }
                     }
 
@@ -5283,8 +5293,10 @@ success: function(response) {
                 error: function(xhr, status, error) {
                     $('.popuploader').hide();
                     console.error('✗ AJAX error moving document back', {status: status, error: error});
-                    if (typeof iziToast !== 'undefined' && iziToast.error) {
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                         iziToast.error({ message: 'Error moving document back. Please try again.', position: 'topRight' });
+                    } else {
+                        alert('Error moving document back. Please try again.');
                     }
                 }
 
@@ -5649,7 +5661,7 @@ success: function(response) {
 
                         $('.popuploader').hide();
 
-                        if (typeof iziToast !== 'undefined' && iziToast.error) {
+                        if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                             iziToast.error({ message: response && response.message ? response.message : 'Failed to pin note', position: 'topRight' });
                         } else {
                             alert(response && response.message ? response.message : 'Failed to pin note');
@@ -5665,7 +5677,7 @@ success: function(response) {
 
                     console.error('[PinNote] AJAX error:', status, error, xhr.responseText);
 
-                    if (typeof iziToast !== 'undefined' && iziToast.error) {
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                         iziToast.error({ message: 'Failed to pin note. Please try again.', position: 'topRight' });
                     } else {
                         alert('Failed to pin note. Please try again.');

@@ -85,7 +85,7 @@
             error: function(xhr, status, error) {
                 $('.popuploader').hide();
                 console.error('[getallnotes] Failed to refresh notes:', status, error);
-                if (typeof iziToast !== 'undefined' && iziToast.error) {
+                if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                     iziToast.error({ message: 'Notes refreshed but some data may be outdated. Please refresh the page.', position: 'topRight' });
                 } else {
                     alert('Notes refreshed but some data may be outdated. Please refresh the page.');

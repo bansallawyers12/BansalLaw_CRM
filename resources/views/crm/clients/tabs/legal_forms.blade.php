@@ -389,13 +389,13 @@
                 if (response.success) {
                     bootstrap.Modal.getInstance(document.getElementById('legalFormModal')).hide();
                     loadLegalForms();
-                    if (typeof iziToast !== 'undefined' && iziToast.success) {
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
                         iziToast.success({ message: response.message || 'Form created successfully!', position: 'topRight' });
                     } else {
                         alert(response.message || 'Form created successfully!');
                     }
                 } else {
-                    if (typeof iziToast !== 'undefined' && iziToast.error) {
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                         iziToast.error({ message: response.message || 'Failed to create form.', position: 'topRight' });
                     } else {
                         alert(response.message || 'Failed to create form.');
@@ -409,7 +409,7 @@
                 } else if (xhr.responseJSON && xhr.responseJSON.errors) {
                     msg = Object.values(xhr.responseJSON.errors).flat().join('\n');
                 }
-                if (typeof iziToast !== 'undefined' && iziToast.error) {
+                if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                     iziToast.error({ message: msg, position: 'topRight' });
                 } else {
                     alert(msg);
@@ -527,12 +527,12 @@
                     textarea.style.opacity = '1';
                     textarea.style.borderColor = '#10b981';
                     setTimeout(function() { textarea.style.borderColor = ''; }, 2000);
-                    if (typeof iziToast !== 'undefined' && iziToast.success) {
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
                         iziToast.success({ message: 'AI text generated successfully!', position: 'topRight' });
                     }
                 } else {
                     textarea.style.opacity = '1';
-                    if (typeof iziToast !== 'undefined' && iziToast.error) {
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                         iziToast.error({ message: response.message || 'Failed to generate text.', position: 'topRight' });
                     } else {
                         alert(response.message || 'Failed to generate text.');
@@ -543,7 +543,7 @@
                 textarea.style.opacity = '1';
                 var msg = 'AI generation failed.';
                 if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
-                if (typeof iziToast !== 'undefined' && iziToast.error) {
+                if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                     iziToast.error({ message: msg, position: 'topRight' });
                 } else {
                     alert(msg);
@@ -566,7 +566,7 @@
             success: function(response) {
                 if (response.success) {
                     loadLegalForms();
-                    if (typeof iziToast !== 'undefined' && iziToast.success) {
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
                         iziToast.success({ message: response.message || 'Form deleted.', position: 'topRight' });
                     } else {
                         alert(response.message || 'Form deleted.');
@@ -574,7 +574,7 @@
                 }
             },
             error: function() {
-                if (typeof iziToast !== 'undefined' && iziToast.error) {
+                if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
                     iziToast.error({ message: 'Failed to delete form.', position: 'topRight' });
                 } else {
                     alert('Failed to delete form.');

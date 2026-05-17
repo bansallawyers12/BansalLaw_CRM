@@ -453,7 +453,7 @@ function isNumberKey1(evt)
                 if(!ValidateEmail($.trim($lead_ccarray[i])))
                 {
 
-                    crmToastError('Please correct to cc email"');
+                    crmToastError('Please correct CC email addresses.');
 
                     return false;
                     break;
@@ -469,7 +469,7 @@ function isNumberKey1(evt)
                 if(!ValidateEmail($.trim($lead_bccarray[i])))
                 {
 
-                    crmToastError('Please correct to bcc email"');
+                    crmToastError('Please correct BCC email addresses.');
 
                     return false;
                     break;
@@ -738,7 +738,7 @@ function isNumberKey1(evt)
                 if(!ValidateEmail($.trim($lead_ccarray[i])))
                 {
 
-                    crmToastError('Please correct to cc email"');
+                    crmToastError('Please correct CC email addresses.');
 
                     return false;
                     break;
@@ -754,7 +754,7 @@ function isNumberKey1(evt)
                 if(!ValidateEmail($.trim($lead_bccarray[i])))
                 {
 
-                    crmToastError('Please correct to bcc email"');
+                    crmToastError('Please correct BCC email addresses.');
 
                     return false;
                     break;
@@ -786,9 +786,7 @@ function isNumberKey1(evt)
             },
             success : function(data){
 
-                if (typeof iziToast !== 'undefined' && iziToast.destroy) {
-                    iziToast.destroy();
-                }
+                crmToastDismissAll();
                 crmToastSuccess('Mail has been sent to traveler');
                 setTimeout(function(){ window.location.reload(); }, 1000);
 
@@ -797,6 +795,8 @@ function isNumberKey1(evt)
             },
             error : function(error){
                 activity_email();
+                crmToastDismissAll();
+                crmToastError('Could not send mail. Please try again.');
                 console.log(error);
             }
         });
