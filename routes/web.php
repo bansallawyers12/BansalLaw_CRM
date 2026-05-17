@@ -280,6 +280,13 @@ Route::middleware(['auth:admin'])->group(function() {
 		Route::get('/reports/trial-balance', [TrustAccountingAdminController::class, 'trialBalanceReport'])->name('reports.trial-balance');
 		Route::get('/reports/receipts-journal', [TrustAccountingAdminController::class, 'receiptsJournalReport'])->name('reports.receipts-journal');
 		Route::get('/reports/payments-journal', [TrustAccountingAdminController::class, 'paymentsJournalReport'])->name('reports.payments-journal');
+		Route::get('/bank-accounts', [TrustAccountingAdminController::class, 'bankAccountsIndex'])->name('bank-accounts.index');
+		Route::post('/bank-accounts', [TrustAccountingAdminController::class, 'bankAccountsStore'])->name('bank-accounts.store');
+		Route::get('/reconciliation', [TrustAccountingAdminController::class, 'reconciliationIndex'])->name('reconciliation.index');
+		Route::post('/reconciliation/lines', [TrustAccountingAdminController::class, 'reconciliationStoreLine'])->name('reconciliation.lines.store');
+		Route::delete('/reconciliation/lines/{line}', [TrustAccountingAdminController::class, 'reconciliationDestroyLine'])->name('reconciliation.lines.destroy');
+		Route::post('/reconciliation/match', [TrustAccountingAdminController::class, 'reconciliationMatch'])->name('reconciliation.match');
+		Route::post('/reconciliation/unmatch', [TrustAccountingAdminController::class, 'reconciliationUnmatch'])->name('reconciliation.unmatch');
 	});
 
 	/*---------- Notifications ----------*/

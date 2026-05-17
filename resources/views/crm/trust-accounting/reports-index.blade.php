@@ -13,6 +13,8 @@
                     </p>
                 </div>
                 <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                    <a href="{{ route('trust-accounting.bank-accounts.index') }}" class="btn btn-outline-primary btn-sm me-1">Bank accounts</a>
+                    <a href="{{ route('trust-accounting.reconciliation.index') }}" class="btn btn-outline-primary btn-sm me-1">Reconciliation</a>
                     <a href="{{ route('trust-accounting.periods.index') }}" class="btn btn-outline-secondary btn-sm">Period locks</a>
                     <a href="{{ route('trust-accounting.audit-log.index') }}" class="btn btn-outline-secondary btn-sm">Audit log</a>
                 </div>
@@ -43,6 +45,16 @@
                             <h5 class="card-title"><i class="fas fa-arrow-up me-2 text-danger"></i>Payments journal</h5>
                             <p class="card-text text-muted small">All trust movements with money out (payments, transfers, disbursements) in a date range.</p>
                             <a href="{{ route('trust-accounting.reports.payments-journal') }}" class="btn btn-primary btn-sm">Open</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-university me-2 text-info"></i>Bank reconciliation</h5>
+                            <p class="card-text text-muted small">Model trust bank accounts, enter statement lines, and match them to ledger receipts and payments (Rule 48 workflow).</p>
+                            <a href="{{ route('trust-accounting.reconciliation.index') }}" class="btn btn-primary btn-sm">Open</a>
+                            <a href="{{ route('trust-accounting.bank-accounts.index') }}" class="btn btn-outline-secondary btn-sm">Accounts</a>
                         </div>
                     </div>
                 </div>

@@ -4,7 +4,10 @@ namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
 use App\Models\Staff;
+use App\Models\TrustBankAccount;
 use App\Models\TrustAccountingPeriod;
+use App\Models\TrustBankStatementLine;
+use App\Services\TrustAccounting\TrustBankReconciliationService;
 use App\Services\TrustAccounting\TrustLedgerAuditLogger;
 use App\Services\TrustAccounting\TrustReportQueryService;
 use Carbon\Carbon;
@@ -16,7 +19,8 @@ use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Trust compliance: period locks, audit log (Phase 2); practice reports (Phase 3).
+ * Trust compliance: period locks, audit log (Phase 2); practice reports (Phase 3);
+ * bank reconciliation (Phase 4 — Rule 48).
  * Super-admin effective privileges only (matches void / critical trust actions).
  */
 class TrustAccountingAdminController extends Controller
@@ -467,5 +471,360 @@ class TrustAccountingAdminController extends Controller
         $end = Carbon::now()->endOfMonth()->format('Y-m-d');
 
         return ['from' => $start, 'to' => $end];
+    }
+
+    /**
+     * Phase 4: practice trust bank accounts (Rule 57 / reconciliation).
+     */
+    public function bankAccountsIndex(): View
+    {
+        $this->gateTrustAdmin();
+
+        if (! Schema::hasTable('trust_bank_accounts')) {
+            abort(503, 'Trust bank accounts are not available. Run migrations.');
+        }
+
+        $accounts = TrustBankAccount::query()->orderBy('name')->orderBy('id')->get();
+
+        return view('crm.trust-accounting.bank-accounts', compact('accounts'));
+    }
+
+    public function bankAccountsStore(Request $request): RedirectResponse
+    {
+        $this->gateTrustAdmin();
+
+        if (! Schema::hasTable('trust_bank_accounts')) {
+            abort(503, 'Trust bank accounts are not available.');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'bsb' => 'nullable|string|max:16',
+            'account_number_hint' => 'nullable|string|max:32',
+            'notes' => 'nullable|string|max:5000',
+        ]);
+
+        $account = TrustBankAccount::query()->create([
+            'name' => $validated['name'],
+            'bsb' => $validated['bsb'] ?? null,
+            'account_number_hint' => $validated['account_number_hint'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+            'is_active' => true,
+        ]);
+
+        TrustLedgerAuditLogger::logForTable(
+            'trust_bank_accounts',
+            'trust_bank_account_created',
+            (int) $account->id,
+            null,
+            null,
+            $account->name,
+            null
+        );
+
+        return redirect()->route('trust-accounting.bank-accounts.index')->with('success', 'Trust bank account saved.');
+    }
+
+    /**
+     * Phase 4: statement lines + manual match to ledger (Rule 48 supporting workflow).
+     */
+    public function reconciliationIndex(Request $request): View
+    {
+        $this->gateTrustAdmin();
+
+        if (! Schema::hasTable('trust_bank_accounts') || ! Schema::hasTable('trust_bank_statement_lines')) {
+            abort(503, 'Bank reconciliation tables are not available. Run migrations.');
+        }
+
+        $accounts = TrustBankAccount::query()
+            ->orderByDesc('is_active')
+            ->orderBy('name')
+            ->get();
+
+        $validated = $request->validate([
+            'trust_bank_account_id' => 'nullable|integer|min:1',
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date',
+        ]);
+
+        $defaults = $this->defaultTrustReportMonthRange();
+        $from = $validated['from_date'] ?? $defaults['from'];
+        $to = $validated['to_date'] ?? $defaults['to'];
+
+        if (Carbon::parse($from)->gt(Carbon::parse($to))) {
+            [$from, $to] = [$to, $from];
+        }
+
+        $accountId = (int) ($validated['trust_bank_account_id'] ?? 0);
+        if ($accountId <= 0 && $accounts->isNotEmpty()) {
+            $accountId = (int) $accounts->first()->id;
+        }
+
+        $account = $accountId > 0
+            ? TrustBankAccount::query()->find($accountId)
+            : null;
+
+        if ($account === null) {
+            return view('crm.trust-accounting.reconciliation', [
+                'accounts' => $accounts,
+                'account' => null,
+                'from' => $from,
+                'to' => $to,
+                'lines' => collect(),
+                'ledgerMovement' => ['deposits' => 0.0, 'payments' => 0.0, 'net' => 0.0],
+                'trialBalanceTotal' => 0.0,
+                'bankCredits' => 0.0,
+                'bankDebits' => 0.0,
+                'bankNet' => 0.0,
+                'movementVariance' => 0.0,
+                'unmatchedDeposits' => collect(),
+                'unmatchedPayments' => collect(),
+            ]);
+        }
+
+        $lines = TrustBankStatementLine::query()
+            ->where('trust_bank_account_id', $account->id)
+            ->whereBetween('value_date', [$from, $to])
+            ->with(['matchedReceipt'])
+            ->orderBy('value_date')
+            ->orderBy('id')
+            ->get();
+
+        $bankCredits = round((float) $lines->filter(fn ($l) => (float) $l->amount > 0)->sum('amount'), 2);
+        $bankDebits = round((float) $lines->filter(fn ($l) => (float) $l->amount < 0)->sum(fn ($l) => abs((float) $l->amount)), 2);
+        $bankNet = round($bankCredits - $bankDebits, 2);
+
+        $ledgerMovement = $this->trustLedgerPeriodMovement($from, $to);
+        $movementVariance = round($ledgerMovement['net'] - $bankNet, 2);
+
+        $trialBalanceTotal = $this->trustTrialBalanceTotalAsAt($to);
+
+        $matchedReceiptIds = DB::table('trust_bank_statement_lines')
+            ->whereNotNull('matched_account_client_receipt_id')
+            ->pluck('matched_account_client_receipt_id')
+            ->all();
+
+        $unmatchedDeposits = $this->unmatchedTrustDepositsForPeriod($from, $to, $matchedReceiptIds);
+        $unmatchedPayments = $this->unmatchedTrustPaymentsForPeriod($from, $to, $matchedReceiptIds);
+
+        return view('crm.trust-accounting.reconciliation', compact(
+            'accounts',
+            'account',
+            'from',
+            'to',
+            'lines',
+            'ledgerMovement',
+            'trialBalanceTotal',
+            'bankCredits',
+            'bankDebits',
+            'bankNet',
+            'movementVariance',
+            'unmatchedDeposits',
+            'unmatchedPayments'
+        ));
+    }
+
+    public function reconciliationStoreLine(Request $request): RedirectResponse
+    {
+        $this->gateTrustAdmin();
+
+        if (! Schema::hasTable('trust_bank_statement_lines')) {
+            abort(503);
+        }
+
+        $validated = $request->validate([
+            'trust_bank_account_id' => 'required|integer|min:1',
+            'value_date' => 'required|date',
+            'amount' => 'required|numeric|regex:/^-?[0-9]+(\.[0-9]{1,2})?$/',
+            'narrative' => 'nullable|string|max:5000',
+            'bank_reference' => 'nullable|string|max:500',
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date',
+        ]);
+
+        TrustBankAccount::query()->findOrFail($validated['trust_bank_account_id']);
+
+        try {
+            TrustBankReconciliationService::createStatementLine(
+                (int) $validated['trust_bank_account_id'],
+                Carbon::parse($validated['value_date'])->format('Y-m-d'),
+                (float) $validated['amount'],
+                $validated['narrative'] ?? null,
+                $validated['bank_reference'] ?? null
+            );
+        } catch (\Throwable $e) {
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('trust-accounting.reconciliation.index', [
+            'trust_bank_account_id' => $validated['trust_bank_account_id'],
+            'from_date' => $validated['from_date'] ?? null,
+            'to_date' => $validated['to_date'] ?? null,
+        ])->with('success', 'Bank statement line added.');
+    }
+
+    public function reconciliationDestroyLine(TrustBankStatementLine $line): RedirectResponse
+    {
+        $this->gateTrustAdmin();
+
+        try {
+            TrustBankReconciliationService::deleteStatementLine((int) $line->id);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->back()->with('success', 'Bank line removed.');
+    }
+
+    public function reconciliationMatch(Request $request): RedirectResponse
+    {
+        $staff = $this->gateTrustAdmin();
+
+        $validated = $request->validate([
+            'statement_line_id' => 'required|integer|min:1',
+            'receipt_id' => 'required|integer|min:1',
+            'match_notes' => 'nullable|string|max:2000',
+            'trust_bank_account_id' => 'nullable|integer|min:1',
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date',
+        ]);
+
+        try {
+            TrustBankReconciliationService::matchLineToReceipt(
+                (int) $validated['statement_line_id'],
+                (int) $validated['receipt_id'],
+                (int) $staff->id,
+                $validated['match_notes'] ?? null
+            );
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('trust-accounting.reconciliation.index', [
+            'trust_bank_account_id' => $validated['trust_bank_account_id'] ?? null,
+            'from_date' => $validated['from_date'] ?? null,
+            'to_date' => $validated['to_date'] ?? null,
+        ])->with('success', 'Bank line matched to trust ledger row.');
+    }
+
+    public function reconciliationUnmatch(Request $request): RedirectResponse
+    {
+        $staff = $this->gateTrustAdmin();
+
+        $validated = $request->validate([
+            'statement_line_id' => 'required|integer|min:1',
+            'trust_bank_account_id' => 'nullable|integer|min:1',
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date',
+        ]);
+
+        try {
+            TrustBankReconciliationService::unmatchLine((int) $validated['statement_line_id'], (int) $staff->id);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('trust-accounting.reconciliation.index', [
+            'trust_bank_account_id' => $validated['trust_bank_account_id'] ?? null,
+            'from_date' => $validated['from_date'] ?? null,
+            'to_date' => $validated['to_date'] ?? null,
+        ])->with('success', 'Match cleared.');
+    }
+
+    /**
+     * @return array{deposits: float, payments: float, net: float}
+     */
+    private function trustLedgerPeriodMovement(string $fromYmd, string $toYmd): array
+    {
+        $dq = TrustReportQueryService::baseTrustLedgerQuery();
+        TrustReportQueryService::applyTransDateRange($dq, $fromYmd, $toYmd, 'account_client_receipts.trans_date');
+        $deposits = round((float) $dq->sum('deposit_amount'), 2);
+
+        $pq = TrustReportQueryService::baseTrustLedgerQuery();
+        TrustReportQueryService::applyTransDateRange($pq, $fromYmd, $toYmd, 'account_client_receipts.trans_date');
+        $payments = round((float) $pq->sum('withdraw_amount'), 2);
+
+        return [
+            'deposits' => $deposits,
+            'payments' => $payments,
+            'net' => round($deposits - $payments, 2),
+        ];
+    }
+
+    private function trustTrialBalanceTotalAsAt(string $asAtYmd): float
+    {
+        $q = TrustReportQueryService::baseTrustLedgerQuery();
+        TrustReportQueryService::applyTransDateUpTo($q, $asAtYmd, 'account_client_receipts.trans_date');
+        $raw = $q->selectRaw(
+            'SUM(COALESCE(account_client_receipts.deposit_amount, 0)::numeric - COALESCE(account_client_receipts.withdraw_amount, 0)::numeric) as total'
+        )->value('total');
+
+        return round((float) $raw, 2);
+    }
+
+    /**
+     * @param  array<int, int>  $matchedReceiptIds
+     * @return \Illuminate\Support\Collection<int, object>
+     */
+    private function unmatchedTrustDepositsForPeriod(string $fromYmd, string $toYmd, array $matchedReceiptIds)
+    {
+        $q = TrustReportQueryService::baseTrustLedgerQuery();
+        TrustReportQueryService::applyTransDateRange($q, $fromYmd, $toYmd, 'account_client_receipts.trans_date');
+        $q->whereRaw('COALESCE(account_client_receipts.deposit_amount, 0)::numeric > 0');
+        if ($matchedReceiptIds !== []) {
+            $q->whereNotIn('account_client_receipts.id', $matchedReceiptIds);
+        }
+
+        $depositCols = [
+            'account_client_receipts.id',
+            'account_client_receipts.trans_date',
+            'account_client_receipts.trans_no',
+            'account_client_receipts.client_fund_ledger_type',
+            'account_client_receipts.description',
+            'account_client_receipts.deposit_amount',
+        ];
+        $q->join('admins', 'admins.id', '=', 'account_client_receipts.client_id')
+            ->leftJoin('client_matters', 'client_matters.id', '=', 'account_client_receipts.client_matter_id')
+            ->select(array_merge($depositCols, [
+                'admins.client_id as client_ref',
+                'client_matters.client_unique_matter_no',
+            ]))
+            ->orderByRaw("TO_DATE(account_client_receipts.trans_date, 'DD/MM/YYYY') ASC")
+            ->orderBy('account_client_receipts.id', 'asc')
+            ->limit(500);
+
+        return $q->get();
+    }
+
+    /**
+     * @param  array<int, int>  $matchedReceiptIds
+     * @return \Illuminate\Support\Collection<int, object>
+     */
+    private function unmatchedTrustPaymentsForPeriod(string $fromYmd, string $toYmd, array $matchedReceiptIds)
+    {
+        $q = TrustReportQueryService::baseTrustLedgerQuery();
+        TrustReportQueryService::applyTransDateRange($q, $fromYmd, $toYmd, 'account_client_receipts.trans_date');
+        $q->whereRaw('COALESCE(account_client_receipts.withdraw_amount, 0)::numeric > 0');
+        if ($matchedReceiptIds !== []) {
+            $q->whereNotIn('account_client_receipts.id', $matchedReceiptIds);
+        }
+
+        $q->join('admins', 'admins.id', '=', 'account_client_receipts.client_id')
+            ->leftJoin('client_matters', 'client_matters.id', '=', 'account_client_receipts.client_matter_id')
+            ->select([
+                'account_client_receipts.id',
+                'account_client_receipts.trans_date',
+                'account_client_receipts.trans_no',
+                'account_client_receipts.client_fund_ledger_type',
+                'account_client_receipts.description',
+                'account_client_receipts.withdraw_amount',
+                'admins.client_id as client_ref',
+                'client_matters.client_unique_matter_no',
+            ])
+            ->orderByRaw("TO_DATE(account_client_receipts.trans_date, 'DD/MM/YYYY') ASC")
+            ->orderBy('account_client_receipts.id', 'asc')
+            ->limit(500);
+
+        return $q->get();
     }
 }

@@ -20,6 +20,9 @@
                     <a href="{{ route('trust-accounting.reports.index') }}" class="btn btn-outline-primary btn-sm me-1">
                         <i class="fas fa-file-export me-1"></i> Reports
                     </a>
+                    <a href="{{ route('trust-accounting.reconciliation.index') }}" class="btn btn-outline-primary btn-sm me-1">
+                        <i class="fas fa-link me-1"></i> Reconciliation
+                    </a>
                     <a href="{{ route('trust-accounting.audit-log.index') }}" class="btn btn-outline-secondary btn-sm">
                         <i class="fas fa-list-alt me-1"></i> Trust audit log
                     </a>
