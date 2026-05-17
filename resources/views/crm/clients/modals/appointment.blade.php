@@ -402,24 +402,61 @@
 	min-height: 260px;
 }
 
-/* Calendar Styling */
-.calendar-wrapper .datepicker {
+/* Calendar Styling — Flatpickr inline */
+.calendar-wrapper .flatpickr-calendar {
 	border: none;
 	background: transparent;
 	padding: 0;
+	box-shadow: none;
+	width: 100%;
 }
 
-.calendar-wrapper .datepicker table thead tr:last-child th {
+.calendar-wrapper .flatpickr-month {
 	background: #0056b3;
 	color: #ffffff;
-	padding: 10px 8px;
+	border-radius: 6px 6px 0 0;
+	padding: 6px 0;
+}
+
+.calendar-wrapper .flatpickr-current-month,
+.calendar-wrapper .flatpickr-current-month .cur-month,
+.calendar-wrapper .flatpickr-current-month .cur-year,
+.calendar-wrapper .flatpickr-current-month .numInputWrapper {
+	color: #ffffff;
 	font-weight: 700;
 	font-size: 13px;
+}
+
+.calendar-wrapper .flatpickr-prev-month,
+.calendar-wrapper .flatpickr-next-month {
+	color: #ffffff !important;
+	fill: #ffffff !important;
+	cursor: pointer;
+	border-radius: 4px;
+	transition: all 0.2s ease;
+}
+
+.calendar-wrapper .flatpickr-prev-month:hover,
+.calendar-wrapper .flatpickr-next-month:hover {
+	background: #e7f3ff !important;
+	color: #004085 !important;
+	fill: #004085 !important;
+}
+
+.calendar-wrapper .flatpickr-weekdays {
+	background: transparent;
+}
+
+.calendar-wrapper .flatpickr-weekday {
+	background: transparent;
+	color: #004085;
+	font-weight: 700;
+	font-size: 12px;
 	text-transform: uppercase;
 	letter-spacing: 0.5px;
 }
 
-.calendar-wrapper .datepicker table tbody td.day {
+.calendar-wrapper .flatpickr-day {
 	padding: 8px 5px;
 	text-align: center;
 	cursor: pointer;
@@ -427,48 +464,48 @@
 	color: #212529;
 	font-weight: 500;
 	transition: all 0.2s ease;
+	border: none;
+	max-width: none;
 }
 
-.calendar-wrapper .datepicker table tbody td.day:hover {
+.calendar-wrapper .flatpickr-day:hover,
+.calendar-wrapper .flatpickr-day.inRange {
 	background: #cfe2ff;
 	color: #004085;
 	font-weight: 600;
+	border-color: #cfe2ff;
 }
 
-.calendar-wrapper .datepicker table tbody td.active,
-.calendar-wrapper .datepicker table tbody td.selected {
+.calendar-wrapper .flatpickr-day.selected,
+.calendar-wrapper .flatpickr-day.selected:hover {
 	background: #0056b3;
+	border-color: #0056b3;
 	color: #ffffff;
 	font-weight: 700;
 	box-shadow: 0 2px 4px rgba(0, 86, 179, 0.3);
 }
 
-.calendar-wrapper .datepicker table tbody td.disabled {
+.calendar-wrapper .flatpickr-day.today {
+	border-color: #0056b3;
+	font-weight: 700;
+}
+
+.calendar-wrapper .flatpickr-day.today:not(.selected) {
+	color: #0056b3;
+}
+
+.calendar-wrapper .flatpickr-day.flatpickr-disabled,
+.calendar-wrapper .flatpickr-day.flatpickr-disabled:hover {
 	color: #adb5bd;
 	background-color: #f8f9fa;
 	cursor: not-allowed;
 	opacity: 0.6;
+	border-color: transparent;
 }
 
-.calendar-wrapper .datepicker table tbody td.disabled:hover {
-	background-color: #f8f9fa;
+.calendar-wrapper .flatpickr-day.prevMonthDay,
+.calendar-wrapper .flatpickr-day.nextMonthDay {
 	color: #adb5bd;
-}
-
-.calendar-wrapper .datepicker .prev,
-.calendar-wrapper .datepicker .next {
-	cursor: pointer;
-	padding: 6px 10px;
-	color: #0056b3;
-	font-weight: 700;
-	border-radius: 4px;
-	transition: all 0.2s ease;
-}
-
-.calendar-wrapper .datepicker .prev:hover,
-.calendar-wrapper .datepicker .next:hover {
-	background: #e7f3ff;
-	color: #004085;
 }
 
 /* Timeslots */

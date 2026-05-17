@@ -1518,8 +1518,7 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/modules/documents.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/accounts.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/invoices.js') }}"></script>
-{{-- Bootstrap Datepicker required by Schedule Appointment modal (appointments.js) --}}
-<script src="{{ URL::asset('js/bootstrap-datepicker.js') }}"></script>
+{{-- appointments.js uses Flatpickr inline (bootstrap-datepicker removed) --}}
 <script src="{{ URL::asset('js/crm/clients/modules/appointments.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/subtabs.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/ledger-dragdrop.js') }}"></script>

@@ -673,7 +673,7 @@ $(function () {
 
   // Date pickers (Flatpickr - standardized)
   if (typeof flatpickr !== 'undefined') {
-    // Check if we're on client detail page (uses bootstrap-datepicker instead)
+    // Check if we're on client detail page (Flatpickr handled by detail-main.js / appointments.js)
     // Client detail pages have .report_date_fields or .client-navigation-sidebar
     var isClientDetailPage = $('.report_date_fields').length > 0 || 
                              $('.client-navigation-sidebar').length > 0;
