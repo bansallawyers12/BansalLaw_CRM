@@ -2,7 +2,7 @@
 @section('title', ucfirst($type) . ' Calendar - Website Bookings')
 
 @section('styles')
-{{-- FullCalendar v6 themed overrides — scoped to .booking-calendar-page. JS globals (window.FullCalendar / FullCalendarPlugins) come from layout @vite(app.js). --}}
+{{-- FullCalendar v6 only: themed overrides scoped to .booking-calendar-page. Globals window.FullCalendar + FullCalendarPlugins come from layout @vite(app.js) — do not load a second FullCalendar script. --}}
 @vite(['resources/css/fullcalendar-v6.css'])
 @endsection
 
@@ -164,29 +164,35 @@
 </div>
 
 <script>
-// Wait for FullCalendar v6 to be loaded from Vite module
-// Vite modules load asynchronously, so we need to wait for it
+// Globals from layout @vite(resources/js/app.js). Deferred modules run before DOMContentLoaded,
+// so on this page init (inside DOMContentLoaded) FullCalendar is usually already defined.
+// Poll anyway: missing manifest/build, slow networks, or future layout/script order changes.
 function waitForFullCalendar(callback, maxAttempts = 100) {
+    function fullCalendarReady() {
+        return typeof FullCalendar !== 'undefined' && FullCalendar.Calendar &&
+            typeof FullCalendarPlugins !== 'undefined';
+    }
+    if (fullCalendarReady()) {
+        console.log('✅ FullCalendar v6 detected, initializing calendar...');
+        callback();
+        return;
+    }
     let attempts = 0;
-    
     const checkInterval = setInterval(() => {
         attempts++;
-        
-        if (typeof FullCalendar !== 'undefined' && FullCalendar.Calendar && 
-            typeof FullCalendarPlugins !== 'undefined') {
+        if (fullCalendarReady()) {
             clearInterval(checkInterval);
             console.log('✅ FullCalendar v6 detected, initializing calendar...');
             callback();
         } else if (attempts >= maxAttempts) {
             clearInterval(checkInterval);
             console.error('❌ FullCalendar v6 not loaded after waiting. Please rebuild assets: npm run build');
-            // Still try to initialize if calendar element exists (graceful degradation)
             const calendarEl = document.getElementById('calendar');
             if (calendarEl) {
                 calendarEl.innerHTML = '<div class="alert alert-danger">FullCalendar v6 failed to load. Please refresh the page or rebuild assets.</div>';
             }
         }
-    }, 100); // Check every 100ms
+    }, 100);
 }
 
 // Make consultants available to JavaScript

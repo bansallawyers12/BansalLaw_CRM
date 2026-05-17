@@ -907,16 +907,6 @@ $(function () {
     }
   } // End: if (isClientDetailPage) check
 
-  // Timepicker
-  if (jQuery().timepicker && $(".timepicker").length) {
-    $(".timepicker").timepicker({
-      icons: {
-        up: "fas fa-chevron-up",
-        down: "fas fa-chevron-down"
-      }
-    });
-  }
-
   $("#mini_sidebar_setting").on("change", function () {
     var _val = $(this).is(":checked") ? "checked" : "unchecked";
     if (_val === "checked") {

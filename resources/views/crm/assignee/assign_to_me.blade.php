@@ -3,7 +3,6 @@
 
 @section('content')
 <style>
-.fc-event-container .fc-h-event{cursor:pointer;}
 #openassigneview .modal-body ul.navbar-nav li .dropdown-menu{transform: none!important; top:40px!important;}
 .sort_col a { color: #212529 !important; font-weight: 700 !important;}
 </style>

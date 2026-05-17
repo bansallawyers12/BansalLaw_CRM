@@ -70,9 +70,7 @@
         @keyframes dynFadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         #subTypeFieldsContainer > div { animation: dynFadeIn 0.3s ease; }
     </style>
-    {{-- Select2 CSS for contact person search --}}
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    {{-- Select2: use layout vendored select2.min.css + select2.full.min.js (no CDN) --}}
 @endpush
 
 @section('content')
@@ -636,9 +634,6 @@
     @include('crm.clients.partials.matter-required-before-convert-modal')
 
     @push('scripts')
-    {{-- Select2 JS for contact person search --}}
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
     <script>
         window.ClientDetailConfig = window.ClientDetailConfig || {};
         window.ClientDetailConfig.urls = window.ClientDetailConfig.urls || {};

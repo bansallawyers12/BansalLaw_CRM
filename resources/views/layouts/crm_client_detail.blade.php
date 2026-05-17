@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="{{asset('css/app.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/iziToast.min.css')}}">
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
-    <link rel="stylesheet" href="{{asset('css/bootstrap-timepicker.min.css')}}">
     @include('components.flatpickr-assets')
     <link rel="stylesheet" href="{{asset('css/select2.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/intlTelInput.css')}}">
@@ -1695,7 +1694,6 @@
     <script src="https://momentjs.com/downloads/moment.js"></script>
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
-    <script src="{{asset('js/bootstrap-timepicker.min.js')}}"></script>
     @include('components.flatpickr-scripts')
     <script src="{{asset('js/crm-flatpickr.js')}}"></script>
     <script src="{{asset('js/select2.full.min.js')}}"></script>
@@ -1769,95 +1767,7 @@
                 this.value =  this.value;
             });
 
-            $('.assineeselect2').select2({
-                dropdownParent: $('#checkinmodal'),
-            });
-
-            $('.js-data-example-ajaxccsearch').select2({
-                closeOnSelect: true,
-                ajax: {
-                    url: '{{route('clients.getallclients')}}',
-                    dataType: 'json',
-                    processResults: function (data) {
-                        // Transforms the top-level key of the response object from 'items' to 'results'
-                        return {
-                            results: data.items
-                        };
-                    },
-                    cache: true
-                },
-                templateResult: formatRepomain,
-                templateSelection: formatRepoSelectionmain
-            });
-
-            function formatRepomain (repo) {
-                if (repo.loading) {
-                    return repo.text;
-                }
-
-                var $container = $(
-                    "<div dataid="+repo.cid+" class='selectclient select2-result-repository ag-flex ag-space-between ag-align-center')'>" +
-
-                    "<div  class='ag-flex ag-align-start'>" +
-                        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
-                        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
-
-                    "</div>" +
-                    "</div>" +
-                    "<div class='ag-flex ag-flex-column ag-align-end'>" +
-
-                        "<span class='select2resultrepositorystatistics'>" +
-
-                        "</span>" +
-                    "</div>" +
-                    "</div>"
-                );
-
-                $container.find(".select2-result-repository__title").text(repo.name);
-                $container.find(".select2-result-repository__description").text(repo.email);
-                if (repo.locked) {
-                    $container.addClass('opacity-75');
-                    $container.find(".select2-result-repository__title").prepend('<span class="mr-1" title="No access">&#128274;</span> ');
-                    var ui = repo.access_ui || {};
-                    if (ui.show_quick) {
-                        $container.find(".select2resultrepositorystatistics").append('<span class="ui label tiny">Quick</span> ');
-                    }
-                    if (ui.show_supervisor) {
-                        $container.find(".select2resultrepositorystatistics").append('<span class="ui label tiny">Supervisor</span> ');
-                    }
-                }
-                if(repo.status == 'Archived'){
-                    $container.find(".select2resultrepositorystatistics").append('<span class="ui label  select2-result-repository__statistics">'+repo.status+'</span>');
-                } else {
-                    $container.find(".select2resultrepositorystatistics").append('<span class="ui label yellow select2-result-repository__statistics">'+repo.status+'</span>');
-                }
-                return $container;
-            }
-
-            function formatRepoSelectionmain (repo) {
-                return repo.name || repo.text;
-            }
-
-            $('.js-data-example-ajaxccsearch').on('select2:select', function (e) {
-                var data = e.params.data || {};
-                if (data.locked && typeof window.openCrmAccessModal === 'function') {
-                    $(this).val(null).trigger('change');
-                    window.openCrmAccessModal(data);
-                    return;
-                }
-                var v = data.id;
-                if (!v) { return; }
-                var s = String(v).split('/');
-                if(s[1] == 'Matter' && s[2] != ''){
-                    window.location = '{{ url("/clients/detail") }}/' + s[0] + '/' + s[2];
-                } else {
-                    if(s[1] == 'Client'){
-                        window.location = '{{ url("/clients/detail") }}/' + s[0];
-                    }  else{
-                        window.location = '{{ url("/history") }}/' + s[0];
-                    }
-                }
-            });
+            @include('layouts.partials.select2-layout-client-search-toolbar')
 
 
             $(document).delegate('.opencheckin', 'click', function(){
@@ -2329,89 +2239,7 @@
                 $('.card .card-body .grid_data').show();
             });
 
-            $('.js-data-example-ajax-check').on("select2:select", function(e) {
-                var data = e.params.data;
-                console.log(data);
-                // Ensure status is set, default to 'Client' if not provided
-                var contactType = data.status || data.type || 'client';
-                // Normalize to lowercase first, then capitalize
-                contactType = contactType.toLowerCase();
-                if (contactType === 'lead') {
-                    contactType = 'Lead';
-                } else if (contactType === 'client') {
-                    contactType = 'Client';
-                } else {
-                    // If status is something else (like 'archived'), default to 'Client'
-                    contactType = 'Client';
-                }
-                $('#utype').val(contactType);
-            });
-
-            // Also handle when selection is cleared
-            $('.js-data-example-ajax-check').on("select2:clear", function(e) {
-                $('#utype').val('');
-            });
-
-            $('.js-data-example-ajax-check').select2({
-                multiple: true,
-                closeOnSelect: false,
-                dropdownParent: $('#checkinmodal'),
-                ajax: {
-                    url: '{{route('clients.getrecipients')}}',
-                    dataType: 'json',
-                    processResults: function (data) {
-                        // Transforms the top-level key of the response object from 'items' to 'results'
-                        return {
-                            results: data.items
-                        };
-                    },
-                    cache: true
-                },
-                templateResult: formatRepocheck,
-                templateSelection: formatRepoSelectioncheck
-            });
-
-            function formatRepocheck (repo) {
-                if (repo.loading) {
-                    return repo.text;
-                }
-
-                var $container = $(
-                    "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-
-                    "<div  class='ag-flex ag-align-start'>" +
-                        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
-                        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
-
-                    "</div>" +
-                    "</div>" +
-                    "<div class='ag-flex ag-flex-column ag-align-end'>" +
-
-                        "<span class='select2resultrepositorystatistics'>" +
-
-                        "</span>" +
-                    "</div>" +
-                    "</div>"
-                );
-
-                $container.find(".select2-result-repository__title").text(repo.name);
-                $container.find(".select2-result-repository__description").text(repo.email);
-                if(repo.status == 'Archived'){
-                    $container.find(".select2resultrepositorystatistics").append('<span class="ui label  select2-result-repository__statistics">'+repo.status+'</span>');
-                }else{
-                    $container.find(".select2resultrepositorystatistics").append('<span class="ui label yellow select2-result-repository__statistics">'+repo.status+'</span>');
-                }
-                return $container;
-            }
-
-            function formatRepoSelectioncheck (repo) {
-                return repo.name || repo.text;
-            }
-
-            /* $('.timepicker').timepicker({
-                minuteStep: 1,
-                showSeconds: true,
-            }); */
+            @include('layouts.partials.select2-layout-checkin-recipients')
         });
 
         $(document).ready(function(){

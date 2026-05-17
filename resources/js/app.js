@@ -83,7 +83,13 @@ window.updateNotificationBell = function (count, options = {}) {
 
 /*
 |--------------------------------------------------------------------------
-| FullCalendar v6
+| FullCalendar v6 (single integration path)
+|--------------------------------------------------------------------------
+| Exposes globals for the booking admin calendar only (Blade: calendar-v6).
+| Plugins are bundled here — do not load legacy fullcalendar.min.js or jQuery
+| .fullCalendar() anywhere. Page init: calendar-v6 Blade (DOMContentLoaded →
+| waitForFullCalendar). Deferred modules usually run before that handler;
+| polling covers failed builds or script-order edge cases.
 |--------------------------------------------------------------------------
 */
 
