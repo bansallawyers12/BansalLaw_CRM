@@ -89,7 +89,14 @@
                             <th style="text-align: center;" title="Trust receipt or payment number">Receipt No.</th>
                             <th style="text-align: right;" title="Trust money received into account">Trust Receipts (+)</th>
                             <th style="text-align: right;" title="Trust money paid out of account">Trust Payments (−)</th>
-                            <th style="text-align: right;" title="Running balance of trust funds held for this client" style="background: #e8f5e9;">Balance</th>
+                            @php
+                                $__ledgerRule42Col = \Illuminate\Support\Facades\Schema::hasTable('trust_withdrawal_authorities')
+                                    && \Illuminate\Support\Facades\Schema::hasTable('trust_withdrawal_authority_types');
+                            @endphp
+                            @if($__ledgerRule42Col)
+                            <th style="text-align: left; max-width: 140px;" title="Uniform Law Rule 42 withdrawal authority captured for this transfer (if applicable)">Rule 42</th>
+                            @endif
+                            <th style="text-align: right; background: #e8f5e9;" title="Running balance of trust funds held for this client">Balance</th>
                         </tr>
                     </thead>
                     <tbody class="productitemList">
@@ -106,6 +113,28 @@
                             ->where('receipt_type',1)
                             ->orderBy('id', 'asc')
                             ->get();
+                        $__rule42ByLedgerRowId = [];
+                        if ($__ledgerRule42Col && $receipts_lists->isNotEmpty()) {
+                            $__ftLedgerIds = $receipts_lists->filter(function ($r) {
+                                return ($r->client_fund_ledger_type ?? '') === 'Fee Transfer';
+                            })->pluck('id')->unique()->values()->all();
+                            if ($__ftLedgerIds !== []) {
+                                $__rule42Rows = DB::table('trust_withdrawal_authorities as twa')
+                                    ->join('trust_withdrawal_authority_types as twat', 'twat.id', '=', 'twa.authority_type_id')
+                                    ->whereIn('twa.account_client_receipt_id', $__ftLedgerIds)
+                                    ->select([
+                                        'twa.account_client_receipt_id',
+                                        'twat.label',
+                                        'twa.notice_given_date',
+                                        'twa.supervisor_override',
+                                        'twa.authority_notes',
+                                    ])
+                                    ->get();
+                                foreach ($__rule42Rows as $__r42) {
+                                    $__rule42ByLedgerRowId[(int) $__r42->account_client_receipt_id] = $__r42;
+                                }
+                            }
+                        }
                         // Running balance for LSBC trust ledger compliance
                         $trust_running_balance = 0;
                         //dd($receipts_lists);
@@ -331,6 +360,36 @@
                             <td style="text-align: right; vertical-align: middle; color: #dc3545; font-weight: 500;">
                                 <?php echo !empty($rec_val->withdraw_amount) ? '$ ' . number_format($rec_val->withdraw_amount, 2) : ''; ?>
                             </td>
+                            @if($__ledgerRule42Col)
+                            <td style="text-align: left; vertical-align: middle; font-size: 11px; max-width: 150px;">
+                                <?php
+                                $dbLedgerType = $rec_val->client_fund_ledger_type ?? '';
+                                if ($dbLedgerType === 'Fee Transfer') {
+                                    $__r42Row = $__rule42ByLedgerRowId[(int) $rec_val->id] ?? null;
+                                    if ($__r42Row) {
+                                        $__hint = (string) $__r42Row->label;
+                                        if (! empty($__r42Row->notice_given_date)) {
+                                            $__hint .= ' | Notice given: ' . $__r42Row->notice_given_date;
+                                        }
+                                        if (! empty($__r42Row->authority_notes)) {
+                                            $__hint .= ' | Notes: ' . $__r42Row->authority_notes;
+                                        }
+                                        $__ov = $__r42Row->supervisor_override ?? false;
+                                        if ($__ov === true || $__ov === 1 || $__ov === '1' || $__ov === 't' || $__ov === 'T') {
+                                            $__hint .= ' | Supervisor override recorded';
+                                        }
+                                        $__hintEsc = htmlspecialchars($__hint, ENT_QUOTES, 'UTF-8');
+                                        $__labelShort = htmlspecialchars(\Illuminate\Support\Str::limit((string) $__r42Row->label, 48), ENT_QUOTES, 'UTF-8');
+                                        echo '<span class="text-body" title="' . $__hintEsc . '">' . $__labelShort . '</span>';
+                                    } else {
+                                        echo '<span class="text-muted" title="No Rule 42 authority record for this row (e.g. legacy posting before authority capture).">—</span>';
+                                    }
+                                } else {
+                                    echo '<span class="text-muted">—</span>';
+                                }
+                                ?>
+                            </td>
+                            @endif
                             <td style="text-align: right; vertical-align: middle; font-weight: 600; background: #f0fff4; border-left: 2px solid #c3e6cb;">
                                 <?php
                                 $balance_color = $trust_running_balance >= 0 ? '#155724' : '#721c24';

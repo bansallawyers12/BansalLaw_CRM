@@ -79,16 +79,27 @@
                             </thead>
                             <tbody>
                             @forelse($logs as $log)
+                                @php
+                                    $auditOld = (string) ($log->old_value ?? '');
+                                    $auditNew = (string) ($log->new_value ?? '');
+                                    $auditCtx = (string) ($log->context ?? '');
+                                @endphp
                                 <tr>
                                     <td>{{ $log->id }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($log->created_at)->format('Y-m-d H:i:s') }}</td>
+                                    <td>
+                                        @if($log->created_at)
+                                            {{ \Carbon\Carbon::parse($log->created_at)->format('Y-m-d H:i:s') }}
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
                                     <td>{{ $log->table_name }}</td>
                                     <td>{{ $log->row_id }}</td>
                                     <td>{{ $log->event }}</td>
                                     <td>{{ $log->field_name ?? '—' }}</td>
                                     <td>
-                                        @if($log->performer_name)
-                                            {{ trim($log->performer_name) }}
+                                        @if(filled($log->performer_name))
+                                            {{ trim((string) $log->performer_name) }}
                                         @elseif($log->performed_by)
                                             #{{ $log->performed_by }}
                                         @else
@@ -97,13 +108,17 @@
                                     </td>
                                     <td>{{ $log->ip_address ?? '—' }}</td>
                                     <td style="max-width: 320px; white-space: normal; font-size: 12px;">
-                                        @if($log->old_value || $log->new_value)
-                                            <span class="text-danger">{{ Str::limit($log->old_value, 120) }}</span>
-                                            @if($log->old_value && $log->new_value) → @endif
-                                            <span class="text-success">{{ Str::limit($log->new_value, 120) }}</span>
+                                        @if($auditOld !== '' || $auditNew !== '')
+                                            @if($auditOld !== '')
+                                                <span class="text-danger">{{ Str::limit($auditOld, 120) }}</span>
+                                            @endif
+                                            @if($auditOld !== '' && $auditNew !== '') → @endif
+                                            @if($auditNew !== '')
+                                                <span class="text-success">{{ Str::limit($auditNew, 120) }}</span>
+                                            @endif
                                         @endif
-                                        @if($log->context)
-                                            <div class="text-muted mt-1">{{ Str::limit($log->context, 200) }}</div>
+                                        @if($auditCtx !== '')
+                                            <div class="text-muted mt-1">{{ Str::limit($auditCtx, 200) }}</div>
                                         @endif
                                     </td>
                                 </tr>

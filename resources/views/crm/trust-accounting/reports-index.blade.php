@@ -17,6 +17,7 @@
                     <a href="{{ route('trust-accounting.bank-accounts.index') }}" class="btn btn-outline-primary btn-sm me-1">Bank accounts</a>
                     <a href="{{ route('trust-accounting.reconciliation.index') }}" class="btn btn-outline-primary btn-sm me-1">Reconciliation</a>
                     <a href="{{ route('trust-accounting.periods.index') }}" class="btn btn-outline-secondary btn-sm">Period locks</a>
+                    <a href="{{ route('trust-accounting.practice-sequences.index') }}" class="btn btn-outline-secondary btn-sm">Sequences</a>
                     <a href="{{ route('trust-accounting.audit-log.index') }}" class="btn btn-outline-secondary btn-sm">Audit log</a>
                 </div>
             </div>

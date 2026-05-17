@@ -24,7 +24,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * Trust compliance: period locks, audit log (Phase 2); practice reports (Phase 3);
  * bank reconciliation (Phase 4 — Rule 48); Rule 42 withdrawal authority types (Phase 5);
  * Rule 42 columns on payments journal + supervisor flag in Staff Console (Phase 6);
- * audit log CSV export + receipts journal invoice column (Phase 7).
+ * audit log CSV export + receipts journal invoice column (Phase 7);
+ * UTF-8 BOM on trust CSV exports + client ledger Rule 42 column (Phase 8);
+ * read-only practice sequences screen (Phase 9).
  * Super-admin effective privileges only (matches void / critical trust actions).
  */
 class TrustAccountingAdminController extends Controller
@@ -42,6 +44,16 @@ class TrustAccountingAdminController extends Controller
         }
 
         return $user;
+    }
+
+    /**
+     * Excel-friendly UTF-8 CSV stream start (Phase 8).
+     *
+     * @param  resource  $out
+     */
+    private static function writeCsvUtf8Bom($out): void
+    {
+        fwrite($out, "\xEF\xBB\xBF");
     }
 
     public function periodsIndex(): View
@@ -196,18 +208,28 @@ class TrustAccountingAdminController extends Controller
         }
 
         if (! empty($validated['event'])) {
-            $query->where('l.event', 'like', '%' . $validated['event'] . '%');
+            // Literal substring, case-insensitive (no LIKE wildcards from user input).
+            $query->whereRaw(
+                'POSITION(LOWER(?::text) IN LOWER(COALESCE(l.event, \'\'))) > 0',
+                [(string) $validated['event']]
+            );
         }
 
         if (! empty($validated['row_id'])) {
             $query->where('l.row_id', (int) $validated['row_id']);
         }
 
-        if (! empty($validated['from_date'])) {
-            $query->whereDate('l.created_at', '>=', $validated['from_date']);
+        $fromAudit = $validated['from_date'] ?? null;
+        $toAudit = $validated['to_date'] ?? null;
+        if ($fromAudit && $toAudit && Carbon::parse($fromAudit)->gt(Carbon::parse($toAudit))) {
+            [$fromAudit, $toAudit] = [$toAudit, $fromAudit];
         }
-        if (! empty($validated['to_date'])) {
-            $query->whereDate('l.created_at', '<=', $validated['to_date']);
+
+        if ($fromAudit) {
+            $query->whereDate('l.created_at', '>=', $fromAudit);
+        }
+        if ($toAudit) {
+            $query->whereDate('l.created_at', '<=', $toAudit);
         }
 
         if (($validated['export'] ?? '') === 'csv') {
@@ -217,6 +239,7 @@ class TrustAccountingAdminController extends Controller
 
             return response()->streamDownload(function () use ($rows) {
                 $out = fopen('php://output', 'w');
+                self::writeCsvUtf8Bom($out);
                 fputcsv($out, [
                     'ID',
                     'When',
@@ -271,6 +294,28 @@ class TrustAccountingAdminController extends Controller
     }
 
     /**
+     * Phase 9: read-only view of practice-wide trust receipt/journal sequence counters.
+     */
+    public function practiceSequencesIndex(): View
+    {
+        $this->gateTrustAdmin();
+
+        if (! Schema::hasTable('trust_practice_sequences')) {
+            abort(503, 'Trust practice sequences table is not available.');
+        }
+
+        $hasSequenceType = Schema::hasColumn('trust_practice_sequences', 'sequence_type');
+        $q = DB::table('trust_practice_sequences');
+        if ($hasSequenceType) {
+            $sequences = $q->orderByDesc('trust_year_start_year')->orderBy('sequence_type')->get();
+        } else {
+            $sequences = $q->orderByDesc('trust_year_start_year')->get();
+        }
+
+        return view('crm.trust-accounting.practice-sequences', compact('sequences', 'hasSequenceType'));
+    }
+
+    /**
      * Practice trial balance: trust funds held per client + matter (non-voided ledger only).
      */
     public function trialBalanceReport(Request $request): View|StreamedResponse
@@ -320,6 +365,7 @@ class TrustAccountingAdminController extends Controller
 
             return response()->streamDownload(function () use ($balances, $asAt, $total) {
                 $out = fopen('php://output', 'w');
+                self::writeCsvUtf8Bom($out);
                 fputcsv($out, ['Trust trial balance (as at ' . $asAt . ')']);
                 fputcsv($out, ['Client ref', 'Matter', 'Client name', 'Balance']);
                 foreach ($balances as $row) {
@@ -413,6 +459,7 @@ class TrustAccountingAdminController extends Controller
 
             return response()->streamDownload(function () use ($rows) {
                 $out = fopen('php://output', 'w');
+                self::writeCsvUtf8Bom($out);
                 fputcsv($out, ['Trans date', 'Receipt no.', 'Type', 'Client ref', 'Matter', 'Description', 'Amount', 'Method', 'Invoice ref', 'Payer', 'Bank ref', 'Banking date']);
                 foreach ($rows as $row) {
                     fputcsv($out, [
@@ -524,6 +571,7 @@ class TrustAccountingAdminController extends Controller
 
             return response()->streamDownload(function () use ($rows, $rule42ColumnsEnabled) {
                 $out = fopen('php://output', 'w');
+                self::writeCsvUtf8Bom($out);
                 $header = ['Trans date', 'Receipt no.', 'Type', 'Client ref', 'Matter', 'Description', 'Amount', 'Method', 'Invoice ref'];
                 if ($rule42ColumnsEnabled) {
                     array_push(

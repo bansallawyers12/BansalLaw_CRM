@@ -277,6 +277,7 @@ Route::middleware(['auth:admin'])->group(function() {
 		Route::post('/periods/{period}/unlock', [TrustAccountingAdminController::class, 'periodsUnlock'])->name('periods.unlock');
 		Route::get('/audit-log', [TrustAccountingAdminController::class, 'auditLogIndex'])->name('audit-log.index');
 		Route::get('/reports', [TrustAccountingAdminController::class, 'reportsIndex'])->name('reports.index');
+		Route::get('/practice-sequences', [TrustAccountingAdminController::class, 'practiceSequencesIndex'])->name('practice-sequences.index');
 		Route::get('/reports/trial-balance', [TrustAccountingAdminController::class, 'trialBalanceReport'])->name('reports.trial-balance');
 		Route::get('/reports/receipts-journal', [TrustAccountingAdminController::class, 'receiptsJournalReport'])->name('reports.receipts-journal');
 		Route::get('/reports/payments-journal', [TrustAccountingAdminController::class, 'paymentsJournalReport'])->name('reports.payments-journal');
