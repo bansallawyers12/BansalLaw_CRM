@@ -3,7 +3,7 @@
 
 @section('content')
 
-{{-- FullCalendar v6 base styles are injected by JS when app.js loads (@fullcalendar/*). No separate global CSS exists on the fullcalendar npm package; a CDN link to index.global.min.css is invalid and breaks the console. --}}
+{{-- FullCalendar v6: JS/API comes from layout @vite(app.js); this entry loads themed overrides (resources/css/fullcalendar-v6.css). Legacy fullcalendar.min.* (v3) removed from layouts. --}}
 @vite(['resources/css/fullcalendar-v6.css'])
 
 <div class="section-body">

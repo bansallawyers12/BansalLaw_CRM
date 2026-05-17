@@ -13,7 +13,6 @@
     <link rel="icon" type="image/png" href="{{asset('img/favicon.png')}}">
     <link rel="stylesheet" href="{{asset('css/app.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/iziToast.min.css')}}">
-    <link rel="stylesheet" href="{{asset('css/fullcalendar.min.css')}}">
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <link rel="stylesheet" href="{{asset('css/bootstrap-timepicker.min.css')}}">
     @include('components.flatpickr-assets')
@@ -1692,7 +1691,6 @@
     };
     </script>
     <script src="{{asset('js/app.min.js')}}"></script>
-    <script src="{{asset('js/fullcalendar.min.js')}}"></script>
     <script src="{{asset('js/datatables.min.js')}}"></script>
     <script src="https://momentjs.com/downloads/moment.js"></script>
     <script src="{{asset('js/dataTables.bootstrap4.js')}}"></script>
@@ -2883,7 +2881,7 @@
         };
     })();
     </script>
-    {{-- Vite: app bundle (notification polling, FullCalendar, etc.). broadcasts.js polls HTTP for admin broadcast banners. --}}
+    {{-- Vite: app bundle (notification polling, FullCalendar v6 globals for booking calendar, etc.). broadcasts.js polls HTTP for admin broadcast banners. --}}
     @vite(['resources/js/app.js'])
     <script src="{{ asset('js/broadcasts.js') }}" defer></script>
 
