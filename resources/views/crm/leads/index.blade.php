@@ -1,12 +1,12 @@
-@extends('layouts.crm_client_detail')
+﻿@extends('layouts.crm_client_detail')
 @section('title', 'Leads')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
-<link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
+<link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
 <style>
-    /* Leads index — docs/theme.md (CSS variables from crm-theme.css :root) */
+    /* Leads index â€” docs/theme.md (CSS variables from crm-theme.css :root) */
 
     .btn-edit-icon {
         display: inline-flex;
@@ -369,7 +369,7 @@
                                         <label for="lead_from_date">From Date</label>
                                         <input type="date" name="from_date" id="lead_from_date" value="{{ request('from_date') }}" class="form-control">
                                     </div>
-                                    <span class="date-range-arrow">→</span>
+                                    <span class="date-range-arrow">â†’</span>
                                     <div class="form-group">
                                         <label for="lead_to_date">To Date</label>
                                         <input type="date" name="to_date" id="lead_to_date" value="{{ request('to_date') }}" class="form-control">
@@ -954,4 +954,5 @@
     }
 </script>
 @endpush
+
 

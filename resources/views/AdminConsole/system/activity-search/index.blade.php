@@ -2,11 +2,10 @@
 @section('title', 'Activity Search')
 
 @section('styles')
-    <link rel="stylesheet" href="{{ asset('css/tom-select.bootstrap5.min.css') }}">
-    <style>
-        /* Tom Select wrappers inside Admin Console filters */
-        .adminconsole-activity-search .ts-wrapper { width: 100% !important; }
-    </style>
+<style>
+    /* Tom Select wrappers inside Admin Console filters */
+    .adminconsole-activity-search .ts-wrapper { width: 100% !important; }
+</style>
 @endsection
 
 @section('content')
@@ -336,8 +335,6 @@
 @endsection
 
 @section('scripts')
-<script src="{{ asset('js/tom-select.complete.min.js') }}"></script>
-<script src="{{ asset('js/ts-init.js') }}"></script>
 <script>
 $(document).ready(function() {
     var clientSearchUrl = @json(route('adminconsole.system.activity-search.search-clients'));

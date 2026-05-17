@@ -1,10 +1,10 @@
-@extends('layouts.crm_client_detail')
+﻿@extends('layouts.crm_client_detail')
 @section('title', 'Clients Closed Matters')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
-<link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
+<link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
 <style>
     .listing-container .table th:first-child,
     .listing-container .table td:first-child {
@@ -224,7 +224,7 @@
                                         <label for="from_date" class="col-form-label" style="color:#4a5568 !important;">From Date</label>
                                         <input type="date" name="from_date" id="from_date" value="{{ request('from_date') }}" class="form-control">
                                     </div>
-                                    <span class="date-range-arrow">→</span>
+                                    <span class="date-range-arrow">â†’</span>
                                     <div class="form-group">
                                         <label for="to_date" class="col-form-label" style="color:#4a5568 !important;">To Date</label>
                                         <input type="date" name="to_date" id="to_date" value="{{ request('to_date') }}" class="form-control">
@@ -306,7 +306,7 @@
                                                 @if($isDiscontinued)
                                                 <button class="btn btn-primary btn-sm closed-matter-reopen" type="button" data-matter-id="{{ $list->id }}"><i class="fas fa-redo"></i> Reopen</button>
                                                 @else
-                                                <span class="text-muted">—</span>
+                                                <span class="text-muted">â€”</span>
                                                 @endif
                                             </td>
                                             @endif
@@ -383,3 +383,4 @@ jQuery(document).ready(function($){
 });
 </script>
 @endpush
+

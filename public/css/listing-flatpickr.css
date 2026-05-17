@@ -1,3 +1,8 @@
+/**
+ * Listing pages: date filter inputs + Flatpickr popup (inside .listing-container).
+ * Class "datepicker" is the field hook for scripts.js → Flatpickr; not Bootstrap Datepicker.
+ */
+
 /* Listing page date inputs (class="datepicker") — tokens from crm-theme.css :root */
 .listing-container .datepicker {
     border-radius: 8px;
@@ -19,7 +24,7 @@
     color: var(--text-muted, #5e7a90);
 }
 
-/* ── Flatpickr popup calendar (replaces old Bootstrap Datepicker dropdown rules) ── */
+/* Flatpickr popup calendar */
 
 .listing-container .flatpickr-calendar {
     border-radius: 10px;

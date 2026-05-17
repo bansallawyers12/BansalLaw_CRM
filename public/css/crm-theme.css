@@ -1952,28 +1952,32 @@ body.sidebar-mini .adminconsole-offices-view .office-view-table-toolbar .btn-out
   border-color: var(--border) !important;
 }
 
-/* Legacy Summernote rule — no longer active; TinyMCE is used instead */
-body.sidebar-mini .adminconsole-crm-email-template-form .note-editor.note-frame {
+/* CRM email template forms use TinyMCE (.tinymce-editor → .tox-*); legacy Summernote .note-* removed */
+body.sidebar-mini .adminconsole-crm-email-template-form .tox-tinymce {
   border: 1px solid var(--border) !important;
   border-radius: 8px !important;
   overflow: hidden !important;
 }
 
-body.sidebar-mini .adminconsole-crm-email-template-form .note-editor.note-frame .note-toolbar {
+body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-editor-header,
+body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-toolbar,
+body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-toolbar__primary {
   background: var(--page-bg) !important;
   border-bottom: 1px solid var(--border) !important;
-  padding: 6px 10px !important;
 }
 
-body.sidebar-mini .adminconsole-crm-email-template-form .note-editor.note-frame .note-statusbar {
+body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-statusbar {
   background: var(--page-bg) !important;
   border-top: 1px solid var(--border) !important;
   color: var(--text-muted) !important;
 }
 
-body.sidebar-mini .adminconsole-crm-email-template-form .note-editor.note-frame .note-editing-area .note-editable {
+body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-edit-area::before {
+  border-color: var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-crm-email-template-form .tox .tox-edit-area iframe {
   background: var(--card-bg) !important;
-  color: var(--text-dark) !important;
 }
 
 body.sidebar-mini .adminconsole-workflow-form .workflow_stges .table {

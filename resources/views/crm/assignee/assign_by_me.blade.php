@@ -1,12 +1,12 @@
-@extends('layouts.crm_client_detail')
+﻿@extends('layouts.crm_client_detail')
 @section('title', 'Assigned by Me')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
-<link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
+<link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
 <style>
-    /* Assigned by me — docs/theme.md (tokens from crm-theme.css :root; shared listing-*.css for table/cards) */
+    /* Assigned by me â€” docs/theme.md (tokens from crm-theme.css :root; shared listing-*.css for table/cards) */
     .listing-container .client-header {
         display: flex;
         justify-content: space-between;
@@ -347,7 +347,7 @@
     </div>
 </div>
 
-<!-- Task Completion Notes Modal — markup + tokens match action page (public/css/crm-theme.css) -->
+<!-- Task Completion Notes Modal â€” markup + tokens match action page (public/css/crm-theme.css) -->
 <div class="modal fade" id="completionNotesModal" tabindex="-1" role="dialog" aria-labelledby="completionNotesModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content completion-notes-modal-content">
@@ -410,7 +410,7 @@
             $('#assign_note_id').val(task_id);
         });
 
-        // Update task — populate fields + Select2 (content in DOM; dropdown parent must be popover, not hidden modal)
+        // Update task â€” populate fields + Select2 (content in DOM; dropdown parent must be popover, not hidden modal)
         $(document).on('shown.bs.popover', '.listing-container .update_task', function() {
             var $trigger = $(this);
             var $shell = $('.popover.show').last();
@@ -539,7 +539,7 @@
             });
         });
 
-        // Update task (scope to visible popover — IDs repeat per row in markup)
+        // Update task (scope to visible popover â€” IDs repeat per row in markup)
         $(document).on('click', '#updateTask', function() {
             var $root = $(this).closest('.popover-body');
             if (!$root.length) {
@@ -646,3 +646,4 @@
     });
 </script>
 @endpush
+

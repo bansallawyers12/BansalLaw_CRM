@@ -1,12 +1,12 @@
-@extends('layouts.crm_client_detail')
+﻿@extends('layouts.crm_client_detail')
 @section('title', 'Completed Action')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
-<link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
+<link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
 <style>
-    /* Completed actions — docs/theme.md (tokens from crm-theme.css :root) */
+    /* Completed actions â€” docs/theme.md (tokens from crm-theme.css :root) */
     .listing-container .action-completed-filter-form {
         margin-bottom: 0;
     }
@@ -19,7 +19,7 @@
         max-width: 100%;
     }
 
-    /* Wrapper <button><a>…</a></button> — strip chrome so themed <a> shows */
+    /* Wrapper <button><a>â€¦</a></button> â€” strip chrome so themed <a> shows */
     .listing-container .filter-buttons > button {
         background: transparent !important;
         border: none !important;
@@ -511,7 +511,7 @@ jQuery(document).ready(function($){
         $('#assign_note_id').val(task_id);
     });
 
-    // Update task popover — populate fields + Select2 (dropdown parent = popover shell)
+    // Update task popover â€” populate fields + Select2 (dropdown parent = popover shell)
     $(document).on('shown.bs.popover', '.listing-container .update_task', function() {
         var $trigger = $(this);
         var $shell = $('.popover.show').last();
@@ -574,7 +574,7 @@ jQuery(document).ready(function($){
         }
     });
 
-    // Reassign from completed (creates new action) — button id in popover is #updateTask
+    // Reassign from completed (creates new action) â€” button id in popover is #updateTask
     $(document).on('click', '#updateTask', function() {
         var $root = $(this).closest('.popover-body');
         if (!$root.length) {
@@ -647,3 +647,4 @@ jQuery(document).ready(function($){
 });
 </script>
 @endpush
+

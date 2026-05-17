@@ -682,7 +682,7 @@ $(function () {
     });
   }
 
-  // Date pickers (Flatpickr - standardized)
+  // Date pickers (Flatpickr — class "datepicker" is historical; not Bootstrap Datepicker)
   if (typeof flatpickr !== 'undefined') {
     // Check if we're on client detail page (Flatpickr handled by detail-main.js / appointments.js)
     // Client detail pages have .report_date_fields or .client-navigation-sidebar

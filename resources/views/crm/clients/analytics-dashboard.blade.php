@@ -1,8 +1,8 @@
-@extends('layouts.crm_client_detail')
+﻿@extends('layouts.crm_client_detail')
 @section('title', 'Financial Analytics Dashboard')
 
 @section('styles')
-<link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
+<link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
 <link rel="stylesheet" href="{{ asset('css/financial-analytics-dashboard.css') }}">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 @endsection
@@ -703,4 +703,5 @@ window.handleQuickSelect = handleQuickSelect;
 
 </script>
 @endpush
+
 
