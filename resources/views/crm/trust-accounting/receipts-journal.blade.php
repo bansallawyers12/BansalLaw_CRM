@@ -10,7 +10,7 @@
             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                 <div>
                     <h4 class="mb-1">Trust receipts journal</h4>
-                    <p class="text-muted small mb-0">Rows with funds in for the period. Export CSV for the full filtered set.</p>
+                    <p class="text-muted small mb-0">Rows with funds in for the period (allocated deposits show invoice reference where present). Export CSV for the full filtered set.</p>
                 </div>
                 <a href="{{ route('trust-accounting.reports.index') }}" class="btn btn-outline-secondary btn-sm">All reports</a>
             </div>
@@ -56,6 +56,7 @@
                                     <th>Description</th>
                                     <th class="text-end">Amount</th>
                                     <th>Method</th>
+                                    <th>Invoice</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -66,12 +67,13 @@
                                     <td>{{ $row->client_fund_ledger_type }}</td>
                                     <td>{{ $row->client_ref }}</td>
                                     <td>{{ $row->client_unique_matter_no ?? '—' }}</td>
-                                    <td style="max-width:220px;"><span class="small">{{ Str::limit($row->description, 80) }}</span></td>
+                                    <td style="max-width:220px;"><span class="small">{{ Str::limit((string) ($row->description ?? ''), 80) }}</span></td>
                                     <td class="text-end font-monospace">${{ number_format((float) $row->deposit_amount, 2) }}</td>
-                                    <td class="small">{{ $row->payment_method }}</td>
+                                    <td class="small">{{ $row->payment_method ?? '—' }}</td>
+                                    <td class="small">{{ $row->invoice_no ?? '—' }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="8" class="text-center text-muted py-4">No rows.</td></tr>
+                                <tr><td colspan="9" class="text-center text-muted py-4">No rows.</td></tr>
                             @endforelse
                             </tbody>
                         </table>

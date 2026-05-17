@@ -12,7 +12,7 @@
             <div class="row mb-3">
                 <div class="col-md-8">
                     <h4 class="mb-1"><i class="fas fa-clipboard-list text-secondary me-2"></i>Trust audit log</h4>
-                    <p class="text-muted mb-0" style="font-size: 14px;">Append-only record of trust ledger voids, metadata edits, and period lock/unlock actions.</p>
+                    <p class="text-muted mb-0" style="font-size: 14px;">Append-only record of trust ledger voids, Rule 42 authorities, bank reconciliation actions, and period lock/unlock. Filter and export CSV (up to 10,000 rows per download) for examinations.</p>
                 </div>
                 <div class="col-md-4 text-md-end mt-2 mt-md-0">
                     <a href="{{ route('trust-accounting.reports.index') }}" class="btn btn-outline-primary btn-sm me-1">Reports</a>
@@ -29,8 +29,11 @@
                             <label class="form-label small mb-0">Table</label>
                             <select name="table_name" class="form-control form-control-sm">
                                 <option value="">Any</option>
-                                <option value="account_client_receipts" @selected(request('table_name') === 'account_client_receipts')>Ledger (receipts)</option>
-                                <option value="trust_accounting_periods" @selected(request('table_name') === 'trust_accounting_periods')>Periods</option>
+                                <option value="account_client_receipts" @selected(request('table_name') === 'account_client_receipts')>Ledger rows</option>
+                                <option value="trust_accounting_periods" @selected(request('table_name') === 'trust_accounting_periods')>Period locks</option>
+                                <option value="trust_withdrawal_authorities" @selected(request('table_name') === 'trust_withdrawal_authorities')>Rule 42 authorities</option>
+                                <option value="trust_bank_accounts" @selected(request('table_name') === 'trust_bank_accounts')>Trust bank accounts</option>
+                                <option value="trust_bank_statement_lines" @selected(request('table_name') === 'trust_bank_statement_lines')>Bank statement lines</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -49,8 +52,9 @@
                             <label class="form-label small mb-0">To</label>
                             <input type="date" name="to_date" class="form-control form-control-sm" value="{{ request('to_date') }}">
                         </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+                        <div class="col-md-2 d-flex gap-1 flex-wrap">
+                            <button type="submit" class="btn btn-primary btn-sm flex-grow-1">Filter</button>
+                            <button type="submit" name="export" value="csv" class="btn btn-outline-secondary btn-sm flex-grow-1" title="Exports up to 10,000 matching rows">CSV</button>
                         </div>
                     </form>
                 </div>

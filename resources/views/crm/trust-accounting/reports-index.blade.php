@@ -35,7 +35,7 @@
                     <div class="card h-100">
                         <div class="card-body">
                             <h5 class="card-title"><i class="fas fa-arrow-down me-2 text-success"></i>Receipts journal</h5>
-                            <p class="card-text text-muted small">All trust movements with money in (deposits) in a date range, including reversals that post a receipt.</p>
+                            <p class="card-text text-muted small">All trust movements with money in (deposits) in a date range. CSV includes invoice reference and payer/banking metadata where captured.</p>
                             <a href="{{ route('trust-accounting.reports.receipts-journal') }}" class="btn btn-primary btn-sm">Open</a>
                         </div>
                     </div>

@@ -23,7 +23,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 /**
  * Trust compliance: period locks, audit log (Phase 2); practice reports (Phase 3);
  * bank reconciliation (Phase 4 — Rule 48); Rule 42 withdrawal authority types (Phase 5);
- * Rule 42 columns on payments journal + supervisor flag in Staff Console (Phase 6).
+ * Rule 42 columns on payments journal + supervisor flag in Staff Console (Phase 6);
+ * audit log CSV export + receipts journal invoice column (Phase 7).
  * Super-admin effective privileges only (matches void / critical trust actions).
  */
 class TrustAccountingAdminController extends Controller
@@ -144,13 +145,33 @@ class TrustAccountingAdminController extends Controller
         return redirect()->route('trust-accounting.periods.index')->with('success', 'Period unlocked. Staff can again post or correct trust entries for these dates. This action was recorded in the trust audit log.');
     }
 
-    public function auditLogIndex(Request $request): View
+    /**
+     * Phase 7: filterable trust audit trail with CSV export for examinations.
+     */
+    public function auditLogIndex(Request $request): View|StreamedResponse
     {
         $this->gateTrustAdmin();
 
         if (! Schema::hasTable('trust_audit_logs')) {
             abort(503, 'Trust audit log table is not available.');
         }
+
+        $validated = $request->validate([
+            'table_name' => 'nullable|string|max:128',
+            'row_id' => 'nullable|integer|min:1',
+            'event' => 'nullable|string|max:128',
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date',
+            'export' => 'nullable|in:csv',
+        ]);
+
+        $allowedTables = [
+            'account_client_receipts',
+            'trust_accounting_periods',
+            'trust_withdrawal_authorities',
+            'trust_bank_accounts',
+            'trust_bank_statement_lines',
+        ];
 
         $query = DB::table('trust_audit_logs as l')
             ->leftJoin('staff as s', 's.id', '=', 'l.performed_by')
@@ -169,32 +190,69 @@ class TrustAccountingAdminController extends Controller
                 DB::raw("NULLIF(TRIM(CONCAT(COALESCE(s.first_name, ''), ' ', COALESCE(s.last_name, ''))), '') as performer_name"),
             ]);
 
-        if ($request->filled('table_name')) {
-            $tn = (string) $request->input('table_name');
-            if ($tn !== '') {
-                $query->where('l.table_name', $tn);
-            }
+        $tn = (string) ($validated['table_name'] ?? '');
+        if ($tn !== '' && in_array($tn, $allowedTables, true)) {
+            $query->where('l.table_name', $tn);
         }
 
-        if ($request->filled('event')) {
-            $ev = (string) $request->input('event');
-            if ($ev !== '') {
-                $query->where('l.event', 'like', '%' . $ev . '%');
-            }
+        if (! empty($validated['event'])) {
+            $query->where('l.event', 'like', '%' . $validated['event'] . '%');
         }
 
-        if ($request->filled('row_id')) {
-            $rid = (int) $request->input('row_id');
-            if ($rid > 0) {
-                $query->where('l.row_id', $rid);
-            }
+        if (! empty($validated['row_id'])) {
+            $query->where('l.row_id', (int) $validated['row_id']);
         }
 
-        if ($request->filled('from_date')) {
-            $query->whereDate('l.created_at', '>=', $request->input('from_date'));
+        if (! empty($validated['from_date'])) {
+            $query->whereDate('l.created_at', '>=', $validated['from_date']);
         }
-        if ($request->filled('to_date')) {
-            $query->whereDate('l.created_at', '<=', $request->input('to_date'));
+        if (! empty($validated['to_date'])) {
+            $query->whereDate('l.created_at', '<=', $validated['to_date']);
+        }
+
+        if (($validated['export'] ?? '') === 'csv') {
+            $rows = (clone $query)->orderByDesc('l.id')->limit(10000)->get();
+            $stamp = Carbon::now()->format('Y-m-d-His');
+            $filename = 'trust-audit-log-' . $stamp . '.csv';
+
+            return response()->streamDownload(function () use ($rows) {
+                $out = fopen('php://output', 'w');
+                fputcsv($out, [
+                    'ID',
+                    'When',
+                    'Table',
+                    'Row ID',
+                    'Event',
+                    'Field',
+                    'Old value',
+                    'New value',
+                    'Staff ID',
+                    'Performer',
+                    'IP',
+                    'Context',
+                ]);
+                foreach ($rows as $log) {
+                    $performerName = trim((string) ($log->performer_name ?? ''));
+                    $performerCol = $performerName !== ''
+                        ? $performerName
+                        : (($log->performed_by ?? null) !== null ? '#' . $log->performed_by : '');
+                    fputcsv($out, [
+                        $log->id,
+                        $log->created_at !== null ? (string) $log->created_at : '',
+                        $log->table_name,
+                        $log->row_id,
+                        $log->event,
+                        (string) ($log->field_name ?? ''),
+                        (string) ($log->old_value ?? ''),
+                        (string) ($log->new_value ?? ''),
+                        $log->performed_by ?? '',
+                        $performerCol,
+                        (string) ($log->ip_address ?? ''),
+                        (string) ($log->context ?? ''),
+                    ]);
+                }
+                fclose($out);
+            }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
         }
 
         $logs = $query->orderByDesc('l.id')->paginate(40)->withQueryString();
@@ -329,6 +387,7 @@ class TrustAccountingAdminController extends Controller
             'account_client_receipts.description',
             'account_client_receipts.deposit_amount',
             'account_client_receipts.payment_method',
+            'account_client_receipts.invoice_no',
         ];
         if (Schema::hasColumn('account_client_receipts', 'payer_name')) {
             $depositCols[] = 'account_client_receipts.payer_name';
@@ -354,7 +413,7 @@ class TrustAccountingAdminController extends Controller
 
             return response()->streamDownload(function () use ($rows) {
                 $out = fopen('php://output', 'w');
-                fputcsv($out, ['Trans date', 'Receipt no.', 'Type', 'Client ref', 'Matter', 'Description', 'Amount', 'Method', 'Payer', 'Bank ref', 'Banking date']);
+                fputcsv($out, ['Trans date', 'Receipt no.', 'Type', 'Client ref', 'Matter', 'Description', 'Amount', 'Method', 'Invoice ref', 'Payer', 'Bank ref', 'Banking date']);
                 foreach ($rows as $row) {
                     fputcsv($out, [
                         $row->trans_date,
@@ -362,9 +421,10 @@ class TrustAccountingAdminController extends Controller
                         $row->client_fund_ledger_type,
                         $row->client_ref,
                         $row->client_unique_matter_no ?? '',
-                        $row->description,
+                        (string) ($row->description ?? ''),
                         number_format((float) $row->deposit_amount, 2, '.', ''),
-                        $row->payment_method,
+                        (string) ($row->payment_method ?? ''),
+                        (string) ($row->invoice_no ?? ''),
                         $row->payer_name ?? '',
                         $row->bank_deposit_reference ?? '',
                         $row->banking_date ?? '',
@@ -483,9 +543,9 @@ class TrustAccountingAdminController extends Controller
                         $row->client_fund_ledger_type,
                         $row->client_ref,
                         $row->client_unique_matter_no ?? '',
-                        $row->description,
+                        (string) ($row->description ?? ''),
                         number_format((float) $row->withdraw_amount, 2, '.', ''),
-                        $row->payment_method,
+                        $row->payment_method ?? '',
                         $row->invoice_no ?? '',
                     ];
                     if ($rule42ColumnsEnabled) {
