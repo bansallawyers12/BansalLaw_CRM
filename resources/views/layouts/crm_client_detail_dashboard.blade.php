@@ -23,7 +23,8 @@
     <link rel="stylesheet" href="{{asset('css/custom.css')}}">
     <link rel="stylesheet" href="{{asset('css/dataTables.bootstrap5.min.css')}}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
-    <script src="{{asset('js/jquery_min_latest.js')}}"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>window.__CRM_APP_NAME__=@json(config('app.name'));</script>
     <script>window.__CRM_BROADCAST_BASE__=@json(rtrim(url('/notifications/broadcasts'), '/'));</script>
     <script src="{{ asset('js/datetime-display.js') }}"></script>
 
@@ -747,9 +748,9 @@
     <script src="https://momentjs.com/downloads/moment.js"></script>
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
+    <script src="{{asset('js/bootstrap-timepicker.min.js')}}"></script>
     @include('components.flatpickr-scripts')
     <script src="{{asset('js/crm-flatpickr.js')}}"></script> {{-- CRM_Flatpickr helper (replaces global-datepicker/daterangepicker) --}}
-    <script src="{{asset('js/bootstrap-timepicker.min.js')}}"></script>
     <script src="{{asset('js/select2.full.min.js')}}"></script>
     <script src="{{asset('js/intlTelInput.js')}}"></script>
     <script src="{{asset('js/custom-form-validation.js')}}"></script>
