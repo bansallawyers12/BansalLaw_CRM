@@ -465,8 +465,8 @@
                             
                             @if (Auth::user()->role == '1' && Auth::user()->email == 'celestyparmar.62@gmail.com')
                                 <button class="btn btn-danger Delete_Receipt" style="margin-right: 10px;">
-                                    <i class="fas fa-trash-alt"></i>
-                                    Delete Receipt
+                                    <i class="fas fa-ban"></i>
+                                    Void trust receipt
                                 </button>
                             @endif
 
@@ -980,27 +980,28 @@ jQuery(document).ready(function($){
             alert('Please select only one receipt to delete.');
             return;
         }
-        var mergeStr = "Are you sure want to delete this receipt?";
+        var mergeStr = "Void this trust receipt? A reversing entry will be posted and the original line will be marked void (audit trail). Continue?";
         if (confirm(mergeStr)) {
+            var voidReason = window.prompt('Void reason (required for auditors):', '');
+            if (!voidReason || !voidReason.trim()) {
+                alert('A void reason is required.');
+                return;
+            }
             $.ajax({
                 type: 'post',
                 url: "{{URL::to('/')}}/delete_receipt",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-                data: { receiptId: clickedReceiptIds[0], receipt_type: 1 },
+                data: { receiptId: clickedReceiptIds[0], receipt_type: 1, trust_void_reason: voidReason.trim() },
                 dataType: 'json',
                 success: function(response) {
                     // Parse response if it's a string (fallback for older jQuery versions)
                     var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
                     if (obj.status) {
-                        $('.listing-container #id_' + clickedReceiptIds[0]).remove();
                         clickedReceiptIds = [];
                         $('.listing-container .custom-error-msg').text(obj.message);
                         $('.listing-container .custom-error-msg').show();
                         $('.listing-container .custom-error-msg').addClass('alert alert-success');
-                        // Check if table is empty after deletion
-                        if ($('.listing-container .tdata tr').length === 0) {
-                            $('.listing-container .tdata').html('<tr><td colspan="11" style="text-align: center; padding: 20px;">No Record Found</td></tr>');
-                        }
+                        window.location.reload();
                     } else {
                         $('.listing-container .custom-error-msg').text(obj.message);
                         $('.listing-container .custom-error-msg').show();

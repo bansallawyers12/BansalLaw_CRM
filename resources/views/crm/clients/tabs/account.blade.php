@@ -50,7 +50,7 @@
                         // Calculate balance from scratch by summing deposits and withdrawals
                         // Exclude voided fee transfers
                         $ledger_entries = DB::table('account_client_receipts')
-                            ->select('deposit_amount', 'withdraw_amount', 'void_fee_transfer')
+                            ->select('deposit_amount', 'withdraw_amount', 'void_fee_transfer', 'trust_voided_at')
                             ->where('client_id', $fetchedData->id)
                             ->where(function($query) use ($client_selected_matter_id) {
                                 if ($client_selected_matter_id !== null) {
@@ -64,8 +64,10 @@
                         
                         $calculated_balance = 0;
                         foreach($ledger_entries as $entry) {
-                            // Skip voided fee transfers
                             if(isset($entry->void_fee_transfer) && $entry->void_fee_transfer == 1) {
+                                continue;
+                            }
+                            if (!empty($entry->trust_voided_at)) {
                                 continue;
                             }
                             $calculated_balance += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
@@ -114,6 +116,10 @@
                             // Add strikethrough class for voided fee transfers
                             $rowClass = '';
                             if(isset($rec_val->void_fee_transfer) && $rec_val->void_fee_transfer == 1){
+                                $rowClass = 'strike-through';
+                                $row_deposit = 0;
+                                $row_withdraw = 0;
+                            } elseif (!empty($rec_val->trust_voided_at)) {
                                 $rowClass = 'strike-through';
                                 $row_deposit = 0;
                                 $row_withdraw = 0;
@@ -271,7 +277,10 @@
                                             data-deposit="<?php echo htmlspecialchars($rec_val->deposit_amount ?? 0, ENT_QUOTES, 'UTF-8'); ?>"
                                             data-withdraw="<?php echo htmlspecialchars($rec_val->withdraw_amount ?? 0, ENT_QUOTES, 'UTF-8'); ?>"
                                             data-payment-method="<?php echo htmlspecialchars($rec_val->payment_method ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-eftpos-surcharge="<?php echo htmlspecialchars($rec_val->eftpos_surcharge_amount ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                            data-eftpos-surcharge="<?php echo htmlspecialchars($rec_val->eftpos_surcharge_amount ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-payer-name="<?php echo htmlspecialchars($rec_val->payer_name ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-bank-deposit-reference="<?php echo htmlspecialchars($rec_val->bank_deposit_reference ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-banking-date="<?php echo htmlspecialchars($rec_val->banking_date ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                                             <i class="fas fa-edit"></i> Edit Entry
                                         </a>
                                         <?php } ?>
@@ -324,6 +333,8 @@
                                 $balance_display = '$ ' . number_format(abs($trust_running_balance), 2);
                                 if ($trust_running_balance < 0) $balance_display = '−' . $balance_display;
                                 if (isset($rec_val->void_fee_transfer) && $rec_val->void_fee_transfer == 1) {
+                                    echo '<span style="color:#6c757d;font-style:italic;">voided</span>';
+                                } elseif (!empty($rec_val->trust_voided_at)) {
                                     echo '<span style="color:#6c757d;font-style:italic;">voided</span>';
                                 } else {
                                     echo '<span style="color:' . $balance_color . ';">' . $balance_display . '</span>';

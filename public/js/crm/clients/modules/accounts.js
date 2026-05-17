@@ -90,6 +90,18 @@
         if (isNaN(sur)) {
             sur = 0;
         }
+        var payerName = $(element).data('payer-name');
+        var bankRef = $(element).data('bank-deposit-reference');
+        var bankingDate = $(element).data('banking-date');
+        if (payerName === undefined || payerName === null) {
+            payerName = '';
+        }
+        if (bankRef === undefined || bankRef === null) {
+            bankRef = '';
+        }
+        if (bankingDate === undefined || bankingDate === null) {
+            bankingDate = '';
+        }
         var principal = (type === 'Deposit' && sur > 0) ? Math.max(0, totalDep - sur) : totalDep;
         $('#editLedgerModal input[name="id"]').val(id);
         $('#editLedgerModal input[name="trans_date"]').val(transDate);
@@ -97,21 +109,24 @@
         $('#editLedgerModal input[name="client_fund_ledger_type"]').val(type).prop('readonly', true);
         $('#editLedgerModal select[name="payment_method"]').val(String(paymentMethod));
         $('#editLedgerModal input[name="description"]').val(description);
+        $('#edit_ledger_payer_name').val(payerName);
+        $('#edit_ledger_bank_ref').val(bankRef);
+        $('#edit_ledger_banking_date').val(bankingDate);
         $('#edit_ledger_eftpos_surcharge').val(sur > 0 ? sur.toFixed(2) : '');
         if (parseFloat(deposit) === 0) {
             $('#editLedgerModal input[name="deposit_amount"]').val(deposit).prop('readonly', true);
         } else {
-            $('#editLedgerModal input[name="deposit_amount"]').val(principal.toFixed(2)).prop('readonly', false);
+            $('#editLedgerModal input[name="deposit_amount"]').val(principal.toFixed(2)).prop('readonly', true);
         }
         if (parseFloat(withdraw) === 0) {
             $('#editLedgerModal input[name="withdraw_amount"]').val(withdraw).prop('readonly', true);
         } else {
-            $('#editLedgerModal input[name="withdraw_amount"]').val(withdraw).prop('readonly', false);
+            $('#editLedgerModal input[name="withdraw_amount"]').val(withdraw).prop('readonly', true);
         }
         if (typeof flatpickr !== 'undefined') {
             var transDateEl = $('#editLedgerModal input[name="trans_date"]')[0];
             var entryDateEl = $('#editLedgerModal input[name="entry_date"]')[0];
-            if (transDateEl && !$(transDateEl).data('flatpickr')) {
+            if (transDateEl && !$(transDateEl).prop('readonly') && !$(transDateEl).data('flatpickr')) {
                 flatpickr(transDateEl, {
                     dateFormat: 'd/m/Y',
                     allowInput: true,
@@ -123,7 +138,7 @@
                     }
                 });
             }
-            if (entryDateEl && !$(entryDateEl).data('flatpickr')) {
+            if (entryDateEl && !$(entryDateEl).prop('readonly') && !$(entryDateEl).data('flatpickr')) {
                 flatpickr(entryDateEl, {
                     dateFormat: 'd/m/Y',
                     allowInput: true,
