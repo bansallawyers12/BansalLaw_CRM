@@ -11,6 +11,7 @@ use App\Models\TrustWithdrawalAuthorityType;
 use App\Services\TrustAccounting\TrustBankReconciliationService;
 use App\Services\TrustAccounting\TrustLedgerAuditLogger;
 use App\Services\TrustAccounting\TrustReportQueryService;
+use App\Services\TrustAccounting\TrustWithdrawalAuthorityService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Trust compliance: period locks, audit log (Phase 2); practice reports (Phase 3);
- * bank reconciliation (Phase 4 — Rule 48); Rule 42 withdrawal authority types (Phase 5).
+ * bank reconciliation (Phase 4 — Rule 48); Rule 42 withdrawal authority types (Phase 5);
+ * Rule 42 columns on payments journal + supervisor flag in Staff Console (Phase 6).
  * Super-admin effective privileges only (matches void / critical trust actions).
  */
 class TrustAccountingAdminController extends Controller
@@ -410,26 +412,49 @@ class TrustAccountingAdminController extends Controller
             ));
         }
 
+        $rule42ColumnsEnabled = Schema::hasTable('trust_withdrawal_authorities')
+            && Schema::hasTable('trust_withdrawal_authority_types');
+
+        $selectCols = [
+            'account_client_receipts.id',
+            'account_client_receipts.trans_date',
+            'account_client_receipts.trans_no',
+            'account_client_receipts.client_fund_ledger_type',
+            'account_client_receipts.description',
+            'account_client_receipts.withdraw_amount',
+            'account_client_receipts.payment_method',
+            'account_client_receipts.invoice_no',
+            'admins.client_id as client_ref',
+            'client_matters.client_unique_matter_no',
+        ];
+
+        if ($rule42ColumnsEnabled) {
+            $selectCols[] = 'twat.label as rule42_authority_type_label';
+            $selectCols[] = 'twa.notice_given_date as rule42_notice_given_date';
+            $selectCols[] = 'twa.authority_notes as rule42_authority_notes';
+            $selectCols[] = 'twa.supervisor_override as rule42_supervisor_override';
+            $selectCols[] = 'twa.override_reason as rule42_override_reason';
+        } else {
+            $selectCols[] = DB::raw('NULL::text as rule42_authority_type_label');
+            $selectCols[] = DB::raw('NULL::text as rule42_notice_given_date');
+            $selectCols[] = DB::raw('NULL::text as rule42_authority_notes');
+            $selectCols[] = DB::raw('NULL::boolean as rule42_supervisor_override');
+            $selectCols[] = DB::raw('NULL::text as rule42_override_reason');
+        }
+
         $q = TrustReportQueryService::baseTrustLedgerQuery();
         TrustReportQueryService::applyTransDateRange($q, $from, $to, 'account_client_receipts.trans_date');
         $q->whereRaw('COALESCE(account_client_receipts.withdraw_amount, 0)::numeric > 0');
         if (! empty($validated['client_id'])) {
             $q->where('account_client_receipts.client_id', (int) $validated['client_id']);
         }
+        if ($rule42ColumnsEnabled) {
+            $q->leftJoin('trust_withdrawal_authorities as twa', 'twa.account_client_receipt_id', '=', 'account_client_receipts.id')
+                ->leftJoin('trust_withdrawal_authority_types as twat', 'twat.id', '=', 'twa.authority_type_id');
+        }
         $q->join('admins', 'admins.id', '=', 'account_client_receipts.client_id')
             ->leftJoin('client_matters', 'client_matters.id', '=', 'account_client_receipts.client_matter_id')
-            ->select([
-                'account_client_receipts.id',
-                'account_client_receipts.trans_date',
-                'account_client_receipts.trans_no',
-                'account_client_receipts.client_fund_ledger_type',
-                'account_client_receipts.description',
-                'account_client_receipts.withdraw_amount',
-                'account_client_receipts.payment_method',
-                'account_client_receipts.invoice_no',
-                'admins.client_id as client_ref',
-                'client_matters.client_unique_matter_no',
-            ])
+            ->select($selectCols)
             ->orderByRaw("TO_DATE(account_client_receipts.trans_date, 'DD/MM/YYYY') ASC")
             ->orderBy('account_client_receipts.id', 'asc');
 
@@ -437,11 +462,22 @@ class TrustAccountingAdminController extends Controller
             $rows = $q->get();
             $filename = 'trust-payments-journal-' . $from . '-to-' . $to . '.csv';
 
-            return response()->streamDownload(function () use ($rows) {
+            return response()->streamDownload(function () use ($rows, $rule42ColumnsEnabled) {
                 $out = fopen('php://output', 'w');
-                fputcsv($out, ['Trans date', 'Receipt no.', 'Type', 'Client ref', 'Matter', 'Description', 'Amount', 'Method', 'Invoice ref']);
+                $header = ['Trans date', 'Receipt no.', 'Type', 'Client ref', 'Matter', 'Description', 'Amount', 'Method', 'Invoice ref'];
+                if ($rule42ColumnsEnabled) {
+                    array_push(
+                        $header,
+                        'Rule 42 authority type',
+                        'Rule 42 notice date',
+                        'Rule 42 notes',
+                        'Rule 42 supervisor override',
+                        'Rule 42 override reason'
+                    );
+                }
+                fputcsv($out, $header);
                 foreach ($rows as $row) {
-                    fputcsv($out, [
+                    $csvRow = [
                         $row->trans_date,
                         $row->trans_no,
                         $row->client_fund_ledger_type,
@@ -451,7 +487,17 @@ class TrustAccountingAdminController extends Controller
                         number_format((float) $row->withdraw_amount, 2, '.', ''),
                         $row->payment_method,
                         $row->invoice_no ?? '',
-                    ]);
+                    ];
+                    if ($rule42ColumnsEnabled) {
+                        $csvRow[] = $row->rule42_authority_type_label ?? '';
+                        $csvRow[] = $row->rule42_notice_given_date !== null && $row->rule42_notice_given_date !== ''
+                            ? (string) $row->rule42_notice_given_date
+                            : '';
+                        $csvRow[] = $row->rule42_authority_notes ?? '';
+                        $csvRow[] = TrustWithdrawalAuthorityService::supervisorOverrideYesNoEmpty($row->rule42_supervisor_override);
+                        $csvRow[] = $row->rule42_override_reason ?? '';
+                    }
+                    fputcsv($out, $csvRow);
                 }
                 fclose($out);
             }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
@@ -460,7 +506,13 @@ class TrustAccountingAdminController extends Controller
         $entries = $q->paginate(100)->withQueryString();
         $sumPage = round((float) collect($entries->items())->sum(fn ($r) => (float) $r->withdraw_amount), 2);
 
-        return view('crm.trust-accounting.payments-journal', compact('entries', 'from', 'to', 'sumPage'));
+        return view('crm.trust-accounting.payments-journal', compact(
+            'entries',
+            'from',
+            'to',
+            'sumPage',
+            'rule42ColumnsEnabled'
+        ));
     }
 
     /**

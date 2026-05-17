@@ -197,6 +197,18 @@
                                     @endif
                                 </div>
 
+                                @if($_isSuperAdminActor && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'trust_rule42_supervisor'))
+                                <div class="form-group">
+                                    <input type="hidden" name="trust_rule42_supervisor" value="0">
+                                    <label class="d-flex align-items-center mb-0">
+                                        <input type="checkbox" name="trust_rule42_supervisor" value="1" class="mr-2"
+                                            @if(old('trust_rule42_supervisor', $fetchedData->trust_rule42_supervisor ?? false)) checked @endif>
+                                        <span>Rule 42 trust supervisor</span>
+                                    </label>
+                                    <small class="text-muted d-block mt-1">May document supervisor overrides on fee transfers from trust (draft invoice, date order, voided invoice). Native Super Admin role already has full override authority.</small>
+                                </div>
+                                @endif
+
                                 <div class="form-group">
                                     <label for="role">Permission</label>
 							    	<?php

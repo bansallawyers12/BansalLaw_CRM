@@ -44,7 +44,7 @@
                     <div class="card h-100">
                         <div class="card-body">
                             <h5 class="card-title"><i class="fas fa-arrow-up me-2 text-danger"></i>Payments journal</h5>
-                            <p class="card-text text-muted small">All trust movements with money out (payments, transfers, disbursements) in a date range.</p>
+                            <p class="card-text text-muted small">Trust withdrawals in a date range. Includes Rule 42 authority columns on fee transfers (and in CSV) when Phase 5 tables are present.</p>
                             <a href="{{ route('trust-accounting.reports.payments-journal') }}" class="btn btn-primary btn-sm">Open</a>
                         </div>
                     </div>

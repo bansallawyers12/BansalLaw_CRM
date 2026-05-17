@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Phase 5 — Uniform Law Rule 42: capture withdrawal authority for Fee Transfer rows.
+ * Uniform Law Rule 42: capture withdrawal authority for Fee Transfer rows (Phase 5)
+ * and display/format helpers for journals (Phase 6).
  */
 class TrustWithdrawalAuthorityService
 {
@@ -230,6 +231,24 @@ class TrustWithdrawalAuthorityService
         }
 
         return false;
+    }
+
+    /**
+     * CSV / UI: Yes, No, or empty when unknown (handles PostgreSQL t/f strings).
+     */
+    public static function supervisorOverrideYesNoEmpty(mixed $value): string
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+        if (in_array($value, [true, 1, '1', 't', 'T', 'true', 'yes', 'on'], true)) {
+            return 'Yes';
+        }
+        if (in_array($value, [false, 0, '0', 'f', 'F', 'false', 'no', 'off'], true)) {
+            return 'No';
+        }
+
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN) ? 'Yes' : 'No';
     }
 
     /**
