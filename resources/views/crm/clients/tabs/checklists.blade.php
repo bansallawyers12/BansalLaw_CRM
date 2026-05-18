@@ -17,7 +17,7 @@
                                             <div class="col-12 col-md-12 col-lg-12">
                                                 <div class="form-group">
                                                     <label for="checklist_legal_practitioner">Legal Practitioner <span class="span_req">*</span></label>
-                                                    <select data-valid="required" class="form-control select2 checklist-field" name="checklist_legal_practitioner" id="checklist_legal_practitioner">
+                                                    <select data-valid="required" class="form-control checklist-field" name="checklist_legal_practitioner" id="checklist_legal_practitioner">
                                                         <option value="">Select responsible solicitor</option>
                                                         @foreach(\App\Services\ClientEditService::staffSelectableForSolicitorRole() as $migAgntlist)
                                                             <option value="{{$migAgntlist->id}}">{{@$migAgntlist->first_name}} {{@$migAgntlist->last_name}} ({{@$migAgntlist->email}})</option>
@@ -30,7 +30,7 @@
                                             <div class="col-12 col-md-12 col-lg-12">
                                                 <div class="form-group">
                                                     <label for="checklist_person_responsible">Person Responsible <span class="span_req">*</span></label>
-                                                    <select data-valid="required" class="form-control select2 checklist-field" name="checklist_person_responsible" id="checklist_person_responsible">
+                                                    <select data-valid="required" class="form-control checklist-field" name="checklist_person_responsible" id="checklist_person_responsible">
                                                         <option value="">Select Person Responsible</option>
                                                         @foreach(\App\Services\ClientEditService::staffSelectableForPersonResponsibleRole() as $perreslist)
                                                             <option value="{{$perreslist->id}}">{{@$perreslist->first_name}} {{@$perreslist->last_name}} ({{@$perreslist->email}})</option>
@@ -43,7 +43,7 @@
                                             <div class="col-12 col-md-12 col-lg-12">
                                                 <div class="form-group">
                                                     <label for="checklist_person_assisting">Person Assisting <span class="span_req">*</span></label>
-                                                    <select data-valid="required" class="form-control select2 checklist-field" name="checklist_person_assisting" id="checklist_person_assisting">
+                                                    <select data-valid="required" class="form-control checklist-field" name="checklist_person_assisting" id="checklist_person_assisting">
                                                         <option value="">Select Person Assisting</option>
                                                         @foreach(\App\Services\ClientEditService::staffSelectableForPersonAssistingRole() as $perassislist)
                                                             <option value="{{$perassislist->id}}">{{@$perassislist->first_name}} {{@$perassislist->last_name}} ({{@$perassislist->email}})</option>
@@ -56,7 +56,7 @@
                                             <div class="col-12 col-md-12 col-lg-12">
                                                 <div class="form-group">
                                                     <label for="checklist_office">Handling Office <span class="span_req">*</span></label>
-                                                    <select data-valid="required" class="form-control select2 checklist-field" name="checklist_office" id="checklist_office">
+                                                    <select data-valid="required" class="form-control checklist-field" name="checklist_office" id="checklist_office">
                                                         <option value="">Select Office</option>
                                                         @foreach(\App\Models\Branch::orderBy('office_name')->get() as $office)
                                                             <option value="{{$office->id}}" {{ Auth::user()->office_id == $office->id ? 'selected' : '' }}>{{$office->office_name}}</option>
@@ -72,7 +72,7 @@
                                             <div class="col-12 col-md-12 col-lg-12">
                                                 <div class="form-group">
                                                     <label for="checklist_matter_select">Select Matter <span class="span_req">*</span></label>
-                                                    <select data-valid="required" class="form-control select2 checklist-field" name="checklist_matter" id="checklist_matter_select">
+                                                    <select data-valid="required" class="form-control checklist-field" name="checklist_matter" id="checklist_matter_select">
                                                         <option value="">Select Matter</option>
                                                         @php
                                                             $matterQuery = \App\Models\Matter::select('id','title')->where('status',1)
@@ -761,7 +761,7 @@
             e.stopPropagation();
             $dropdown.toggle();
             if ($dropdown.is(':visible')) {
-                initChecklistSelect2();
+                initChecklistTomSelect();
             }
         });
 
@@ -806,33 +806,49 @@
             $('#cost_assignment_lead_id').val(clientId);
             var $leadModal = $('#costAssignmentCreateFormModelLead');
             var $leadSelects = $('#sel_legal_practitioner_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead');
+            function setLeadCostTomSelectValue(el, val) {
+                if (!el) return;
+                var v = val != null && val !== '' ? String(val) : '';
+                var ts = el.tomselect;
+                if (ts) {
+                    // Second arg true = silent (no synthetic change); matter change is fired after modal is shown.
+                    if (v) ts.setValue(v, true);
+                    else ts.clear(true);
+                } else {
+                    $(el).val(val).trigger('change');
+                }
+            }
             $leadSelects.each(function() {
-                var $el = $(this);
-                if ($el.hasClass('select2-hidden-accessible')) {
-                    $el.select2('destroy');
+                if (typeof destroyTS === 'function') destroyTS(this);
+                if (typeof initTS === 'function' && typeof buildPlainSingleTomSelectConfig === 'function') {
+                    initTS(this, buildPlainSingleTomSelectConfig({ dropdownParent: '#costAssignmentCreateFormModelLead' }));
+                } else if (typeof initTS === 'function') {
+                    initTS(this, { dropdownParent: '#costAssignmentCreateFormModelLead', create: false, maxItems: 1, allowEmptyOption: true });
                 }
             });
-            $leadSelects.select2({ dropdownParent: $leadModal });
-            // Set values after Select2 so the UI reflects checklist choices (matter id 1 must exist on #sel_matter_id_lead)
-            $('#sel_matter_id_lead').val(matterId).trigger('change');
-            $('#sel_legal_practitioner_id_lead').val(legalPractitioner).trigger('change');
-            $('#sel_person_responsible_id_lead').val(personResponsible).trigger('change');
-            $('#sel_person_assisting_id_lead').val(personAssisting).trigger('change');
-            $('#sel_office_id_lead').val(officeId).trigger('change');
+            setLeadCostTomSelectValue(document.getElementById('sel_matter_id_lead'), matterId);
+            setLeadCostTomSelectValue(document.getElementById('sel_legal_practitioner_id_lead'), legalPractitioner);
+            setLeadCostTomSelectValue(document.getElementById('sel_person_responsible_id_lead'), personResponsible);
+            setLeadCostTomSelectValue(document.getElementById('sel_person_assisting_id_lead'), personAssisting);
+            setLeadCostTomSelectValue(document.getElementById('sel_office_id_lead'), officeId);
+            $leadModal.one('shown.bs.modal', function() {
+                $('#sel_matter_id_lead').trigger('change');
+            });
             $leadModal.modal('show');
             $dropdown.hide();
         });
 
-        function initChecklistSelect2() {
-            if (typeof $.fn.select2 !== 'undefined') {
-                var $fields = $('#checklist_matter_select,#checklist_legal_practitioner,#checklist_person_responsible,#checklist_person_assisting,#checklist_office');
-                $fields.each(function() {
-                    var $el = $(this);
-                    if (!$el.hasClass('select2-hidden-accessible')) {
-                        $el.select2({ dropdownParent: $dropdown, width: '100%' });
-                    }
-                });
+        function initChecklistTomSelect() {
+            if (typeof initTS !== 'function' || typeof buildPlainSingleTomSelectConfig !== 'function') {
+                return;
             }
+            var parent = '#checklist-create-dropdown';
+            var $fields = $('#checklist_matter_select,#checklist_legal_practitioner,#checklist_person_responsible,#checklist_person_assisting,#checklist_office');
+            $fields.each(function() {
+                if (!this.tomselect) {
+                    initTS(this, buildPlainSingleTomSelectConfig({ dropdownParent: parent }));
+                }
+            });
         }
 
         // Accordion toggle functionality

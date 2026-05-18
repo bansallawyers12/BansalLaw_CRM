@@ -158,6 +158,8 @@
                         enableRemoteLoad: true
                     }));
                 });
+            } else {
+                console.warn('[notes.js] CC recipient Tom Select skipped: initTS/buildCrmGetRecipientsMultiTomSelectConfig or ClientDetailConfig.urls.getRecipients missing.');
             }
         }
 

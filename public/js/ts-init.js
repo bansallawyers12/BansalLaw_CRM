@@ -245,6 +245,122 @@
   }
 
   /**
+   * Static-option native &lt;select&gt; → single-value Tom Select (staff/office/matter pickers).
+   * @param {{ dropdownParent?: string|HTMLElement }} opts
+   */
+  function buildPlainSingleTomSelectConfig(opts) {
+    opts = opts || {};
+    var cfg = {
+      maxItems: 1,
+      create: false,
+      allowEmptyOption: true,
+      dropdownParent: opts.dropdownParent !== undefined ? opts.dropdownParent : 'body'
+    };
+    /** Short static lists: hide typeahead filtering (≈ Select2 minimumResultsForSearch: Infinity). */
+    if (opts.minimalSearch) {
+      cfg.searchField = [];
+    }
+    return cfg;
+  }
+
+  /**
+   * Multi-select AJAX partner search (POST) for client/lead edit “related files”.
+   * Body: query, exclude_client (optional). Response: { partners: [{ id, first_name, last_name, client_id, email, phone }] }.
+   * @param {{ url: string, csrfToken?: string, excludeClientId?: string|number|null, dropdownParent?: string|HTMLElement, placeholder?: string, minQueryLength?: number, loadThrottle?: number }} opts
+   */
+  function buildPartnerSearchMultiTomSelectConfig(opts) {
+    opts = opts || {};
+    var url = opts.url || '';
+    var csrf = opts.csrfToken || '';
+    var excludeClient = opts.excludeClientId !== undefined && opts.excludeClientId !== null ? opts.excludeClientId : '';
+    var dropdownParent = opts.dropdownParent !== undefined ? opts.dropdownParent : 'body';
+    var minLen = opts.minQueryLength != null ? opts.minQueryLength : 2;
+    var placeholder = opts.placeholder || 'Search for clients by name or client ID';
+    var loadThrottle = opts.loadThrottle != null ? opts.loadThrottle : 250;
+
+    return {
+      plugins: ['remove_button'],
+      maxItems: null,
+      closeAfterSelect: false,
+      valueField: 'id',
+      labelField: 'text',
+      searchField: ['text'],
+      allowEmptyOption: true,
+      create: false,
+      placeholder: placeholder,
+      dropdownParent: dropdownParent,
+      loadThrottle: loadThrottle,
+      shouldLoad: function (q) {
+        return String(q || '').length >= minLen;
+      },
+      load: function (query, callback) {
+        if (!url || String(query).length < minLen) {
+          callback([]);
+          return;
+        }
+        var body = new URLSearchParams();
+        body.set('query', String(query));
+        if (excludeClient !== '' && excludeClient != null) {
+          body.set('exclude_client', String(excludeClient));
+        }
+        fetch(url, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': csrf,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+          },
+          body: body.toString()
+        })
+          .then(function (r) {
+            if (!r.ok) {
+              throw new Error('HTTP ' + r.status);
+            }
+            return r.json();
+          })
+          .then(function (data) {
+            var partners = data && Array.isArray(data.partners) ? data.partners : [];
+            callback(
+              partners.map(function (p) {
+                var fid = p.first_name != null ? String(p.first_name) : '';
+                var lid = p.last_name != null ? String(p.last_name) : '';
+                var cid = p.client_id != null && p.client_id !== '' ? String(p.client_id) : 'No ID';
+                return {
+                  id: p.id,
+                  text: (fid + ' ' + lid).trim() + ' (' + cid + ')',
+                  email: p.email,
+                  phone: p.phone,
+                  client_id: p.client_id
+                };
+              })
+            );
+          })
+          .catch(function () {
+            callback([]);
+          });
+      },
+      render: {
+        option: function (item, escape) {
+          if (!item || item.loading) {
+            return '<div class="crm-ts-partner-loading">Searching…</div>';
+          }
+          return (
+            '<div class="select2-result-partner" style="padding: 8px;">' +
+            '<div class="select2-result-partner__title" style="font-weight: 600; color: #333; font-size: 14px;">' +
+            escape(item.text || '') +
+            '</div></div>'
+          );
+        },
+        item: function (item, escape) {
+          return '<div>' + escape(item.text || '') + '</div>';
+        }
+      }
+    };
+  }
+
+  /**
    * Single-select AJAX contact person (company lead create, company edit).
    * GET url with q= and optional exclude_id=; response { results: [{ id, text, first_name, last_name, email, phone, client_id }] }.
    * @param {{ url: string, excludeId?: string|number, dropdownParent?: string|HTMLElement, placeholder?: string, loadThrottle?: number, minQueryLength?: number }} opts
@@ -301,7 +417,31 @@
             return r.json();
           })
           .then(function (data) {
-            callback(data && Array.isArray(data.results) ? data.results : []);
+            var raw = data && Array.isArray(data.results) ? data.results : [];
+            var normalized = raw.map(function (item) {
+              if (!item || item.id == null) return null;
+              var fn = item.first_name != null ? String(item.first_name) : '';
+              var ln = item.last_name != null ? String(item.last_name) : '';
+              var nameGuess = (fn + ' ' + ln).trim();
+              var text =
+                item.text ||
+                (nameGuess
+                  ? nameGuess +
+                    (item.email ? ' (' + item.email + ')' : '') +
+                    (item.phone ? ' — ' + item.phone : '') +
+                    (item.client_id != null && item.client_id !== '' ? ' — ' + item.client_id : '')
+                  : item.email || item.phone || String(item.id));
+              return {
+                id: item.id,
+                text: text,
+                first_name: item.first_name,
+                last_name: item.last_name,
+                email: item.email,
+                phone: item.phone,
+                client_id: item.client_id
+              };
+            }).filter(Boolean);
+            callback(normalized);
           })
           .catch(function () {
             callback([]);
@@ -350,4 +490,6 @@
   global.buildCrmGetRecipientsMultiTomSelectConfig = buildCrmGetRecipientsMultiTomSelectConfig;
   global.initRecipientsMultiTomSelectPreload = initRecipientsMultiTomSelectPreload;
   global.buildContactPersonSearchTomSelectConfig = buildContactPersonSearchTomSelectConfig;
+  global.buildPlainSingleTomSelectConfig = buildPlainSingleTomSelectConfig;
+  global.buildPartnerSearchMultiTomSelectConfig = buildPartnerSearchMultiTomSelectConfig;
 })(typeof window !== 'undefined' ? window : this);

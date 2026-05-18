@@ -47,8 +47,7 @@ function customValidate(formName, savetype = '')
 					var $element = $(this);
 					var el = $element[0];
 					var isTomSelectEnhanced = !!(el && el.tomselect);
-					var isSelect2 = $element.hasClass('select2-hidden-accessible') || $element.data('select2');
-					var isEnhancedSelect = isSelect2 || isTomSelectEnhanced || $element.is('[data-crm-ts]');
+					var isEnhancedSelect = isTomSelectEnhanced || $element.is('[data-crm-ts]');
 					var isMultiple = $element.prop('multiple');
 					
 					if(for_class.indexOf('multiselect_subject') != -1)
@@ -63,7 +62,7 @@ function customValidate(formName, savetype = '')
 						}
 					else if(isEnhancedSelect && isMultiple)
 						{
-							// Select2 multiple or Tom Select multiple (underlying <select>.val())
+							// Tom Select multiple (underlying native <select> .val())
 							var selectedValues = $element.val();
 							if(!selectedValues || selectedValues.length === 0 || (selectedValues.length === 1 && selectedValues[0] === ''))
 								{

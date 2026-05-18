@@ -130,15 +130,17 @@ function showuser_pref_dateformat(heading,description,button,action)
 	}
 	$("#pop_action").html($("#popup_user-preference_contents").html()); //load into popuop
 	if(!isMobile){
-		$('#pop_action #format').select2({
-			width:"320px"		//No I18N
-			}).on("select2:close", function (e) { 
-				$(e.target).siblings(".select2").find(".select2-selection--single").focus();
-		});
-		$('#pop_action #hours_type').select2({
-			width:"320px",//No I18N
-			minimumResultsForSearch: Infinity
-		});
+		var popEl = document.getElementById('pop_action');
+		if (popEl && typeof initTS === 'function' && typeof buildPlainSingleTomSelectConfig === 'function') {
+			var fmtEl = popEl.querySelector('#format');
+			var hrsEl = popEl.querySelector('#hours_type');
+			if (fmtEl) {
+				initTS(fmtEl, buildPlainSingleTomSelectConfig({ dropdownParent: '#pop_action' }));
+			}
+			if (hrsEl) {
+				initTS(hrsEl, buildPlainSingleTomSelectConfig({ dropdownParent: '#pop_action', minimalSearch: true }));
+			}
+		}
 	}
 	
 	$(savedateformat).children("button").addClass("pref_disable_btn");
@@ -167,7 +169,12 @@ function showuser_pref_dateformat(heading,description,button,action)
 	closePopup(close_popupscreen,"common_popup");//No I18N
 	
 	
-	$("#user_pref_dateformat .select2-selection:first").focus(); 
+	var fmtFocus = document.querySelector('#pop_action #format');
+	if (fmtFocus && fmtFocus.tomselect && typeof fmtFocus.tomselect.focus === 'function') {
+		fmtFocus.tomselect.focus();
+	} else if (fmtFocus && typeof fmtFocus.focus === 'function') {
+		fmtFocus.focus();
+	} 
 }
 
 function save_date_format(f)
@@ -1214,13 +1221,22 @@ function show_deletepopup()
 	});
 	if(!isMobile)
 	{
-		$("#delete_acc_reason").select2({
-			minimumResultsForSearch: Infinity
-		});
+		var drEl = document.getElementById('delete_acc_reason');
+		if (drEl && typeof destroyTS === 'function') {
+			destroyTS(drEl);
+		}
+		if (drEl && typeof initTS === 'function' && typeof buildPlainSingleTomSelectConfig === 'function') {
+			initTS(drEl, buildPlainSingleTomSelectConfig({ dropdownParent: '#popup_deleteaccount_close', minimalSearch: true }));
+		}
 	}
 	popup_blurHandler('6','.5');
 	control_Enter(".blue"); //No i18N
-	$("#delete_acc_reason~.select2 .select2-selection").focus();
+	var drFocus = document.getElementById('delete_acc_reason');
+	if (drFocus && drFocus.tomselect && typeof drFocus.tomselect.focus === 'function') {
+		drFocus.tomselect.focus();
+	} else if (drFocus && typeof drFocus.focus === 'function') {
+		drFocus.focus();
+	}
 	closePopup(close_deleteaccount,"popup_deleteaccount_close");//No I18N
 	
 }

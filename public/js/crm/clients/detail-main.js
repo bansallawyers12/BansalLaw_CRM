@@ -4238,7 +4238,9 @@ success: function(response) {
         $(document).delegate('.costAssignmentCreateFormLead', 'click', function() {
             $('#cost_assignment_lead_id').val(window.ClientDetailConfig.clientId);
             $('#sel_legal_practitioner_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').each(function () {
-                initTS(this, { dropdownParent: '#costAssignmentCreateFormModelLead', create: false });
+                initTS(this, typeof buildPlainSingleTomSelectConfig === 'function'
+                    ? buildPlainSingleTomSelectConfig({ dropdownParent: '#costAssignmentCreateFormModelLead' })
+                    : { dropdownParent: '#costAssignmentCreateFormModelLead', create: false, maxItems: 1, allowEmptyOption: true });
             });
             $('#costAssignmentCreateFormModelLead').modal('show');
         });

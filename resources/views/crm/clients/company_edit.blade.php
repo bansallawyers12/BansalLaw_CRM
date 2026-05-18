@@ -70,7 +70,7 @@
         @keyframes dynFadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         #subTypeFieldsContainer > div { animation: dynFadeIn 0.3s ease; }
     </style>
-    {{-- Select2: use layout vendored select2.min.css + select2.full.min.js (no CDN) --}}
+    {{-- Tom Select: layout loads tom-select + ts-init.js --}}
 @endpush
 
 @section('content')
@@ -670,7 +670,15 @@
         }
 
         var cpEl = document.getElementById('contactPersonSearch');
-        if (cpEl && typeof TomSelect !== 'undefined' && typeof initTS === 'function' && typeof buildContactPersonSearchTomSelectConfig === 'function') {
+        if (
+            cpEl &&
+            !cpEl.tomselect &&
+            typeof TomSelect !== 'undefined' &&
+            typeof initTS === 'function' &&
+            typeof buildContactPersonSearchTomSelectConfig === 'function' &&
+            window.editClientConfig &&
+            window.editClientConfig.searchContactPersonRoute
+        ) {
             var cpCfg = buildContactPersonSearchTomSelectConfig({
                 url: window.editClientConfig.searchContactPersonRoute,
                 excludeId: window.currentClientId,
@@ -686,6 +694,8 @@
                 clearCompanyEditContactPerson();
             };
             initTS(cpEl, cpCfg);
+        } else if (cpEl && !cpEl.tomselect && !window.editClientConfig) {
+            console.warn('Contact person Tom Select: window.editClientConfig missing.');
         }
 
         // Format ABN/ACN input (strip non-digits)

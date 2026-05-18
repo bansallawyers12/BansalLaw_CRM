@@ -1168,7 +1168,7 @@
             minQueryLength: 2
         });
         cfg.onItemAdd = function (value) {
-            var item = this.options[value];
+            var item = this.options[value] || this.options[String(value)];
             fillLeadContactPersonFields(item);
         };
         cfg.onClear = function () {
@@ -1216,9 +1216,9 @@
                                 last_name: p.last_name || '',
                                 email: p.email || '',
                                 phone: p.phone || '',
-                                client_id: p.client_id || ''
+                                client_id: p.client_id != null && p.client_id !== '' ? p.client_id : ''
                             });
-                            ts.setValue(p.id, true);
+                            ts.setValue(String(p.id), true);
                             var opt = ts.options[p.id] || ts.options[String(p.id)];
                             fillLeadContactPersonFields(opt || p);
                         } else {

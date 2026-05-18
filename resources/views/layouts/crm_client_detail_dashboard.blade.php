@@ -15,7 +15,6 @@
     <link rel="stylesheet" href="{{asset('css/iziToast.min.css')}}">
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     @include('components.flatpickr-assets')
-    <link rel="stylesheet" href="{{asset('css/select2.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/tom-select.bootstrap5.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/intlTelInput.css')}}">
     <link rel="stylesheet" href="{{asset('css/style.css')}}">
@@ -750,7 +749,6 @@
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
     @include('components.flatpickr-scripts')
     <script src="{{asset('js/crm-flatpickr.js')}}"></script> {{-- CRM_Flatpickr helper (replaces global-datepicker/daterangepicker) --}}
-    <script src="{{asset('js/select2.full.min.js')}}"></script>
     <script src="{{asset('js/tom-select.complete.min.js')}}"></script>
     <script src="{{asset('js/ts-init.js')}}"></script>
     <script src="{{asset('js/intlTelInput.js')}}"></script>

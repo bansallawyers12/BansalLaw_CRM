@@ -374,7 +374,7 @@
                         <div class="col-12 col-md-6 col-lg-6">
                             <div class="form-group">
                                 <label for="legal_practitioner_lead">Legal Practitioner <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="legal_practitioner" id="sel_legal_practitioner_id_lead">
+                                <select data-valid="required" class="form-control" name="legal_practitioner" id="sel_legal_practitioner_id_lead">
                                     <option value="">Select responsible solicitor</option>
                                     @foreach(\App\Services\ClientEditService::staffSelectableForSolicitorRole() as $migAgntlist)
                                         <option value="{{$migAgntlist->id}}">{{@$migAgntlist->first_name}} {{@$migAgntlist->last_name}} ({{@$migAgntlist->email}})</option>
@@ -386,7 +386,7 @@
                         <div class="col-12 col-md-6 col-lg-6">
                             <div class="form-group">
                                 <label for="person_responsible">Select Person Responsible <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="person_responsible" id="sel_person_responsible_id_lead">
+                                <select data-valid="required" class="form-control" name="person_responsible" id="sel_person_responsible_id_lead">
                                     <option value="">Select Person Responsible</option>
                                     @foreach(\App\Services\ClientEditService::staffSelectableForPersonResponsibleRole() as $perreslist)
                                         <option value="{{$perreslist->id}}">{{@$perreslist->first_name}} {{@$perreslist->last_name}} ({{@$perreslist->email}})</option>
@@ -398,7 +398,7 @@
                         <div class="col-12 col-md-6 col-lg-6">
                             <div class="form-group">
                                 <label for="person_assisting">Select Person Assisting <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="person_assisting" id="sel_person_assisting_id_lead">
+                                <select data-valid="required" class="form-control" name="person_assisting" id="sel_person_assisting_id_lead">
                                     <option value="">Select Person Assisting</option>
                                     @foreach(\App\Services\ClientEditService::staffSelectableForPersonAssistingRole() as $perassislist)
                                         <option value="{{$perassislist->id}}">{{@$perassislist->first_name}} {{@$perassislist->last_name}} ({{@$perassislist->email}})</option>
@@ -410,7 +410,7 @@
                         <div class="col-12 col-md-6 col-lg-6">
                             <div class="form-group">
                                 <label for="office_id">Handling Office <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="office_id" id="sel_office_id_lead">
+                                <select data-valid="required" class="form-control" name="office_id" id="sel_office_id_lead">
                                     <option value="">Select Office</option>
                                     @foreach(\App\Models\Branch::orderBy('office_name')->get() as $office)
                                         <option value="{{$office->id}}" 
@@ -425,7 +425,7 @@
                         <div class="col-12 col-md-6 col-lg-6">
                             <div class="form-group">
                                 <label for="matter_id">Select Matter <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="matter_id" id="sel_matter_id_lead">
+                                <select data-valid="required" class="form-control" name="matter_id" id="sel_matter_id_lead">
                                     <option value="">Select Matter</option>
                                     @php
                                         $leadCostMatterQuery = \App\Models\Matter::select('id', 'title')->where('status', 1)

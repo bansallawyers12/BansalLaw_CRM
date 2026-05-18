@@ -324,24 +324,25 @@ $(function () {
     container: "body"
   });
 
-  // Tom Select — plain static selects migrated to Tom Select (class crm-ts-plain).
-  // Excludes selects inside Bootstrap modals (same rule as the Select2 block below).
+  // Tom Select — `.crm-ts-plain` plus legacy class `select2` (hook name only; Select2 library removed).
+  // Skip Bootstrap modals: init with dropdownParent on shown.bs.modal (see matter-assignee-modal.js, detail-main.js).
+  // Skip `.selecttemplate`: listings / email modal init those with the correct parent.
   if (typeof TomSelect !== 'undefined' && typeof initTS === 'function') {
-    $(".crm-ts-plain").not(".modal .crm-ts-plain").each(function () {
-      var isMultiple = $(this).prop('multiple');
-      initTS(this, {
-        plugins: isMultiple ? ['remove_button'] : ['clear_button'],
-        allowEmptyOption: !isMultiple,
-        create: false
+    $('.crm-ts-plain, .select2')
+      .not('.modal .crm-ts-plain, .modal .select2')
+      .each(function () {
+        var $el = $(this);
+        if ($el.hasClass('selecttemplate')) {
+          return;
+        }
+        var isMultiple = $el.prop('multiple');
+        initTS(this, {
+          plugins: isMultiple ? ['remove_button'] : ['clear_button'],
+          allowEmptyOption: !isMultiple,
+          create: false,
+          dropdownParent: 'body'
+        });
       });
-    });
-  }
-
-  // Select2 — skip selects inside Bootstrap modals: they are often display:none at init,
-  // which breaks positioning (dropdown can appear over unrelated UI e.g. client edit tabs).
-  // Those fields should use dropdownParent on shown.bs.modal (see matter-assignee-modal.js).
-  if (jQuery().select2) {
-    $(".select2").not(".modal .select2").select2();
   }
 
   // Selectric

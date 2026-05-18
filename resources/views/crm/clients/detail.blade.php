@@ -214,7 +214,7 @@ use App\Http\Controllers\Controller;
                                 return 0; // Maintain original order for other matters
                             });
                             ?>
-                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
+                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control visa-dropdown" data-valid="required">
                                 <option value="">Select Matters</option>
                                 @foreach($matter_list_arr as $matterlist)
                                     @php
@@ -245,7 +245,7 @@ use App\Http\Controllers\Controller;
                                 $latestClientMatter = \App\Models\ClientMatter::where('client_id',$fetchedData->id)->where('matter_status',1)->latest()->first();
                                 $latestClientMatterId = $latestClientMatter ? $latestClientMatter->id : null;
                                 ?>
-                                <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
+                                <select name="matter_id" id="sel_matter_id_client_detail" class="form-control visa-dropdown" data-valid="required">
                                     <option value="">Select Matters</option>
                                     @foreach($matter_list_arr as $matterlist)
                                         @php
@@ -278,7 +278,7 @@ use App\Http\Controllers\Controller;
                             $latestClientMatter = \App\Models\ClientMatter::where('client_id',$fetchedData->id)->where('matter_status',1)->latest()->first();
                             $latestClientMatterId = $latestClientMatter ? $latestClientMatter->id : null;
                             ?>
-                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
+                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control visa-dropdown" data-valid="required">
                                 <option value="">Select Matters</option>
                                 @foreach($matter_list_arr as $matterlist)
                                     @php
@@ -2100,8 +2100,6 @@ $(function () {
                 var ts = (typeof window.getTomSelectInstance === 'function') ? window.getTomSelectInstance(el0) : null;
                 if (ts && typeof window.openTS === 'function') {
                     window.openTS(el0);
-                } else if ($el.hasClass('select2-hidden-accessible')) {
-                    $el.select2('open');
                 } else {
                     $el.trigger('focus');
                 }

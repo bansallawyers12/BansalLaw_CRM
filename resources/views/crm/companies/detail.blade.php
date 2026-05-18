@@ -129,7 +129,7 @@ use App\Http\Controllers\Controller;
                                 return 0; // Maintain original order for other matters
                             });
                             ?>
-                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
+                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control visa-dropdown" data-valid="required">
                                 <option value="">Select Matters</option>
                                 @foreach($matter_list_arr as $matterlist)
                                     @php
@@ -160,7 +160,7 @@ use App\Http\Controllers\Controller;
                                 $latestClientMatter = \App\Models\ClientMatter::where('client_id',$fetchedData->id)->where('matter_status',1)->latest()->first();
                                 $latestClientMatterId = $latestClientMatter ? $latestClientMatter->id : null;
                                 ?>
-                                <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
+                                <select name="matter_id" id="sel_matter_id_client_detail" class="form-control visa-dropdown" data-valid="required">
                                     <option value="">Select Matters</option>
                                     @foreach($matter_list_arr as $matterlist)
                                         @php
@@ -193,7 +193,7 @@ use App\Http\Controllers\Controller;
                             $latestClientMatter = \App\Models\ClientMatter::where('client_id',$fetchedData->id)->where('matter_status',1)->latest()->first();
                             $latestClientMatterId = $latestClientMatter ? $latestClientMatter->id : null;
                             ?>
-                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
+                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control visa-dropdown" data-valid="required">
                                 <option value="">Select Matters</option>
                                 @foreach($matter_list_arr as $matterlist)
                                     @php

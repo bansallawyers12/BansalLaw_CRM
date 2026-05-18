@@ -5689,187 +5689,101 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Initialize Select2 for Related Files dropdown
     initializeRelatedFilesSelect2();
-    
-    // Fallback: If Select2 fails to initialize, try again after a delay
-    setTimeout(function() {
-        const relatedFilesSelect = $('#relatedFiles');
-        if (relatedFilesSelect.length > 0 && !relatedFilesSelect.hasClass('select2-hidden-accessible')) {
-            console.log('Select2 not initialized, retrying...');
+
+    setTimeout(function () {
+        var el = document.getElementById('relatedFiles');
+        if (el && !el.tomselect) {
             initializeRelatedFilesSelect2();
         }
     }, 1000);
-    
-    // Another fallback after longer delay
-    setTimeout(function() {
-        const relatedFilesSelect = $('#relatedFiles');
-        if (relatedFilesSelect.length > 0 && !relatedFilesSelect.hasClass('select2-hidden-accessible')) {
-            console.log('Select2 still not initialized, final retry...');
+
+    setTimeout(function () {
+        var el = document.getElementById('relatedFiles');
+        if (el && !el.tomselect) {
             initializeRelatedFilesSelect2();
         }
     }, 3000);
 });
 
 /**
- * Initialize Select2 for Related Files dropdown with AJAX search
+ * Tom Select + POST /clients/search-partner for Related Files (multi).
  */
 function initializeRelatedFilesSelect2() {
-    const relatedFilesSelect = $('#relatedFiles');
+    var relatedFilesSelect = document.getElementById('relatedFiles');
+    if (!relatedFilesSelect) return;
 
-    if (relatedFilesSelect.length === 0) return;
-    
-    if (relatedFilesSelect.length > 0 && typeof $.fn.select2 !== 'undefined') {
-        console.log('Initializing Related Files Select2...');
-        
-        relatedFilesSelect.select2({
-            multiple: true,
-            closeOnSelect: false,
-            placeholder: 'Search for clients by name or client ID',
-            allowClear: true,
-            minimumInputLength: 2,
-            ajax: {
-                url: window.editClientConfig?.searchPartnerRoute || '/clients/search-partner',
-                type: 'POST',
-                dataType: 'json',
-                delay: 250,
-                headers: {
-                    'X-CSRF-TOKEN': window.editClientConfig?.csrfToken || $('meta[name="csrf-token"]').attr('content')
-                },
-                data: function (params) {
-                    console.log('Searching for:', params.term);
-                    return {
-                        query: params.term,
-                        exclude_client: window.currentClientId || null // Exclude current client
-                    };
-                },
-                processResults: function (data) {
-                    console.log('Search results received:', data);
-                    
-                    // Log debug information if available
-                    if (data.debug) {
-                        console.log('Debug info:', data.debug);
-                        console.log('Total clients in DB:', data.debug.total_clients);
-                        console.log('Filtered results:', data.debug.filtered_count);
-                    }
-                    
-                    // Log error if present
-                    if (data.error) {
-                        console.error('Search error from server:', data.error);
-                    }
-                    
-                    // Transform the response data to Select2 format
-                    if (data.partners && Array.isArray(data.partners)) {
-                        const results = data.partners.map(function(partner) {
-                            return {
-                                id: partner.id,
-                                text: partner.first_name + ' ' + partner.last_name + ' (' + (partner.client_id || 'No ID') + ')',
-                                email: partner.email,
-                                phone: partner.phone,
-                                client_id: partner.client_id
-                            };
-                        });
-                        
-                        console.log('Processed results:', results);
-                        return { results: results };
-                    }
-                    
-                    console.log('No results found');
-                    return { results: [] };
-                },
-                error: function(xhr, status, error) {
-                    console.error('Search error:', error, xhr.responseText);
-                    console.error('Status:', status);
-                    console.error('Response:', xhr.responseText);
-                    return { results: [] };
-                },
-                cache: true
-            },
-            templateResult: formatRelatedFileResult,
-            templateSelection: formatRelatedFileSelection
+    if (typeof TomSelect === 'undefined' || typeof initTS !== 'function' || typeof buildPartnerSearchMultiTomSelectConfig !== 'function') {
+        console.error('Related Files Tom Select initialization failed:', {
+            elementExists: true,
+            tomSelectAvailable: typeof TomSelect !== 'undefined'
         });
-        
-        // Debug: Log when Select2 is initialized
-        relatedFilesSelect.on('select2:open', function() {
-            console.log('Select2 dropdown opened');
-        });
-        
-        relatedFilesSelect.on('select2:select', function(e) {
-            console.log('Item selected:', e.params.data);
-        });
-        
-        // Add test function to window for debugging
-        window.testRelatedFilesSearch = function(query) {
-            console.log('Testing search with query:', query);
-            $.ajax({
-                url: window.editClientConfig?.searchPartnerRoute || '/clients/search-partner',
-                type: 'POST',
-                dataType: 'json',
-                headers: {
-                    'X-CSRF-TOKEN': window.editClientConfig?.csrfToken || $('meta[name="csrf-token"]').attr('content')
-                },
-                data: {
-                    query: query || 'test',
-                    exclude_client: window.currentClientId || null
-                },
-                success: function(data) {
-                    console.log('Test search success:', data);
-                },
-                error: function(xhr, status, error) {
-                    console.error('Test search error:', error, xhr.responseText);
-                }
-            });
-        };
-    } else {
-        console.error('Related Files Select2 initialization failed:', {
-            elementExists: relatedFilesSelect.length > 0,
-            select2Available: typeof $.fn.select2 !== 'undefined'
-        });
-    }
-}
-
-// Function to reinitialize Select2 when edit mode is toggled
-window.reinitializeRelatedFilesSelect2 = function() {
-    console.log('Reinitializing Related Files Select2...');
-    const relatedFilesSelect = $('#relatedFiles');
-    if (relatedFilesSelect.length > 0) {
-        // Destroy existing Select2 if it exists
-        if (relatedFilesSelect.hasClass('select2-hidden-accessible')) {
-            relatedFilesSelect.select2('destroy');
-        }
-        // Reinitialize
-        setTimeout(function() {
-            initializeRelatedFilesSelect2();
-        }, 100);
-    }
-};
-
-/**
- * Format the display of search results in the dropdown
- */
-function formatRelatedFileResult(partner) {
-    if (partner.loading) {
-        return partner.text;
+        return;
     }
 
-    var $container = $(
-        '<div class="select2-result-partner" style="padding: 8px;">' +
-        '<div class="select2-result-partner__title" style="font-weight: 600; color: #333; font-size: 14px;"></div>' +
-        '</div>'
+    var partnerUrl =
+        window.editClientConfig && window.editClientConfig.searchPartnerRoute
+            ? window.editClientConfig.searchPartnerRoute
+            : crmClientUrl('/clients/search-partner');
+    var csrf =
+        window.editClientConfig && window.editClientConfig.csrfToken
+            ? window.editClientConfig.csrfToken
+            : typeof jQuery !== 'undefined'
+              ? jQuery('meta[name="csrf-token"]').attr('content')
+              : '';
+    var excludeId =
+        typeof window.currentClientId !== 'undefined' && window.currentClientId !== null && String(window.currentClientId) !== ''
+            ? window.currentClientId
+            : null;
+
+    initTS(
+        relatedFilesSelect,
+        buildPartnerSearchMultiTomSelectConfig({
+            url: partnerUrl,
+            csrfToken: csrf || '',
+            excludeClientId: excludeId,
+            dropdownParent: 'body',
+            minQueryLength: 2
+        })
     );
 
-    // Show only name and client ID
-    $container.find('.select2-result-partner__title').text(partner.text);
-
-    return $container;
+    window.testRelatedFilesSearch = function (query) {
+        if (typeof jQuery === 'undefined') return;
+        jQuery.ajax({
+            url: window.editClientConfig && window.editClientConfig.searchPartnerRoute ? window.editClientConfig.searchPartnerRoute : crmClientUrl('/clients/search-partner'),
+            type: 'POST',
+            dataType: 'json',
+            headers: {
+                'X-CSRF-TOKEN':
+                    window.editClientConfig && window.editClientConfig.csrfToken
+                        ? window.editClientConfig.csrfToken
+                        : jQuery('meta[name="csrf-token"]').attr('content')
+            },
+            data: {
+                query: query || 'test',
+                exclude_client: window.currentClientId || null
+            },
+            success: function (data) {
+                console.log('Test search success:', data);
+            },
+            error: function (xhr, status, error) {
+                console.error('Test search error:', error, xhr.responseText);
+            }
+        });
+    };
 }
 
-/**
- * Format the display of selected items
- */
-function formatRelatedFileSelection(partner) {
-    return partner.text || partner.id;
-}
+/** Re-run when Related Files edit panel is toggled (kept name for callers). */
+window.reinitializeRelatedFilesSelect2 = function () {
+    var el = document.getElementById('relatedFiles');
+    if (!el) return;
+    if (typeof destroyTS === 'function') {
+        destroyTS(el);
+    }
+    setTimeout(function () {
+        initializeRelatedFilesSelect2();
+    }, 100);
+};
 
 // English proficiency functions moved to separate file: english-proficiency.js
 
