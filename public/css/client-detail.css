@@ -2483,16 +2483,20 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   background: transparent;
 }
 
-/* Layout: top bar (hero only), then main + activity feed in two columns */
+/* Layout: full-width top bar; main + activity feed stacked below (each full width).
+   The old 2-column grid left an empty rail when #activity-feed was display:none (Tasks, Notes, etc.). */
 .crm-container.crm-container--unified {
   display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto auto;
   grid-template-areas:
-    "cdn-topbar cdn-topbar"
-    "cdn-main cdn-feed";
+    "cdn-topbar"
+    "cdn-main"
+    "cdn-feed";
   gap: 16px;
   align-items: start;
+  /* Prevent min-height from stretching rows apart (Timeline tab looked like a huge gap under tabs). */
+  align-content: start;
   width: 100%;
   max-width: none !important;
   /* Keep page tint from first .crm-container.crm-container--unified block (tokens); cards stay white inside panes */
@@ -2506,7 +2510,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   gap: 16px;
 }
 
-/* Top stack: hero + hidden matter controls (tabs are inside .main-content) */
+/* Top stack: hero + tab strip live in sidebar (cdn-topbar); tab panes render in .main-content */
 .crm-container.crm-container--unified .client-navigation-sidebar {
   position: relative;
   grid-area: cdn-topbar;
@@ -2572,11 +2576,24 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   grid-area: cdn-feed;
   min-width: 0;
   align-self: stretch;
+  width: 100% !important;
+  max-width: none !important;
+  flex: none !important;
+  box-sizing: border-box;
 }
 
-/* Activity-only tab: feed spans full width below top bar */
+/* Cancel legacy flex “sidebar width” when feed sits below main */
+.crm-container.crm-container--unified > aside.activity-feed.wide-mode {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  flex: none !important;
+}
+
+/* Activity-only tab: top bar + feed (main is display:none; two template rows) */
 .crm-container.crm-container--unified.crm-container--activity-tab {
   grid-template-columns: 1fr;
+  grid-template-rows: auto auto;
   grid-template-areas:
     "cdn-topbar"
     "cdn-feed";
@@ -2836,18 +2853,6 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   /* Keep horizontal flush with viewport; gutter comes from .crm-container.crm-container--unified */
   .crm-container.crm-container--unified {
     padding: 12px 0 20px;
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "cdn-topbar"
-      "cdn-main"
-      "cdn-feed";
-  }
-
-  .crm-container.crm-container--unified.crm-container--activity-tab {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "cdn-topbar"
-      "cdn-feed";
   }
 }
 

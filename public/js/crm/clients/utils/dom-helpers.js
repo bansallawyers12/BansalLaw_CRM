@@ -11,7 +11,34 @@
      * Adjust activity feed height based on viewport and content.
      */
     function adjustActivityFeedHeight() {
-        if (!$('.activity-feed').length || !$('.main-content').length || !$('.crm-container').length) {
+        if (!$('.activity-feed').length || !$('.crm-container').length) {
+            return;
+        }
+
+        var $container = $('.crm-container');
+        var isUnified = $container.hasClass('crm-container--unified');
+
+        if (!isUnified && !$('.main-content').length) {
+            return;
+        }
+
+        /* Unified layout: main and feed stack vertically; do not reserve a fixed-height side rail. */
+        if (isUnified) {
+            $container.css('align-items', '');
+            if ($('.main-content').length && $('.main-content').is(':visible')) {
+                $('.main-content').css('max-height', 'none');
+                $('.main-content').css('overflow-y', 'visible');
+                $('.main-content').css('height', 'auto');
+            }
+            if (!$('.activity-feed').is(':visible')) {
+                $('.activity-feed').css('max-height', '');
+                $('.activity-feed').css('height', '');
+                $('.activity-feed').css('overflow-y', '');
+                return;
+            }
+            $('.activity-feed').css('height', 'auto');
+            $('.activity-feed').css('max-height', 'min(560px, 70vh)');
+            $('.activity-feed').css('overflow-y', 'auto');
             return;
         }
 
