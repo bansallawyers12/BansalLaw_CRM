@@ -252,7 +252,7 @@
             var el = this;
             if (typeof destroyTS === 'function') destroyTS(el);
             if (typeof initTS === 'function') {
-                initTS(el, { create: false, dropdownParent: modalEl });
+                initTS(el, { create: false, allowEmptyOption: true, dropdownParent: modalEl });
                 var ts = el.tomselect;
                 if (ts && ts.wrapper) {
                     ts.wrapper.style.width = '100%';

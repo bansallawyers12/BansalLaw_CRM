@@ -377,6 +377,12 @@
 								@endif
 							</div>
 						</div>
+						<div class="col-12 col-md-6 col-lg-6">
+							<div class="form-group">
+								<label for="email_cc_lead">CC</label>
+								<select multiple class="js-data-example-ajaxcc" name="email_cc[]" id="email_cc_lead"></select>
+							</div>
+						</div>
 						
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
@@ -479,56 +485,9 @@ function myfollowuplist(lead_id) {
 	$('.followuphistory').html('<div class="alert alert-info">Followup functionality has been removed.</div>');
 }
 $(function () {
-	$(document).delegate('.clientemail', 'click', function(){ 
-
-	$('#emailmodal').modal('show');
-	var array = [];
-	var data = [];
-
-		
-			var id = $(this).attr('data-id');
-			 array.push(id);
-			var email = $(this).attr('data-email');
-			var name = $(this).attr('data-name');
-			var status = 'Client';
-			
-			data.push({
-				id: id,
-  text: name,
-  html:  "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-
-      "<div  class='ag-flex ag-align-start'>" +
-        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
-        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>"+email+"</small ></div>" +
-      
-      "</div>" +
-      "</div>" +
-	   "<div class='ag-flex ag-flex-column ag-align-end'>" +
-        
-        "<span class='ui label yellow select2-result-repository__statistics'>"+ status +
-          
-        "</span>" +
-      "</div>" +
-    "</div>",
-  title: name
-				});
-	
-	$(".js-data-example-ajax").select2({
-  data: data,
-  escapeMarkup: function(markup) {
-    return markup;
-  },
-  templateResult: function(data) {
-    return data.html;
-  },
-  templateSelection: function(data) {
-    return data.text;
-  }
-})
-	$('.js-data-example-ajax').val(array);
-		$('.js-data-example-ajax').trigger('change');
-	
-});
+	$(document).delegate('.clientemail', 'click', function(){
+		$('#emailmodal').modal('show');
+	});
   $('[data-bs-toggle="tooltip"]').tooltip();
    $('[data-bs-toggle="popover"]').popover();
    
@@ -550,62 +509,18 @@ $(function () {
        }
      });
    }
-			 
-	$('.js-data-example-ajaxccd').select2({
-		 multiple: true,
-		 closeOnSelect: false,
-		dropdownParent: $('#emailmodal'),
-		  ajax: {
-			url: '{{URL::to('/clients/get-recipients')}}',
-			dataType: 'json',
-			processResults: function (data) {
-			  // Transforms the top-level key of the response object from 'items' to 'results'
-			  return {
-				results: data.items
-			  };
-			  
-			},
-			 cache: true
-			
-		  },
-	templateResult: formatRepo,
-	templateSelection: formatRepoSelection
-});
-function formatRepo (repo) {
-  if (repo.loading) {
-    return repo.text;
-  }
+	var crmRecipientsUrl = '{{ URL::to('/clients/get-recipients') }}';
+	if (typeof initTS === 'function' && typeof buildCrmGetRecipientsMultiTomSelectConfig === 'function') {
+		$('#emailmodal .js-data-example-ajaxcc').each(function () {
+			initTS(this, buildCrmGetRecipientsMultiTomSelectConfig({
+				url: crmRecipientsUrl,
+				dropdownParent: '#emailmodal',
+				enableRemoteLoad: true
+			}));
+		});
+	}
 
-  var $container = $(
-    "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-
-      "<div  class='ag-flex ag-align-start'>" +
-        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
-        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
-      
-      "</div>" +
-      "</div>" +
-	   "<div class='ag-flex ag-flex-column ag-align-end'>" +
-        
-        "<span class='ui label yellow select2-result-repository__statistics'>" +
-          
-        "</span>" +
-      "</div>" +
-    "</div>"
-  );
-
-  $container.find(".select2-result-repository__title").text(repo.name);
-  $container.find(".select2-result-repository__description").text(repo.email);
-  $container.find(".select2-result-repository__statistics").append(repo.status);
- 
-  return $container;
-}
-
-function formatRepoSelection (repo) {
-  return repo.name || repo.text;
-}		
-
-$(document).delegate('.selecttemplate', 'change', function(){
+	$(document).delegate('.selecttemplate', 'change', function(){
 	var v = $(this).val();
 	$.ajax({
 		url: '{{URL::to('/get-templates')}}',

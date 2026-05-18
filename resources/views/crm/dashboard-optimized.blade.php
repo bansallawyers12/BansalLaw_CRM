@@ -1374,17 +1374,20 @@ $(function () {
             $('.add_my_task').popover('hide');
         });
         
-        // Initialize client picker (Tom Select)
+        // Initialize client picker (Tom Select) — must use the visible popover tip, not the hidden
+        // #add-task-popover-template clone (duplicate id would make $('#assign_client_id') match the wrong node).
         setTimeout(function() {
-            initializeClientSelect2();
+            initializeClientSelect2($popover);
         }, 100);
     });
     
     // Hide backdrop when popover is hidden
     $(document).on('hide.bs.popover', '.add_my_task', function() {
-        var $clientSelect = $('#assign_client_id');
-        if ($clientSelect.length && typeof destroyTS === 'function') {
-            destroyTS($clientSelect[0]);
+        // Duplicate id: destroy Tom Select on every matching select (template + tip).
+        if (typeof destroyTS === 'function') {
+            document.querySelectorAll('#assign_client_id').forEach(function (el) {
+                destroyTS(el);
+            });
         }
     });
 
@@ -1393,13 +1396,16 @@ $(function () {
     });
     
     // Function to initialize Add My Task client picker (Tom Select)
-    function initializeClientSelect2() {
+    // @param {JQuery} [$popoverTip] - visible popover root (preferred); avoids hidden template duplicate #assign_client_id
+    function initializeClientSelect2($popoverTip) {
         var attempts = 0;
         var maxAttempts = 10;
         
         function tryInitialize() {
             attempts++;
-            var $clientSelect = $('#assign_client_id');
+            var $clientSelect = ($popoverTip && $popoverTip.length)
+                ? $popoverTip.find('#assign_client_id')
+                : $('.popover.show #assign_client_id, .popover.add-my-task-popover:visible #assign_client_id').first();
             
             if ($clientSelect.length && $clientSelect.is(':visible')) {
                 if (typeof initTS !== 'function' || typeof buildGetAllClientsTomSelectConfig !== 'function' || typeof destroyTS !== 'function') {

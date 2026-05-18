@@ -5724,57 +5724,18 @@ success: function(response) {
         // createapplicationnewinvoice handler removed - Create Invoice from Schedule flow unused
 
 
-        /** Shared Tom Select config for /clients/get-recipients (ex-Select2 AJAX recipients). */
+        /** Shared Tom Select config for /clients/get-recipients (vendored helper in ts-init.js). */
         function crmDetailRecipientTomSelectOptions(dropdownParent, enableRemoteLoad) {
-            var cfg = {
-                plugins: ['remove_button'],
-                maxItems: null,
-                closeAfterSelect: false,
-                valueField: 'id',
-                labelField: 'name',
-                searchField: ['name', 'email'],
-                loadThrottle: 300,
-                dropdownParent: dropdownParent,
-                create: false,
-                render: {
-                    option: function (item, escape) {
-                        if (!item || item.loading) {
-                            return '<div class="crm-ts-recipient-loading">Searching…</div>';
-                        }
-                        var name = escape(item.name || item.text || '');
-                        var email = escape(item.email || '');
-                        var status = escape(item.status || '');
-                        return '<div class="select2-result-repository ag-flex ag-space-between ag-align-center">' +
-                            '<div class="ag-flex ag-align-start">' +
-                            '<div class="ag-flex ag-flex-column col-hr-1"><div class="ag-flex"><span class="select2-result-repository__title text-semi-bold">' + name + '</span>&nbsp;</div>' +
-                            '<div class="ag-flex ag-align-center"><small class="select2-result-repository__description">' + email + '</small></div>' +
-                            '</div></div>' +
-                            '<div class="ag-flex ag-flex-column ag-align-end">' +
-                            '<span class="ui label yellow select2-result-repository__statistics">' + status + '</span>' +
-                            '</div></div>';
-                    },
-                    item: function (item, escape) {
-                        return '<div>' + escape(item.name || item.text || '') + '</div>';
-                    }
-                }
-            };
-            if (enableRemoteLoad !== false && window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.getRecipients) {
-                cfg.load = function (query, callback) {
-                    if (!query || !String(query).length) return callback();
-                    $.ajax({
-                        url: window.ClientDetailConfig.urls.getRecipients,
-                        dataType: 'json',
-                        data: { q: query },
-                        success: function (data) {
-                            callback((data && data.items) ? data.items : []);
-                        },
-                        error: function () {
-                            callback();
-                        }
-                    });
-                };
+            var url = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.getRecipients) || '';
+            if (typeof buildCrmGetRecipientsMultiTomSelectConfig !== 'function') {
+                return {};
             }
-            return cfg;
+            return buildCrmGetRecipientsMultiTomSelectConfig({
+                url: url,
+                dropdownParent: dropdownParent,
+                enableRemoteLoad: enableRemoteLoad,
+                loadThrottle: 300
+            });
         }
 
         $('.js-data-example-ajaxccapp').each(function () {

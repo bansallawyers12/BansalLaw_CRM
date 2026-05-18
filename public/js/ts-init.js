@@ -88,6 +88,8 @@
   /**
    * Single-select AJAX client picker for GET /clients/get-allclients?q=
    * Items: { id, name, email, status, cid, ... } (same shape as legacy Select2).
+   * Important: if popover content is cloned from a hidden template, the same id may exist twice in the DOM;
+   * always pass the visible tip element into initTS (e.g. $tip.find('#assign_client_id')), never rely on $('#id') alone.
    * @param {{ url: string, dropdownParent?: string|HTMLElement, placeholder?: string, loadThrottle?: number, minQueryLength?: number }} opts
    */
   function buildGetAllClientsTomSelectConfig(opts) {
@@ -144,7 +146,7 @@
       },
       load: function (query, callback) {
         if (!url) {
-          callback();
+          callback([]);
           return;
         }
         var sep = url.indexOf('?') >= 0 ? '&' : '?';
@@ -154,16 +156,116 @@
           headers: { Accept: 'application/json' }
         })
           .then(function (r) {
+            if (!r.ok) {
+              throw new Error('HTTP ' + r.status);
+            }
             return r.json();
           })
           .then(function (data) {
             callback(data && data.items ? data.items : []);
           })
           .catch(function () {
-            callback();
+            callback([]);
           });
       }
     };
+  }
+
+  /**
+   * Multi-select AJAX for GET /clients/get-recipients?q= (admin recipients).
+   * @param {{ url: string, dropdownParent?: string|HTMLElement, enableRemoteLoad?: boolean, loadThrottle?: number }} opts
+   */
+  function buildCrmGetRecipientsMultiTomSelectConfig(opts) {
+    opts = opts || {};
+    var url = opts.url || '';
+    var dropdownParent = opts.dropdownParent !== undefined ? opts.dropdownParent : 'body';
+    var enableRemoteLoad = opts.enableRemoteLoad !== false;
+    var loadThrottle = opts.loadThrottle != null ? opts.loadThrottle : 300;
+
+    var cfg = {
+      plugins: ['remove_button'],
+      maxItems: null,
+      closeAfterSelect: false,
+      valueField: 'id',
+      labelField: 'name',
+      searchField: ['name', 'email'],
+      loadThrottle: loadThrottle,
+      dropdownParent: dropdownParent,
+      create: false,
+      render: {
+        option: function (item, escape) {
+          if (!item || item.loading) {
+            return '<div class="crm-ts-recipient-loading">Searching…</div>';
+          }
+          var name = escape(item.name || item.text || '');
+          var email = escape(item.email || '');
+          var status = escape(item.status || '');
+          return (
+            '<div class="select2-result-repository ag-flex ag-space-between ag-align-center">' +
+            '<div class="ag-flex ag-align-start">' +
+            '<div class="ag-flex ag-flex-column col-hr-1"><div class="ag-flex"><span class="select2-result-repository__title text-semi-bold">' + name + '</span>&nbsp;</div>' +
+            '<div class="ag-flex ag-align-center"><small class="select2-result-repository__description">' + email + '</small></div>' +
+            '</div></div>' +
+            '<div class="ag-flex ag-flex-column ag-align-end">' +
+            '<span class="ui label yellow select2-result-repository__statistics">' + status + '</span>' +
+            '</div></div>'
+          );
+        },
+        item: function (item, escape) {
+          return '<div>' + escape(item.name || item.text || '') + '</div>';
+        }
+      }
+    };
+
+    if (enableRemoteLoad && url) {
+      cfg.load = function (query, callback) {
+        if (!query || !String(query).length) {
+          callback([]);
+          return;
+        }
+        var sep = url.indexOf('?') >= 0 ? '&' : '?';
+        fetch(url + sep + 'q=' + encodeURIComponent(String(query)), {
+          credentials: 'same-origin',
+          headers: { Accept: 'application/json' }
+        })
+          .then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+          })
+          .then(function (data) {
+            callback(data && data.items ? data.items : []);
+          })
+          .catch(function () {
+            callback([]);
+          });
+      };
+    }
+
+    return cfg;
+  }
+
+  /**
+   * Preload-only multi recipient select (compose from row / bulk) + optional post-init trigger.
+   * @param {JQuery|Element|string} el
+   * @param {{ dropdownParent?: string|HTMLElement, options: Array<{id:any,name?:string,email?:string,status?:string}>, items: Array<any>, triggerChange?: boolean }} opts
+   */
+  function initRecipientsMultiTomSelectPreload(el, opts) {
+    var sel = getNativeSelect(el);
+    if (!sel || !opts) return null;
+    destroyTS(sel);
+    var base = buildCrmGetRecipientsMultiTomSelectConfig({
+      url: '',
+      dropdownParent: opts.dropdownParent != null ? opts.dropdownParent : '#emailmodal',
+      enableRemoteLoad: false
+    });
+    var items = (opts.items || []).map(function (x) {
+      return String(x);
+    });
+    var instance = initTS(sel, Object.assign({}, base, { options: opts.options || [], items: items }));
+    if (opts.triggerChange !== false && typeof jQuery !== 'undefined') {
+      jQuery(sel).trigger('change');
+    }
+    return instance;
   }
 
   global.initTS = initTS;
@@ -173,4 +275,6 @@
   /** @expose for callers that need duck-typing checks */
   global.getTomSelectInstance = getTS;
   global.buildGetAllClientsTomSelectConfig = buildGetAllClientsTomSelectConfig;
+  global.buildCrmGetRecipientsMultiTomSelectConfig = buildCrmGetRecipientsMultiTomSelectConfig;
+  global.initRecipientsMultiTomSelectPreload = initRecipientsMultiTomSelectPreload;
 })(typeof window !== 'undefined' ? window : this);
