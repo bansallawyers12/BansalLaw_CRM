@@ -490,7 +490,6 @@
 
 @push('scripts')
 <link rel="stylesheet" href="{{URL::to('/')}}/css/task-popover-modern.css">
-<script src="{{URL::to('/')}}/js/popover.js"></script>
 <script>
 jQuery(document).ready(function($){
     $('.listing-container [data-bs-toggle="tooltip"]').tooltip();

@@ -447,7 +447,6 @@
 </div>
 @endsection
 @push('scripts')
-<script src="{{URL::to('/')}}/public/js/popover.js"></script>  
 <script> 
 
 var lead_id = '{{base64_encode(convert_uuencode(@$fetchedData->id))}}';

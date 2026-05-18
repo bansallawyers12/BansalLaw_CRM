@@ -1382,7 +1382,6 @@ $(document).ready(function() {
     });
 });
 </script>
-<script src="{{URL::to('/')}}/js/popover.js"></script>
 {{-- jquery-datetimepicker removed - not used on this page --}}
 
 {{-- Activity Feed Functionality --}}

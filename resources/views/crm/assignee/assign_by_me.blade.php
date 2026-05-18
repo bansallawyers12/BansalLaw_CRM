@@ -390,7 +390,7 @@
 
 @push('scripts')
 <link rel="stylesheet" href="{{URL::to('/')}}/css/task-popover-modern.css">
-<script src="{{ URL::to('/') }}/js/popover.js"></script>
+{{-- $.fn.popover: public/js/bootstrap5-jquery-compat.js (layout) --}}
 <script>
     jQuery(document).ready(function($) {
         // Open assignee modal

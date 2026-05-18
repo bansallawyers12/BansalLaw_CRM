@@ -477,7 +477,6 @@
 </div>
 @endsection
 @push('scripts')
-<script src="{{URL::to('/')}}/js/popover.js"></script>
 <script>
 	jQuery(document).ready(function($){
      $(document).delegate('.openassignee', 'click', function(){

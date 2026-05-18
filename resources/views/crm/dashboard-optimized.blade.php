@@ -1299,7 +1299,6 @@ body > .ts-dropdown {
 
 @push('scripts')
 @once
-<script src="{{URL::to('/')}}/js/popover.js"></script>
 <script src="{{URL::to('/')}}/js/components/dropdown-multi-select.js"></script>
 <script>
     // Define dashboard routes and data before loading the main script
