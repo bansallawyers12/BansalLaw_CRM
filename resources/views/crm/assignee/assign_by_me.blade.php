@@ -105,10 +105,6 @@
         color: #fff !important;
     }
 
-    body > .select2-container--open {
-        z-index: 10700 !important;
-    }
-
     body > .ts-dropdown {
         z-index: 10700 !important;
     }
@@ -155,11 +151,6 @@
     #openassigneview .modal-body,
     .custom_modal .modal-body {
         padding: 20px;
-    }
-
-    .listing-container .select2-container {
-        z-index: 100000;
-        width: 100% !important;
     }
 
     @media (max-width: 768px) {

@@ -906,6 +906,23 @@ jQuery(document).ready(function($){
         });
     }
 
+    // Template picker: inside #emailmodal so skipped by global scripts.js init; wire on shown.
+    $(document).on('shown.bs.modal', '#emailmodal', function () {
+        if (typeof initTS !== 'function') return;
+        var modalEl = this;
+        $(modalEl).find('.selecttemplate').each(function () {
+            if (!this.tomselect) {
+                initTS(this, { create: false, allowEmptyOption: true, dropdownParent: modalEl });
+            }
+        });
+    });
+    $(document).on('hidden.bs.modal', '#emailmodal', function () {
+        var modalEl = this;
+        $(modalEl).find('.selecttemplate').each(function () {
+            if (typeof destroyTS === 'function') destroyTS(this);
+        });
+    });
+
     // Archive client confirmation function - Global scope
     function archiveClientAction(event, clientName) {
         event.preventDefault();

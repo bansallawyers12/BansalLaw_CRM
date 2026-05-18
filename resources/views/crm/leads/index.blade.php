@@ -711,6 +711,20 @@
               $('#assignlead_modal').modal('show');
           });
 
+        $(document).on('shown.bs.modal', '#assignlead_modal', function () {
+            var modalEl = this;
+            var sel = modalEl.querySelector('select[name="assignto"]');
+            if (!sel) return;
+            if (typeof destroyTS === 'function') destroyTS(sel);
+            if (typeof initTS === 'function') {
+                initTS(sel, { create: false, allowEmptyOption: true, dropdownParent: modalEl });
+            }
+        });
+        $(document).on('hidden.bs.modal', '#assignlead_modal', function () {
+            var sel = this.querySelector('select[name="assignto"]');
+            if (sel && typeof destroyTS === 'function') destroyTS(sel);
+        });
+
         $('.listing-container [data-checkboxes]').each(function () {
             var me = $(this),
             group = me.data('checkboxes'),
@@ -902,6 +916,23 @@
                 }));
             });
         }
+
+        // Template picker: inside #emailmodal so skipped by global scripts.js; wire on shown.
+        $(document).on('shown.bs.modal', '#emailmodal', function () {
+            if (typeof initTS !== 'function') return;
+            var modalEl = this;
+            $(modalEl).find('.selecttemplate').each(function () {
+                if (!this.tomselect) {
+                    initTS(this, { create: false, allowEmptyOption: true, dropdownParent: modalEl });
+                }
+            });
+        });
+        $(document).on('hidden.bs.modal', '#emailmodal', function () {
+            var modalEl = this;
+            $(modalEl).find('.selecttemplate').each(function () {
+                if (typeof destroyTS === 'function') destroyTS(this);
+            });
+        });
     });
 </script>
 <script>

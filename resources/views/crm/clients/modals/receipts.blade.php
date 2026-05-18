@@ -1297,12 +1297,47 @@
                             </div>
 
                             <button onclick="customValidate('create_journal_receipt')" type="button" class="btn btn-primary" style="margin:0px !important;">Save Entry</button>
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-						</div>
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+					</div>
                     </div>
-				</form>
+			</form>
             </div>
 		</div>
 	</div>
 </div>
+
+<script>
+(function () {
+    'use strict';
+
+    /**
+     * Agent dropdowns inside receipt / invoice / office / journal modals.
+     * Static <select> options rendered server-side; use plain single Tom Select
+     * with dropdownParent set to the modal element so the dropdown renders correctly.
+     */
+    var agentModalMap = [
+        { modal: '#createclientreceiptmodal',  select: '#sel_client_agent_id'  },
+        { modal: '#createinvoicereceiptmodal', select: '#sel_invoice_agent_id' },
+        { modal: '#createofficereceiptmodal',  select: '#sel_office_agent_id'  },
+        { modal: '#createjournalreceiptmodal', select: '#sel_journal_agent_id' }
+    ];
+
+    agentModalMap.forEach(function (entry) {
+        jQuery(document).on('shown.bs.modal', entry.modal, function () {
+            var modalEl = this;
+            var sel = modalEl.querySelector(entry.select);
+            if (!sel) return;
+            if (typeof destroyTS === 'function') destroyTS(sel);
+            if (typeof initTS === 'function' && typeof buildPlainSingleTomSelectConfig === 'function') {
+                initTS(sel, buildPlainSingleTomSelectConfig({ dropdownParent: modalEl }));
+            }
+        });
+
+        jQuery(document).on('hidden.bs.modal', entry.modal, function () {
+            var sel = this.querySelector(entry.select);
+            if (sel && typeof destroyTS === 'function') destroyTS(sel);
+        });
+    });
+}());
+</script>
 

@@ -123,15 +123,6 @@
         color: #fff !important;
     }
 
-    .listing-container .select2-container {
-        z-index: 100000;
-        width: 100% !important;
-    }
-
-    body > .select2-container--open {
-        z-index: 10700 !important;
-    }
-
     body > .ts-dropdown {
         z-index: 10700 !important;
     }

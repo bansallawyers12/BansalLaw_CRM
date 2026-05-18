@@ -281,14 +281,14 @@
         outline: none;
     }
 
-    .listing-container .select2-container--default .select2-selection--single {
+    .listing-container .ts-control {
         border: 2px solid #e2e8f0;
         border-radius: 10px;
-        height: 44px;
+        min-height: 44px;
         padding: 6px 16px;
     }
 
-    .listing-container .select2-container--default .select2-selection--single:focus {
+    .listing-container .ts-wrapper.focus .ts-control {
         border-color: var(--navy);
     }
 

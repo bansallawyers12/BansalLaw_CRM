@@ -485,59 +485,14 @@
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
         
-        /* Sidebar matter dropdown - allow long names to wrap to prevent sidebar width expansion */
-        .sidebar-matter-selection .select2-container {
-            width: 100% !important;
-            max-width: 100% !important;
-        }
-        
-        .sidebar-matter-selection .select2-container--default .select2-selection--single {
-            height: auto !important;
-            min-height: 38px;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-        }
-        
-        .sidebar-matter-selection .select2-container--default .select2-selection--single .select2-selection__rendered {
-            white-space: normal !important;
-            word-wrap: break-word !important;
-            overflow-wrap: break-word !important;
-            word-break: break-word !important;
-            max-width: 100% !important;
-            padding-right: 30px !important;
-            line-height: 1.4 !important;
-            padding-top: 6px !important;
-            padding-bottom: 6px !important;
-            display: block !important;
-        }
-        
-        .sidebar-matter-selection .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 100%;
-            min-height: 36px;
-            right: 8px;
-            top: 0;
-            bottom: 0;
-        }
-        
+        /* Sidebar matter dropdown */
         .sidebar-matter-selection {
             min-width: 0;
             overflow: hidden;
             width: 100%;
         }
-        
-        .sidebar-matter-selection .select2-container--default {
-            max-width: 100% !important;
-        }
-        
-        /* Matter dropdown - wrap long option names when opened */
-        .matter-dropdown-wrap .select2-results__option {
-            white-space: normal !important;
-            word-wrap: break-word !important;
-            overflow-wrap: break-word !important;
-            line-height: 1.4 !important;
-        }
 
-        /* Sidebar matter dropdown - Tom Select equivalents */
+        /* Sidebar matter dropdown - Tom Select */
         .sidebar-matter-selection .ts-wrapper {
             width: 100% !important;
             max-width: 100% !important;
