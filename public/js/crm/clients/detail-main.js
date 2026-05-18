@@ -1029,56 +1029,49 @@ $(document).ready(function() {
 
     jQuery(document).ready(function($){
 
-        /** Visually hidden #sel_matter_id_client_detail breaks Select2 placement; anchor dropdown to Change Matter. */
+        /** Anchor Tom Select matter-switcher dropdown below the Change Matter hero button. */
         function positionClientDetailMatterSwitchDropdown() {
-            var $sel = $('#sel_matter_id_client_detail');
-            var s2 = $sel.data('select2');
-            if (!s2 || !$sel.length) {
-                return;
-            }
+            var ts = (typeof getTomSelectInstance === 'function') ? getTomSelectInstance('#sel_matter_id_client_detail') : null;
+            if (!ts) return;
             var btn = document.getElementById('cdn-focus-matter-select');
-            if (!btn) {
-                return;
-            }
+            if (!btn) return;
             var r = btn.getBoundingClientRect();
             var minW = 280;
             var w = Math.max(r.width, minW);
             var maxLeft = window.innerWidth - w - 8;
             var left = Math.min(Math.max(8, r.left), maxLeft);
-            var $dd = (s2.$dropdown && s2.$dropdown.length) ? s2.$dropdown
-                : (s2.dropdown && s2.dropdown.$dropdown && s2.dropdown.$dropdown.length) ? s2.dropdown.$dropdown
-                : $('body > .select2-dropdown.matter-dropdown-wrap').last();
-            if ($dd && $dd.length) {
-                $dd.css({
-                    position: 'fixed',
-                    left: left + 'px',
-                    top: (r.bottom + 4) + 'px',
-                    width: w + 'px',
-                    'z-index': 10050
-                });
+            var dd = ts.dropdown;
+            if (dd) {
+                dd.style.position = 'fixed';
+                dd.style.left = left + 'px';
+                dd.style.top = (r.bottom + 4) + 'px';
+                dd.style.width = w + 'px';
+                dd.style.zIndex = '10050';
             }
         }
 
 
 
-        // Initialize Select2 for the matter dropdown (dropdownCssClass for wrapping long names; body parent + JS position for hero button)
+        // Initialize Tom Select for the matter dropdown (body parent + JS position for hero button; matter-dropdown-wrap for long-name wrapping)
         var $matterClientDetail = $('#sel_matter_id_client_detail');
         if ($matterClientDetail.length) {
-            $matterClientDetail.select2({
-                dropdownParent: $('body'),
-                dropdownCssClass: 'matter-dropdown-wrap',
-                minimumResultsForSearch: 0,
-                width: 'resolve'
+            var _tsMatterDetail = initTS($matterClientDetail[0], {
+                dropdownParent: 'body',
+                create: false,
+                onDropdownOpen: function () {
+                    requestAnimationFrame(function () {
+                        positionClientDetailMatterSwitchDropdown();
+                        $(window).on('scroll.matterSwitchDd resize.matterSwitchDd', positionClientDetailMatterSwitchDropdown);
+                    });
+                },
+                onDropdownClose: function () {
+                    $(window).off('scroll.matterSwitchDd resize.matterSwitchDd');
+                }
             });
-            $(document).on('select2:open', '#sel_matter_id_client_detail', function () {
-                requestAnimationFrame(function () {
-                    positionClientDetailMatterSwitchDropdown();
-                    $(window).on('scroll.matterSwitchDd resize.matterSwitchDd', positionClientDetailMatterSwitchDropdown);
-                });
-            });
-            $(document).on('select2:close', '#sel_matter_id_client_detail', function () {
-                $(window).off('scroll.matterSwitchDd resize.matterSwitchDd');
-            });
+            // Add class for long-name option wrapping (equivalent to Select2 dropdownCssClass)
+            if (_tsMatterDetail && _tsMatterDetail.dropdown) {
+                _tsMatterDetail.dropdown.classList.add('matter-dropdown-wrap');
+            }
         }
 
 
@@ -1564,9 +1557,9 @@ success: function(response) {
 
             if (this.checked) {
 
-                $('#sel_matter_id_client_detail').prop('disabled', true).trigger('change');
+                setDisabledTS('#sel_matter_id_client_detail', true);
 
-                $('#sel_matter_id_client_detail').removeAttr('data-valid').trigger('change');
+                $('#sel_matter_id_client_detail').removeAttr('data-valid');
 
                 selectedMatter = $(this).val();
 
@@ -1701,9 +1694,9 @@ success: function(response) {
 
             } else {
 
-                $('#sel_matter_id_client_detail').prop('disabled', false).trigger('change');
+                setDisabledTS('#sel_matter_id_client_detail', false);
 
-                $('#sel_matter_id_client_detail').attr('data-valid', 'required').trigger('change');
+                $('#sel_matter_id_client_detail').attr('data-valid', 'required');
 
                 selectedMatter = "";
 
@@ -3226,11 +3219,16 @@ success: function(response) {
 
 
 
-        //Set select2 drop down box width
-
-        $('#changeassignee').select2();
-
-        $('#changeassignee').next('.select2-container').first().css('width', '220px');
+        // In-person assignee (check-in panel HTML): Tom Select, fixed width
+        var $changeAssignee = $('#changeassignee');
+        if ($changeAssignee.length) {
+            initTS($changeAssignee[0], { create: false });
+            var _caTs = $changeAssignee[0].tomselect;
+            if (_caTs && _caTs.wrapper) {
+                _caTs.wrapper.style.width = '220px';
+                _caTs.wrapper.style.maxWidth = '100%';
+            }
+        }
 
 
 
@@ -5726,87 +5724,65 @@ success: function(response) {
         // createapplicationnewinvoice handler removed - Create Invoice from Schedule flow unused
 
 
-
-        $('.js-data-example-ajaxccapp').select2({
-
-                multiple: true,
-
-                closeOnSelect: false,
-
-                dropdownParent: $('#matteremailmodal'),
-
-                ajax: {
-
-                    url: window.ClientDetailConfig.urls.getRecipients,
-
-                    dataType: 'json',
-
-                    processResults: function (data) {
-
-                    // Transforms the top-level key of the response object from 'items' to 'results'
-
-                    return {
-
-                        results: data.items
-
-                    };
-
-
-
+        /** Shared Tom Select config for /clients/get-recipients (ex-Select2 AJAX recipients). */
+        function crmDetailRecipientTomSelectOptions(dropdownParent, enableRemoteLoad) {
+            var cfg = {
+                plugins: ['remove_button'],
+                maxItems: null,
+                closeAfterSelect: false,
+                valueField: 'id',
+                labelField: 'name',
+                searchField: ['name', 'email'],
+                loadThrottle: 300,
+                dropdownParent: dropdownParent,
+                create: false,
+                render: {
+                    option: function (item, escape) {
+                        if (!item || item.loading) {
+                            return '<div class="crm-ts-recipient-loading">Searching…</div>';
+                        }
+                        var name = escape(item.name || item.text || '');
+                        var email = escape(item.email || '');
+                        var status = escape(item.status || '');
+                        return '<div class="select2-result-repository ag-flex ag-space-between ag-align-center">' +
+                            '<div class="ag-flex ag-align-start">' +
+                            '<div class="ag-flex ag-flex-column col-hr-1"><div class="ag-flex"><span class="select2-result-repository__title text-semi-bold">' + name + '</span>&nbsp;</div>' +
+                            '<div class="ag-flex ag-align-center"><small class="select2-result-repository__description">' + email + '</small></div>' +
+                            '</div></div>' +
+                            '<div class="ag-flex ag-flex-column ag-align-end">' +
+                            '<span class="ui label yellow select2-result-repository__statistics">' + status + '</span>' +
+                            '</div></div>';
                     },
+                    item: function (item, escape) {
+                        return '<div>' + escape(item.name || item.text || '') + '</div>';
+                    }
+                }
+            };
+            if (enableRemoteLoad !== false && window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.getRecipients) {
+                cfg.load = function (query, callback) {
+                    if (!query || !String(query).length) return callback();
+                    $.ajax({
+                        url: window.ClientDetailConfig.urls.getRecipients,
+                        dataType: 'json',
+                        data: { q: query },
+                        success: function (data) {
+                            callback((data && data.items) ? data.items : []);
+                        },
+                        error: function () {
+                            callback();
+                        }
+                    });
+                };
+            }
+            return cfg;
+        }
 
-                    cache: true
-
-
-
-                },
-
-            templateResult: formatRepo,
-
-            templateSelection: formatRepoSelection
-
+        $('.js-data-example-ajaxccapp').each(function () {
+            initTS(this, crmDetailRecipientTomSelectOptions('#matteremailmodal', true));
         });
 
-
-
-        $('.js-data-example-ajaxcontact').select2({
-
-                multiple: true,
-
-                closeOnSelect: false,
-
-                dropdownParent: $('#opentaskmodal'),
-
-                ajax: {
-
-                    url: window.ClientDetailConfig.urls.getRecipients,
-
-                    dataType: 'json',
-
-                    processResults: function (data) {
-
-                    // Transforms the top-level key of the response object from 'items' to 'results'
-
-                    return {
-
-                        results: data.items
-
-                    };
-
-
-
-                    },
-
-                    cache: true
-
-
-
-                },
-
-            templateResult: formatRepo,
-
-            templateSelection: formatRepoSelection
-
+        $('.js-data-example-ajaxcontact').each(function () {
+            initTS(this, crmDetailRecipientTomSelectOptions('#opentaskmodal', true));
         });
 
 
@@ -5878,77 +5854,29 @@ success: function(response) {
 
 
 
-            data.push({
-
-                id: id,
-
-                text: name,
-
-                html:  "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+            data.push({ id: id, name: name, email: email, status: status });
 
 
 
-                "<div  class='ag-flex ag-align-start'>" +
+            var $to = $('.js-data-example-ajax');
 
-                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
+            if ($to.length) {
 
-                    "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>"+email+"</small ></div>" +
+                var elTo = $to[0];
 
+                destroyTS(elTo);
 
+                initTS(elTo, $.extend({}, crmDetailRecipientTomSelectOptions('#emailmodal', false), {
 
-                "</div>" +
+                    options: data,
 
-                "</div>" +
+                    items: array.map(function (x) { return String(x); })
 
-                "<div class='ag-flex ag-flex-column ag-align-end'>" +
+                }));
 
+                $to.trigger('change');
 
-
-                    "<span class='ui label yellow select2-result-repository__statistics'>"+ status +
-
-
-
-                    "</span>" +
-
-                "</div>" +
-
-                "</div>",
-
-                title: name
-
-            });
-
-
-
-            $(".js-data-example-ajax").select2({
-
-                data: data,
-
-                escapeMarkup: function(markup) {
-
-                    return markup;
-
-                },
-
-                templateResult: function(data) {
-
-                    return data.html;
-
-                },
-
-                templateSelection: function(data) {
-
-                    return data.text;
-
-                }
-
-            })
-
-
-
-            $('.js-data-example-ajax').val(array);
-
-            $('.js-data-example-ajax').trigger('change');
+            }
 
         });
 
@@ -5994,53 +5922,27 @@ success: function(response) {
 
             var status = 'Client';
 
-            data.push({
+            data.push({ id: id, name: name, email: email, status: status });
 
-                id: id,
+            var $toGr = $('.js-data-example-ajax');
 
-                text: name,
+            if ($toGr.length) {
 
-                html:  "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+                var elToGr = $toGr[0];
 
-                    "<div  class='ag-flex ag-align-start'>" +
+                destroyTS(elToGr);
 
-                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
+                initTS(elToGr, $.extend({}, crmDetailRecipientTomSelectOptions('#emailmodal', false), {
 
-                    "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>"+email+"</small ></div>" +
+                    options: data,
 
-                    "</div>" +
+                    items: array.map(function (x) { return String(x); })
 
-                    "</div>" +
+                }));
 
-                    "<div class='ag-flex ag-flex-column ag-align-end'>" +
+                $toGr.trigger('change');
 
-                    "<span class='ui label yellow select2-result-repository__statistics'>"+ status +
-
-                    "</span>" +
-
-                    "</div>" +
-
-                    "</div>",
-
-                title: name
-
-            });
-
-            $(".js-data-example-ajax").select2({
-
-                data: data,
-
-                escapeMarkup: function(markup) { return markup; },
-
-                templateResult: function(data) { return data.html; },
-
-                templateSelection: function(data) { return data.text; }
-
-            });
-
-            $('.js-data-example-ajax').val(array);
-
-            $('.js-data-example-ajax').trigger('change');
+            }
 
             $('#emailmodal').one('shown.bs.modal', function(){
 
@@ -6334,149 +6236,19 @@ success: function(response) {
 
 
 
-        $('.js-data-example-ajax').select2({
+        $('.js-data-example-ajax').each(function () {
 
-                multiple: true,
-
-                closeOnSelect: false,
-
-                dropdownParent: $('#emailmodal'),
-
-                ajax: {
-
-                    url: window.ClientDetailConfig.urls.getRecipients,
-
-                    dataType: 'json',
-
-                    processResults: function (data) {
-
-                    // Transforms the top-level key of the response object from 'items' to 'results'
-
-                    return {
-
-                        results: data.items
-
-                    };
-
-
-
-                    },
-
-                    cache: true
-
-
-
-                },
-
-            templateResult: formatRepo,
-
-            templateSelection: formatRepoSelection
+            initTS(this, crmDetailRecipientTomSelectOptions('#emailmodal', true));
 
         });
 
 
 
-        $('.js-data-example-ajaxccd').select2({
+        $('.js-data-example-ajaxccd').each(function () {
 
-            multiple: true,
-
-            closeOnSelect: false,
-
-            dropdownParent: $('#emailmodal'),
-
-            ajax: {
-
-                url: window.ClientDetailConfig.urls.getRecipients,
-
-                dataType: 'json',
-
-                processResults: function (data) {
-
-                    // Transforms the top-level key of the response object from 'items' to 'results'
-
-                    return {
-
-                        results: data.items
-
-                    };
-
-                },
-
-                cache: true
-
-            },
-
-            templateResult: formatRepo,
-
-            templateSelection: formatRepoSelection
+            initTS(this, crmDetailRecipientTomSelectOptions('#emailmodal', true));
 
         });
-
-
-
-        function formatRepo (repo) {
-
-            if (repo.loading) {
-
-                return repo.text;
-
-            }
-
-
-
-            var $container = $(
-
-                "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-
-
-
-                    "<div  class='ag-flex ag-align-start'>" +
-
-                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
-
-                    "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
-
-
-
-                    "</div>" +
-
-                    "</div>" +
-
-                    "<div class='ag-flex ag-flex-column ag-align-end'>" +
-
-
-
-                    "<span class='ui label yellow select2-result-repository__statistics'>" +
-
-
-
-                    "</span>" +
-
-                    "</div>" +
-
-                "</div>"
-
-                );
-
-
-
-            $container.find(".select2-result-repository__title").text(repo.name);
-
-            $container.find(".select2-result-repository__description").text(repo.email);
-
-            $container.find(".select2-result-repository__statistics").append(repo.status);
-
-            return $container;
-
-        }
-
-
-
-        function formatRepoSelection (repo) {
-
-            return repo.name || repo.text;
-
-        }
 
 
 
@@ -7127,7 +6899,19 @@ success: function(response) {
 
             $('.create_education_docs').modal('show');
 
-            $("#checklist").select2({dropdownParent: $(".create_education_docs")});
+            initTS('#checklist', {
+
+                plugins: ['remove_button'],
+
+                allowEmptyOption: true,
+
+                closeAfterSelect: false,
+
+                dropdownParent: '.create_education_docs',
+
+                create: false
+
+            });
 
         });
 
@@ -7207,7 +6991,19 @@ success: function(response) {
 
             $('.create_migration_docs').modal('show');
 
-            $("#visa_checklist").select2({dropdownParent: $("#openmigrationdocsmodal")});
+            initTS('#visa_checklist', {
+
+                plugins: ['remove_button'],
+
+                allowEmptyOption: true,
+
+                closeAfterSelect: false,
+
+                dropdownParent: '#openmigrationdocsmodal',
+
+                create: false
+
+            });
 
         });
 
@@ -7223,7 +7019,19 @@ success: function(response) {
 
             $('.create_nomination_docs').modal('show');
 
-            $("#nomination_checklist").select2({dropdownParent: $("#opennominationdocsmodal")});
+            initTS('#nomination_checklist', {
+
+                plugins: ['remove_button'],
+
+                allowEmptyOption: true,
+
+                closeAfterSelect: false,
+
+                dropdownParent: '#opennominationdocsmodal',
+
+                create: false
+
+            });
 
         });
 

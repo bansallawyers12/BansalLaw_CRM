@@ -247,20 +247,23 @@
     });
 
     $(document).on('shown.bs.modal', '#changeMatterAssigneeModal', function () {
-        var $modal = $(this);
+        var modalEl = this;
         $('#change_sel_legal_practitioner_id, #change_sel_person_responsible_id, #change_sel_person_assisting_id, #change_office_id').each(function () {
-            var $el = $(this);
-            if ($el.data('select2')) $el.select2('destroy');
-            $el.select2({ dropdownParent: $modal, minimumResultsForSearch: 0, width: '100%' });
+            var el = this;
+            if (typeof destroyTS === 'function') destroyTS(el);
+            if (typeof initTS === 'function') {
+                initTS(el, { create: false, dropdownParent: modalEl });
+                var ts = el.tomselect;
+                if (ts && ts.wrapper) {
+                    ts.wrapper.style.width = '100%';
+                }
+            }
         });
     });
 
     $(document).on('hidden.bs.modal', '#changeMatterAssigneeModal', function () {
         $('#change_sel_legal_practitioner_id, #change_sel_person_responsible_id, #change_sel_person_assisting_id, #change_office_id').each(function () {
-            var $el = $(this);
-            if ($el.data('select2')) {
-                try { $el.select2('close'); } catch (e) { /* no-op */ }
-            }
+            if (typeof destroyTS === 'function') destroyTS(this);
         });
     });
 })(jQuery);

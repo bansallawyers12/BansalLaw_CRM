@@ -85,10 +85,92 @@
     else if (!disabled && typeof ts.enable === 'function') ts.enable();
   }
 
+  /**
+   * Single-select AJAX client picker for GET /clients/get-allclients?q=
+   * Items: { id, name, email, status, cid, ... } (same shape as legacy Select2).
+   * @param {{ url: string, dropdownParent?: string|HTMLElement, placeholder?: string, loadThrottle?: number, minQueryLength?: number }} opts
+   */
+  function buildGetAllClientsTomSelectConfig(opts) {
+    opts = opts || {};
+    var url = opts.url || '';
+    var dropdownParent = opts.dropdownParent !== undefined ? opts.dropdownParent : 'body';
+    var placeholder = opts.placeholder || 'Search client...';
+    var loadThrottle = opts.loadThrottle != null ? opts.loadThrottle : 250;
+    var minQueryLen = opts.minQueryLength != null ? opts.minQueryLength : 1;
+
+    return {
+      maxItems: 1,
+      plugins: ['clear_button'],
+      allowEmptyOption: true,
+      create: false,
+      placeholder: placeholder,
+      dropdownParent: dropdownParent,
+      valueField: 'id',
+      labelField: 'name',
+      searchField: ['name', 'email'],
+      loadThrottle: loadThrottle,
+      shouldLoad: function (query) {
+        return String(query || '').length >= minQueryLen;
+      },
+      render: {
+        option: function (item, escape) {
+          if (!item || item.loading) {
+            return '<div class="crm-ts-client-loading">…</div>';
+          }
+          var cidAttr = escape(String(item.cid != null ? item.cid : ''));
+          var name = escape(item.name || item.text || '');
+          var email = escape(item.email || '');
+          var status = item.status || '';
+          var statInner = '';
+          if (status === 'Archived') {
+            statInner = '<span class="ui label select2-result-repository__statistics">' + escape(status) + '</span>';
+          } else if (status) {
+            statInner = '<span class="ui label yellow select2-result-repository__statistics">' + escape(status) + '</span>';
+          }
+          return (
+            '<div data-id="' + cidAttr + '" class="selectclient select2-result-repository ag-flex ag-space-between ag-align-center">' +
+            '<div class="ag-flex ag-align-start">' +
+            '<div class="ag-flex ag-flex-column col-hr-1"><div class="ag-flex"><span class="select2-result-repository__title text-semi-bold">' + name + '</span>&nbsp;</div>' +
+            '<div class="ag-flex ag-align-center"><small class="select2-result-repository__description">' + email + '</small></div>' +
+            '</div></div>' +
+            '<div class="ag-flex ag-flex-column ag-align-end">' +
+            '<span class="select2resultrepositorystatistics">' + statInner + '</span>' +
+            '</div></div>'
+          );
+        },
+        item: function (item, escape) {
+          return '<div>' + escape(item.name || item.text || '') + '</div>';
+        }
+      },
+      load: function (query, callback) {
+        if (!url) {
+          callback();
+          return;
+        }
+        var sep = url.indexOf('?') >= 0 ? '&' : '?';
+        var qEnc = encodeURIComponent(String(query));
+        fetch(url + sep + 'q=' + qEnc, {
+          credentials: 'same-origin',
+          headers: { Accept: 'application/json' }
+        })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (data) {
+            callback(data && data.items ? data.items : []);
+          })
+          .catch(function () {
+            callback();
+          });
+      }
+    };
+  }
+
   global.initTS = initTS;
   global.destroyTS = destroyTS;
   global.openTS = openTS;
   global.setDisabledTS = setDisabledTS;
   /** @expose for callers that need duck-typing checks */
   global.getTomSelectInstance = getTS;
+  global.buildGetAllClientsTomSelectConfig = buildGetAllClientsTomSelectConfig;
 })(typeof window !== 'undefined' ? window : this);

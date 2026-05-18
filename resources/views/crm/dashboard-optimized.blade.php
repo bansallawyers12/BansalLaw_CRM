@@ -1278,6 +1278,15 @@
     display: block;
 }
 
+body > .ts-dropdown {
+    z-index: 10050 !important;
+}
+
+.popover .ts-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
 @media (max-width: 768px) {
     .popover {
         max-width: calc(100vw - 24px) !important;
@@ -1365,18 +1374,25 @@ $(function () {
             $('.add_my_task').popover('hide');
         });
         
-        // Initialize client Select2
+        // Initialize client picker (Tom Select)
         setTimeout(function() {
             initializeClientSelect2();
         }, 100);
     });
     
     // Hide backdrop when popover is hidden
+    $(document).on('hide.bs.popover', '.add_my_task', function() {
+        var $clientSelect = $('#assign_client_id');
+        if ($clientSelect.length && typeof destroyTS === 'function') {
+            destroyTS($clientSelect[0]);
+        }
+    });
+
     $(document).on('hidden.bs.popover', '.add_my_task', function() {
         $('.popover-backdrop').removeClass('show');
     });
     
-    // Function to initialize client Select2
+    // Function to initialize Add My Task client picker (Tom Select)
     function initializeClientSelect2() {
         var attempts = 0;
         var maxAttempts = 10;
@@ -1386,38 +1402,27 @@ $(function () {
             var $clientSelect = $('#assign_client_id');
             
             if ($clientSelect.length && $clientSelect.is(':visible')) {
-                if ($clientSelect.hasClass('select2-hidden-accessible')) {
-                    $clientSelect.select2('destroy');
+                if (typeof initTS !== 'function' || typeof buildGetAllClientsTomSelectConfig !== 'function' || typeof destroyTS !== 'function') {
+                    if (attempts < maxAttempts) {
+                        setTimeout(tryInitialize, 50);
+                    }
+                    return;
                 }
-                
                 try {
-                    $clientSelect.select2({
-                        closeOnSelect: true,
-                        placeholder: 'Search client...',
-                        allowClear: true,
-                        width: '100%',
-                        dropdownParent: $('.popover'),
-                        ajax: {
-                            url: '{{URL::to('/clients/get-allclients')}}',
-                            dataType: 'json',
-                            delay: 250,
-                            processResults: function (data) {
-                                if (!data || typeof data !== 'object') {
-                                    return { results: [] };
-                                }
-                                return {
-                                    results: data.items || []
-                                };
-                            },
-                            cache: true
-                        },
-                        templateResult: formatRepomainMYTask,
-                        templateSelection: formatRepoSelectionmainMYTask,
-                        minimumInputLength: 1
-                    });
+                    var el = $clientSelect[0];
+                    destroyTS(el);
+                    initTS(el, buildGetAllClientsTomSelectConfig({
+                        url: '{{URL::to('/clients/get-allclients')}}',
+                        dropdownParent: 'body',
+                        placeholder: 'Search client...'
+                    }));
+                    var w = el.tomselect && el.tomselect.wrapper;
+                    if (w) {
+                        w.style.width = '100%';
+                    }
                     return true;
                 } catch (error) {
-                    console.error('Error initializing Select2:', error);
+                    console.error('Error initializing client Tom Select:', error);
                     return false;
                 }
             } else if (attempts < maxAttempts) {
@@ -1428,38 +1433,7 @@ $(function () {
         tryInitialize();
     }
     
-    // Helper functions for Select2 templates
-    function formatRepomainMYTask (repo) {
-        if (repo.loading) {
-            return repo.text;
-        }
-        var cidSafe = String(repo.cid || '').replace(/'/g, '&#39;').replace(/&/g, '&amp;');
-        var $container = $(
-            "<div dataid='" + cidSafe + "' class='selectclient select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-            "<div class='ag-flex ag-align-start'>" +
-                "<div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span class='select2-result-repository__title text-semi-bold'></span>\u00A0</div>" +
-                "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small></div>" +
-            "</div>" +
-            "</div>" +
-            "<div class='ag-flex ag-flex-column ag-align-end'>" +
-                "<span class='select2resultrepositorystatistics'></span>" +
-            "</div>" +
-            "</div>"
-        );
-        $container.find(".select2-result-repository__title").text(repo.name || '');
-        $container.find(".select2-result-repository__description").text(repo.email || '');
-        var statClass = (repo.status == 'Archived') ? 'ui label select2-result-repository__statistics' : 'ui label yellow select2-result-repository__statistics';
-        if (repo.status) {
-            $container.find(".select2resultrepositorystatistics").append($('<span class="' + statClass + '"></span>').text(repo.status));
-        }
-        return $container;
-    }
-
-    function formatRepoSelectionmainMYTask (repo) {
-        return (repo && repo.name) || (repo && repo.text) || '';
-    }
-    
-    // Add My Task submission - matching action page exactly
+    // Add My Task submission — uses #assign_client_id native value (Tom Select syncs)
     // Use event delegation on document to catch clicks on dynamically loaded popover content
     $(document).on('click', '#add_my_task', function(e) {
         e.preventDefault();

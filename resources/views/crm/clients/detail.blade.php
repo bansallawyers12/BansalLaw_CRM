@@ -575,7 +575,7 @@ use App\Http\Controllers\Controller;
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="email_to">To <span class="span_req">*</span></label>
-								<select data-valid="required" class="js-data-example-ajax" name="email_to[]"></select>
+								<select multiple data-valid="required" class="js-data-example-ajax" name="email_to[]"></select>
 
 								@if ($errors->has('email_to'))
 									<span class="custom-error" role="alert">
@@ -587,7 +587,7 @@ use App\Http\Controllers\Controller;
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="email_cc">CC </label>
-								<select data-valid="" class="js-data-example-ajaxccd" name="email_cc[]"></select>
+								<select multiple data-valid="" class="js-data-example-ajaxccd" name="email_cc[]"></select>
 
 								@if ($errors->has('email_cc'))
 									<span class="custom-error" role="alert">
@@ -2096,7 +2096,11 @@ $(function () {
         matterBtn.addEventListener('click', function () {
             var $el = window.jQuery && window.jQuery('#sel_matter_id_client_detail');
             if ($el && $el.length) {
-                if ($el.hasClass('select2-hidden-accessible')) {
+                var el0 = $el[0];
+                var ts = (typeof window.getTomSelectInstance === 'function') ? window.getTomSelectInstance(el0) : null;
+                if (ts && typeof window.openTS === 'function') {
+                    window.openTS(el0);
+                } else if ($el.hasClass('select2-hidden-accessible')) {
                     $el.select2('open');
                 } else {
                     $el.trigger('focus');

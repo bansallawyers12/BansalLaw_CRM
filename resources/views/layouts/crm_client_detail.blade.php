@@ -537,6 +537,34 @@
             overflow-wrap: break-word !important;
             line-height: 1.4 !important;
         }
+
+        /* Sidebar matter dropdown - Tom Select equivalents */
+        .sidebar-matter-selection .ts-wrapper {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        .sidebar-matter-selection .ts-control {
+            height: auto !important;
+            min-height: 38px;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 6px !important;
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            word-break: break-word !important;
+            line-height: 1.4 !important;
+            padding-top: 6px !important;
+            padding-bottom: 6px !important;
+        }
+
+        /* Matter dropdown - wrap long option names (Tom Select) */
+        .matter-dropdown-wrap .option {
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            line-height: 1.4 !important;
+        }
         
         /* Application Status Badge */
         .matter-status-badge {
