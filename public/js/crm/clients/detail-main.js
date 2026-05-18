@@ -1145,11 +1145,11 @@ $(document).ready(function() {
 
 
 
-        //Initialize both Select2 dropdowns
+        //Initialize both Tom Select dropdowns
 
-        $('#reassign_client_id').select2();
+        initTS('#reassign_client_id', { create: false, dropdownParent: 'body' });
 
-        $('#reassign_client_matter_id').select2();
+        initTS('#reassign_client_matter_id', { create: false, dropdownParent: 'body' });
 
 
 
@@ -1201,15 +1201,19 @@ success: function(response) {
 
                         $('#reassign_client_matter_id').html(matterlist);
 
+                        // Reinit Tom Select so it picks up the new options
+                        initTS('#reassign_client_matter_id', { create: false, dropdownParent: 'body' });
+
                     }
 
                 });
 
-                $('#reassign_client_matter_id').prop('disabled', false).select2();
+                // Enable matter dropdown immediately while AJAX loads new options
+                setDisabledTS('#reassign_client_matter_id', false);
 
             } else {
 
-                $('#reassign_client_matter_id').prop('disabled', true).select2();
+                setDisabledTS('#reassign_client_matter_id', true);
 
             }
 
@@ -1261,11 +1265,11 @@ success: function(response) {
 
 
 
-        //Initialize both Select2 dropdowns
+        //Initialize both Tom Select dropdowns
 
-        $('#reassign_sent_client_id').select2();
+        initTS('#reassign_sent_client_id', { create: false, dropdownParent: 'body' });
 
-        $('#reassign_sent_client_matter_id').select2();
+        initTS('#reassign_sent_client_matter_id', { create: false, dropdownParent: 'body' });
 
 
 
@@ -1313,15 +1317,19 @@ success: function(response) {
 
                         $('#reassign_sent_client_matter_id').html(matterlist);
 
+                        // Reinit Tom Select so it picks up the new options
+                        initTS('#reassign_sent_client_matter_id', { create: false, dropdownParent: 'body' });
+
                     }
 
                 });
 
-                $('#reassign_sent_client_matter_id').prop('disabled', false).select2();
+                // Enable matter dropdown immediately while AJAX loads new options
+                setDisabledTS('#reassign_sent_client_matter_id', false);
 
             } else {
 
-                $('#reassign_sent_client_matter_id').prop('disabled', true).select2();
+                setDisabledTS('#reassign_sent_client_matter_id', true);
 
             }
 
@@ -1537,15 +1545,15 @@ success: function(response) {
 
             if (this.checked) {
 
-                $('#sel_matter_id').prop('disabled', true).trigger('change');
+                setDisabledTS('#sel_matter_id', true);
 
-                $('#sel_matter_id').removeAttr('data-valid').trigger('change');
+                $('#sel_matter_id').removeAttr('data-valid');
 
             } else {
 
-                $('#sel_matter_id').prop('disabled', false).trigger('change');
+                setDisabledTS('#sel_matter_id', false);
 
-                $('#sel_matter_id').attr('data-valid', 'required').trigger('change');
+                $('#sel_matter_id').attr('data-valid', 'required');
 
             }
 
@@ -6040,6 +6048,9 @@ success: function(response) {
 
                 if ($templateSelect.length && templateId) {
 
+                    // Update Tom Select UI first (if initialized), then sync native val + fire handler
+                    var _ts = (typeof getTomSelectInstance === 'function') ? getTomSelectInstance($templateSelect[0]) : null;
+                    if (_ts) { _ts.setValue(String(templateId), true); }
                     $templateSelect.val(templateId).trigger('change');
 
                 }
