@@ -608,18 +608,14 @@ $(document).ready(function() {
 
     // Matter assignee / edit matter details modal: public/js/crm/clients/matter-assignee-modal.js (loaded before this file)
 
-    // Convert Lead to Client modal: re-init Select2 with dropdownParent so dropdowns render inside modal
+    // Convert Lead to Client modal: re-init Tom Select with dropdownParent so dropdowns render inside modal
     $(document).on('shown.bs.modal', '#convertLeadToClientModal', function(){
 
-        var $modal = $(this);
+        var modal = this;
 
         $('#sel_legal_practitioner_id, #sel_person_responsible_id, #sel_person_assisting_id, #sel_office_id, #sel_matter_id').each(function(){
 
-            var $el = $(this);
-
-            if ($el.data('select2')) $el.select2('destroy');
-
-            $el.select2({ dropdownParent: $modal, minimumResultsForSearch: 0, width: '100%' });
+            initTS(this, { dropdownParent: modal, create: false });
 
         });
 
@@ -1087,7 +1083,7 @@ $(document).ready(function() {
 
 
 
-        $('.selecttemplate').select2({dropdownParent: $('#emailmodal')});
+        $('.selecttemplate').each(function () { initTS(this, { dropdownParent: '#emailmodal', create: false }); });
 
 
 
@@ -4235,8 +4231,8 @@ success: function(response) {
         // ──────────────────────────────────────────────────────────────────
         $(document).delegate('.costAssignmentCreateFormLead', 'click', function() {
             $('#cost_assignment_lead_id').val(window.ClientDetailConfig.clientId);
-            $('#sel_legal_practitioner_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').select2({
-                dropdownParent: $('#costAssignmentCreateFormModelLead')
+            $('#sel_legal_practitioner_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').each(function () {
+                initTS(this, { dropdownParent: '#costAssignmentCreateFormModelLead', create: false });
             });
             $('#costAssignmentCreateFormModelLead').modal('show');
         });
