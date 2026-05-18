@@ -111,6 +111,36 @@ use App\Http\Controllers\Controller;
             if ($cdnMatterRefLabel) {
                 $cdnClientMatterKey .= ' / ' . $cdnMatterRefLabel;
             }
+
+            $__ftRaw = $fetchedData->type ?? null;
+            $__ftStr = $__ftRaw === null ? '' : trim((string) $__ftRaw);
+            $__crmIsLeadType = ($__ftRaw === 1)
+                || in_array($__ftStr, ['lead', 'l', '1'], true);
+
+            // Mirror tab-strip "Last update on" visibility (hero renders before nav $matter_cnt).
+            $cdnHeroTabSlugList = [
+                'personaldetails', 'overview', 'companydetails', 'activityfeed', 'clientaction', 'noteterm', 'personaldocuments', 'matterdocuments', 'documents', 'nominationdocuments',
+                'emails', 'client_portal', 'legalforms',
+                'formgenerations', 'formgenerationsl',
+                'application', 'workflow', 'checklists', 'account', 'notuseddocuments',
+                'visadocuments',
+            ];
+            $cdnHeroIsMatterIdInUrl = isset($id1) && $id1 !== '' && ! in_array(strtolower((string) $id1), array_map('strtolower', $cdnHeroTabSlugList), true);
+            $cdnHeroMatterCntForLastUpdate = \App\Models\ClientMatter::query()
+                ->where('client_id', $fetchedData->id)
+                ->where(function ($q) {
+                    $q->where('matter_status', 1)->orWhere('matter_status', '1');
+                })
+                ->count();
+            $cdnHeroShowMatterDocsForConvertedLead = ! $__crmIsLeadType
+                && strtolower(trim((string) ($fetchedData->lead_status ?? ''))) === 'converted';
+            $cdnHeroLastUpdateOn = null;
+            if (($cdnHeroIsMatterIdInUrl || $cdnHeroMatterCntForLastUpdate > 0 || $cdnHeroShowMatterDocsForConvertedLead) && ! empty($fetchedData->updated_at)) {
+                try {
+                    $cdnHeroLastUpdateOn = \Carbon\Carbon::parse($fetchedData->updated_at)->format('d/m/Y');
+                } catch (\Throwable $e) {
+                }
+            }
         @endphp
 
         <section class="cdn-client-hero" aria-label="Client summary">
@@ -118,9 +148,19 @@ use App\Http\Controllers\Controller;
                 <div class="cdn-client-hero__identity">
                     <div class="cdn-client-hero__avatar" aria-hidden="true">{{ $cdnInitials }}</div>
                     <div class="cdn-client-hero__text">
-                        <h1 class="cdn-client-hero__name">
-                            {{ trim($cdnFn . ' ' . $cdnLn) }}
-                        </h1>
+                        <div class="cdn-client-hero__name-row">
+                            <h1 class="cdn-client-hero__name">
+                                {{ trim($cdnFn . ' ' . $cdnLn) }}
+                            </h1>
+                            @if(empty($fetchedData->is_company))
+                                <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}"
+                                   class="cdn-client-hero__name-edit"
+                                   title="{{ $__crmIsLeadType ? 'Edit Lead' : 'Edit Client' }}"
+                                   aria-label="{{ $__crmIsLeadType ? 'Edit Lead' : 'Edit Client' }}">
+                                    <i class="fa fa-edit" aria-hidden="true"></i>
+                                </a>
+                            @endif
+                        </div>
                         <div class="cdn-client-hero__meta">
                             <span class="cdn-client-hero__meta-item">{{ $cdnClientMatterKey }}</span>
                             @if($cdnAssigneeName)
@@ -168,6 +208,9 @@ use App\Http\Controllers\Controller;
                         <button type="button" class="btn cdn-client-hero__action-btn clientemail" data-id="{{ @$fetchedData->id }}" data-email="{{ @$fetchedData->email }}" data-name="{{ trim(($cdnFn ?? '').' '.($cdnLn ?? '')) }}" title="Compose mail">Send Email</button>
                         <button type="button" class="btn cdn-client-hero__action-btn send-sms-btn" data-client-id="{{ @$fetchedData->id }}" data-client-name="{{ trim(($cdnFn ?? '').' '.($cdnLn ?? '')) }}" title="Send SMS">Send SMS</button>
                     </div>
+                    @if($cdnHeroLastUpdateOn)
+                        <p class="cdn-client-hero__last-update">Last update on {{ $cdnHeroLastUpdateOn }}</p>
+                    @endif
                 </div>
             </div>
         </section>
@@ -406,18 +449,6 @@ use App\Http\Controllers\Controller;
             }
             ?>
         </nav>
-        @if(($isMatterIdInUrl || $matter_cnt > 0 || $crmShowMatterDocsForConvertedLead) && !empty($fetchedData->updated_at))
-            @php
-                $cdnMainTabLastUpdated = null;
-                try {
-                    $cdnMainTabLastUpdated = \Carbon\Carbon::parse($fetchedData->updated_at)->format('d/m/Y');
-                } catch (\Throwable $e) {
-                }
-            @endphp
-            @if($cdnMainTabLastUpdated)
-                <p class="cdn-tab-last-updated">Last update on {{ $cdnMainTabLastUpdated }}</p>
-            @endif
-        @endif
         </div>
     </aside>
 
@@ -433,10 +464,6 @@ use App\Http\Controllers\Controller;
                 // Subtab strip only for leads (Personal | Matter); clients use main-nav Matter documents tab.
                 $cdnDocStripVisibleDemo = ! empty($cdnShowMattersDocSubtab)
                     && in_array($cdnDocStripTab, ['personaldocuments', 'matterdocuments'], true);
-                $__ftRaw = $fetchedData->type ?? null;
-                $__ftStr = $__ftRaw === null ? '' : trim((string) $__ftRaw);
-                $__crmIsLeadType = ($__ftRaw === 1)
-                    || in_array($__ftStr, ['lead', 'l', '1'], true);
             @endphp
             @if(!empty($cdnShowMattersDocSubtab))
             <div id="cdn-doc-subtab-strip" class="cdn-doc-subtab-strip{{ $cdnDocStripVisibleDemo ? ' is-visible' : '' }}" role="tablist" aria-label="Personal documents or matter documents">
@@ -446,12 +473,8 @@ use App\Http\Controllers\Controller;
             @endif
             <!-- Tab Contents -->
             <div class="tab-content" id="tab-content">
-            @if(empty($fetchedData->is_company))
+            @if(empty($fetchedData->is_company) && $__crmIsLeadType)
             <div class="lead-actions-bar">
-                <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}" class="btn btn-sm btn-secondary">
-                    <i class="fa fa-edit"></i> {{ $__crmIsLeadType ? 'Edit Lead' : 'Edit Client' }}
-                </a>
-                @if($__crmIsLeadType)
                 <a href="{{ route('leads.history', base64_encode(convert_uuencode($fetchedData->id))) }}" class="btn btn-sm btn-warning lead-actions-bar__history">
                     <i class="fa fa-history"></i> View History
                 </a>
@@ -472,7 +495,6 @@ use App\Http\Controllers\Controller;
                 <span class="btn btn-sm btn-secondary disabled">
                     <i class="fa fa-check"></i> Converted to Client
                 </span>
-                @endif
                 @endif
             </div>
             @endif

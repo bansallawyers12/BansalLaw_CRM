@@ -164,7 +164,7 @@
 </div>
 
 <script>
-// Globals from layout @vite(resources/js/app.js). Deferred modules run before DOMContentLoaded,
+// Globals from layout @@vite(['resources/js/app.js']). Deferred modules run before DOMContentLoaded,
 // so on this page init (inside DOMContentLoaded) FullCalendar is usually already defined.
 // Poll anyway: missing manifest/build, slow networks, or future layout/script order changes.
 function waitForFullCalendar(callback, maxAttempts = 100) {
