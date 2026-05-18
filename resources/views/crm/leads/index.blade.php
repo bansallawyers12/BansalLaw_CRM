@@ -831,9 +831,9 @@
                 });
             });
 
-            var $to = $('.js-data-example-ajax');
+            var $to = $('#emailmodal .js-data-example-ajax');
             if ($to.length && typeof initRecipientsMultiTomSelectPreload === 'function') {
-                initRecipientsMultiTomSelectPreload($to[0], { dropdownParent: '#emailmodal', options: data, items: array });
+                initRecipientsMultiTomSelectPreload($to[0], { url: crmRecipientsUrl, dropdownParent: '#emailmodal', options: data, items: array });
             }
 
         });
@@ -856,9 +856,9 @@
                 status: status
             });
 
-            var $to = $('.js-data-example-ajax');
+            var $to = $('#emailmodal .js-data-example-ajax');
             if ($to.length && typeof initRecipientsMultiTomSelectPreload === 'function') {
-                initRecipientsMultiTomSelectPreload($to[0], { dropdownParent: '#emailmodal', options: data, items: array });
+                initRecipientsMultiTomSelectPreload($to[0], { url: crmRecipientsUrl, dropdownParent: '#emailmodal', options: data, items: array });
             }
 
         });
@@ -887,14 +887,14 @@
         });
 
         if (typeof initTS === 'function' && typeof buildCrmGetRecipientsMultiTomSelectConfig === 'function') {
-            $('.js-data-example-ajax').each(function () {
+            $('#emailmodal .js-data-example-ajax').each(function () {
                 initTS(this, buildCrmGetRecipientsMultiTomSelectConfig({
                     url: crmRecipientsUrl,
                     dropdownParent: '#emailmodal',
                     enableRemoteLoad: true
                 }));
             });
-            $('.js-data-example-ajaxcc').each(function () {
+            $('#emailmodal .js-data-example-ajaxcc').each(function () {
                 initTS(this, buildCrmGetRecipientsMultiTomSelectConfig({
                     url: crmRecipientsUrl,
                     dropdownParent: '#emailmodal',

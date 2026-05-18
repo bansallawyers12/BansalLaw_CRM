@@ -328,8 +328,7 @@
 		</div>
 	</div>
 </div>
-@endsection
-@push('scripts')
+
 <div id="emailmodal"  data-backdrop="static" data-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
@@ -446,6 +445,8 @@
 		</div>
 	</div>
 </div>
+@endsection
+@push('scripts')
 <script src="{{URL::to('/')}}/public/js/popover.js"></script>  
 <script> 
 
@@ -520,7 +521,7 @@ $(function () {
 		});
 	}
 
-	$(document).delegate('.selecttemplate', 'change', function(){
+	$(document).delegate('#emailmodal .selecttemplate', 'change', function(){
 	var v = $(this).val();
 	$.ajax({
 		url: '{{URL::to('/get-templates')}}',

@@ -1,5 +1,5 @@
 /**
- * Notes module - Create, edit, view notes; getallnotes; Select2 format helpers
+ * Notes module - Create, edit, view notes; getallnotes; legacy formatRepo helpers for inline scripts
  * Extracted from detail-main.js - Phase 3b refactoring.
  * Requires: jQuery, ClientDetailConfig, clearEditor, setEditorContent, adjustActivityFeedHeight
  */
@@ -148,22 +148,17 @@
             }
         });
 
-        if ($('#create_note').length && $('.js-data-example-ajaxcc').length) {
-            $('.js-data-example-ajaxcc').select2({
-                multiple: true,
-                closeOnSelect: false,
-                dropdownParent: $('#create_note'),
-                ajax: {
-                    url: window.ClientDetailConfig.urls.getRecipients,
-                    dataType: 'json',
-                    processResults: function(data) {
-                        return { results: data.items };
-                    },
-                    cache: true
-                },
-                templateResult: formatRepo,
-                templateSelection: formatRepoSelection
-            });
+        if ($('#create_note').length && $('#create_note .js-data-example-ajaxcc').length) {
+            if (typeof initTS === 'function' && typeof buildCrmGetRecipientsMultiTomSelectConfig === 'function' &&
+                window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.getRecipients) {
+                $('#create_note .js-data-example-ajaxcc').each(function () {
+                    initTS(this, buildCrmGetRecipientsMultiTomSelectConfig({
+                        url: window.ClientDetailConfig.urls.getRecipients,
+                        dropdownParent: '#create_note',
+                        enableRemoteLoad: true
+                    }));
+                });
+            }
         }
 
         $(document).on('click', '.opennoteform', function(e) {

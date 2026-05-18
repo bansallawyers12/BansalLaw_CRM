@@ -750,6 +750,8 @@
 (function($) {
     'use strict';
     $(document).ready(function() {
+        var crmRecipientsComposeUrl = '{{ URL::to('/clients/get-recipients') }}';
+
         var $btnAdd = $('#btn-add-checklist');
         var $dropdown = $('#checklist-create-dropdown');
         var $matterSelect = $('#checklist_matter_select');
@@ -890,38 +892,26 @@
 
             $('#compose_email_subject').val(subject);
 
-            // Set To field with client
-            var array = [];
-            var data = [];
-            if (clientId && clientEmail) {
-                array.push(clientId);
-                data.push({
-                    id: clientId,
-                    text: clientName || clientEmail,
-                    html: "<div class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-                        "<div class='ag-flex ag-align-start'><div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span class='select2-result-repository__title text-semi-bold'>" + (clientName || clientEmail) + "</span></div>" +
-                        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>" + clientEmail + "</small></div></div></div>" +
-                        "<div class='ag-flex ag-flex-column ag-align-end'><span class='ui label yellow select2-result-repository__statistics'>Client</span></div></div>",
-                    title: clientName || clientEmail
+            var $toSelect = $('#emailmodal .js-data-example-ajax');
+            if ($toSelect.length && typeof destroyTS === 'function') {
+                destroyTS($toSelect[0]);
+            }
+            if ($toSelect.length && typeof initRecipientsMultiTomSelectPreload === 'function') {
+                initRecipientsMultiTomSelectPreload($toSelect[0], {
+                    url: crmRecipientsComposeUrl,
+                    dropdownParent: '#emailmodal',
+                    options: [
+                        {
+                            id: clientId,
+                            name: (clientName.trim() || clientEmail || '').trim() || clientEmail,
+                            email: clientEmail,
+                            status: 'Client'
+                        }
+                    ],
+                    items: [clientId]
                 });
             }
 
-            var $toSelect = $('#emailmodal .js-data-example-ajax');
-            if ($toSelect.data('select2')) {
-                $toSelect.select2('destroy');
-            }
-            $toSelect.select2({
-                data: data,
-                escapeMarkup: function(markup) { return markup; },
-                templateResult: function(d) { return d.html; },
-                templateSelection: function(d) { return d.text; },
-                dropdownParent: $('#emailmodal'),
-                multiple: true,
-                closeOnSelect: false
-            });
-            $toSelect.val(array).trigger('change');
-
-            // Set TinyMCE content after modal is shown
             $('#emailmodal').one('shown.bs.modal', function() {
                 if (typeof setTinyMCEContent === 'function') {
                     setTinyMCEContent('compose_email_message', message);
@@ -999,38 +989,26 @@
 
             $('#compose_email_subject').val(subject);
 
-            // Set To field: use client (recipient ID) for backend compatibility
-            var array = [];
-            var data = [];
-            if (clientId && clientEmail) {
-                array.push(clientId);
-                data.push({
-                    id: clientId,
-                    text: clientName || clientEmail,
-                    html: "<div class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-                        "<div class='ag-flex ag-align-start'><div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span class='select2-result-repository__title text-semi-bold'>" + (clientName || clientEmail) + "</span></div>" +
-                        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>" + clientEmail + "</small></div></div></div>" +
-                        "<div class='ag-flex ag-flex-column ag-align-end'><span class='ui label yellow select2-result-repository__statistics'>Client</span></div></div>",
-                    title: clientName || clientEmail
+            var $sigTo = $('#emailmodal .js-data-example-ajax');
+            if ($sigTo.length && typeof destroyTS === 'function') {
+                destroyTS($sigTo[0]);
+            }
+            if ($sigTo.length && typeof initRecipientsMultiTomSelectPreload === 'function') {
+                initRecipientsMultiTomSelectPreload($sigTo[0], {
+                    url: crmRecipientsComposeUrl,
+                    dropdownParent: '#emailmodal',
+                    options: [
+                        {
+                            id: clientId,
+                            name: (clientName.trim() || clientEmail || '').trim() || clientEmail,
+                            email: clientEmail,
+                            status: 'Client'
+                        }
+                    ],
+                    items: [clientId]
                 });
             }
 
-            var $toSelect = $('.js-data-example-ajax');
-            if ($toSelect.length && $toSelect.data('select2')) {
-                $toSelect.select2('destroy');
-            }
-            $('.js-data-example-ajax').select2({
-                data: data,
-                escapeMarkup: function(markup) { return markup; },
-                templateResult: function(d) { return d.html; },
-                templateSelection: function(d) { return d.text; },
-                dropdownParent: $('#emailmodal'),
-                multiple: true,
-                closeOnSelect: false
-            });
-            $('.js-data-example-ajax').val(array).trigger('change');
-
-            // Subject set above; message will come from First Email template when getComposeDefaults loads it
             $('#emailmodal').modal('show');
         });
 

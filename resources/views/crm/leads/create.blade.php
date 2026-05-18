@@ -1132,112 +1132,49 @@
         }
     }
     
-    // Initialize Select2 for contact person search
+    function fillLeadContactPersonFields(item) {
+        if (!item) return;
+        $('#contactPersonFirstName').val(item.first_name || '');
+        $('#contactPersonLastName').val(item.last_name || '');
+        $('#contactPersonPhone').val(item.phone || '');
+        $('#contactPersonEmailDisplay').val(item.email || '');
+        $('.contact-person-field').addClass('field-auto-filled');
+    }
+
+    function clearLeadContactPersonFields() {
+        $('#contactPersonFirstName').val('');
+        $('#contactPersonLastName').val('');
+        $('#contactPersonPhone').val('');
+        $('#contactPersonEmailDisplay').val('');
+        $('.contact-person-field').removeClass('field-auto-filled');
+        $('#associatedPersonAlert').hide();
+    }
+
+    /** Tom Select AJAX for company lead contact person (#contactPersonEmail). */
     function initContactPersonSearch() {
-        const contactPersonSelect = $('#contactPersonEmail');
-        
-        // Check if Select2 is already initialized
-        if (contactPersonSelect.hasClass('select2-hidden-accessible')) {
-            return; // Already initialized
-        }
-        
-        // Check if Select2 library is available
-        if (typeof $.fn.select2 === 'undefined') {
-            console.warn('Select2 library not loaded. Contact person search will not work.');
+        var el = document.getElementById('contactPersonEmail');
+        if (!el) return;
+        if (typeof TomSelect === 'undefined' || typeof initTS !== 'function' || typeof buildContactPersonSearchTomSelectConfig !== 'function') {
+            console.warn('Tom Select helpers not loaded. Contact person search will not work.');
             return;
         }
-        
-        contactPersonSelect.select2({
-            ajax: {
-                url: '{{ route("api.search.contact.person") }}',
-                dataType: 'json',
-                delay: 250,
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                data: function (params) {
-                    return {
-                        q: params.term, // search term
-                        exclude_id: null // Can exclude current lead if editing
-                    };
-                },
-                processResults: function (data) {
-                    // Validate response format
-                    if (!data || typeof data !== 'object') {
-                        console.error('Invalid response format:', data);
-                        return { results: [] };
-                    }
-                    
-                    // Check if results array exists
-                    if (!data.results || !Array.isArray(data.results)) {
-                        console.warn('Response missing results array:', data);
-                        return { results: [] };
-                    }
-                    
-                    // Map results to Select2 format
-                    try {
-                        return {
-                            results: data.results.map(function(item) {
-                                return {
-                                    id: item.id,
-                                    text: item.text || (item.first_name + ' ' + item.last_name),
-                                    first_name: item.first_name || '',
-                                    last_name: item.last_name || '',
-                                    email: item.email || '',
-                                    phone: item.phone || '',
-                                    client_id: item.client_id || ''
-                                };
-                            })
-                        };
-                    } catch (error) {
-                        console.error('Error processing results:', error, data);
-                        return { results: [] };
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Contact person search error:', {
-                        status: status,
-                        error: error,
-                        response: xhr.responseText,
-                        statusCode: xhr.status
-                    });
-                    // Return empty results instead of showing error
-                    return { results: [] };
-                },
-                cache: true
-            },
-            minimumInputLength: 2,
+        if (el.tomselect) {
+            return;
+        }
+        var cfg = buildContactPersonSearchTomSelectConfig({
+            url: '{{ route("api.search.contact.person") }}',
+            dropdownParent: 'body',
             placeholder: 'Type phone, email, name, or client ID to search...',
-            allowClear: true,
-            width: '100%'
+            minQueryLength: 2
         });
-        
-        // Auto-fill contact person details when selected
-        contactPersonSelect.on('select2:select', function (e) {
-            const data = e.params.data;
-            
-            // Auto-fill fields
-            $('#contactPersonFirstName').val(data.first_name || '');
-            $('#contactPersonLastName').val(data.last_name || '');
-            $('#contactPersonPhone').val(data.phone || '');
-            $('#contactPersonEmailDisplay').val(data.email || '');
-            
-            // Add visual indicator
-            $('.contact-person-field').addClass('field-auto-filled');
-            
-            // Store contact person ID (already in select value)
-            console.log('Contact person selected:', data);
-        });
-        
-        // Clear fields when selection is cleared
-        contactPersonSelect.on('select2:clear', function (e) {
-            $('#contactPersonFirstName').val('');
-            $('#contactPersonLastName').val('');
-            $('#contactPersonPhone').val('');
-            $('#contactPersonEmailDisplay').val('');
-            $('.contact-person-field').removeClass('field-auto-filled');
-            $('#associatedPersonAlert').hide();
-        });
+        cfg.onItemAdd = function (value) {
+            var item = this.options[value];
+            fillLeadContactPersonFields(item);
+        };
+        cfg.onClear = function () {
+            clearLeadContactPersonFields();
+        };
+        initTS(el, cfg);
     }
     
     // Check phone/email for matching contact person (company leads only)
@@ -1267,19 +1204,38 @@
                     if (res.found && res.person) {
                         $('#associatedPersonName').text(res.person.first_name + ' ' + res.person.last_name + (res.person.client_id ? ' (' + res.person.client_id + ')' : ''));
                         $('#associatedPersonAlert').show();
-                        const $select = $('#contactPersonEmail');
-                        const existingOpt = $select.find('option[value="' + res.person.id + '"]');
-                        if (existingOpt.length) {
-                            $select.val(res.person.id).trigger('change');
+                        var selEl = document.getElementById('contactPersonEmail');
+                        if (selEl && selEl.tomselect) {
+                            var ts = selEl.tomselect;
+                            var p = res.person;
+                            ts.clear(true);
+                            ts.addOption({
+                                id: p.id,
+                                text: p.text,
+                                first_name: p.first_name || '',
+                                last_name: p.last_name || '',
+                                email: p.email || '',
+                                phone: p.phone || '',
+                                client_id: p.client_id || ''
+                            });
+                            ts.setValue(p.id, true);
+                            var opt = ts.options[p.id] || ts.options[String(p.id)];
+                            fillLeadContactPersonFields(opt || p);
                         } else {
-                            const option = new Option(res.person.text, res.person.id, true, true);
-                            $select.append(option).trigger('change');
+                            const $select = $('#contactPersonEmail');
+                            const existingOpt = $select.find('option[value="' + res.person.id + '"]');
+                            if (existingOpt.length) {
+                                $select.val(res.person.id).trigger('change');
+                            } else {
+                                const option = new Option(res.person.text, res.person.id, true, true);
+                                $select.append(option).trigger('change');
+                            }
+                            $('#contactPersonFirstName').val(res.person.first_name || '');
+                            $('#contactPersonLastName').val(res.person.last_name || '');
+                            $('#contactPersonPhone').val(res.person.phone || '');
+                            $('#contactPersonEmailDisplay').val(res.person.email || '');
+                            $('.contact-person-field').addClass('field-auto-filled');
                         }
-                        $('#contactPersonFirstName').val(res.person.first_name || '');
-                        $('#contactPersonLastName').val(res.person.last_name || '');
-                        $('#contactPersonPhone').val(res.person.phone || '');
-                        $('#contactPersonEmailDisplay').val(res.person.email || '');
-                        $('.contact-person-field').addClass('field-auto-filled');
                     } else {
                         $('#associatedPersonAlert').hide();
                     }

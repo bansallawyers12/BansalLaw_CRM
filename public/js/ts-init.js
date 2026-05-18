@@ -245,18 +245,90 @@
   }
 
   /**
-   * Preload-only multi recipient select (compose from row / bulk) + optional post-init trigger.
+   * Single-select AJAX contact person (company lead create, company edit).
+   * GET url with q= and optional exclude_id=; response { results: [{ id, text, first_name, last_name, email, phone, client_id }] }.
+   * @param {{ url: string, excludeId?: string|number, dropdownParent?: string|HTMLElement, placeholder?: string, loadThrottle?: number, minQueryLength?: number }} opts
+   */
+  function buildContactPersonSearchTomSelectConfig(opts) {
+    opts = opts || {};
+    var url = opts.url || '';
+    var dropdownParent = opts.dropdownParent !== undefined ? opts.dropdownParent : 'body';
+    var loadThrottle = opts.loadThrottle != null ? opts.loadThrottle : 250;
+    var minQueryLen = opts.minQueryLength != null ? opts.minQueryLength : 2;
+    var excludeId = opts.excludeId !== undefined && opts.excludeId !== null ? opts.excludeId : null;
+
+    return {
+      maxItems: 1,
+      plugins: ['clear_button'],
+      allowEmptyOption: true,
+      create: false,
+      placeholder: opts.placeholder || 'Type phone, email, name, or client ID to search...',
+      dropdownParent: dropdownParent,
+      valueField: 'id',
+      labelField: 'text',
+      searchField: ['text', 'first_name', 'last_name', 'email', 'phone', 'client_id'],
+      loadThrottle: loadThrottle,
+      shouldLoad: function (query) {
+        return String(query || '').length >= minQueryLen;
+      },
+      render: {
+        option: function (item, escape) {
+          if (!item || item.loading) {
+            return '<div class="crm-ts-contact-person-loading">Searching…</div>';
+          }
+          return '<div>' + escape(item.text || '') + '</div>';
+        },
+        item: function (item, escape) {
+          return '<div>' + escape(item.text || '') + '</div>';
+        }
+      },
+      load: function (query, callback) {
+        if (!url) {
+          callback([]);
+          return;
+        }
+        var sep = url.indexOf('?') >= 0 ? '&' : '?';
+        var u = url + sep + 'q=' + encodeURIComponent(String(query));
+        if (excludeId != null && String(excludeId) !== '') {
+          u += '&exclude_id=' + encodeURIComponent(String(excludeId));
+        }
+        fetch(u, {
+          credentials: 'same-origin',
+          headers: { Accept: 'application/json' }
+        })
+          .then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+          })
+          .then(function (data) {
+            callback(data && Array.isArray(data.results) ? data.results : []);
+          })
+          .catch(function () {
+            callback([]);
+          });
+      }
+    };
+  }
+
+  /**
+   * Multi recipient select with preloaded options/items; can keep AJAX search when opts.url is set.
    * @param {JQuery|Element|string} el
-   * @param {{ dropdownParent?: string|HTMLElement, options: Array<{id:any,name?:string,email?:string,status?:string}>, items: Array<any>, triggerChange?: boolean }} opts
+   * @param {{ url?: string, dropdownParent?: string|HTMLElement, enableRemoteLoad?: boolean, options: Array<{id:any,name?:string,email?:string,status?:string}>, items: Array<any>, triggerChange?: boolean }} opts
    */
   function initRecipientsMultiTomSelectPreload(el, opts) {
+    opts = opts || {};
     var sel = getNativeSelect(el);
-    if (!sel || !opts) return null;
+    if (!sel) return null;
     destroyTS(sel);
+    var url = opts.url != null ? String(opts.url).trim() : '';
+    var enableRemote =
+      opts.enableRemoteLoad !== undefined && opts.enableRemoteLoad !== null
+        ? !!opts.enableRemoteLoad
+        : !!url;
     var base = buildCrmGetRecipientsMultiTomSelectConfig({
-      url: '',
+      url: url,
       dropdownParent: opts.dropdownParent != null ? opts.dropdownParent : '#emailmodal',
-      enableRemoteLoad: false
+      enableRemoteLoad: enableRemote
     });
     var items = (opts.items || []).map(function (x) {
       return String(x);
@@ -277,4 +349,5 @@
   global.buildGetAllClientsTomSelectConfig = buildGetAllClientsTomSelectConfig;
   global.buildCrmGetRecipientsMultiTomSelectConfig = buildCrmGetRecipientsMultiTomSelectConfig;
   global.initRecipientsMultiTomSelectPreload = initRecipientsMultiTomSelectPreload;
+  global.buildContactPersonSearchTomSelectConfig = buildContactPersonSearchTomSelectConfig;
 })(typeof window !== 'undefined' ? window : this);

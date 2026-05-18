@@ -653,63 +653,41 @@
     
     <script>
     $(document).ready(function() {
-        // Initialize Select2 for contact person search
-        $('#contactPersonSearch').select2({
-            ajax: {
-                url: window.editClientConfig.searchContactPersonRoute,
-                dataType: 'json',
-                delay: 250,
-                data: function (params) {
-                    return {
-                        q: params.term, // search term
-                        exclude_id: window.currentClientId // Exclude current company being edited
-                    };
-                },
-                processResults: function (data) {
-                    return {
-                        results: data.results.map(function(item) {
-                            return {
-                                id: item.id,
-                                text: item.text,
-                                first_name: item.first_name,
-                                last_name: item.last_name,
-                                email: item.email,
-                                phone: item.phone,
-                                client_id: item.client_id
-                            };
-                        })
-                    };
-                },
-                cache: true
-            },
-            minimumInputLength: 2,
-            placeholder: 'Type phone, email, name, or client ID to search...',
-            allowClear: true
-        });
-        
-        // Auto-fill contact person details when selected
-        $('#contactPersonSearch').on('select2:select', function (e) {
-            const data = e.params.data;
-            
-            // Auto-fill fields
-            $('#contactPersonFirstName').val(data.first_name);
-            $('#contactPersonLastName').val(data.last_name);
-            $('#contactPersonPhone').val(data.phone || '');
-            $('#contactPersonEmailDisplay').val(data.email);
-            
-            // Add visual indicator
+        function fillCompanyEditContactPerson(item) {
+            if (!item) return;
+            $('#contactPersonFirstName').val(item.first_name || '');
+            $('#contactPersonLastName').val(item.last_name || '');
+            $('#contactPersonPhone').val(item.phone || '');
+            $('#contactPersonEmailDisplay').val(item.email || '');
             $('.contact-person-field').addClass('field-auto-filled');
-        });
-        
-        // Clear fields when selection is cleared
-        $('#contactPersonSearch').on('select2:clear', function (e) {
+        }
+        function clearCompanyEditContactPerson() {
             $('#contactPersonFirstName').val('');
             $('#contactPersonLastName').val('');
             $('#contactPersonPhone').val('');
             $('#contactPersonEmailDisplay').val('');
             $('.contact-person-field').removeClass('field-auto-filled');
-        });
-        
+        }
+
+        var cpEl = document.getElementById('contactPersonSearch');
+        if (cpEl && typeof TomSelect !== 'undefined' && typeof initTS === 'function' && typeof buildContactPersonSearchTomSelectConfig === 'function') {
+            var cpCfg = buildContactPersonSearchTomSelectConfig({
+                url: window.editClientConfig.searchContactPersonRoute,
+                excludeId: window.currentClientId,
+                dropdownParent: 'body',
+                placeholder: 'Type phone, email, name, or client ID to search...',
+                minQueryLength: 2
+            });
+            cpCfg.onItemAdd = function (value) {
+                var item = this.options[value] || this.options[String(value)];
+                fillCompanyEditContactPerson(item);
+            };
+            cpCfg.onClear = function () {
+                clearCompanyEditContactPerson();
+            };
+            initTS(cpEl, cpCfg);
+        }
+
         // Format ABN/ACN input (strip non-digits)
         $('#abn, #acn').on('input', function() {
             this.value = this.value.replace(/\D/g, '');
