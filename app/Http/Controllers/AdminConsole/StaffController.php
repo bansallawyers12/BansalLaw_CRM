@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Schema;
 
 class StaffController extends Controller
 {
@@ -252,6 +253,10 @@ class StaffController extends Controller
                 return redirect()->back()->withInput()->with('error', 'Only Superadmin role user can provide this access.');
             }
 
+            if (! $isSuperAdminActor && $request->has('trust_rule42_supervisor')) {
+                return redirect()->back()->withInput()->with('error', 'Only Superadmin role user can set Rule 42 supervisor authority.');
+            }
+
             $prevQuickEnabled = (bool) ($obj->quick_access_enabled ?? false);
             $prevStatus = (int) ($obj->status ?? 1);
 
@@ -305,6 +310,10 @@ class StaffController extends Controller
 
             if ($isSuperAdminActor) {
                 $obj->grant_super_admin_access = $request->boolean('grant_super_admin_access') ? 1 : null;
+            }
+
+            if ($isSuperAdminActor && Schema::hasColumn('staff', 'trust_rule42_supervisor')) {
+                $obj->trust_rule42_supervisor = $request->boolean('trust_rule42_supervisor');
             }
 
             $saved = $obj->save();

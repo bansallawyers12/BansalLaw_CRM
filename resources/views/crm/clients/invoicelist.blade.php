@@ -1,10 +1,10 @@
-@extends('layouts.crm_client_detail')
+﻿@extends('layouts.crm_client_detail')
 @section('title', 'Clients Invoice List')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
-<link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
+<link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
 <style>
     /* Modern Page Styling */
     .listing-container {
@@ -1025,10 +1025,10 @@
                                         </label>
                                         <select name="aging_category" id="aging_category" class="form-control">
                                             <option value="">All Aging Categories</option>
-                                            <option value="current" {{ request('aging_category') == 'current' ? 'selected' : '' }}>🟢 Current (0-30 days)</option>
-                                            <option value="warning" {{ request('aging_category') == 'warning' ? 'selected' : '' }}>🟡 Warning (30-60 days overdue)</option>
-                                            <option value="urgent" {{ request('aging_category') == 'urgent' ? 'selected' : '' }}>🟠 Urgent (60-90 days overdue)</option>
-                                            <option value="critical" {{ request('aging_category') == 'critical' ? 'selected' : '' }}>🔴 Critical (90+ days overdue)</option>
+                                            <option value="current" {{ request('aging_category') == 'current' ? 'selected' : '' }}>ðŸŸ¢ Current (0-30 days)</option>
+                                            <option value="warning" {{ request('aging_category') == 'warning' ? 'selected' : '' }}>ðŸŸ¡ Warning (30-60 days overdue)</option>
+                                            <option value="urgent" {{ request('aging_category') == 'urgent' ? 'selected' : '' }}>ðŸŸ  Urgent (60-90 days overdue)</option>
+                                            <option value="critical" {{ request('aging_category') == 'critical' ? 'selected' : '' }}>ðŸ”´ Critical (90+ days overdue)</option>
                                         </select>
                                     </div>
                                 </div>
@@ -1080,7 +1080,7 @@
                                         <input type="text" name="from_date" id="from_date" value="{{ old('from_date', Request::get('from_date')) }}" class="form-control datepicker" autocomplete="off" placeholder="Select start date">
                                     </div>
                                     
-                                    <span class="date-range-arrow">→</span>
+                                    <span class="date-range-arrow">â†’</span>
                                     
                                     <div class="form-group">
                                         <label for="to_date" class="col-form-label" style="color:#4a5568 !important;">
@@ -1645,3 +1645,4 @@ jQuery(document).ready(function($){
 });
 </script>
 @endpush
+

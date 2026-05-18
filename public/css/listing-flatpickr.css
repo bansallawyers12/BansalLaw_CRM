@@ -1,0 +1,143 @@
+/**
+ * Listing pages: date filter inputs + Flatpickr popup (inside .listing-container).
+ * Class "datepicker" is the field hook for scripts.js → Flatpickr; not Bootstrap Datepicker.
+ */
+
+/* Listing page date inputs (class="datepicker") — tokens from crm-theme.css :root */
+.listing-container .datepicker {
+    border-radius: 8px;
+    border: 2px solid var(--border, #c8dcef);
+    padding: 10px 15px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    background-color: var(--card-bg, #ffffff);
+    color: var(--text-dark, #1a2c40);
+}
+
+.listing-container .datepicker:focus {
+    border-color: var(--sidebar-active, #3a6fa8);
+    box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.2);
+    outline: none;
+}
+
+.listing-container .datepicker::placeholder {
+    color: var(--text-muted, #5e7a90);
+}
+
+/* Flatpickr popup calendar */
+
+.listing-container .flatpickr-calendar {
+    border-radius: 10px;
+    border: 1px solid var(--border, #c8dcef);
+    box-shadow: 0 10px 25px rgba(30, 61, 96, 0.12);
+    padding: 15px;
+    background: var(--card-bg, #ffffff);
+    font-family: "Segoe UI", sans-serif;
+}
+
+.listing-container .flatpickr-month {
+    background: var(--sidebar-active, #3a6fa8);
+    color: #fff;
+    border-radius: 8px 8px 0 0;
+    padding: 8px 0;
+}
+
+.listing-container .flatpickr-current-month,
+.listing-container .flatpickr-current-month .numInputWrapper,
+.listing-container .flatpickr-current-month .cur-month,
+.listing-container .flatpickr-current-month .cur-year {
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.listing-container .flatpickr-prev-month,
+.listing-container .flatpickr-next-month {
+    color: #fff !important;
+    fill: #fff !important;
+}
+
+.listing-container .flatpickr-prev-month:hover,
+.listing-container .flatpickr-next-month:hover {
+    filter: brightness(1.2);
+}
+
+.listing-container .flatpickr-weekdays {
+    background: var(--page-bg, #f0f6ff);
+}
+
+.listing-container .flatpickr-weekday {
+    background: var(--page-bg, #f0f6ff);
+    color: var(--navy, #1e3d60);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+.listing-container .flatpickr-day {
+    border-radius: 8px;
+    color: var(--text-dark, #1a2c40);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.listing-container .flatpickr-day:hover {
+    background: var(--sidebar-hover, #c8dcef);
+    border-color: var(--sidebar-hover, #c8dcef);
+    transform: scale(1.05);
+}
+
+.listing-container .flatpickr-day.selected,
+.listing-container .flatpickr-day.selected:hover {
+    background: var(--navy, #1e3d60);
+    border-color: var(--navy, #1e3d60);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(30, 61, 96, 0.25);
+    transform: scale(1.05);
+}
+
+.listing-container .flatpickr-day.today {
+    background: var(--accent-light, #fefae8);
+    color: var(--navy, #1e3d60);
+    font-weight: 600;
+    border: 2px solid var(--accent-gold, #c8992a);
+}
+
+.listing-container .flatpickr-day.today:hover {
+    background: rgba(200, 153, 42, 0.2);
+    transform: scale(1.05);
+}
+
+.listing-container .flatpickr-day.prevMonthDay,
+.listing-container .flatpickr-day.nextMonthDay {
+    color: var(--text-muted, #5e7a90);
+    background: var(--page-bg, #f0f6ff);
+}
+
+.listing-container .flatpickr-day.prevMonthDay:hover,
+.listing-container .flatpickr-day.nextMonthDay:hover {
+    background: var(--sidebar-hover, #c8dcef);
+    color: var(--text-muted, #5e7a90);
+}
+
+.listing-container .flatpickr-day.disabled,
+.listing-container .flatpickr-day.disabled:hover {
+    color: #adb5bd;
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+}
+
+@media (max-width: 768px) {
+    .listing-container .flatpickr-calendar {
+        padding: 10px;
+    }
+
+    .listing-container .flatpickr-day {
+        font-size: 12px;
+    }
+}

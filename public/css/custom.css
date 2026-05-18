@@ -38,7 +38,6 @@
 .drop_table_data .dropdown_list.active{display:block;}
 .drop_table_data .dropdown_list label{font-size:14px;line-height:18px;margin:0px 0px 10px;display:block;}
 .card .card-body .form-group .span_note, .modal .modal-body .form-group .span_note{font-size:10px;line-height:14px;display: block;margin-top: 4px;}
-.bfh-selectbox .bfh-selectbox-options ul li>a>i, .bfh-selectbox .bfh-selectbox-toggle .bfh-selectbox-option i{display:inline-block;}
 
 .card .card-body ul.nav-pills li.nav-item{margin:0px 5px 5px 0px;}
 .card .card-body .invoice-detail-item .invoice-detail-name{letter-spacing: 0.3px;color: #98a6ad;margin-bottom: 4px;}
@@ -630,8 +629,6 @@ margin:0px 0px 5px;}
 .custom_require_list .require_row .require_col span.span_label{color: #9c9c9c;}
 .custom_require_list .require_row .require_col span.span_value{color: #424242;}
 
-
-.note-toolbar-wrapper{height: auto!important;}
 .dash_card{height:100%;margin:0px;}
 .dash_card .card-content{}
 .dash_card .card-content ul{list-style-type:none;padding:0px;}

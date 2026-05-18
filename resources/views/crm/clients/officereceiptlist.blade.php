@@ -1,10 +1,10 @@
-@extends('layouts.crm_client_detail')
+﻿@extends('layouts.crm_client_detail')
 @section('title', 'Office Receipt List')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
-<link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
+<link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
 <style>
     /* Modern Page Styling */
     .listing-container {
@@ -147,15 +147,18 @@
         outline: none;
     }
 
-    .listing-container .select2-container--default .select2-selection--single {
-        border: 2px solid #e2e8f0;
+    /* Tom Select (receipt filter client / matter) */
+    .listing-container .filter_panel select.crm-ts-receipt-filter + .ts-wrapper .ts-control {
+        border: 2px solid #e2e8f0 !important;
         border-radius: 10px;
-        height: 44px;
+        min-height: 44px;
         padding: 6px 16px;
+        box-shadow: none !important;
     }
 
-    .listing-container .select2-container--default .select2-selection--single:focus {
-        border-color: var(--navy);
+    .listing-container .filter_panel select.crm-ts-receipt-filter + .ts-wrapper.focus .ts-control {
+        border-color: var(--navy) !important;
+        box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.1) !important;
     }
 
     .listing-container .filter-buttons-container {
@@ -474,7 +477,7 @@
                                         <label for="client_id" class="col-form-label" style="color:#4a5568 !important;">
                                             <i class="fas fa-user"></i> Client ID
                                         </label>
-                                        <select name="client_id" id="client_id" class="form-control select2">
+                                        <select name="client_id" id="client_id" class="form-control crm-ts-receipt-filter" data-ts-placeholder="Select an option">
                                             <option value="">Select Client</option>
                                             @foreach($clientIds as $client)
                                                 <option value="{{ $client->client_id }}" {{ request('client_id') == $client->client_id ? 'selected' : '' }}>
@@ -489,7 +492,7 @@
                                         <label for="client_matter_id" class="col-form-label" style="color:#4a5568 !important;">
                                             <i class="fas fa-briefcase"></i> Client Matter ID
                                         </label>
-                                        <select name="client_matter_id" id="client_matter_id" class="form-control select2">
+                                        <select name="client_matter_id" id="client_matter_id" class="form-control crm-ts-receipt-filter" data-ts-placeholder="Select an option">
                                             <option value="">Select Matter</option>
                                             @foreach($matterIds as $matter)
                                                 <option value="{{ $matter->client_matter_id }}" {{ request('client_matter_id') == $matter->client_matter_id ? 'selected' : '' }}>
@@ -741,16 +744,24 @@ jQuery(document).ready(function($){
         window.location.href = currentUrl.toString();
     });
 
-    // Initialize Select2 for searchable dropdowns
-    $('.listing-container .select2').select2({
-        placeholder: 'Select an option',
-        allowClear: true,
-        width: '100%',
-        dropdownParent: $('body') // Ensure dropdown appears above other elements
-    }).on('select2:open', function() {
-        // Ensure dropdown is visible
-        $('.select2-dropdown').css('z-index', '9999');
-    });
+    // Tom Select: searchable client / matter filters (static options from server)
+    if (typeof initTS === 'function') {
+        $('.listing-container .crm-ts-receipt-filter').each(function () {
+            var ph = $(this).attr('data-ts-placeholder') || 'Select an option';
+            initTS(this, {
+                plugins: ['clear_button'],
+                allowEmptyOption: true,
+                placeholder: ph,
+                create: false,
+                dropdownParent: 'body',
+                onDropdownOpen: function () {
+                    if (this.dropdown) {
+                        this.dropdown.style.zIndex = '9999';
+                    }
+                }
+            });
+        });
+    }
 
     // Enhanced Date Filter Scripts
     @include('crm.clients.partials.enhanced-date-filter-scripts')
@@ -925,3 +936,4 @@ jQuery(document).ready(function($){
 });
 </script>
 @endpush
+

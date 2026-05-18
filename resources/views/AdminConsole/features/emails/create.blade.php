@@ -70,7 +70,7 @@
 													<h4>User Sharing</h4>
 													<div class="form-group">
 														<label for="display_name">Select Users</label>
-														<select data-valid="required" multiple class="form-control select2" name="users[]">
+														<select data-valid="required" multiple class="form-control crm-ts-plain" name="users[]">
 															<option value="">Select User</option>
 															<?php
 																$users = \App\Models\Staff::where('status', 1)->orderBy('first_name')->get();
@@ -87,7 +87,7 @@
 												<div class="col-12 col-md-12 col-lg-12">
 													<div class="form-group">
 														<label for="status">Company Email Signature</label><br>
-														<textarea class="form-control summernote-simple" name="email_signature"></textarea>
+														<textarea class="form-control tinymce-editor" name="email_signature"></textarea>
 													</div>
 												</div>
 											</div>

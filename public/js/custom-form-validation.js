@@ -45,7 +45,10 @@ function customValidate(formName, savetype = '')
 				{
 					var for_class = $(this).attr('class') || '';
 					var $element = $(this);
+					var el = $element[0];
+					var isTomSelectEnhanced = !!(el && el.tomselect);
 					var isSelect2 = $element.hasClass('select2-hidden-accessible') || $element.data('select2');
+					var isEnhancedSelect = isSelect2 || isTomSelectEnhanced || $element.is('[data-crm-ts]');
 					var isMultiple = $element.prop('multiple');
 					
 					if(for_class.indexOf('multiselect_subject') != -1)
@@ -58,9 +61,9 @@ function customValidate(formName, savetype = '')
 									$(this).parent().after(errorDisplay(requiredError));
 								}
 						}
-					else if(isSelect2 && isMultiple)
+					else if(isEnhancedSelect && isMultiple)
 						{
-							// Handle Select2 multiple select
+							// Select2 multiple or Tom Select multiple (underlying <select>.val())
 							var selectedValues = $element.val();
 							if(!selectedValues || selectedValues.length === 0 || (selectedValues.length === 1 && selectedValues[0] === ''))
 								{
@@ -822,6 +825,16 @@ function customValidate(formName, savetype = '')
 											let withdrawAmount = subArray.withdraw_amount ? "$" + parseFloat(subArray.withdraw_amount).toFixed(2) : '';
 											let balanceAmount = subArray.balance_amount ? "$" + parseFloat(subArray.balance_amount).toFixed(2) : '';
 
+											var rule42LedgerCol = $('#client-ledger-table').attr('data-rule42-column') === '1';
+											var rule42Cell = '';
+											if (rule42LedgerCol) {
+												var r42Inner = '<span class="text-muted">—</span>';
+												if (subArray.client_fund_ledger_type === 'Fee Transfer') {
+													r42Inner = '<span class="text-muted" title="Rule 42 authority appears after save/reload.">—</span>';
+												}
+												rule42Cell = '<td style="text-align:left;vertical-align:middle;font-size:11px;max-width:150px;">' + r42Inner + '</td>';
+											}
+
 											const pm = (subArray.payment_method && String(subArray.payment_method).trim()) ? subArray.payment_method : '—';
 											let methodCellDyn = pm;
 											if (subArray.eftpos_surcharge_amount && parseFloat(subArray.eftpos_surcharge_amount) > 0) {
@@ -838,6 +851,7 @@ function customValidate(formName, savetype = '')
 												<td><a href="#" title="View Receipt ${subArray.trans_no}">${subArray.trans_no}</a></td>
 												<td class="currency text-success">${depositAmount}</td>
 												<td class="currency">${withdrawAmount}</td>
+												${rule42Cell}
 												<td class="currency balance">${balanceAmount}</td>
 											</tr>`;
 										});
@@ -1489,7 +1503,7 @@ function customValidate(formName, savetype = '')
 												"searching": false,
 												"lengthChange": false,
 											  "columnDefs": [
-												{ "sortable": false, "targets": [0, 2, 3] }
+												{ "orderable": false, "targets": [0, 2, 3] }
 											  ],
 											  order: [[1, "desc"]] //column indexes is zero based
 
@@ -2329,11 +2343,11 @@ function customValidate(formName, savetype = '')
 									console.log('notetermform_n note added successfully');
 								    $('#create_note_d input[name="title"]').val('');
 								    $('#create_note_d input[name="title"]').val('');
-									$("#create_note_d .summernote-simple").val('');
-									$('#create_note_d input[name="noteid"]').val('');
-									// Clear TinyMCE editor if initialized
-									if (typeof tinymce !== 'undefined') {
-										$("#create_note_d .summernote-simple").each(function() {
+								$("#create_note_d .tinymce-editor").val('');
+								$('#create_note_d input[name="noteid"]').val('');
+								// Clear TinyMCE editor if initialized
+								if (typeof tinymce !== 'undefined') {
+									$("#create_note_d .tinymce-editor").each(function() {
 											var editorId = $(this).attr('id');
 											if (editorId && tinymce.get(editorId)) {
 												tinymce.get(editorId).setContent('');

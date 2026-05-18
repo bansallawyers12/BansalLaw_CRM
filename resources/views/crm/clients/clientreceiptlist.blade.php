@@ -1,10 +1,10 @@
-@extends('layouts.crm_client_detail')
+﻿@extends('layouts.crm_client_detail')
 @section('title', 'Client Receipt List')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
-<link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
+<link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
 <style>
     /* Modern Page Styling */
     .listing-container {
@@ -145,15 +145,22 @@
         outline: none;
     }
 
-    .listing-container .select2-container--default .select2-selection--single {
-        border: 2px solid #e2e8f0;
-        border-radius: 10px;
-        height: 44px;
-        padding: 6px 16px;
+    /* Tom Select (receipt filter client / matter) */
+    .listing-container .filter_panel select.crm-ts-receipt-filter + .ts-wrapper {
+        max-width: 150px;
     }
 
-    .listing-container .select2-container--default .select2-selection--single:focus {
-        border-color: var(--navy);
+    .listing-container .filter_panel select.crm-ts-receipt-filter + .ts-wrapper .ts-control {
+        border: 2px solid #e2e8f0 !important;
+        border-radius: 10px;
+        min-height: 44px;
+        padding: 6px 16px;
+        box-shadow: none !important;
+    }
+
+    .listing-container .filter_panel select.crm-ts-receipt-filter + .ts-wrapper.focus .ts-control {
+        border-color: var(--navy) !important;
+        box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.1) !important;
     }
 
     .listing-container .btn-info {
@@ -463,10 +470,10 @@
                             
                             <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn" style="margin-right: 10px;"><i class="fas fa-filter"></i> Filter</a>
                             
-                            @if (Auth::user()->role == '1' && Auth::user()->email == 'celestyparmar.62@gmail.com')
+                            @if (Auth::user() instanceof \App\Models\Staff && Auth::user()->hasEffectiveSuperAdminPrivileges())
                                 <button class="btn btn-danger Delete_Receipt" style="margin-right: 10px;">
-                                    <i class="fas fa-trash-alt"></i>
-                                    Delete Receipt
+                                    <i class="fas fa-ban"></i>
+                                    Void trust receipt
                                 </button>
                             @endif
 
@@ -494,7 +501,7 @@
                                 <div class="col-md-2">
                                     <div class="form-group">
                                         <label for="client_id" class="col-form-label" style="color:#4a5568 !important;">Client ID</label>
-                                        <select name="client_id" id="client_id" class="form-control select2" style="max-width: 150px;">
+                                        <select name="client_id" id="client_id" class="form-control crm-ts-receipt-filter" data-ts-placeholder="Search..." style="max-width: 150px;">
                                             <option value="">Select Client</option>
                                             @foreach($clientIds as $client)
                                                 <option value="{{ $client->client_id }}" {{ request('client_id') == $client->client_id ? 'selected' : '' }}>
@@ -507,7 +514,7 @@
                                 <div class="col-md-2">
                                     <div class="form-group">
                                         <label for="client_matter_id" class="col-form-label" style="color:#4a5568 !important;">Client Matter ID</label>
-                                        <select name="client_matter_id" id="client_matter_id" class="form-control select2" style="max-width: 150px;">
+                                        <select name="client_matter_id" id="client_matter_id" class="form-control crm-ts-receipt-filter" data-ts-placeholder="Search..." style="max-width: 150px;">
                                             <option value="">Select Matter</option>
                                             @foreach($matterIds as $matter)
                                                 <option value="{{ $matter->client_matter_id }}" {{ request('client_matter_id') == $matter->client_matter_id ? 'selected' : '' }}>
@@ -798,16 +805,24 @@ jQuery(document).ready(function($){
 		$('.listing-container .filter_panel').toggle();
 	});
 
-    // Initialize Select2 for searchable dropdowns
-    $('.listing-container .select2').select2({
-        placeholder: "Search...",
-        allowClear: true,
-        width: '100%',
-        dropdownParent: $('body') // Ensure dropdown appears above other elements
-    }).on('select2:open', function() {
-        // Ensure dropdown is visible
-        $('.select2-dropdown').css('z-index', '9999');
-    });
+    // Tom Select: searchable client / matter filters (static options from server)
+    if (typeof initTS === 'function') {
+        $('.listing-container .crm-ts-receipt-filter').each(function () {
+            var ph = $(this).attr('data-ts-placeholder') || 'Search...';
+            initTS(this, {
+                plugins: ['clear_button'],
+                allowEmptyOption: true,
+                placeholder: ph,
+                create: false,
+                dropdownParent: 'body',
+                onDropdownOpen: function () {
+                    if (this.dropdown) {
+                        this.dropdown.style.zIndex = '9999';
+                    }
+                }
+            });
+        });
+    }
 
     // Enhanced Date Filter Scripts
     @include('crm.clients.partials.enhanced-date-filter-scripts')
@@ -980,27 +995,28 @@ jQuery(document).ready(function($){
             alert('Please select only one receipt to delete.');
             return;
         }
-        var mergeStr = "Are you sure want to delete this receipt?";
+        var mergeStr = "Void this trust receipt? A reversing entry will be posted and the original line will be marked void (audit trail). Continue?";
         if (confirm(mergeStr)) {
+            var voidReason = window.prompt('Void reason (required for auditors):', '');
+            if (!voidReason || !voidReason.trim()) {
+                alert('A void reason is required.');
+                return;
+            }
             $.ajax({
                 type: 'post',
                 url: "{{URL::to('/')}}/delete_receipt",
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-                data: { receiptId: clickedReceiptIds[0], receipt_type: 1 },
+                data: { receiptId: clickedReceiptIds[0], receipt_type: 1, trust_void_reason: voidReason.trim() },
                 dataType: 'json',
                 success: function(response) {
                     // Parse response if it's a string (fallback for older jQuery versions)
                     var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
                     if (obj.status) {
-                        $('.listing-container #id_' + clickedReceiptIds[0]).remove();
                         clickedReceiptIds = [];
                         $('.listing-container .custom-error-msg').text(obj.message);
                         $('.listing-container .custom-error-msg').show();
                         $('.listing-container .custom-error-msg').addClass('alert alert-success');
-                        // Check if table is empty after deletion
-                        if ($('.listing-container .tdata tr').length === 0) {
-                            $('.listing-container .tdata').html('<tr><td colspan="11" style="text-align: center; padding: 20px;">No Record Found</td></tr>');
-                        }
+                        window.location.reload();
                     } else {
                         $('.listing-container .custom-error-msg').text(obj.message);
                         $('.listing-container .custom-error-msg').show();
@@ -1047,3 +1063,4 @@ jQuery(document).ready(function($){
 });
 </script>
 @endpush
+

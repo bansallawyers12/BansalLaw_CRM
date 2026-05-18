@@ -2,6 +2,7 @@
     $_staffTop = Auth::user();
     $_crmTopAdminish = $_staffTop instanceof \App\Models\Staff
         && (in_array((int) $_staffTop->role, [1, 12], true) || $_staffTop->hasEffectiveSuperAdminPrivileges());
+    $_trustSuperAdmin = $_staffTop instanceof \App\Models\Staff && $_staffTop->hasEffectiveSuperAdminPrivileges();
 @endphp
 <nav class="main-topbar">
     <button class="topbar-toggle" title="Show menu" aria-label="Toggle topbar">
@@ -66,6 +67,12 @@
                     <a class="dropdown-item" href="{{route('clients.invoicelist')}}"><i class="fas fa-file-invoice-dollar mr-2"></i> Invoice Lists</a>
                     <a class="dropdown-item" href="{{route('clients.officereceiptlist')}}"><i class="fas fa-building mr-2"></i> Office Receipts</a>
                     <a class="dropdown-item" href="{{route('clients.journalreceiptlist')}}"><i class="fas fa-book mr-2"></i> Journal Receipts</a>
+                    @if($_trustSuperAdmin)
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ route('trust-accounting.periods.index') }}"><i class="fas fa-lock mr-2"></i> Trust period locks</a>
+                    <a class="dropdown-item" href="{{ route('trust-accounting.reports.index') }}"><i class="fas fa-file-export mr-2"></i> Trust reports (exam pack)</a>
+                    <a class="dropdown-item" href="{{ route('trust-accounting.audit-log.index') }}"><i class="fas fa-clipboard-list mr-2"></i> Trust audit log</a>
+                    @endif
                     <div class="dropdown-divider"></div>
                 </div>
             </div>

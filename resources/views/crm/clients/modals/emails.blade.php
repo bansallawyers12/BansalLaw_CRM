@@ -90,7 +90,7 @@
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="email_cc">CC </label>
-								<select data-valid="" class="js-data-example-ajaxccapp" name="email_cc[]"></select>
+								<select multiple data-valid="" class="js-data-example-ajaxccapp" name="email_cc[]"></select>
 
 								@if ($errors->has('email_cc'))
 									<span class="custom-error" role="alert">

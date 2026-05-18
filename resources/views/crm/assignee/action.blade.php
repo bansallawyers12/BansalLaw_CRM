@@ -327,22 +327,26 @@
         border-color: var(--sidebar-active, #3a6fa8); 
     }
     
-    /* DataTables customization */
-    .dataTables_wrapper {
+    /* DataTables customization — selectors cover DT 1.x (dataTables_*) and DT 2.x (dt-*) class names */
+    .dataTables_wrapper,
+    .dt-container {
         width: 100%;
         max-width: 100%;
         overflow-x: hidden;
     }
     
-    .dataTables_wrapper .dataTables_length { 
+    .dataTables_wrapper .dataTables_length,
+    .dt-container .dt-length { 
         margin-bottom: 0; 
     }
     
-    .dataTables_wrapper .dataTables_filter { 
+    .dataTables_wrapper .dataTables_filter,
+    .dt-container .dt-search { 
         display: none; 
     }
     
-    #DataTables_Table_0_info { 
+    #DataTables_Table_0_info,
+    .dt-info { 
         margin-top: 20px; 
     }
     
@@ -360,11 +364,13 @@
         border: 1px solid var(--border, #c8dcef);
     }
     
-    .dataTables_length {
+    .dataTables_length,
+    .dt-length {
         flex-shrink: 0;
     }
     
-    .dataTables_length select {
+    .dataTables_length select,
+    .dt-length select {
         padding: 10px 15px;
         border: 2px solid var(--border, #c8dcef);
         border-radius: 8px;
@@ -374,13 +380,15 @@
         transition: all 0.3s ease;
     }
     
-    .dataTables_length select:focus {
+    .dataTables_length select:focus,
+    .dt-length select:focus {
         outline: none;
         border-color: var(--sidebar-active, #3a6fa8);
         box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
     }
     
-    .dataTables_length label {
+    .dataTables_length label,
+    .dt-length label {
         font-size: 0.9em;
         color: var(--text-muted, #5e7a90);
         display: flex;
@@ -390,7 +398,8 @@
         font-weight: 600;
     }
     
-    .dataTables_info {
+    .dataTables_info,
+    .dt-info {
         flex-grow: 1;
         text-align: center;
         font-size: 0.9em;
@@ -529,20 +538,24 @@
         border: 1px solid var(--border, #c8dcef);
     }
 
-    /* DataTables pagination — theme.md (hover/focus/active; beats Bootstrap link + #3490dc ring) */
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link {
+    /* DataTables pagination — DT 1.x + DT 2.x selectors (dataTables_paginate / dt-paging) */
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link,
+    .assignee-action-page .dt-container .dt-paging .pagination .page-link {
         color: var(--navy, #1e3d60) !important;
         background-color: var(--card-bg, #ffffff) !important;
         border-color: var(--border, #c8dcef) !important;
         box-shadow: none !important;
     }
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item:not(.active):not(.disabled) .page-link:hover {
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item:not(.active):not(.disabled) .page-link:hover,
+    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button:not(.active):not(.disabled) .page-link:hover {
         color: var(--navy, #1e3d60) !important;
         background-color: var(--sidebar-hover, #c8dcef) !important;
         border-color: var(--border, #c8dcef) !important;
     }
     .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link:focus,
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link:focus-visible {
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link:focus-visible,
+    .assignee-action-page .dt-container .dt-paging .pagination .page-link:focus,
+    .assignee-action-page .dt-container .dt-paging .pagination .page-link:focus-visible {
         color: var(--navy, #1e3d60) !important;
         background-color: var(--card-bg, #ffffff) !important;
         border-color: var(--sidebar-active, #3a6fa8) !important;
@@ -551,7 +564,8 @@
     }
     .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.active .page-link,
     .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .active > .page-link,
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link.active {
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-link.active,
+    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button.active .page-link {
         color: #fff !important;
         background-color: var(--sidebar-active, #3a6fa8) !important;
         border-color: var(--sidebar-active, #3a6fa8) !important;
@@ -560,14 +574,18 @@
     .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.active .page-link:focus,
     .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.active .page-link:focus-visible,
     .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .active > .page-link:hover,
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .active > .page-link:focus {
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .active > .page-link:focus,
+    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button.active .page-link:hover,
+    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button.active .page-link:focus {
         color: #fff !important;
         background-color: var(--sidebar-active, #3a6fa8) !important;
         border-color: var(--sidebar-active, #3a6fa8) !important;
         box-shadow: none !important;
     }
     .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.disabled .page-link,
-    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.disabled .page-link:hover {
+    .assignee-action-page .dataTables_wrapper .dataTables_paginate .pagination .page-item.disabled .page-link:hover,
+    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button.disabled .page-link,
+    .assignee-action-page .dt-container .dt-paging .pagination .dt-paging-button.disabled .page-link:hover {
         color: var(--text-muted, #5e7a90) !important;
         background-color: var(--card-bg, #ffffff) !important;
         border-color: var(--border, #c8dcef) !important;
@@ -1190,6 +1208,15 @@
     body > .select2-container--open {
         z-index: 10050 !important;
     }
+
+    body > .ts-dropdown {
+        z-index: 10050 !important;
+    }
+
+    .popover .ts-wrapper {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
 </style>
 <script type="text/javascript">
 $(function () {
@@ -1286,7 +1313,7 @@ $(function () {
             {data: 'note_description', name: 'note_description', orderable: true, searchable: true},
             {data: 'action', name: 'action', orderable: false, searchable: false}
         ],
-        "fnDrawCallback": function() {
+        "drawCallback": function() {
             // Initialize popovers for dynamically added elements (exclude update_task buttons which are initialized manually)
             $('[data-bs-toggle="popover"]').not('.update_task').not('.add_my_task').popover({
                 html: true,
@@ -1300,7 +1327,6 @@ $(function () {
             // Update badge counts
             updateBadgeCounts();
         },
-        "bAutoWidth": false,
         "scrollX": true,
         "scrollCollapse": true,
         "dom": 'rt<"bottom"lip><"clear">', // Move length menu (l) to bottom with info (i) and pagination (p)
@@ -1439,10 +1465,8 @@ $(function () {
     $(document).on('hide.bs.popover', '.add_my_task', function() {
         var $tip = getAddTaskPopoverTip(this);
         var $sel = $tip.find('#add_task_client_select');
-        if ($sel.length && $sel.hasClass('select2-hidden-accessible')) {
-            try {
-                $sel.select2('destroy');
-            } catch (err) { /* ignore */ }
+        if ($sel.length && typeof destroyTS === 'function') {
+            destroyTS($sel[0]);
         }
     });
 
@@ -1469,101 +1493,64 @@ $(function () {
             var $clientSelect = $popover.find('#add_task_client_select').addBack('#add_task_client_select').first();
 
             if ($clientSelect.length && $popover.length) {
-                if (typeof $.fn.select2 !== 'function') {
+                if (typeof initTS !== 'function' || typeof buildGetAllClientsTomSelectConfig !== 'function' || typeof destroyTS !== 'function') {
                     if (attempts < maxAttempts) {
                         setTimeout(tryInitialize, 50);
                     }
                     return;
                 }
-                if ($clientSelect.hasClass('select2-hidden-accessible')) {
-                    $clientSelect.select2('destroy');
-                }
-
-                    try {
-                        $clientSelect.select2({
-                            closeOnSelect: true,
-                            placeholder: 'Search client...',
-                            allowClear: true,
-                            width: '100%',
-                            dropdownParent: $(document.body),
-                            ajax: {
-                                url: '{{URL::to('/clients/get-allclients')}}',
-                                dataType: 'json',
-                                delay: 250,
-                                processResults: function (data) {
-                                    if (!data || typeof data !== 'object') {
-                                        return { results: [] };
-                                    }
-                                    return {
-                                        results: data.items || []
-                                    };
-                                },
-                                cache: true,
-                                error: function(xhr, status, error) {
-                                    console.error('Error fetching clients:', error);
-                                }
-                            },
-                            templateResult: formatRepomainMYTask,
-                            templateSelection: formatRepoSelectionmainMYTask,
-                            minimumInputLength: 1
-                        });
-                        
-                        return true;
+                try {
+                    var el = $clientSelect[0];
+                    destroyTS(el);
+                    initTS(el, buildGetAllClientsTomSelectConfig({
+                        url: '{{URL::to('/clients/get-allclients')}}',
+                        dropdownParent: 'body',
+                        placeholder: 'Search client...'
+                    }));
+                    var _tsW = el.tomselect && el.tomselect.wrapper;
+                    if (_tsW) {
+                        _tsW.style.width = '100%';
+                    }
+                    return true;
                 } catch (error) {
-                    console.error('Error initializing Select2:', error);
+                    console.error('Error initializing client Tom Select:', error);
                     return false;
                 }
             } else if (attempts < maxAttempts) {
                 setTimeout(tryInitialize, 50);
             } else {
-                console.warn('Add My Task: client Select2 could not be initialized (popover or select missing).');
+                console.warn('Add My Task: client Tom Select could not be initialized (popover or select missing).');
             }
         }
 
         tryInitialize();
     }
-    
-    // Helper functions for Select2 templates
-    function formatRepomainMYTask (repo) {
-        if (repo.loading) {
-            return repo.text;
-        }
 
-        var $container = $(
-            "<div data-id='" + String(repo.cid || '').replace(/'/g, '&#39;').replace(/&/g, '&amp;') + "' class='selectclient select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-
-            "<div  class='ag-flex ag-align-start'>" +
-                "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
-                "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
-
-            "</div>" +
-            "</div>" +
-            "<div class='ag-flex ag-flex-column ag-align-end'>" +
-
-                "<span class='select2resultrepositorystatistics'>" +
-
-                "</span>" +
-            "</div>" +
-            "</div>"
-        );
-
-        $container.find(".select2-result-repository__title").text(repo.name || '');
-        $container.find(".select2-result-repository__description").text(repo.email || '');
-        if(repo.status == 'Archived'){
-            $container.find(".select2resultrepositorystatistics").append('<span class="ui label  select2-result-repository__statistics">'+(repo.status || '')+'</span>');
-        } else if(repo.status) {
-            $container.find(".select2resultrepositorystatistics").append('<span class="ui label yellow select2-result-repository__statistics">'+(repo.status || '')+'</span>');
-        }
-        return $container;
-    }
-
-    function formatRepoSelectionmainMYTask (repo) {
-        return (repo && repo.name) || (repo && repo.text) || '';
-    }
-
-    // Initialize Update Task popover
+    // Initialize Update Task popover — Tom Select for assignee fields inside popover shell
     $(document).on('shown.bs.popover', '.update_task', function() {
-        // placeholder — assigneeselect2 initialised on-demand by update handler
+        var $shell = $('.popover.show').last();
+        var $popover = $shell.find('.popover-body');
+        if (!$popover.length) {
+            $popover = $shell;
+        }
+        var ddParent = $shell.length ? $shell[0] : document.body;
+        $popover.find('.assigneeselect2').each(function() {
+            if (typeof destroyTS === 'function') destroyTS(this);
+            if (typeof initTS === 'function') {
+                initTS(this, { create: false, dropdownParent: ddParent });
+            }
+            var ts = this.tomselect;
+            if (ts && ts.wrapper) {
+                ts.wrapper.style.width = '100%';
+                ts.wrapper.style.maxWidth = '100%';
+            }
+        });
+    });
+
+    $(document).on('hide.bs.popover', '.update_task', function() {
+        $('.popover .assigneeselect2').each(function() {
+            if (typeof destroyTS === 'function') destroyTS(this);
+        });
     });
 
     // Update badge counts

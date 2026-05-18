@@ -15,13 +15,14 @@
                 <form id="editLedgerForm">
                     <input type="hidden" name="id">
                     <input type="hidden" name="client_id" value="{{$fetchedData->id}}">
+                    <p class="text-muted small">Trust amounts and dates are locked after posting. To correct, void the entry (receipt list, super-admin) to create a reversal. Edit narrative and banking references below only.</p>
                     <div class="form-group">
                         <label for="trans_date">Transaction Date</label>
-                        <input type="text" class="form-control" name="trans_date" required>
+                        <input type="text" class="form-control bg-light" name="trans_date" id="edit_ledger_trans_date" readonly>
                     </div>
                     <div class="form-group">
                         <label for="entry_date">Entry Date</label>
-                        <input type="text" class="form-control" name="entry_date" required>
+                        <input type="text" class="form-control bg-light" name="entry_date" id="edit_ledger_entry_date" readonly>
                     </div>
                     <div class="form-group">
                         <label for="client_fund_ledger_type">Type</label>
@@ -32,7 +33,7 @@
                         <select class="form-control" name="payment_method" id="edit_ledger_payment_method">
                             <option value="">—</option>
                             <option value="Cash">Cash</option>
-                            <option value="Bank transfer">Bank transfer</option>
+                            <option value="Bank transfer">Bank Transfer / EFT</option>
                             <option value="EFTPOS">EFTPOS</option>
                             <option value="Refund">Refund</option>
                         </select>
@@ -46,12 +47,24 @@
                         <input type="text" class="form-control" name="description">
                     </div>
                     <div class="form-group">
-                        <label for="deposit_amount">Funds In (+) <span class="text-muted" style="font-weight:normal;font-size:12px;">(excl. surcharge)</span></label>
-                        <input type="number" class="form-control" name="deposit_amount" step="0.01" value="0.00">
+                        <label for="edit_ledger_payer_name">Payer / source (optional)</label>
+                        <input type="text" class="form-control" name="payer_name" id="edit_ledger_payer_name" placeholder="Who paid trust money in">
                     </div>
                     <div class="form-group">
-                        <label for="withdraw_amount">Funds Out (-)</label>
-                        <input type="number" class="form-control" name="withdraw_amount" step="0.01" value="0.00">
+                        <label for="edit_ledger_bank_ref">Bank deposit reference (optional)</label>
+                        <input type="text" class="form-control" name="bank_deposit_reference" id="edit_ledger_bank_ref">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_ledger_banking_date">Banking date (optional, d/m/Y)</label>
+                        <input type="text" class="form-control" name="banking_date" id="edit_ledger_banking_date" placeholder="dd/mm/yyyy">
+                    </div>
+                    <div class="form-group">
+                        <label for="deposit_amount">Funds In (+) <span class="text-muted" style="font-weight:normal;font-size:12px;">(locked)</span></label>
+                        <input type="number" class="form-control bg-light" name="deposit_amount" step="0.01" value="0.00" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="withdraw_amount">Funds Out (-) <span class="text-muted" style="font-weight:normal;font-size:12px;">(locked)</span></label>
+                        <input type="number" class="form-control bg-light" name="withdraw_amount" step="0.01" value="0.00" readonly>
                     </div>
 
             </div>

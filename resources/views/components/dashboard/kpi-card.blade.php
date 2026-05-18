@@ -4,7 +4,8 @@
     'icon' => 'fas fa-chart-bar',
     'iconClass' => 'icon-active',
     'route' => null,
-    'color' => 'primary'
+    'color' => 'primary',
+    'subtitle' => null,
 ])
 
 @php
@@ -28,6 +29,9 @@
                     <span class="kpi-count-number">{{ number_format($count) }}</span>
                 @endif
             </div>
+            @if($subtitle)
+                <p class="kpi-subtitle">{{ $subtitle }}</p>
+            @endif
         </div>
     </div>
     <div class="kpi-card-shine"></div>
@@ -158,6 +162,14 @@
 .kpi-count-link:hover {
     transform: scale(1.05);
     color: var(--sidebar-active, #3a6fa8);
+}
+
+.kpi-subtitle {
+    margin: 10px 0 0 0;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted, #5e7a90);
+    line-height: 1.35;
 }
 
 /* Shine effect on hover */

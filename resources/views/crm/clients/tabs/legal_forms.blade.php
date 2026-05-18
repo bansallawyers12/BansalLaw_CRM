@@ -389,11 +389,17 @@
                 if (response.success) {
                     bootstrap.Modal.getInstance(document.getElementById('legalFormModal')).hide();
                     loadLegalForms();
-                    if (typeof toastr !== 'undefined') toastr.success(response.message || 'Form created successfully!');
-                    else alert(response.message || 'Form created successfully!');
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
+                        iziToast.success({ message: response.message || 'Form created successfully!', position: 'topRight' });
+                    } else {
+                        alert(response.message || 'Form created successfully!');
+                    }
                 } else {
-                    if (typeof toastr !== 'undefined') toastr.error(response.message || 'Failed to create form.');
-                    else alert(response.message || 'Failed to create form.');
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                        iziToast.error({ message: response.message || 'Failed to create form.', position: 'topRight' });
+                    } else {
+                        alert(response.message || 'Failed to create form.');
+                    }
                 }
             },
             error: function(xhr) {
@@ -403,8 +409,11 @@
                 } else if (xhr.responseJSON && xhr.responseJSON.errors) {
                     msg = Object.values(xhr.responseJSON.errors).flat().join('\n');
                 }
-                if (typeof toastr !== 'undefined') toastr.error(msg);
-                else alert(msg);
+                if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                    iziToast.error({ message: msg, position: 'topRight' });
+                } else {
+                    alert(msg);
+                }
             },
             complete: function() {
                 btn.disabled = false;
@@ -518,19 +527,27 @@
                     textarea.style.opacity = '1';
                     textarea.style.borderColor = '#10b981';
                     setTimeout(function() { textarea.style.borderColor = ''; }, 2000);
-                    if (typeof toastr !== 'undefined') toastr.success('AI text generated successfully!');
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
+                        iziToast.success({ message: 'AI text generated successfully!', position: 'topRight' });
+                    }
                 } else {
                     textarea.style.opacity = '1';
-                    if (typeof toastr !== 'undefined') toastr.error(response.message || 'Failed to generate text.');
-                    else alert(response.message || 'Failed to generate text.');
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                        iziToast.error({ message: response.message || 'Failed to generate text.', position: 'topRight' });
+                    } else {
+                        alert(response.message || 'Failed to generate text.');
+                    }
                 }
             },
             error: function(xhr) {
                 textarea.style.opacity = '1';
                 var msg = 'AI generation failed.';
                 if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
-                if (typeof toastr !== 'undefined') toastr.error(msg);
-                else alert(msg);
+                if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                    iziToast.error({ message: msg, position: 'topRight' });
+                } else {
+                    alert(msg);
+                }
             },
             complete: function() {
                 btn.disabled = false;
@@ -549,13 +566,19 @@
             success: function(response) {
                 if (response.success) {
                     loadLegalForms();
-                    if (typeof toastr !== 'undefined') toastr.success(response.message || 'Form deleted.');
-                    else alert(response.message || 'Form deleted.');
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
+                        iziToast.success({ message: response.message || 'Form deleted.', position: 'topRight' });
+                    } else {
+                        alert(response.message || 'Form deleted.');
+                    }
                 }
             },
             error: function() {
-                if (typeof toastr !== 'undefined') toastr.error('Failed to delete form.');
-                else alert('Failed to delete form.');
+                if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                    iziToast.error({ message: 'Failed to delete form.', position: 'topRight' });
+                } else {
+                    alert('Failed to delete form.');
+                }
             }
         });
     };

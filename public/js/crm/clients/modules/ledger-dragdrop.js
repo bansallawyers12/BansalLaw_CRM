@@ -169,8 +169,8 @@
             var fileExtension = file.name.split('.').pop().toLowerCase();
             
             if (!allowedExtensions.includes(fileExtension)) {
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('Invalid file type: ' + file.name + '. Please upload PDF, JPG, PNG, DOC, or DOCX files only.');
+                if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                    iziToast.error({ message: 'Invalid file type: ' + file.name + '. Please upload PDF, JPG, PNG, DOC, or DOCX files only.', position: 'topRight' });
                 } else {
                     alert('Invalid file type: ' + file.name + '. Please upload PDF, JPG, PNG, DOC, or DOCX files only.');
                 }
@@ -180,8 +180,8 @@
             // Validate file size (10MB max)
             var maxSize = 10 * 1024 * 1024;
             if (file.size > maxSize) {
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('File too large: ' + file.name + '. Maximum size is 10MB.');
+                if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                    iziToast.error({ message: 'File too large: ' + file.name + '. Maximum size is 10MB.', position: 'topRight' });
                 } else {
                     alert('File too large: ' + file.name + '. Maximum size is 10MB.');
                 }
@@ -455,8 +455,8 @@
             var fileExtension = file.name.split('.').pop().toLowerCase();
             
             if (!allowedExtensions.includes(fileExtension)) {
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('Invalid file type: ' + file.name + '. Please upload PDF, JPG, PNG, DOC, or DOCX files only.');
+                if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                    iziToast.error({ message: 'Invalid file type: ' + file.name + '. Please upload PDF, JPG, PNG, DOC, or DOCX files only.', position: 'topRight' });
                 } else {
                     alert('Invalid file type: ' + file.name + '. Please upload PDF, JPG, PNG, DOC, or DOCX files only.');
                 }
@@ -466,8 +466,8 @@
             // Validate file size (10MB max)
             var maxSize = 10 * 1024 * 1024;
             if (file.size > maxSize) {
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('File too large: ' + file.name + '. Maximum size is 10MB.');
+                if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                    iziToast.error({ message: 'File too large: ' + file.name + '. Maximum size is 10MB.', position: 'topRight' });
                 } else {
                     alert('File too large: ' + file.name + '. Maximum size is 10MB.');
                 }

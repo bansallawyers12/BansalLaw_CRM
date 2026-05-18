@@ -1,12 +1,24 @@
 @extends('layouts.crm_client_detail_dashboard')
 
 @section('content')
+    @php
+        $hour = (int) now()->format('G');
+        $greeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
+        $staffUser = auth('admin')->user();
+        $staffFirstName = ($staffUser && ! empty($staffUser->first_name)) ? $staffUser->first_name : 'there';
+        $dashboardFiltersActive = ! empty(trim((string) ($filters['client_name'] ?? '')))
+            || ! empty((string) ($filters['client_stage'] ?? ''));
+    @endphp
     <main class="main-content">
         <header class="header">
             <div class="header-title-section">
-                <h1>Dashboard</h1>
+                <h1>{{ $greeting }}, {{ $staffFirstName }}</h1>
+                <p class="dashboard-header-meta">{{ now()->format('l, j F Y') }}</p>
             </div>
             <div class="header-actions">
+                <a href="{{ route('adminconsole.system.clients.createclient') }}" class="action-btn action-btn-primary">
+                    <i class="fas fa-user-plus"></i> New client
+                </a>
                 <button type="button" class="action-btn action-btn-secondary" id="refreshDashboard" title="Refresh Dashboard (Alt+R)">
                     <i class="fas fa-sync-alt"></i> Refresh
                 </button>
@@ -19,6 +31,7 @@
                 :title="'Active Matters'" 
                 :count="$count_active_matter" 
                 :route="route('clients.clientsmatterslist')"
+                subtitle="Open matters — go to full list"
                 icon="fas fa-briefcase"
                 icon-class="icon-active" 
             />
@@ -26,6 +39,7 @@
             <x-dashboard.kpi-card 
                 :title="'Urgent Notes Deadlines'" 
                 :count="$count_note_deadline"
+                :subtitle="count($notesData) . ' shown below'"
                 icon="fas fa-hourglass-half"
                 icon-class="icon-pending" 
             />
@@ -33,8 +47,9 @@
             <x-dashboard.kpi-card 
                 :title="'Cases Requiring Attention'" 
                 :count="$count_cases_requiring_attention_data"
-                icon="fas fa-check-circle"
-                icon-class="icon-success" 
+                subtitle="Matters that may need follow-up"
+                icon="fas fa-exclamation-triangle"
+                icon-class="icon-pending" 
             />
         </section>
 
@@ -50,7 +65,7 @@
                             <i class="fas fa-tasks dashboard-theme-icon-primary"></i> 
                             My Actions
                         </h3>
-                        <span class="todo-count-badge">{{ $count_note_deadline }}</span>
+                        <span class="todo-count-badge">{{ count($notesData) }}</span>
                     </div>
                     {{-- Add Task popover template (outside attribute to avoid unescaped & in JS) --}}
                     <div id="add-task-popover-template" style="display:none;">
@@ -114,6 +129,13 @@
                 
                 <div class="todo-task-list-container">
                     @if(count($notesData) > 0)
+                        <div class="todo-filter-tabs" role="toolbar" aria-label="Filter my actions">
+                            <button type="button" class="todo-filter-tab is-active" data-todo-filter="all">All</button>
+                            <button type="button" class="todo-filter-tab" data-todo-filter="overdue">Overdue</button>
+                            <button type="button" class="todo-filter-tab" data-todo-filter="today">Due today</button>
+                            <button type="button" class="todo-filter-tab" data-todo-filter="upcoming">Upcoming</button>
+                            <button type="button" class="todo-filter-tab" data-todo-filter="no-deadline">No deadline</button>
+                        </div>
                         <ul class="todo-task-list">
                             @foreach($notesData as $note)
                                 <x-dashboard.task-item :note="$note" />
@@ -158,8 +180,8 @@
                             @endforeach
                         </ul>
                     @else
-                        <div class="empty-state-modern">
-                            <i class="fas fa-thumbs-up fa-3x"></i>
+                        <div class="empty-state-modern empty-state-modern--compact">
+                            <i class="fas fa-thumbs-up fa-2x"></i>
                             <h4>Great Work!</h4>
                             <p>No cases requiring immediate attention.</p>
                         </div>
@@ -199,6 +221,7 @@
                             <th class="col-person_responsible" role="columnheader">Person Responsible</th>
                             <th class="col-person_assisting" role="columnheader">Person Assisting</th>
                             <th class="col-stage" role="columnheader">Stage</th>
+                            <th class="matter-row-action" scope="col"><span class="visually-hidden">Open matter</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -310,16 +333,23 @@
                                         @endforeach
                                     </select>
                                 </td>
+                                <td class="matter-row-action">
+                                    @if(!empty($clientDetailParams))
+                                        <a href="{{ route('clients.detail', $clientDetailParams) }}" class="matter-row-open" title="Open matter">
+                                            <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                                        </a>
+                                    @endif
+                                </td>
                             </tr>
                             @endif
                         @empty
                             <tr>
-                                <td colspan="8" class="empty-state">
+                                <td colspan="9" class="empty-state">
                                     <div class="empty-state-modern">
                                         <i class="fas fa-inbox fa-3x"></i>
                                         <h4>No Records Found</h4>
                                         <p>Try adjusting your filters or search criteria.</p>
-                                        @if(isset($filters['client_name']) || isset($filters['client_stage']))
+                                        @if($dashboardFiltersActive)
                                             <a href="{{ route('dashboard') }}" class="btn btn-primary mt-3">
                                                 <i class="fas fa-times"></i> Clear All Filters
                                             </a>
@@ -362,14 +392,6 @@
 
     {{-- Modals --}}
     @include('components.dashboard.modals')
-    
-    {{-- Loading Overlay --}}
-    <div class="popuploader" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999;">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 5px; display: inline-block;">
-            <i class="fa fa-spinner fa-spin" style="font-size: 24px; color: #007bff;"></i>
-            <p style="margin-top: 10px; margin-bottom: 0;">Processing...</p>
-        </div>
-    </div>
 @endsection
 
 @push('styles')
@@ -379,6 +401,71 @@
 <style>
 .dashboard-theme-icon-primary {
     color: var(--primary-color);
+}
+
+.dashboard-header-meta {
+    margin: 6px 0 0 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-muted-color);
+}
+
+.header-title-section h1 {
+    margin: 0;
+    font-size: 1.8em;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+.todo-filter-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 12px;
+    background: var(--card-bg-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.todo-filter-tab {
+    border: 1px solid var(--border-color);
+    background: var(--background-color);
+    color: var(--text-muted-color);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.todo-filter-tab:hover {
+    border-color: var(--secondary-color);
+    color: var(--primary-color);
+}
+
+.todo-filter-tab.is-active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
+.empty-state-modern--compact {
+    padding: 24px 16px;
+}
+
+.empty-state-modern--compact i {
+    margin-bottom: 10px;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 /* Microsoft To Do Style Task Widget — theme.md */
@@ -562,14 +649,6 @@
     overflow-x: auto !important;
 }
 
-/* Test Page Specific Styles */
-.header-title-section h1 {
-    margin: 0;
-    font-size: 1.8em;
-    font-weight: 700;
-    color: var(--primary-color);
-}
-
 .cases-overview-header h3 i {
     color: var(--primary-color);
 }
@@ -578,6 +657,7 @@
     display: flex;
     gap: 10px;
     align-self: flex-start;
+    flex-wrap: wrap;
 }
 
 /* Enhanced Action Buttons */
@@ -593,6 +673,7 @@
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
 }
 
 .action-btn-primary {
@@ -713,14 +794,10 @@
 }
 
 .data-table-enhanced tbody tr {
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease;
 }
 
-.data-table-enhanced tbody tr:hover {
-    background-color: #ebf3ff;
-    transform: scale(1.001);
-    box-shadow: 0 2px 8px rgba(30, 61, 96, 0.06);
-}
+/* Row hover / zebra: handled in dashboard.css (td backgrounds) to avoid conflicting transforms */
 
 .matter-link {
     color: var(--secondary-color);
@@ -968,236 +1045,252 @@
     .focus-container {
         width: 100%;
     }
+}
 
-    /* Popover styling - matching action page */
+/* Add Task popover — applies at all breakpoints (was incorrectly scoped to mobile only) */
+.popover {
+    max-width: 600px !important;
+    width: 600px !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
+    border: none !important;
+    z-index: 9999 !important;
+    overflow: hidden !important;
+}
+
+.popover.add-my-task-popover {
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+}
+
+.popover.add-my-task-popover .arrow,
+.popover.add-my-task-popover .popover-arrow {
+    display: none !important;
+}
+
+.popover-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    display: none;
+}
+
+.popover-backdrop.show {
+    display: block;
+}
+
+.popover.show {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.popover .popover-header {
+    background: #ffffff !important;
+    color: #1e3d60 !important;
+    border-bottom: 1px solid #c8dcef !important;
+    border-radius: 8px 8px 0 0 !important;
+    padding: 12px 18px !important;
+    font-weight: 700 !important;
+    font-size: 15px !important;
+    letter-spacing: 0.02em !important;
+}
+
+.popover .popover-body {
+    padding: 15px !important;
+    background: #f0f6ff !important;
+    word-wrap: break-word !important;
+    white-space: normal !important;
+}
+
+.popover .popover-body * {
+    box-sizing: border-box !important;
+}
+
+.popover .form-group {
+    margin-bottom: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.popover .modern-popover-content {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    padding: 5px !important;
+}
+
+.popover .modern-popover-content > .form-group {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+}
+
+.popover .modern-popover-content > .form-group-full-width {
+    grid-column: 1 / -1 !important;
+}
+
+.popover .modern-popover-content > .text-center {
+    grid-column: 1 / -1 !important;
+    margin-top: 8px !important;
+}
+
+.popover .form-group label {
+    font-weight: 600 !important;
+    color: #2c3e50 !important;
+    margin-bottom: 6px !important;
+    display: block !important;
+    font-size: 13px !important;
+}
+
+.popover .form-control {
+    border: 1px solid #ced4da !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: block !important;
+}
+
+.popover .form-control:focus {
+    border-color: var(--secondary-color) !important;
+    box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
+    outline: 0 !important;
+}
+
+.popover textarea.form-control {
+    min-height: 70px !important;
+    resize: vertical !important;
+    line-height: 1.5 !important;
+}
+
+.popover .btn {
+    padding: 10px 24px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+    letter-spacing: 0.5px !important;
+}
+
+.popover .btn-primary {
+    background: var(--primary-color) !important;
+    border: 1px solid var(--primary-color) !important;
+    color: #fff !important;
+}
+
+.popover .btn-primary:hover {
+    background: var(--secondary-color) !important;
+    border-color: var(--secondary-color) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(30, 61, 96, 0.2) !important;
+}
+
+.popover .error-message {
+    color: #dc3545 !important;
+    font-size: 11px !important;
+    margin-top: 3px !important;
+    font-weight: 500 !important;
+    display: block !important;
+    min-height: 14px !important;
+}
+
+.popover .dropdown-multi-select {
+    position: relative;
+    display: block;
+    width: 100%;
+}
+
+.popover .dropdown-multi-select .btn {
+    width: 100%;
+    text-align: left;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: #1a2c40 !important;
+}
+
+.popover .dropdown-multi-select .btn-default,
+.popover .dropdown-multi-select .dropdown-toggle {
+    color: #1a2c40 !important;
+}
+
+.popover .dropdown-multi-select .selected-count {
+    color: #5e7a90;
+    font-weight: 600;
+}
+
+.popover .dropdown-multi-select .assignee-list {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.popover .dropdown-multi-select .dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.popover .dropdown-multi-select .dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.popover .dropdown-multi-select .dropdown-item input[type="checkbox"] {
+    margin-right: 8px;
+    margin-bottom: 0;
+}
+
+.popover .js-data-example-ajaxccsearch__addmytask {
+    width: 100%;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+    background-color: #fff;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.popover .js-data-example-ajaxccsearch__addmytask:focus {
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2);
+    outline: 0;
+}
+
+.custom-error {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 5px;
+    display: block;
+}
+
+body > .ts-dropdown {
+    z-index: 10050 !important;
+}
+
+.popover .ts-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+@media (max-width: 768px) {
     .popover {
-        max-width: 600px !important;
-        width: 600px !important;
-        border-radius: 10px !important;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
-        border: none !important;
-        z-index: 9999 !important;
-        overflow: hidden !important;
-    }
-    
-    .popover.add-my-task-popover {
-        position: fixed !important;
-        left: 50% !important;
-        top: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        margin: 0 !important;
-    }
-    
-    .popover.add-my-task-popover .arrow,
-    .popover.add-my-task-popover .popover-arrow {
-        display: none !important;
-    }
-    
-    .popover-backdrop {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        z-index: 9998;
-        display: none;
-    }
-    
-    .popover-backdrop.show {
-        display: block;
-    }
-    
-    .popover.show {
-        display: block !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-    }
-
-    .popover .popover-header {
-        background: #ffffff !important;
-        color: #1e3d60 !important;
-        border-bottom: 1px solid #c8dcef !important;
-        border-radius: 8px 8px 0 0 !important;
-        padding: 12px 18px !important;
-        font-weight: 700 !important;
-        font-size: 15px !important;
-        letter-spacing: 0.02em !important;
-    }
-
-    .popover .popover-body {
-        padding: 15px !important;
-        background: #f0f6ff !important;
-        word-wrap: break-word !important;
-        white-space: normal !important;
-    }
-
-    .popover .popover-body * {
-        box-sizing: border-box !important;
-    }
-
-    .popover .form-group {
-        margin-bottom: 0 !important;
-        box-sizing: border-box !important;
-    }
-
-    .popover .modern-popover-content {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 12px !important;
-        padding: 5px !important;
-    }
-
-    .popover .modern-popover-content > .form-group {
-        width: 100% !important;
-        min-width: 0 !important;
-        max-width: 100% !important;
-    }
-
-    .popover .modern-popover-content > .form-group-full-width {
-        grid-column: 1 / -1 !important;
-    }
-
-    .popover .modern-popover-content > .text-center {
-        grid-column: 1 / -1 !important;
-        margin-top: 8px !important;
-    }
-
-    .popover .form-group label {
-        font-weight: 600 !important;
-        color: #2c3e50 !important;
-        margin-bottom: 6px !important;
-        display: block !important;
-        font-size: 13px !important;
-    }
-
-    .popover .form-control {
-        border: 1px solid #ced4da !important;
-        border-radius: 6px !important;
-        padding: 8px 12px !important;
-        font-size: 14px !important;
-        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-        display: block !important;
-    }
-
-    .popover .form-control:focus {
-        border-color: var(--secondary-color) !important;
-        box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
-        outline: 0 !important;
-    }
-
-    .popover textarea.form-control {
-        min-height: 70px !important;
-        resize: vertical !important;
-        line-height: 1.5 !important;
-    }
-
-    .popover .btn {
-        padding: 10px 24px !important;
-        font-size: 14px !important;
-        font-weight: 600 !important;
-        border-radius: 8px !important;
-        transition: all 0.2s ease !important;
-        letter-spacing: 0.5px !important;
-    }
-
-    .popover .btn-primary {
-        background: var(--primary-color) !important;
-        border: 1px solid var(--primary-color) !important;
-        color: #fff !important;
-    }
-
-    .popover .btn-primary:hover {
-        background: var(--secondary-color) !important;
-        border-color: var(--secondary-color) !important;
-        transform: translateY(-1px) !important;
-        box-shadow: 0 4px 12px rgba(30, 61, 96, 0.2) !important;
-    }
-
-    .popover .error-message {
-        color: #dc3545 !important;
-        font-size: 11px !important;
-        margin-top: 3px !important;
-        font-weight: 500 !important;
-        display: block !important;
-        min-height: 14px !important;
-    }
-
-    .popover .dropdown-multi-select {
-        position: relative;
-        display: block;
-        width: 100%;
-    }
-
-    .popover .dropdown-multi-select .btn {
-        width: 100%;
-        text-align: left;
-        background-color: #fff;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
-        padding: 8px 12px;
-        font-size: 14px;
-        color: #1a2c40 !important;
-    }
-
-    .popover .dropdown-multi-select .btn-default,
-    .popover .dropdown-multi-select .dropdown-toggle {
-        color: #1a2c40 !important;
-    }
-
-    .popover .dropdown-multi-select .selected-count {
-        color: #5e7a90;
-        font-weight: 600;
-    }
-
-    .popover .dropdown-multi-select .assignee-list {
-        max-height: 200px;
-        overflow-y: auto;
-        padding: 8px;
-    }
-
-    .popover .dropdown-multi-select .dropdown-item {
-        display: flex;
-        align-items: center;
-        padding: 6px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background-color 0.15s ease;
-    }
-
-    .popover .dropdown-multi-select .dropdown-item:hover {
-        background-color: #f8f9fa;
-    }
-
-    .popover .dropdown-multi-select .dropdown-item input[type="checkbox"] {
-        margin-right: 8px;
-        margin-bottom: 0;
-    }
-
-    .popover .js-data-example-ajaxccsearch__addmytask {
-        width: 100%;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
-        padding: 8px 12px;
-        font-size: 14px;
-        background-color: #fff;
-        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-    }
-
-    .popover .js-data-example-ajaxccsearch__addmytask:focus {
-        border-color: var(--secondary-color);
-        box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2);
-        outline: 0;
-    }
-
-    .custom-error {
-        color: #dc3545;
-        font-size: 12px;
-        margin-top: 5px;
-        display: block;
+        max-width: calc(100vw - 24px) !important;
+        width: calc(100vw - 24px) !important;
     }
 }
 </style>
@@ -1281,59 +1374,61 @@ $(function () {
             $('.add_my_task').popover('hide');
         });
         
-        // Initialize client Select2
+        // Initialize client picker (Tom Select) — must use the visible popover tip, not the hidden
+        // #add-task-popover-template clone (duplicate id would make $('#assign_client_id') match the wrong node).
         setTimeout(function() {
-            initializeClientSelect2();
+            initializeClientSelect2($popover);
         }, 100);
     });
     
     // Hide backdrop when popover is hidden
+    $(document).on('hide.bs.popover', '.add_my_task', function() {
+        // Duplicate id: destroy Tom Select on every matching select (template + tip).
+        if (typeof destroyTS === 'function') {
+            document.querySelectorAll('#assign_client_id').forEach(function (el) {
+                destroyTS(el);
+            });
+        }
+    });
+
     $(document).on('hidden.bs.popover', '.add_my_task', function() {
         $('.popover-backdrop').removeClass('show');
     });
     
-    // Function to initialize client Select2
-    function initializeClientSelect2() {
+    // Function to initialize Add My Task client picker (Tom Select)
+    // @param {JQuery} [$popoverTip] - visible popover root (preferred); avoids hidden template duplicate #assign_client_id
+    function initializeClientSelect2($popoverTip) {
         var attempts = 0;
         var maxAttempts = 10;
         
         function tryInitialize() {
             attempts++;
-            var $clientSelect = $('#assign_client_id');
+            var $clientSelect = ($popoverTip && $popoverTip.length)
+                ? $popoverTip.find('#assign_client_id')
+                : $('.popover.show #assign_client_id, .popover.add-my-task-popover:visible #assign_client_id').first();
             
             if ($clientSelect.length && $clientSelect.is(':visible')) {
-                if ($clientSelect.hasClass('select2-hidden-accessible')) {
-                    $clientSelect.select2('destroy');
+                if (typeof initTS !== 'function' || typeof buildGetAllClientsTomSelectConfig !== 'function' || typeof destroyTS !== 'function') {
+                    if (attempts < maxAttempts) {
+                        setTimeout(tryInitialize, 50);
+                    }
+                    return;
                 }
-                
                 try {
-                    $clientSelect.select2({
-                        closeOnSelect: true,
-                        placeholder: 'Search client...',
-                        allowClear: true,
-                        width: '100%',
-                        dropdownParent: $('.popover'),
-                        ajax: {
-                            url: '{{URL::to('/clients/get-allclients')}}',
-                            dataType: 'json',
-                            delay: 250,
-                            processResults: function (data) {
-                                if (!data || typeof data !== 'object') {
-                                    return { results: [] };
-                                }
-                                return {
-                                    results: data.items || []
-                                };
-                            },
-                            cache: true
-                        },
-                        templateResult: formatRepomainMYTask,
-                        templateSelection: formatRepoSelectionmainMYTask,
-                        minimumInputLength: 1
-                    });
+                    var el = $clientSelect[0];
+                    destroyTS(el);
+                    initTS(el, buildGetAllClientsTomSelectConfig({
+                        url: '{{URL::to('/clients/get-allclients')}}',
+                        dropdownParent: 'body',
+                        placeholder: 'Search client...'
+                    }));
+                    var w = el.tomselect && el.tomselect.wrapper;
+                    if (w) {
+                        w.style.width = '100%';
+                    }
                     return true;
                 } catch (error) {
-                    console.error('Error initializing Select2:', error);
+                    console.error('Error initializing client Tom Select:', error);
                     return false;
                 }
             } else if (attempts < maxAttempts) {
@@ -1344,38 +1439,7 @@ $(function () {
         tryInitialize();
     }
     
-    // Helper functions for Select2 templates
-    function formatRepomainMYTask (repo) {
-        if (repo.loading) {
-            return repo.text;
-        }
-        var cidSafe = String(repo.cid || '').replace(/'/g, '&#39;').replace(/&/g, '&amp;');
-        var $container = $(
-            "<div dataid='" + cidSafe + "' class='selectclient select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-            "<div class='ag-flex ag-align-start'>" +
-                "<div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span class='select2-result-repository__title text-semi-bold'></span>\u00A0</div>" +
-                "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small></div>" +
-            "</div>" +
-            "</div>" +
-            "<div class='ag-flex ag-flex-column ag-align-end'>" +
-                "<span class='select2resultrepositorystatistics'></span>" +
-            "</div>" +
-            "</div>"
-        );
-        $container.find(".select2-result-repository__title").text(repo.name || '');
-        $container.find(".select2-result-repository__description").text(repo.email || '');
-        var statClass = (repo.status == 'Archived') ? 'ui label select2-result-repository__statistics' : 'ui label yellow select2-result-repository__statistics';
-        if (repo.status) {
-            $container.find(".select2resultrepositorystatistics").append($('<span class="' + statClass + '"></span>').text(repo.status));
-        }
-        return $container;
-    }
-
-    function formatRepoSelectionmainMYTask (repo) {
-        return (repo && repo.name) || (repo && repo.text) || '';
-    }
-    
-    // Add My Task submission - matching action page exactly
+    // Add My Task submission — uses #assign_client_id native value (Tom Select syncs)
     // Use event delegation on document to catch clicks on dynamically loaded popover content
     $(document).on('click', '#add_my_task', function(e) {
         e.preventDefault();
@@ -1483,8 +1547,18 @@ $(function () {
 <script>
 // Enhanced Dashboard Test Page JavaScript
 
-// Toast Notification System
+// Toast: prefer crmNotify (iziToast) from layout; else DOM fallback for this page.
 window.showToast = function(message, type = 'info') {
+    if (typeof window.crmNotify !== 'undefined') {
+        var kind = type === 'danger' ? 'error' : type;
+        if (['success', 'error', 'warning', 'info'].indexOf(kind) !== -1 &&
+            typeof window.crmNotify[kind] === 'function') {
+            window.crmNotify[kind]({ message: message });
+        } else {
+            window.crmNotify.info({ message: message });
+        }
+        return;
+    }
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     
@@ -1546,7 +1620,22 @@ document.addEventListener('keydown', function(e) {
 });
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Dashboard ready
+    document.querySelectorAll('.todo-filter-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            var clicked = this;
+            var filter = clicked.getAttribute('data-todo-filter');
+            document.querySelectorAll('.todo-filter-tab').forEach(function(b) {
+                b.classList.toggle('is-active', b === clicked);
+            });
+            document.querySelectorAll('.todo-task-item').forEach(function(li) {
+                var u = li.getAttribute('data-urgency') || '';
+                var show = filter === 'all'
+                    || (filter === 'upcoming' && ['tomorrow', 'this-week', 'upcoming'].indexOf(u) !== -1)
+                    || (filter !== 'upcoming' && filter !== 'all' && u === filter);
+                li.style.display = show ? '' : 'none';
+            });
+        });
+    });
 });
 
 // Debounced search (override from original script)

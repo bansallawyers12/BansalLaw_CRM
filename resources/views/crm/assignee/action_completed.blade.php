@@ -1,12 +1,12 @@
-@extends('layouts.crm_client_detail')
+﻿@extends('layouts.crm_client_detail')
 @section('title', 'Completed Action')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
-<link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
+<link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
 <style>
-    /* Completed actions — docs/theme.md (tokens from crm-theme.css :root) */
+    /* Completed actions â€” docs/theme.md (tokens from crm-theme.css :root) */
     .listing-container .action-completed-filter-form {
         margin-bottom: 0;
     }
@@ -19,7 +19,7 @@
         max-width: 100%;
     }
 
-    /* Wrapper <button><a>…</a></button> — strip chrome so themed <a> shows */
+    /* Wrapper <button><a>â€¦</a></button> â€” strip chrome so themed <a> shows */
     .listing-container .filter-buttons > button {
         background: transparent !important;
         border: none !important;
@@ -130,6 +130,15 @@
 
     body > .select2-container--open {
         z-index: 10700 !important;
+    }
+
+    body > .ts-dropdown {
+        z-index: 10700 !important;
+    }
+
+    .popover .ts-wrapper {
+        width: 100% !important;
+        max-width: 100% !important;
     }
 
     .listing-container .btn-link {
@@ -407,7 +416,7 @@
                                                                         <div class='form-group row' style='margin-bottom:12px'>
                                                                             <label for='inputEmail3' class='col-sm-3 control-label c6 f13' style='margin-top:8px'>Note</label>
                                                                             <div class='col-sm-9'>
-                                                                                <textarea id='assignnote' class='form-control summernote-simple f13' placeholder='Enter a note....' type='text'></textarea>
+                                                                                <textarea id='assignnote' class='form-control tinymce-editor f13' placeholder='Enter a note....' type='text'></textarea>
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -511,7 +520,7 @@ jQuery(document).ready(function($){
         $('#assign_note_id').val(task_id);
     });
 
-    // Update task popover — populate fields + Select2 (dropdown parent = popover shell)
+    // Update task popover â€” populate fields + Select2 (dropdown parent = popover shell)
     $(document).on('shown.bs.popover', '.listing-container .update_task', function() {
         var $trigger = $(this);
         var $shell = $('.popover.show').last();
@@ -530,29 +539,24 @@ jQuery(document).ready(function($){
         }
 
         $popover.find('.assigneeselect2').each(function() {
-            var $sel = $(this);
-            if ($sel.hasClass('select2-hidden-accessible')) {
-                try {
-                    $sel.select2('destroy');
-                } catch (e) { /* ignore */ }
-            }
+            if (typeof destroyTS === 'function') destroyTS(this);
         });
-        if (typeof $.fn.select2 === 'function') {
-            $popover.find('.assigneeselect2').select2({
-                width: '100%',
-                dropdownParent: $shell.length ? $shell : $(document.body)
+        var ddParent = $shell.length ? $shell[0] : document.body;
+        if (typeof initTS === 'function') {
+            $popover.find('.assigneeselect2').each(function() {
+                initTS(this, { create: false, dropdownParent: ddParent });
+                var ts = this.tomselect;
+                if (ts && ts.wrapper) {
+                    ts.wrapper.style.width = '100%';
+                    ts.wrapper.style.maxWidth = '100%';
+                }
             });
         }
     });
 
     $(document).on('hide.bs.popover', '.listing-container .update_task', function() {
         $('.popover .assigneeselect2').each(function() {
-            var $sel = $(this);
-            if ($sel.hasClass('select2-hidden-accessible')) {
-                try {
-                    $sel.select2('destroy');
-                } catch (e) { /* ignore */ }
-            }
+            if (typeof destroyTS === 'function') destroyTS(this);
         });
     });
 
@@ -574,7 +578,7 @@ jQuery(document).ready(function($){
         }
     });
 
-    // Reassign from completed (creates new action) — button id in popover is #updateTask
+    // Reassign from completed (creates new action) â€” button id in popover is #updateTask
     $(document).on('click', '#updateTask', function() {
         var $root = $(this).closest('.popover-body');
         if (!$root.length) {
@@ -647,3 +651,4 @@ jQuery(document).ready(function($){
 });
 </script>
 @endpush
+

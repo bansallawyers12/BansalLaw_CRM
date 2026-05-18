@@ -324,6 +324,19 @@ $(function () {
     container: "body"
   });
 
+  // Tom Select — plain static selects migrated to Tom Select (class crm-ts-plain).
+  // Excludes selects inside Bootstrap modals (same rule as the Select2 block below).
+  if (typeof TomSelect !== 'undefined' && typeof initTS === 'function') {
+    $(".crm-ts-plain").not(".modal .crm-ts-plain").each(function () {
+      var isMultiple = $(this).prop('multiple');
+      initTS(this, {
+        plugins: isMultiple ? ['remove_button'] : ['clear_button'],
+        allowEmptyOption: !isMultiple,
+        create: false
+      });
+    });
+  }
+
   // Select2 — skip selects inside Bootstrap modals: they are often display:none at init,
   // which breaks positioning (dropdown can appear over unrelated UI e.g. client edit tabs).
   // Those fields should use dropdownParent on shown.bs.modal (see matter-assignee-modal.js).
@@ -376,7 +389,7 @@ $(function () {
       "3B82F6", "Light Blue", "8B5CF6", "Light Purple", "EC4899", "Light Pink"
     ];
 
-    // Configuration for simple TinyMCE editors (replacing .summernote-simple)
+    // Configuration for simple TinyMCE editors (.tinymce-editor)
     // Optimized for quick notes with essential features
     var tinymceSimpleConfig = {
       license_key: 'gpl',
@@ -415,9 +428,7 @@ $(function () {
       }
     };
 
-    // Initialize TinyMCE for .summernote-simple (keeping class for backward compatibility during migration)
-    // Also initialize for .tinymce-editor
-    var editorsToInit = '.summernote-simple, .tinymce-editor';
+    var editorsToInit = '.tinymce-editor';
     
     // Check if editors exist and initialize them
     $(editorsToInit).each(function() {
@@ -435,7 +446,7 @@ $(function () {
       }
     });
 
-    // Configuration for full TinyMCE editors (replacing .summernote)
+    // Configuration for full TinyMCE editors (.tinymce-editor-full)
     // Enhanced for emails, templates, and longer content
     var tinymceFullConfig = {
       license_key: 'gpl',
@@ -519,8 +530,8 @@ $(function () {
       }
     };
 
-    // Initialize TinyMCE for .summernote (keeping class for backward compatibility)
-    $('.summernote').each(function() {
+    // Initialize full TinyMCE for .tinymce-editor-full
+    $('.tinymce-editor-full').each(function() {
       var editorId = $(this).attr('id') || 'tinymce_' + Math.random().toString(36).substr(2, 9);
       if (!$(this).attr('id')) {
         $(this).attr('id', editorId);
@@ -671,9 +682,9 @@ $(function () {
     });
   }
 
-  // Date pickers (Flatpickr - standardized)
+  // Date pickers (Flatpickr — class "datepicker" is historical; not Bootstrap Datepicker)
   if (typeof flatpickr !== 'undefined') {
-    // Check if we're on client detail page (uses bootstrap-datepicker instead)
+    // Check if we're on client detail page (Flatpickr handled by detail-main.js / appointments.js)
     // Client detail pages have .report_date_fields or .client-navigation-sidebar
     var isClientDetailPage = $('.report_date_fields').length > 0 || 
                              $('.client-navigation-sidebar').length > 0;
@@ -908,16 +919,6 @@ $(function () {
       });
     }
   } // End: if (isClientDetailPage) check
-
-  // Timepicker
-  if (jQuery().timepicker && $(".timepicker").length) {
-    $(".timepicker").timepicker({
-      icons: {
-        up: "fas fa-chevron-up",
-        down: "fas fa-chevron-down"
-      }
-    });
-  }
 
   $("#mini_sidebar_setting").on("change", function () {
     var _val = $(this).is(":checked") ? "checked" : "unchecked";

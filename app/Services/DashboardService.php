@@ -145,8 +145,9 @@ class DashboardService
         // Apply role-based filtering
         $this->applyRoleBasedFiltering($query, $user);
 
-        $cases = $query->orderByDesc('updated_at')
-            ->limit(50) // Limit to 50 most recent cases to avoid timeout
+        // Oldest activity first — surfaces matters that have stalled longest
+        $cases = $query->orderBy('updated_at', 'asc')
+            ->limit(50) // Limit to 50 cases to avoid timeout
             ->get();
         
         // Enrich only the first 20 cases with activity (those displayed on dashboard)
@@ -300,9 +301,9 @@ class DashboardService
     private function getVisibleColumns(): array
     {
         $defaultColumns = [
-            'matter', 'client_id', 'client_name', 'dob', 
-            'legal_practitioner', 'person_responsible', 
-            'person_assisting', 'stage'
+            'matter', 'client_id', 'client_name',
+            'legal_practitioner', 'person_responsible',
+            'person_assisting', 'stage',
         ];
 
         return session('dashboard_column_preferences', $defaultColumns);

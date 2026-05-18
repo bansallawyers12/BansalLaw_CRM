@@ -1,12 +1,12 @@
-@extends('layouts.crm_client_detail')
+﻿@extends('layouts.crm_client_detail')
 @section('title', 'Assigned by Me')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
-<link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
+<link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
 <style>
-    /* Assigned by me — docs/theme.md (tokens from crm-theme.css :root; shared listing-*.css for table/cards) */
+    /* Assigned by me â€” docs/theme.md (tokens from crm-theme.css :root; shared listing-*.css for table/cards) */
     .listing-container .client-header {
         display: flex;
         justify-content: space-between;
@@ -107,6 +107,15 @@
 
     body > .select2-container--open {
         z-index: 10700 !important;
+    }
+
+    body > .ts-dropdown {
+        z-index: 10700 !important;
+    }
+
+    .popover .ts-wrapper {
+        width: 100% !important;
+        max-width: 100% !important;
     }
 
     .listing-container .btn-link {
@@ -278,7 +287,7 @@
                                                                     <div class="form-group row" style="margin-bottom:12px">
                                                                         <label for="assignnote" class="col-sm-3 control-label c6 f13" style="margin-top:8px">Note</label>
                                                                         <div class="col-sm-9">
-                                                                            <textarea id="assignnote" class="form-control summernote-simple f13" placeholder="Enter a note..."></textarea>
+                                                                            <textarea id="assignnote" class="form-control tinymce-editor f13" placeholder="Enter a note..."></textarea>
                                                                         </div>
                                                                     </div>
                                                                     <div class="form-group row" style="margin-bottom:12px">
@@ -347,7 +356,7 @@
     </div>
 </div>
 
-<!-- Task Completion Notes Modal — markup + tokens match action page (public/css/crm-theme.css) -->
+<!-- Task Completion Notes Modal â€” markup + tokens match action page (public/css/crm-theme.css) -->
 <div class="modal fade" id="completionNotesModal" tabindex="-1" role="dialog" aria-labelledby="completionNotesModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content completion-notes-modal-content">
@@ -410,7 +419,7 @@
             $('#assign_note_id').val(task_id);
         });
 
-        // Update task — populate fields + Select2 (content in DOM; dropdown parent must be popover, not hidden modal)
+        // Update task â€” populate fields + Select2 (content in DOM; dropdown parent must be popover, not hidden modal)
         $(document).on('shown.bs.popover', '.listing-container .update_task', function() {
             var $trigger = $(this);
             var $shell = $('.popover.show').last();
@@ -429,29 +438,24 @@
             }
 
             $popover.find('.assigneeselect2').each(function() {
-                var $sel = $(this);
-                if ($sel.hasClass('select2-hidden-accessible')) {
-                    try {
-                        $sel.select2('destroy');
-                    } catch (e) { /* ignore */ }
-                }
+                if (typeof destroyTS === 'function') destroyTS(this);
             });
-            if (typeof $.fn.select2 === 'function') {
-                $popover.find('.assigneeselect2').select2({
-                    width: '100%',
-                    dropdownParent: $shell.length ? $shell : $(document.body)
+            var ddParent = $shell.length ? $shell[0] : document.body;
+            if (typeof initTS === 'function') {
+                $popover.find('.assigneeselect2').each(function() {
+                    initTS(this, { create: false, dropdownParent: ddParent });
+                    var ts = this.tomselect;
+                    if (ts && ts.wrapper) {
+                        ts.wrapper.style.width = '100%';
+                        ts.wrapper.style.maxWidth = '100%';
+                    }
                 });
             }
         });
 
         $(document).on('hide.bs.popover', '.listing-container .update_task', function() {
             $('.popover .assigneeselect2').each(function() {
-                var $sel = $(this);
-                if ($sel.hasClass('select2-hidden-accessible')) {
-                    try {
-                        $sel.select2('destroy');
-                    } catch (e) { /* ignore */ }
-                }
+                if (typeof destroyTS === 'function') destroyTS(this);
             });
         });
 
@@ -539,7 +543,7 @@
             });
         });
 
-        // Update task (scope to visible popover — IDs repeat per row in markup)
+        // Update task (scope to visible popover â€” IDs repeat per row in markup)
         $(document).on('click', '#updateTask', function() {
             var $root = $(this).closest('.popover-body');
             if (!$root.length) {
@@ -646,3 +650,4 @@
     });
 </script>
 @endpush
+

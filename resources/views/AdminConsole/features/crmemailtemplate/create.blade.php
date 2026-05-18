@@ -58,7 +58,7 @@
 												<div class="col-12 col-md-12 col-lg-12">
 													<div class="form-group"> 
 														<label for="description">Description</label>
-														<textarea class="form-control summernote-simple" name="description"></textarea>
+														<textarea class="form-control tinymce-editor" name="description"></textarea>
 													</div>
 												</div> 
 											</div>

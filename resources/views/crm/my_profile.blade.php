@@ -108,7 +108,7 @@
 										</div>
 										<div class="form-group">
 											<label for="country">Country <span style="color:#ff0000;">*</span></label>
-											<select class="form-control  select2" name="country" >
+											<select class="form-control crm-ts-plain" name="country" >
 												<?php
 													foreach(\App\Models\Country::all() as $list){
 														?>

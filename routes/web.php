@@ -16,6 +16,7 @@ use App\Http\Controllers\CRM\ActiveStaffController;
 use App\Http\Controllers\CRM\BroadcastNotificationAjaxController;
 // use App\Http\Controllers\CRM\EmailTemplateController; // DISABLED: email_templates table has been deleted
 use App\Http\Controllers\CRM\AuditLogController;
+use App\Http\Controllers\CRM\TrustAccountingAdminController;
 use App\Http\Controllers\Auth\AdminLoginController;
 use App\Http\Controllers\CRM\SuperAdminElevationController;
 
@@ -268,6 +269,30 @@ Route::middleware(['auth:admin'])->group(function() {
 
 	/*---------- Audit Logs ----------*/
 	Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('auditlogs.index');
+
+	/*---------- Trust accounting (VLSB+C tooling) ----------*/
+	Route::prefix('trust-accounting')->name('trust-accounting.')->group(function () {
+		Route::get('/periods', [TrustAccountingAdminController::class, 'periodsIndex'])->name('periods.index');
+		Route::post('/periods', [TrustAccountingAdminController::class, 'periodsStore'])->name('periods.store');
+		Route::post('/periods/{period}/unlock', [TrustAccountingAdminController::class, 'periodsUnlock'])->name('periods.unlock');
+		Route::get('/audit-log', [TrustAccountingAdminController::class, 'auditLogIndex'])->name('audit-log.index');
+		Route::get('/reports', [TrustAccountingAdminController::class, 'reportsIndex'])->name('reports.index');
+		Route::get('/practice-sequences', [TrustAccountingAdminController::class, 'practiceSequencesIndex'])->name('practice-sequences.index');
+		Route::get('/guide', [TrustAccountingAdminController::class, 'guide'])->name('guide');
+		Route::get('/reports/trial-balance', [TrustAccountingAdminController::class, 'trialBalanceReport'])->name('reports.trial-balance');
+		Route::get('/reports/receipts-journal', [TrustAccountingAdminController::class, 'receiptsJournalReport'])->name('reports.receipts-journal');
+		Route::get('/reports/payments-journal', [TrustAccountingAdminController::class, 'paymentsJournalReport'])->name('reports.payments-journal');
+		Route::get('/bank-accounts', [TrustAccountingAdminController::class, 'bankAccountsIndex'])->name('bank-accounts.index');
+		Route::post('/bank-accounts', [TrustAccountingAdminController::class, 'bankAccountsStore'])->name('bank-accounts.store');
+		Route::get('/reconciliation', [TrustAccountingAdminController::class, 'reconciliationIndex'])->name('reconciliation.index');
+		Route::post('/reconciliation/lines', [TrustAccountingAdminController::class, 'reconciliationStoreLine'])->name('reconciliation.lines.store');
+		Route::delete('/reconciliation/lines/{line}', [TrustAccountingAdminController::class, 'reconciliationDestroyLine'])->name('reconciliation.lines.destroy');
+		Route::post('/reconciliation/match', [TrustAccountingAdminController::class, 'reconciliationMatch'])->name('reconciliation.match');
+		Route::post('/reconciliation/unmatch', [TrustAccountingAdminController::class, 'reconciliationUnmatch'])->name('reconciliation.unmatch');
+		Route::get('/rule42-withdrawal-authority-types', [TrustAccountingAdminController::class, 'withdrawalAuthorityTypesIndex'])->name('withdrawal-authority-types.index');
+		Route::post('/rule42-withdrawal-authority-types', [TrustAccountingAdminController::class, 'withdrawalAuthorityTypesStore'])->name('withdrawal-authority-types.store');
+		Route::put('/rule42-withdrawal-authority-types/{type}', [TrustAccountingAdminController::class, 'withdrawalAuthorityTypesUpdate'])->name('withdrawal-authority-types.update');
+	});
 
 	/*---------- Notifications ----------*/
 	Route::get('/fetch-notification', [CRMUtilityController::class, 'fetchnotification']);

@@ -13,17 +13,15 @@
     <link rel="icon" type="image/png" href="{{asset('img/favicon.png')}}">
     <link rel="stylesheet" href="{{asset('css/app.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/iziToast.min.css')}}">
-    <link rel="stylesheet" href="{{asset('css/fullcalendar.min.css')}}">
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
-    <link rel="stylesheet" href="{{asset('css/bootstrap-timepicker.min.css')}}">
     @include('components.flatpickr-assets')
     <link rel="stylesheet" href="{{asset('css/select2.min.css')}}">
-    <link rel="stylesheet" href="{{asset('css/bootstrap-formhelpers.min.css')}}">
+    <link rel="stylesheet" href="{{asset('css/tom-select.bootstrap5.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/intlTelInput.css')}}">
     <link rel="stylesheet" href="{{asset('css/style.css')}}">
     <link rel="stylesheet" href="{{asset('css/components.css')}}">
     <link rel="stylesheet" href="{{asset('css/custom.css')}}">
-    <link rel="stylesheet" href="{{asset('css/dataTables_min_latest.css')}}">
+    <link rel="stylesheet" href="{{asset('css/dataTables.bootstrap5.min.css')}}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>window.__CRM_APP_NAME__=@json(config('app.name'));</script>
@@ -534,6 +532,34 @@
         
         /* Matter dropdown - wrap long option names when opened */
         .matter-dropdown-wrap .select2-results__option {
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            line-height: 1.4 !important;
+        }
+
+        /* Sidebar matter dropdown - Tom Select equivalents */
+        .sidebar-matter-selection .ts-wrapper {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        .sidebar-matter-selection .ts-control {
+            height: auto !important;
+            min-height: 38px;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 6px !important;
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            word-break: break-word !important;
+            line-height: 1.4 !important;
+            padding-top: 6px !important;
+            padding-bottom: 6px !important;
+        }
+
+        /* Matter dropdown - wrap long option names (Tom Select) */
+        .matter-dropdown-wrap .option {
             white-space: normal !important;
             word-wrap: break-word !important;
             overflow-wrap: break-word !important;
@@ -1547,18 +1573,37 @@
             z-index: 2 !important; pointer-events: none !important; color: #868e96 !important; line-height: 1 !important;
         }
         .topbar-center .topbar-search__icon i { font-size: 0.85rem !important; }
-        .topbar-center .topbar-search .select2-container { width: 100% !important; }
-        .topbar-center .topbar-search .select2-container--default .select2-selection--single {
+        /* Topbar Tom Select search */
+        .topbar-center .topbar-search .ts-wrapper { width: 100% !important; }
+        .topbar-center .topbar-search .ts-wrapper .ts-control {
             background-color: #fff !important;
             border: 1px solid #dee2e6 !important;
             border-radius: 8px !important;
-            padding-left: 2rem !important; min-height: 40px !important; height: 40px !important;
-            display: flex !important; align-items: center !important;
+            padding-left: 2rem !important;
+            min-height: 40px !important;
+            height: 40px !important;
+            display: flex !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            cursor: text !important;
+            box-shadow: none !important;
         }
-        .topbar-center .topbar-search .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 38px !important; font-size: 0.875rem !important;
+        .topbar-center .topbar-search .ts-wrapper .ts-control input {
+            font-size: 0.875rem !important;
+            padding: 0 !important;
+            min-width: 0 !important;
+            flex: 1 1 0% !important;
+            border: 0 !important;
+            background: transparent !important;
+            line-height: 1 !important;
         }
-        .topbar-center .topbar-search .select2-container--default .select2-selection--single .select2-selection__arrow { height: 38px !important; }
+        .topbar-center .topbar-search .ts-wrapper .ts-control .item {
+            font-size: 0.875rem !important;
+            line-height: 1 !important;
+            padding: 0 !important;
+        }
+        /* Hide the Bootstrap 5 theme chevron on the topbar search control */
+        .topbar-center .topbar-search .ts-wrapper.single .ts-control::after { display: none !important; }
         .topbar-center .topbar-search .form-control { border: 0 !important; background: transparent !important; width: 100% !important; }
         .topbar-right { display: flex !important; align-items: center !important; gap: 10px !important; }
         /* Dropdowns */
@@ -1593,61 +1638,9 @@
         /* When topbar is hidden, reclaim space for content (leave 6px gap) */
         body.topbar-hidden .crm-container { margin-top: 6px !important; }
         
-        /* Datepicker styling improvements */
-        .datepicker {
-            border-radius: 8px !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-            border: 1px solid #e9ecef !important;
-            font-family: 'Inter', sans-serif !important;
-        }
-        
-        .datepicker table tr td.active,
-        .datepicker table tr td.active:hover,
-        .datepicker table tr td.active.disabled,
-        .datepicker table tr td.active.disabled:hover {
-            background-color: #3498db !important;
-            background-image: none !important;
-            color: #ffffff !important;
-        }
-        
-        .datepicker table tr td.today {
-            background-color: #e3f2fd !important;
-            color: #1976d2 !important;
-            font-weight: 600 !important;
-        }
-        
-        .datepicker table tr td:hover {
-            background-color: #f8f9fa !important;
-        }
-        
-        .datepicker table tr td.old,
-        .datepicker table tr td.new {
-            color: #adb5bd !important;
-        }
-        
-        .datepicker table tr td.day {
-            border-radius: 4px !important;
-            margin: 1px !important;
-        }
-        
-        .datepicker table tr th {
-            background-color: #f8f9fa !important;
-            color: #495057 !important;
-            font-weight: 600 !important;
-            border-bottom: 1px solid #dee2e6 !important;
-        }
-        
-        .datepicker-switch,
-        .datepicker .datepicker-switch:hover,
-        .datepicker .prev:hover,
-        .datepicker .next:hover {
-            background-color: #3498db !important;
-            color: #ffffff !important;
-            border-radius: 6px !important;
-        }
-        
-        .datepicker .datepicker-switch {
-            font-weight: 600 !important;
+        /* Flatpickr z-index: inline appointment calendar sits inside a modal */
+        .flatpickr-calendar {
+            z-index: 99999 !important;
         }
     </style>
     @yield('styles')
@@ -1744,23 +1737,22 @@
     };
     </script>
     <script src="{{asset('js/app.min.js')}}"></script>
-    <script src="{{asset('js/fullcalendar.min.js')}}"></script>
     <script src="{{asset('js/datatables.min.js')}}"></script>
-    <script src="https://momentjs.com/downloads/moment.js"></script>
-    <script src="{{asset('js/dataTables.bootstrap4.js')}}"></script>
+    <script src="{{asset('js/dataTables.bootstrap5.min.js')}}"></script>
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
-    <script src="{{asset('js/bootstrap-timepicker.min.js')}}"></script>
     @include('components.flatpickr-scripts')
     <script src="{{asset('js/crm-flatpickr.js')}}"></script>
     <script src="{{asset('js/select2.full.min.js')}}"></script>
-    <script src="{{asset('js/bootstrap-formhelpers.min.js')}}"></script>
+    <script src="{{asset('js/tom-select.complete.min.js')}}"></script>
+    <script src="{{asset('js/ts-init.js')}}"></script>
     <script src="{{asset('js/intlTelInput.js')}}"></script>
     <script src="{{asset('js/custom-form-validation.js')}}"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{asset('js/bootstrap5-jquery-compat.js')}}"></script>
     <script src="{{asset('js/scripts.js')}}"></script>
     <script src="{{asset('js/iziToast.min.js')}}"></script>
+    <script src="{{asset('js/crm-notify.js')}}"></script>
     <script src="{{asset('js/custom.js')}}"></script>
     @auth('admin')
     <script>window.crmLoginUrl = {!! json_encode(route('crm.login')) !!};</script>
@@ -1825,95 +1817,7 @@
                 this.value =  this.value;
             });
 
-            $('.assineeselect2').select2({
-                dropdownParent: $('#checkinmodal'),
-            });
-
-            $('.js-data-example-ajaxccsearch').select2({
-                closeOnSelect: true,
-                ajax: {
-                    url: '{{route('clients.getallclients')}}',
-                    dataType: 'json',
-                    processResults: function (data) {
-                        // Transforms the top-level key of the response object from 'items' to 'results'
-                        return {
-                            results: data.items
-                        };
-                    },
-                    cache: true
-                },
-                templateResult: formatRepomain,
-                templateSelection: formatRepoSelectionmain
-            });
-
-            function formatRepomain (repo) {
-                if (repo.loading) {
-                    return repo.text;
-                }
-
-                var $container = $(
-                    "<div dataid="+repo.cid+" class='selectclient select2-result-repository ag-flex ag-space-between ag-align-center')'>" +
-
-                    "<div  class='ag-flex ag-align-start'>" +
-                        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
-                        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
-
-                    "</div>" +
-                    "</div>" +
-                    "<div class='ag-flex ag-flex-column ag-align-end'>" +
-
-                        "<span class='select2resultrepositorystatistics'>" +
-
-                        "</span>" +
-                    "</div>" +
-                    "</div>"
-                );
-
-                $container.find(".select2-result-repository__title").text(repo.name);
-                $container.find(".select2-result-repository__description").text(repo.email);
-                if (repo.locked) {
-                    $container.addClass('opacity-75');
-                    $container.find(".select2-result-repository__title").prepend('<span class="mr-1" title="No access">&#128274;</span> ');
-                    var ui = repo.access_ui || {};
-                    if (ui.show_quick) {
-                        $container.find(".select2resultrepositorystatistics").append('<span class="ui label tiny">Quick</span> ');
-                    }
-                    if (ui.show_supervisor) {
-                        $container.find(".select2resultrepositorystatistics").append('<span class="ui label tiny">Supervisor</span> ');
-                    }
-                }
-                if(repo.status == 'Archived'){
-                    $container.find(".select2resultrepositorystatistics").append('<span class="ui label  select2-result-repository__statistics">'+repo.status+'</span>');
-                } else {
-                    $container.find(".select2resultrepositorystatistics").append('<span class="ui label yellow select2-result-repository__statistics">'+repo.status+'</span>');
-                }
-                return $container;
-            }
-
-            function formatRepoSelectionmain (repo) {
-                return repo.name || repo.text;
-            }
-
-            $('.js-data-example-ajaxccsearch').on('select2:select', function (e) {
-                var data = e.params.data || {};
-                if (data.locked && typeof window.openCrmAccessModal === 'function') {
-                    $(this).val(null).trigger('change');
-                    window.openCrmAccessModal(data);
-                    return;
-                }
-                var v = data.id;
-                if (!v) { return; }
-                var s = String(v).split('/');
-                if(s[1] == 'Matter' && s[2] != ''){
-                    window.location = '{{ url("/clients/detail") }}/' + s[0] + '/' + s[2];
-                } else {
-                    if(s[1] == 'Client'){
-                        window.location = '{{ url("/clients/detail") }}/' + s[0];
-                    }  else{
-                        window.location = '{{ url("/history") }}/' + s[0];
-                    }
-                }
-            });
+            @include('layouts.partials.select2-layout-client-search-toolbar')
 
 
             $(document).delegate('.opencheckin', 'click', function(){
@@ -2385,89 +2289,7 @@
                 $('.card .card-body .grid_data').show();
             });
 
-            $('.js-data-example-ajax-check').on("select2:select", function(e) {
-                var data = e.params.data;
-                console.log(data);
-                // Ensure status is set, default to 'Client' if not provided
-                var contactType = data.status || data.type || 'client';
-                // Normalize to lowercase first, then capitalize
-                contactType = contactType.toLowerCase();
-                if (contactType === 'lead') {
-                    contactType = 'Lead';
-                } else if (contactType === 'client') {
-                    contactType = 'Client';
-                } else {
-                    // If status is something else (like 'archived'), default to 'Client'
-                    contactType = 'Client';
-                }
-                $('#utype').val(contactType);
-            });
-
-            // Also handle when selection is cleared
-            $('.js-data-example-ajax-check').on("select2:clear", function(e) {
-                $('#utype').val('');
-            });
-
-            $('.js-data-example-ajax-check').select2({
-                multiple: true,
-                closeOnSelect: false,
-                dropdownParent: $('#checkinmodal'),
-                ajax: {
-                    url: '{{route('clients.getrecipients')}}',
-                    dataType: 'json',
-                    processResults: function (data) {
-                        // Transforms the top-level key of the response object from 'items' to 'results'
-                        return {
-                            results: data.items
-                        };
-                    },
-                    cache: true
-                },
-                templateResult: formatRepocheck,
-                templateSelection: formatRepoSelectioncheck
-            });
-
-            function formatRepocheck (repo) {
-                if (repo.loading) {
-                    return repo.text;
-                }
-
-                var $container = $(
-                    "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-
-                    "<div  class='ag-flex ag-align-start'>" +
-                        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
-                        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
-
-                    "</div>" +
-                    "</div>" +
-                    "<div class='ag-flex ag-flex-column ag-align-end'>" +
-
-                        "<span class='select2resultrepositorystatistics'>" +
-
-                        "</span>" +
-                    "</div>" +
-                    "</div>"
-                );
-
-                $container.find(".select2-result-repository__title").text(repo.name);
-                $container.find(".select2-result-repository__description").text(repo.email);
-                if(repo.status == 'Archived'){
-                    $container.find(".select2resultrepositorystatistics").append('<span class="ui label  select2-result-repository__statistics">'+repo.status+'</span>');
-                }else{
-                    $container.find(".select2resultrepositorystatistics").append('<span class="ui label yellow select2-result-repository__statistics">'+repo.status+'</span>');
-                }
-                return $container;
-            }
-
-            function formatRepoSelectioncheck (repo) {
-                return repo.name || repo.text;
-            }
-
-            /* $('.timepicker').timepicker({
-                minuteStep: 1,
-                showSeconds: true,
-            }); */
+            @include('layouts.partials.select2-layout-checkin-recipients')
         });
 
         $(document).ready(function(){
@@ -2926,16 +2748,20 @@
                 parent.classList.add('notification-bell-flash');
                 setTimeout(function() { parent.classList.remove('notification-bell-flash'); }, 600);
             }
-            if (options.showToast !== false && newCount > prevCount && typeof iziToast !== 'undefined' && iziToast.show) {
+            if (options.showToast !== false && newCount > prevCount) {
                 var toastMsg = options.message || (newCount === 1 ? 'You have a new notification' : 'You have ' + (newCount - prevCount) + ' new notification(s)');
                 var toastOpts = { title: 'Notification', message: toastMsg, position: 'topRight', color: 'blue', timeout: 5000, closeOnClick: true };
                 if (options.url) toastOpts.onClick = function() { window.location.href = options.url; };
-                iziToast.show(toastOpts);
+                if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.show === 'function') {
+                    window.crmNotify.show(toastOpts);
+                } else if (typeof iziToast !== 'undefined' && iziToast.show) {
+                    iziToast.show(toastOpts);
+                }
             }
         };
     })();
     </script>
-    {{-- Vite: app bundle (notification polling, FullCalendar, etc.). broadcasts.js polls HTTP for admin broadcast banners. --}}
+    {{-- Vite: app bundle (notification polling, FullCalendar v6 globals for booking calendar, etc.). broadcasts.js polls HTTP for admin broadcast banners. --}}
     @vite(['resources/js/app.js'])
     <script src="{{ asset('js/broadcasts.js') }}" defer></script>
 

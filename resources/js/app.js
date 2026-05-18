@@ -28,23 +28,24 @@ window.updateNotificationBell = function (count, options = {}) {
         setTimeout(function () { parent.classList.remove('notification-bell-flash'); }, 600);
     }
     if (options.showToast !== false && newCount > prevCount) {
-        const izi = typeof window !== 'undefined' && window.iziToast;
-        if (izi && izi.show) {
-            const toastMessage = options.message || (newCount === 1 ? 'You have a new notification' : 'You have ' + (newCount - prevCount) + ' new notification(s)');
-            const toastConfig = {
-                title: 'Notification',
-                message: toastMessage,
-                position: 'topRight',
-                color: 'blue',
-                timeout: 5000,
-                closeOnClick: true
+        const toastMessage = options.message || (newCount === 1 ? 'You have a new notification' : 'You have ' + (newCount - prevCount) + ' new notification(s)');
+        const toastConfig = {
+            title: 'Notification',
+            message: toastMessage,
+            position: 'topRight',
+            color: 'blue',
+            timeout: 5000,
+            closeOnClick: true
+        };
+        if (options.url) {
+            toastConfig.onClick = function () {
+                window.location.href = options.url;
             };
-            if (options.url) {
-                toastConfig.onClick = function () {
-                    window.location.href = options.url;
-                };
-            }
-            izi.show(toastConfig);
+        }
+        if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.show === 'function') {
+            window.crmNotify.show(toastConfig);
+        } else if (typeof window !== 'undefined' && window.iziToast && window.iziToast.show) {
+            window.iziToast.show(toastConfig);
         }
     }
 };
@@ -83,7 +84,13 @@ window.updateNotificationBell = function (count, options = {}) {
 
 /*
 |--------------------------------------------------------------------------
-| FullCalendar v6
+| FullCalendar v6 (single integration path)
+|--------------------------------------------------------------------------
+| Exposes globals for the booking admin calendar only (Blade: calendar-v6).
+| Plugins are bundled here — do not load legacy fullcalendar.min.js or jQuery
+| .fullCalendar() anywhere. Page init: calendar-v6 Blade (DOMContentLoaded →
+| waitForFullCalendar). Deferred modules usually run before that handler;
+| polling covers failed builds or script-order edge cases.
 |--------------------------------------------------------------------------
 */
 

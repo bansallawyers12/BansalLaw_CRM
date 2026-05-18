@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 /**
@@ -70,19 +71,15 @@ class FinancialStatsService
 
         // Total deposits this month (Client Receipts - receipt_type 1)
         $totalDeposits = $receiptType === null || $receiptType == 1
-            ? $applyDateFilter($applyTypeFilter(DB::table('account_client_receipts')->where('receipt_type', 1)), $startDateStr, $endDateStr)
+            ? $applyDateFilter($applyTypeFilter($this->applyActiveTrustLedgerFilter(DB::table('account_client_receipts')->where('receipt_type', 1))), $startDateStr, $endDateStr)
                 ->sum('deposit_amount')
             : 0;
 
         // Total fee transfers this month (only for Client Receipts)
         $totalFeeTransfers = $receiptType === null || $receiptType == 1
-            ? $applyDateFilter(DB::table('account_client_receipts')
+            ? $applyDateFilter($this->applyActiveTrustLedgerFilter(DB::table('account_client_receipts')
                 ->where('receipt_type', 1)
-                ->where('client_fund_ledger_type', 'Fee Transfer')
-                ->where(function($q) {
-                    $q->whereNull('void_fee_transfer')
-                      ->orWhere('void_fee_transfer', '!=', 1);
-                }), $startDateStr, $endDateStr)
+                ->where('client_fund_ledger_type', 'Fee Transfer')), $startDateStr, $endDateStr)
                 ->sum('withdraw_amount')
             : 0;
 
@@ -113,8 +110,8 @@ class FinancialStatsService
 
         // Count of transactions
         $depositCount = $receiptType === null || $receiptType == 1
-            ? $applyDateFilter(DB::table('account_client_receipts')
-                ->where('receipt_type', 1), $startDateStr, $endDateStr)
+            ? $applyDateFilter($this->applyActiveTrustLedgerFilter(DB::table('account_client_receipts')
+                ->where('receipt_type', 1)), $startDateStr, $endDateStr)
                 ->count()
             : 0;
 
@@ -150,8 +147,8 @@ class FinancialStatsService
         $previousEndDateStr = $previousEndDate->format('d/m/Y');
 
         $previousDeposits = $receiptType === null || $receiptType == 1
-            ? $applyDateFilter(DB::table('account_client_receipts')
-                ->where('receipt_type', 1), $previousStartDateStr, $previousEndDateStr)
+            ? $applyDateFilter($this->applyActiveTrustLedgerFilter(DB::table('account_client_receipts')
+                ->where('receipt_type', 1)), $previousStartDateStr, $previousEndDateStr)
                 ->sum('deposit_amount')
             : 0;
 
@@ -203,31 +200,27 @@ class FinancialStatsService
         $endDateStr = $endDate->format('d/m/Y');
 
         // Unallocated receipts count (within date range)
-        $unallocatedCount = DB::table('account_client_receipts')
-            ->where('receipt_type', 1)
+        $unallocatedCount = $this->applyActiveTrustLedgerFilter(DB::table('account_client_receipts')
+            ->where('receipt_type', 1))
             ->whereNotNull('trans_date')
             ->whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", [$startDateStr, $endDateStr])
             ->where(function($q) {
                 $q->whereNull('validate_receipt')
                   ->orWhere('validate_receipt', 0);
             })
-            ->where(function($q) {
-                $q->whereNull('void_fee_transfer')
-                  ->orWhere('void_fee_transfer', '!=', 1);
-            })
             ->count();
 
         // Total allocated receipts (within date range)
-        $allocatedCount = DB::table('account_client_receipts')
-            ->where('receipt_type', 1)
+        $allocatedCount = $this->applyActiveTrustLedgerFilter(DB::table('account_client_receipts')
+            ->where('receipt_type', 1))
             ->whereNotNull('trans_date')
             ->whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", [$startDateStr, $endDateStr])
             ->where('validate_receipt', 1)
             ->count();
 
         // Total client receipts (within date range)
-        $totalClientReceipts = DB::table('account_client_receipts')
-            ->where('receipt_type', 1)
+        $totalClientReceipts = $this->applyActiveTrustLedgerFilter(DB::table('account_client_receipts')
+            ->where('receipt_type', 1))
             ->whereNotNull('trans_date')
             ->whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", [$startDateStr, $endDateStr])
             ->count();
@@ -379,8 +372,8 @@ class FinancialStatsService
         $thirtyDaysAgoStr = Carbon::now()->subDays(30)->format('d/m/Y');
 
         // Get receipts that have been validated within date range
-        $validatedReceipts = DB::table('account_client_receipts')
-            ->where('receipt_type', 1)
+        $validatedReceipts = $this->applyActiveTrustLedgerFilter(DB::table('account_client_receipts')
+            ->where('receipt_type', 1))
             ->whereNotNull('trans_date')
             ->whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", [$startDateStr, $endDateStr])
             ->where('validate_receipt', 1)
@@ -407,8 +400,8 @@ class FinancialStatsService
         $averageDays = $count > 0 ? round($totalDays / $count, 1) : 0;
 
         // Get receipts older than 30 days that are unallocated (within date range)
-        $oldUnallocated = DB::table('account_client_receipts')
-            ->where('receipt_type', 1)
+        $oldUnallocated = $this->applyActiveTrustLedgerFilter(DB::table('account_client_receipts')
+            ->where('receipt_type', 1))
             ->whereNotNull('trans_date')
             ->whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", [$startDateStr, $endDateStr])
             ->where(function($q) {
@@ -450,8 +443,8 @@ class FinancialStatsService
             
             // Deposits (Client Receipts - type 1)
             $deposits[] = ($receiptType === null || $receiptType == 1)
-                ? DB::table('account_client_receipts')
-                    ->where('receipt_type', 1)
+                ? $this->applyActiveTrustLedgerFilter(DB::table('account_client_receipts')
+                    ->where('receipt_type', 1))
                     ->whereNotNull('trans_date')
                     ->whereRaw("TO_DATE(trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", [$startDateStr, $endDateStr])
                     ->sum('deposit_amount')
@@ -525,6 +518,20 @@ class FinancialStatsService
             )
             ->whereNotNull('acr.trans_date')
             ->whereRaw("TO_DATE(acr.trans_date, 'DD/MM/YYYY') BETWEEN TO_DATE(?, 'DD/MM/YYYY') AND TO_DATE(?, 'DD/MM/YYYY')", [$startDateStr, $endDateStr]);
+
+        if (Schema::hasColumn('account_client_receipts', 'trust_voided_at')) {
+            $query->where(function ($w) {
+                $w->where('acr.receipt_type', '!=', 1)
+                    ->orWhere(function ($q) {
+                        $q->where('acr.receipt_type', 1)
+                            ->whereNull('acr.trust_voided_at')
+                            ->where(function ($v) {
+                                $v->whereNull('acr.void_fee_transfer')
+                                    ->orWhere('acr.void_fee_transfer', '!=', 1);
+                            });
+                    });
+            });
+        }
         
         // Apply receipt_type filter if provided
         if ($receiptType !== null) {
@@ -546,6 +553,25 @@ class FinancialStatsService
                 'transaction_count' => $client->transaction_count,
             ];
         })->toArray();
+    }
+
+    /**
+     * Trust ledger rows that still affect balances (not voided fee transfer, not practice voided).
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return \Illuminate\Database\Query\Builder
+     */
+    private function applyActiveTrustLedgerFilter($query)
+    {
+        $query->where(function ($q) {
+            $q->whereNull('void_fee_transfer')
+                ->orWhere('void_fee_transfer', '!=', 1);
+        });
+        if (Schema::hasColumn('account_client_receipts', 'trust_voided_at')) {
+            $query->whereNull('trust_voided_at');
+        }
+
+        return $query;
     }
 
     /**

@@ -1,10 +1,10 @@
-@extends('layouts.crm_client_detail')
+﻿@extends('layouts.crm_client_detail')
 @section('title', 'Clients Matters')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
-<link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
+<link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
 <style>
     /* Page-specific styles for clientsmatterslist */
     .listing-container .table th:first-child,
@@ -432,7 +432,7 @@
                                         <label for="from_date" class="col-form-label" style="color:#4a5568 !important;">From Date</label>
                                         <input type="date" name="from_date" id="from_date" value="{{ request('from_date') }}" class="form-control" placeholder="Start date">
                                     </div>
-                                    <span class="date-range-arrow">→</span>
+                                    <span class="date-range-arrow">â†’</span>
                                     <div class="form-group">
                                         <label for="to_date" class="col-form-label" style="color:#4a5568 !important;">To Date</label>
                                         <input type="date" name="to_date" id="to_date" value="{{ request('to_date') }}" class="form-control" placeholder="End date">
@@ -683,6 +683,8 @@ jQuery(document).ready(function($){
         }
     });
 
+    var crmRecipientsUrl = '{{ URL::to('/clients/get-recipients') }}';
+
     $(document).delegate('.listing-container .clientemail', 'click', function(){
         $('#emailmodal').modal('show');
         var array = [];
@@ -694,38 +696,14 @@ jQuery(document).ready(function($){
         var status = 'Client';
         data.push({
             id: id,
-            text: name,
-            html:  "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-
-                "<div  class='ag-flex ag-align-start'>" +
-                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
-                    "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>"+email+"</small ></div>" +
-
-                "</div>" +
-                "</div>" +
-                "<div class='ag-flex ag-flex-column ag-align-end'>" +
-
-                    "<span class='ui label yellow select2-result-repository__statistics'>"+ status +
-
-                    "</span>" +
-                "</div>" +
-                "</div>",
-            title: name
+            name: name,
+            email: email,
+            status: status
         });
-        $(".js-data-example-ajax").select2({
-            data: data,
-            escapeMarkup: function(markup) {
-                return markup;
-            },
-            templateResult: function(data) {
-                return data.html;
-            },
-            templateSelection: function(data) {
-                return data.text;
-            }
-        })
-        $('.js-data-example-ajax').val(array);
-        $('.js-data-example-ajax').trigger('change');
+        var $to = $('.js-data-example-ajax');
+        if ($to.length && typeof initRecipientsMultiTomSelectPreload === 'function') {
+            initRecipientsMultiTomSelectPreload($to[0], { dropdownParent: '#emailmodal', options: data, items: array });
+        }
     });
 
     $(document).delegate('.listing-container .selecttemplate', 'change', function(){
@@ -739,7 +717,7 @@ jQuery(document).ready(function($){
                 var res = JSON.parse(response);
                 $('.selectedsubject').val(res.subject);
                 // Clear and set TinyMCE editor content
-                $(".summernote-simple").each(function() {
+                $(".tinymce-editor").each(function() {
                     var editorId = $(this).attr('id');
                     if (editorId && typeof tinymce !== 'undefined' && tinymce.get(editorId)) {
                         tinymce.get(editorId).setContent(res.description || '');
@@ -751,71 +729,21 @@ jQuery(document).ready(function($){
         });
     });
 
-    $('.js-data-example-ajax').select2({
-        multiple: true,
-        closeOnSelect: false,
-        dropdownParent: $('#emailmodal'),
-        ajax: {
-            url: '{{URL::to('/clients/get-recipients')}}',
-            dataType: 'json',
-            processResults: function (data) {
-                // Transforms the top-level key of the response object from 'items' to 'results'
-                return { results: data.items };
-            },
-            cache: true
-        },
-        templateResult: formatRepo,
-        templateSelection: formatRepoSelection
-    });
-
-    $('.js-data-example-ajaxcc').select2({
-        multiple: true,
-        closeOnSelect: false,
-        dropdownParent: $('#emailmodal'),
-        ajax: {
-            url: '{{URL::to('/clients/get-recipients')}}',
-            dataType: 'json',
-            processResults: function (data) {
-                // Transforms the top-level key of the response object from 'items' to 'results'
-                return {
-                    results: data.items
-                };
-            },
-            cache: true
-        },
-        templateResult: formatRepo,
-        templateSelection: formatRepoSelection
-    });
-
-    function formatRepo (repo) {
-        if (repo.loading) {
-            return repo.text;
-        }
-        var $container = $(
-            "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-
-            "<div  class='ag-flex ag-align-start'>" +
-                "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
-                "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
-
-            "</div>" +
-            "</div>" +
-            "<div class='ag-flex ag-flex-column ag-align-end'>" +
-
-                "<span class='ui label yellow select2-result-repository__statistics'>" +
-
-                "</span>" +
-            "</div>" +
-            "</div>"
-        );
-        $container.find(".select2-result-repository__title").text(repo.name);
-        $container.find(".select2-result-repository__description").text(repo.email);
-        $container.find(".select2-result-repository__statistics").append(repo.status);
-        return $container;
-    }
-
-    function formatRepoSelection (repo) {
-    return repo.name || repo.text;
+    if (typeof initTS === 'function' && typeof buildCrmGetRecipientsMultiTomSelectConfig === 'function') {
+        $('.js-data-example-ajax').each(function () {
+            initTS(this, buildCrmGetRecipientsMultiTomSelectConfig({
+                url: crmRecipientsUrl,
+                dropdownParent: '#emailmodal',
+                enableRemoteLoad: true
+            }));
+        });
+        $('.js-data-example-ajaxcc').each(function () {
+            initTS(this, buildCrmGetRecipientsMultiTomSelectConfig({
+                url: crmRecipientsUrl,
+                dropdownParent: '#emailmodal',
+                enableRemoteLoad: true
+            }));
+        });
     }
 
     // ============================================
@@ -901,5 +829,6 @@ jQuery(document).ready(function($){
 });
 </script>
 @endpush
+
 
 

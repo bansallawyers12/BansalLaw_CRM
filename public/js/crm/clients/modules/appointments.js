@@ -78,6 +78,7 @@
 
     $(document).ready(function() {
         var duration, daysOfWeek, starttime, endtime, disabledtimeslotes, timeslotLabelsFromBackend;
+        var _appointmentFlatpickr = null; // Flatpickr instance for #datetimepicker
         var safeParse = typeof window.safeParseJsonResponse === 'function' ? window.safeParseJsonResponse : function(r) {
             if (typeof r === 'object' && r !== null) return r;
             if (typeof r === 'string' && r.trim()) { try { return JSON.parse(r); } catch (e) { return null; } }
@@ -227,10 +228,10 @@
                 
                 var slot_overwrite = $('#slot_overwrite_hidden').val() == 1 ? 1 : 0; // Get slot overwrite value
 
-                // Initialize datepicker when location is selected
-                // Destroy existing datepicker instance if it exists
-                if ($('#datetimepicker').data('datepicker')) {
-                    $('#datetimepicker').datepicker('destroy');
+                // Destroy existing Flatpickr instance before re-init
+                if (_appointmentFlatpickr) {
+                    _appointmentFlatpickr.destroy();
+                    _appointmentFlatpickr = null;
                 }
 
                 // Fetch appointment settings from backend
@@ -269,181 +270,155 @@
 
                                 var datesForDisable = obj.disabledatesarray;
 
-                                // Destroy existing datepicker instance if it exists (before reinitializing)
-                                if ($('#datetimepicker').data('datepicker')) {
-                                    $('#datetimepicker').datepicker('destroy');
+                                // Destroy existing Flatpickr instance before reinitializing
+                                if (_appointmentFlatpickr) {
+                                    _appointmentFlatpickr.destroy();
+                                    _appointmentFlatpickr = null;
                                 }
 
-                                // Initialize datepicker and attach changeDate handler
-                                $('#datetimepicker').datepicker({
+                                // Build Flatpickr disable array:
+                                // - specific disabled dates (from backend, expected as 'dd/mm/yyyy')
+                                // - disabled weekdays (0=Sun … 6=Sat)
+                                var disabledWeekdays = Array.isArray(daysOfWeek) ? daysOfWeek : [];
+                                var disabledDates = Array.isArray(datesForDisable)
+                                    ? datesForDisable.map(function(d) {
+                                        // convert dd/mm/yyyy → Date object
+                                        if (!d || typeof d !== 'string') return null;
+                                        var parts = d.split('/');
+                                        if (parts.length === 3) {
+                                            return new Date(
+                                                parseInt(parts[2], 10),
+                                                parseInt(parts[1], 10) - 1,
+                                                parseInt(parts[0], 10)
+                                            );
+                                        }
+                                        return null;
+                                    }).filter(Boolean)
+                                    : [];
 
+                                var disableRules = [];
+                                if (disabledWeekdays.length) {
+                                    disableRules.push(function(date) {
+                                        return disabledWeekdays.indexOf(date.getDay()) !== -1;
+                                    });
+                                }
+                                disabledDates.forEach(function(d) { disableRules.push(d); });
+
+                                // Initialize Flatpickr inline calendar
+                                _appointmentFlatpickr = flatpickr('#datetimepicker', {
                                     inline: true,
+                                    minDate: 'today',
+                                    disable: disableRules,
+                                    dateFormat: 'd/m/Y',
+                                    locale: { firstDayOfWeek: 1 },
+                                    onChange: function(selectedDates, dateStr) {
+                                        var date = dateStr;
+                                        var checked_date = selectedDates[0].toLocaleDateString('en-US');
 
-                                    startDate: new Date(),
+                                        $('.showselecteddate').html(date);
+                                        $('input[name="date"]').val(date);
+                                        $('#timeslot_col_date').val(date);
 
-                                    datesDisabled: datesForDisable,
-
-                                    daysOfWeekDisabled: daysOfWeek,
-
-                                    format: 'dd/mm/yyyy'
-
-                                }).off('changeDate').on('changeDate', function(e) {
-
-                                    var date = e.format();
-
-                                    var checked_date=e.date.toLocaleDateString('en-US');
-
-
-
-                                    $('.showselecteddate').html(date);
-
-                                    $('input[name="date"]').val(date);
-
-                                    $('#timeslot_col_date').val(date);
-
-
-
-                                    // If slot overwrite is enabled, don't fetch/show time slots
-
-                                    if( $('#slot_overwrite_hidden').val() == 1){
-
-                                        // User will select time from dropdown, not from slots
-
-                                        return false;
-
-                                    }
-
-
-
-                                    $('.timeslots').html('');
-
-                                    var start_time = parseTime(starttime),
-
-                                    end_time = parseTime(endtime),
-
-                                    interval = parseInt(duration);
-
-                                    var service_id = $("input[name='radioGroup']:checked").val(); //alert(service_id);
-
-                                    var inperson_address = inpersonAddressDataVal();
-
-                                    var enquiry_item  = $('.enquiry_item').val(); //alert(enquiry_item);
-
-                                    var slot_overwrite = $('#slot_overwrite_hidden').val() == 1 ? 1 : 0; // Get slot overwrite value
-
-                                    // Fetch disabled time slots for selected date
-                                    $.ajax({
-                                        url:window.ClientDetailConfig.urls.getDisabledDateTime,
-                                        headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-                                        type:'POST',
-                                        data:{service_id:service_id,sel_date:date, enquiry_item:enquiry_item,inperson_address:inperson_address,slot_overwrite:slot_overwrite},
-                                        dataType:'json',
-                                        success:function(res){
-
-                                            $('.timeslots').html('');
-
-                                            var obj = safeParse(res);
-                                            if (!obj) return;
-                                            if(obj.success){
-
-                                                
-
-                                                // If slot overwrite is enabled, don't generate time slots
-
-                                                if( $('#slot_overwrite_hidden').val() == 1){
-
-                                                    // Slot overwrite enabled - user will use dropdown, don't show time slots
-
-                                                    return false;
-
-                                                }
-
-
-
-                                                var objdisable = Array.isArray(obj.disabledtimeslotes) ? obj.disabledtimeslotes : [];
-
-                                                var today_date = new Date();
-                                                today_date = today_date.toLocaleDateString('en-US');
-                                                var now = new Date();
-                                                var nowTime = new Date('1/1/1900 ' + now.toLocaleTimeString(navigator.language, {
-                                                    hour: '2-digit',
-                                                    minute: '2-digit',
-                                                    hour12: true
-                                                }));
-                                                var current_time = nowTime.toLocaleTimeString('en-US');
-
-                                                function tryAppendSlot(timeString12hr, timetoString12hr) {
-                                                    if (isLabelInDisabledList(timeString12hr, objdisable)) {
-                                                        return;
-                                                    }
-                                                    if ((checked_date == today_date) && (current_time > timeString12hr || current_time > timetoString12hr)) {
-                                                        return;
-                                                    }
-                                                    $('.timeslots').append('<div data-fromtime="' + timeString12hr + '" data-totime="' + timetoString12hr + '" style="cursor: pointer;" class="timeslot_col"><span>' + timeString12hr + '</span></div>');
-                                                }
-
-                                                if (timeslotLabelsFromBackend && timeslotLabelsFromBackend.length) {
-                                                    for (var tli = 0; tli < timeslotLabelsFromBackend.length; tli++) {
-                                                        var timeString12hr = String(timeslotLabelsFromBackend[tli]).replace(/\s+/g, ' ').trim();
-                                                        if (!timeString12hr) {
-                                                            continue;
-                                                        }
-                                                        var startMins = parseTimeLatest(timeString12hr);
-                                                        if (isNaN(startMins)) {
-                                                            var _try = new Date('1/1/2000 ' + timeString12hr);
-                                                            if (!isNaN(_try.getTime())) {
-                                                                startMins = _try.getHours() * 60 + _try.getMinutes();
-                                                            }
-                                                        }
-                                                        if (isNaN(startMins)) {
-                                                            continue;
-                                                        }
-                                                        var endMins = startMins + interval;
-                                                        var timeStringMins = endMins;
-                                                        var timetoString12hr = new Date('1970-01-01T' + convertHours(timeStringMins) + 'Z')
-                                                            .toLocaleTimeString('en-US', { timeZone: 'UTC', hour12: true, hour: 'numeric', minute: 'numeric' });
-                                                        tryAppendSlot(timeString12hr, timetoString12hr);
-                                                    }
-                                                } else {
-                                                    var start_timer = start_time;
-                                                    for (var i = start_time; i < end_time; i = i + interval) {
-                                                        var timeString = start_timer + interval;
-                                                        const timeString12hr = new Date('1970-01-01T' + convertHours(start_timer) + 'Z')
-                                                            .toLocaleTimeString('en-US', { timeZone: 'UTC', hour12: true, hour: 'numeric', minute: 'numeric' });
-                                                        const timetoString12hr = new Date('1970-01-01T' + convertHours(timeString) + 'Z')
-                                                            .toLocaleTimeString('en-US', { timeZone: 'UTC', hour12: true, hour: 'numeric', minute: 'numeric' });
-                                                        tryAppendSlot(timeString12hr, timetoString12hr);
-                                                        start_timer = timeString;
-                                                    }
-                                                }
-
-                                            }else{
-
-
-
-                                            }
-
-                                        },
-                                        error: function(xhr, status, error) {
-                                            console.error('getDisabledDateTime error:', error);
-                                            console.error('Response:', xhr.responseText);
+                                        // Slot overwrite: user picks time from dropdown, not from slots
+                                        if ($('#slot_overwrite_hidden').val() == 1) {
+                                            return;
                                         }
 
-                                    });
-                                    // End of getDisabledDateTime AJAX call
+                                        $('.timeslots').html('');
 
-                                });
+                                        var start_time = parseTime(starttime);
+                                        var end_time   = parseTime(endtime);
+                                        var interval   = parseInt(duration);
 
-                                // Modal was hidden during init — refresh inline calendar so it paints (Bootstrap datepicker)
+                                        var service_id       = $("input[name='radioGroup']:checked").val();
+                                        var inperson_address = inpersonAddressDataVal();
+                                        var enquiry_item     = $('.enquiry_item').val();
+                                        var slot_overwrite   = $('#slot_overwrite_hidden').val() == 1 ? 1 : 0;
+
+                                        // Fetch disabled time slots for selected date
+                                        $.ajax({
+                                            url: window.ClientDetailConfig.urls.getDisabledDateTime,
+                                            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                                            type: 'POST',
+                                            data: {
+                                                service_id: service_id,
+                                                sel_date: date,
+                                                enquiry_item: enquiry_item,
+                                                inperson_address: inperson_address,
+                                                slot_overwrite: slot_overwrite
+                                            },
+                                            dataType: 'json',
+                                            success: function(res) {
+                                                $('.timeslots').html('');
+
+                                                var obj = safeParse(res);
+                                                if (!obj) return;
+
+                                                if (obj.success) {
+                                                    if ($('#slot_overwrite_hidden').val() == 1) {
+                                                        // Slot overwrite — user will use dropdown
+                                                        return;
+                                                    }
+
+                                                    var objdisable = Array.isArray(obj.disabledtimeslotes) ? obj.disabledtimeslotes : [];
+
+                                                    var today_date = new Date().toLocaleDateString('en-US');
+                                                    var now        = new Date();
+                                                    var nowTime    = new Date('1/1/1900 ' + now.toLocaleTimeString(navigator.language, {
+                                                        hour: '2-digit', minute: '2-digit', hour12: true
+                                                    }));
+                                                    var current_time = nowTime.toLocaleTimeString('en-US');
+
+                                                    function tryAppendSlot(timeString12hr, timetoString12hr) {
+                                                        if (isLabelInDisabledList(timeString12hr, objdisable)) { return; }
+                                                        if ((checked_date == today_date) && (current_time > timeString12hr || current_time > timetoString12hr)) { return; }
+                                                        $('.timeslots').append(
+                                                            '<div data-fromtime="' + timeString12hr + '" data-totime="' + timetoString12hr +
+                                                            '" style="cursor:pointer;" class="timeslot_col"><span>' + timeString12hr + '</span></div>'
+                                                        );
+                                                    }
+
+                                                    if (timeslotLabelsFromBackend && timeslotLabelsFromBackend.length) {
+                                                        for (var tli = 0; tli < timeslotLabelsFromBackend.length; tli++) {
+                                                            var timeString12hr = String(timeslotLabelsFromBackend[tli]).replace(/\s+/g, ' ').trim();
+                                                            if (!timeString12hr) { continue; }
+                                                            var startMins = parseTimeLatest(timeString12hr);
+                                                            if (isNaN(startMins)) {
+                                                                var _try = new Date('1/1/2000 ' + timeString12hr);
+                                                                if (!isNaN(_try.getTime())) {
+                                                                    startMins = _try.getHours() * 60 + _try.getMinutes();
+                                                                }
+                                                            }
+                                                            if (isNaN(startMins)) { continue; }
+                                                            var endMins         = startMins + interval;
+                                                            var timetoString12hr = new Date('1970-01-01T' + convertHours(endMins) + 'Z')
+                                                                .toLocaleTimeString('en-US', { timeZone: 'UTC', hour12: true, hour: 'numeric', minute: 'numeric' });
+                                                            tryAppendSlot(timeString12hr, timetoString12hr);
+                                                        }
+                                                    } else {
+                                                        var start_timer = start_time;
+                                                        for (var i = start_time; i < end_time; i = i + interval) {
+                                                            var timeString       = start_timer + interval;
+                                                            var timeString12hr   = new Date('1970-01-01T' + convertHours(start_timer) + 'Z')
+                                                                .toLocaleTimeString('en-US', { timeZone: 'UTC', hour12: true, hour: 'numeric', minute: 'numeric' });
+                                                            var timetoString12hr = new Date('1970-01-01T' + convertHours(timeString) + 'Z')
+                                                                .toLocaleTimeString('en-US', { timeZone: 'UTC', hour12: true, hour: 'numeric', minute: 'numeric' });
+                                                            tryAppendSlot(timeString12hr, timetoString12hr);
+                                                            start_timer = timeString;
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            error: function(xhr, status, error) {
+                                                console.error('getDisabledDateTime error:', error);
+                                                console.error('Response:', xhr.responseText);
+                                            }
+                                        }); // end getDisabledDateTime AJAX
+                                    } // end onChange
+                                }); // end flatpickr init
+
+                                // Flatpickr inline always repaints itself — no update hack needed
                                 $('.info_row').show();
-                                setTimeout(function () {
-                                    var $cal = $('#datetimepicker');
-                                    if ($cal.length && $cal.data('datepicker')) {
-                                        try {
-                                            $cal.datepicker('update');
-                                        } catch (ignore) {}
-                                    }
-                                }, 150);
 
                             if(id != ""){
 
@@ -679,8 +654,11 @@
 
             }
             
-            // Destroy existing datepicker and reload with new slot_overwrite value
-            $('#datetimepicker').datepicker('destroy');
+            // Destroy existing Flatpickr instance and reload with new slot_overwrite value
+            if (_appointmentFlatpickr) {
+                _appointmentFlatpickr.destroy();
+                _appointmentFlatpickr = null;
+            }
             $('.timeslots').html(''); // Clear time slots
             
             // Trigger location change to reload calendar with new settings

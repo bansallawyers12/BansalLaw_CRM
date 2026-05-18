@@ -1,12 +1,12 @@
-@extends('layouts.crm_client_detail')
+﻿@extends('layouts.crm_client_detail')
 @section('title', 'Leads')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
-<link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
+<link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
 <style>
-    /* Leads index — docs/theme.md (CSS variables from crm-theme.css :root) */
+    /* Leads index â€” docs/theme.md (CSS variables from crm-theme.css :root) */
 
     .btn-edit-icon {
         display: inline-flex;
@@ -369,7 +369,7 @@
                                         <label for="lead_from_date">From Date</label>
                                         <input type="date" name="from_date" id="lead_from_date" value="{{ request('from_date') }}" class="form-control">
                                     </div>
-                                    <span class="date-range-arrow">→</span>
+                                    <span class="date-range-arrow">â†’</span>
                                     <div class="form-group">
                                         <label for="lead_to_date">To Date</label>
                                         <input type="date" name="to_date" id="lead_to_date" value="{{ request('to_date') }}" class="form-control">
@@ -570,6 +570,100 @@
     </div>
 </div>
 
+<div id="emailmodal"  data-backdrop="static" data-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="clientModalLabel">Compose Email</h5>
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<form method="post" name="sendmail" action="{{URL::to('/sendmail')}}" autocomplete="off" enctype="multipart/form-data">
+				@csrf
+					<div class="row">
+						<div class="col-12 col-md-6 col-lg-6">
+							<div class="form-group">
+								<label for="email_from">From <span class="span_req">*</span></label>
+								@include('partials.email-from-sendgrid')
+								@if ($errors->has('email_from'))
+									<span class="custom-error" role="alert">
+										<strong>{{ @$errors->first('email_from') }}</strong>
+									</span>
+								@endif
+							</div>
+						</div>
+						<div class="col-12 col-md-6 col-lg-6">
+							<div class="form-group">
+								<label for="email_to">To <span class="span_req">*</span></label>
+								<select multiple data-valid="required" class="js-data-example-ajax" name="email_to[]"></select>
+
+								@if ($errors->has('email_to'))
+									<span class="custom-error" role="alert">
+										<strong>{{ @$errors->first('email_to') }}</strong>
+									</span>
+								@endif
+							</div>
+						</div>
+						<div class="col-12 col-md-6 col-lg-6">
+							<div class="form-group">
+								<label for="email_cc">CC </label>
+								<select multiple data-valid="" class="js-data-example-ajaxcc" name="email_cc[]"></select>
+
+								@if ($errors->has('email_cc'))
+									<span class="custom-error" role="alert">
+										<strong>{{ @$errors->first('email_cc') }}</strong>
+									</span>
+								@endif
+							</div>
+						</div>
+
+						<div class="col-12 col-md-6 col-lg-6">
+							<div class="form-group">
+								<label for="template">Templates </label>
+								<select data-valid="" class="form-control select2 selecttemplate" name="template">
+									<option value="">Select</option>
+									@foreach(\App\Models\EmailTemplate::crm()->orderBy('id', 'desc')->get() as $list)
+										<option value="{{$list->id}}">{{$list->name}}</option>
+									@endforeach
+								</select>
+
+							</div>
+						</div>
+						<div class="col-12 col-md-12 col-lg-12">
+							<div class="form-group">
+								<label for="subject">Subject <span class="span_req">*</span></label>
+								<input type="text" name="subject" value="{{ old('subject', '') }}" class="form-control selectedsubject" data-valid="required" autocomplete="off" placeholder="Enter Subject">
+								@if ($errors->has('subject'))
+									<span class="custom-error" role="alert">
+										<strong>{{ @$errors->first('subject') }}</strong>
+									</span>
+								@endif
+							</div>
+						</div>
+						<div class="col-12 col-md-12 col-lg-12">
+							<div class="form-group">
+								<label for="message">Message <span class="span_req">*</span></label>
+								<textarea class="tinymce-editor selectedmessage" name="message"></textarea>
+								@if ($errors->has('message'))
+									<span class="custom-error" role="alert">
+										<strong>{{ @$errors->first('message') }}</strong>
+									</span>
+								@endif
+							</div>
+						</div>
+						<div class="col-12 col-md-12 col-lg-12">
+							<button onclick="customValidate('sendmail')" type="button" class="btn btn-primary">Send</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
 @endsection
 @push('scripts')
 <script>
@@ -716,6 +810,8 @@
             }
         });
 
+        var crmRecipientsUrl = '{{ URL::to('/clients/get-recipients') }}';
+
         $(document).delegate('.listing-container .emailmodal', 'click', function(){
             $('#emailmodal').modal('show');
             var array = [];
@@ -729,41 +825,16 @@
 
                 data.push({
                     id: id,
-                    text: name,
-                    html:  "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-
-                        "<div  class='ag-flex ag-align-start'>" +
-                            "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
-                            "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>"+email+"</small ></div>" +
-
-                        "</div>" +
-                        "</div>" +
-                        "<div class='ag-flex ag-flex-column ag-align-end'>" +
-
-                            "<span class='ui label yellow select2-result-repository__statistics'>"+ status +
-
-                            "</span>" +
-                        "</div>" +
-                        "</div>",
-                    title: name
+                    name: name,
+                    email: email,
+                    status: status
                 });
             });
 
-            $(".js-data-example-ajax").select2({
-                data: data,
-                escapeMarkup: function(markup) {
-                    return markup;
-                },
-                templateResult: function(data) {
-                    return data.html;
-                },
-                templateSelection: function(data) {
-                    return data.text;
-                }
-            })
-
-            $('.js-data-example-ajax').val(array);
-            $('.js-data-example-ajax').trigger('change');
+            var $to = $('.js-data-example-ajax');
+            if ($to.length && typeof initRecipientsMultiTomSelectPreload === 'function') {
+                initRecipientsMultiTomSelectPreload($to[0], { dropdownParent: '#emailmodal', options: data, items: array });
+            }
 
         });
 
@@ -780,40 +851,15 @@
 
             data.push({
                 id: id,
-                text: name,
-                html:  "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-
-                    "<div  class='ag-flex ag-align-start'>" +
-                        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
-                        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>"+email+"</small ></div>" +
-
-                    "</div>" +
-                    "</div>" +
-                    "<div class='ag-flex ag-flex-column ag-align-end'>" +
-
-                        "<span class='ui label yellow select2-result-repository__statistics'>"+ status +
-
-                        "</span>" +
-                    "</div>" +
-                    "</div>",
-                title: name
+                name: name,
+                email: email,
+                status: status
             });
 
-            $(".js-data-example-ajax").select2({
-                data: data,
-                escapeMarkup: function(markup) {
-                    return markup;
-                },
-                templateResult: function(data) {
-                    return data.html;
-                },
-                templateSelection: function(data) {
-                    return data.text;
-                }
-            })
-
-            $('.js-data-example-ajax').val(array);
-            $('.js-data-example-ajax').trigger('change');
+            var $to = $('.js-data-example-ajax');
+            if ($to.length && typeof initRecipientsMultiTomSelectPreload === 'function') {
+                initRecipientsMultiTomSelectPreload($to[0], { dropdownParent: '#emailmodal', options: data, items: array });
+            }
 
         });
 
@@ -828,7 +874,7 @@
                     var res = JSON.parse(response);
                     $('.selectedsubject').val(res.subject);
                     // Clear and set TinyMCE editor content
-                    $(".summernote-simple").each(function() {
+                    $(".tinymce-editor").each(function() {
                         var editorId = $(this).attr('id');
                         if (editorId && typeof tinymce !== 'undefined' && tinymce.get(editorId)) {
                             tinymce.get(editorId).setContent(res.description || '');
@@ -840,76 +886,21 @@
             });
         });
 
-        $('.js-data-example-ajax').select2({
-            multiple: true,
-            closeOnSelect: false,
-            dropdownParent: $('#emailmodal'),
-            ajax: {
-                url: '{{URL::to('/clients/get-recipients')}}',
-                dataType: 'json',
-                processResults: function (data) {
-                  // Transforms the top-level key of the response object from 'items' to 'results'
-                    return {
-                        results: data.items
-                    };
-                },
-                cache: true
-            },
-            templateResult: formatRepo,
-            templateSelection: formatRepoSelection
-        });
-
-        $('.js-data-example-ajaxcc').select2({
-            multiple: true,
-            closeOnSelect: false,
-            dropdownParent: $('#emailmodal'),
-            ajax: {
-                url: '{{URL::to('/clients/get-recipients')}}',
-                dataType: 'json',
-                processResults: function (data) {
-                    // Transforms the top-level key of the response object from 'items' to 'results'
-                    return {
-                        results: data.items
-                    };
-                },
-                cache: true
-            },
-            templateResult: formatRepo,
-            templateSelection: formatRepoSelection
-        });
-
-        function formatRepo (repo) {
-            if (repo.loading) {
-                return repo.text;
-            }
-
-            var $container = $(
-                "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-
-                "<div  class='ag-flex ag-align-start'>" +
-                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
-                    "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
-
-                "</div>" +
-                "</div>" +
-                "<div class='ag-flex ag-flex-column ag-align-end'>" +
-
-                    "<span class='ui label yellow select2-result-repository__statistics'>" +
-
-                    "</span>" +
-                "</div>" +
-                "</div>"
-            );
-
-            $container.find(".select2-result-repository__title").text(repo.name);
-            $container.find(".select2-result-repository__description").text(repo.email);
-            $container.find(".select2-result-repository__statistics").append(repo.status);
-
-            return $container;
-        }
-
-        function formatRepoSelection (repo) {
-            return repo.name || repo.text;
+        if (typeof initTS === 'function' && typeof buildCrmGetRecipientsMultiTomSelectConfig === 'function') {
+            $('.js-data-example-ajax').each(function () {
+                initTS(this, buildCrmGetRecipientsMultiTomSelectConfig({
+                    url: crmRecipientsUrl,
+                    dropdownParent: '#emailmodal',
+                    enableRemoteLoad: true
+                }));
+            });
+            $('.js-data-example-ajaxcc').each(function () {
+                initTS(this, buildCrmGetRecipientsMultiTomSelectConfig({
+                    url: crmRecipientsUrl,
+                    dropdownParent: '#emailmodal',
+                    enableRemoteLoad: true
+                }));
+            });
         }
     });
 </script>
@@ -954,4 +945,5 @@
     }
 </script>
 @endpush
+
 

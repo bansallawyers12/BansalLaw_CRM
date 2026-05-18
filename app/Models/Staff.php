@@ -56,6 +56,7 @@ class Staff extends Authenticatable
         'tax_number',
         'quick_access_enabled',
         'grant_super_admin_access',
+        'trust_rule42_supervisor',
     ];
 
     /**
@@ -75,6 +76,7 @@ class Staff extends Authenticatable
         'is_solicitor' => 'integer',
         'quick_access_enabled' => 'boolean',
         'grant_super_admin_access' => 'boolean',
+        'trust_rule42_supervisor' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

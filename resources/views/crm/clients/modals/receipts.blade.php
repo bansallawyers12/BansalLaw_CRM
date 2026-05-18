@@ -8,6 +8,14 @@
     $__receiptModalAgents = $__agentDetailsTableOk
         ? \App\Models\AgentDetails::where('status', 1)->orderBy('agent_name')->orderBy('id')->get()
         : collect();
+    $__trustWithdrawalAuthorityTypes = collect();
+    if (\Illuminate\Support\Facades\Schema::hasTable('trust_withdrawal_authority_types')) {
+        $__trustWithdrawalAuthorityTypes = \Illuminate\Support\Facades\DB::table('trust_withdrawal_authority_types')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+    }
 @endphp
 
 <style>
@@ -283,6 +291,46 @@
                                         </tr>
                                     </tbody>
                                 </table>
+
+                                @if($__trustWithdrawalAuthorityTypes->isNotEmpty())
+                                <div class="mt-2 w-100" id="ledger-rule42-block" style="display: none;">
+                                    <div class="card border-warning mb-2">
+                                        <div class="card-header py-2 bg-warning bg-opacity-10">
+                                            <strong>Rule 42 — withdrawal authority</strong>
+                                            <span class="text-muted small ms-1">(required for Fee Transfer lines)</span>
+                                        </div>
+                                        <div class="card-body py-2">
+                                            <div class="row g-2">
+                                                <div class="col-md-4">
+                                                    <label class="small mb-0">Authority type <span class="text-danger">*</span></label>
+                                                    <select name="trust_withdrawal_authority_type_id" class="form-select form-select-sm">
+                                                        <option value="">— Select —</option>
+                                                        @foreach($__trustWithdrawalAuthorityTypes as $t)
+                                                            <option value="{{ $t->id }}">{{ $t->label }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="small mb-0">Date notice given</label>
+                                                    <input type="date" name="trust_notice_given_date" class="form-control form-control-sm" />
+                                                </div>
+                                                <div class="col-md-5">
+                                                    <label class="small mb-0">Notes / clause / reference</label>
+                                                    <input type="text" name="trust_authority_notes" class="form-control form-control-sm" maxlength="5000" placeholder="Extra detail if transferring without invoice" />
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="form-check">
+                                                        <input type="checkbox" class="form-check-input" name="trust_rule42_supervisor_override" id="trust_rule42_supervisor_override" value="1">
+                                                        <label class="form-check-label small" for="trust_rule42_supervisor_override">Supervisor override (draft invoice, date, or voided invoice)</label>
+                                                    </div>
+                                                    <label class="small mb-0">Override reason (min 10 characters if override checked)</label>
+                                                    <textarea name="trust_rule42_override_reason" class="form-control form-control-sm" rows="2" maxlength="5000"></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
                             </div>
 						</div>
 

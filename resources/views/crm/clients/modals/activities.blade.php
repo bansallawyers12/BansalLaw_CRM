@@ -105,7 +105,7 @@
                         <div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
                                 <label for="note_description">Note Description</label>
-                                <textarea class="form-control summernote-simple" name="note_description" id="convert_note_description" rows="4" readonly></textarea>
+                                <textarea class="form-control tinymce-editor" name="note_description" id="convert_note_description" rows="4" readonly></textarea>
                             </div>
                         </div>
                         

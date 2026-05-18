@@ -1,5 +1,18 @@
 @props(['visibleColumns'])
 
+@php
+    $columns = [
+        'matter' => 'Matter',
+        'client_id' => 'Client ID',
+        'client_name' => 'Client Name',
+        'dob' => 'DOB',
+        'legal_practitioner' => 'Legal Practitioner',
+        'person_responsible' => 'Person Responsible',
+        'person_assisting' => 'Person Assisting',
+        'stage' => 'Stage',
+    ];
+@endphp
+
 <div class="column-toggle-container">
     <button class="column-toggle-btn" type="button" id="columnToggleBtn">
         <i class="fas fa-columns"></i>
@@ -8,24 +21,11 @@
     <div class="column-dropdown" id="columnDropdown">
         <div class="column-dropdown-header">
             <label class="column-toggle-all">
-                <input type="checkbox" id="toggleAllColumns" {{ count($visibleColumns) == 8 ? 'checked' : '' }}>
+                <input type="checkbox" id="toggleAllColumns" {{ count($visibleColumns) === count($columns) ? 'checked' : '' }}>
                 <span>Display All</span>
             </label>
         </div>
         <div class="column-dropdown-body">
-            @php
-                $columns = [
-                    'matter' => 'Matter',
-                    'client_id' => 'Client ID',
-                    'client_name' => 'Client Name',
-                    'dob' => 'DOB',
-                    'legal_practitioner' => 'Legal Practitioner',
-                    'person_responsible' => 'Person Responsible',
-                    'person_assisting' => 'Person Assisting',
-                    'stage' => 'Stage'
-                ];
-            @endphp
-            
             @foreach($columns as $key => $label)
                 <label class="column-option">
                     <input type="checkbox" name="column" value="{{ $key }}" {{ in_array($key, $visibleColumns) ? 'checked' : '' }}>

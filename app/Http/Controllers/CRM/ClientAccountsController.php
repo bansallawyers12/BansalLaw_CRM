@@ -20,7 +20,12 @@ use App\Models\AccountAllInvoiceReceipt;
 use App\Mail\HubdocInvoiceMail;
 use App\Services\FinancialStatsService;
 use App\Services\FCMService;
+use App\Services\TrustAccounting\TrustLedgerAuditLogger;
+use App\Services\TrustAccounting\TrustPeriodService;
+use App\Services\TrustAccounting\TrustReceiptSequenceService;
+use App\Services\TrustAccounting\TrustWithdrawalAuthorityService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 
@@ -51,6 +56,79 @@ class ClientAccountsController extends Controller
         if ($request->filled('client_id')) {
             $this->ensureCrmRecordAccess((int) $request->input('client_id'));
         }
+    }
+
+    /**
+     * Trust rows excluded from running balance (voided fee transfer flag or practice void + reversal).
+     * Static flag avoids repeated information_schema queries in loops.
+     */
+    protected function trustLedgerRowExcludedFromBalance(object $row): bool
+    {
+        static $hasTrustVoidedAt = null;
+        if ($hasTrustVoidedAt === null) {
+            $hasTrustVoidedAt = Schema::hasColumn('account_client_receipts', 'trust_voided_at');
+        }
+
+        if ($hasTrustVoidedAt && isset($row->trust_voided_at) && $row->trust_voided_at !== null) {
+            return true;
+        }
+        if (isset($row->void_fee_transfer) && (int) $row->void_fee_transfer === 1) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Recalculate stored running balances for one client trust ledger (single matter or null matter).
+     */
+    protected function recalculateTrustBalancesForClientLedger(int $clientId, $clientMatterId): void
+    {
+        $q = DB::table('account_client_receipts')
+            ->where('client_id', $clientId)
+            ->where('receipt_type', 1)
+            ->orderBy('id', 'asc');
+        if ($clientMatterId !== null && $clientMatterId !== '') {
+            $q->where('client_matter_id', $clientMatterId);
+        } else {
+            $q->whereNull('client_matter_id');
+        }
+        $rows = $q->get();
+        $running = 0.0;
+        foreach ($rows as $ledgerRow) {
+            if ($this->trustLedgerRowExcludedFromBalance($ledgerRow)) {
+                DB::table('account_client_receipts')->where('id', $ledgerRow->id)->update([
+                    'balance_amount' => null,
+                    'updated_at' => now(),
+                ]);
+
+                continue;
+            }
+            $running += floatval($ledgerRow->deposit_amount) - floatval($ledgerRow->withdraw_amount);
+            $running = round($running, 2);
+            DB::table('account_client_receipts')->where('id', $ledgerRow->id)->update([
+                'balance_amount' => $running,
+                'updated_at' => now(),
+            ]);
+        }
+    }
+
+    /** Optional payer / banking fields per line (trust compliance). */
+    protected function trustDepositMetadataAt(array $requestData, int $i): array
+    {
+        static $hasPayerName = null;
+        if ($hasPayerName === null) {
+            $hasPayerName = Schema::hasColumn('account_client_receipts', 'payer_name');
+        }
+        if (! $hasPayerName) {
+            return [];
+        }
+
+        return [
+            'payer_name' => isset($requestData['payer_name'][$i]) ? (trim((string) $requestData['payer_name'][$i]) ?: null) : null,
+            'bank_deposit_reference' => isset($requestData['bank_deposit_reference'][$i]) ? (trim((string) $requestData['bank_deposit_reference'][$i]) ?: null) : null,
+            'banking_date' => isset($requestData['banking_date'][$i]) ? (trim((string) $requestData['banking_date'][$i]) ?: null) : null,
+        ];
     }
 
     /**
@@ -346,6 +424,27 @@ class ClientAccountsController extends Controller
         }
    
         if (isset($requestData['trans_date'])) {
+            for ($ti = 0; $ti < count($requestData['trans_date']); $ti++) {
+                try {
+                    TrustPeriodService::assertTransDateUnlocked($requestData['trans_date'][$ti]);
+                } catch (\RuntimeException $e) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => $e->getMessage(),
+                        'requestData' => [],
+                        'awsUrl' => '',
+                        'invoices' => [],
+                    ], 422);
+                }
+            }
+
+            $authorityPayload = null;
+            if (TrustWithdrawalAuthorityService::isEnforcementActive()
+                && TrustWithdrawalAuthorityService::requestHasFeeTransferLines($requestData)) {
+                $authorityPayload = TrustWithdrawalAuthorityService::parseAuthorityFromRequest($requestData);
+                TrustWithdrawalAuthorityService::validateAuthorityPayload($authorityPayload);
+            }
+
             $ledgerPaymentMethodAt = function (int $index) use ($requestData): string {
                 if (empty($requestData['payment_method']) || ! is_array($requestData['payment_method'])) {
                     return '';
@@ -383,7 +482,7 @@ class ClientAccountsController extends Controller
 			$existingLedgerEntries = $ledgerBalanceQuery->get();
 			$running_balance = 0;
 			foreach ($existingLedgerEntries as $existingEntry) {
-				if (isset($existingEntry->void_fee_transfer) && $existingEntry->void_fee_transfer == 1) {
+				if ($this->trustLedgerRowExcludedFromBalance($existingEntry)) {
 					continue;
 				}
 				$running_balance += floatval($existingEntry->deposit_amount) - floatval($existingEntry->withdraw_amount);
@@ -429,8 +528,7 @@ class ClientAccountsController extends Controller
                 
                 $currentFundsHeld = 0;
 			foreach($ledger_entries as $entry) {
-				// Skip voided fee transfers
-				if(isset($entry->void_fee_transfer) && $entry->void_fee_transfer == 1) {
+				if ($this->trustLedgerRowExcludedFromBalance($entry)) {
 					continue;
 				}
 				$currentFundsHeld += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
@@ -446,37 +544,62 @@ class ClientAccountsController extends Controller
                     $response['invoices'] = [];
                     return response()->json($response, 200);
                 }
-   
-                // Get invoice details
-                $invoiceInfo = DB::table('account_client_receipts')
-                    ->select('withdraw_amount', 'partial_paid_amount', 'balance_amount')
+
+                if ($authorityPayload !== null) {
+                    foreach ($feeTransfers as $ft) {
+                        TrustWithdrawalAuthorityService::assertInvoiceEligibleForWithdrawal(
+                            (string) $invoiceNo,
+                            (int) $requestData['client_id'],
+                            (string) $ft['trans_date'],
+                            Auth::user(),
+                            $authorityPayload
+                        );
+                    }
+                }
+
+                // Get invoice details (invoice_no OR trans_no — must match Rule 42 eligibility + UI invoice picker)
+                $invoiceRow = DB::table('account_client_receipts')
+                    ->select('withdraw_amount', 'partial_paid_amount', 'balance_amount', 'invoice_no', 'trans_no')
                     ->where('client_id', $requestData['client_id'])
                     ->where('receipt_type', 3)
-                    ->where('invoice_no', $invoiceNo)
+                    ->where(function ($q) use ($invoiceNo) {
+                        $q->where('invoice_no', $invoiceNo)
+                            ->orWhere('trans_no', $invoiceNo);
+                    })
                     ->first();
-   
-                if ($invoiceInfo) {
-                    $invoiceWithdrawAmount = floatval($invoiceInfo->withdraw_amount);
-                    
+
+                if ($invoiceRow) {
+                    $canonicalInvoiceNo = (string) (
+                        ($invoiceRow->invoice_no !== null && $invoiceRow->invoice_no !== '')
+                            ? $invoiceRow->invoice_no
+                            : (($invoiceRow->trans_no !== null && $invoiceRow->trans_no !== '')
+                                ? $invoiceRow->trans_no
+                                : $invoiceNo)
+                    );
+                    $invoiceWithdrawAmount = floatval($invoiceRow->withdraw_amount);
+
                     // Recalculate current total payments from all sources (office receipts + fee transfers)
                     // This ensures we have accurate data even if office receipts were applied first
                     $currentTotalPaidOffice = DB::table('account_client_receipts')
                         ->where('receipt_type', 2)
-                        ->where('invoice_no', $invoiceNo)
+                        ->where('invoice_no', $canonicalInvoiceNo)
                         ->where('client_id', $requestData['client_id'])
                         ->where('save_type', 'final')
                         ->sum('deposit_amount');
-                    
+
                     $currentTotalPaidFeeTransfer = DB::table('account_client_receipts')
                         ->where('receipt_type', 1)
                         ->where('client_fund_ledger_type', 'Fee Transfer')
-                        ->where('invoice_no', $invoiceNo)
+                        ->where('invoice_no', $canonicalInvoiceNo)
                         ->where('client_id', $requestData['client_id'])
                         ->where(function($q) {
                             $q->whereNull('void_fee_transfer')
                               ->orWhere('void_fee_transfer', 0);
-                        })
-                        ->sum('withdraw_amount');
+                        });
+                    if (Schema::hasColumn('account_client_receipts', 'trust_voided_at')) {
+                        $currentTotalPaidFeeTransfer->whereNull('trust_voided_at');
+                    }
+                    $currentTotalPaidFeeTransfer = $currentTotalPaidFeeTransfer->sum('withdraw_amount');
                     
                     $currentTotalPaid = $currentTotalPaidOffice + $currentTotalPaidFeeTransfer;
                     $currentBalance = $invoiceWithdrawAmount - $currentTotalPaid;
@@ -504,7 +627,7 @@ class ClientAccountsController extends Controller
                         // Track this amount for next iteration
                         $totalNewFeeTransferAmount += $amountToUse;
    
-                        $trans_no = $this->createTransactionNumber('Fee Transfer');
+                        $trans_no = TrustReceiptSequenceService::nextTransNo($feeTransfer['trans_date']);
                         if ($firstFeeTransferTransNo === null) {
                             $firstFeeTransferTransNo = $trans_no; // Store first trans_no for residual description
                         }
@@ -512,8 +635,8 @@ class ClientAccountsController extends Controller
                         $withdraw = $amountToUse;
    
                         $running_balance += $deposit - $withdraw;
-   
-                        $saved = DB::table('account_client_receipts')->insert([
+
+                        $feeTransferRowId = DB::table('account_client_receipts')->insertGetId(array_merge([
                             'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
                             'client_id' => $requestData['client_id'],
                             'client_matter_id' => $requestData['client_matter_id'] ?? null,
@@ -521,7 +644,7 @@ class ClientAccountsController extends Controller
                             'receipt_type' => $requestData['receipt_type'],
                             'trans_date' => $feeTransfer['trans_date'],
                             'entry_date' => $feeTransfer['entry_date'],
-                            'invoice_no' => $invoiceNo,
+                            'invoice_no' => $canonicalInvoiceNo,
                             'trans_no' => $trans_no,
                             'client_fund_ledger_type' => 'Fee Transfer',
                             'description' => $feeTransfer['description'],
@@ -538,14 +661,27 @@ class ClientAccountsController extends Controller
                             'hubdoc_sent' => 0,
                             'created_at' => now(),
                             'updated_at' => now(),
-                        ]);
-   
+                        ], $this->trustDepositMetadataAt($requestData, $feeTransfer['index'])));
+
+                        $saved = true;
+
+                        if ($authorityPayload !== null) {
+                            TrustWithdrawalAuthorityService::recordAuthorityForNewFeeTransfer(
+                                (int) $feeTransferRowId,
+                                (int) $requestData['client_id'],
+                                $canonicalInvoiceNo,
+                                (float) $amountToUse,
+                                $authorityPayload,
+                                (int) ($requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? Auth::id())
+                            );
+                        }
+
                         $finalArr[] = [
                             'trans_date' => $feeTransfer['trans_date'],
                             'entry_date' => $feeTransfer['entry_date'],
                             'client_fund_ledger_type' => 'Fee Transfer',
                             'trans_no' => $trans_no,
-                            'invoice_no' => $invoiceNo,
+                            'invoice_no' => $canonicalInvoiceNo,
                             'description' => $feeTransfer['description'],
                             'deposit_amount' => $deposit,
                             'withdraw_amount' => $amountToUse,
@@ -569,7 +705,7 @@ class ClientAccountsController extends Controller
                             $excessAmount = $remainingWithdraw - $withdraw;
                             
                             if ($withdraw > 0) {
-                                $trans_no = $this->createTransactionNumber('Fee Transfer');
+                                $trans_no = TrustReceiptSequenceService::nextTransNo($feeTransfers[0]['trans_date']);
                                 if ($firstFeeTransferTransNo === null) {
                                     $firstFeeTransferTransNo = $trans_no;
                                 }
@@ -577,7 +713,7 @@ class ClientAccountsController extends Controller
                                 $running_balance += 0 - $withdraw;
                                 $totalNewFeeTransferAmount += $withdraw;
 
-                                $saved = DB::table('account_client_receipts')->insert([
+                                $feeTransferRowId = DB::table('account_client_receipts')->insertGetId(array_merge([
                                     'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
                                     'client_id' => $requestData['client_id'],
                                     'client_matter_id' => $requestData['client_matter_id'] ?? null,
@@ -585,7 +721,7 @@ class ClientAccountsController extends Controller
                                     'receipt_type' => $requestData['receipt_type'],
                                     'trans_date' => $feeTransfers[0]['trans_date'],
                                     'entry_date' => $feeTransfers[0]['entry_date'],
-                                    'invoice_no' => $invoiceNo,
+                                    'invoice_no' => $canonicalInvoiceNo,
                                     'trans_no' => $trans_no,
                                     'client_fund_ledger_type' => 'Fee Transfer',
                                     'description' => $feeTransfers[0]['description'],
@@ -602,14 +738,27 @@ class ClientAccountsController extends Controller
                                     'hubdoc_sent' => 0,
                                     'created_at' => now(),
                                     'updated_at' => now(),
-                                ]);
+                                ], $this->trustDepositMetadataAt($requestData, $feeTransfers[0]['index'])));
+
+                                $saved = true;
+
+                                if ($authorityPayload !== null) {
+                                    TrustWithdrawalAuthorityService::recordAuthorityForNewFeeTransfer(
+                                        (int) $feeTransferRowId,
+                                        (int) $requestData['client_id'],
+                                        $canonicalInvoiceNo,
+                                        (float) $withdraw,
+                                        $authorityPayload,
+                                        (int) ($requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? Auth::id())
+                                    );
+                                }
 
                                 $finalArr[] = [
                                     'trans_date' => $feeTransfers[0]['trans_date'],
                                     'entry_date' => $feeTransfers[0]['entry_date'],
                                     'client_fund_ledger_type' => 'Fee Transfer',
                                     'trans_no' => $trans_no,
-                                    'invoice_no' => $invoiceNo,
+                                    'invoice_no' => $canonicalInvoiceNo,
                                     'description' => $feeTransfers[0]['description'],
                                     'deposit_amount' => 0,
                                     'withdraw_amount' => $withdraw,
@@ -622,17 +771,17 @@ class ClientAccountsController extends Controller
                         
                         // Create residual client fund deposit for excess amount (same behavior as office receipts)
                         if ($excessAmount > 0.01) { // Allow for small rounding differences
-                            $residualTransNo = $this->createTransactionNumber('Deposit');
+                            $residualTransNo = TrustReceiptSequenceService::nextTransNo($feeTransfers[0]['trans_date']);
                             $residualDescription = 'Residual from Fee Transfer';
                             if ($firstFeeTransferTransNo) {
                                 $residualDescription .= ' ' . $firstFeeTransferTransNo;
                             }
-                            $residualDescription .= ' - Applied to ' . $invoiceNo;
+                            $residualDescription .= ' - Applied to ' . $canonicalInvoiceNo;
                             
                             // Deposit the excess amount back to client funds
                             $running_balance += $excessAmount;
 
-                            $residualReceiptId = DB::table('account_client_receipts')->insertGetId([
+                            $residualReceiptId = DB::table('account_client_receipts')->insertGetId(array_merge([
                                 'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
                                 'client_id' => $requestData['client_id'],
                                 'client_matter_id' => $requestData['client_matter_id'] ?? null,
@@ -658,7 +807,7 @@ class ClientAccountsController extends Controller
                                 'hubdoc_sent' => 0,
                                 'created_at' => now(),
                                 'updated_at' => now(),
-                            ]);
+                            ], $this->trustDepositMetadataAt($requestData, $feeTransfers[0]['index'])));
 
                             $finalArr[] = [
                                 'trans_date' => $feeTransfers[0]['trans_date'],
@@ -676,7 +825,7 @@ class ClientAccountsController extends Controller
                             ];
 
                             Log::info('Residual client fund deposit created from fee transfer', [
-                                'invoice_no' => $invoiceNo,
+                                'invoice_no' => $canonicalInvoiceNo,
                                 'fee_transfer_trans_no' => $firstFeeTransferTransNo,
                                 'residual_receipt_id' => $residualReceiptId,
                                 'residual_trans_no' => $residualTransNo,
@@ -690,21 +839,24 @@ class ClientAccountsController extends Controller
                     // This ensures accuracy even if office receipts exist
                     $totalPaidOffice = DB::table('account_client_receipts')
                         ->where('receipt_type', 2)
-                        ->where('invoice_no', $invoiceNo)
+                        ->where('invoice_no', $canonicalInvoiceNo)
                         ->where('client_id', $requestData['client_id'])
                         ->where('save_type', 'final')
                         ->sum('deposit_amount');
-                    
+
                     $totalPaidFeeTransfer = DB::table('account_client_receipts')
                         ->where('receipt_type', 1)
                         ->where('client_fund_ledger_type', 'Fee Transfer')
-                        ->where('invoice_no', $invoiceNo)
+                        ->where('invoice_no', $canonicalInvoiceNo)
                         ->where('client_id', $requestData['client_id'])
                         ->where(function($q) {
                             $q->whereNull('void_fee_transfer')
                               ->orWhere('void_fee_transfer', 0);
-                        })
-                        ->sum('withdraw_amount');
+                        });
+                    if (Schema::hasColumn('account_client_receipts', 'trust_voided_at')) {
+                        $totalPaidFeeTransfer->whereNull('trust_voided_at');
+                    }
+                    $totalPaidFeeTransfer = $totalPaidFeeTransfer->sum('withdraw_amount');
                     
                     $totalPaid = $totalPaidOffice + $totalPaidFeeTransfer;
                     $newBalance = $invoiceWithdrawAmount - $totalPaid;
@@ -721,24 +873,24 @@ class ClientAccountsController extends Controller
                     DB::table('account_client_receipts')
                         ->where('client_id', $requestData['client_id'])
                         ->where('receipt_type', 3)
-                        ->where('invoice_no', $invoiceNo)
+                        ->where('invoice_no', $canonicalInvoiceNo)
                         ->update([
                             'invoice_status' => $status,
                             'partial_paid_amount' => $totalPaid,
                             'balance_amount' => max(0, $newBalance),
                             'updated_at' => now(),
                         ]);
-   
+
                     AccountAllInvoiceReceipt::where('client_id', $requestData['client_id'])
                         ->where('receipt_type', 3)
-                        ->where('invoice_no', $invoiceNo)
+                        ->where('invoice_no', $canonicalInvoiceNo)
                         ->update([
                             'invoice_status' => $status,
                             'updated_at' => now(),
                         ]);
-   
+
                     $response['invoices'][] = [
-                        'invoice_no' => $invoiceNo,
+                        'invoice_no' => $canonicalInvoiceNo,
                         'invoice_status' => $status,
                         'invoice_balance' => $newBalance,
                         'outstanding_balance' => $newBalance,
@@ -756,7 +908,7 @@ class ClientAccountsController extends Controller
                     continue;
                 }
    
-                $trans_no = $this->createTransactionNumber($clientFundLedgerType);
+                $trans_no = TrustReceiptSequenceService::nextTransNo($requestData['trans_date'][$i]);
                 $principal = floatval($requestData['deposit_amount'][$i] ?? 0);
                 $eftposSurcharge = $ledgerSurchargeAt($i);
                 $deposit = ($clientFundLedgerType === 'Deposit') ? round($principal + $eftposSurcharge, 2) : $principal;
@@ -778,8 +930,7 @@ class ClientAccountsController extends Controller
                     
                     $currentFundsHeld = 0;
 			foreach($ledger_entries as $entry) {
-				// Skip voided fee transfers
-				if(isset($entry->void_fee_transfer) && $entry->void_fee_transfer == 1) {
+				if ($this->trustLedgerRowExcludedFromBalance($entry)) {
 					continue;
 				}
 				$currentFundsHeld += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
@@ -796,10 +947,14 @@ class ClientAccountsController extends Controller
                         return response()->json($response, 200);
                     }
                 }
-   
+
+                if ($clientFundLedgerType === 'Fee Transfer' && $authorityPayload !== null && ! $invoiceNo) {
+                    TrustWithdrawalAuthorityService::assertNonInvoiceFeeTransferAuthority($authorityPayload);
+                }
+
                 $running_balance += $deposit - $withdraw;
-   
-                $saved = DB::table('account_client_receipts')->insert([
+
+                $newLedgerRowId = DB::table('account_client_receipts')->insertGetId(array_merge([
                     'user_id' => $requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? null,
                     'client_id' => $requestData['client_id'],
                      'client_matter_id' => $requestData['client_matter_id'] ?? null,
@@ -824,8 +979,21 @@ class ClientAccountsController extends Controller
                     'hubdoc_sent' => 0,
                     'created_at' => now(),
                     'updated_at' => now(),
-                ]);
-   
+                ], $this->trustDepositMetadataAt($requestData, $i)));
+
+                $saved = true;
+
+                if ($clientFundLedgerType === 'Fee Transfer' && $authorityPayload !== null) {
+                    TrustWithdrawalAuthorityService::recordAuthorityForNewFeeTransfer(
+                        (int) $newLedgerRowId,
+                        (int) $requestData['client_id'],
+                        $invoiceNo,
+                        (float) $withdraw,
+                        $authorityPayload,
+                        (int) ($requestData['loggedin_staffid'] ?? $requestData['loggedin_userid'] ?? Auth::id())
+                    );
+                }
+
                 $finalArr[] = [
                     'trans_date' => $requestData['trans_date'][$i],
                     'entry_date' => $requestData['entry_date'][$i],
@@ -891,6 +1059,14 @@ class ClientAccountsController extends Controller
         }
    
         return response()->json($response, 200);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+                'requestData' => [],
+                'awsUrl' => '',
+                'invoices' => [],
+            ], 422);
         } catch (\Exception $e) {
             Log::error('Error in saveaccountreport: ' . $e->getMessage(), [
                 'request_data' => $request->except(['document_upload']),
@@ -906,44 +1082,6 @@ class ClientAccountsController extends Controller
             ], 500);
         }
     }
-   
-    private function createTransactionNumber($clientFundLedgerType)
-    {
-        switch ($clientFundLedgerType) {
-            case 'Deposit':
-                $prefix = 'CFL';
-                break;
-            case 'Fee Transfer':
-                $prefix = 'FEE';
-                break;
-            case 'Disbursement':
-                $prefix = 'DIS';
-                break;
-            case 'Refund':
-                $prefix = 'REF';
-                break;
-            default:
-                $prefix = 'CFL';
-        }
-   
-        $latestTrans = DB::table('account_client_receipts')
-            ->select('trans_no')
-            ->where('receipt_type', 1)
-            ->where('client_fund_ledger_type', $clientFundLedgerType)
-            ->where('trans_no', 'LIKE', "$prefix-%")
-            ->orderBy('id', 'desc')
-            ->first();
-   
-        if (!$latestTrans) {
-            $nextNumber = 1;
-        } else {
-            $lastTransNo = explode('-', $latestTrans->trans_no);
-            $lastNumber = isset($lastTransNo[1]) ? (int)$lastTransNo[1] : 0;
-            $nextNumber = $lastNumber + 1;
-        }
-   
-        return $prefix . '-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
-       }
    
        //Save adjust invoice reports
     public function saveadjustinvoicereport(Request $request, $id = NULL)
@@ -1506,26 +1644,27 @@ class ClientAccountsController extends Controller
             $this->ensureCrmRecordAccess((int) $requestData['client_id']);
         }
         $response            =     [];
-        $latest_balance = DB::table('account_client_receipts')
-            ->where('client_matter_id', $requestData['selectedMatter'])
+        $ledgerQuery = DB::table('account_client_receipts')
             ->where('client_id', $requestData['client_id'])
             ->where('receipt_type', 1)
-            ->where(function($query) {
-                $query->whereNull('void_fee_transfer')
-                      ->orWhere('void_fee_transfer', 0);
-            })
-            ->orderBy('id', 'desc')
-            ->value('balance_amount');
-        if( is_numeric($latest_balance) ) {
-            $response['record_get'] = $latest_balance;
-            $response['status']     =     true;
-            $response['message']    =    'Record is exist';
+            ->orderBy('id', 'asc');
+        if (! empty($requestData['selectedMatter'])) {
+            $ledgerQuery->where('client_matter_id', $requestData['selectedMatter']);
         } else {
-            $latest_balance = 0;
-            $response['record_get'] = 0;
-            $response['status']     =     false;
-            $response['message']    =    'Record is not exist.Please try again';
+            $ledgerQuery->whereNull('client_matter_id');
         }
+        $rows = $ledgerQuery->get();
+        $running = 0.0;
+        foreach ($rows as $r) {
+            if ($this->trustLedgerRowExcludedFromBalance($r)) {
+                continue;
+            }
+            $running += floatval($r->deposit_amount) - floatval($r->withdraw_amount);
+        }
+        $running = round($running, 2);
+        $response['record_get'] = $running;
+        $response['status'] = true;
+        $response['message'] = 'Record is exist';
         return response()->json($response);
        }
    
@@ -2608,7 +2747,6 @@ class ClientAccountsController extends Controller
               
               // Calculate current balance for this client/matter
               $ledger_entries = DB::table('account_client_receipts')
-                  ->select('deposit_amount', 'withdraw_amount', 'void_fee_transfer')
                   ->where('client_id', $clientId)
                   ->where('client_matter_id', $depositEntry->client_matter_id)
                   ->where('receipt_type', 1)
@@ -2617,8 +2755,7 @@ class ClientAccountsController extends Controller
               
               $running_balance = 0;
               foreach($ledger_entries as $entry) {
-                  // Skip voided fee transfers
-                  if(isset($entry->void_fee_transfer) && $entry->void_fee_transfer == 1) {
+                  if ($this->trustLedgerRowExcludedFromBalance($entry)) {
                       continue;
                   }
                   $running_balance += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
@@ -2631,15 +2768,28 @@ class ClientAccountsController extends Controller
                       'message' => 'Insufficient funds in client account. Available: $' . number_format($running_balance, 2),
                   ], 400);
               }
-              
+
+              $authorityPayload = null;
+              if (TrustWithdrawalAuthorityService::isEnforcementActive()) {
+                  $authorityPayload = TrustWithdrawalAuthorityService::parseAuthorityFromRequest($request->all());
+                  TrustWithdrawalAuthorityService::validateAuthorityPayload($authorityPayload);
+                  TrustWithdrawalAuthorityService::assertInvoiceEligibleForWithdrawal(
+                      (string) $invoiceNo,
+                      (int) $clientId,
+                      (string) $depositEntry->trans_date,
+                      Auth::user(),
+                      $authorityPayload
+                  );
+              }
+
               // Generate transaction number for Fee Transfer
-              $trans_no = $this->createTransactionNumber('Fee Transfer');
-              
+              $trans_no = TrustReceiptSequenceService::nextTransNo((string) $depositEntry->trans_date);
+
               // Calculate new running balance after withdrawal
               $new_balance = $running_balance - $depositAmount;
-              
+
               // Insert Fee Transfer entry
-              DB::table('account_client_receipts')->insert([
+              $feeTransferRowId = DB::table('account_client_receipts')->insertGetId([
                   'user_id' => Auth::user()->id,
                   'client_id' => $clientId,
                   'client_matter_id' => $depositEntry->client_matter_id,
@@ -2662,11 +2812,24 @@ class ClientAccountsController extends Controller
                   'created_at' => now(),
                   'updated_at' => now(),
               ]);
-              
+
+              if ($authorityPayload !== null) {
+                  TrustWithdrawalAuthorityService::recordAuthorityForNewFeeTransfer(
+                      (int) $feeTransferRowId,
+                      (int) $clientId,
+                      (string) $invoiceNo,
+                      (float) $depositAmount,
+                      $authorityPayload,
+                      (int) Auth::id()
+                  );
+              }
+
+              $this->recalculateTrustBalancesForClientLedger((int) $clientId, $depositEntry->client_matter_id);
+
               Log::info('Fee Transfer created', [
                   'trans_no' => $trans_no,
                   'amount' => $depositAmount,
-                  'invoice_no' => $invoiceNo
+                  'invoice_no' => $invoiceNo,
               ]);
           }
           
@@ -2695,8 +2858,11 @@ class ClientAccountsController extends Controller
                   ->where(function($q) {
                       $q->whereNull('void_fee_transfer')
                         ->orWhere('void_fee_transfer', 0);
-                  })
-                  ->sum('withdraw_amount');
+                  });
+              if (Schema::hasColumn('account_client_receipts', 'trust_voided_at')) {
+                  $totalPaidFeeTransfer->whereNull('trust_voided_at');
+              }
+              $totalPaidFeeTransfer = $totalPaidFeeTransfer->sum('withdraw_amount');
               
               $totalPaid = $totalPaidOffice + $totalPaidFeeTransfer;
               
@@ -2789,7 +2955,12 @@ class ClientAccountsController extends Controller
               'status' => true,
               'message' => 'Client fund deposit allocated and fee transfer created successfully',
           ], 200);
-          
+
+      } catch (\RuntimeException $e) {
+          return response()->json([
+              'status' => false,
+              'message' => $e->getMessage(),
+          ], 422);
       } catch (\Exception $e) {
           Log::error('updateClientFundLedger error: ' . $e->getMessage(), [
               'trace' => $e->getTraceAsString()
@@ -2908,6 +3079,19 @@ class ClientAccountsController extends Controller
       }
 
       if(isset($requestData['trans_date'])){
+          for ($ji = 0; $ji < count($requestData['trans_date']); $ji++) {
+              try {
+                  TrustPeriodService::assertTransDateUnlocked($requestData['trans_date'][$ji]);
+              } catch (\RuntimeException $e) {
+                  return response()->json([
+                      'status' => false,
+                      'message' => $e->getMessage(),
+                      'requestData' => [],
+                      'awsUrl' => '',
+                  ], 422);
+              }
+          }
+
           $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type',4)->orderBy('receipt_id', 'desc')->first();
           if(!$is_record_exist){
            $receipt_id = 1;
@@ -2918,9 +3102,13 @@ class ClientAccountsController extends Controller
           $finalArr = array();
           for($i=0; $i<count($requestData['trans_date']); $i++){
            $withdrawAmount = isset($requestData['withdraw_amount'][$i]) ? $requestData['withdraw_amount'][$i] : 0;
+           $journalTransNo = TrustReceiptSequenceService::nextTransNo(
+               $requestData['trans_date'][$i],
+               TrustReceiptSequenceService::TYPE_JOURNAL
+           );
            $finalArr[$i]['trans_date'] = $requestData['trans_date'][$i];
            $finalArr[$i]['entry_date'] = $requestData['entry_date'][$i];
-           $finalArr[$i]['trans_no'] = $requestData['trans_no'][$i];
+           $finalArr[$i]['trans_no'] = $journalTransNo;
            $finalArr[$i]['invoice_no'] = $requestData['invoice_no'][$i];
            $finalArr[$i]['description'] = $requestData['description'][$i];
            $finalArr[$i]['withdrawal_amount'] = $withdrawAmount;
@@ -2933,7 +3121,7 @@ class ClientAccountsController extends Controller
                'receipt_type' => $requestData['receipt_type'],
                'trans_date' => $requestData['trans_date'][$i],
                'entry_date' => $requestData['entry_date'][$i],
-               'trans_no' => $requestData['trans_no'][$i],
+               'trans_no' => $journalTransNo,
                'invoice_no' => isset($requestData['invoice_no'][$i]) && $requestData['invoice_no'][$i] !== '' ? $requestData['invoice_no'][$i] : null,
                'description' => $requestData['description'][$i],
                'withdraw_amount' => $withdrawAmount,
@@ -4784,89 +4972,201 @@ class ClientAccountsController extends Controller
       }
   }
 
-  //Delete Receipt by Super admin
+  /**
+   * Trust ledger rows (receipt_type 1) are voided with a reversing entry; other receipt types keep hard-delete for super-admins.
+   */
   public function delete_receipt(Request $request)
   {
-      $response = array();
-      if (isset($request->receiptId) && !empty($request->receiptId)) {
-          // Super Admin (role 1) or elevated grant; optional authorized email from config
-          $authorizedEmail = config('app.super_admin_email');
-          $receiptActor = Auth::user();
-          $receiptOk = $receiptActor instanceof \App\Models\Staff && $receiptActor->hasEffectiveSuperAdminPrivileges();
-          if (! $receiptOk || (config('app.require_super_admin_email') && Auth::user()->email != $authorizedEmail)) {
-           $response['status'] = false;
-           $response['message'] = 'Unauthorized access.';
-           return response()->json($response);
-          }
-
-          // Fetch the receipt to be deleted
-          $receipt = AccountClientReceipt::where('id', $request->receiptId)
-           ->where('receipt_type', $request->receipt_type)
-           ->first();
-
-          if (!$receipt) {
-           $response['status'] = false;
-           $response['message'] = 'Receipt not found.';
-        return response()->json($response);
-           return;
-          }
-
-          $this->ensureCrmRecordAccess((int) $receipt->client_id);
-
-          // Check if the client_fund_ledger_type is 'Fee Transfer'
-          if ($receipt->client_fund_ledger_type == 'Fee Transfer') {
-           $response['status'] = false;
-           $response['message'] = 'This entry is already associated with an Invoice, so it cannot be deleted. Please try another.';
-        return response()->json($response);
-           return;
-          }
-
-          // Store receipt details for balance adjustment and logging
-          $client_id = $receipt->client_id;
-          $deposit_amount = $receipt->deposit_amount ?? 0;
-          $withdraw_amount = $receipt->withdraw_amount ?? 0;
-          $receipt_id = $receipt->id;
-
-          // Delete the receipt
-          $affectedRows = AccountClientReceipt::where('id', $request->receiptId)
-           ->where('receipt_type', $request->receipt_type)
-           ->delete();
-
-          if ($affectedRows > 0) {
-           // Adjust balance (assuming a balance table or logic exists)
-           // Example: Update client balance by reversing the transaction
-           $client_info = \App\Models\Admin::select('id')->where('id', $client_id)->first();
-           if ($client_info) {
-               // This is a placeholder for balance adjustment logic
-               // You may need to adjust this based on your actual balance management system
-               // For example, if you have a ClientBalance model:
-               // ClientBalance::where('client_id', $client_id)
-               //     ->decrement('balance', $deposit_amount - $withdraw_amount);
-           }
-
-           // Log the activity
-           $client_info = \App\Models\Admin::select('client_id')->where('id', $client_id)->first();
-           $subject = 'Deleted client receipt no -' . $receipt_id . ' of client-' . ($client_info->client_id ?? 'N/A');
-           $objs = new ActivitiesLog;
-           $objs->client_id = $client_id;
-           $objs->created_by = Auth::user()->id;
-           $objs->description = '';
-           $objs->subject = $subject;
-           $objs->task_status = 0;
-           $objs->pin = 0;
-           $objs->save();
-
-           $response['status'] = true;
-           $response['message'] = 'Receipt deleted successfully.';
-          } else {
-           $response['status'] = false;
-           $response['message'] = 'Failed to delete receipt.';
-          }
-      } else {
+      $response = [];
+      if (! isset($request->receiptId) || $request->receiptId === '') {
           $response['status'] = false;
           $response['message'] = 'No receipt selected.';
+
+          return response()->json($response);
       }
-        return response()->json($response);
+
+      $authorizedEmail = config('app.super_admin_email');
+      $receiptActor = Auth::user();
+      $receiptOk = $receiptActor instanceof \App\Models\Staff && $receiptActor->hasEffectiveSuperAdminPrivileges();
+      if (! $receiptOk || (config('app.require_super_admin_email') && Auth::user()->email != $authorizedEmail)) {
+          $response['status'] = false;
+          $response['message'] = 'Unauthorized access.';
+
+          return response()->json($response);
+      }
+
+      $receipt = AccountClientReceipt::where('id', $request->receiptId)
+          ->where('receipt_type', $request->receipt_type)
+          ->first();
+
+      if (! $receipt) {
+          $response['status'] = false;
+          $response['message'] = 'Receipt not found.';
+
+          return response()->json($response);
+      }
+
+      $this->ensureCrmRecordAccess((int) $receipt->client_id);
+
+      if ((int) $request->receipt_type === AccountClientReceipt::RECEIPT_TYPE_TRUST_LEDGER) {
+          if ($receipt->client_fund_ledger_type === 'Fee Transfer') {
+              $response['status'] = false;
+              $response['message'] = 'Fee Transfer entries cannot be voided here; reverse via invoice adjustment.';
+
+              return response()->json($response);
+          }
+
+          $reason = trim((string) $request->input('trust_void_reason', ''));
+          if ($reason === '') {
+              $response['status'] = false;
+              $response['message'] = 'A void reason is required (audit trail).';
+
+              return response()->json($response, 422);
+          }
+
+          if (Schema::hasColumn('account_client_receipts', 'trust_reversal_of_entry_id') && $receipt->trust_reversal_of_entry_id) {
+              $response['status'] = false;
+              $response['message'] = 'This row is a reversal entry and cannot be voided.';
+
+              return response()->json($response);
+          }
+
+          if (Schema::hasColumn('account_client_receipts', 'trust_voided_at') && $receipt->trust_voided_at) {
+              $response['status'] = false;
+              $response['message'] = 'This receipt is already voided.';
+
+              return response()->json($response);
+          }
+
+          try {
+              TrustPeriodService::assertTransDateUnlocked((string) $receipt->trans_date);
+          } catch (\RuntimeException $e) {
+              return response()->json(['status' => false, 'message' => $e->getMessage()], 422);
+          }
+
+          try {
+              DB::transaction(function () use ($receipt, $reason, $request) {
+                  $orig = AccountClientReceipt::where('id', $receipt->id)->lockForUpdate()->first();
+                  if (! $orig || ((int) $orig->receipt_type) !== 1) {
+                      throw new \RuntimeException('Receipt not found.');
+                  }
+                  if ($orig->client_fund_ledger_type === 'Fee Transfer') {
+                      throw new \RuntimeException('Fee transfer cannot be voided.');
+                  }
+                  if (Schema::hasColumn('account_client_receipts', 'trust_voided_at') && $orig->trust_voided_at) {
+                      throw new \RuntimeException('Already voided.');
+                  }
+
+                  $transNo = TrustReceiptSequenceService::nextTransNo((string) $orig->trans_date);
+                  $revDeposit = (float) $orig->withdraw_amount;
+                  $revWithdraw = (float) $orig->deposit_amount;
+
+                  $reversalData = [
+                      'user_id' => $request->input('loggedin_staffid') ?? Auth::user()->id,
+                      'client_id' => $orig->client_id,
+                      'client_matter_id' => $orig->client_matter_id,
+                      'receipt_id' => $orig->receipt_id,
+                      'receipt_type' => 1,
+                      'trans_date' => $orig->trans_date,
+                      'entry_date' => $orig->entry_date,
+                      'invoice_no' => $orig->invoice_no,
+                      'trans_no' => $transNo,
+                      'client_fund_ledger_type' => $orig->client_fund_ledger_type,
+                      'description' => 'Reversal — void of ' . $orig->trans_no . ': ' . $reason,
+                      'deposit_amount' => $revDeposit,
+                      'withdraw_amount' => $revWithdraw,
+                      'balance_amount' => null,
+                      'payment_method' => $orig->payment_method,
+                      'eftpos_surcharge_amount' => null,
+                      'uploaded_doc_id' => null,
+                      'validate_receipt' => 0,
+                      'void_invoice' => 0,
+                      'invoice_status' => 0,
+                      'save_type' => 'final',
+                      'hubdoc_sent' => 0,
+                      'created_at' => now(),
+                      'updated_at' => now(),
+                  ];
+                  if (Schema::hasColumn('account_client_receipts', 'trust_reversal_of_entry_id')) {
+                      $reversalData['trust_reversal_of_entry_id'] = $orig->id;
+                  }
+
+                  $reversalId = DB::table('account_client_receipts')->insertGetId($reversalData);
+
+                  if (Schema::hasColumn('account_client_receipts', 'trust_voided_at')) {
+                      DB::table('account_client_receipts')->where('id', $orig->id)->update([
+                          'trust_voided_at' => now(),
+                          'trust_voided_by' => Auth::user()->id,
+                          'trust_void_reason' => $reason,
+                          'updated_at' => now(),
+                      ]);
+                  }
+
+                  TrustLedgerAuditLogger::log('voided', (int) $orig->id, null, null, null, $reason);
+                  TrustLedgerAuditLogger::log('reversal_created', (int) $reversalId, 'reverses_row', (string) $orig->id, (string) $orig->trans_no . ' → ' . $transNo, $reason);
+
+                  $this->recalculateTrustBalancesForClientLedger((int) $orig->client_id, $orig->client_matter_id);
+              });
+          } catch (\Throwable $e) {
+              Log::error('Trust void failed', ['error' => $e->getMessage(), 'receipt_id' => $receipt->id]);
+
+              return response()->json([
+                  'status' => false,
+                  'message' => 'Could not void receipt: ' . $e->getMessage(),
+              ], 500);
+          }
+
+          $client_info = \App\Models\Admin::select('client_id')->where('id', $receipt->client_id)->first();
+          $subject = 'Voided trust ledger row id ' . $receipt->id . ' (client ref ' . ($client_info->client_id ?? 'N/A') . ')';
+          $objs = new ActivitiesLog;
+          $objs->client_id = $receipt->client_id;
+          $objs->created_by = Auth::user()->id;
+          $objs->description = $reason;
+          $objs->subject = $subject;
+          $objs->task_status = 0;
+          $objs->pin = 0;
+          $objs->save();
+
+          $response['status'] = true;
+          $response['message'] = 'Trust receipt voided; reversing entry created.';
+
+          return response()->json($response);
+      }
+
+      if ($receipt->client_fund_ledger_type === 'Fee Transfer') {
+          $response['status'] = false;
+          $response['message'] = 'This entry is already associated with an Invoice, so it cannot be deleted. Please try another.';
+
+          return response()->json($response);
+      }
+
+      $client_id = $receipt->client_id;
+      $receipt_id = $receipt->id;
+
+      $affectedRows = AccountClientReceipt::where('id', $request->receiptId)
+          ->where('receipt_type', $request->receipt_type)
+          ->delete();
+
+      if ($affectedRows > 0) {
+          $client_info = \App\Models\Admin::select('client_id')->where('id', $client_id)->first();
+          $subject = 'Deleted client receipt no -' . $receipt_id . ' of client-' . ($client_info->client_id ?? 'N/A');
+          $objs = new ActivitiesLog;
+          $objs->client_id = $client_id;
+          $objs->created_by = Auth::user()->id;
+          $objs->description = '';
+          $objs->subject = $subject;
+          $objs->task_status = 0;
+          $objs->pin = 0;
+          $objs->save();
+
+          $response['status'] = true;
+          $response['message'] = 'Receipt deleted successfully.';
+      } else {
+          $response['status'] = false;
+          $response['message'] = 'Failed to delete receipt.';
+      }
+
+      return response()->json($response);
   }
 
   public function printPreview(Request $request, $id){
@@ -5561,169 +5861,175 @@ public function updateClientFundsLedger(Request $request)
 {
     $requestData = $request->all();
     $id = $request->input('id');
-    $trans_date = $request->input('trans_date');
-    $entry_date = $request->input('entry_date');
-    $client_fund_ledger_type = $request->input('client_fund_ledger_type');
     $description = $request->input('description');
     $payment_method = trim((string) $request->input('payment_method', ''));
 
-    // Handle document upload
-    $insertedDocId = null; // Use null to indicate no document uploaded
-    $client_unique_id = "";
+    $insertedDocId = null;
+    $client_unique_id = '';
     $doctype = isset($request->doctype) ? $request->doctype : '';
 
     if ($request->hasFile('document_upload')) {
         $files = is_array($request->file('document_upload')) ? $request->file('document_upload') : [$request->file('document_upload')];
 
         $client_info = \App\Models\Admin::select('client_id')->where('id', $requestData['client_id'])->first();
-        $client_unique_id = !empty($client_info) ? $client_info->client_id : "";
+        $client_unique_id = ! empty($client_info) ? $client_info->client_id : '';
 
         foreach ($files as $file) {
-         $size = $file->getSize();
-         $fileName = $file->getClientOriginalName();
-         $nameWithoutExtension = pathinfo($fileName, PATHINFO_FILENAME);
-         $fileExtension = $file->getClientOriginalExtension();
-         $name = time() . $file->getClientOriginalName();
-         $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
-         Storage::disk('s3')->put($filePath, file_get_contents($file));
+            $size = $file->getSize();
+            $fileName = $file->getClientOriginalName();
+            $nameWithoutExtension = pathinfo($fileName, PATHINFO_FILENAME);
+            $fileExtension = $file->getClientOriginalExtension();
+            $name = time() . $file->getClientOriginalName();
+            $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
+            Storage::disk('s3')->put($filePath, file_get_contents($file));
 
-         $obj = new \App\Models\Document;
-         $obj->file_name = $nameWithoutExtension;
-         $obj->filetype = $fileExtension;
-         $obj->user_id = Auth::user()->id;
-         $obj->myfile = $this->s3PublicUrl($filePath);
-         $obj->myfile_key = $name;
-         $obj->client_id = $requestData['client_id'];
-         $obj->type = $request->type;
-         $obj->file_size = $size;
-         $obj->doc_type = $doctype;
-         $obj->save();
+            $obj = new \App\Models\Document;
+            $obj->file_name = $nameWithoutExtension;
+            $obj->filetype = $fileExtension;
+            $obj->user_id = Auth::user()->id;
+            $obj->myfile = $this->s3PublicUrl($filePath);
+            $obj->myfile_key = $name;
+            $obj->client_id = $requestData['client_id'];
+            $obj->type = $request->type;
+            $obj->file_size = $size;
+            $obj->doc_type = $doctype;
+            $obj->save();
 
-         $insertedDocId = $obj->id; // Store the last inserted ID
+            $insertedDocId = $obj->id;
         }
     }
 
-    // Validate that the entry is not a Fee Transfer
     $entry = DB::table('account_client_receipts')
         ->where('id', $id)
         ->where('receipt_type', 1)
         ->first();
 
-    if (!$entry) {
+    if (! $entry) {
         return response()->json([
-         'status' => false,
-         'message' => 'Entry not found.',
+            'status' => false,
+            'message' => 'Entry not found.',
         ], 404);
     }
 
+    $this->ensureCrmRecordAccess((int) $entry->client_id);
+
     if ($entry->client_fund_ledger_type === 'Fee Transfer') {
         return response()->json([
-         'status' => false,
-         'message' => 'Fee Transfer entries cannot be edited.',
+            'status' => false,
+            'message' => 'Fee Transfer entries cannot be edited.',
         ], 403);
     }
 
-    $principal = floatval($request->input('deposit_amount', 0));
-    $withdraw_amount = floatval($request->input('withdraw_amount', 0));
-    $surchargeInput = max(0, floatval($request->input('eftpos_surcharge_amount', 0)));
-    $eftposSurcharge = ($client_fund_ledger_type === 'Deposit' && $payment_method === 'EFTPOS') ? round($surchargeInput, 2) : 0.0;
-    $deposit_amount = ($client_fund_ledger_type === 'Deposit') ? round($principal + $eftposSurcharge, 2) : $principal;
+    if ($this->trustLedgerRowExcludedFromBalance($entry)) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Voided entries cannot be edited.',
+        ], 403);
+    }
 
-    // Prepare the update data for account_client_receipts
+    if (Schema::hasColumn('account_client_receipts', 'trust_reversal_of_entry_id')
+        && ! empty($entry->trust_reversal_of_entry_id)) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Reversal entries cannot be edited.',
+        ], 403);
+    }
+
+    try {
+        TrustPeriodService::assertTransDateUnlocked((string) $entry->trans_date);
+    } catch (\RuntimeException $e) {
+        return response()->json(['status' => false, 'message' => $e->getMessage()], 422);
+    }
+
     $updateData = [
-        'trans_date' => $trans_date,
-        'entry_date' => $entry_date,
-        'client_fund_ledger_type' => $client_fund_ledger_type,
         'description' => $description,
-        'deposit_amount' => $deposit_amount,
-        'withdraw_amount' => $withdraw_amount,
         'payment_method' => $payment_method,
-        'eftpos_surcharge_amount' => $eftposSurcharge > 0 ? $eftposSurcharge : null,
         'updated_at' => now(),
     ];
 
-    // If a document was uploaded, add the uploaded_doc_id to the update data
+    if (Schema::hasColumn('account_client_receipts', 'payer_name')) {
+        $updateData['payer_name'] = trim((string) $request->input('payer_name', '')) ?: null;
+        $updateData['bank_deposit_reference'] = trim((string) $request->input('bank_deposit_reference', '')) ?: null;
+        $updateData['banking_date'] = trim((string) $request->input('banking_date', '')) ?: null;
+    }
+
     if ($insertedDocId !== null) {
         $updateData['uploaded_doc_id'] = $insertedDocId;
     }
 
-    // Update the entry in account_client_receipts (excluding trans_no)
     $updated = DB::table('account_client_receipts')
         ->where('id', $id)
         ->update($updateData);
 
-    if ($updated) {
-        // Recalculate balances for all entries
-        $entries = DB::table('account_client_receipts')
-         ->where('client_id', $entry->client_id)
-         ->where('receipt_type', 1)
-         ->orderBy('id', 'asc')
-         ->get();
-
-        $running_balance = 0;
-        $updatedEntries = [];
-
-        foreach ($entries as $ledgerRow) {
-         $running_balance += floatval($ledgerRow->deposit_amount) - floatval($ledgerRow->withdraw_amount);
-         DB::table('account_client_receipts')
-             ->where('id', $ledgerRow->id)
-             ->update(['balance_amount' => $running_balance]);
-
-         $ledgerRow->balance_amount = $running_balance;
-         $updatedEntries[] = $ledgerRow;
-        }
-
-        // Log activity
-        /** @var \App\Models\Admin|null $staff */
-        $staff = Auth::guard('admin')->user();
-        $userName = $staff ? trim(($staff->first_name ?? '') . ' ' . ($staff->last_name ?? '')) : 'Staff';
-        $transactionType = $deposit_amount > 0 ? 'Deposit' : 'Withdrawal';
-        $amount = $deposit_amount > 0 ? $deposit_amount : $withdraw_amount;
-        $formattedAmount = '$' . number_format($amount, 2);
-        $formattedBalance = '$' . number_format($running_balance, 2);
-        $transDate = date('d/m/Y', strtotime($trans_date));
-        
-        $subject = "Client Funds Ledger Updated - {$formattedAmount} (Ref: {$entry->trans_no})";
-        
-        $descriptionText = "<div class='activity-detail'>";
-        $descriptionText .= "<p><strong>{$userName}</strong> updated a client funds ledger entry:</p>";
-        $descriptionText .= "<ul>";
-        $descriptionText .= "<li><strong>Type:</strong> {$transactionType}</li>";
-        $descriptionText .= "<li><strong>Amount:</strong> {$formattedAmount}</li>";
-        $descriptionText .= "<li><strong>Transaction Date:</strong> {$transDate}</li>";
-        $descriptionText .= "<li><strong>Reference No:</strong> {$entry->trans_no}</li>";
-        if (!empty($description)) {
-            $descriptionText .= "<li><strong>Description:</strong> " . htmlspecialchars($description) . "</li>";
-        }
-        $descriptionText .= "<li><strong>Updated Balance:</strong> {$formattedBalance}</li>";
-        if ($insertedDocId !== null) {
-            $descriptionText .= "<li><strong>Document:</strong> Attached</li>";
-        }
-        $descriptionText .= "</ul>";
-        $descriptionText .= "</div>";
-        
-        $activity = new \App\Models\ActivitiesLog;
-        $activity->client_id = $entry->client_id;
-        $activity->created_by = Auth::guard('admin')->id();
-        $activity->description = $descriptionText;
-        $activity->subject = $subject;
-        $activity->activity_type = 'financial';
-        $activity->task_status = 0;
-        $activity->pin = 0;
-        $activity->save();
-
+    if (! $updated) {
         return response()->json([
-         'status' => true,
-         'message' => 'Entry updated successfully.',
-         'updatedEntries' => $updatedEntries,
-         'currentFundsHeld' => $running_balance,
-        ], 200);
+            'status' => false,
+            'message' => 'Failed to update entry.',
+        ], 500);
     }
 
+    $auditable = ['description', 'payment_method', 'payer_name', 'bank_deposit_reference', 'banking_date', 'uploaded_doc_id'];
+    foreach ($auditable as $field) {
+        if (! array_key_exists($field, $updateData)) {
+            continue;
+        }
+        $old = $entry->{$field} ?? null;
+        $new = $updateData[$field];
+        if ((string) ($old ?? '') !== (string) ($new ?? '')) {
+            TrustLedgerAuditLogger::log('metadata_updated', (int) $id, $field, $old, $new, null);
+        }
+    }
+
+    $running_balance = 0.0;
+    $ledgerBalanceQ = DB::table('account_client_receipts')
+        ->where('client_id', $entry->client_id)
+        ->where('receipt_type', 1)
+        ->orderBy('id', 'asc');
+    if (! empty($entry->client_matter_id)) {
+        $ledgerBalanceQ->where('client_matter_id', $entry->client_matter_id);
+    } else {
+        $ledgerBalanceQ->whereNull('client_matter_id');
+    }
+    foreach ($ledgerBalanceQ->get() as $row) {
+        if ($this->trustLedgerRowExcludedFromBalance($row)) {
+            continue;
+        }
+        $running_balance += floatval($row->deposit_amount) - floatval($row->withdraw_amount);
+    }
+    $running_balance = round($running_balance, 2);
+
+    $staff = Auth::guard('admin')->user();
+    $userName = $staff ? trim(($staff->first_name ?? '') . ' ' . ($staff->last_name ?? '')) : 'Staff';
+    $subject = "Client Funds Ledger metadata updated (Ref: {$entry->trans_no})";
+    $descriptionText = "<div class='activity-detail'>";
+    $descriptionText .= "<p><strong>{$userName}</strong> updated ledger metadata (amounts unchanged):</p>";
+    $descriptionText .= '<ul>';
+    $descriptionText .= '<li><strong>Reference No:</strong> ' . htmlspecialchars((string) $entry->trans_no) . '</li>';
+    if (! empty($description)) {
+        $descriptionText .= '<li><strong>Description:</strong> ' . htmlspecialchars((string) $description) . '</li>';
+    }
+    $descriptionText .= '<li><strong>Current computed balance:</strong> $' . number_format($running_balance, 2) . '</li>';
+    if ($insertedDocId !== null) {
+        $descriptionText .= '<li><strong>Document:</strong> Attached</li>';
+    }
+    $descriptionText .= '</ul></div>';
+
+    $activity = new \App\Models\ActivitiesLog;
+    $activity->client_id = $entry->client_id;
+    $activity->created_by = Auth::guard('admin')->id();
+    $activity->description = $descriptionText;
+    $activity->subject = $subject;
+    $activity->activity_type = 'financial';
+    $activity->task_status = 0;
+    $activity->pin = 0;
+    $activity->save();
+
     return response()->json([
-        'status' => false,
-        'message' => 'Failed to update entry.',
-    ], 500);
+        'status' => true,
+        'message' => 'Entry updated (description and banking metadata only; amounts are locked).',
+        'updatedEntries' => [],
+        'currentFundsHeld' => $running_balance,
+    ], 200);
 }
 
 public function getInvoiceAmount(Request $request)

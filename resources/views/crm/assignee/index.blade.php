@@ -3,7 +3,6 @@
 
 @section('content')
 <style>
-.fc-event-container .fc-h-event{cursor:pointer;}
 #openassigneview .modal-body ul.navbar-nav li .dropdown-menu{transform: none!important; top:40px!important;}
 .sort_col a { color: #212529 !important; font-weight: 700 !important;}
 </style>
@@ -186,7 +185,7 @@
 														<div class=&quot;form-group row&quot; style=&quot;margin-bottom:12px&quot; >
 															<label for=&quot;inputEmail3&quot; class=&quot;col-sm-3 control-label c6 f13&quot; style=&quot;margin-top:8px&quot;>Note</label>
 															<div class=&quot;col-sm-9&quot;>
-																<textarea id=&quot;assignnote&quot; class=&quot;form-control summernote-simple f13&quot; placeholder=&quot;Enter an note....&quot; type=&quot;text&quot;></textarea>
+																<textarea id=&quot;assignnote&quot; class=&quot;form-control tinymce-editor f13&quot; placeholder=&quot;Enter an note....&quot; type=&quot;text&quot;></textarea>
 															</div>
 															<div class=&quot;clearfix&quot;></div>
 														</div>

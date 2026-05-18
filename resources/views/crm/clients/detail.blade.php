@@ -575,7 +575,7 @@ use App\Http\Controllers\Controller;
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="email_to">To <span class="span_req">*</span></label>
-								<select data-valid="required" class="js-data-example-ajax" name="email_to[]"></select>
+								<select multiple data-valid="required" class="js-data-example-ajax" name="email_to[]"></select>
 
 								@if ($errors->has('email_to'))
 									<span class="custom-error" role="alert">
@@ -587,7 +587,7 @@ use App\Http\Controllers\Controller;
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="email_cc">CC </label>
-								<select data-valid="" class="js-data-example-ajaxccd" name="email_cc[]"></select>
+								<select multiple data-valid="" class="js-data-example-ajaxccd" name="email_cc[]"></select>
 
 								@if ($errors->has('email_cc'))
 									<span class="custom-error" role="alert">
@@ -1361,8 +1361,7 @@ $(document).ready(function() {
 });
 </script>
 <script src="{{URL::to('/')}}/js/popover.js"></script>
-{{-- Bootstrap-datepicker removed - already loaded in layout, migrating to Flatpickr --}}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.full.min.js"></script>
+{{-- jquery-datetimepicker removed - not used on this page --}}
 
 {{-- Activity Feed Functionality --}}
 <script src="{{ URL::asset('js/crm/clients/tabs/activity-feed.js') }}"></script>
@@ -1519,8 +1518,7 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/modules/documents.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/accounts.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/invoices.js') }}"></script>
-{{-- Bootstrap Datepicker required by Schedule Appointment modal (appointments.js) --}}
-<script src="{{ URL::asset('js/bootstrap-datepicker.js') }}"></script>
+{{-- appointments.js uses Flatpickr inline (bootstrap-datepicker removed) --}}
 <script src="{{ URL::asset('js/crm/clients/modules/appointments.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/subtabs.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/ledger-dragdrop.js') }}"></script>
@@ -2098,7 +2096,11 @@ $(function () {
         matterBtn.addEventListener('click', function () {
             var $el = window.jQuery && window.jQuery('#sel_matter_id_client_detail');
             if ($el && $el.length) {
-                if ($el.hasClass('select2-hidden-accessible')) {
+                var el0 = $el[0];
+                var ts = (typeof window.getTomSelectInstance === 'function') ? window.getTomSelectInstance(el0) : null;
+                if (ts && typeof window.openTS === 'function') {
+                    window.openTS(el0);
+                } else if ($el.hasClass('select2-hidden-accessible')) {
                     $el.select2('open');
                 } else {
                     $el.trigger('focus');
