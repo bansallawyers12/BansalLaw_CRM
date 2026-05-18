@@ -1290,14 +1290,23 @@ $(function () {
         serverSide: true,
         ajax: {
             url: "{{ route('action.list') }}",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'application/json'
+            },
             data: function(d) {
                 var $activeTab = $('.tabs .tab-button.active');
                 d.filter = $activeTab.length ? ($activeTab.data('filter') || 'all') : 'all';
                 d.search.value = $('#searchInput').val() || ''; // Pass the search term to the server in DataTables format
             },
             error: function(xhr, error, thrown) {
-                console.error('DataTables Ajax Error:', error, thrown);
-                // Handle UTF-8 encoding errors gracefully
+                var st = xhr && xhr.status;
+                // Expired CSRF/session or auth: Laravel often returns HTML; reload sends user to login
+                if (st === 401 || st === 419 || st === 403) {
+                    window.location.reload();
+                    return;
+                }
+                console.error('DataTables Ajax Error:', error, thrown, st, xhr && xhr.responseURL);
                 if (xhr && xhr.responseText && xhr.responseText.includes('Malformed UTF-8')) {
                     console.warn('UTF-8 encoding issue detected. Please refresh the page.');
                 }
@@ -1558,6 +1567,10 @@ $(function () {
         $.ajax({
             url: "{{ route('action.counts') }}",
             method: "GET",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'application/json'
+            },
             success: function(data) {
                 if (data && typeof data === 'object') {
                     $('#all-count').text(data.all || 0);
@@ -1573,6 +1586,10 @@ $(function () {
                 }
             },
             error: function(xhr) {
+                if (xhr.status === 401 || xhr.status === 419 || xhr.status === 403) {
+                    window.location.reload();
+                    return;
+                }
                 console.error('Error fetching badge counts:', xhr.responseText);
             }
         });

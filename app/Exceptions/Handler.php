@@ -82,6 +82,32 @@ class Handler extends ExceptionHandler
 		$hasBearerToken = $request->hasHeader('Authorization') && 
 						  str_starts_with($request->header('Authorization', ''), 'Bearer ');
 		
+		// AJAX DataTables loaders must not receive an HTML redirect (invalid JSON → client error).
+		if ($request->is('action/list')) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Unauthenticated.',
+				'draw' => (int) $request->input('draw', 0),
+				'recordsTotal' => 0,
+				'recordsFiltered' => 0,
+				'data' => [],
+			], 401);
+		}
+
+		if ($request->is('action/counts')) {
+			return response()->json([
+				'all' => 0,
+				'call' => 0,
+				'checklist' => 0,
+				'review' => 0,
+				'query' => 0,
+				'urgent' => 0,
+				'personal_action' => 0,
+				'follow_up' => 0,
+				'unauthenticated' => true,
+			], 401);
+		}
+
 		// Return JSON 401 for API routes or requests with bearer tokens
 		if ($request->expectsJson() || $isApiRoute || $hasBearerToken)
 		{

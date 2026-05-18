@@ -45,6 +45,18 @@ class AssigneeController extends Controller
         return $u instanceof Staff && $u->hasEffectiveSuperAdminPrivileges();
     }
 
+    /**
+     * SQL expression concatenating two nullable columns with a space (driver-aware).
+     * MySQL/MariaDB use CONCAT(); pgsql/sqlite accept || for string concatenation.
+     */
+    private function sqlConcatWithSpace(string $leftColumn, string $rightColumn): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'mysql', 'mariadb' => "CONCAT(COALESCE({$leftColumn}, ''), ' ', COALESCE({$rightColumn}, ''))",
+            default => "COALESCE({$leftColumn}, '') || ' ' || COALESCE({$rightColumn}, '')",
+        };
+    }
+
     //All action lists except completed = Closed
     public function index(Request $request)
     {
@@ -284,7 +296,6 @@ class AssigneeController extends Controller
     public function getAction(Request $request)
     {
         try {
-            if ($request->ajax()) {
                 // Select specific columns from the notes table, using the correct column name 'user_id'
                 $query = Note::select([
                         'notes.id',
@@ -354,8 +365,9 @@ class AssigneeController extends Controller
                             $query->leftJoin('admins as client_admins', 'notes.client_id', '=', 'client_admins.id')
                                 ->leftJoin('companies as action_client_companies', 'action_client_companies.admin_id', '=', 'client_admins.id')
                                 ->orderByRaw(
-                                    "LOWER(COALESCE(NULLIF(TRIM(action_client_companies.company_name), ''), COALESCE(client_admins.first_name, '') || ' ' || COALESCE(client_admins.last_name, ''))) "
-                                    . $orderDirection
+                                    'LOWER(COALESCE(NULLIF(TRIM(action_client_companies.company_name), \'\'), '
+                                    . $this->sqlConcatWithSpace('client_admins.first_name', 'client_admins.last_name')
+                                    . ')) ' . $orderDirection
                                 );
                             break;
                         case 'assign_date':
@@ -482,10 +494,11 @@ class AssigneeController extends Controller
                     // Define how to filter computed columns
                     ->filterColumn('assigner_name', function($query, $keyword) {
                         $keywordLower = strtolower($keyword);
-                        $query->whereHas('noteStaff', function($q) use ($keywordLower) {
+                        $nameConcat = $this->sqlConcatWithSpace('first_name', 'last_name');
+                        $query->whereHas('noteStaff', function($q) use ($keywordLower, $nameConcat) {
                             $q->whereRaw('LOWER(first_name) LIKE ?', ['%' . $keywordLower . '%'])
                               ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . $keywordLower . '%'])
-                              ->orWhereRaw("LOWER(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?", ['%' . $keywordLower . '%']);
+                              ->orWhereRaw("LOWER({$nameConcat}) LIKE ?", ['%' . $keywordLower . '%']);
                         });
                     })
                     ->filterColumn('client_reference', function($query, $keyword) {
@@ -509,7 +522,6 @@ class AssigneeController extends Controller
                 }
                 
                 return $response;
-            }
         } catch (\Exception $e) {
             Log::error('Error in getAction: ' . $e->getMessage(), [
                 'file' => $e->getFile(),
