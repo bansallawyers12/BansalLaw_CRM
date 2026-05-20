@@ -193,7 +193,10 @@
 							<div class="document-info">
 								<b>ABN</b> 66 677 069 439<br/>
 								<b>Receipt Date:</b> {{@$record_get->trans_date ? $record_get->trans_date : date('d/m/Y')}}<br/>
-								<b>Receipt No:</b> {{@$record_get->trans_no}}
+								<b>Receipt No:</b> {{@$record_get->trans_no}}<br/>
+								@if(!empty($issued_by_name))
+								<b>Received by:</b> {{ $issued_by_name }}
+								@endif
 							</div>
 						</td>
 					</tr>
@@ -286,7 +289,7 @@
 					<tr>
 						<td colspan="2">
 							<div style="background: #eef1f7; border-left: 4px solid #1b3a6b; padding: 15px; margin-top: 20px; font-size: 13px; color: #1f2937;">
-								<p style="margin: 0;"><strong style="color: #111827;">Receipt Acknowledgement:</strong> This receipt confirms that we have received the above amount into our Client Trust Account for matter <strong>{{ $client_matter_no }}</strong>. These funds will be applied to your matter as professional fees, disbursements, and charges are incurred.</p>
+								<p style="margin: 0;"><strong style="color: #111827;">Receipt Acknowledgement:</strong> This receipt confirms that we have received the above amount into the <strong>Bansal Lawyers law practice trust account</strong> for matter <strong>{{ $client_matter_no }}</strong>. These funds will be applied to your matter as professional fees, disbursements, and charges are incurred.</p>
 							</div>
 						</td>
 					</tr>

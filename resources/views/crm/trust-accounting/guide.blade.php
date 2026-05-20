@@ -15,6 +15,8 @@
                         border-radius: 4px; font-size: 13.5px; }
 .guide-law            { border-left: 4px solid #6f42c1; background: #f8f5ff; padding: 10px 14px;
                         border-radius: 4px; font-size: 13.5px; }
+.guide-test           { border-left: 4px solid #0dcaf0; background: #f0fbff; padding: 10px 14px;
+                        border-radius: 4px; font-size: 13.5px; }
 .guide-card           { border: 1px solid #dee2e6; border-radius: 6px; padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; }
 .guide-card h5        { margin-bottom: .6rem; font-size: 1rem; }
 .guide-flow           { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: .5rem 0 .8rem; }
@@ -24,6 +26,9 @@
 .toc a:hover          { text-decoration: underline; }
 .toc li               { margin-bottom: 4px; }
 .section-anchor       { scroll-margin-top: 72px; }
+.test-pass            { display: inline-block; background: #198754; color: #fff; border-radius: 3px;
+                        padding: 1px 7px; font-size: 11px; font-weight: 600; letter-spacing: .3px; }
+.test-check           { color: #0d6efd; font-weight: 600; }
 </style>
 
 <div class="main-content">
@@ -49,9 +54,18 @@
                 <strong><i class="fas fa-gavel me-1"></i> Relevant law (Victoria)</strong> — This module implements
                 the <em>Legal Profession Uniform Law Application Act 2014 (Vic)</em> and the
                 <em>Legal Profession Uniform General Rules 2015</em>, specifically:
-                Rule&nbsp;42 (withdrawal authority for fee transfers),
-                Rule&nbsp;47 (trust receipts / payments records),
-                Rule&nbsp;48 (monthly bank reconciliation).
+                <ul class="mb-0 mt-1">
+                    <li><strong>Rule 35</strong> — receipt form and wording (trust account name)</li>
+                    <li><strong>Rule 36</strong> — required fields on each trust receipt (payer, date, method, issued-by)</li>
+                    <li><strong>Rule 38</strong> — immutable month-end copies of trust records</li>
+                    <li><strong>Rule 39</strong> — audit trail when client or matter details change</li>
+                    <li><strong>Rule 40</strong> — overdrawn ledger detection and logging</li>
+                    <li><strong>Rule 42</strong> — written withdrawal authority for fee transfers</li>
+                    <li><strong>Rule 43</strong> — payee, cheque and EFT details on payment records</li>
+                    <li><strong>Rule 47</strong> — trust receipts and payments records</li>
+                    <li><strong>Rule 48</strong> — monthly bank reconciliation</li>
+                    <li><strong>Rule 52</strong> — annual client trust account statements</li>
+                </ul>
                 The system does not replace qualified legal accounting advice.
             </div>
 
@@ -63,7 +77,12 @@
                         <li><a href="#section-overview">System overview</a></li>
                         <li><a href="#section-setup">Initial setup</a></li>
                         <li><a href="#section-daily">Day-to-day: recording trust entries</a></li>
+                        <li><a href="#section-receipt-fields">Rule 36 &amp; 43 — payer / payee fields</a></li>
                         <li><a href="#section-rule42">Rule 42 — fee transfer authority</a></li>
+                        <li><a href="#section-overdraw">Rule 40 — overdrawn ledger</a></li>
+                        <li><a href="#section-rule39">Rule 39 — client &amp; matter field auditing</a></li>
+                        <li><a href="#section-statements">Rule 52 — client trust statements</a></li>
+                        <li><a href="#section-archives">Rule 38 — monthly archives &amp; auditor's pack</a></li>
                         <li><a href="#section-reports">Reports hub</a></li>
                         <li><a href="#section-trial-balance">Trial balance</a></li>
                         <li><a href="#section-journals">Receipts &amp; payments journals</a></li>
@@ -72,6 +91,7 @@
                         <li><a href="#section-audit">Audit log</a></li>
                         <li><a href="#section-sequences">Practice sequences</a></li>
                         <li><a href="#section-monthend">Month-end checklist</a></li>
+                        <li><a href="#section-testing">Testing &amp; verification checklist</a></li>
                     </ol>
                 </div>
             </div>
@@ -82,7 +102,7 @@
             <div id="section-overview" class="guide-section section-anchor">
                 <h5 class="border-bottom pb-2 mb-3">1. System overview</h5>
 
-                <p>The trust module is a single, integrated workflow. Here is how the pieces fit together:</p>
+                <p>The trust module is a single, integrated compliance workflow. Here is how the pieces fit together:</p>
 
                 <div class="guide-flow">
                     <span class="guide-flow-item"><i class="fas fa-university me-1"></i> Client trust entry</span>
@@ -95,6 +115,8 @@
                     <span class="guide-flow-arrow">→</span>
                     <span class="guide-flow-item">Bank reconciliation</span>
                     <span class="guide-flow-arrow">→</span>
+                    <span class="guide-flow-item">Monthly archive</span>
+                    <span class="guide-flow-arrow">→</span>
                     <span class="guide-flow-item">Period lock</span>
                 </div>
 
@@ -104,9 +126,9 @@
                             <h5><i class="fas fa-users me-2 text-primary"></i>Who can access trust admin?</h5>
                             <p class="mb-0 small">Only staff with <strong>super-admin effective privileges</strong>
                             (the checkbox in the Staff Console) can access the trust admin screens
-                            (reports, reconciliation, period locks, etc.). Regular staff can post
+                            (reports, reconciliation, period locks, archives, etc.). Regular staff can post
                             client ledger entries from the client detail page but cannot lock
-                            periods or export reports.</p>
+                            periods, export reports, or create archives.</p>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -190,12 +212,17 @@
                             <ol class="small mb-0">
                                 <li>Open the client record and click the <strong>Accounts</strong> tab.</li>
                                 <li>Click <strong>"Trust Account Entry"</strong> (green button).</li>
-                                <li>Select type <em>Deposit</em>.</li>
+                                <li>Select type <em>Trust Receipt (Deposit)</em>.</li>
                                 <li>Enter the transaction date, amount, payment method, and a
                                     description (e.g. "Initial retainer — <em>Matter ref</em>").</li>
-                                <li>If the deposit relates to an existing invoice, select the invoice
-                                    in the <em>Invoice</em> field (this allocates the trust receipt).</li>
-                                <li>Click Save. A <strong>TR-</strong> reference is issued automatically.</li>
+                                <li><strong>Payer name</strong> — enter who the money came from (Rule 36(e)).
+                                    If left blank the system logs a compliance audit event.</li>
+                                <li>If paying by bank transfer, enter the <strong>bank deposit reference</strong>
+                                    and <strong>banking date</strong>.</li>
+                                <li>If the deposit relates to an existing invoice, select it in the
+                                    <em>Invoice</em> field (allocates the trust receipt).</li>
+                                <li>Click Save. A <strong>TR-</strong> reference is issued and a
+                                    receipt PDF (naming the staff member who issued it) is generated.</li>
                             </ol>
                         </div>
                     </div>
@@ -207,9 +234,10 @@
                                     <em>Fee Transfer</em>.</li>
                                 <li>Enter date, amount and the invoice number being satisfied.</li>
                                 <li>The Rule 42 authority block appears — select the authority type
-                                    and fill in the notice date. See <a href="#section-rule42">Section 4</a>
+                                    and fill in the notice date. See <a href="#section-rule42">Section 5</a>
                                     for details.</li>
-                                <li>Click Save. The ledger balance reduces immediately.</li>
+                                <li>Click Save. The ledger balance reduces immediately. The system
+                                    blocks you from transferring more than the current funds held.</li>
                             </ol>
                             <div class="guide-warning mt-2">
                                 <strong>Important:</strong> A Fee Transfer <em>without</em> a Rule 42
@@ -222,11 +250,13 @@
                         <div class="guide-card">
                             <h5><i class="fas fa-arrow-circle-up me-2 text-danger"></i>Disbursement (payment from trust)</h5>
                             <ol class="small mb-0">
-                                <li>Select type <em>Disbursement</em>.</li>
+                                <li>Select type <em>Disbursement (Trust Payment)</em>.</li>
                                 <li>Describe exactly what the payment is for
                                     (e.g. "Barrister fee — J. Smith — Brief ref 123").</li>
-                                <li>Rule 42 authority is not required for disbursements, but record
-                                    the payment method and any supporting reference.</li>
+                                <li>Enter the <strong>payee name</strong> (who is being paid — Rule 43).</li>
+                                <li>Select payment method. If <em>Cheque</em>, enter the cheque number.
+                                    If <em>Bank Transfer / EFT</em>, enter account name, BSB and account
+                                    number (Rule 43).</li>
                             </ol>
                         </div>
                     </div>
@@ -234,8 +264,10 @@
                         <div class="guide-card">
                             <h5><i class="fas fa-undo-alt me-2" style="color:#6f42c1;"></i>Refund to client</h5>
                             <ol class="small mb-0">
-                                <li>Select type <em>Refund</em>.</li>
+                                <li>Select type <em>Refund to Client</em>.</li>
                                 <li>Enter the date and amount. The running balance will decrease.</li>
+                                <li>Enter the <strong>payee name</strong> (client receiving the refund)
+                                    and payment details (cheque or EFT).</li>
                                 <li>Ensure the refund is backed by a bank payment before posting.</li>
                             </ol>
                         </div>
@@ -246,15 +278,82 @@
                     <strong>Viewing the ledger:</strong> The Trust Account Ledger section on the
                     Accounts tab shows a running balance, transaction type icons, and receipt
                     numbers. Voided rows appear with strikethrough. A green tick icon next to
-                    the date means the receipt has been verified.
+                    the date means the receipt has been verified. Use the <strong>Trust Statement</strong>
+                    button (top of the Accounts tab, visible when a matter is selected) to generate
+                    a Rule 52 statement for the client in that matter at any time.
                 </div>
             </div>
 
             {{-- ───────────────────────────────────────────────────────── --}}
-            {{-- 4. RULE 42 --}}
+            {{-- 4. RECEIPT FIELDS (RULE 36 & 43) --}}
+            {{-- ───────────────────────────────────────────────────────── --}}
+            <div id="section-receipt-fields" class="guide-section section-anchor">
+                <h5 class="border-bottom pb-2 mb-3">4. Rule 36 &amp; 43 — payer / payee &amp; payment fields</h5>
+
+                <div class="guide-law mb-3">
+                    <strong>Rule 36</strong> requires each trust receipt to record: the date, amount, form of payment,
+                    the name of the person from whom money was received (payer), the matter reference, and the name of
+                    the person receipting the money.<br/>
+                    <strong>Rule 43</strong> requires payments records to show the name of the person to whom payment
+                    was made (payee) and, for cheques, the cheque number; for EFT, the account name, BSB and account number.
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="guide-card">
+                            <h5><i class="fas fa-arrow-down me-2 text-success"></i>Deposit (money-in) fields</h5>
+                            <table class="table table-sm table-bordered mb-0 small">
+                                <thead class="table-light"><tr><th>Field</th><th>Purpose</th></tr></thead>
+                                <tbody>
+                                    <tr><td><strong>Payer / Payee</strong> column — top input</td><td>Name of person paying money into trust (Rule 36(e)). Logged as an audit event if omitted.</td></tr>
+                                    <tr><td><strong>Bank / Cheque ref</strong></td><td>Bank deposit slip reference for reconciliation.</td></tr>
+                                    <tr><td><strong>Date / BSB</strong> — top input</td><td>Banking date — the date funds cleared the bank (may differ from transaction date).</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="guide-card">
+                            <h5><i class="fas fa-arrow-up me-2 text-danger"></i>Payment (money-out) fields</h5>
+                            <table class="table table-sm table-bordered mb-0 small">
+                                <thead class="table-light"><tr><th>Field</th><th>Purpose</th></tr></thead>
+                                <tbody>
+                                    <tr><td><strong>Payer / Payee</strong> column — bottom input</td><td>Name of person receiving trust funds — payee (Rule 43).</td></tr>
+                                    <tr><td><strong>Bank / Cheque ref</strong> — bottom input</td><td>Cheque number (visible when <em>Cheque</em> is selected as payment method).</td></tr>
+                                    <tr><td><strong>Date / BSB</strong> — bottom input</td><td>EFT BSB of recipient account (visible when <em>Bank Transfer / EFT</em> is selected).</td></tr>
+                                    <tr><td><strong>EFT details</strong> column</td><td>EFT account name and account number (Rule 43).</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guide-tip mt-1">
+                    <strong>Dynamic fields:</strong> The entry form shows only the fields relevant to the selected
+                    transaction type and payment method. Deposit rows show payer and banking fields;
+                    Disbursement / Refund / Fee Transfer rows show payee, cheque or EFT fields.
+                    EFT fields appear only when <em>Bank Transfer / EFT</em> is chosen.
+                    Cheque number appears only when <em>Cheque</em> is chosen.
+                </div>
+
+                <div class="guide-card mt-2">
+                    <h5><i class="fas fa-file-pdf me-2 text-danger"></i>Trust receipt PDF (Rule 35 &amp; 36)</h5>
+                    <p class="small mb-0">
+                        When a trust entry is saved, a PDF receipt is automatically generated naming
+                        <strong>Bansal Lawyers law practice trust account</strong> (Rule 35 — the receipt must
+                        identify the law practice's trust account, not just "our trust account").
+                        The receipt also shows <strong>Received by:</strong> with the name of the staff member
+                        who posted the entry (Rule 36(i)). The PDF is attached to the client record and can be
+                        emailed or downloaded at any time.
+                    </p>
+                </div>
+            </div>
+
+            {{-- ───────────────────────────────────────────────────────── --}}
+            {{-- 5. RULE 42 --}}
             {{-- ───────────────────────────────────────────────────────── --}}
             <div id="section-rule42" class="guide-section section-anchor">
-                <h5 class="border-bottom pb-2 mb-3">4. Rule 42 — fee transfer authority</h5>
+                <h5 class="border-bottom pb-2 mb-3">5. Rule 42 — fee transfer authority</h5>
 
                 <div class="guide-law mb-3">
                     <strong>What is Rule 42?</strong> — Rule 42 of the <em>Legal Profession Uniform General Rules 2015</em>
@@ -310,10 +409,220 @@
             </div>
 
             {{-- ───────────────────────────────────────────────────────── --}}
-            {{-- 5. REPORTS HUB --}}
+            {{-- 6. RULE 40 — OVERDRAWN LEDGER --}}
+            {{-- ───────────────────────────────────────────────────────── --}}
+            <div id="section-overdraw" class="guide-section section-anchor">
+                <h5 class="border-bottom pb-2 mb-3">6. Rule 40 — overdrawn ledger report</h5>
+
+                <div class="guide-law mb-3">
+                    <strong>Rule 40</strong> — A law practice must not overdraw a trust ledger account.
+                    If an overdraw occurs the practice must remedy it immediately and report it. The system
+                    detects and logs overdraws automatically but does <strong>not</strong> block Disbursements
+                    or Refunds that cause a negative balance (only Fee Transfers are hard-blocked). This allows
+                    you to correct bank timing differences while maintaining a complete audit record.
+                </div>
+
+                <div class="guide-step">
+                    <div class="guide-step-num">1</div>
+                    <div class="guide-step-body">
+                        Go to <a href="{{ route('trust-accounting.reports.overdrawn-ledger') }}">Reports → Overdrawn ledger</a>.
+                        Set the date range and click <strong>Run</strong>.
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <div class="guide-step-num">2</div>
+                    <div class="guide-step-body">
+                        The table lists every ledger row where the <strong>running balance</strong> went below zero.
+                        Columns show: transaction date, reference number, type, client, matter, withdrawal amount, and
+                        resulting negative balance.
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <div class="guide-step-num">3</div>
+                    <div class="guide-step-body">
+                        Click <strong>CSV</strong> to download the overdrawn ledger report (UTF-8 BOM, opens in Excel).
+                        The CSV also includes the corresponding audit log events for each overdraw.
+                    </div>
+                </div>
+                <div class="guide-step">
+                    <div class="guide-step-num">4</div>
+                    <div class="guide-step-body">
+                        For every row on this report: investigate immediately, correct the cause (e.g. post a
+                        missing deposit, correct an incorrect disbursement date), and document the remedy.
+                        The audit log records the overdraw event and any subsequent void/correction actions.
+                    </div>
+                </div>
+
+                <div class="guide-warning mt-1">
+                    <strong>Fee Transfers are hard-blocked</strong> — the system will refuse to save a Fee Transfer
+                    that would exceed current funds held. Disbursements and Refunds are logged-only (audit event
+                    <code>overdrawn_transaction_posted</code>) to accommodate legitimate timing differences
+                    (e.g. a deposit in transit). Any overdrawn state must be remedied and reported to the VLSB+C.
+                </div>
+            </div>
+
+            {{-- ───────────────────────────────────────────────────────── --}}
+            {{-- 7. RULE 39 — CLIENT & MATTER FIELD AUDITING --}}
+            {{-- ───────────────────────────────────────────────────────── --}}
+            <div id="section-rule39" class="guide-section section-anchor">
+                <h5 class="border-bottom pb-2 mb-3">7. Rule 39 — client &amp; matter field auditing</h5>
+
+                <div class="guide-law mb-3">
+                    <strong>Rule 39</strong> — Trust records must accurately identify the person for whom trust money
+                    is held. If a client's name, address, or matter reference changes after trust money has been received,
+                    that change must be traceable. The system automatically records these changes in the trust audit log.
+                </div>
+
+                <div class="guide-card">
+                    <h5 class="small fw-semibold">What is automatically audited</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="small fw-semibold mb-1"><i class="fas fa-user me-1"></i> Client record changes</p>
+                            <ul class="small mb-0">
+                                <li>First name</li>
+                                <li>Last name</li>
+                                <li>Address</li>
+                                <li>City / Suburb</li>
+                                <li>State</li>
+                                <li>Postcode</li>
+                                <li>Country</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="small fw-semibold mb-1"><i class="fas fa-folder me-1"></i> Matter record changes</p>
+                            <ul class="small mb-0">
+                                <li>Matter reference number (<code>client_unique_matter_no</code>)</li>
+                                <li>Matter description / case detail</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="small mt-2">
+                    Changes are recorded in the <strong>Audit log</strong> with event type
+                    <code>field_updated</code>, the table name (<code>admins</code> or <code>client_matters</code>),
+                    the field that changed, the old value, and the new value. To view these events:
+                    go to <a href="{{ route('trust-accounting.audit-log.index') }}">Audit log</a> and
+                    filter by table <em>admins</em> or <em>client_matters</em> and event <em>field_updated</em>.
+                </p>
+
+                <div class="guide-tip">
+                    <strong>No action needed from staff</strong> — this auditing is fully automatic. Every time
+                    a client's name or address is saved in the CRM, the system checks whether it changed and records
+                    the before/after values. You do not need to do anything differently.
+                </div>
+            </div>
+
+            {{-- ───────────────────────────────────────────────────────── --}}
+            {{-- 8. RULE 52 — CLIENT TRUST STATEMENTS --}}
+            {{-- ───────────────────────────────────────────────────────── --}}
+            <div id="section-statements" class="guide-section section-anchor">
+                <h5 class="border-bottom pb-2 mb-3">8. Rule 52 — client trust statements</h5>
+
+                <div class="guide-law mb-3">
+                    <strong>Rule 52</strong> — A law practice must give each person for whom it holds trust money a
+                    <strong>trust account statement</strong> at least once a year (as at 30 June) and at the conclusion
+                    of the matter. The statement must show all receipts and payments during the period and the
+                    balance held.
+                </div>
+
+                <div class="guide-card">
+                    <h5><i class="fas fa-file-alt me-2 text-primary"></i>On-demand statement (any time)</h5>
+                    <ol class="small mb-0">
+                        <li>From the client's Accounts tab, select the matter from the dropdown.</li>
+                        <li>Click the <strong>Trust Statement</strong> button. A PDF opens in a new tab
+                            showing all trust transactions for that matter.</li>
+                        <li>Alternatively, go to
+                            <a href="{{ route('trust-accounting.statements.index') }}">Reports → Trust statements</a>,
+                            enter the client ID and matter ID, optionally set a date range, and click
+                            <strong>Generate PDF</strong>.</li>
+                    </ol>
+                </div>
+
+                <div class="guide-card">
+                    <h5><i class="fas fa-calendar-alt me-2 text-warning"></i>30 June annual batch run</h5>
+                    <ol class="small mb-0">
+                        <li>Go to <a href="{{ route('trust-accounting.statements.annual') }}">Reports → Trust statements → 30 June batch</a>.</li>
+                        <li>The page lists every matter with a non-zero trust balance as at 30 June this year.
+                            Matters marked <strong>Exempt</strong> have a zero balance and no trust activity in the
+                            past 12 months — you may skip sending a statement to these.</li>
+                        <li>For each non-exempt matter: click <strong>PDF</strong> to generate the statement,
+                            send it to the client by email or post, then click <strong>Mark sent</strong>.</li>
+                        <li>Marked matters show the date the statement was recorded as sent. This satisfies
+                            Rule 52 for the year.</li>
+                    </ol>
+                    <div class="guide-warning mt-2">
+                        <strong>Deadline:</strong> Annual statements must be sent by <strong>30 September</strong>
+                        (within 3 months of 30 June). The batch screen shows the <em>Last sent</em> date so you
+                        can track which matters are outstanding.
+                    </div>
+                </div>
+
+                <div class="guide-tip">
+                    The statement PDF header names <strong>Bansal Lawyers law practice trust account</strong>
+                    (Rule 35) and includes the client's address, matter reference, period dates, opening balance,
+                    all transactions (with date, reference, type and description), and closing balance.
+                </div>
+            </div>
+
+            {{-- ───────────────────────────────────────────────────────── --}}
+            {{-- 9. RULE 38 — MONTHLY ARCHIVES --}}
+            {{-- ───────────────────────────────────────────────────────── --}}
+            <div id="section-archives" class="guide-section section-anchor">
+                <h5 class="border-bottom pb-2 mb-3">9. Rule 38 — monthly archives &amp; auditor's pack</h5>
+
+                <div class="guide-law mb-3">
+                    <strong>Rule 38</strong> — A law practice must retain trust records for at least 7 years.
+                    Month-end copies of the journals and trial balance must be kept in a form that cannot be altered.
+                    The monthly archive feature creates immutable CSV snapshots of each report.
+                </div>
+
+                <div class="guide-card">
+                    <h5><i class="fas fa-archive me-2 text-secondary"></i>Creating a monthly archive</h5>
+                    <ol class="small mb-0">
+                        <li>Go to <a href="{{ route('trust-accounting.archives.index') }}">Reports → Monthly archives</a>.</li>
+                        <li>Enter the <strong>Year</strong> and <strong>Month</strong> to archive (e.g. 2026 / 5 for May 2026).
+                            You must have locked the period first — locking prevents further changes to entries in that month.</li>
+                        <li>Click <strong>Archive month reports</strong>. The system creates three CSV snapshots:
+                            <ul class="mt-1">
+                                <li><code>receipts_journal</code> — all trust receipts for the month</li>
+                                <li><code>payments_journal</code> — all trust payments for the month</li>
+                                <li><code>trial_balance</code> — balances held as at end of month</li>
+                            </ul>
+                        </li>
+                        <li>Each archive row shows who prepared it and when. Click <strong>Download</strong>
+                            to retrieve any archived CSV at any time.</li>
+                        <li>Attempting to archive a month that is already archived is silently skipped
+                            (idempotent) — you will see a message saying how many were created vs. skipped.</li>
+                    </ol>
+                </div>
+
+                <div class="guide-card">
+                    <h5><i class="fas fa-file-archive me-2 text-secondary"></i>Auditor's pack (ZIP download)</h5>
+                    <p class="small mb-1">
+                        Go to <a href="{{ route('trust-accounting.reports.index') }}">Reports hub</a>
+                        and use the <strong>Auditor's pack</strong> card. Enter a date range and click
+                        <strong>Download ZIP</strong>. The ZIP contains:
+                    </p>
+                    <ul class="small mb-0">
+                        <li>Receipts journal CSV for the range</li>
+                        <li>Payments journal CSV for the range (includes payee, cheque, EFT columns)</li>
+                        <li>Trial balance CSV as at the end date</li>
+                        <li>Overdrawn ledger CSV for the range</li>
+                    </ul>
+                    <div class="guide-tip mt-2">
+                        <strong>External examination:</strong> Provide the ZIP from <em>Auditor's pack</em> plus
+                        the signed Rule 48 reconciliation statements as the primary supporting pack for the examiner.
+                        Name the ZIP file <code>TrustExamPack-{from}-to-{to}</code> for easy identification.
+                    </div>
+                </div>
+            </div>
+
+            {{-- ───────────────────────────────────────────────────────── --}}
+            {{-- 10. REPORTS HUB --}}
             {{-- ───────────────────────────────────────────────────────── --}}
             <div id="section-reports" class="guide-section section-anchor">
-                <h5 class="border-bottom pb-2 mb-3">5. Reports hub</h5>
+                <h5 class="border-bottom pb-2 mb-3">10. Reports hub</h5>
 
                 <p class="small">
                     Access at <a href="{{ route('trust-accounting.reports.index') }}">Trust accounting → Reports</a>.
@@ -332,14 +641,35 @@
                         <div class="guide-card h-100">
                             <h5><i class="fas fa-arrow-down me-2 text-success"></i>Receipts journal</h5>
                             <p class="small mb-0">All money-in movements in a date range.
-                            Includes payer name, banking date, and invoice reference.</p>
+                            CSV includes payer name, banking date, bank reference, and invoice reference (Rule 36).</p>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
                         <div class="guide-card h-100">
                             <h5><i class="fas fa-arrow-up me-2 text-danger"></i>Payments journal</h5>
                             <p class="small mb-0">All money-out movements in a date range.
-                            Includes full Rule 42 authority columns for fee transfers.</p>
+                            CSV includes payee name, cheque number, EFT details (Rule 43), and full Rule 42 authority columns.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="guide-card h-100">
+                            <h5><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Overdrawn ledger</h5>
+                            <p class="small mb-0">Rule 40 — any ledger rows with a negative running balance.
+                            Must be cleared immediately and reported.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="guide-card h-100">
+                            <h5><i class="fas fa-file-alt me-2 text-primary"></i>Trust statements</h5>
+                            <p class="small mb-0">Rule 52 — on-demand PDF or 30 June annual batch run
+                            for all matters with funds held.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="guide-card h-100">
+                            <h5><i class="fas fa-archive me-2 text-secondary"></i>Monthly archives</h5>
+                            <p class="small mb-0">Rule 38 — immutable month-end CSV copies of all three journals.
+                            Download individual CSVs or the full auditor's pack ZIP.</p>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
@@ -360,10 +690,10 @@
             </div>
 
             {{-- ───────────────────────────────────────────────────────── --}}
-            {{-- 6. TRIAL BALANCE --}}
+            {{-- 11. TRIAL BALANCE --}}
             {{-- ───────────────────────────────────────────────────────── --}}
             <div id="section-trial-balance" class="guide-section section-anchor">
-                <h5 class="border-bottom pb-2 mb-3">6. Trial balance</h5>
+                <h5 class="border-bottom pb-2 mb-3">11. Trial balance</h5>
 
                 <div class="guide-step">
                     <div class="guide-step-num">1</div>
@@ -401,10 +731,10 @@
             </div>
 
             {{-- ───────────────────────────────────────────────────────── --}}
-            {{-- 7. JOURNALS --}}
+            {{-- 12. JOURNALS --}}
             {{-- ───────────────────────────────────────────────────────── --}}
             <div id="section-journals" class="guide-section section-anchor">
-                <h5 class="border-bottom pb-2 mb-3">7. Receipts &amp; Payments journals</h5>
+                <h5 class="border-bottom pb-2 mb-3">12. Receipts &amp; Payments journals</h5>
 
                 <p class="small text-muted">Both journals work the same way — select a date range, optionally filter by client, then view or export.</p>
 
@@ -419,47 +749,45 @@
                     <div class="guide-step-num">2</div>
                     <div class="guide-step-body">
                         Set the <strong>From</strong> and <strong>To</strong> dates to the
-                        month you are reviewing. If you only supply one date, the other is
-                        set automatically to the start/end of that calendar month.
-                    </div>
-                </div>
-                <div class="guide-step">
-                    <div class="guide-step-num">3</div>
-                    <div class="guide-step-body">
-                        Click <strong>Run</strong> to view on screen (100 rows per page), or
-                        <strong>CSV</strong> to download the full set for the date range.
+                        month you are reviewing. Click <strong>Run</strong> to view on screen
+                        (100 rows per page), or <strong>CSV</strong> to download the full set.
                     </div>
                 </div>
 
                 <div class="guide-card mt-2">
-                    <h5 class="small fw-semibold">What the columns mean (Payments journal)</h5>
+                    <h5 class="small fw-semibold">Payments journal CSV columns (including Rule 43)</h5>
                     <table class="table table-sm table-bordered mb-0 small">
                         <thead class="table-light">
-                            <tr><th>Column</th><th>Description</th></tr>
+                            <tr><th>Column</th><th>Rule</th><th>Description</th></tr>
                         </thead>
                         <tbody>
-                            <tr><td>Trans date</td><td>Date of the ledger transaction (d/m/Y format as stored)</td></tr>
-                            <tr><td>No.</td><td>Unique TR- or TJ- reference number</td></tr>
-                            <tr><td>Type</td><td>Fee Transfer / Disbursement / Refund</td></tr>
-                            <tr><td>Client / Matter</td><td>Client reference and matter number</td></tr>
-                            <tr><td>Amount</td><td>Amount withdrawn from trust</td></tr>
-                            <tr><td>Method</td><td>Payment method recorded at posting</td></tr>
-                            <tr><td>Invoice</td><td>Invoice number where a fee transfer satisfies a specific invoice</td></tr>
-                            <tr><td>Rule 42 type</td><td>Authority type label (configured in setup)</td></tr>
-                            <tr><td>Notice</td><td>Date client was notified of the withdrawal</td></tr>
-                            <tr><td>Rule 42 notes</td><td>Free-text reference for the authority document</td></tr>
-                            <tr><td>Override</td><td>Yes / blank — whether a supervisor override was recorded</td></tr>
-                            <tr><td>Override reason</td><td>The stated reason if an override was used</td></tr>
+                            <tr><td>Trans date</td><td></td><td>Date of the ledger transaction (as stored)</td></tr>
+                            <tr><td>Receipt no.</td><td></td><td>Unique TR- or TJ- reference</td></tr>
+                            <tr><td>Type</td><td></td><td>Fee Transfer / Disbursement / Refund</td></tr>
+                            <tr><td>Client / Matter</td><td></td><td>Client reference and matter number</td></tr>
+                            <tr><td>Amount</td><td></td><td>Amount withdrawn from trust</td></tr>
+                            <tr><td>Method</td><td></td><td>Payment method recorded at posting</td></tr>
+                            <tr><td>Invoice ref</td><td></td><td>Invoice number for fee transfers</td></tr>
+                            <tr><td><strong>Payee</strong></td><td>R.43</td><td>Name of person/entity paid from trust</td></tr>
+                            <tr><td><strong>Cheque no.</strong></td><td>R.43</td><td>Cheque number if paid by cheque</td></tr>
+                            <tr><td><strong>EFT account</strong></td><td>R.43</td><td>Recipient bank account name</td></tr>
+                            <tr><td><strong>EFT BSB</strong></td><td>R.43</td><td>Recipient BSB</td></tr>
+                            <tr><td><strong>EFT acct no.</strong></td><td>R.43</td><td>Recipient account number</td></tr>
+                            <tr><td>Rule 42 type</td><td>R.42</td><td>Authority type label (fee transfers only)</td></tr>
+                            <tr><td>Rule 42 notice date</td><td>R.42</td><td>Date client was notified</td></tr>
+                            <tr><td>Rule 42 notes</td><td>R.42</td><td>Free-text authority document reference</td></tr>
+                            <tr><td>Supervisor override</td><td>R.42</td><td>Yes / blank</td></tr>
+                            <tr><td>Override reason</td><td>R.42</td><td>Stated reason for override</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
             {{-- ───────────────────────────────────────────────────────── --}}
-            {{-- 8. BANK RECONCILIATION --}}
+            {{-- 13. BANK RECONCILIATION --}}
             {{-- ───────────────────────────────────────────────────────── --}}
             <div id="section-reconciliation" class="guide-section section-anchor">
-                <h5 class="border-bottom pb-2 mb-3">8. Bank reconciliation <small class="text-muted fw-normal">(Rule 48 — monthly)</small></h5>
+                <h5 class="border-bottom pb-2 mb-3">13. Bank reconciliation <small class="text-muted fw-normal">(Rule 48 — monthly)</small></h5>
 
                 <div class="guide-law mb-3">
                     <strong>Rule 48</strong> requires a law practice to reconcile its trust bank account
@@ -509,9 +837,7 @@
                     <div class="guide-step-num">5</div>
                     <div class="guide-step-body">
                         <strong>Confirm the trial balance total</strong> matches your bank closing
-                        balance. This figure is shown in the blue information bar at the top of
-                        the reconciliation page. Print or screenshot the screen for your signed
-                        Rule 48 reconciliation statement.
+                        balance. Print or screenshot the screen for your signed Rule 48 reconciliation statement.
                     </div>
                 </div>
 
@@ -524,14 +850,15 @@
             </div>
 
             {{-- ───────────────────────────────────────────────────────── --}}
-            {{-- 9. PERIOD LOCKS --}}
+            {{-- 14. PERIOD LOCKS --}}
             {{-- ───────────────────────────────────────────────────────── --}}
             <div id="section-periods" class="guide-section section-anchor">
-                <h5 class="border-bottom pb-2 mb-3">9. Period locks</h5>
+                <h5 class="border-bottom pb-2 mb-3">14. Period locks</h5>
 
                 <p class="small">
                     After completing the monthly reconciliation, lock the period to prevent staff
-                    from accidentally altering historical entries.
+                    from accidentally altering historical entries — and to meet Rule 38's immutability requirement
+                    before archiving.
                 </p>
 
                 <div class="guide-step">
@@ -574,10 +901,10 @@
             </div>
 
             {{-- ───────────────────────────────────────────────────────── --}}
-            {{-- 10. AUDIT LOG --}}
+            {{-- 15. AUDIT LOG --}}
             {{-- ───────────────────────────────────────────────────────── --}}
             <div id="section-audit" class="guide-section section-anchor">
-                <h5 class="border-bottom pb-2 mb-3">10. Audit log</h5>
+                <h5 class="border-bottom pb-2 mb-3">15. Audit log</h5>
 
                 <p class="small">
                     The audit log is an <strong>append-only</strong> record of every sensitive action
@@ -587,21 +914,28 @@
 
                 <div class="guide-card">
                     <h5 class="small fw-semibold">What is logged</h5>
-                    <ul class="small mb-0">
-                        <li>Trust ledger voids (who voided, when, original values)</li>
-                        <li>Rule 42 authority record creation and updates</li>
-                        <li>Bank reconciliation matches and unmatches</li>
-                        <li>Period lock and unlock actions</li>
-                        <li>Trust bank account creation and changes</li>
-                    </ul>
+                    <table class="table table-sm table-bordered mb-0 small">
+                        <thead class="table-light"><tr><th>Event</th><th>Triggered when</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>void_entry</code></td><td>A trust ledger row is voided</td></tr>
+                            <tr><td><code>metadata_updated</code></td><td>Description, payment method, payer/payee, EFT or cheque details edited on a ledger row</td></tr>
+                            <tr><td><code>deposit_posted_without_payer_name</code></td><td>A deposit is saved without a payer name (Rule 36 soft compliance warning)</td></tr>
+                            <tr><td><code>overdrawn_transaction_posted</code></td><td>A Disbursement or Refund results in a negative ledger balance (Rule 40)</td></tr>
+                            <tr><td><code>field_updated</code> (admins)</td><td>A client's name or address is changed in the CRM (Rule 39)</td></tr>
+                            <tr><td><code>field_updated</code> (client_matters)</td><td>A matter reference or description is changed (Rule 39)</td></tr>
+                            <tr><td><code>rule42_authority_created</code></td><td>A Rule 42 withdrawal authority record is created for a fee transfer</td></tr>
+                            <tr><td><code>period_locked / period_unlocked</code></td><td>A trust accounting period is locked or unlocked</td></tr>
+                            <tr><td><code>reconciliation_match / unmatch</code></td><td>A bank statement line is matched or unmatched to a ledger row</td></tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 <div class="guide-step mt-2">
                     <div class="guide-step-num">1</div>
                     <div class="guide-step-body">
                         <strong>Filtering</strong>: Use the filter bar to narrow by table (e.g.
-                        <em>Ledger rows</em>), by partial event text (e.g. type "void" to see all
-                        void events), by Row ID, and by date range. Click <strong>Run</strong>.
+                        <em>admins</em>, <em>account_client_receipts</em>), by partial event text
+                        (e.g. type "overdrawn"), by Row ID, and by date range. Click <strong>Run</strong>.
                     </div>
                 </div>
                 <div class="guide-step">
@@ -615,10 +949,10 @@
             </div>
 
             {{-- ───────────────────────────────────────────────────────── --}}
-            {{-- 11. PRACTICE SEQUENCES --}}
+            {{-- 16. PRACTICE SEQUENCES --}}
             {{-- ───────────────────────────────────────────────────────── --}}
             <div id="section-sequences" class="guide-section section-anchor">
-                <h5 class="border-bottom pb-2 mb-3">11. Practice sequences</h5>
+                <h5 class="border-bottom pb-2 mb-3">16. Practice sequences</h5>
 
                 <p class="small">
                     Go to <a href="{{ route('trust-accounting.practice-sequences.index') }}">Trust accounting → Sequences</a>.
@@ -641,12 +975,12 @@
             </div>
 
             {{-- ───────────────────────────────────────────────────────── --}}
-            {{-- 12. MONTH-END CHECKLIST --}}
+            {{-- 17. MONTH-END CHECKLIST --}}
             {{-- ───────────────────────────────────────────────────────── --}}
             <div id="section-monthend" class="guide-section section-anchor">
-                <h5 class="border-bottom pb-2 mb-3">12. Month-end checklist</h5>
+                <h5 class="border-bottom pb-2 mb-3">17. Month-end checklist</h5>
 
-                <p class="small text-muted">Complete these steps in order each month (typically within 15 days of month end per Rule 48).</p>
+                <p class="small text-muted">Complete these steps in order each month (within 15 days of month end per Rule 48).</p>
 
                 <div class="guide-card">
                     <table class="table table-sm mb-0">
@@ -656,59 +990,315 @@
                         <tbody>
                             <tr>
                                 <td class="text-muted">1</td>
-                                <td>Confirm all trust entries for the month are posted (deposits, fee transfers, disbursements, refunds)</td>
+                                <td>Confirm all trust entries for the month are posted (deposits, fee transfers, disbursements, refunds), with payer/payee names and payment details captured</td>
                                 <td class="small text-muted">Client → Accounts tab</td>
                             </tr>
                             <tr>
                                 <td class="text-muted">2</td>
+                                <td>Check the <strong>Overdrawn ledger report</strong> for the month — any negative balances must be investigated and corrected before proceeding</td>
+                                <td class="small"><a href="{{ route('trust-accounting.reports.overdrawn-ledger') }}">Overdrawn ledger</a></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">3</td>
                                 <td>Confirm every Fee Transfer has a Rule 42 authority record (check Payments journal for "—" in the Rule 42 column)</td>
                                 <td class="small"><a href="{{ route('trust-accounting.reports.payments-journal') }}">Payments journal</a></td>
                             </tr>
                             <tr>
-                                <td class="text-muted">3</td>
+                                <td class="text-muted">4</td>
                                 <td>Run trial balance as at last day of month — note total</td>
                                 <td class="small"><a href="{{ route('trust-accounting.reports.trial-balance') }}">Trial balance</a></td>
                             </tr>
                             <tr>
-                                <td class="text-muted">4</td>
+                                <td class="text-muted">5</td>
                                 <td>Enter all bank statement lines for the month</td>
                                 <td class="small"><a href="{{ route('trust-accounting.reconciliation.index') }}">Reconciliation</a></td>
                             </tr>
                             <tr>
-                                <td class="text-muted">5</td>
+                                <td class="text-muted">6</td>
                                 <td>Match every statement line to its ledger row; confirm variance = $0.00</td>
                                 <td class="small"><a href="{{ route('trust-accounting.reconciliation.index') }}">Reconciliation</a></td>
                             </tr>
                             <tr>
-                                <td class="text-muted">6</td>
-                                <td>Export Receipts journal CSV + Payments journal CSV for the month</td>
-                                <td class="small"><a href="{{ route('trust-accounting.reports.index') }}">Reports hub</a></td>
-                            </tr>
-                            <tr>
                                 <td class="text-muted">7</td>
-                                <td>Export Trial balance CSV as at end of month</td>
-                                <td class="small"><a href="{{ route('trust-accounting.reports.trial-balance') }}">Trial balance</a></td>
-                            </tr>
-                            <tr>
-                                <td class="text-muted">8</td>
                                 <td>Print reconciliation screen — have principal sign the Rule 48 statement — file for 7 years</td>
                                 <td class="small text-muted">Print from browser</td>
                             </tr>
                             <tr>
-                                <td class="text-muted">9</td>
+                                <td class="text-muted">8</td>
                                 <td>Lock the period to prevent accidental changes</td>
                                 <td class="small"><a href="{{ route('trust-accounting.periods.index') }}">Period locks</a></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">9</td>
+                                <td>Create the <strong>monthly archive</strong> for the locked month (receipts journal, payments journal, trial balance CSVs)</td>
+                                <td class="small"><a href="{{ route('trust-accounting.archives.index') }}">Monthly archives</a></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">10</td>
+                                <td>Download the <strong>Auditor's pack ZIP</strong> for the month and store it in the examination file folder</td>
+                                <td class="small"><a href="{{ route('trust-accounting.reports.index') }}">Reports hub</a></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
                 <div class="guide-tip mt-1">
-                    <strong>Keeping the examination pack:</strong> The three CSVs from steps 6–7
-                    plus a screenshot or print of the reconciliation screen (step 8) form the
-                    core of what an external examiner will request. Store them in a dedicated
-                    folder named <code>Trust-Exam-{year}-{month}</code> alongside the signed
-                    Rule 48 statement.
+                    <strong>Annual obligation (30 June):</strong> Run the
+                    <a href="{{ route('trust-accounting.statements.annual') }}">30 June batch statements</a>
+                    and mark each as sent by 30 September. Keep a copy of each PDF statement on file.
+                    The batch screen tracks which matters still need a statement sent.
+                </div>
+            </div>
+
+            {{-- ───────────────────────────────────────────────────────── --}}
+            {{-- 18. TESTING & VERIFICATION --}}
+            {{-- ───────────────────────────────────────────────────────── --}}
+            <div id="section-testing" class="guide-section section-anchor">
+                <h5 class="border-bottom pb-2 mb-3">18. Testing &amp; verification checklist</h5>
+
+                <p class="small text-muted mb-3">
+                    Use these manual test steps to confirm each compliance feature is working correctly
+                    after deployment or after any system update. Each test is self-contained — you can
+                    run them in any order. Use a test client record to avoid polluting real data.
+                </p>
+
+                {{-- Test 1 --}}
+                <div class="guide-card">
+                    <h5><span class="badge bg-primary me-2">T1</span>Rule 35 &amp; 36 — Receipt PDF wording and staff name</h5>
+                    <div class="guide-test mb-2">
+                        <strong>What to check:</strong> The trust receipt PDF names the practice trust account correctly
+                        and shows who issued the receipt.
+                    </div>
+                    <ol class="small mb-0">
+                        <li>Log in as a staff member (note the staff member's name).</li>
+                        <li>Open a test client → Accounts tab → click <strong>Trust Account Entry</strong>.</li>
+                        <li>Select type <em>Trust Receipt</em>, enter any amount, date, and description. Click <strong>Save</strong>.</li>
+                        <li>Click the PDF icon next to the new ledger entry to open the receipt PDF.</li>
+                    </ol>
+                    <p class="small mt-2 mb-1"><strong>Expected results:</strong></p>
+                    <ul class="small mb-0">
+                        <li>The receipt acknowledgement text reads: <em>"…received the above amount into the <strong>Bansal Lawyers law practice trust account</strong>…"</em></li>
+                        <li>The document info block shows <em>Received by: [staff member's full name]</em></li>
+                        <li>A TR- reference number is visible on the receipt</li>
+                    </ul>
+                </div>
+
+                {{-- Test 2 --}}
+                <div class="guide-card">
+                    <h5><span class="badge bg-primary me-2">T2</span>Rule 36(e) — Payer name audit event when omitted</h5>
+                    <div class="guide-test mb-2">
+                        <strong>What to check:</strong> A deposit saved without a payer name creates an audit log entry.
+                    </div>
+                    <ol class="small mb-0">
+                        <li>Post a trust deposit on a test client, leaving the <strong>Payer / Payee</strong> field blank.</li>
+                        <li>Go to <a href="{{ route('trust-accounting.audit-log.index') }}">Audit log</a>.</li>
+                        <li>Filter by event text: <code>deposit_posted_without_payer_name</code>. Click <strong>Run</strong>.</li>
+                    </ol>
+                    <p class="small mt-2 mb-1"><strong>Expected result:</strong></p>
+                    <ul class="small mb-0">
+                        <li>A new audit row appears with event <code>deposit_posted_without_payer_name</code>
+                            and context <em>"Rule 36(e) payer name not captured at posting"</em> for the row ID just created.</li>
+                    </ul>
+                </div>
+
+                {{-- Test 3 --}}
+                <div class="guide-card">
+                    <h5><span class="badge bg-primary me-2">T3</span>Rule 43 — Payee, cheque &amp; EFT fields on payments</h5>
+                    <div class="guide-test mb-2">
+                        <strong>What to check:</strong> Cheque and EFT fields appear for withdrawal types and are saved and exported correctly.
+                    </div>
+                    <ol class="small mb-0">
+                        <li>Post a trust deposit first so there are funds to withdraw.</li>
+                        <li>Add a new trust entry, type <em>Disbursement</em>. Observe that the <em>Payer / Payee</em> cell shows
+                            the <strong>Payee name</strong> input (payer name input should be hidden).</li>
+                        <li>Select payment method <em>Cheque</em>. Confirm the <strong>Cheque no.</strong> input appears
+                            in the Bank / Cheque ref cell; EFT fields remain hidden.</li>
+                        <li>Enter payee name <code>Test Barrister Pty Ltd</code> and cheque number <code>000123</code>. Save.</li>
+                        <li>Now add another disbursement, select <em>Bank Transfer / EFT</em>. Confirm the <strong>BSB</strong>,
+                            <strong>EFT account name</strong> and <strong>EFT account number</strong> fields appear. Enter values and save.</li>
+                        <li>Go to <a href="{{ route('trust-accounting.reports.payments-journal') }}">Payments journal</a>,
+                            set date range to today, click <strong>CSV</strong>.</li>
+                    </ol>
+                    <p class="small mt-2 mb-1"><strong>Expected results:</strong></p>
+                    <ul class="small mb-0">
+                        <li>Cheque disbursement: CSV columns <em>Payee</em> = <code>Test Barrister Pty Ltd</code>,
+                            <em>Cheque no.</em> = <code>000123</code>; EFT columns blank.</li>
+                        <li>EFT disbursement: CSV columns <em>EFT account</em>, <em>EFT BSB</em>, <em>EFT acct no.</em> filled;
+                            Cheque no. blank.</li>
+                    </ul>
+                </div>
+
+                {{-- Test 4 --}}
+                <div class="guide-card">
+                    <h5><span class="badge bg-primary me-2">T4</span>Rule 40 — Overdrawn ledger detection</h5>
+                    <div class="guide-test mb-2">
+                        <strong>What to check:</strong> A disbursement that causes a negative balance is logged and appears on the overdrawn report.
+                    </div>
+                    <div class="guide-warning mb-2">Use a test client with a zero or small balance to avoid affecting real client funds.</div>
+                    <ol class="small mb-0">
+                        <li>On a test client with <strong>$0</strong> trust balance (or post a $10 deposit first),
+                            post a Disbursement for <strong>$50</strong> (more than the balance). Save.</li>
+                        <li>Go to <a href="{{ route('trust-accounting.reports.overdrawn-ledger') }}">Overdrawn ledger report</a>,
+                            set date range to today. Click <strong>Run</strong>.</li>
+                        <li>Go to <a href="{{ route('trust-accounting.audit-log.index') }}">Audit log</a>,
+                            filter event: <code>overdrawn_transaction_posted</code>.</li>
+                    </ol>
+                    <p class="small mt-2 mb-1"><strong>Expected results:</strong></p>
+                    <ul class="small mb-0">
+                        <li>Overdrawn report shows the disbursement row with a red negative balance.</li>
+                        <li>Audit log shows <code>overdrawn_transaction_posted</code> for the same row ID with the prior balance, withdrawal amount, and resulting balance.</li>
+                        <li><em>Fee Transfer</em> of the same amount should have been <strong>blocked</strong> by the system with an error message — confirm by attempting it.</li>
+                    </ul>
+                </div>
+
+                {{-- Test 5 --}}
+                <div class="guide-card">
+                    <h5><span class="badge bg-primary me-2">T5</span>Rule 39 — Client field change auditing</h5>
+                    <div class="guide-test mb-2">
+                        <strong>What to check:</strong> Changing a client's name or address creates an audit log entry automatically.
+                    </div>
+                    <ol class="small mb-0">
+                        <li>Open a test client's personal details and change the <strong>last name</strong> (e.g. append " Test").</li>
+                        <li>Save the change.</li>
+                        <li>Go to <a href="{{ route('trust-accounting.audit-log.index') }}">Audit log</a>,
+                            filter table: <code>admins</code>, event: <code>field_updated</code>. Click <strong>Run</strong>.</li>
+                    </ol>
+                    <p class="small mt-2 mb-1"><strong>Expected result:</strong></p>
+                    <ul class="small mb-0">
+                        <li>A new audit row appears with table <code>admins</code>, event <code>field_updated</code>,
+                            field <code>last_name</code>, old value = original name, new value = new name,
+                            context <em>"Rule 39 client field change"</em>.</li>
+                        <li>Revert the name change — a second audit row should appear recording the reversion.</li>
+                    </ul>
+                </div>
+
+                {{-- Test 6 --}}
+                <div class="guide-card">
+                    <h5><span class="badge bg-primary me-2">T6</span>Rule 39 — Matter field change auditing</h5>
+                    <div class="guide-test mb-2">
+                        <strong>What to check:</strong> Changing a matter reference or description creates an audit entry.
+                    </div>
+                    <ol class="small mb-0">
+                        <li>Open a test client → Matters → edit a matter and change the <strong>matter description / case detail</strong>.</li>
+                        <li>Save the change.</li>
+                        <li>Go to <a href="{{ route('trust-accounting.audit-log.index') }}">Audit log</a>,
+                            filter table: <code>client_matters</code>, event: <code>field_updated</code>.</li>
+                    </ol>
+                    <p class="small mt-2 mb-1"><strong>Expected result:</strong></p>
+                    <ul class="small mb-0">
+                        <li>Audit row with table <code>client_matters</code>, event <code>field_updated</code>,
+                            field <code>case_detail</code>, old and new values, context <em>"Rule 39 matter field change"</em>.</li>
+                    </ul>
+                </div>
+
+                {{-- Test 7 --}}
+                <div class="guide-card">
+                    <h5><span class="badge bg-primary me-2">T7</span>Rule 52 — On-demand trust statement PDF</h5>
+                    <div class="guide-test mb-2">
+                        <strong>What to check:</strong> A trust statement PDF can be generated for a client and matter.
+                    </div>
+                    <ol class="small mb-0">
+                        <li>Open a test client with at least one trust entry → Accounts tab.</li>
+                        <li>Select a matter from the matter dropdown (top of the Accounts tab).</li>
+                        <li>Click the <strong>Trust Statement</strong> button. A PDF should open in a new tab.</li>
+                        <li>Alternatively go to <a href="{{ route('trust-accounting.statements.index') }}">Reports → Trust statements</a>,
+                            enter the client's <code>admins.id</code> and the <code>client_matters.id</code>, click <strong>Generate PDF</strong>.</li>
+                    </ol>
+                    <p class="small mt-2 mb-1"><strong>Expected results:</strong></p>
+                    <ul class="small mb-0">
+                        <li>PDF header shows <em>Bansal Lawyers — law practice trust account</em> and the client's name and address.</li>
+                        <li>Matter reference is shown.</li>
+                        <li>Table lists all trust transactions with dates, TR- references, types, descriptions, deposit/payment amounts, and running balance.</li>
+                        <li>Opening balance and closing balance summary is shown at the top.</li>
+                        <li>Footer cites <em>"Rule 52 of the Legal Profession Uniform General Rules 2015"</em>.</li>
+                    </ul>
+                </div>
+
+                {{-- Test 8 --}}
+                <div class="guide-card">
+                    <h5><span class="badge bg-primary me-2">T8</span>Rule 52 — 30 June annual batch screen</h5>
+                    <div class="guide-test mb-2">
+                        <strong>What to check:</strong> The annual batch page lists matters with trust funds and allows marking as sent.
+                    </div>
+                    <ol class="small mb-0">
+                        <li>Go to <a href="{{ route('trust-accounting.statements.annual') }}">Reports → Trust statements → 30 June batch</a>.</li>
+                        <li>Confirm the page lists all matters with non-zero trust balances as at 30 June of the current year.</li>
+                        <li>Check that matters with zero balance and no activity in 12 months are labelled <strong>Exempt</strong>.</li>
+                        <li>For a non-exempt matter, click <strong>PDF</strong> — confirm the statement opens.</li>
+                        <li>Click <strong>Mark sent</strong> for that matter.</li>
+                    </ol>
+                    <p class="small mt-2 mb-1"><strong>Expected results:</strong></p>
+                    <ul class="small mb-0">
+                        <li>After marking sent, the <em>Last sent</em> column shows today's date for that matter.</li>
+                        <li>The <strong>Mark sent</strong> button remains available (to re-mark if needed).</li>
+                    </ul>
+                </div>
+
+                {{-- Test 9 --}}
+                <div class="guide-card">
+                    <h5><span class="badge bg-primary me-2">T9</span>Rule 38 — Monthly archive creation and download</h5>
+                    <div class="guide-test mb-2">
+                        <strong>What to check:</strong> Monthly archives are created, stored, and downloadable.
+                    </div>
+                    <ol class="small mb-0">
+                        <li>Lock a test period first: go to <a href="{{ route('trust-accounting.periods.index') }}">Period locks</a>
+                            and lock a past month (e.g. April 2026).</li>
+                        <li>Go to <a href="{{ route('trust-accounting.archives.index') }}">Monthly archives</a>.</li>
+                        <li>Enter year <code>2026</code> and month <code>4</code>. Click <strong>Archive month reports</strong>.</li>
+                        <li>Confirm the success message: <em>"Archived 3 report(s). Skipped 0 already archived."</em></li>
+                        <li>The table now shows three rows for April 2026: <code>receipts_journal</code>, <code>payments_journal</code>, <code>trial_balance</code>.</li>
+                        <li>Click <strong>Download</strong> on one row — confirm a CSV file downloads.</li>
+                        <li>Attempt to archive the same month again — confirm: <em>"Archived 0. Skipped 3 already archived."</em> (idempotent).</li>
+                    </ol>
+                </div>
+
+                {{-- Test 10 --}}
+                <div class="guide-card">
+                    <h5><span class="badge bg-primary me-2">T10</span>Auditor's pack ZIP download</h5>
+                    <div class="guide-test mb-2">
+                        <strong>What to check:</strong> The auditor's pack downloads as a ZIP containing all four CSVs.
+                    </div>
+                    <ol class="small mb-0">
+                        <li>Go to <a href="{{ route('trust-accounting.reports.index') }}">Reports hub</a>.</li>
+                        <li>In the <strong>Auditor's pack</strong> card, enter a date range that includes known trust entries
+                            (e.g. from 2026-01-01 to 2026-05-31). Click <strong>Download ZIP</strong>.</li>
+                        <li>Open the downloaded ZIP file.</li>
+                    </ol>
+                    <p class="small mt-2 mb-1"><strong>Expected results:</strong></p>
+                    <ul class="small mb-0">
+                        <li>ZIP contains four CSV files: receipts journal, payments journal, trial balance, overdrawn ledger.</li>
+                        <li>Each CSV opens in Excel with correct UTF-8 encoding (no garbled characters).</li>
+                        <li>Payments journal CSV includes <em>Payee</em>, <em>Cheque no.</em>, <em>EFT account</em>, <em>EFT BSB</em>, <em>EFT acct no.</em> columns.</li>
+                        <li>Receipts journal CSV includes <em>Payer name</em>, <em>Bank ref</em>, <em>Banking date</em> columns.</li>
+                    </ul>
+                </div>
+
+                {{-- Test 11 --}}
+                <div class="guide-card">
+                    <h5><span class="badge bg-primary me-2">T11</span>Edit ledger entry — payer / payee fields persist</h5>
+                    <div class="guide-test mb-2">
+                        <strong>What to check:</strong> The edit modal correctly loads and saves payer/payee/EFT fields.
+                    </div>
+                    <ol class="small mb-0">
+                        <li>On the client Accounts tab, find a trust ledger entry. Click the dropdown arrow → <strong>Edit Entry</strong>.</li>
+                        <li>Confirm the <em>Payer / source</em> field is populated if a payer name was entered at posting.</li>
+                        <li>Change the payee name to <code>Updated Payee</code>, change payment method to <em>EFT</em>
+                            — confirm the EFT fields appear. Enter BSB <code>063-123</code> and save.</li>
+                        <li>Re-open the edit modal for the same entry.</li>
+                    </ol>
+                    <p class="small mt-2 mb-1"><strong>Expected results:</strong></p>
+                    <ul class="small mb-0">
+                        <li>Payee shows <code>Updated Payee</code>; EFT BSB shows <code>063-123</code>.</li>
+                        <li>Audit log shows a <code>metadata_updated</code> event for <code>payee_name</code>
+                            and <code>eft_bsb</code> with old and new values.</li>
+                    </ul>
+                </div>
+
+                <div class="guide-tip mt-2">
+                    <strong>After running all tests:</strong> Check the audit log for any unexpected
+                    events, confirm the overdrawn ledger report is clear (or all entries are explained),
+                    and void any test transactions to clean up — voided rows appear in strikethrough on the
+                    client ledger and are excluded from balances and journals, but remain in the audit trail.
                 </div>
             </div>
 
@@ -717,6 +1307,8 @@
                 <a href="{{ route('trust-accounting.reports.index') }}" class="btn btn-outline-primary btn-sm">Reports hub</a>
                 <a href="{{ route('trust-accounting.reconciliation.index') }}" class="btn btn-outline-secondary btn-sm">Reconciliation</a>
                 <a href="{{ route('trust-accounting.periods.index') }}" class="btn btn-outline-secondary btn-sm">Period locks</a>
+                <a href="{{ route('trust-accounting.archives.index') }}" class="btn btn-outline-secondary btn-sm">Archives</a>
+                <a href="{{ route('trust-accounting.statements.index') }}" class="btn btn-outline-secondary btn-sm">Statements</a>
                 <a href="{{ route('trust-accounting.audit-log.index') }}" class="btn btn-outline-secondary btn-sm">Audit log</a>
                 <a href="{{ route('trust-accounting.withdrawal-authority-types.index') }}" class="btn btn-outline-secondary btn-sm">Rule 42 types</a>
             </div>

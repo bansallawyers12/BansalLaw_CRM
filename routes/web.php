@@ -282,6 +282,15 @@ Route::middleware(['auth:admin'])->group(function() {
 		Route::get('/reports/trial-balance', [TrustAccountingAdminController::class, 'trialBalanceReport'])->name('reports.trial-balance');
 		Route::get('/reports/receipts-journal', [TrustAccountingAdminController::class, 'receiptsJournalReport'])->name('reports.receipts-journal');
 		Route::get('/reports/payments-journal', [TrustAccountingAdminController::class, 'paymentsJournalReport'])->name('reports.payments-journal');
+		Route::get('/reports/overdrawn-ledger', [TrustAccountingAdminController::class, 'overdrawnLedgerReport'])->name('reports.overdrawn-ledger');
+		Route::get('/reports/auditors-pack', [TrustAccountingAdminController::class, 'auditorsPack'])->name('reports.auditors-pack');
+		Route::get('/statements', [TrustAccountingAdminController::class, 'statementsIndex'])->name('statements.index');
+		Route::get('/statements/generate', [TrustAccountingAdminController::class, 'generateTrustStatement'])->name('statements.generate');
+		Route::get('/statements/annual', [TrustAccountingAdminController::class, 'statementsAnnualIndex'])->name('statements.annual');
+		Route::post('/statements/mark-sent', [TrustAccountingAdminController::class, 'markStatementSent'])->name('statements.mark-sent');
+		Route::get('/archives', [TrustAccountingAdminController::class, 'archivesIndex'])->name('archives.index');
+		Route::post('/archives', [TrustAccountingAdminController::class, 'archivesStore'])->name('archives.store');
+		Route::get('/archives/{archive}/download', [TrustAccountingAdminController::class, 'archivesDownload'])->name('archives.download');
 		Route::get('/bank-accounts', [TrustAccountingAdminController::class, 'bankAccountsIndex'])->name('bank-accounts.index');
 		Route::post('/bank-accounts', [TrustAccountingAdminController::class, 'bankAccountsStore'])->name('bank-accounts.store');
 		Route::get('/reconciliation', [TrustAccountingAdminController::class, 'reconciliationIndex'])->name('reconciliation.index');

@@ -4,6 +4,7 @@
 @section('content')
 @php
     $rule42ColumnsEnabled = $rule42ColumnsEnabled ?? false;
+    $payeeColumnsEnabled  = $payeeColumnsEnabled  ?? false;
 @endphp
 <div class="main-content">
     <section class="section">
@@ -46,7 +47,9 @@
             <p class="small text-muted">Page subtotal (this page only): <strong>${{ number_format($sumPage, 2) }}</strong></p>
 
             @php
-                $rjCols = $rule42ColumnsEnabled ? 14 : 9;
+                $rjCols = 9
+                    + ($payeeColumnsEnabled  ? 5 : 0)
+                    + ($rule42ColumnsEnabled ? 5 : 0);
             @endphp
             <div class="card">
                 <div class="card-body p-0">
@@ -63,6 +66,13 @@
                                     <th class="text-end">Amount</th>
                                     <th>Method</th>
                                     <th>Invoice</th>
+                                    @if($payeeColumnsEnabled)
+                                        <th>Payee</th>
+                                        <th>Cheque no.</th>
+                                        <th>EFT account</th>
+                                        <th>EFT BSB</th>
+                                        <th>EFT acct no.</th>
+                                    @endif
                                     @if($rule42ColumnsEnabled)
                                         <th>Rule 42 type</th>
                                         <th>Notice</th>
@@ -89,6 +99,13 @@
                                     <td class="text-end font-monospace">${{ number_format((float) $row->withdraw_amount, 2) }}</td>
                                     <td class="small">{{ $row->payment_method ?? '—' }}</td>
                                     <td class="small">{{ $row->invoice_no ?? '—' }}</td>
+                                    @if($payeeColumnsEnabled)
+                                        <td class="small">{{ $row->payee_name ?? '—' }}</td>
+                                        <td class="small font-monospace">{{ $row->cheque_number ?? '—' }}</td>
+                                        <td class="small">{{ $row->eft_account_name ?? '—' }}</td>
+                                        <td class="small font-monospace">{{ $row->eft_bsb ?? '—' }}</td>
+                                        <td class="small font-monospace">{{ $row->eft_account_number ?? '—' }}</td>
+                                    @endif
                                     @if($rule42ColumnsEnabled)
                                         <td class="small">{{ $row->rule42_authority_type_label ?? '—' }}</td>
                                         <td class="small text-nowrap">{{ $row->rule42_notice_given_date ?? '—' }}</td>

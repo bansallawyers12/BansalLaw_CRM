@@ -58,6 +58,28 @@
                         <label for="edit_ledger_banking_date">Banking date (optional, d/m/Y)</label>
                         <input type="text" class="form-control" name="banking_date" id="edit_ledger_banking_date" placeholder="dd/mm/yyyy">
                     </div>
+                    <div class="form-group" id="edit_ledger_payee_group">
+                        <label for="edit_ledger_payee_name">Payee (optional)</label>
+                        <input type="text" class="form-control" name="payee_name" id="edit_ledger_payee_name" placeholder="Payment recipient">
+                    </div>
+                    <div class="form-group" id="edit_ledger_cheque_group" style="display:none;">
+                        <label for="edit_ledger_cheque_number">Cheque number (optional)</label>
+                        <input type="text" class="form-control" name="cheque_number" id="edit_ledger_cheque_number">
+                    </div>
+                    <div id="edit_ledger_eft_group" style="display:none;">
+                        <div class="form-group">
+                            <label for="edit_ledger_eft_account_name">EFT account name</label>
+                            <input type="text" class="form-control" name="eft_account_name" id="edit_ledger_eft_account_name">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_ledger_eft_bsb">EFT BSB</label>
+                            <input type="text" class="form-control" name="eft_bsb" id="edit_ledger_eft_bsb" maxlength="16">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_ledger_eft_account_number">EFT account number</label>
+                            <input type="text" class="form-control" name="eft_account_number" id="edit_ledger_eft_account_number">
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label for="deposit_amount">Funds In (+) <span class="text-muted" style="font-weight:normal;font-size:12px;">(locked)</span></label>
                         <input type="number" class="form-control bg-light" name="deposit_amount" step="0.01" value="0.00" readonly>

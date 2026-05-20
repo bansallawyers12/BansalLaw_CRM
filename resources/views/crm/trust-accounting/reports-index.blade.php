@@ -56,6 +56,47 @@
                 <div class="col-md-4 mb-4">
                     <div class="card h-100">
                         <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Overdrawn ledger</h5>
+                            <p class="card-text text-muted small">Rule 40 — practice-wide report of negative ledger balances and overdraw audit events.</p>
+                            <a href="{{ route('trust-accounting.reports.overdrawn-ledger') }}" class="btn btn-primary btn-sm">Open</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-file-archive me-2 text-secondary"></i>Auditor's pack</h5>
+                            <p class="card-text text-muted small">Download a ZIP with receipts journal, payments journal, trial balance and overdrawn ledger for a date range.</p>
+                            <form method="get" action="{{ route('trust-accounting.reports.auditors-pack') }}" class="row g-1 mt-2">
+                                <div class="col-6"><input type="date" name="from_date" class="form-control form-control-sm" required></div>
+                                <div class="col-6"><input type="date" name="to_date" class="form-control form-control-sm" required></div>
+                                <div class="col-12"><button type="submit" class="btn btn-primary btn-sm w-100">Download ZIP</button></div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-file-alt me-2 text-primary"></i>Trust statements</h5>
+                            <p class="card-text text-muted small">Rule 52 — on-demand and 30 June annual statement runs.</p>
+                            <a href="{{ route('trust-accounting.statements.index') }}" class="btn btn-primary btn-sm">Statements</a>
+                            <a href="{{ route('trust-accounting.statements.annual') }}" class="btn btn-outline-secondary btn-sm">30 June</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-archive me-2 text-secondary"></i>Monthly archives</h5>
+                            <p class="card-text text-muted small">Rule 38 — immutable month-end CSV copies of journals and trial balance.</p>
+                            <a href="{{ route('trust-accounting.archives.index') }}" class="btn btn-primary btn-sm">Archives</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
                             <h5 class="card-title"><i class="fas fa-university me-2 text-info"></i>Bank reconciliation</h5>
                             <p class="card-text text-muted small">Model trust bank accounts, enter statement lines, and match them to ledger receipts and payments (Rule 48 workflow).</p>
                             <a href="{{ route('trust-accounting.reconciliation.index') }}" class="btn btn-primary btn-sm">Open</a>

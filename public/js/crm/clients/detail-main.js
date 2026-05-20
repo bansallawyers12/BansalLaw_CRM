@@ -2072,6 +2072,7 @@ success: function(response) {
             initFlatpickrForClass('.report_date_fields,.report_entry_date_fields');
 
             toggleLedgerEftposSurchargeRow($newRow);
+            toggleLedgerMetaFields($newRow);
 
             if (typeof window.updateLedgerRule42Visibility === 'function') {
                 window.updateLedgerRule42Visibility();
@@ -2574,8 +2575,28 @@ success: function(response) {
 
             toggleLedgerEftposSurchargeRow($row);
 
+            toggleLedgerMetaFields($row);
+
             updateLedgerRule42Visibility();
         });
+
+
+
+        function toggleLedgerMetaFields($row) {
+            var ledgerType = $row.find('.client_fund_ledger_type').val();
+            var pm = $row.find('.ledger-payment-method').val();
+            var isDeposit = ledgerType === 'Deposit';
+            var isWithdraw = ledgerType === 'Fee Transfer' || ledgerType === 'Disbursement' || ledgerType === 'Refund';
+
+            $row.find('.ledger-payer-name').toggle(isDeposit);
+            $row.find('.ledger-payee-name').toggle(isWithdraw);
+            $row.find('.ledger-banking-date').toggle(isDeposit);
+            $row.find('.ledger-bank-ref').toggle(isDeposit || pm === 'Cheque');
+            $row.find('.ledger-cheque-no').toggle(isWithdraw && pm === 'Cheque');
+            $row.find('.ledger-eft-bsb, .ledger-eft-acct-name, .ledger-eft-acct-no').toggle(isWithdraw && pm === 'Bank transfer');
+        }
+
+        window.toggleLedgerMetaFields = toggleLedgerMetaFields;
 
 
 
@@ -2647,7 +2668,9 @@ success: function(response) {
 
         $(document).on('change', '.ledger-payment-method', function() {
 
-            toggleLedgerEftposSurchargeRow($(this).closest('tr'));
+            var $row = $(this).closest('tr');
+            toggleLedgerEftposSurchargeRow($row);
+            toggleLedgerMetaFields($row);
 
             grandtotalAccountTab();
 

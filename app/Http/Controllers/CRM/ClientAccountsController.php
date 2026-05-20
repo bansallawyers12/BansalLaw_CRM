@@ -21,8 +21,10 @@ use App\Mail\HubdocInvoiceMail;
 use App\Services\FinancialStatsService;
 use App\Services\FCMService;
 use App\Services\TrustAccounting\TrustLedgerAuditLogger;
+use App\Services\TrustAccounting\TrustLedgerBalanceService;
 use App\Services\TrustAccounting\TrustPeriodService;
 use App\Services\TrustAccounting\TrustReceiptSequenceService;
+use App\Services\TrustAccounting\TrustStatementService;
 use App\Services\TrustAccounting\TrustWithdrawalAuthorityService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -124,10 +126,30 @@ class ClientAccountsController extends Controller
             return [];
         }
 
-        return [
+        return array_merge([
             'payer_name' => isset($requestData['payer_name'][$i]) ? (trim((string) $requestData['payer_name'][$i]) ?: null) : null,
             'bank_deposit_reference' => isset($requestData['bank_deposit_reference'][$i]) ? (trim((string) $requestData['bank_deposit_reference'][$i]) ?: null) : null,
             'banking_date' => isset($requestData['banking_date'][$i]) ? (trim((string) $requestData['banking_date'][$i]) ?: null) : null,
+        ], $this->trustPaymentMetadataAt($requestData, $i));
+    }
+
+    /** Payment detail fields for withdrawals (Rule 43). */
+    protected function trustPaymentMetadataAt(array $requestData, int $i): array
+    {
+        static $hasPayee = null;
+        if ($hasPayee === null) {
+            $hasPayee = Schema::hasColumn('account_client_receipts', 'payee_name');
+        }
+        if (! $hasPayee) {
+            return [];
+        }
+
+        return [
+            'payee_name' => isset($requestData['payee_name'][$i]) ? (trim((string) $requestData['payee_name'][$i]) ?: null) : null,
+            'cheque_number' => isset($requestData['cheque_number'][$i]) ? (trim((string) $requestData['cheque_number'][$i]) ?: null) : null,
+            'eft_account_name' => isset($requestData['eft_account_name'][$i]) ? (trim((string) $requestData['eft_account_name'][$i]) ?: null) : null,
+            'eft_bsb' => isset($requestData['eft_bsb'][$i]) ? (trim((string) $requestData['eft_bsb'][$i]) ?: null) : null,
+            'eft_account_number' => isset($requestData['eft_account_number'][$i]) ? (trim((string) $requestData['eft_account_number'][$i]) ?: null) : null,
         ];
     }
 
@@ -916,29 +938,13 @@ class ClientAccountsController extends Controller
    
                 // Validate Fee Transfer amount against Current Funds Held (for Fee Transfer without invoice)
                 if ($clientFundLedgerType === 'Fee Transfer' && !$invoiceNo) {
-                    // Calculate balance excluding voided fee transfers
-                    $ledger_entries = DB::table('account_client_receipts')
-                        ->select('deposit_amount', 'withdraw_amount', 'void_fee_transfer')
-                        ->where('client_id', $requestData['client_id'])
-                        ->where('receipt_type', 1);
-                    
-                    if (!empty($requestData['client_matter_id'])) {
-                        $ledger_entries->where('client_matter_id', $requestData['client_matter_id']);
-                    }
-                    
-                    $ledger_entries = $ledger_entries->get();
-                    
-                    $currentFundsHeld = 0;
-			foreach($ledger_entries as $entry) {
-				if ($this->trustLedgerRowExcludedFromBalance($entry)) {
-					continue;
-				}
-				$currentFundsHeld += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
-			}
-			$currentFundsHeld = round($currentFundsHeld, 2);
-			$withdraw = round($withdraw, 2);
-			
-			if ($withdraw > $currentFundsHeld) {
+                    $currentFundsHeld = TrustLedgerBalanceService::currentFundsHeld(
+                        (int) $requestData['client_id'],
+                        $requestData['client_matter_id'] ?? null
+                    );
+                    $withdraw = round($withdraw, 2);
+
+                    if ($withdraw > $currentFundsHeld) {
                         $response['status'] = false;
                         $response['message'] = 'You cannot transfer the amount greater than of Current Funds Held amount (Current: $' . number_format($currentFundsHeld, 2) . ')';
                         $response['requestData'] = [];
@@ -947,6 +953,11 @@ class ClientAccountsController extends Controller
                         return response()->json($response, 200);
                     }
                 }
+
+                $priorBalance = TrustLedgerBalanceService::currentFundsHeld(
+                    (int) $requestData['client_id'],
+                    $requestData['client_matter_id'] ?? null
+                );
 
                 if ($clientFundLedgerType === 'Fee Transfer' && $authorityPayload !== null && ! $invoiceNo) {
                     TrustWithdrawalAuthorityService::assertNonInvoiceFeeTransferAuthority($authorityPayload);
@@ -982,6 +993,33 @@ class ClientAccountsController extends Controller
                 ], $this->trustDepositMetadataAt($requestData, $i)));
 
                 $saved = true;
+
+                if ($withdraw > 0 && in_array($clientFundLedgerType, ['Disbursement', 'Refund'], true)) {
+                    $resultingBalance = round($priorBalance - $withdraw, 2);
+                    if ($resultingBalance < 0) {
+                        TrustLedgerBalanceService::logOverdrawnTransaction(
+                            (int) $newLedgerRowId,
+                            $clientFundLedgerType,
+                            $priorBalance,
+                            $withdraw,
+                            $resultingBalance
+                        );
+                    }
+                }
+
+                if ($clientFundLedgerType === 'Deposit') {
+                    $payerName = isset($requestData['payer_name'][$i]) ? trim((string) $requestData['payer_name'][$i]) : '';
+                    if ($payerName === '') {
+                        TrustLedgerAuditLogger::log(
+                            'deposit_posted_without_payer_name',
+                            (int) $newLedgerRowId,
+                            'payer_name',
+                            null,
+                            null,
+                            'Rule 36(e) payer name not captured at posting'
+                        );
+                    }
+                }
 
                 if ($clientFundLedgerType === 'Fee Transfer' && $authorityPayload !== null) {
                     TrustWithdrawalAuthorityService::recordAuthorityForNewFeeTransfer(
@@ -5276,6 +5314,14 @@ class ClientAccountsController extends Controller
         $client_matter_display = '';
     }
 
+    $issued_by_name = '';
+    if (! empty($record_get->user_id)) {
+        $issuer = Staff::query()->find((int) $record_get->user_id);
+        if ($issuer) {
+            $issued_by_name = trim(($issuer->first_name ?? '') . ' ' . ($issuer->last_name ?? ''));
+        }
+    }
+
     // Check if PDF already exists in AWS (skip cache when regenerate=1 so PDF is regenerated with correct matter)
     if (!$request->has('regenerate') && !empty($record_get->pdf_document_id)) {
         $existingPdf = DB::table('documents')
@@ -5301,7 +5347,7 @@ class ClientAccountsController extends Controller
          'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
          'logOutputFile' => storage_path('logs/log.htm'),
          'tempDir' => storage_path('logs/')
-        ])->loadView('emails.genclientfundreceipt',compact(['record_get','clientname','client_matter_no','client_matter_display']));
+        ])->loadView('emails.genclientfundreceipt',compact(['record_get','clientname','client_matter_no','client_matter_display','issued_by_name']));
         
         // Save PDF to AWS S3
         $pdfContent = $pdf->output();
@@ -5348,7 +5394,7 @@ class ClientAccountsController extends Controller
          'isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true,
          'logOutputFile' => storage_path('logs/log.htm'),
          'tempDir' => storage_path('logs/')
-        ])->loadView('emails.genclientfundreceipt', compact(['record_get', 'clientname', 'client_matter_no', 'client_matter_display']));
+        ])->loadView('emails.genclientfundreceipt', compact(['record_get', 'clientname', 'client_matter_no', 'client_matter_display', 'issued_by_name']));
 
         try {
             $pdfBinary = $pdf->output();
@@ -5952,6 +5998,13 @@ public function updateClientFundsLedger(Request $request)
         $updateData['bank_deposit_reference'] = trim((string) $request->input('bank_deposit_reference', '')) ?: null;
         $updateData['banking_date'] = trim((string) $request->input('banking_date', '')) ?: null;
     }
+    if (Schema::hasColumn('account_client_receipts', 'payee_name')) {
+        $updateData['payee_name'] = trim((string) $request->input('payee_name', '')) ?: null;
+        $updateData['cheque_number'] = trim((string) $request->input('cheque_number', '')) ?: null;
+        $updateData['eft_account_name'] = trim((string) $request->input('eft_account_name', '')) ?: null;
+        $updateData['eft_bsb'] = trim((string) $request->input('eft_bsb', '')) ?: null;
+        $updateData['eft_account_number'] = trim((string) $request->input('eft_account_number', '')) ?: null;
+    }
 
     if ($insertedDocId !== null) {
         $updateData['uploaded_doc_id'] = $insertedDocId;
@@ -5968,7 +6021,7 @@ public function updateClientFundsLedger(Request $request)
         ], 500);
     }
 
-    $auditable = ['description', 'payment_method', 'payer_name', 'bank_deposit_reference', 'banking_date', 'uploaded_doc_id'];
+    $auditable = ['description', 'payment_method', 'payer_name', 'bank_deposit_reference', 'banking_date', 'payee_name', 'cheque_number', 'eft_account_name', 'eft_bsb', 'eft_account_number', 'uploaded_doc_id'];
     foreach ($auditable as $field) {
         if (! array_key_exists($field, $updateData)) {
             continue;
@@ -6695,6 +6748,38 @@ public function getInvoiceAmount(Request $request)
                 'message' => 'Failed to send receipt: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Rule 52 — trust account statement PDF for a client/matter (staff with client access).
+     */
+    public function genTrustStatement(Request $request)
+    {
+        $clientId = (int) $request->query('client_id');
+        $matterId = (int) $request->query('matter_id');
+        if ($clientId < 1 || $matterId < 1) {
+            abort(422, 'client_id and matter_id are required.');
+        }
+
+        $this->ensureCrmRecordAccess($clientId);
+
+        try {
+            $pdf = TrustStatementService::pdfBinary(
+                $clientId,
+                $matterId,
+                $request->query('from_date'),
+                $request->query('to_date')
+            );
+        } catch (\Throwable $e) {
+            abort(404, $e->getMessage());
+        }
+
+        $filename = 'Trust-Statement-' . $clientId . '-' . $matterId . '.pdf';
+
+        return response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
     }
 
 }

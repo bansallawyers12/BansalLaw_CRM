@@ -1,6 +1,18 @@
            <!-- Account Tab -->
            <div class="tab-pane" id="account-tab">
 <?php use Illuminate\Support\Facades\Storage; ?>
+@php
+    $__account_matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->where('matter_status', 1)->count();
+    $__account_matter_id = null;
+    if ((isset($id1) && $id1 != '') || $__account_matter_cnt > 0) {
+        if (isset($id1) && $id1 != '') {
+            $__matter_row = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->where('client_unique_matter_no', $id1)->first();
+        } else {
+            $__matter_row = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->orderBy('id', 'desc')->first();
+        }
+        $__account_matter_id = $__matter_row->id ?? null;
+    }
+@endphp
 
 <div class="card full-width">
     <div style="margin-bottom: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -14,6 +26,11 @@
         <a class="btn btn-info btn-sm createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="3" title="Issue a tax invoice to the client">
             <i class="fas fa-file-invoice-dollar"></i> Invoice
         </a>
+        @if(!empty($__account_matter_id))
+        <a class="btn btn-outline-secondary btn-sm" href="{{ url('/clients/genTrustStatement') }}?client_id={{ $fetchedData->id }}&matter_id={{ $__account_matter_id }}" target="_blank" title="Rule 52 trust account statement for this matter">
+            <i class="fas fa-file-alt"></i> Trust Statement
+        </a>
+        @endif
     </div>
 
     <div class="account-layout" style="overflow-x: hidden; max-width: 100%;">
@@ -305,7 +322,12 @@
                                             data-eftpos-surcharge="<?php echo htmlspecialchars($rec_val->eftpos_surcharge_amount ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                             data-payer-name="<?php echo htmlspecialchars($rec_val->payer_name ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                             data-bank-deposit-reference="<?php echo htmlspecialchars($rec_val->bank_deposit_reference ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-banking-date="<?php echo htmlspecialchars($rec_val->banking_date ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                            data-banking-date="<?php echo htmlspecialchars($rec_val->banking_date ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-payee-name="<?php echo htmlspecialchars($rec_val->payee_name ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-cheque-number="<?php echo htmlspecialchars($rec_val->cheque_number ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-eft-account-name="<?php echo htmlspecialchars($rec_val->eft_account_name ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-eft-bsb="<?php echo htmlspecialchars($rec_val->eft_bsb ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-eft-account-number="<?php echo htmlspecialchars($rec_val->eft_account_number ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                                             <i class="fas fa-edit"></i> Edit Entry
                                         </a>
                                         <?php } ?>

@@ -215,7 +215,11 @@
                                             <th style="width:12%;color: #34395e;" title="LSBC Uniform Law trust transaction type">Transaction Type</th>
                                             <th style="width:11%;color: #34395e;" title="Required when type is Transfer to Office Account">Invoice Ref.</th>
                                             <th style="width:10%;color: #34395e;" title="How trust money was received or paid">Payment Method</th>
-                                            <th style="width:22%;color: #34395e;" title="Particulars of the trust transaction">Particulars / Description</th>
+                                            <th style="width:10%;color: #34395e;" title="Payer (deposit) or payee (payment)">Payer / Payee</th>
+                                            <th style="width:9%;color: #34395e;" title="Bank deposit ref or cheque number">Bank / Cheque ref</th>
+                                            <th style="width:9%;color: #34395e;" title="Banking date (deposit) or EFT BSB">Date / BSB</th>
+                                            <th style="width:9%;color: #34395e;" title="EFT account name and number">EFT details</th>
+                                            <th style="width:16%;color: #34395e;" title="Particulars of the trust transaction">Particulars / Description</th>
                                             <th style="width:10%;color: #34395e;" title="Trust money received into trust account">Trust Receipts (+)</th>
 											<th style="width:10%;color: #34395e;" title="Trust money paid from trust account">Trust Payments (−)</th>
                                             <th style="width:1%;color: #34395e;"></th>
@@ -257,6 +261,22 @@
                                                     <input type="text" class="form-control ledger-eftpos-surcharge-input" name="eftpos_surcharge_amount[]" inputmode="decimal" autocomplete="off" placeholder="0.00" style="font-size:12px;padding:4px 8px;" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="">
                                                 </div>
                                             </td>
+                                            <td class="ledger-payer-cell">
+                                                <input class="form-control ledger-payer-name" name="payer_name[]" type="text" placeholder="Payer name" style="font-size:12px;" />
+                                                <input class="form-control ledger-payee-name mt-1" name="payee_name[]" type="text" placeholder="Payee name" style="font-size:12px;display:none;" />
+                                            </td>
+                                            <td class="ledger-bankref-cell">
+                                                <input class="form-control ledger-bank-ref" name="bank_deposit_reference[]" type="text" placeholder="Bank ref / cheque #" style="font-size:12px;" />
+                                                <input class="form-control ledger-cheque-no mt-1" name="cheque_number[]" type="text" placeholder="Cheque no." style="font-size:12px;display:none;" />
+                                            </td>
+                                            <td class="ledger-banking-cell">
+                                                <input class="form-control ledger-banking-date report_date_fields" name="banking_date[]" type="text" placeholder="Banking date" style="font-size:12px;" />
+                                                <input class="form-control ledger-eft-bsb mt-1" name="eft_bsb[]" type="text" placeholder="BSB" style="font-size:12px;display:none;" maxlength="16" />
+                                            </td>
+                                            <td class="ledger-eft-cell">
+                                                <input class="form-control ledger-eft-acct-name" name="eft_account_name[]" type="text" placeholder="EFT account name" style="font-size:12px;display:none;" />
+                                                <input class="form-control ledger-eft-acct-no mt-1" name="eft_account_number[]" type="text" placeholder="Account no." style="font-size:12px;display:none;" />
+                                            </td>
                                             <td>
                                                 <input data-valid="required" class="form-control" name="description[]" type="text" value="" />
                                             </td>
@@ -281,7 +301,7 @@
                                 <table border="1" class="table text_wrap table-striped table-hover table-md vertical_align">
                                     <tbody>
                                         <tr>
-                                            <td colspan="6" style="text-align:right;color: #34395e;">Totals</td>
+                                            <td colspan="10" style="text-align:right;color: #34395e;">Totals</td>
                                             <td>
                                                 <span class="total_deposit_amount_all_rows" style="color: #34395e;"></span>
                                             </td>

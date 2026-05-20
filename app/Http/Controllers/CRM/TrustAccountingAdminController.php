@@ -11,10 +11,13 @@ use App\Models\TrustWithdrawalAuthorityType;
 use App\Services\TrustAccounting\TrustBankReconciliationService;
 use App\Services\TrustAccounting\TrustLedgerAuditLogger;
 use App\Services\TrustAccounting\TrustReportQueryService;
+use App\Services\TrustAccounting\TrustMonthlyArchiveService;
+use App\Services\TrustAccounting\TrustStatementService;
 use App\Services\TrustAccounting\TrustWithdrawalAuthorityService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
@@ -439,6 +442,8 @@ class TrustAccountingAdminController extends Controller
             $q->where('account_client_receipts.client_id', (int) $validated['client_id']);
         }
 
+        $payerColumnsEnabled = Schema::hasColumn('account_client_receipts', 'payer_name');
+
         $depositCols = [
             'account_client_receipts.id',
             'account_client_receipts.trans_date',
@@ -449,7 +454,7 @@ class TrustAccountingAdminController extends Controller
             'account_client_receipts.payment_method',
             'account_client_receipts.invoice_no',
         ];
-        if (Schema::hasColumn('account_client_receipts', 'payer_name')) {
+        if ($payerColumnsEnabled) {
             $depositCols[] = 'account_client_receipts.payer_name';
             $depositCols[] = 'account_client_receipts.bank_deposit_reference';
             $depositCols[] = 'account_client_receipts.banking_date';
@@ -498,7 +503,7 @@ class TrustAccountingAdminController extends Controller
         $entries = $q->paginate(100)->withQueryString();
         $sumPage = round((float) collect($entries->items())->sum(fn ($r) => (float) $r->deposit_amount), 2);
 
-        return view('crm.trust-accounting.receipts-journal', compact('entries', 'from', 'to', 'sumPage'));
+        return view('crm.trust-accounting.receipts-journal', compact('entries', 'from', 'to', 'sumPage', 'payerColumnsEnabled'));
     }
 
     /**
@@ -549,6 +554,21 @@ class TrustAccountingAdminController extends Controller
             'client_matters.client_unique_matter_no',
         ];
 
+        $payeeColumnsEnabled = Schema::hasColumn('account_client_receipts', 'payee_name');
+        if ($payeeColumnsEnabled) {
+            $selectCols[] = 'account_client_receipts.payee_name';
+            $selectCols[] = 'account_client_receipts.cheque_number';
+            $selectCols[] = 'account_client_receipts.eft_account_name';
+            $selectCols[] = 'account_client_receipts.eft_bsb';
+            $selectCols[] = 'account_client_receipts.eft_account_number';
+        } else {
+            $selectCols[] = DB::raw('NULL::text as payee_name');
+            $selectCols[] = DB::raw('NULL::text as cheque_number');
+            $selectCols[] = DB::raw('NULL::text as eft_account_name');
+            $selectCols[] = DB::raw('NULL::text as eft_bsb');
+            $selectCols[] = DB::raw('NULL::text as eft_account_number');
+        }
+
         if ($rule42ColumnsEnabled) {
             $selectCols[] = 'twat.label as rule42_authority_type_label';
             $selectCols[] = 'twa.notice_given_date as rule42_notice_given_date';
@@ -583,10 +603,13 @@ class TrustAccountingAdminController extends Controller
             $rows = $q->get();
             $filename = 'trust-payments-journal-' . $from . '-to-' . $to . '.csv';
 
-            return response()->streamDownload(function () use ($rows, $rule42ColumnsEnabled) {
+            return response()->streamDownload(function () use ($rows, $payeeColumnsEnabled, $rule42ColumnsEnabled) {
                 $out = fopen('php://output', 'w');
                 self::writeCsvUtf8Bom($out);
                 $header = ['Trans date', 'Receipt no.', 'Type', 'Client ref', 'Matter', 'Description', 'Amount', 'Method', 'Invoice ref'];
+                if ($payeeColumnsEnabled) {
+                    array_push($header, 'Payee', 'Cheque no.', 'EFT account', 'EFT BSB', 'EFT acct no.');
+                }
                 if ($rule42ColumnsEnabled) {
                     array_push(
                         $header,
@@ -610,6 +633,13 @@ class TrustAccountingAdminController extends Controller
                         $row->payment_method ?? '',
                         $row->invoice_no ?? '',
                     ];
+                    if ($payeeColumnsEnabled) {
+                        $csvRow[] = $row->payee_name ?? '';
+                        $csvRow[] = $row->cheque_number ?? '';
+                        $csvRow[] = $row->eft_account_name ?? '';
+                        $csvRow[] = $row->eft_bsb ?? '';
+                        $csvRow[] = $row->eft_account_number ?? '';
+                    }
                     if ($rule42ColumnsEnabled) {
                         $csvRow[] = $row->rule42_authority_type_label ?? '';
                         $csvRow[] = $row->rule42_notice_given_date !== null && $row->rule42_notice_given_date !== ''
@@ -633,7 +663,8 @@ class TrustAccountingAdminController extends Controller
             'from',
             'to',
             'sumPage',
-            'rule42ColumnsEnabled'
+            'rule42ColumnsEnabled',
+            'payeeColumnsEnabled'
         ));
     }
 
@@ -1074,5 +1105,192 @@ class TrustAccountingAdminController extends Controller
             ->limit(500);
 
         return $q->get();
+    }
+
+    public function overdrawnLedgerReport(Request $request): View|StreamedResponse
+    {
+        $this->gateTrustAdmin();
+
+        $defaults = $this->defaultTrustReportMonthRange();
+        $from = $request->input('from_date', $defaults['from']);
+        $to = $request->input('to_date', $defaults['to']);
+
+        if (($request->input('export') ?? '') === 'csv') {
+            $csv = TrustMonthlyArchiveService::buildOverdrawnLedgerCsv($from, $to);
+
+            return response()->streamDownload(function () use ($csv) {
+                echo $csv;
+            }, 'trust-overdrawn-ledger-' . $from . '-to-' . $to . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
+
+        $rows = TrustMonthlyArchiveService::overdrawnLedgerRows($from, $to);
+
+        return view('crm.trust-accounting.overdrawn-ledger', compact('rows', 'from', 'to'));
+    }
+
+    public function statementsIndex(): View
+    {
+        $this->gateTrustAdmin();
+
+        return view('crm.trust-accounting.statements');
+    }
+
+    public function generateTrustStatement(Request $request): Response
+    {
+        $this->gateTrustAdmin();
+
+        $validated = $request->validate([
+            'client_id' => 'required|integer|min:1',
+            'matter_id' => 'required|integer|min:1',
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date',
+        ]);
+
+        try {
+            $pdf = TrustStatementService::pdfBinary(
+                (int) $validated['client_id'],
+                (int) $validated['matter_id'],
+                $validated['from_date'] ?? null,
+                $validated['to_date'] ?? null
+            );
+        } catch (\Throwable $e) {
+            abort(404, $e->getMessage());
+        }
+
+        $filename = 'Trust-Statement-' . $validated['client_id'] . '-' . $validated['matter_id'] . '.pdf';
+
+        return response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
+    }
+
+    public function statementsAnnualIndex(Request $request): View
+    {
+        $this->gateTrustAdmin();
+
+        $asAt = $request->input('as_at', Carbon::create(null, 6, 30)->format('Y-m-d'));
+        $rows = TrustStatementService::mattersRequiringStatement($asAt, false);
+
+        $matters = $rows->map(function ($row) use ($asAt) {
+            $exempt = round((float) $row->balance, 2) === 0.0 && $this->matterHasNoTrustActivityInMonths((int) $row->client_id, (int) $row->client_matter_id, 12);
+            $row->exempt = $exempt;
+
+            return $row;
+        });
+
+        return view('crm.trust-accounting.statements-annual', compact('matters', 'asAt'));
+    }
+
+    public function markStatementSent(Request $request): RedirectResponse
+    {
+        $this->gateTrustAdmin();
+
+        $validated = $request->validate([
+            'matter_id' => 'required|integer|min:1',
+        ]);
+
+        if (Schema::hasColumn('client_matters', 'trust_last_statement_sent_at')) {
+            DB::table('client_matters')->where('id', (int) $validated['matter_id'])->update([
+                'trust_last_statement_sent_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Statement marked as sent for this matter.');
+    }
+
+    public function archivesIndex(): View
+    {
+        $this->gateTrustAdmin();
+
+        if (! Schema::hasTable('trust_monthly_archives')) {
+            abort(503, 'Monthly archives table is not available.');
+        }
+
+        $archives = DB::table('trust_monthly_archives as tma')
+            ->leftJoin('staff', 'staff.id', '=', 'tma.prepared_by_staff_id')
+            ->select([
+                'tma.*',
+                DB::raw("TRIM(COALESCE(staff.first_name, '') || ' ' || COALESCE(staff.last_name, '')) as staff_name"),
+            ])
+            ->orderByDesc('tma.period_year')
+            ->orderByDesc('tma.period_month')
+            ->orderBy('tma.archive_type')
+            ->paginate(50);
+
+        return view('crm.trust-accounting.archives', compact('archives'));
+    }
+
+    public function archivesStore(Request $request): RedirectResponse
+    {
+        $staff = $this->gateTrustAdmin();
+
+        $validated = $request->validate([
+            'period_year' => 'required|integer|min:2000|max:2100',
+            'period_month' => 'required|integer|min:1|max:12',
+        ]);
+
+        try {
+            $result = TrustMonthlyArchiveService::createMonthArchives(
+                (int) $validated['period_year'],
+                (int) $validated['period_month'],
+                (int) $staff->id
+            );
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('trust-accounting.archives.index')->with(
+            'success',
+            'Archived ' . $result['created'] . ' report(s). Skipped ' . $result['skipped'] . ' already archived.'
+        );
+    }
+
+    public function archivesDownload(int $archiveId): StreamedResponse
+    {
+        $this->gateTrustAdmin();
+
+        $archive = DB::table('trust_monthly_archives')->where('id', $archiveId)->first();
+        if (! $archive || ! $archive->file_document_id) {
+            abort(404);
+        }
+
+        $doc = DB::table('documents')->where('id', $archive->file_document_id)->first();
+        if (! $doc || empty($doc->myfile) || ! is_file($doc->myfile)) {
+            abort(404, 'Archive file not found.');
+        }
+
+        return response()->streamDownload(function () use ($doc) {
+            readfile($doc->myfile);
+        }, $doc->file_name ?? 'trust-archive.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    public function auditorsPack(Request $request): StreamedResponse
+    {
+        $this->gateTrustAdmin();
+
+        $defaults = $this->defaultTrustReportMonthRange();
+        $from = $request->input('from_date', $defaults['from']);
+        $to = $request->input('to_date', $defaults['to']);
+
+        $zipPath = TrustMonthlyArchiveService::buildAuditorsPackZip($from, $to);
+        $downloadName = 'TrustExamPack-' . $from . '-to-' . $to . '.zip';
+
+        return response()->streamDownload(function () use ($zipPath) {
+            readfile($zipPath);
+            @unlink($zipPath);
+        }, $downloadName, ['Content-Type' => 'application/zip']);
+    }
+
+    private function matterHasNoTrustActivityInMonths(int $clientId, int $matterId, int $months): bool
+    {
+        $since = Carbon::now()->subMonths($months)->format('Y-m-d');
+        $q = TrustReportQueryService::baseTrustLedgerQuery()
+            ->where('client_id', $clientId)
+            ->where('client_matter_id', $matterId);
+        TrustReportQueryService::applyTransDateRange($q, $since, Carbon::now()->format('Y-m-d'));
+
+        return ! $q->exists();
     }
 }

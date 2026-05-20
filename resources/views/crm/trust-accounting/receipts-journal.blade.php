@@ -2,6 +2,9 @@
 @section('title', 'Trust receipts journal')
 
 @section('content')
+@php
+    $payerColumnsEnabled = $payerColumnsEnabled ?? false;
+@endphp
 <div class="main-content">
     <section class="section">
         <div class="section-body">
@@ -42,6 +45,7 @@
 
             <p class="small text-muted">Page subtotal (this page only): <strong>${{ number_format($sumPage, 2) }}</strong></p>
 
+            @php $rjCols = 9 + ($payerColumnsEnabled ? 3 : 0); @endphp
             <div class="card">
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -57,6 +61,11 @@
                                     <th class="text-end">Amount</th>
                                     <th>Method</th>
                                     <th>Invoice</th>
+                                    @if($payerColumnsEnabled)
+                                        <th>Payer</th>
+                                        <th>Bank ref</th>
+                                        <th>Banking date</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody>
@@ -71,9 +80,14 @@
                                     <td class="text-end font-monospace">${{ number_format((float) $row->deposit_amount, 2) }}</td>
                                     <td class="small">{{ $row->payment_method ?? '—' }}</td>
                                     <td class="small">{{ $row->invoice_no ?? '—' }}</td>
+                                    @if($payerColumnsEnabled)
+                                        <td class="small">{{ $row->payer_name ?? '—' }}</td>
+                                        <td class="small font-monospace">{{ $row->bank_deposit_reference ?? '—' }}</td>
+                                        <td class="small text-nowrap">{{ $row->banking_date ?? '—' }}</td>
+                                    @endif
                                 </tr>
                             @empty
-                                <tr><td colspan="9" class="text-center text-muted py-4">No rows.</td></tr>
+                                <tr><td colspan="{{ $rjCols }}" class="text-center text-muted py-4">No rows.</td></tr>
                             @endforelse
                             </tbody>
                         </table>
