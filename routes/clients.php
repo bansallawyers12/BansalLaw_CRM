@@ -297,6 +297,7 @@ Route::get('/legal-forms/client-forms', [\App\Http\Controllers\CRM\LegalFormsCon
 Route::get('/legal-forms/{legalForm}', [\App\Http\Controllers\CRM\LegalFormsController::class, 'show'])->name('legal-forms.show');
 Route::put('/legal-forms/{legalForm}', [\App\Http\Controllers\CRM\LegalFormsController::class, 'update'])->name('legal-forms.update');
 Route::delete('/legal-forms/{legalForm}', [\App\Http\Controllers\CRM\LegalFormsController::class, 'destroy'])->name('legal-forms.destroy');
+Route::post('/legal-forms/{legalForm}/delete', [\App\Http\Controllers\CRM\LegalFormsController::class, 'destroy'])->name('legal-forms.delete');
 Route::get('/legal-forms/{legalForm}/preview', [\App\Http\Controllers\CRM\LegalFormsController::class, 'previewDocx'])->name('legal-forms.preview');
 Route::get('/legal-forms/{legalForm}/download', [\App\Http\Controllers\CRM\LegalFormsController::class, 'downloadDocx'])->name('legal-forms.download');
 

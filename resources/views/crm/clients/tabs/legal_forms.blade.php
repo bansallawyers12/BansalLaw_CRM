@@ -476,7 +476,7 @@
             html += '</div>';
             html += '<div class="legal-form-card-actions">';
             html += '<a href="' + LF_BASE + '/' + form.id + '/download" class="btn btn-sm btn-outline-success" title="Download Word Document"><i class="fas fa-file-word"></i> Download</a>';
-            html += '<button class="btn btn-sm btn-outline-danger" onclick="deleteLegalForm(' + form.id + ')" title="Delete"><i class="fas fa-trash"></i></button>';
+            html += '<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteLegalForm(' + form.id + ')" title="Delete"><i class="fas fa-trash"></i></button>';
             html += '</div>';
             html += '</div>';
         });
@@ -560,8 +560,8 @@
         if (!confirm('Are you sure you want to delete this form? This action cannot be undone.')) return;
 
         $.ajax({
-            url: LF_BASE + '/' + formId,
-            method: 'DELETE',
+            url: LF_BASE + '/' + formId + '/delete',
+            method: 'POST',
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function(response) {
                 if (response.success) {
@@ -571,13 +571,24 @@
                     } else {
                         alert(response.message || 'Form deleted.');
                     }
+                } else {
+                    var failMsg = (response && response.message) ? response.message : 'Failed to delete form.';
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                        iziToast.error({ message: failMsg, position: 'topRight' });
+                    } else {
+                        alert(failMsg);
+                    }
                 }
             },
-            error: function() {
+            error: function(xhr) {
+                var msg = 'Failed to delete form.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
                 if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
-                    iziToast.error({ message: 'Failed to delete form.', position: 'topRight' });
+                    iziToast.error({ message: msg, position: 'topRight' });
                 } else {
-                    alert('Failed to delete form.');
+                    alert(msg);
                 }
             }
         });
