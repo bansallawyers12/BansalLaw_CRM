@@ -57,6 +57,11 @@ return [
 
     'strict_allocation' => filter_var(env('CRM_ACCESS_STRICT_ALLOCATION', false), FILTER_VALIDATE_BOOLEAN),
 
+    // Master switch for matter allocation + cross-access restrictions (lists, search lock, detail gates).
+    // When false, staff see all client/lead rows except super-admin-only file IDs (config/crm.php).
+    // Set true to restore allocation filtering and the quick/supervisor grant flow.
+    'allocation_enabled' => filter_var(env('CRM_ACCESS_ALLOCATION_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+
     'max_pending_supervisor_requests' => max(1, (int) env('CRM_ACCESS_MAX_PENDING_SUPERVISOR_REQUESTS', 5)),
 
     // Days after which un-actioned pending supervisor requests are auto-expired by the scheduled job.

@@ -9,6 +9,12 @@ use Tests\TestCase;
 
 class CrmAccessServiceQuickOnlyTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['crm_access.allocation_enabled' => true]);
+    }
+
     // -----------------------------------------------------------------------
     // Role 14 (Calling Team) — supervisor path hard-blocked
     // -----------------------------------------------------------------------

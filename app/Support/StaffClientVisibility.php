@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\DB;
  * Lead listing keeps its own role rules (leadFullAccessRoleIds, strict mode) in restrictLeadListQuery / userMaySeeByAllocation.
  *
  * Cross-access grants and strict allocation are controlled by config/crm_access.php
- * (CRM_ACCESS_STRICT_ALLOCATION, exempt roles, approvers, quick access).
+ * (CRM_ACCESS_ALLOCATION_ENABLED, CRM_ACCESS_STRICT_ALLOCATION, exempt roles, approvers, quick access).
  */
 final class StaffClientVisibility
 {
@@ -90,8 +90,21 @@ final class StaffClientVisibility
         ];
     }
 
+    /**
+     * When false, allocation filters, search locks, and cross-access UI are disabled site-wide.
+     * Super-admin-only client file IDs (config/crm.php) remain enforced.
+     */
+    public static function isAllocationEnforcementEnabled(): bool
+    {
+        return (bool) config('crm_access.allocation_enabled', true);
+    }
+
     public static function isRestrictedPersonAssisting(?Authenticatable $user): bool
     {
+        if (! self::isAllocationEnforcementEnabled()) {
+            return false;
+        }
+
         if (! $user) {
             return false;
         }
@@ -135,7 +148,7 @@ final class StaffClientVisibility
      */
     public static function crossAccessUiFlags(?Authenticatable $user): array
     {
-        if (! $user || self::isExemptFromAllocation($user)) {
+        if (! self::isAllocationEnforcementEnabled() || ! $user || self::isExemptFromAllocation($user)) {
             return ['show_quick' => false, 'show_supervisor' => false];
         }
 
@@ -166,6 +179,14 @@ final class StaffClientVisibility
             return $item;
         }
 
+        if (! self::isAllocationEnforcementEnabled()) {
+            $item['locked'] = false;
+            $item['record_type'] = $recordType;
+            $item['access_ui'] = ['show_quick' => false, 'show_supervisor' => false];
+
+            return $item;
+        }
+
         $can = self::canAccessClientOrLead($cid, $user);
         $item['locked'] = ! $can;
         $item['record_type'] = $recordType;
@@ -182,7 +203,7 @@ final class StaffClientVisibility
     public static function restrictMatterListToAllocatedClients($query, string $cmAlias = 'cm', string $adAlias = 'ad'): void
     {
         $user = self::currentStaff();
-        if (! $user || self::isExemptFromAllocation($user)) {
+        if (! $user || ! self::isAllocationEnforcementEnabled() || self::isExemptFromAllocation($user)) {
             return;
         }
         $staffId = (int) $user->id;
@@ -312,7 +333,7 @@ final class StaffClientVisibility
     public static function restrictLeadListQuery(Builder $query): void
     {
         $user = self::currentStaff();
-        if (! $user) {
+        if (! $user || ! self::isAllocationEnforcementEnabled()) {
             return;
         }
 
@@ -377,7 +398,7 @@ final class StaffClientVisibility
         $user = self::currentStaff();
         self::excludeSuperAdminOnlyLockedClientsFromAdminQuery($query, $user);
 
-        if (! $user || self::isExemptFromAllocation($user)) {
+        if (! $user || ! self::isAllocationEnforcementEnabled() || self::isExemptFromAllocation($user)) {
             return;
         }
 
@@ -423,6 +444,10 @@ final class StaffClientVisibility
 
         if (self::isSuperAdminOnlyLockedClient($row->type ?? null, $row->client_id ?? null)) {
             return $user instanceof Staff && $user->hasEffectiveSuperAdminPrivileges();
+        }
+
+        if (! self::isAllocationEnforcementEnabled()) {
+            return true;
         }
 
         if (self::isExemptFromAllocation($user)) {
@@ -487,7 +512,7 @@ final class StaffClientVisibility
     public static function restrictDocumentEloquentQuery(Builder $query, ?Authenticatable $user = null): void
     {
         $user = self::currentStaff($user);
-        if (! $user || self::isExemptFromAllocation($user)) {
+        if (! $user || ! self::isAllocationEnforcementEnabled() || self::isExemptFromAllocation($user)) {
             return;
         }
 
@@ -539,7 +564,7 @@ final class StaffClientVisibility
     public static function restrictBookingAppointmentEloquentQuery(Builder $query, ?Authenticatable $user = null): void
     {
         $user = self::currentStaff($user);
-        if (! $user || self::isExemptFromAllocation($user)) {
+        if (! $user || ! self::isAllocationEnforcementEnabled() || self::isExemptFromAllocation($user)) {
             return;
         }
 
