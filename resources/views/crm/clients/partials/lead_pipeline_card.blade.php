@@ -360,6 +360,14 @@
                     saveBtn.disabled = false;
                     if (res.ok && res.data.success) {
                         toast(res.data.message || 'Saved', true);
+                        if (res.data.conflict_warning) {
+                            iziToast.show({
+                                message: res.data.conflict_warning,
+                                color: 'yellow',
+                                position: 'topRight',
+                                timeout: 7000
+                            });
+                        }
                         var st = res.data.lead_status || (stageSel && stageSel.value);
                         if (stageDisplay) stageDisplay.textContent = stageLabel(st);
                         if (followRow) followRow.style.display = st === 'follow_up' ? '' : 'none';

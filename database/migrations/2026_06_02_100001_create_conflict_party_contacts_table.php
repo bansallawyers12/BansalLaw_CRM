@@ -1,0 +1,31 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        if (! Schema::hasTable('conflict_party_contacts')) {
+            Schema::create('conflict_party_contacts', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('conflict_party_id')->index();
+                $table->string('contact_type', 64)->nullable()->default('Mobile');
+                $table->string('country_code', 10)->nullable()->default('+61');
+                $table->string('phone', 64);
+                $table->timestamps();
+
+                $table->foreign('conflict_party_id')
+                    ->references('id')->on('client_conflict_parties')
+                    ->onDelete('cascade');
+            });
+        }
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('conflict_party_contacts');
+    }
+};

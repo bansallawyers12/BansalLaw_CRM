@@ -979,6 +979,12 @@
                         ])
                     @endif
 
+                    @include('crm.clients.partials.conflict-parties-card', [
+                        'fetchedData'         => $fetchedData,
+                        'conflictParties'     => $conflictParties ?? collect(),
+                        'latestConflictCheck' => $latestConflictCheck ?? null,
+                    ])
+
                     @unless($suppressPersonalDetailsTagCard ?? false)
                     <div class="card">
                         <div style="display: flex; justify-content: space-between; align-items: center;">

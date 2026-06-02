@@ -32,6 +32,10 @@ use App\Models\ClientCharacter;
 use App\Models\ClientRelationship;
 use App\Models\ClientMatter;
 use App\Models\ClientMatterOpposingParty;
+use App\Models\ClientConflictParty;
+use App\Models\ConflictPartyContact;
+use App\Models\ConflictPartyEmail;
+use App\Models\ClientConflictCheck;
 use App\Models\Matter;
 use App\Support\MatterStreamHelper;
 use App\Models\Company;
@@ -1961,6 +1965,10 @@ class ClientPersonalDetailsController extends Controller
                     return $this->saveNominationsSection($request, $client);
                 case 'leadPipeline':
                     return $this->saveLeadPipelineSection($request, $client);
+                case 'conflictParties':
+                    return $this->saveConflictPartiesSection($request, $client);
+                case 'conflictCheckOutcome':
+                    return $this->saveConflictCheckOutcomeSection($request, $client);
                 case 'referBy':
                     return $this->saveReferBySection($request, $client);
                 case 'leadSource':
@@ -2440,7 +2448,12 @@ class ClientPersonalDetailsController extends Controller
             ]);
         }
 
-        $pipelineStages = ['new', 'follow_up', 'not_qualified', 'hostile'];
+        $pipelineStages = [
+            'new', 'initial_consultation', 'conflict_check',
+            'engaged', 'retained', 'follow_up',
+            'not_proceeding', 'declined',
+            'not_qualified', 'hostile',
+        ];
         $allowedStages = $pipelineStages;
         $currentStage = (string) ($client->lead_status ?? '');
         if ($currentStage !== '' && ! in_array($currentStage, $pipelineStages, true)) {
@@ -2470,6 +2483,16 @@ class ClientPersonalDetailsController extends Controller
         ];
 
         $client->lead_status = $validated['lead_status'];
+
+        $conflictWarning = null;
+        if (in_array($validated['lead_status'], ['engaged', 'retained'], true)) {
+            $hasCheck = ClientConflictCheck::where('client_id', $client->id)
+                ->whereIn('outcome', ['clear', 'waived'])
+                ->exists();
+            if (! $hasCheck) {
+                $conflictWarning = 'Warning: No conflict check has been recorded as Clear or Waived for this client.';
+            }
+        }
 
         if ($request->has('followup_date')) {
             $rawFd = $request->input('followup_date');
@@ -2528,12 +2551,160 @@ class ClientPersonalDetailsController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Lead pipeline updated',
+            'message' => 'Pipeline updated successfully.',
             'lead_status' => $client->lead_status,
             'followup_date' => $client->followup_date ? $client->followup_date->format('Y-m-d') : null,
             'assigned_staff_id' => $client->user_id,
             'record_status' => (int) $client->status,
+            'conflict_warning' => $conflictWarning,
         ]);
+    }
+
+    /**
+     * Save other parties for conflict check — client/lead level, not matter level.
+     */
+    private function saveConflictPartiesSection(Request $request, Admin $client)
+    {
+        $raw = $request->input('conflict_parties_json', '[]');
+        $parties = json_decode((string) $raw, true);
+
+        if (! is_array($parties)) {
+            return response()->json(['success' => false, 'message' => 'Invalid data format.'], 422);
+        }
+
+        try {
+            DB::transaction(function () use ($client, $parties) {
+                ClientConflictParty::where('client_id', $client->id)->delete();
+
+                foreach ($parties as $i => $p) {
+                    $firstName   = trim((string) ($p['first_name'] ?? ''));
+                    $companyName = trim((string) ($p['company_name'] ?? ''));
+
+                    if ($firstName === '' && $companyName === '') {
+                        continue;
+                    }
+
+                    $dobFormatted = null;
+                    if (! empty($p['dob']) && $p['dob'] !== 'dd/mm/yyyy') {
+                        try {
+                            $dobFormatted = Carbon::createFromFormat('d/m/Y', $p['dob'])->format('Y-m-d');
+                        } catch (\Exception $e) {
+                            $dobFormatted = null;
+                        }
+                    }
+
+                    $party = ClientConflictParty::create([
+                        'client_id'        => $client->id,
+                        'party_type'       => $p['party_type'] ?? 'individual',
+                        'party_role'       => $p['party_role'] ?? null,
+                        'first_name'       => $firstName ?: null,
+                        'last_name'        => trim((string) ($p['last_name'] ?? '')) ?: null,
+                        'aliases'          => ! empty($p['aliases']) && is_array($p['aliases'])
+                            ? array_values(array_filter($p['aliases']))
+                            : null,
+                        'dob'              => $dobFormatted,
+                        'company_name'     => $companyName ?: null,
+                        'trading_name'     => trim((string) ($p['trading_name'] ?? '')) ?: null,
+                        'abn'              => trim((string) ($p['abn'] ?? '')) ?: null,
+                        'acn'              => trim((string) ($p['acn'] ?? '')) ?: null,
+                        'address'          => trim((string) ($p['address'] ?? '')) ?: null,
+                        'suburb'           => trim((string) ($p['suburb'] ?? '')) ?: null,
+                        'state'            => trim((string) ($p['state'] ?? '')) ?: null,
+                        'postcode'         => trim((string) ($p['postcode'] ?? '')) ?: null,
+                        'country'          => trim((string) ($p['country'] ?? 'Australia')) ?: 'Australia',
+                        'rep_firm_name'    => trim((string) ($p['rep_firm_name'] ?? '')) ?: null,
+                        'rep_name'         => trim((string) ($p['rep_name'] ?? '')) ?: null,
+                        'rep_email'        => trim((string) ($p['rep_email'] ?? '')) ?: null,
+                        'rep_phone'        => trim((string) ($p['rep_phone'] ?? '')) ?: null,
+                        'rep_country_code' => trim((string) ($p['rep_country_code'] ?? '')) ?: null,
+                        'notes'            => trim((string) ($p['notes'] ?? '')) ?: null,
+                        'sort_order'       => $i,
+                        'created_by'       => Auth::id(),
+                    ]);
+
+                    foreach ($p['phones'] ?? [] as $ph) {
+                        $num = trim((string) ($ph['phone'] ?? ''));
+                        if ($num !== '') {
+                            ConflictPartyContact::create([
+                                'conflict_party_id' => $party->id,
+                                'contact_type'      => $ph['contact_type'] ?? 'Mobile',
+                                'country_code'      => $ph['country_code'] ?? '+61',
+                                'phone'             => $num,
+                            ]);
+                        }
+                    }
+
+                    foreach ($p['emails'] ?? [] as $em) {
+                        $addr = trim((string) ($em['email'] ?? ''));
+                        if ($addr !== '') {
+                            ConflictPartyEmail::create([
+                                'conflict_party_id' => $party->id,
+                                'email_type'        => $em['email_type'] ?? 'Personal',
+                                'email'             => $addr,
+                            ]);
+                        }
+                    }
+                }
+            });
+
+            $count = ClientConflictParty::where('client_id', $client->id)->count();
+            $this->logClientActivity($client->id, 'updated other parties', $count . ' party record(s) saved', 'activity');
+
+            return response()->json(['success' => true, 'message' => 'Other parties saved successfully.', 'count' => $count]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error saving other parties: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Save conflict check outcome (result of running the search).
+     */
+    private function saveConflictCheckOutcomeSection(Request $request, Admin $client)
+    {
+        $allowed = ['pending', 'clear', 'conflict_found', 'waived'];
+        $outcome = $request->input('outcome', 'pending');
+
+        if (! in_array($outcome, $allowed, true)) {
+            return response()->json(['success' => false, 'message' => 'Invalid outcome value.'], 422);
+        }
+
+        try {
+            $check = ClientConflictCheck::create([
+                'client_id'        => $client->id,
+                'checked_by'       => Auth::id(),
+                'checked_at'       => now(),
+                'search_terms'     => $request->input('search_terms') ?? null,
+                'matches'          => $request->input('matches') ?? null,
+                'outcome'          => $outcome,
+                'outcome_notes'    => trim((string) ($request->input('outcome_notes', ''))) ?: null,
+                'consent_obtained' => (bool) $request->input('consent_obtained', false),
+                'consent_notes'    => trim((string) ($request->input('consent_notes', ''))) ?: null,
+            ]);
+
+            $outcomeLabels = [
+                'clear'          => 'Clear — no conflict found',
+                'conflict_found' => 'Conflict found',
+                'waived'         => 'Waived with consent',
+                'pending'        => 'Pending',
+            ];
+
+            $this->logClientActivity(
+                $client->id,
+                'conflict check recorded',
+                'Outcome: ' . ($outcomeLabels[$outcome] ?? $outcome),
+                'activity'
+            );
+
+            return response()->json([
+                'success'    => true,
+                'message'    => 'Conflict check outcome saved.',
+                'check_id'   => $check->id,
+                'outcome'    => $outcome,
+                'checked_at' => $check->checked_at->format('d M Y H:i'),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error saving outcome: ' . $e->getMessage()], 500);
+        }
     }
 
     private function saveBasicInfoSection($request, $client)

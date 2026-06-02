@@ -270,6 +270,18 @@ class Admin extends Authenticatable
         return $this->hasMany(\App\Models\ClientRelationship::class, 'client_id');
     }
 
+    public function conflictParties(): HasMany
+    {
+        return $this->hasMany(\App\Models\ClientConflictParty::class, 'client_id')
+            ->orderBy('sort_order');
+    }
+
+    public function conflictChecks(): HasMany
+    {
+        return $this->hasMany(\App\Models\ClientConflictCheck::class, 'client_id')
+            ->orderByDesc('checked_at');
+    }
+
     // ============================================================
     // COMPANY LEAD/CLIENT RELATIONSHIPS
     // ============================================================

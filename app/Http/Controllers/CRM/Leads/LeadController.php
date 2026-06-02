@@ -1037,12 +1037,22 @@ class LeadController extends Controller
             'declined' => 'Declined',
         ];
 
+        $conflictParties = \App\Models\ClientConflictParty::where('client_id', $id)
+            ->with(['phones', 'emails'])
+            ->orderBy('sort_order')
+            ->get();
+
+        $latestConflictCheck = \App\Models\ClientConflictCheck::where('client_id', $id)
+            ->orderByDesc('checked_at')
+            ->first();
+
         return view('crm.leads.edit', compact(
             'fetchedData', 'countries', 'clientContacts', 'emails',
             'visaCountries', 'clientPassports', 'clientAddresses', 'clientTravels', 'visaTypes',
             'assignableStaff', 'leadStageLabels',
             'qualifications', 'experiences', 'testScores',
-            'clientOccupations', 'clientCharacters', 'clientPartners'
+            'clientOccupations', 'clientCharacters', 'clientPartners',
+            'conflictParties', 'latestConflictCheck'
         ));
     }
 

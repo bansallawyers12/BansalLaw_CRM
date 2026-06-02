@@ -2220,6 +2220,15 @@ class ClientsController extends Controller
                 $__crmEditLeadType = (($fetchedData->type ?? null) === 1
                     || in_array(trim((string) ($fetchedData->type ?? '')), ['lead', 'l', '1'], true));
 
+                $conflictParties = \App\Models\ClientConflictParty::where('client_id', $id)
+                    ->with(['phones', 'emails'])
+                    ->orderBy('sort_order')
+                    ->get();
+
+                $latestConflictCheck = \App\Models\ClientConflictCheck::where('client_id', $id)
+                    ->orderByDesc('checked_at')
+                    ->first();
+
                 //Return the view with all data
                 return view('crm.clients.detail', compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
@@ -2228,7 +2237,8 @@ class ClientsController extends Controller
                     'staffName', 'matterNumber', 'officePhone', 'officeCountryCode',
                     'visibleNomineeNominations', 'notPickedCallSmsDefault',
                     'assignableStaff', 'leadStageLabels', 'showGoogleReviewReminderModal',
-                    'matterFormForLead', '__crmEditLeadType'
+                    'matterFormForLead', '__crmEditLeadType',
+                    'conflictParties', 'latestConflictCheck'
                 ));
             } else {
                 return redirect()->route('clients.index')->with('error', 'Clients Not Exist');
