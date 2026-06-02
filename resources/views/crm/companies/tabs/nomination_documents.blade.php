@@ -1246,6 +1246,7 @@
                     const invalidFiles = [];
                     const maxSize = 50 * 1024 * 1024; // 50MB
                     const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
+                    const validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
                     
                     Array.from(files).forEach(file => {
                         // Check file size
@@ -1258,6 +1259,12 @@
                         const ext = file.name.split('.').pop().toLowerCase();
                         if (!allowedExtensions.includes(ext)) {
                             invalidFiles.push(file.name + ' (invalid file type)');
+                            return;
+                        }
+                        
+                        // Check filename characters
+                        if (!validNameRegex.test(file.name)) {
+                            invalidFiles.push(file.name + ' (invalid characters in name)');
                             return;
                         }
                         

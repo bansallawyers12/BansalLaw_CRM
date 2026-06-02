@@ -453,9 +453,9 @@
                                 }
                                 
                                 // Validate filename
-                                var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$]+$/;
+                                var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
                                 if (!validNameRegex.test(file.name)) {
-                                    alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), and dollar signs ($). Please rename the file and try again.");
+                                    alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
                                     return false;
                                 }
                                 
@@ -640,9 +640,9 @@
                             }
                             
                             // Validate filename
-                            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$]+$/;
+                            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
                             if (!validNameRegex.test(file.name)) {
-                                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), and dollar signs ($). Please rename the file and try again.");
+                                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
                                 return false;
                             }
                             
@@ -1573,6 +1573,7 @@
                     const invalidFiles = [];
                     const maxSize = 50 * 1024 * 1024; // 50MB
                     const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
+                    const validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
                     
                     Array.from(files).forEach(file => {
                         // Check file size
@@ -1585,6 +1586,12 @@
                         const ext = file.name.split('.').pop().toLowerCase();
                         if (!allowedExtensions.includes(ext)) {
                             invalidFiles.push(file.name + ' (invalid file type)');
+                            return;
+                        }
+                        
+                        // Check filename characters
+                        if (!validNameRegex.test(file.name)) {
+                            invalidFiles.push(file.name + ' (invalid characters in name)');
                             return;
                         }
                         
