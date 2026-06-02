@@ -5,6 +5,7 @@ namespace App\Http\Controllers\CRM\Clients;
 use App\Http\Controllers\Controller;
 use App\Models\ClientMatter;
 use App\Models\ClientMatterTask;
+use App\Services\ClientMatterTaskSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -94,6 +95,9 @@ class ClientMatterTaskController extends Controller
         $task->created_by       = Auth::user()->id;
         $task->save();
 
+        app(ClientMatterTaskSyncService::class)->mirrorClientTaskToAction($task);
+        $task->refresh();
+
         return response()->json(['status' => true, 'data' => $task]);
     }
 
@@ -105,6 +109,8 @@ class ClientMatterTaskController extends Controller
         }
 
         $changed = false;
+
+        $sync = app(ClientMatterTaskSyncService::class);
 
         if ($request->exists('is_done')) {
             $task->is_done = $this->parseBoolean($request->input('is_done'));
@@ -127,6 +133,13 @@ class ClientMatterTaskController extends Controller
 
         $task->save();
 
+        if ($request->exists('is_done')) {
+            $sync->syncCompletionFromClientTask($task);
+        }
+        if ($request->has('title')) {
+            $sync->syncTitleFromClientTask($task);
+        }
+
         return response()->json(['status' => true, 'data' => $task]);
     }
 
@@ -137,6 +150,7 @@ class ClientMatterTaskController extends Controller
             return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
         }
 
+        app(ClientMatterTaskSyncService::class)->onClientTaskDeleted($task);
         $task->delete();
 
         return response()->json(['status' => true]);

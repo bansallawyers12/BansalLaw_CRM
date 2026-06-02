@@ -16,6 +16,7 @@ class ClientMatterTask extends Model
         'is_done',
         'sort_order',
         'created_by',
+        'note_id',
     ];
 
     protected $casts = [
@@ -35,5 +36,10 @@ class ClientMatterTask extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'created_by');
+    }
+
+    public function note(): BelongsTo
+    {
+        return $this->belongsTo(Note::class, 'note_id');
     }
 }

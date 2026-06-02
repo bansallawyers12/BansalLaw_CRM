@@ -19,6 +19,7 @@ use App\Models\ActivitiesLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\ClientMatterTaskSyncService;
 use App\Services\FCMService;
 use App\Events\NotificationCountUpdated;
 use Yajra\DataTables\Facades\DataTables;
@@ -147,6 +148,8 @@ class AssigneeController extends Controller
                 $objs->task_status = 1; //marked completed
                 $objs->pin = 0;
                 $objs->save();
+
+                app(ClientMatterTaskSyncService::class)->syncCompletionFromNote($note_data, true);
             }
             $response['status'] 	= 	true;
             $response['message']	=	'Action completed successfully';
@@ -166,6 +169,10 @@ class AssigneeController extends Controller
                     ->whereNotNull('unique_group_id')
                     ->update(['status'=>'0']);
         if($note){
+            $noteRow = Note::where('id', $data['id'] ?? 0)->first();
+            if ($noteRow) {
+                app(ClientMatterTaskSyncService::class)->syncCompletionFromNote($noteRow, false);
+            }
             $response['status'] 	= 	true;
             $response['message']	=	'Action updated successfully';
         } else {
@@ -763,6 +770,7 @@ class AssigneeController extends Controller
 
             // Step 1: Mark the current action as complete
             $currentAction->update(['status' => '1']);
+            app(ClientMatterTaskSyncService::class)->syncCompletionFromNote($currentAction, true);
 
             // Step 2: Activity Feed log for completed action
             if ($currentAction->client_id) {
@@ -804,6 +812,10 @@ class AssigneeController extends Controller
             $actionUniqueId = 'group_' . uniqid('', true);
             $newAction->unique_group_id = $actionUniqueId; // Generate unique group ID for the new action
             $newAction->save();
+
+            if ($clientId) {
+                app(ClientMatterTaskSyncService::class)->mirrorActionToClientTask($newAction);
+            }
 
             // Step 4: Activity Feed log for the new action
             if ($clientId) {

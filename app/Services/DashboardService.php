@@ -557,6 +557,8 @@ class DashboardService
             return ['success' => false, 'message' => 'Failed to complete action'];
         }
 
+        app(\App\Services\ClientMatterTaskSyncService::class)->syncCompletionFromNote($noteData, true);
+
         if ($noteData->client_id) {
             $assigneeName = 'N/A';
             if ($noteData->assigned_to) {

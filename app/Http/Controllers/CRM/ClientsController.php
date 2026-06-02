@@ -35,6 +35,7 @@ use App\Support\ClientTagStorage;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Mail;
+use App\Services\ClientMatterTaskSyncService;
 use App\Services\ClientReferenceService;
 use App\Services\MatterAssigneeDefaults;
 use App\Support\NoteDescriptionHtml;
@@ -6189,6 +6190,8 @@ class ClientsController extends Controller
             $actionUniqueId = 'group_' . uniqid('', true);
 
             // Loop through each assignee and create an action
+            $mirroredToClientTask = false;
+            $taskSync = app(ClientMatterTaskSyncService::class);
             foreach ($remCat as $assigneeId) {
                 // Create a new action for each assignee
                 $action = new \App\Models\Note;
@@ -6228,6 +6231,11 @@ class ClientsController extends Controller
                 $saved = $action->save();
 
                 if ($saved) {
+                    if (! $mirroredToClientTask) {
+                        $taskSync->mirrorActionToClientTask($action);
+                        $mirroredToClientTask = true;
+                    }
+
                     // Update lead action date
                     if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
                         $targetClient->followup_date = $requestData['followup_datetime'];
@@ -6418,6 +6426,8 @@ class ClientsController extends Controller
             $assignees = is_array($requestData['rem_cat']) ? $requestData['rem_cat'] : [$requestData['rem_cat']];
 
             // Loop through each assignee and create an action
+            $mirroredToClientTask = false;
+            $taskSync = app(ClientMatterTaskSyncService::class);
             foreach ($assignees as $assigneeId) {
                 // Create a new action for each assignee
                 $action = new \App\Models\Note;
@@ -6441,6 +6451,11 @@ class ClientsController extends Controller
                 $saved = $action->save();
 
                 if ($saved) {
+                    if ($clientId && ! $mirroredToClientTask) {
+                        $taskSync->mirrorActionToClientTask($action);
+                        $mirroredToClientTask = true;
+                    }
+
                     // Create a notification for the assignee
                     $notification = new \App\Models\Notification;
                     $notification->sender_id = Auth::user()->id;
@@ -6617,6 +6632,10 @@ class ClientsController extends Controller
             $saved = $action->save();
 
             if ($saved) {
+                if ($clientId) {
+                    app(ClientMatterTaskSyncService::class)->mirrorActionToClientTask($action);
+                }
+
                 // Create a notification for the assignee
                 $notification = new \App\Models\Notification;
                 $notification->sender_id = Auth::user()->id;
