@@ -6903,7 +6903,7 @@ success: function(response) {
 
 
 
-        //Add Personal Document category
+        //Add Personal Document folder
 
         $(document).delegate('.add_personal_doc_cat', 'click', function (e) {
 
@@ -6913,7 +6913,7 @@ success: function(response) {
 
         });
 
-        // Add matter document category (opens addvisadoccatmodel)
+        // Add matter document folder (opens addvisadoccatmodel)
 
         $(document).delegate('.add-visa-doc-category', 'click', function (e) {
 

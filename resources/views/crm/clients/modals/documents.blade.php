@@ -1,11 +1,11 @@
 {{-- openfileuploadmodal REMOVED - workflow checklist upload flow dead (no workflow UI with upload triggers; Client Portal refactored) --}}
 
-<!-- Add Personal Document Category Modal -->
+<!-- Add Personal Document Folder Modal -->
 <div class="modal fade addpersonaldoccatmodel custom_modal" id="addpersonaldoccatmodel" tabindex="-1" role="dialog" aria-labelledby="addPersDocCatModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="addPersDocCatModalLabel">Add Personal Document Category</h5>
+				<h5 class="modal-title" id="addPersDocCatModalLabel">Add Personal Document Folder</h5>
 				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
@@ -18,7 +18,7 @@
 					<div class="row">
 						<div class="col-6 col-md-6 col-lg-6">
 							<div class="form-group">
-								<label for="personal_doc_category">Category<span class="span_req">*</span></label>
+								<label for="personal_doc_category">Folder name<span class="span_req">*</span></label>
 								<input type="text" class="form-control" name="personal_doc_category" id="personal_doc_category" data-valid="required">
 
 								<span class="custom-error personal_doc_category_error" role="alert">
@@ -40,12 +40,12 @@
 	</div>
 </div>
 
-<!-- Add matter document category modal (visa_document_types) -->
+<!-- Add matter document folder modal (visa_document_types) -->
 <div class="modal fade addvisadoccatmodel custom_modal" id="addvisadoccatmodel" tabindex="-1" role="dialog" aria-labelledby="addVisaDocCatModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="addVisaDocCatModalLabel">Add Matter Document Category</h5>
+				<h5 class="modal-title" id="addVisaDocCatModalLabel">Add Matter Document Folder</h5>
 				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
@@ -59,7 +59,7 @@
 					<div class="row">
 						<div class="col-6 col-md-6 col-lg-6">
 							<div class="form-group">
-								<label for="visa_doc_category">Category<span class="span_req">*</span></label>
+								<label for="visa_doc_category">Folder name<span class="span_req">*</span></label>
 								<input type="text" class="form-control" name="visa_doc_category" id="visa_doc_category" data-valid="required">
 
 								<span class="custom-error visa_doc_category_error" role="alert">
@@ -81,12 +81,12 @@
 	</div>
 </div>
 
-<!-- Add Nomination Document Category Modal -->
+<!-- Add Nomination Document Folder Modal -->
 <div class="modal fade addnominationdoccatmodel custom_modal" id="addnominationdoccatmodel" tabindex="-1" role="dialog" aria-labelledby="addNominationDocCatModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="addNominationDocCatModalLabel">Add Nomination Document Category</h5>
+				<h5 class="modal-title" id="addNominationDocCatModalLabel">Add Nomination Document Folder</h5>
 				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
@@ -100,7 +100,7 @@
 					<div class="row">
 						<div class="col-6 col-md-6 col-lg-6">
 							<div class="form-group">
-								<label for="nomination_doc_category">Category<span class="span_req">*</span></label>
+								<label for="nomination_doc_category">Folder name<span class="span_req">*</span></label>
 								<input type="text" class="form-control" name="nomination_doc_category" id="nomination_doc_category" data-valid="required">
 
 								<span class="custom-error nomination_doc_category_error" role="alert">

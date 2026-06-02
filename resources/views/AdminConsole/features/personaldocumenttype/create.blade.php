@@ -1,5 +1,5 @@
 @extends('layouts.crm_client_detail')
-@section('title', 'Add Personal Document Category')
+@section('title', 'Add Personal Document Folder')
 
 @section('content')
 
@@ -15,7 +15,7 @@
 					<div class="col-12 col-md-12 col-lg-12">
 						<div class="card">
 							<div class="card-header">
-								<h4>Add personal document category</h4>
+								<h4>Add personal document folder</h4>
 								<div class="card-header-action">
 									<a href="{{ route('adminconsole.features.personaldocumenttype.index') }}" class="btn btn-outline-primary"><i class="fa fa-arrow-left"></i> Back</a>
 								</div>

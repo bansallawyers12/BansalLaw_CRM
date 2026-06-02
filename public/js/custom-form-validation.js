@@ -703,7 +703,6 @@ function customValidate(formName, savetype = '')
 					}
 
                     else if(formName == 'add_pers_doc_cat_form'){
-                        var client_id = $('#add_pers_doc_cat_form input[name="client_id"]').val();
                         var myform = document.getElementById('add_pers_doc_cat_form');
                         var fd = new FormData(myform);
                         $.ajax({
@@ -711,24 +710,28 @@ function customValidate(formName, savetype = '')
                             url:$("form[name="+formName+"]").attr('action'),
                             processData: false,
                             contentType: false,
+                            dataType: 'json',
                             data: fd,
-                            success: function(response){
-                                var obj = response; // Remove $.parseJSON(response)
-                                $('#addpersonaldoccatmodel').modal('hide');
+                            success: function(obj){
                                 $('.popuploader').hide();
                                 if(obj.status){
+                                    $('#addpersonaldoccatmodel').modal('hide');
 									localStorage.setItem('activeTab', 'documentalls');
                                     location.reload();
                                     $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
                                 }else{
                                     $('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
                                 }
+                            },
+                            error: function(xhr){
+                                $('.popuploader').hide();
+                                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Unable to add folder. Please try again.';
+                                $('.custom-error-msg').html('<span class="alert alert-danger">'+msg+'</span>');
                             }
                         });
                     }
 
                     else if(formName == 'add_visa_doc_cat_form'){
-                        var client_id = $('#add_visa_doc_cat_form input[name="client_id"]').val();
                         var myform = document.getElementById('add_visa_doc_cat_form');
                         var fd = new FormData(myform);
                         $.ajax({
@@ -736,24 +739,28 @@ function customValidate(formName, savetype = '')
                             url:$("form[name="+formName+"]").attr('action'),
                             processData: false,
                             contentType: false,
+                            dataType: 'json',
                             data: fd,
-                            success: function(response){
-                                var obj = response; // Remove $.parseJSON(response)
-                                $('#addvisadoccatmodel').modal('hide');
+                            success: function(obj){
                                 $('.popuploader').hide();
                                 if(obj.status){
+                                    $('#addvisadoccatmodel').modal('hide');
 									localStorage.setItem('activeTab', 'documentalls');
                                     location.reload();
                                     $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
                                 }else{
                                     $('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
                                 }
+                            },
+                            error: function(xhr){
+                                $('.popuploader').hide();
+                                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Unable to add folder. Please try again.';
+                                $('.custom-error-msg').html('<span class="alert alert-danger">'+msg+'</span>');
                             }
                         });
                     }
 
                     else if(formName == 'add_nom_doc_cat_form'){
-                        var client_id = $('#add_nom_doc_cat_form input[name="clientid"]').val();
                         var myform = document.getElementById('add_nom_doc_cat_form');
                         var fd = new FormData(myform);
                         $.ajax({
@@ -761,18 +768,23 @@ function customValidate(formName, savetype = '')
                             url:$("form[name="+formName+"]").attr('action'),
                             processData: false,
                             contentType: false,
+                            dataType: 'json',
                             data: fd,
-                            success: function(response){
-                                var obj = response;
-                                $('#addnominationdoccatmodel').modal('hide');
+                            success: function(obj){
                                 $('.popuploader').hide();
                                 if(obj.status){
+                                    $('#addnominationdoccatmodel').modal('hide');
 									localStorage.setItem('activeTab', 'nominationdocuments');
                                     location.reload();
                                     $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
                                 }else{
                                     $('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
                                 }
+                            },
+                            error: function(xhr){
+                                $('.popuploader').hide();
+                                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Unable to add folder. Please try again.';
+                                $('.custom-error-msg').html('<span class="alert alert-danger">'+msg+'</span>');
                             }
                         });
                     }

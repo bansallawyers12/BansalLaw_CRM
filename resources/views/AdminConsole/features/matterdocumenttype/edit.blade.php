@@ -1,5 +1,5 @@
 @extends('layouts.crm_client_detail')
-@section('title', 'Edit Matter Document Category')
+@section('title', 'Edit Matter Document Folder')
 
 @section('content')
 
@@ -16,7 +16,7 @@
 					<div class="col-12 col-md-12 col-lg-12">
 						<div class="card">
 							<div class="card-header">
-								<h4>Edit matter document category</h4>
+								<h4>Edit matter document folder</h4>
 								<div class="card-header-action">
 									<a href="{{ route('adminconsole.features.matterdocumenttype.index') }}" class="btn btn-outline-primary"><i class="fa fa-arrow-left"></i> Back</a>
 								</div>

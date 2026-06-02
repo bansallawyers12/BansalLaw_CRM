@@ -62,7 +62,7 @@ class MatterDocumentTypeController extends Controller
 			}
 			else
 			{
-				return redirect()->route('adminconsole.features.matterdocumenttype.index')->with('success', 'Matter document category created successfully.');
+				return redirect()->route('adminconsole.features.matterdocumenttype.index')->with('success', 'Matter document folder created successfully.');
 			}
 		}
         return view('AdminConsole.features.matterdocumenttype.create');
@@ -81,7 +81,7 @@ class MatterDocumentTypeController extends Controller
 				$fetchedData = VisaDocumentType::find($id);
 				return view('AdminConsole.features.matterdocumenttype.edit', compact(['fetchedData']));
 			} else {
-				return redirect()->route('adminconsole.features.matterdocumenttype.index')->with('error', 'Matter document category not found.');
+				return redirect()->route('adminconsole.features.matterdocumenttype.index')->with('error', 'Matter document folder not found.');
 			}
 		} else {
 			return redirect()->route('adminconsole.features.matterdocumenttype.index')->with('error', config('constants.unauthorized'));
@@ -102,7 +102,7 @@ class MatterDocumentTypeController extends Controller
 
         $obj = VisaDocumentType::find($id);
         if (!$obj) {
-			return redirect()->route('adminconsole.features.matterdocumenttype.index')->with('error', 'Matter document category not found.');
+			return redirect()->route('adminconsole.features.matterdocumenttype.index')->with('error', 'Matter document folder not found.');
 		}
         
         $obj->title = @$requestData['title'];
@@ -111,7 +111,7 @@ class MatterDocumentTypeController extends Controller
         if(!$saved) {
 			return redirect()->back()->with('error', config('constants.server_error'));
 		} else {
-			return redirect()->route('adminconsole.features.matterdocumenttype.index')->with('success', 'Matter document category updated successfully.');
+			return redirect()->route('adminconsole.features.matterdocumenttype.index')->with('success', 'Matter document folder updated successfully.');
 		}
     }
 

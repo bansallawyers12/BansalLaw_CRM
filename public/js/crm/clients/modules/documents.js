@@ -1,5 +1,5 @@
 /**
- * Documents module - Category updates, document rename, download
+ * Documents module - Folder updates, document rename, download
  * Extracted from detail-main.js - Phase 3d refactoring.
  * Requires: jQuery, ClientDetailConfig. Uses: previewFile (global)
  */
@@ -8,104 +8,132 @@
     if (!$) return;
 
     $(document).ready(function() {
-        // ---- Update Personal Document Category ----
+        function folderUpdateErrorMessage(xhr, fallback) {
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                return xhr.responseJSON.message;
+            }
+            if (xhr.responseJSON && xhr.responseJSON.errors) {
+                var firstKey = Object.keys(xhr.responseJSON.errors)[0];
+                if (firstKey && xhr.responseJSON.errors[firstKey][0]) {
+                    return xhr.responseJSON.errors[firstKey][0];
+                }
+            }
+            return fallback || 'Unable to update folder.';
+        }
+
+        // ---- Update Personal Document Folder ----
         $(document).on('click', '.update-personal-cat-title', function() {
             var id = $(this).data('id');
-            var newTitle = prompt('Enter new title for the category:');
-            if (newTitle) {
-                $.ajax({
-                    url: window.ClientDetailConfig.urls.updatePersonalCategory,
-                    method: 'POST',
-                    data: {
-                        _token: $('meta[name="csrf-token"]').attr('content'),
-                        id: id,
-                        title: newTitle
-                    },
-                    success: function(response) {
-                        if (response.status) {
-                            alert(response.message);
-                            location.reload();
-                        } else {
-                            alert(response.message);
-                        }
-                    }
-                });
+            var newTitle = prompt('Enter new title for the folder:');
+            newTitle = (newTitle || '').trim();
+            if (!newTitle) {
+                return;
             }
+            $.ajax({
+                url: window.ClientDetailConfig.urls.updatePersonalCategory,
+                method: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content'),
+                    id: id,
+                    title: newTitle
+                },
+                success: function(response) {
+                    if (response.status) {
+                        alert(response.message);
+                        location.reload();
+                    } else {
+                        alert(response.message || 'Unable to update folder.');
+                    }
+                },
+                error: function(xhr) {
+                    alert(folderUpdateErrorMessage(xhr));
+                }
+            });
         });
 
-        // ---- Update Visa Document Category ----
+        // ---- Update Matter Document Folder ----
         $(document).on('click', '.update-visa-cat-title', function() {
             var id = $(this).data('id');
-            var newTitle = prompt('Enter new title for the category:');
-            if (newTitle) {
-                $.ajax({
-                    url: window.ClientDetailConfig.urls.updateVisaCategory,
-                    method: 'POST',
-                    data: {
-                        _token: $('meta[name="csrf-token"]').attr('content'),
-                        id: id,
-                        title: newTitle
-                    },
-                    success: function(response) {
-                        if (response.status) {
-                            alert(response.message);
-                            location.reload();
-                        } else {
-                            alert(response.message);
-                        }
-                    }
-                });
+            var newTitle = prompt('Enter new title for the folder:');
+            newTitle = (newTitle || '').trim();
+            if (!newTitle) {
+                return;
             }
+            $.ajax({
+                url: window.ClientDetailConfig.urls.updateVisaCategory,
+                method: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content'),
+                    id: id,
+                    title: newTitle
+                },
+                success: function(response) {
+                    if (response.status) {
+                        alert(response.message);
+                        location.reload();
+                    } else {
+                        alert(response.message || 'Unable to update folder.');
+                    }
+                },
+                error: function(xhr) {
+                    alert(folderUpdateErrorMessage(xhr));
+                }
+            });
         });
 
-        // ---- Update Nomination Document Category ----
+        // ---- Update Nomination Document Folder ----
         $(document).on('click', '.update-nomination-cat-title', function() {
             var id = $(this).data('id');
-            var newTitle = prompt('Enter new title for the category:');
-            if (newTitle) {
-                var url = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.updateNominationCategory)
-                    ? window.ClientDetailConfig.urls.updateNominationCategory
-                    : '';
-                if (!url) {
-                    alert('Nomination category update URL is not configured.');
-                    return;
-                }
-                $.ajax({
-                    url: url,
-                    method: 'POST',
-                    data: {
-                        _token: $('meta[name="csrf-token"]').attr('content'),
-                        id: id,
-                        title: newTitle
-                    },
-                    success: function(response) {
-                        if (response.status) {
-                            alert(response.message);
-                            location.reload();
-                        } else {
-                            alert(response.message);
-                        }
-                    }
-                });
+            var newTitle = prompt('Enter new title for the folder:');
+            newTitle = (newTitle || '').trim();
+            if (!newTitle) {
+                return;
             }
+            var url = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.updateNominationCategory)
+                ? window.ClientDetailConfig.urls.updateNominationCategory
+                : '';
+            if (!url) {
+                alert('Nomination folder update URL is not configured.');
+                return;
+            }
+            $.ajax({
+                url: url,
+                method: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content'),
+                    id: id,
+                    title: newTitle
+                },
+                success: function(response) {
+                    if (response.status) {
+                        alert(response.message);
+                        location.reload();
+                    } else {
+                        alert(response.message || 'Unable to update folder.');
+                    }
+                },
+                error: function(xhr) {
+                    alert(folderUpdateErrorMessage(xhr));
+                }
+            });
         });
 
-        // ---- Delete Personal Document Category ----
+        // ---- Delete Personal Document Folder ----
         $(document).on('click', '.delete-personal-cat-title', function(e) {
             e.preventDefault();
             var id = $(this).data('id');
-            var title = $(this).data('title') || 'this category';
-            var warningMessage = '⚠️ WARNING: You are about to delete the category "' + title + '"\n\n' +
-                'This action will permanently remove the category from the system.\n\n' +
+            var title = $(this).data('title') || 'this folder';
+            var warningMessage = '⚠️ WARNING: You are about to delete the folder "' + title + '"\n\n' +
+                'This action will permanently remove the folder from the system.\n\n' +
                 'Requirements:\n' +
-                '• Category must be empty (no documents)\n' +
+                '• Folder must be empty (no documents)\n' +
                 '• Only superadmin can perform this action\n\n' +
                 'This action CANNOT be undone!\n\n' +
                 'Do you want to proceed?';
             if (confirm(warningMessage)) {
                 var confirmMessage = '⚠️ FINAL CONFIRMATION\n\n' +
                     'Are you absolutely sure you want to delete "' + title + '"?\n\n' +
-                    'This will permanently delete the category.\n\n' +
+                    'This will permanently delete the folder.\n\n' +
                     'Click OK to delete or Cancel to abort.';
                 if (confirm(confirmMessage)) {
                     $.ajax({
@@ -120,11 +148,11 @@
                                 alert('✓ Success: ' + response.message);
                                 location.reload();
                             } else {
-                                alert('✗ Error: ' + (response.message || 'Failed to delete category.'));
+                                alert('✗ Error: ' + (response.message || 'Failed to delete folder.'));
                             }
                         },
                         error: function(xhr) {
-                            var errorMsg = 'An error occurred while deleting the category.';
+                            var errorMsg = 'An error occurred while deleting the folder.';
                             if (xhr.responseJSON && xhr.responseJSON.message) {
                                 errorMsg = xhr.responseJSON.message;
                             }

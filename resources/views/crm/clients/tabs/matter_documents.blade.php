@@ -117,7 +117,7 @@
                             </nav>
                             <div style="display: flex; gap: 10px; align-items: center;">
                                 <button type="button" class="btn add-visa-doc-category-btn add-visa-doc-category" data-type="visa" data-categoryid="">
-                                    <i class="fas fa-plus"></i> Add Category
+                                    <i class="fas fa-plus"></i> Add Folder
                                 </button>
                                 <!-- Add link to Not Used Documents -->
                                 <button class="btn btn-secondary client-nav-button" data-tab="notuseddocuments">
@@ -460,19 +460,19 @@
                                 </select>
                             </div>
                             
-                            <!-- For Personal Documents: Show Categories -->
+                            <!-- For Personal Documents: show folders -->
                             <div class="form-group" id="moveVisaPersonalCategoryContainer" style="display: none;">
-                                <label>Select Personal Category:</label>
+                                <label>Select Personal Folder:</label>
                                 <select id="moveVisaPersonalCategoryId" class="form-control">
-                                    <option value="">-- Select Category --</option>
+                                    <option value="">-- Select Folder --</option>
                                 </select>
                             </div>
                             
-                            <!-- For matter documents: show categories (like personal documents) -->
+                            <!-- For matter documents: show folders -->
                             <div class="form-group" id="moveVisaVisaCategoryContainer" style="display: none;">
-                                <label>Select matter document category:</label>
+                                <label>Select matter document folder:</label>
                                 <select id="moveVisaVisaCategoryId" class="form-control">
-                                    <option value="">-- Select Category --</option>
+                                    <option value="">-- Select Folder --</option>
                                 </select>
                             </div>
                             
@@ -626,8 +626,8 @@
                     $('#moveVisaTargetType').val('');
                     $('#moveVisaPersonalCategoryContainer').hide();
                     $('#moveVisaVisaCategoryContainer').hide();
-                    $('#moveVisaPersonalCategoryId').empty().append('<option value="">-- Select Category --</option>');
-                    $('#moveVisaVisaCategoryId').empty().append('<option value="">-- Select Category --</option>');
+                    $('#moveVisaPersonalCategoryId').empty().append('<option value="">-- Select Folder --</option>');
+                    $('#moveVisaVisaCategoryId').empty().append('<option value="">-- Select Folder --</option>');
                     $('#moveVisaDocumentError').hide();
                     
                     // Show modal
@@ -658,13 +658,13 @@
                             }
                         });
                         
-                        $('#moveVisaPersonalCategoryId').empty().append('<option value="">-- Select Category --</option>');
+                        $('#moveVisaPersonalCategoryId').empty().append('<option value="">-- Select Folder --</option>');
                         if (categories.length > 0) {
                             categories.forEach(cat => {
                                 $('#moveVisaPersonalCategoryId').append(`<option value="${cat.id}">${cat.title}</option>`);
                             });
                         } else {
-                            $('#moveVisaPersonalCategoryId').append('<option value="">No categories found</option>');
+                            $('#moveVisaPersonalCategoryId').append('<option value="">No folders found</option>');
                         }
                         $('#moveVisaPersonalCategoryContainer').show();
                         
@@ -679,13 +679,13 @@
                             }
                         });
                         
-                        $('#moveVisaVisaCategoryId').empty().append('<option value="">-- Select Category --</option>');
+                        $('#moveVisaVisaCategoryId').empty().append('<option value="">-- Select Folder --</option>');
                         if (categories.length > 0) {
                             categories.forEach(cat => {
                                 $('#moveVisaVisaCategoryId').append(`<option value="${cat.id}">${cat.title}</option>`);
                             });
                         } else {
-                            $('#moveVisaVisaCategoryId').append('<option value="">No categories found</option>');
+                            $('#moveVisaVisaCategoryId').append('<option value="">No folders found</option>');
                         }
                         $('#moveVisaVisaCategoryContainer').show();
                     }
@@ -740,13 +740,13 @@
                     if (targetType === 'personal') {
                         targetId = $('#moveVisaPersonalCategoryId').val();
                         if (!targetId) {
-                            $error.text('Please select a personal category').show();
+                            $error.text('Please select a personal folder').show();
                             return;
                         }
                     } else if (targetType === 'matter') {
                         targetId = $('#moveVisaVisaCategoryId').val();
                         if (!targetId) {
-                            $error.text('Please select a matter document category').show();
+                            $error.text('Please select a matter document folder').show();
                             return;
                         }
                     }

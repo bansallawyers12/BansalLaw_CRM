@@ -140,7 +140,7 @@ class ClientDocumentsController extends Controller
             
             // Validate folder_name
             if(empty($request->folder_name)) {
-                $response['message'] = 'Document category is required';
+                $response['message'] = 'Document folder is required';
                 return response()->json($response);
             }
 
@@ -199,7 +199,7 @@ class ClientDocumentsController extends Controller
                     if($request->type == 'client'){
                         $checklistCount = count($checklistArray);
                         $subject = "added Personal Checklist";
-                        $description = "<p>Added {$checklistCount} document checklist items in '{$request->folder_name}' category: " . implode(', ', array_slice($checklistArray, 0, 3)) . ($checklistCount > 3 ? '...' : '') . "</p>";
+                        $description = "<p>Added {$checklistCount} document checklist items in '{$request->folder_name}' folder: " . implode(', ', array_slice($checklistArray, 0, 3)) . ($checklistCount > 3 ? '...' : '') . "</p>";
                         
                         $this->logClientActivity(
                             $clientid,
@@ -557,7 +557,7 @@ class ClientDocumentsController extends Controller
                             $subject = !empty($matterRef) 
                                 ? "uploaded {$checklistName} - {$matterRef}"
                                 : "uploaded {$checklistName}";
-                            $description = "<p>Uploaded document in '{$request->doccategory}' category</p>";
+                            $description = "<p>Uploaded document in '{$request->doccategory}' folder</p>";
                             
                             $this->logClientActivity(
                                 $clientid,
@@ -1766,7 +1766,7 @@ class ClientDocumentsController extends Controller
                 // Verify target category exists
                 $category = \App\Models\PersonalDocumentType::find($targetId);
                 if (!$category) {
-                    $response['message'] = 'Target category not found';
+                    $response['message'] = 'Target folder not found';
                     return response()->json($response);
                 }
                 
@@ -1783,7 +1783,7 @@ class ClientDocumentsController extends Controller
                 // Get the category to find its matter
                 $category = \App\Models\VisaDocumentType::find($targetId);
                 if (!$category) {
-                    $response['message'] = 'Target matter document category not found';
+                    $response['message'] = 'Target matter document folder not found';
                     return response()->json($response);
                 }
                 
@@ -1799,7 +1799,7 @@ class ClientDocumentsController extends Controller
             } elseif ($targetType === 'nomination') {
                 $category = NominationDocumentType::find($targetId);
                 if (!$category) {
-                    $response['message'] = 'Target nomination category not found';
+                    $response['message'] = 'Target nomination folder not found';
                     return response()->json($response);
                 }
 
@@ -1821,7 +1821,7 @@ class ClientDocumentsController extends Controller
                 $oldLane = $oldType === 'personal' ? 'Personal' : ($oldType === 'nomination' ? 'Nomination' : 'Visa');
                 $newLane = $targetType === 'personal' ? 'Personal' : ($targetType === 'nomination' ? 'Nomination' : 'Visa');
                 $oldLocation = $oldType === 'personal'
-                    ? ($oldFolderName ? "Personal (Category: {$oldFolderName})" : 'Personal')
+                    ? ($oldFolderName ? "Personal (Folder: {$oldFolderName})" : 'Personal')
                     : ($oldChecklistName ? "{$oldLane} ({$oldChecklistName})" : $oldLane);
 
                 $newLocation = $targetType === 'personal' ? "Personal ({$targetName})" : "{$newLane} ({$targetName})";
@@ -2517,9 +2517,15 @@ class ClientDocumentsController extends Controller
         $request->merge(['personal_doc_category' => $categoryTitle]);
 
         // Basic validation
-        $validator = Validator::make($request->all(), [
-            'personal_doc_category' => 'required|string|max:255',
-        ]);
+        $validator = Validator::make(
+            $request->all(),
+            ['personal_doc_category' => 'required|string|max:255'],
+            [
+                'personal_doc_category.required' => 'Folder name is required.',
+                'personal_doc_category.max' => 'Folder name may not be greater than 255 characters.',
+            ],
+            ['personal_doc_category' => 'folder name']
+        );
 
         if ($validator->fails()) {
             return response()->json([
@@ -2543,7 +2549,7 @@ class ClientDocumentsController extends Controller
         if ($existsForNullClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists globally (for NULL client).'
+                'message' => 'This folder name already exists as a system default folder.'
             ]);
         }
 
@@ -2556,7 +2562,7 @@ class ClientDocumentsController extends Controller
         if ($existsForSameClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists for this client.'
+                'message' => 'This folder already exists for this client.'
             ]);
         }
 
@@ -2569,12 +2575,12 @@ class ClientDocumentsController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Personal Document Category added successfully.'
+                'message' => 'Personal document folder added successfully.'
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Error adding category: ' . $e->getMessage()
+                'message' => 'Error adding folder: ' . $e->getMessage()
             ]);
         }
     }
@@ -2599,7 +2605,7 @@ class ClientDocumentsController extends Controller
 
         // Check if the category is client-generated
         if ($category->client_id === null) {
-            return response()->json(['success' => false, 'message' => 'Only client-generated categories can be updated.']);
+            return response()->json(['status' => false, 'message' => 'Only client-generated folders can be updated.']);
         }
 
         $categoryTitle = trim($request->input('title'));
@@ -2613,7 +2619,7 @@ class ClientDocumentsController extends Controller
         if ($existsForNullClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists globally for all client.Pls try other.'
+                'message' => 'This folder already exists globally for all clients. Please try another name.'
             ]);
         }
 
@@ -2627,7 +2633,7 @@ class ClientDocumentsController extends Controller
         if ($existsForSameClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists for this client.Pls try other.'
+                'message' => 'This folder already exists for this client. Please try another name.'
             ]);
         }
 
@@ -2635,9 +2641,9 @@ class ClientDocumentsController extends Controller
             $category->title = $categoryTitle;
             $category->save();
 
-            return response()->json(['status' => true,'message' => 'This category is updated successfully.']);
+            return response()->json(['status' => true,'message' => 'Folder updated successfully.']);
         } catch (\Exception $e) {
-            return response()->json(['status' => false, 'message' => 'Error updating category: ' . $e->getMessage()]);
+            return response()->json(['status' => false, 'message' => 'Error updating folder: ' . $e->getMessage()]);
         }
     }
 
@@ -2652,9 +2658,15 @@ class ClientDocumentsController extends Controller
         $request->merge(['visa_doc_category' => $categoryTitle]);
 
         // Basic validation
-        $validator = Validator::make($request->all(), [
-            'visa_doc_category' => 'required|string|max:255',
-        ]);
+        $validator = Validator::make(
+            $request->all(),
+            ['visa_doc_category' => 'required|string|max:255'],
+            [
+                'visa_doc_category.required' => 'Folder name is required.',
+                'visa_doc_category.max' => 'Folder name may not be greater than 255 characters.',
+            ],
+            ['visa_doc_category' => 'folder name']
+        );
 
         if ($validator->fails()) {
             return response()->json([
@@ -2679,7 +2691,7 @@ class ClientDocumentsController extends Controller
         if ($existsForNullClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists globally.'
+                'message' => 'This folder already exists globally.'
             ]);
         }
 
@@ -2692,7 +2704,7 @@ class ClientDocumentsController extends Controller
         if ($existsForSameClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists for this client matter.'
+                'message' => 'This folder already exists for this client matter.'
             ]);
         }
 
@@ -2706,12 +2718,12 @@ class ClientDocumentsController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Matter document category added successfully.'
+                'message' => 'Matter document folder added successfully.'
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Error adding category: ' . $e->getMessage()
+                'message' => 'Error adding folder: ' . $e->getMessage()
             ]);
         }
     }
@@ -2730,7 +2742,7 @@ class ClientDocumentsController extends Controller
 
         // Check if the category is client-generated
         if ($category->client_matter_id === null) {
-            return response()->json(['success' => false, 'message' => 'Only client-matter-generated categories can be updated.']);
+            return response()->json(['status' => false, 'message' => 'Only client-matter-generated folders can be updated.']);
         }
 
         if ($category->client_id !== null && $category->client_id !== '' && is_numeric($category->client_id)) {
@@ -2750,7 +2762,7 @@ class ClientDocumentsController extends Controller
         if ($existsForNullClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists globally for all client matters.Pls try other.'
+                'message' => 'This folder already exists globally for all client matters. Please try another name.'
             ]);
         }
 
@@ -2764,7 +2776,7 @@ class ClientDocumentsController extends Controller
         if ($existsForSameClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists for this client matter.'
+                'message' => 'This folder already exists for this client matter.'
             ]);
         }
 
@@ -2774,12 +2786,12 @@ class ClientDocumentsController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Matter document category updated successfully.'
+                'message' => 'Matter document folder updated successfully.'
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Error updating category: ' . $e->getMessage()
+                'message' => 'Error updating folder: ' . $e->getMessage()
             ]);
         }
     }
@@ -2792,9 +2804,15 @@ class ClientDocumentsController extends Controller
 
         $request->merge(['nomination_doc_category' => $categoryTitle]);
 
-        $validator = Validator::make($request->all(), [
-            'nomination_doc_category' => 'required|string|max:255',
-        ]);
+        $validator = Validator::make(
+            $request->all(),
+            ['nomination_doc_category' => 'required|string|max:255'],
+            [
+                'nomination_doc_category.required' => 'Folder name is required.',
+                'nomination_doc_category.max' => 'Folder name may not be greater than 255 characters.',
+            ],
+            ['nomination_doc_category' => 'folder name']
+        );
 
         if ($validator->fails()) {
             return response()->json([
@@ -2818,7 +2836,7 @@ class ClientDocumentsController extends Controller
         if ($existsForNullClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists globally.',
+                'message' => 'This folder already exists globally.',
             ]);
         }
 
@@ -2830,7 +2848,7 @@ class ClientDocumentsController extends Controller
         if ($existsForSameClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists for this client matter.',
+                'message' => 'This folder already exists for this client matter.',
             ]);
         }
 
@@ -2844,12 +2862,12 @@ class ClientDocumentsController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Nomination document category added successfully.',
+                'message' => 'Nomination document folder added successfully.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Error adding category: '.$e->getMessage(),
+                'message' => 'Error adding folder: '.$e->getMessage(),
             ]);
         }
     }
@@ -2865,7 +2883,7 @@ class ClientDocumentsController extends Controller
         $clientMatterId = $category->client_matter_id;
 
         if ($category->client_matter_id === null) {
-            return response()->json(['success' => false, 'message' => 'Only client-matter-generated categories can be updated.']);
+            return response()->json(['status' => false, 'message' => 'Only client-matter-generated folders can be updated.']);
         }
 
         if ($category->client_id !== null && $category->client_id !== '' && is_numeric($category->client_id)) {
@@ -2885,7 +2903,7 @@ class ClientDocumentsController extends Controller
         if ($existsForNullClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists globally for all client matters.Pls try other.',
+                'message' => 'This folder already exists globally for all client matters. Please try another name.',
             ]);
         }
 
@@ -2898,7 +2916,7 @@ class ClientDocumentsController extends Controller
         if ($existsForSameClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists for this client matter.',
+                'message' => 'This folder already exists for this client matter.',
             ]);
         }
 
@@ -2908,12 +2926,12 @@ class ClientDocumentsController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Nomination document category updated successfully.',
+                'message' => 'Nomination document folder updated successfully.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Error updating category: '.$e->getMessage(),
+                'message' => 'Error updating folder: '.$e->getMessage(),
             ]);
         }
     }
@@ -2927,7 +2945,7 @@ class ClientDocumentsController extends Controller
             if (! ($viewer instanceof Staff && $viewer->hasEffectiveSuperAdminPrivileges())) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Only superadmin can delete categories.'
+                    'message' => 'Only superadmin can delete folders.'
                 ]);
             }
 
@@ -2945,7 +2963,7 @@ class ClientDocumentsController extends Controller
             if ($documentCount > 0) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Cannot delete category. It contains ' . $documentCount . ' document(s). Please remove all documents first.'
+                    'message' => 'Cannot delete folder. It contains ' . $documentCount . ' document(s). Please remove all documents first.'
                 ]);
             }
 
@@ -2955,7 +2973,7 @@ class ClientDocumentsController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Category "' . $categoryTitle . '" deleted successfully.'
+                'message' => 'Folder "' . $categoryTitle . '" deleted successfully.'
             ]);
 
         } catch (\Exception $e) {
@@ -2968,7 +2986,7 @@ class ClientDocumentsController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => 'Error deleting category: ' . $e->getMessage()
+                'message' => 'Error deleting folder: ' . $e->getMessage()
             ]);
         }
     }

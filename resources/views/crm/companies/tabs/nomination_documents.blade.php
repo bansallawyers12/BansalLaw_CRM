@@ -102,7 +102,7 @@
                             </nav>
                             <div style="display: flex; gap: 10px; align-items: center;">
                                 <button type="button" class="btn add-nomination-doc-category-btn add-nomination-doc-category" data-type="nomination" data-categoryid="">
-                                    <i class="fas fa-plus"></i> Add Category
+                                    <i class="fas fa-plus"></i> Add Folder
                                 </button>
                                 <!-- Add link to Not Used Documents -->
                                 <button class="btn btn-secondary client-nav-button" data-tab="notuseddocuments">
@@ -444,24 +444,24 @@
                             
                             <!-- For Personal Documents: Show Categories -->
                             <div class="form-group" id="moveNominationPersonalCategoryContainer" style="display: none;">
-                                <label>Select Personal Category:</label>
+                                <label>Select Personal Folder:</label>
                                 <select id="moveNominationPersonalCategoryId" class="form-control">
-                                    <option value="">-- Select Category --</option>
+                                    <option value="">-- Select Folder --</option>
                                 </select>
                             </div>
                             
                             <!-- For matter documents: show categories (like personal documents) -->
                             <div class="form-group" id="moveNominationVisaCategoryContainer" style="display: none;">
-                                <label>Select matter document category:</label>
+                                <label>Select matter document folder:</label>
                                 <select id="moveNominationVisaCategoryId" class="form-control">
-                                    <option value="">-- Select Category --</option>
+                                    <option value="">-- Select Folder --</option>
                                 </select>
                             </div>
 
                             <div class="form-group" id="moveNominationNominationCategoryContainer" style="display: none;">
-                                <label>Select Nomination Category:</label>
+                                <label>Select Nomination Folder:</label>
                                 <select id="moveNominationNominationCategoryId" class="form-control">
-                                    <option value="">-- Select Category --</option>
+                                    <option value="">-- Select Folder --</option>
                                 </select>
                             </div>
                             
@@ -616,9 +616,9 @@
                     $('#moveNominationPersonalCategoryContainer').hide();
                     $('#moveNominationVisaCategoryContainer').hide();
                     $('#moveNominationNominationCategoryContainer').hide();
-                    $('#moveNominationPersonalCategoryId').empty().append('<option value="">-- Select Category --</option>');
-                    $('#moveNominationVisaCategoryId').empty().append('<option value="">-- Select Category --</option>');
-                    $('#moveNominationNominationCategoryId').empty().append('<option value="">-- Select Category --</option>');
+                    $('#moveNominationPersonalCategoryId').empty().append('<option value="">-- Select Folder --</option>');
+                    $('#moveNominationVisaCategoryId').empty().append('<option value="">-- Select Folder --</option>');
+                    $('#moveNominationNominationCategoryId').empty().append('<option value="">-- Select Folder --</option>');
                     $('#moveNominationDocumentError').hide();
                     
                     // Show modal
@@ -650,13 +650,13 @@
                             }
                         });
                         
-                        $('#moveNominationPersonalCategoryId').empty().append('<option value="">-- Select Category --</option>');
+                        $('#moveNominationPersonalCategoryId').empty().append('<option value="">-- Select Folder --</option>');
                         if (categories.length > 0) {
                             categories.forEach(cat => {
                                 $('#moveNominationPersonalCategoryId').append(`<option value="${cat.id}">${cat.title}</option>`);
                             });
                         } else {
-                            $('#moveNominationPersonalCategoryId').append('<option value="">No categories found</option>');
+                            $('#moveNominationPersonalCategoryId').append('<option value="">No folders found</option>');
                         }
                         $('#moveNominationPersonalCategoryContainer').show();
                         
@@ -670,13 +670,13 @@
                             }
                         });
                         const finishVisaCats = function(cats) {
-                            $('#moveNominationVisaCategoryId').empty().append('<option value="">-- Select Category --</option>');
+                            $('#moveNominationVisaCategoryId').empty().append('<option value="">-- Select Folder --</option>');
                             if (cats.length > 0) {
                                 cats.forEach(cat => {
                                     $('#moveNominationVisaCategoryId').append(`<option value="${cat.id}">${cat.title}</option>`);
                                 });
                             } else {
-                                $('#moveNominationVisaCategoryId').append('<option value="">No categories found</option>');
+                                $('#moveNominationVisaCategoryId').append('<option value="">No folders found</option>');
                             }
                             $('#moveNominationVisaCategoryContainer').show();
                         };
@@ -707,13 +707,13 @@
                                 categories.push({ id: catId, title: catTitle });
                             }
                         });
-                        $('#moveNominationNominationCategoryId').empty().append('<option value="">-- Select Category --</option>');
+                        $('#moveNominationNominationCategoryId').empty().append('<option value="">-- Select Folder --</option>');
                         if (categories.length > 0) {
                             categories.forEach(cat => {
                                 $('#moveNominationNominationCategoryId').append(`<option value="${cat.id}">${cat.title}</option>`);
                             });
                         } else {
-                            $('#moveNominationNominationCategoryId').append('<option value="">No categories found</option>');
+                            $('#moveNominationNominationCategoryId').append('<option value="">No folders found</option>');
                         }
                         $('#moveNominationNominationCategoryContainer').show();
                     }
@@ -768,19 +768,19 @@
                     if (targetType === 'personal') {
                         targetId = $('#moveNominationPersonalCategoryId').val();
                         if (!targetId) {
-                            $error.text('Please select a personal category').show();
+                            $error.text('Please select a personal folder').show();
                             return;
                         }
                     } else if (targetType === 'matter') {
                         targetId = $('#moveNominationVisaCategoryId').val();
                         if (!targetId) {
-                            $error.text('Please select a visa category').show();
+                            $error.text('Please select a matter document folder').show();
                             return;
                         }
                     } else if (targetType === 'nomination') {
                         targetId = $('#moveNominationNominationCategoryId').val();
                         if (!targetId) {
-                            $error.text('Please select a nomination category').show();
+                            $error.text('Please select a nomination folder').show();
                             return;
                         }
                     }

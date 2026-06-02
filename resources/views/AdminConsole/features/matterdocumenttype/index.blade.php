@@ -1,5 +1,5 @@
 @extends('layouts.crm_client_detail')
-@section('title', 'Matter Document Category')
+@section('title', 'Matter Document Folders')
 
 @section('content')
 
@@ -19,7 +19,7 @@
 				<div class="col-9 col-md-9 col-lg-9">
 					<div class="card">
 						<div class="card-header">
-							<h4>Matter document category</h4>
+							<h4>Matter document folders</h4>
 							<div class="card-header-action">
 								<a href="{{route('adminconsole.features.matterdocumenttype.create')}}" class="btn btn-primary"><i class="fa fa-plus"></i> Add</a>
 							</div>
