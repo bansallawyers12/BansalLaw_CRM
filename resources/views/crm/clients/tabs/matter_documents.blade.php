@@ -1004,6 +1004,24 @@
                 let currentVisaCategoryId = null;
                 let currentVisaMatterId = <?= $client_selected_matter_id1 ?? 'null' ?>;
                 let currentVisaClientId = <?= $fetchedData->id ?>;
+
+                function resetVisaBulkUploadFileInput(categoryId) {
+                    const input = document.querySelector(
+                        '#bulk-upload-visa-' + categoryId + ' .bulk-upload-file-input-visa[data-categoryid="' + categoryId + '"]'
+                    );
+                    if (input) {
+                        input.value = '';
+                    }
+                }
+
+                function resetVisaBulkUploadSelection(categoryId) {
+                    bulkUploadVisaFiles[categoryId] = [];
+                    resetVisaBulkUploadFileInput(categoryId);
+                    const container = $('#bulk-upload-visa-' + categoryId);
+                    container.find('.bulk-upload-file-list-visa').hide();
+                    container.find('.bulk-upload-files-container-visa').empty();
+                    container.find('.file-count-visa').text('0');
+                }
                 
                 // Toggle bulk upload dropzone for visa
                 $(document).on('click', '.bulk-upload-toggle-btn-visa', function() {
@@ -1018,12 +1036,14 @@
                     if (dropzoneContainer.is(':visible')) {
                         dropzoneContainer.slideUp();
                         $(this).html('<i class="fas fa-upload"></i> Bulk Upload');
-                        // Clear files if closing
-                        bulkUploadVisaFiles[categoryId] = [];
-                        dropzoneContainer.find('.bulk-upload-file-list-visa').hide();
-                        dropzoneContainer.find('.bulk-upload-files-container-visa').empty();
-                        dropzoneContainer.find('.file-count-visa').text('0');
+                        resetVisaBulkUploadSelection(categoryId);
+                        if (typeof window.hideBulkUploadModal === 'function') {
+                            window.hideBulkUploadModal();
+                        }
                     } else {
+                        if (typeof window.hideBulkUploadModal === 'function') {
+                            window.hideBulkUploadModal();
+                        }
                         dropzoneContainer.slideDown();
                         $(this).html('<i class="fas fa-times"></i> Close');
                         currentVisaCategoryId = categoryId;
@@ -1392,7 +1412,7 @@
                     tableContainer.html(html);
                     
                     // Handle new checklist option
-                    $(document).off('change', '.checklist-select').on('change', '.checklist-select', function() {
+                    $(document).off('change.bulkUploadMapping', '.checklist-select').on('change.bulkUploadMapping', '.checklist-select', function() {
                         const fileIndex = $(this).data('file-index');
                         const value = $(this).val();
                         const newInput = $('.new-checklist-input[data-file-index="' + fileIndex + '"]');
@@ -1411,7 +1431,7 @@
                     });
                     
                     // Handle remove file button for visa documents
-                    $(document).off('click', '.remove-bulk-file').on('click', '.remove-bulk-file', function(e) {
+                    $(document).off('click.bulkUploadRemove', '.remove-bulk-file').on('click.bulkUploadRemove', '.remove-bulk-file', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
                         
@@ -1425,7 +1445,7 @@
                         }
                         
                         // Find and remove the file from the array by matching file name
-                        const fileArray = bulkUploadVisaFiles[categoryId];
+                        const fileArray = bulkUploadVisaFiles[categoryId] || [];
                         const fileIndex = fileArray.findIndex(f => f.name === fileName);
                         
                         if (fileIndex > -1) {
@@ -1442,9 +1462,10 @@
                         
                         // If no files left, hide the file list and modal
                         if (remainingCount === 0) {
-                            $('#bulk-upload-mapping-modal').hide();
-                            container.find('.bulk-upload-file-list-visa').hide();
-                            container.find('.bulk-upload-files-container-visa').empty();
+                            if (typeof window.hideBulkUploadModal === 'function') {
+                                window.hideBulkUploadModal();
+                            }
+                            resetVisaBulkUploadSelection(categoryId);
                             alert('All files have been removed. Please select files again to upload.');
                         } else {
                             // Reindex remaining rows to maintain correct file indices
@@ -1457,10 +1478,12 @@
                         }
                     });
                     
-                    // Update the confirm button to handle visa upload
-                    $('#confirm-bulk-upload').off('click').on('click', function() {
-                        confirmVisaBulkUpload();
-                    });
+                    window._bulkUploadConfirmFn = confirmVisaBulkUpload;
+                    window._bulkUploadOnCancel = function() {
+                        if (currentVisaCategoryId) {
+                            resetVisaBulkUploadSelection(currentVisaCategoryId);
+                        }
+                    };
                     
                     modal.show();
                 }
@@ -1469,7 +1492,11 @@
                 function confirmVisaBulkUpload() {
                     const categoryId = currentVisaCategoryId;
                     const matterId = currentVisaMatterId;
-                    const files = bulkUploadVisaFiles[categoryId];
+                    const files = bulkUploadVisaFiles[categoryId] || [];
+                    if (!files.length) {
+                        alert('No files selected. Please select files to upload.');
+                        return;
+                    }
                     const mappings = [];
                     const autoCreate = $('#auto-create-unmatched').is(':checked');
                     
@@ -1609,6 +1636,7 @@
                                 alert(errorMsg);
                                 $('#bulk-upload-progress').hide();
                                 $('#confirm-bulk-upload').prop('disabled', false);
+                                resetVisaBulkUploadFileInput(categoryId);
                             }
                         },
                         error: function(xhr) {
@@ -1619,6 +1647,7 @@
                             alert('Error: ' + errorMsg);
                             $('#bulk-upload-progress').hide();
                             $('#confirm-bulk-upload').prop('disabled', false);
+                            resetVisaBulkUploadFileInput(categoryId);
                         }
                     });
                 }

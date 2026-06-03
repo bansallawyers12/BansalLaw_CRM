@@ -1365,6 +1365,51 @@
                 let bulkUploadFiles = {};
                 let currentCategoryId = null;
                 let currentClientId = @json($clientId ?? null);
+
+                function resetBulkUploadFileInput(categoryId) {
+                    const input = document.querySelector(
+                        '#bulk-upload-' + categoryId + ' .bulk-upload-file-input[data-categoryid="' + categoryId + '"]'
+                    );
+                    if (input) {
+                        input.value = '';
+                    }
+                }
+
+                function resetBulkUploadSelection(categoryId) {
+                    bulkUploadFiles[categoryId] = [];
+                    resetBulkUploadFileInput(categoryId);
+                    const container = $('#bulk-upload-' + categoryId);
+                    container.find('.bulk-upload-file-list').hide();
+                    container.find('.bulk-upload-files-container').empty();
+                    container.find('.file-count').text('0');
+                }
+
+                function hideBulkUploadModal() {
+                    $('#bulk-upload-mapping-modal').hide();
+                    $('#bulk-upload-progress').hide();
+                    $('#bulk-upload-mapping-table').empty();
+                    $('#confirm-bulk-upload').prop('disabled', false);
+                    window._bulkUploadConfirmFn = null;
+                    window._bulkUploadOnCancel = null;
+                }
+                window.hideBulkUploadModal = hideBulkUploadModal;
+
+                $(function() {
+                    $('#confirm-bulk-upload').off('click.bulkUploadShared').on('click.bulkUploadShared', function() {
+                        if (typeof window._bulkUploadConfirmFn === 'function') {
+                            window._bulkUploadConfirmFn();
+                        } else {
+                            alert('Please select files to upload first.');
+                        }
+                    });
+
+                    $(document).off('click.bulkUploadModal', '.close-mapping-modal, #cancel-bulk-upload').on('click.bulkUploadModal', '.close-mapping-modal, #cancel-bulk-upload', function() {
+                        if (typeof window._bulkUploadOnCancel === 'function') {
+                            window._bulkUploadOnCancel();
+                        }
+                        hideBulkUploadModal();
+                    });
+                });
                 
                 // Toggle bulk upload dropzone
                 $(document).on('click', '.bulk-upload-toggle-btn', function() {
@@ -1378,12 +1423,10 @@
                     if (dropzoneContainer.is(':visible')) {
                         dropzoneContainer.slideUp();
                         $(this).html('<i class="fas fa-upload"></i> Bulk Upload');
-                        // Clear files if closing
-                        bulkUploadFiles[categoryId] = [];
-                        dropzoneContainer.find('.bulk-upload-file-list').hide();
-                        dropzoneContainer.find('.bulk-upload-files-container').empty();
-                        dropzoneContainer.find('.file-count').text('0');
+                        resetBulkUploadSelection(categoryId);
+                        hideBulkUploadModal();
                     } else {
+                        hideBulkUploadModal();
                         dropzoneContainer.slideDown();
                         $(this).html('<i class="fas fa-times"></i> Close');
                         currentCategoryId = categoryId;
@@ -1751,8 +1794,15 @@
                     html += '</tbody></table>';
                     tableContainer.html(html);
                     
+                    window._bulkUploadConfirmFn = confirmPersonalBulkUpload;
+                    window._bulkUploadOnCancel = function() {
+                        if (currentCategoryId) {
+                            resetBulkUploadSelection(currentCategoryId);
+                        }
+                    };
+
                     // Handle new checklist option
-                    $(document).off('change', '.checklist-select').on('change', '.checklist-select', function() {
+                    $(document).off('change.bulkUploadMapping', '.checklist-select').on('change.bulkUploadMapping', '.checklist-select', function() {
                         const fileIndex = $(this).data('file-index');
                         const value = $(this).val();
                         const newInput = $('.new-checklist-input[data-file-index="' + fileIndex + '"]');
@@ -1771,7 +1821,7 @@
                     });
                     
                     // Handle remove file button
-                    $(document).off('click', '.remove-bulk-file').on('click', '.remove-bulk-file', function(e) {
+                    $(document).off('click.bulkUploadRemove', '.remove-bulk-file').on('click.bulkUploadRemove', '.remove-bulk-file', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
                         
@@ -1785,7 +1835,7 @@
                         }
                         
                         // Find and remove the file from the array by matching file name
-                        const fileArray = bulkUploadFiles[categoryId];
+                        const fileArray = bulkUploadFiles[categoryId] || [];
                         const fileIndex = fileArray.findIndex(f => f.name === fileName);
                         
                         if (fileIndex > -1) {
@@ -1802,9 +1852,8 @@
                         
                         // If no files left, hide the file list and modal
                         if (remainingCount === 0) {
-                            $('#bulk-upload-mapping-modal').hide();
-                            container.find('.bulk-upload-file-list').hide();
-                            container.find('.bulk-upload-files-container').empty();
+                            hideBulkUploadModal();
+                            resetBulkUploadSelection(categoryId);
                             alert('All files have been removed. Please select files again to upload.');
                         } else {
                             // Reindex remaining rows to maintain correct file indices
@@ -1820,17 +1869,14 @@
                     modal.show();
                 }
                 
-                // Close mapping modal
-                $(document).off('click', '.close-mapping-modal, #cancel-bulk-upload').on('click', '.close-mapping-modal, #cancel-bulk-upload', function() {
-                    $('#bulk-upload-mapping-modal').hide();
-                    $('#bulk-upload-progress').hide();
-                    $('#confirm-bulk-upload').prop('disabled', false);
-                });
-                
                 // Confirm bulk upload
-                $('#confirm-bulk-upload').on('click', function() {
+                function confirmPersonalBulkUpload() {
                     const categoryId = currentCategoryId;
-                    const files = bulkUploadFiles[categoryId];
+                    const files = bulkUploadFiles[categoryId] || [];
+                    if (!files.length) {
+                        alert('No files selected. Please select files to upload.');
+                        return;
+                    }
                     const mappings = [];
                     const autoCreate = $('#auto-create-unmatched').is(':checked');
                     
@@ -1917,7 +1963,7 @@
                     
                     // Upload files
                     uploadBulkFiles(categoryId, files, mappings);
-                });
+                }
                 
                 // Extract checklist name from filename
                 function extractChecklistNameFromFile(fileName) {
@@ -1988,6 +2034,7 @@
                                 alert(errorMsg);
                                 $('#bulk-upload-progress').hide();
                                 $('#confirm-bulk-upload').prop('disabled', false);
+                                resetBulkUploadFileInput(categoryId);
                             }
                         },
                         error: function(xhr) {
@@ -1998,6 +2045,7 @@
                             alert('Error: ' + errorMsg);
                             $('#bulk-upload-progress').hide();
                             $('#confirm-bulk-upload').prop('disabled', false);
+                            resetBulkUploadFileInput(categoryId);
                         }
                     });
                 }
