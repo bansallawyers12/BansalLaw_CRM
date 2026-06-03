@@ -81,7 +81,7 @@ class CronJob extends Command
 			$invoicearray['subject'] = $subject;
 			$invoicearray['from'] = $sender;
 			$invoicearray['content'] = $emailContent;
-			Mail::mailer('sendgrid')->to($explodeTo)->queue(new InvoiceEmailManager($invoicearray));
+			app(\App\Services\MailRoutingService::class)->queueTo($explodeTo, new InvoiceEmailManager($invoicearray), $sender);
 			
 			return true;
 		} catch (\Exception $e) {

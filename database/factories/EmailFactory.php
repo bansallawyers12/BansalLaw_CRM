@@ -22,6 +22,10 @@ class EmailFactory extends Factory
         return [
             'email' => fake()->unique()->safeEmail(),
             'display_name' => fake()->name(),
+            'mail_provider' => 'zoho',
+            'smtp_host' => 'smtp.zoho.com',
+            'smtp_port' => 587,
+            'smtp_encryption' => 'tls',
             'status' => true,
             'user_id' => null,
         ];

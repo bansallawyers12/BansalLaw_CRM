@@ -31,7 +31,10 @@ class EmailVerificationMail extends Mailable
      */
     public function build()
     {
-        return $this->from(config('mail.from.address'), config('mail.from.name'))
+        return $this->from(
+            config('services.sendgrid.from_email') ?: config('mail.from.address'),
+            config('mail.from.name')
+        )
                     ->subject('Verify Your Email Address - BANSAL Immigration')
                     ->view('emails.email_verification');
     }

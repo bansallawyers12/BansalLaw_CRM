@@ -1153,17 +1153,7 @@ class PublicDocumentController extends Controller
                 return redirect()->back()->with('error', 'Maximum reminders already sent.');
             }
 
-            // Send reminder email
-            $signingUrl = url("/sign/{$document->id}/{$signer->token}");
-            Mail::raw("This is a reminder to sign your document: " . $signingUrl . "\n\nConsumer guide: https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf", function ($message) use ($signer) {
-                $message->to($signer->email, $signer->name)
-                        ->subject('Reminder: Please Sign Your Document');
-            });
-
-            $signer->update([
-                'last_reminder_sent_at' => now(),
-                'reminder_count' => $signer->reminder_count + 1
-            ]);
+            app(\App\Services\SignatureService::class)->remind($signer);
 
             return redirect()->back()->with('success', 'Reminder sent successfully!');
         } catch (\Exception $e) {

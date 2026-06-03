@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\View;
 use App\Mail\CommonMail;
 use App\Mail\InvoiceEmailManager;
 use App\Mail\MultipleattachmentEmailManager;
+use App\Services\MailRoutingService;
 
 use App\Models\UserRole;
 // use App\Models\WebsiteSetting; // removed website settings dependency
@@ -114,6 +115,11 @@ class Controller extends BaseController
 			}
 	}
 
+	protected function crmMailRouting(): MailRoutingService
+	{
+		return app(MailRoutingService::class);
+	}
+
 	protected function send_email_template($replace = array(), $replace_with = array(), $alias = null, $to = null, $subject = null, $sender = null, $sendername = null)
 	{
 		// email_templates table has been deleted - using fallback content
@@ -133,7 +139,7 @@ class Controller extends BaseController
 		$explodeTo = explode(';', $to);//for multiple and single to
 
 		try {
-			Mail::mailer('sendgrid')
+			$this->crmMailRouting()->mailer($sender)
 				->to($explodeTo)
 				->send(new CommonMail($emailContent, $subject, $sender, $sendername, []));
 
@@ -150,7 +156,7 @@ class Controller extends BaseController
 
 		try {
 			$explodeTo = explode(';', $to);//for multiple and single to
-			$q = Mail::mailer('sendgrid')->to($explodeTo);
+			$q = $this->crmMailRouting()->mailer($sender)->to($explodeTo);
 			if(!empty($cc)){
 				$q->cc($cc);
 			}
@@ -184,7 +190,7 @@ class Controller extends BaseController
 			$invoicearray['subject'] = $subject;
 			$invoicearray['from'] = $sender;
 			$invoicearray['content'] = $emailContent;
-			Mail::mailer('sendgrid')->to($explodeTo)->queue(new InvoiceEmailManager($invoicearray));
+			$this->crmMailRouting()->queueTo($explodeTo, new InvoiceEmailManager($invoicearray), $sender);
 			
 			return true;
 		} catch (\Exception $e) {
@@ -215,7 +221,7 @@ class Controller extends BaseController
 			$invoicearray['subject'] = $subject;
 			$invoicearray['from'] = $sender;
 			$invoicearray['content'] = $emailContent;
-			Mail::mailer('sendgrid')->to($explodeTo)->queue(new MultipleattachmentEmailManager($invoicearray));
+			$this->crmMailRouting()->queueTo($explodeTo, new MultipleattachmentEmailManager($invoicearray), $sender);
 			
 			return true;
 		} catch (\Exception $e) {
@@ -230,7 +236,7 @@ class Controller extends BaseController
 		try {
 			$explodeTo = explode(';', $to);//for multiple and single to
 			$invoicearray['from'] = $sender;
-			Mail::mailer('sendgrid')->to($explodeTo)->queue(new MultipleattachmentEmailManager($invoicearray));
+			$this->crmMailRouting()->queueTo($explodeTo, new MultipleattachmentEmailManager($invoicearray), $sender);
 			
 			return true;
 		} catch (\Exception $e) {

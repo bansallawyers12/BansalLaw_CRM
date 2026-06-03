@@ -3,11 +3,14 @@
 namespace App\Services;
 
 use App\Models\Email;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Mail\Message;
 
 class EmailService
 {
+    public function __construct(
+        protected MailRoutingService $mailRouting
+    ) {}
+
     /**
      * Get all active email configurations.
      *
@@ -16,7 +19,7 @@ class EmailService
     public function getAllActiveEmails()
     {
         return Email::where('status', true)
-            ->select('id', 'email', 'display_name')
+            ->select('id', 'email', 'display_name', 'mail_provider')
             ->get();
     }
 
@@ -27,7 +30,7 @@ class EmailService
      * @param array $data
      * @param string $to
      * @param string $subject
-     * @param int $fromEmailId
+     * @param string $fromEmailId
      * @return bool
      * @throws \Exception
      */
@@ -35,11 +38,10 @@ class EmailService
     {
         try {
             $emailConfig = Email::where('email', $fromEmailId)->first();
-            $fromAddress = $emailConfig?->email ?? config('mail.from.address');
+            $fromAddress = $emailConfig?->email ?? $fromEmailId;
             $fromName = $emailConfig?->display_name ?? config('mail.from.name');
 
-            // Send the email
-            Mail::mailer('sendgrid')->send($view, $data, function (Message $message) use ($to, $subject, $fromAddress, $fromName, $attachments, $cc) {
+            $this->mailRouting->sendClosure($view, $data, function (Message $message) use ($to, $subject, $fromAddress, $fromName, $attachments, $cc) {
                 $message->to($to)
                     ->subject($subject)
                     ->from($fromAddress, $fromName);
@@ -55,7 +57,7 @@ class EmailService
                         }
                     }
                 }
-            });
+            }, $fromAddress);
 
             return true;
         } catch (\Exception $e) {

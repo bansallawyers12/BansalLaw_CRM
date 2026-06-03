@@ -18,13 +18,15 @@ use Illuminate\Support\Facades\Auth;
 class SignatureService
 {
     protected EmailConfigService $emailConfigService;
+    protected MailRoutingService $mailRouting;
 
     /**
      * Constructor with dependency injection
      */
-    public function __construct(EmailConfigService $emailConfigService)
+    public function __construct(EmailConfigService $emailConfigService, MailRoutingService $mailRouting)
     {
         $this->emailConfigService = $emailConfigService;
+        $this->mailRouting = $mailRouting;
     }
     /**
      * Send a document for signature
@@ -138,7 +140,7 @@ class SignatureService
                 $attachments = $options['attachments'];
             }
 
-            Mail::mailer('sendgrid')->send($template, $templateData, function (Message $mail) use ($signer, $subject, $from, $attachments) {
+            $this->mailRouting->sendClosure($template, $templateData, function (Message $mail) use ($signer, $subject, $from, $attachments) {
                 $mail->to($signer->email, $signer->name)
                     ->subject($subject)
                     ->from($from['from_address'], $from['from_name']);
@@ -163,7 +165,7 @@ class SignatureService
                         }
                     }
                 }
-            });
+            }, $from['from_address'] ?? null);
 
             // Create activity note for successful email delivery
             SignatureActivity::create([
@@ -254,11 +256,11 @@ class SignatureService
                 'emailSignature' => $from['email_signature'] ?? '',
             ];
 
-            Mail::mailer('sendgrid')->send('emails.signature.reminder', $templateData, function (Message $mail) use ($signer, $from) {
+            $this->mailRouting->sendClosure('emails.signature.reminder', $templateData, function (Message $mail) use ($signer, $from) {
                 $mail->to($signer->email, $signer->name)
                     ->subject('Reminder: Please Sign Your Document - ' . config('app.name'))
                     ->from($from['from_address'], $from['from_name']);
-            });
+            }, $from['from_address'] ?? null);
 
             // Update reminder tracking
             $signer->update([

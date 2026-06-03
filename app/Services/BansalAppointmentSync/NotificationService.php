@@ -4,35 +4,26 @@ namespace App\Services\BansalAppointmentSync;
 
 use App\Models\BookingAppointment;
 use App\Services\Sms\UnifiedSmsManager;
-use Illuminate\Support\Facades\Mail;
+use App\Services\MailRoutingService;
 use Illuminate\Support\Facades\Log;
 
 class NotificationService
 {
     protected UnifiedSmsManager $smsManager;
+    protected MailRoutingService $mailRouting;
 
-    public function __construct(UnifiedSmsManager $smsManager)
+    public function __construct(UnifiedSmsManager $smsManager, MailRoutingService $mailRouting)
     {
         $this->smsManager = $smsManager;
+        $this->mailRouting = $mailRouting;
     }
 
     /**
-     * Use the app default mail driver (see config/mail.php + .env MAIL_MAILER).
-     * Do not hardcode "sendgrid": it ignores local smtp/log and fails when the key is wrong or missing.
+     * Appointment confirmations are system emails (SendGrid / no-reply).
      */
-    protected function appointmentMailerName(): string
+    protected function appointmentMailer()
     {
-        $name = (string) config('mail.default', 'smtp');
-
-        if ($name === 'sendgrid' && blank(config('mail.mailers.sendgrid.password'))) {
-            Log::notice('Appointment email: SENDGRID_API_KEY empty; using log mailer', [
-                'configured_default' => $name,
-            ]);
-
-            return 'log';
-        }
-
-        return $name;
+        return $this->mailRouting->mailer(null, true);
     }
 
     /**
@@ -48,7 +39,7 @@ class NotificationService
                 return true;
             }
 
-            $mailer = $this->appointmentMailerName();
+            $mailer = $this->appointmentMailer();
 
             $details = [
                 'client_name' => $appointment->client_name,
@@ -60,7 +51,7 @@ class NotificationService
                 'admin_notes' => $appointment->admin_notes,
             ];
 
-            Mail::mailer($mailer)->to($appointment->client_email)->send(
+            $mailer->to($appointment->client_email)->send(
                 new \App\Mail\AppointmentDetailedConfirmation($details)
             );
 
@@ -72,7 +63,7 @@ class NotificationService
             Log::info('Sent detailed confirmation email', [
                 'appointment_id' => $appointment->id,
                 'email' => $appointment->client_email,
-                'mailer' => $mailer,
+                'mailer' => 'sendgrid',
             ]);
 
             return true;
@@ -91,7 +82,7 @@ class NotificationService
      */
     public function sendCancellationConfirmationEmail(BookingAppointment $appointment, ?string $cancellationReason = null): bool
     {
-        $mailer = $this->appointmentMailerName();
+        $mailer = $this->appointmentMailer();
         try {
             $details = [
                 'client_name' => $appointment->client_name,
@@ -103,14 +94,14 @@ class NotificationService
                 'cancellation_reason' => $cancellationReason,
             ];
 
-            Mail::mailer($mailer)->to($appointment->client_email)->send(
+            $mailer->to($appointment->client_email)->send(
                 new \App\Mail\AppointmentCancellation($details)
             );
 
             Log::info('Sent cancellation confirmation email', [
                 'appointment_id' => $appointment->id,
                 'email' => $appointment->client_email,
-                'mailer' => $mailer,
+                'mailer' => 'sendgrid',
             ]);
 
             return true;

@@ -55,6 +55,42 @@
 												</div>
 												<div class="col-12 col-md-12 col-lg-12">
 													<div class="form-group">
+														<label for="mail_provider">Mail Provider</label>
+														<select name="mail_provider" class="form-control">
+															<option value="zoho" selected>Zoho SMTP (staff / personal)</option>
+															<option value="sendgrid">SendGrid (system / no-reply)</option>
+														</select>
+													</div>
+												</div>
+												<div class="col-12 col-md-12 col-lg-12 zoho-smtp-fields">
+													<div class="form-group">
+														<label for="password">Zoho App Password</label>
+														<input type="password" name="password" value="" class="form-control" autocomplete="new-password" placeholder="Required for Zoho SMTP sending">
+													</div>
+												</div>
+												<div class="col-12 col-md-6 col-lg-6 zoho-smtp-fields">
+													<div class="form-group">
+														<label for="smtp_host">SMTP Host</label>
+														<input type="text" name="smtp_host" value="smtp.zoho.com" class="form-control" autocomplete="off">
+													</div>
+												</div>
+												<div class="col-12 col-md-3 col-lg-3 zoho-smtp-fields">
+													<div class="form-group">
+														<label for="smtp_port">SMTP Port</label>
+														<input type="number" name="smtp_port" value="587" class="form-control" autocomplete="off">
+													</div>
+												</div>
+												<div class="col-12 col-md-3 col-lg-3 zoho-smtp-fields">
+													<div class="form-group">
+														<label for="smtp_encryption">Encryption</label>
+														<select name="smtp_encryption" class="form-control">
+															<option value="tls" selected>TLS</option>
+															<option value="ssl">SSL</option>
+														</select>
+													</div>
+												</div>
+												<div class="col-12 col-md-12 col-lg-12">
+													<div class="form-group">
 														<label for="display_name">Display Name</label>
 														<input type="text" name="display_name" value="" class="form-control" data-valid="" autocomplete="off" placeholder="">
 

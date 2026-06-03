@@ -6,7 +6,6 @@ use App\Models\EmailVerification;
 use App\Models\ClientEmail;
 use App\Mail\EmailVerificationMail;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
@@ -15,6 +14,10 @@ class EmailVerificationService
 {
     protected $tokenValidHours = 24;
     protected $maxAttemptsPerDay = 5;
+
+    public function __construct(
+        protected MailRoutingService $mailRouting
+    ) {}
 
     /**
      * Send verification email
@@ -71,7 +74,7 @@ class EmailVerificationService
 
         // Send email
         try {
-            Mail::mailer('sendgrid')->to($clientEmail->email)->send(new EmailVerificationMail(
+            $this->mailRouting->mailer(null, true)->to($clientEmail->email)->send(new EmailVerificationMail(
                 $clientEmail,
                 $verificationUrl,
                 $expiresAt

@@ -48,6 +48,17 @@ return [
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
+        'zoho' => [
+            'transport' => 'smtp',
+            'host' => env('ZOHO_SMTP_HOST', 'smtp.zoho.com'),
+            'port' => (int) env('ZOHO_SMTP_PORT', 587),
+            'username' => env('ZOHO_SMTP_USERNAME', ''),
+            'password' => env('ZOHO_SMTP_PASSWORD', ''),
+            'encryption' => env('ZOHO_SMTP_ENCRYPTION', 'tls'),
+            'timeout' => null,
+            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],

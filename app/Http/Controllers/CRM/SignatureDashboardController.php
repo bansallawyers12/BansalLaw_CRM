@@ -514,11 +514,11 @@ class SignatureDashboardController extends Controller
                 $templateData['emailSignature'] = $emailSignature;
 
                 try {
-                    Mail::mailer('sendgrid')->send($template, $templateData, function ($mail) use ($signer, $subject, $fromAddress, $fromName) {
+                    app(\App\Services\MailRoutingService::class)->sendClosure($template, $templateData, function ($mail) use ($signer, $subject, $fromAddress, $fromName) {
                         $mail->to($signer->email, $signer->name)
                             ->subject($subject)
                             ->from($fromAddress, $fromName);
-                    });
+                    }, $fromAddress);
 
                     // Create activity note for successful email
                     \App\Models\SignatureActivity::create([

@@ -153,10 +153,11 @@ class EmailConfigServiceTest extends TestCase
         $config = $this->service->forAccountById($email->id);
 
         $this->assertIsArray($config);
-        $this->assertCount(3, $config);
+        $this->assertCount(4, $config);
         $this->assertArrayHasKey('from_address', $config);
         $this->assertArrayHasKey('from_name', $config);
         $this->assertArrayHasKey('email_signature', $config);
+        $this->assertArrayHasKey('mail_provider', $config);
         $this->assertEquals('test@example.com', $config['from_address']);
         $this->assertEquals('Test User', $config['from_name']);
         $this->assertEquals('<p>Signature</p>', $config['email_signature']);

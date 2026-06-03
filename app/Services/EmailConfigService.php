@@ -68,6 +68,7 @@ class EmailConfigService
             'from_address' => $emailConfig->email,
             'from_name' => $emailConfig->display_name ?? config('app.name'),
             'email_signature' => $emailConfig->email_signature ?? '',
+            'mail_provider' => $emailConfig->mail_provider ?? 'zoho',
         ];
     }
 

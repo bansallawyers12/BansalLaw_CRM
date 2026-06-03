@@ -3,49 +3,85 @@
 namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
+use App\Models\Email;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Returns SendGrid verified senders for the Compose Email "From" dropdown.
- * Used by partials/email-from-sendgrid-script.blade.php (AJAX on page load).
+ * Returns compose "From" addresses for the CRM email UI.
+ * Staff/personal senders come from the emails table (Zoho SMTP).
+ * SendGrid verified senders are included only when marked mail_provider=sendgrid.
  */
 class SendGridSendersController extends Controller
 {
     /**
-     * Return verified senders as JSON for AJAX (e.g. frontend populating From dropdown).
      * GET /crm/sendgrid-senders
      */
     public function senders(Request $request)
     {
-        $list = $this->getVerifiedSenders();
-        $fromEmail = config('services.sendgrid.from_email', '');
-        if (empty($fromEmail)) {
-            $fromEmail = optional(auth('admin')->user())->email ?? config('mail.from.address', '');
-        }
-        $emails = array_column($list, 'email');
-        if (!empty($emails) && !in_array($fromEmail, $emails)) {
-            $fromEmail = $emails[0];
-        }
+        $zohoSenders = $this->getZohoComposeSenders();
+        $sendgridSenders = $this->getSendGridVerifiedSenders();
+
+        $list = collect($zohoSenders)
+            ->merge($sendgridSenders)
+            ->unique('email')
+            ->values()
+            ->all();
+
+        $defaultFrom = $this->resolveDefaultFrom($list);
+
         return response()->json([
             'senders' => $list,
-            'default_from' => $fromEmail,
+            'default_from' => $defaultFrom,
         ]);
     }
 
-    /**
-     * Fetch verified senders from SendGrid API.
-     */
-    private function getVerifiedSenders(): array
+    private function getZohoComposeSenders(): array
+    {
+        return Email::query()
+            ->where('status', true)
+            ->where(function ($q) {
+                $q->where('mail_provider', 'zoho')
+                    ->orWhereNull('mail_provider')
+                    ->orWhere('mail_provider', '');
+            })
+            ->orderBy('email')
+            ->get()
+            ->map(function (Email $account) {
+                return [
+                    'email' => $account->email,
+                    'name' => $account->display_name ?: $account->email,
+                    'nickname' => '',
+                    'provider' => 'zoho',
+                ];
+            })
+            ->all();
+    }
+
+    private function getSendGridVerifiedSenders(): array
     {
         $apiKey = config('services.sendgrid.api_key');
         $baseUrl = rtrim(config('services.sendgrid.base_url', 'https://api.sendgrid.com'), '/');
         $senders = [];
 
+        $explicitSendgrid = Email::query()
+            ->where('status', true)
+            ->where('mail_provider', 'sendgrid')
+            ->orderBy('email')
+            ->get();
+
+        foreach ($explicitSendgrid as $account) {
+            $senders[] = [
+                'email' => $account->email,
+                'name' => $account->display_name ?: $account->email,
+                'nickname' => '',
+                'provider' => 'sendgrid',
+            ];
+        }
+
         if (empty($apiKey)) {
-            Log::warning('SendGrid senders: SENDGRID_API_KEY not set in .env');
-            return $this->getFallbackSendersFromEnv();
+            return $senders;
         }
 
         try {
@@ -54,94 +90,55 @@ class SendGridSendersController extends Controller
             ])->timeout(10)->get($baseUrl . '/v3/verified_senders');
 
             if ($response->successful()) {
-                $data = $response->json();
-                if (isset($data['results'])) {
-                    foreach ($data['results'] as $sender) {
-                        if (!empty($sender['from_email']) && (isset($sender['verified']) ? $sender['verified'] : true)) {
-                            $senders[] = [
-                                'email' => $sender['from_email'],
-                                'name' => $sender['from_name'] ?? $sender['nickname'] ?? $sender['from_email'],
-                                'nickname' => $sender['nickname'] ?? '',
-                            ];
-                        }
-                    }
-                }
-            }
-
-            if (empty($senders)) {
-                $response2 = Http::withHeaders([
-                    'Authorization' => 'Bearer ' . $apiKey,
-                ])->timeout(10)->get($baseUrl . '/v3/senders');
-
-                if ($response2->successful()) {
-                    $data2 = $response2->json();
-                    $result = $data2['result'] ?? (is_array($data2) ? $data2 : []);
-                    foreach (is_array($result) ? $result : [] as $sender) {
-                        $email = $sender['from']['email'] ?? $sender['email'] ?? null;
-                        if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                foreach (($response->json()['results'] ?? []) as $sender) {
+                    if (! empty($sender['from_email']) && (isset($sender['verified']) ? $sender['verified'] : true)) {
+                        $email = $sender['from_email'];
+                        if (! collect($senders)->contains(fn ($s) => strcasecmp($s['email'], $email) === 0)) {
                             $senders[] = [
                                 'email' => $email,
-                                'name' => $sender['from']['name'] ?? $sender['nickname'] ?? $email,
+                                'name' => $sender['from_name'] ?? $sender['nickname'] ?? $email,
                                 'nickname' => $sender['nickname'] ?? '',
+                                'provider' => 'sendgrid',
                             ];
-                        }
-                    }
-                }
-            }
-
-            if (empty($senders) && strpos($baseUrl, 'api.sendgrid.com') !== false) {
-                $responseEu = Http::withHeaders([
-                    'Authorization' => 'Bearer ' . $apiKey,
-                ])->timeout(10)->get('https://api.eu.sendgrid.com/v3/verified_senders');
-
-                if ($responseEu->successful()) {
-                    $data = $responseEu->json();
-                    if (isset($data['results'])) {
-                        foreach ($data['results'] as $sender) {
-                            if (!empty($sender['from_email']) && (isset($sender['verified']) ? $sender['verified'] : true)) {
-                                $senders[] = [
-                                    'email' => $sender['from_email'],
-                                    'name' => $sender['from_name'] ?? $sender['nickname'] ?? $sender['from_email'],
-                                    'nickname' => $sender['nickname'] ?? '',
-                                ];
-                            }
                         }
                     }
                 }
             }
         } catch (\Exception $e) {
-            Log::error('SendGrid API Error: ' . $e->getMessage());
-        }
-
-        $senders = collect($senders)->unique('email')->values()->toArray();
-
-        if (empty($senders)) {
-            return $this->getFallbackSendersFromEnv();
+            Log::error('SendGrid verified senders fetch failed: ' . $e->getMessage());
         }
 
         return $senders;
     }
 
-    /**
-     * Fallback: use SENDGRID_SENDERS from .env (comma-separated emails).
-     */
-    private function getFallbackSendersFromEnv(): array
+    private function resolveDefaultFrom(array $list): string
     {
-        $fallbackSenders = config('services.sendgrid.senders');
-        if (empty($fallbackSenders) || !is_string($fallbackSenders)) {
-            return [];
+        $zohoEmails = collect($list)
+            ->filter(fn ($s) => ($s['provider'] ?? '') === 'zoho')
+            ->pluck('email')
+            ->filter()
+            ->values()
+            ->all();
+
+        $authEmail = optional(auth('admin')->user())->email;
+        if ($authEmail && in_array($authEmail, $zohoEmails, true)) {
+            return $authEmail;
         }
-        $emails = array_filter(array_map('trim', explode(',', $fallbackSenders)));
-        $list = [];
-        foreach ($emails as $email) {
-            if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $list[] = [
-                    'email' => $email,
-                    'name' => $email,
-                    'nickname' => '',
-                ];
-            }
+
+        if (! empty($zohoEmails)) {
+            return $zohoEmails[0];
         }
-        return $list;
+
+        $preferred = config('services.sendgrid.from_email', '');
+        if (blank($preferred)) {
+            $preferred = $authEmail ?? config('mail.from.address', '');
+        }
+
+        $emails = array_column($list, 'email');
+        if (! empty($emails) && ! in_array($preferred, $emails, true)) {
+            return $emails[0];
+        }
+
+        return (string) $preferred;
     }
 }

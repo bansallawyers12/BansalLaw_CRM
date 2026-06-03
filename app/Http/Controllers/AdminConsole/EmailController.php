@@ -192,7 +192,14 @@ class EmailController extends Controller
 			$obj->email	 =	@$requestData['email'];
 			$obj->email_signature	=	@$requestData['email_signature'];
 			$obj->display_name	=	@$requestData['display_name'];
-			$obj->status	=	@$requestData['status'];
+			$obj->mail_provider = @$requestData['mail_provider'] ?: 'zoho';
+			$obj->smtp_host = @$requestData['smtp_host'] ?: 'smtp.zoho.com';
+			$obj->smtp_port = @$requestData['smtp_port'] ?: 587;
+			$obj->smtp_encryption = @$requestData['smtp_encryption'] ?: 'tls';
+			if (! empty($requestData['password'])) {
+				$obj->password = $requestData['password'];
+			}
+			$obj->status	=	! empty($requestData['status']) ? 1 : 0;
 			$obj->user_id	=	json_encode(@$requestData['users']);
             $saved			=	$obj->save();
 
@@ -253,7 +260,14 @@ class EmailController extends Controller
 		$obj->email = @$requestData['email'];
 		$obj->email_signature = @$requestData['email_signature'];
 		$obj->display_name = @$requestData['display_name'];
-		$obj->status = @$requestData['status'];
+		$obj->mail_provider = @$requestData['mail_provider'] ?: 'zoho';
+		$obj->smtp_host = @$requestData['smtp_host'] ?: 'smtp.zoho.com';
+		$obj->smtp_port = @$requestData['smtp_port'] ?: 587;
+		$obj->smtp_encryption = @$requestData['smtp_encryption'] ?: 'tls';
+		if (! empty($requestData['password'])) {
+			$obj->password = $requestData['password'];
+		}
+		$obj->status = ! empty($requestData['status']) ? 1 : 0;
 		$obj->user_id = json_encode(@$requestData['users']);
 		$saved = $obj->save();
 

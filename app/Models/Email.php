@@ -1,13 +1,14 @@
 <?php
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 use Kyslik\ColumnSortable\Sortable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class Email extends Authenticatable
 {
-    use Notifiable;
+    use HasFactory, Notifiable;
 	use Sortable; 
 	
     /** 
@@ -18,9 +19,23 @@ class Email extends Authenticatable
     protected $fillable = [
         'email',
         'display_name',
+        'mail_provider',
+        'smtp_host',
+        'smtp_port',
+        'smtp_encryption',
+        'password',
         'status',
         'email_signature',
         'user_id',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'password',
     ];
 
     /**

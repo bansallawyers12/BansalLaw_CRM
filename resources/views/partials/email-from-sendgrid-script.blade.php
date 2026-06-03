@@ -1,4 +1,4 @@
-{{-- Populate Compose Email From dropdowns with SendGrid verified senders --}}
+{{-- Populate Compose Email From dropdown (Zoho staff senders + SendGrid system senders) --}}
 <script>
 (function() {
 	var sendersUrl = '{{ route("crm.sendgrid.senders") }}';
@@ -22,7 +22,8 @@
 						senders.forEach(function(s) {
 							var opt = document.createElement('option');
 							opt.value = s.email || '';
-							opt.textContent = (s.name && s.name !== s.email) ? (s.name + ' <' + s.email + '>') : (s.email || '');
+							var provider = s.provider ? (' [' + s.provider + ']') : '';
+							opt.textContent = (s.name && s.name !== s.email) ? (s.name + ' <' + s.email + '>' + provider) : ((s.email || '') + provider);
 							if (s.email && s.email === defaultFrom) opt.selected = true;
 							select.appendChild(opt);
 						});
@@ -33,13 +34,13 @@
 						fallback.selected = true;
 						select.appendChild(fallback);
 					} else {
-						select.innerHTML = '<option value="">No SendGrid senders found</option>';
+						select.innerHTML = '<option value="">No senders configured — add emails in Admin Console</option>';
 					}
 				});
 			})
 			.catch(function() {
 				selects.forEach(function(select) {
-					select.innerHTML = '<option value="">SendGrid unavailable – check SENDGRID_API_KEY</option>';
+					select.innerHTML = '<option value="">Unable to load senders</option>';
 				});
 			});
 	}

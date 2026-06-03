@@ -54,6 +54,44 @@
 												</div>
 												<div class="col-12 col-md-12 col-lg-12">
 													<div class="form-group">
+														<label for="mail_provider">Mail Provider</label>
+														@php $provider = $fetchedData->mail_provider ?? 'zoho'; @endphp
+														<select name="mail_provider" class="form-control">
+															<option value="zoho" @selected($provider === 'zoho')>Zoho SMTP (staff / personal)</option>
+															<option value="sendgrid" @selected($provider === 'sendgrid')>SendGrid (system / no-reply)</option>
+														</select>
+													</div>
+												</div>
+												<div class="col-12 col-md-12 col-lg-12 zoho-smtp-fields">
+													<div class="form-group">
+														<label for="password">Zoho App Password</label>
+														<input type="password" name="password" value="" class="form-control" autocomplete="new-password" placeholder="Leave blank to keep existing password">
+													</div>
+												</div>
+												<div class="col-12 col-md-6 col-lg-6 zoho-smtp-fields">
+													<div class="form-group">
+														<label for="smtp_host">SMTP Host</label>
+														<input type="text" name="smtp_host" value="{{ $fetchedData->smtp_host ?? 'smtp.zoho.com' }}" class="form-control" autocomplete="off">
+													</div>
+												</div>
+												<div class="col-12 col-md-3 col-lg-3 zoho-smtp-fields">
+													<div class="form-group">
+														<label for="smtp_port">SMTP Port</label>
+														<input type="number" name="smtp_port" value="{{ $fetchedData->smtp_port ?? 587 }}" class="form-control" autocomplete="off">
+													</div>
+												</div>
+												<div class="col-12 col-md-3 col-lg-3 zoho-smtp-fields">
+													<div class="form-group">
+														<label for="smtp_encryption">Encryption</label>
+														<select name="smtp_encryption" class="form-control">
+															@php $enc = $fetchedData->smtp_encryption ?? 'tls'; @endphp
+															<option value="tls" @selected($enc === 'tls')>TLS</option>
+															<option value="ssl" @selected($enc === 'ssl')>SSL</option>
+														</select>
+													</div>
+												</div>
+												<div class="col-12 col-md-12 col-lg-12">
+													<div class="form-group">
 														<label for="display_name">Display Name</label>
 														<input type="text" name="display_name" value="{{ @$fetchedData->display_name }}" class="form-control" data-valid="" autocomplete="off" placeholder="">
 

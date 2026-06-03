@@ -1511,7 +1511,7 @@ class DocumentController extends Controller
                     }
                     
                     try {
-                        Mail::mailer('sendgrid')->send(
+                        app(\App\Services\MailRoutingService::class)->sendClosure(
                             'emails.sign_agreement_document_email',
                             [
                                 'signingUrl' => $signingUrl,
@@ -1539,7 +1539,7 @@ class DocumentController extends Controller
                                     $message->attach($path, $options);
                                 }
                             }
-                        );
+                        , $fromAddress);
                         $sendMail = true;
                         
                         // Create activity note for successful email
@@ -1648,7 +1648,7 @@ class DocumentController extends Controller
                     }
 
                     try {
-                        Mail::mailer('sendgrid')->send(
+                        app(\App\Services\MailRoutingService::class)->sendClosure(
                             'emails.sign_document_email',
                             [
                                 'signingUrl' => $signingUrl,
@@ -1659,7 +1659,8 @@ class DocumentController extends Controller
                                 $message->to($signerEmail, $signerName)
                                     ->subject(config('app.name') . ' Requesting To Sign Your Document')
                                     ->from($fromAddress, $fromName);
-                            }
+                            },
+                            $fromAddress
                         );
                         
                         // Create activity note for successful email
@@ -2666,18 +2667,8 @@ class DocumentController extends Controller
             return redirect()->back()->with('error', 'Maximum reminders already sent.');
         }
 
-        // Send reminder email
-        $signingUrl = url("/sign/{$document->id}/{$signer->token}");
-        Mail::raw("This is a reminder to sign your document: " . $signingUrl . "\n\nConsumer guide: https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf", function ($message) use ($signer) {
-            $message->to($signer->email, $signer->name)
-                    ->subject('Reminder: Please Sign Your Document');
-        });
-
-        // Update reminder tracking
-        $signer->update([
-            'last_reminder_sent_at' => now(),
-            'reminder_count' => $signer->reminder_count + 1
-        ]);
+        // Send reminder email via SignatureService (Zoho/SendGrid routing + proper From)
+        app(\App\Services\SignatureService::class)->remind($signer);
 
         return redirect()->back()->with('success', 'Reminder sent successfully!');
         } catch (\Exception $e) {
