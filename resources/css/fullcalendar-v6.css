@@ -81,6 +81,36 @@
     opacity: 0.88 !important;
 }
 
+.booking-calendar-page .calendar-v6-container .fc-event.event-court {
+    background-color: #5c3d8f !important;
+    border-color: #5c3d8f !important;
+    color: #fff !important;
+}
+
+.booking-calendar-page .calendar-v6-container .fc-event.event-meeting {
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: #fff !important;
+}
+
+.booking-calendar-page .calendar-v6-container .fc-event.event-deadline {
+    background-color: #c0392b !important;
+    border-color: #c0392b !important;
+    color: #fff !important;
+}
+
+.booking-calendar-page .calendar-v6-container .fc-event.event-reminder {
+    background-color: #d97706 !important;
+    border-color: #d97706 !important;
+    color: #1a2c40 !important;
+}
+
+.booking-calendar-page .calendar-v6-container .fc-event.event-other {
+    background-color: #5e7a90 !important;
+    border-color: #5e7a90 !important;
+    color: #fff !important;
+}
+
 .booking-calendar-page .calendar-v6-container .fc-event {
     cursor: pointer;
     font-size: 0.85em;

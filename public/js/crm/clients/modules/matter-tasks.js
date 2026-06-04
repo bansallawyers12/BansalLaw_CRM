@@ -278,7 +278,7 @@
                 '<div class="cdn-matter-task__empty">' +
                     '<span class="cdn-matter-task__empty-icon" aria-hidden="true"><i class="fas fa-clipboard-list"></i></span>' +
                     '<p class="cdn-matter-task__empty-title">No tasks yet</p>' +
-                    '<p class="cdn-matter-task__empty-hint">Add a task below. Tasks you create here also appear on the <strong>Action</strong> page for follow-up.</p>' +
+                    '<p class="cdn-matter-task__empty-hint">Add a task above. Tasks you create here also appear on the <strong>Action</strong> page for follow-up.</p>' +
                     '</div>'
             );
         }

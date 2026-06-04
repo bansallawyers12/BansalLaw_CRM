@@ -3011,9 +3011,9 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   flex-wrap: wrap;
   align-items: stretch;
   gap: 0.65rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--cdn-border, #e2e8f0);
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--cdn-border, #e2e8f0);
 }
 
 .cdn-matter-task-composer__input {

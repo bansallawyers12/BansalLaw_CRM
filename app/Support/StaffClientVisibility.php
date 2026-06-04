@@ -687,6 +687,55 @@ final class StaffClientVisibility
     }
 
     /**
+     * Limit rows on any table that has a nullable CRM client_id column (staff calendar events, court hearings, etc.).
+     *
+     * Rows with no client_id remain visible. Linked clients use the same rules as booking appointments.
+     *
+     * @param  Builder<\Illuminate\Database\Eloquent\Model>  $query
+     */
+    public static function restrictEloquentQueryByClientIdColumn(Builder $query, string $clientIdColumn = 'client_id', ?Authenticatable $user = null): void
+    {
+        $user = self::currentStaff($user);
+        if (! $user || ! self::isAllocationEnforcementEnabled() || self::isExemptFromAllocation($user)) {
+            return;
+        }
+
+        $staffId = (int) $user->id;
+        $table = $query->getModel()->getTable();
+        $col = "{$table}.{$clientIdColumn}";
+
+        $query->where(function (Builder $outer) use ($staffId, $col) {
+            $outer->whereNull($col)
+                ->orWhere($col, '<=', 0);
+
+            $outer->orWhere(function (Builder $inner) use ($staffId, $col) {
+                $inner->where($col, '>', 0)
+                    ->where(function (Builder $accessQ) use ($staffId, $col) {
+                        $accessQ->whereExists(function ($sub) use ($staffId, $col) {
+                            $sub->select(DB::raw('1'))
+                                ->from('client_matters')
+                                ->whereColumn('client_matters.client_id', $col);
+                            self::whereClientMatterRowAssignedToStaff($sub, $staffId);
+                        })->orWhereExists(function ($sub) use ($staffId, $col) {
+                            $sub->select(DB::raw('1'))
+                                ->from('admins')
+                                ->whereColumn('admins.id', $col)
+                                ->where('admins.user_id', $staffId);
+                        })->orWhereExists(function ($sub) use ($staffId, $col) {
+                            $sub->select(DB::raw('1'))
+                                ->from('client_access_grants')
+                                ->whereColumn('client_access_grants.admin_id', $col)
+                                ->where('client_access_grants.staff_id', $staffId)
+                                ->where('client_access_grants.status', 'active')
+                                ->whereNotNull('client_access_grants.ends_at')
+                                ->whereRaw('client_access_grants.ends_at > NOW()');
+                        });
+                    });
+            });
+        });
+    }
+
+    /**
      * For whereExists subqueries after ->from('client_matters') (table name must be `client_matters`, not aliased).
      *
      * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $sub

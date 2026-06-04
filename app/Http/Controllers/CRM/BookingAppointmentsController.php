@@ -13,6 +13,8 @@ use App\Models\ActivitiesLog;
 use App\Services\BansalAppointmentSync\AppointmentSyncService;
 use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\Booking\BookingCalendarExternalFeed;
+use App\Services\Booking\StaffCalendarFeedService;
+use App\Models\StaffCalendarEvent;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,15 +33,19 @@ class BookingAppointmentsController extends Controller
     protected BansalApiClient $bansalApiClient;
     protected BookingCalendarExternalFeed $calendarExternalFeed;
 
+    protected StaffCalendarFeedService $staffCalendarFeed;
+
     public function __construct(
         AppointmentSyncService $syncService,
         BansalApiClient $bansalApiClient,
-        BookingCalendarExternalFeed $calendarExternalFeed
+        BookingCalendarExternalFeed $calendarExternalFeed,
+        StaffCalendarFeedService $staffCalendarFeed
     ) {
         $this->middleware('auth:admin');
         $this->syncService = $syncService;
         $this->bansalApiClient = $bansalApiClient;
         $this->calendarExternalFeed = $calendarExternalFeed;
+        $this->staffCalendarFeed = $staffCalendarFeed;
     }
 
     protected function assertBookingAppointmentAccess(BookingAppointment $appointment): void
@@ -159,6 +165,26 @@ class BookingAppointmentsController extends Controller
      * @param  Builder<BookingAppointment>  $query  Pre-filtered (e.g. by calendar type)
      * @return array{success: bool, data: array<int, array<string, mixed>>, message?: string}
      */
+    /**
+     * @param  array{success: bool, data: array<int, array<string, mixed>>, message?: string}  $response
+     * @return array{success: bool, data: array<int, array<string, mixed>>, message?: string}
+     */
+    protected function mergeImportantEventsIntoCalendarFeed(array $response, Request $request): array
+    {
+        if (! ($response['success'] ?? false)) {
+            return $response;
+        }
+
+        try {
+            $extra = $this->staffCalendarFeed->eventsForCalendarRequest($request);
+            $response['data'] = array_merge($response['data'] ?? [], $extra);
+        } catch (Exception $e) {
+            Log::warning('Important calendar events merge failed', ['error' => $e->getMessage()]);
+        }
+
+        return $response;
+    }
+
     protected function buildCalendarFeedResponse(Request $request, Builder $query): array
     {
         $source = config('booking_calendar.data_source', 'local');
@@ -188,21 +214,21 @@ class BookingAppointmentsController extends Controller
                 'appointments_count_after_filter' => $appointments->count(),
             ]);
 
-            return [
+            return $this->mergeImportantEventsIntoCalendarFeed([
                 'success' => true,
                 'data' => $appointments
                     ->map(fn (BookingAppointment $a) => $this->calendarExternalFeed->calendarPayloadFromModel($a))
                     ->values()
                     ->all(),
-            ];
+            ], $request);
         }
 
         if ($source === 'merge') {
             try {
-                return [
+                return $this->mergeImportantEventsIntoCalendarFeed([
                     'success' => true,
                     'data' => $this->mergeCalendarLocalAndExternal($request, $query, $startOfToday),
-                ];
+                ], $request);
             } catch (Exception $e) {
                 Log::error('Calendar merge (external) failed; using local only', ['error' => $e->getMessage()]);
                 if ($this->calendarIncludePastInVisibleRange()) {
@@ -212,13 +238,13 @@ class BookingAppointmentsController extends Controller
                 }
                 $appointments = $query->get();
 
-                return [
+                return $this->mergeImportantEventsIntoCalendarFeed([
                     'success' => true,
                     'data' => $appointments
                         ->map(fn (BookingAppointment $a) => $this->calendarExternalFeed->calendarPayloadFromModel($a))
                         ->values()
                         ->all(),
-                ];
+                ], $request);
             }
         }
 
@@ -278,7 +304,138 @@ class BookingAppointmentsController extends Controller
             'rows' => count($data),
         ]);
 
-        return ['success' => true, 'data' => $data];
+        return $this->mergeImportantEventsIntoCalendarFeed(['success' => true, 'data' => $data], $request);
+    }
+
+    /**
+     * Create a staff calendar event (court, meeting, deadline, etc.) shown on the booking calendar.
+     */
+    public function storeCalendarEvent(Request $request)
+    {
+        $validated = $request->validate([
+            'title'            => 'required|string|max:255',
+            'event_type'       => 'required|in:' . implode(',', StaffCalendarEvent::TYPES),
+            'starts_at'        => 'required|date',
+            'ends_at'          => 'nullable|date|after_or_equal:starts_at',
+            'is_all_day'       => 'sometimes|boolean',
+            'calendar_type'    => 'nullable|in:ajay,kunal',
+            'client_id'        => 'nullable|integer|exists:admins,id',
+            'client_matter_id' => 'nullable|integer|exists:client_matters,id',
+            'location'         => 'nullable|string|max:255',
+            'notes'            => 'nullable|string|max:5000',
+            'reminder_minutes' => 'nullable|integer|min:0|max:20160',
+        ]);
+
+        if (! empty($validated['client_id']) && ! StaffClientVisibility::canAccessClientOrLead((int) $validated['client_id'])) {
+            return response()->json(['success' => false, 'message' => 'You do not have access to this client.'], 403);
+        }
+
+        $user = Auth::guard('admin')->user();
+        $startsAt = Carbon::parse($validated['starts_at'], config('app.timezone'));
+        $endsAt = ! empty($validated['ends_at'])
+            ? Carbon::parse($validated['ends_at'], config('app.timezone'))
+            : $startsAt->copy()->addHour();
+
+        $event = StaffCalendarEvent::create([
+            'title'            => $validated['title'],
+            'event_type'       => $validated['event_type'],
+            'starts_at'        => $startsAt,
+            'ends_at'          => $endsAt,
+            'is_all_day'       => (bool) ($validated['is_all_day'] ?? false),
+            'calendar_type'    => $validated['calendar_type'] ?? null,
+            'client_id'        => $validated['client_id'] ?? null,
+            'client_matter_id' => $validated['client_matter_id'] ?? null,
+            'location'         => $validated['location'] ?? null,
+            'notes'            => $validated['notes'] ?? null,
+            'reminder_minutes' => isset($validated['reminder_minutes']) ? (int) $validated['reminder_minutes'] : null,
+            'created_by_staff_id' => $user ? (int) $user->id : null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $this->staffCalendarFeed->payloadFromStaffEvent($event->fresh(['client'])),
+        ]);
+    }
+
+    public function updateCalendarEvent(Request $request, int $id)
+    {
+        $event = StaffCalendarEvent::findOrFail($id);
+        $this->staffCalendarFeed->abortUnlessMayAccessStaffCalendarEvent($event);
+
+        $validated = $request->validate([
+            'title'            => 'sometimes|required|string|max:255',
+            'event_type'       => 'sometimes|required|in:' . implode(',', StaffCalendarEvent::TYPES),
+            'starts_at'        => 'sometimes|required|date',
+            'ends_at'          => 'nullable|date',
+            'is_all_day'       => 'sometimes|boolean',
+            'calendar_type'    => 'nullable|in:ajay,kunal',
+            'client_id'        => 'nullable|integer|exists:admins,id',
+            'client_matter_id' => 'nullable|integer|exists:client_matters,id',
+            'location'         => 'nullable|string|max:255',
+            'notes'            => 'nullable|string|max:5000',
+            'reminder_minutes' => 'nullable|integer|min:0|max:20160',
+        ]);
+
+        if (array_key_exists('client_id', $validated) && ! empty($validated['client_id'])
+            && ! StaffClientVisibility::canAccessClientOrLead((int) $validated['client_id'])) {
+            return response()->json(['success' => false, 'message' => 'You do not have access to this client.'], 403);
+        }
+
+        if (isset($validated['starts_at'])) {
+            $validated['starts_at'] = Carbon::parse($validated['starts_at'], config('app.timezone'));
+        }
+        if (array_key_exists('ends_at', $validated) && $validated['ends_at'] !== null) {
+            $validated['ends_at'] = Carbon::parse($validated['ends_at'], config('app.timezone'));
+        }
+
+        $event->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'data' => $this->staffCalendarFeed->payloadFromStaffEvent($event->fresh(['client'])),
+        ]);
+    }
+
+    public function destroyCalendarEvent(int $id)
+    {
+        $event = StaffCalendarEvent::findOrFail($id);
+        $this->staffCalendarFeed->abortUnlessMayAccessStaffCalendarEvent($event);
+        $event->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Returns upcoming staff events whose reminder window has opened but not yet been acknowledged.
+     * Called by JS polling; lightweight — only reads staff_calendar_events, no external feeds.
+     */
+    public function pendingReminders()
+    {
+        $now = Carbon::now(config('app.timezone'));
+        $lookahead = $now->copy()->addMinutes(60); // look up to 60 min ahead for any reminder
+
+        $query = StaffCalendarEvent::query()
+            ->whereNotNull('reminder_minutes')
+            ->where('reminder_minutes', '>', 0)
+            ->where('starts_at', '>', $now)                 // event hasn't started yet
+            ->where('starts_at', '<=', $lookahead)          // within lookahead window
+            ->whereRaw('starts_at <= DATE_ADD(NOW(), INTERVAL reminder_minutes MINUTE)'); // reminder is now due
+
+        $this->staffCalendarFeed->restrictStaffCalendarEventQuery($query);
+
+        $rows = $query->orderBy('starts_at')->get()
+            ->map(fn (StaffCalendarEvent $e) => [
+                'id'               => $e->id,
+                'title'            => $e->title,
+                'event_type'       => $e->event_type,
+                'starts_at'        => Carbon::parse($e->starts_at)->timezone(config('app.timezone'))->toIso8601String(),
+                'reminder_minutes' => $e->reminder_minutes,
+                'location'         => $e->location,
+            ])
+            ->values()
+            ->all();
+
+        return response()->json(['success' => true, 'data' => $rows]);
     }
 
     /**

@@ -86,4 +86,14 @@ Route::controller(BookingAppointmentsController::class)
         Route::get('/api/calendar-stats/{type}', 'calendarStatsJson')
             ->name('api.calendar-stats')
             ->whereIn('type', ['ajay', 'kunal']);
+
+        Route::get('/api/calendar-events/reminders', 'pendingReminders')
+            ->name('api.calendar-events.reminders');
+        Route::post('/api/calendar-events', 'storeCalendarEvent')->name('api.calendar-events.store');
+        Route::put('/api/calendar-events/{id}', 'updateCalendarEvent')
+            ->name('api.calendar-events.update')
+            ->whereNumber('id');
+        Route::delete('/api/calendar-events/{id}', 'destroyCalendarEvent')
+            ->name('api.calendar-events.destroy')
+            ->whereNumber('id');
     });

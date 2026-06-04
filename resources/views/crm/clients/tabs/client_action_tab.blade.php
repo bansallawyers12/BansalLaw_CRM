@@ -9,8 +9,6 @@
             </h2>
 
             <div id="cdn-matter-tasks" class="cdn-matter-tasks">
-                <div class="cdn-matter-task__list" aria-live="polite" aria-relevant="additions text"></div>
-
                 <div class="cdn-matter-task-composer">
                     <label class="visually-hidden" for="cdn-matter-task-title">Add a task</label>
                     <input type="text" class="form-control cdn-matter-task-composer__input" id="cdn-matter-task-title" maxlength="500" placeholder="Add a task…" autocomplete="off">
@@ -18,6 +16,8 @@
                         <i class="fas fa-plus" aria-hidden="true"></i> Add
                     </button>
                 </div>
+
+                <div class="cdn-matter-task__list" aria-live="polite" aria-relevant="additions text"></div>
             </div>
         </div>
     </div>

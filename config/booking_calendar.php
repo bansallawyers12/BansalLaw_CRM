@@ -33,6 +33,14 @@ return [
         FILTER_VALIDATE_BOOL
     ),
 
+    /**
+     * Merge staff calendar events and client court hearings into the booking calendar feed.
+     */
+    'include_important_events' => filter_var(
+        env('BOOKING_CALENDAR_INCLUDE_IMPORTANT_EVENTS', true),
+        FILTER_VALIDATE_BOOL
+    ),
+
     'external' => [
         'default_service_id' => (int) env('BOOKING_CALENDAR_SERVICE_ID', 1),
         'service_ids_by_type' => [
