@@ -417,9 +417,10 @@ class BookingAppointmentsController extends Controller
         $query = StaffCalendarEvent::query()
             ->whereNotNull('reminder_minutes')
             ->where('reminder_minutes', '>', 0)
-            ->where('starts_at', '>', $now)                 // event hasn't started yet
-            ->where('starts_at', '<=', $lookahead)          // within lookahead window
-            ->whereRaw('starts_at <= DATE_ADD(NOW(), INTERVAL reminder_minutes MINUTE)'); // reminder is now due
+            ->where('starts_at', '>', $now)
+            ->where('starts_at', '<=', $lookahead)
+            // reminder window has opened: starts_at is within reminder_minutes from now
+            ->whereRaw("starts_at <= NOW() + (reminder_minutes * INTERVAL '1 minute')");
 
         $this->staffCalendarFeed->restrictStaffCalendarEventQuery($query);
 
