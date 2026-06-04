@@ -38,8 +38,19 @@
     @php
         $client = $form->client;
         $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
-        $clientAddress = collect([$client->address, $client->city, $client->state, $client->zip])
-            ->filter()->implode(', ');
+        $resolvedAddr = \App\Models\ClientAddress::where('client_id', $client->id)->orderByDesc('id')->first();
+        if ($resolvedAddr) {
+            $clientAddress = collect([
+                $resolvedAddr->address_line_1,
+                $resolvedAddr->address_line_2,
+                $resolvedAddr->suburb,
+                $resolvedAddr->state,
+                $resolvedAddr->zip,
+            ])->filter()->implode(', ');
+        } else {
+            $clientAddress = collect([$client->address, $client->city, $client->state, $client->zip])
+                ->filter()->implode(', ');
+        }
     @endphp
 
     <div class="header">

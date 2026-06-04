@@ -62,16 +62,31 @@
         @php
             $client = $form->client;
             $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
-            $clientAddress = trim(($client->address ?? '') . ', ' . ($client->city ?? '') . ' ' . ($client->state ?? '') . ' ' . ($client->zip ?? ''));
-            $clientAddress = trim($clientAddress, ', ');
+            $resolvedAddr = \App\Models\ClientAddress::where('client_id', $client->id)->orderByDesc('id')->first();
+            if ($resolvedAddr) {
+                $clientAddress = collect([
+                    $resolvedAddr->address_line_1,
+                    $resolvedAddr->address_line_2,
+                    $resolvedAddr->suburb,
+                    $resolvedAddr->state,
+                    $resolvedAddr->zip,
+                ])->filter()->implode(', ');
+                $clientState = $resolvedAddr->state ?? '';
+                $clientZip   = $resolvedAddr->zip   ?? '';
+            } else {
+                $clientAddress = trim(($client->address ?? '') . ', ' . ($client->city ?? '') . ' ' . ($client->state ?? '') . ' ' . ($client->zip ?? ''));
+                $clientAddress = trim($clientAddress, ', ');
+                $clientState = $client->state ?? '';
+                $clientZip   = $client->zip   ?? '';
+            }
         @endphp
         <table class="form-table">
             <tr><td class="label">Name</td><td class="value">{{ $clientName }}</td></tr>
             <tr><td class="label">Phone</td><td class="value">{{ $client->phone ?? '' }}</td></tr>
             <tr><td class="label">Address</td><td class="value">{{ $clientAddress }}</td></tr>
             <tr><td class="label">Email</td><td class="value">{{ $client->email ?? '' }}</td></tr>
-            <tr><td class="label">State/Territory</td><td class="value">{{ $client->state ?? '' }}</td></tr>
-            <tr><td class="label">Postcode</td><td class="value">{{ $client->zip ?? '' }}</td></tr>
+            <tr><td class="label">State/Territory</td><td class="value">{{ $clientState }}</td></tr>
+            <tr><td class="label">Postcode</td><td class="value">{{ $clientZip }}</td></tr>
         </table>
     </div>
 

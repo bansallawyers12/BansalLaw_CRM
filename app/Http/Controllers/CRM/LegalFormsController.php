@@ -264,8 +264,12 @@ class LegalFormsController extends Controller
 
         $contextParts = [];
         $contextParts[] = "Client: {$clientName}";
-        if ($client->address) {
-            $contextParts[] = "Address: {$client->address}, {$client->city}, {$client->state} {$client->zip}";
+        $resolvedAddr = \App\Models\ClientAddress::where('client_id', $client->id)->orderByDesc('id')->first();
+        $resolvedAddrStr = $resolvedAddr
+            ? collect([$resolvedAddr->address_line_1, $resolvedAddr->address_line_2, $resolvedAddr->suburb, $resolvedAddr->state, $resolvedAddr->zip])->filter()->implode(', ')
+            : collect([$client->address, $client->city, $client->state, $client->zip])->filter()->implode(', ');
+        if ($resolvedAddrStr) {
+            $contextParts[] = "Address: {$resolvedAddrStr}";
         }
         if ($client->email) {
             $contextParts[] = "Email: {$client->email}";

@@ -2592,11 +2592,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 .crm-container.crm-container--unified.crm-container--no-feed > aside.activity-feed {
   display: none !important;
 }
-
-/* Wider activity rail when “expand width” is enabled */
-.crm-container.crm-container--unified:not(.crm-container--no-feed):has(> aside.activity-feed.wide-mode) {
-  grid-template-columns: minmax(0, 1fr) minmax(380px, 50%);
-}
+
 
 /* Activity-only tab: top bar + feed (main is display:none; two template rows) */
 .crm-container.crm-container--unified.crm-container--activity-tab {

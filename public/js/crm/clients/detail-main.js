@@ -842,14 +842,10 @@ $(document).ready(function() {
 
     if (showFeedOnLoad) {
 
+        // activityfeed tab: show feed, hide main content column
         $('#activity-feed').show();
-
-        if (!$('#activityfeed-tab').hasClass('active')) {
-            $('#main-content').css('flex', '1');
-        } else {
-            $('#main-content').hide();
-            $('.crm-container').addClass('crm-container--activity-tab');
-        }
+        $('#main-content').hide();
+        $('.crm-container').addClass('crm-container--activity-tab');
 
         setTimeout(function() {
             adjustActivityFeedHeight();

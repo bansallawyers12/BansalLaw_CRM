@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ClientAddress;
 use App\Models\ClientLegalForm;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
@@ -92,8 +93,7 @@ class LegalFormDocxService
 
         $client = $form->client;
         $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
-        $clientAddress = collect([$client->address, $client->city, $client->state, $client->zip])
-            ->filter()->implode(', ');
+        $clientAddress = $this->resolveClientAddress($client);
         $matterRef = $form->matter_reference ?? ($form->matter ? $form->matter->client_unique_matter_no : '');
 
         $tp->setValue('CLIENT_NAME', $clientName);
@@ -125,8 +125,10 @@ class LegalFormDocxService
 
         $client = $form->client;
         $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
-        $clientAddress = collect([$client->address, $client->city, $client->state, $client->zip])
-            ->filter()->implode(', ');
+        $resolvedAddr  = $this->resolveClientAddressRow($client);
+        $clientAddress = $this->resolveClientAddress($client, $resolvedAddr);
+        $clientState   = $resolvedAddr ? ($resolvedAddr->state ?? '') : ($client->state ?? '');
+        $clientZip     = $resolvedAddr ? ($resolvedAddr->zip   ?? '') : ($client->zip   ?? '');
         $formDate = $form->form_date ? $form->form_date->format('d/m/Y') : now()->format('d/m/Y');
 
         $dir = 'legal_forms/' . $form->client_id;
@@ -161,8 +163,8 @@ class LegalFormDocxService
             12 => $clientAddress,
             13 => $client->mobile ?? '',
             14 => $client->email ?? '',
-            15 => $client->state ?? '',
-            16 => $client->zip ?? '',
+            15 => $clientState,
+            16 => $clientZip,
             17 => $form->scope_of_work ?? '',
             18 => number_format($form->estimated_legal_fees ?? 0, 2),
             21 => number_format($form->estimated_disbursements ?? 0, 2),
@@ -183,8 +185,10 @@ class LegalFormDocxService
     {
         $client = $form->client;
         $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
-        $clientAddress = collect([$client->address, $client->city, $client->state, $client->zip])
-            ->filter()->implode(', ');
+        $resolvedAddr  = $this->resolveClientAddressRow($client);
+        $clientAddress = $this->resolveClientAddress($client, $resolvedAddr);
+        $clientState   = $resolvedAddr ? ($resolvedAddr->state ?? '') : ($client->state ?? '');
+        $clientZip     = $resolvedAddr ? ($resolvedAddr->zip   ?? '') : ($client->zip   ?? '');
         $formDate = $form->form_date ? $form->form_date->format('d/m/Y') : now()->format('d/m/Y');
 
         $dir = 'legal_forms/' . $form->client_id;
@@ -216,8 +220,8 @@ class LegalFormDocxService
             ['Client address', $clientAddress],
             ['Client mobile', $client->mobile ?? ''],
             ['Client email', $client->email ?? ''],
-            ['Client state', $client->state ?? ''],
-            ['Client postcode', $client->zip ?? ''],
+            ['Client state', $clientState],
+            ['Client postcode', $clientZip],
             ['Scope of work', $form->scope_of_work ?? ''],
             ['Legal fees (ex GST)', number_format($form->estimated_legal_fees ?? 0, 2)],
             ['Disbursements (ex GST)', number_format($form->estimated_disbursements ?? 0, 2)],
@@ -346,8 +350,7 @@ class LegalFormDocxService
 
         $client = $form->client;
         $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
-        $clientAddress = collect([$client->address, $client->city, $client->state, $client->zip])
-            ->filter()->implode(', ');
+        $clientAddress = $this->resolveClientAddress($client);
         $matterRef = $form->matter_reference ?? ($form->matter ? $form->matter->client_unique_matter_no : '');
 
         $tp->setValue('CLIENT_NAME', $clientName);
@@ -360,6 +363,38 @@ class LegalFormDocxService
         $tp->setValue('AUTHORITY_ITEMS', '');
 
         return $this->saveFromTemplate($tp, $form);
+    }
+
+    /**
+     * Fetch the most recent ClientAddress row for a client, or null if none exists.
+     */
+    private function resolveClientAddressRow($client): ?ClientAddress
+    {
+        return ClientAddress::where('client_id', $client->id)
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    /**
+     * Build an address string from a resolved ClientAddress row, falling back
+     * to the legacy admins table columns when no row exists.
+     */
+    private function resolveClientAddress($client, ?ClientAddress $row = null): string
+    {
+        $addr = $row ?? $this->resolveClientAddressRow($client);
+
+        if ($addr) {
+            return collect([
+                $addr->address_line_1,
+                $addr->address_line_2,
+                $addr->suburb,
+                $addr->state,
+                $addr->zip,
+            ])->filter()->implode(', ');
+        }
+
+        return collect([$client->address, $client->city, $client->state, $client->zip])
+            ->filter()->implode(', ');
     }
 
     private function saveFromTemplate(TemplateProcessor $tp, ClientLegalForm $form): string

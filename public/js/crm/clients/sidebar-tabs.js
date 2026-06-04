@@ -212,9 +212,6 @@
         if (isActivityFeedTab(tabId)) {
             syncFeedGridLayout(true);
             $('#activity-feed').show();
-            if (tabId !== 'activityfeed') {
-                $('#main-content').css('flex', '1');
-            }
             setMainColumnForTab(tabId);
             
             // Adjust Activity Feed height when it becomes visible
@@ -438,23 +435,12 @@
 
         // "Default" tabs: the Blade template already marks the pane and button as active.
         // Apply side-effects directly to avoid an unwanted pushState entry.
+        // personaldetails and companydetails never show the feed (feed is Timeline-only).
         const defaultTabs = ['personaldetails', 'companydetails'];
         if (defaultTabs.includes(tabId)) {
-            // The pane is already active from PHP; just apply feed + column visibility.
-            if (isActivityFeedTab(tabId)) {
-                syncFeedGridLayout(true);
-                $('#activity-feed').show();
-                setMainColumnForTab(tabId);
-                setTimeout(function() {
-                    if (typeof adjustActivityFeedHeight === 'function') {
-                        adjustActivityFeedHeight();
-                    }
-                }, 100);
-            } else {
-                syncFeedGridLayout(false);
-                $('#activity-feed').hide();
-                setMainColumnForTab(tabId);
-            }
+            syncFeedGridLayout(false);
+            $('#activity-feed').hide();
+            setMainColumnForTab(tabId);
             syncAriaForTabs(tabId);
             return;
         }
