@@ -22,10 +22,8 @@
             return;
         }
 
-        /* Unified layout: feed in right column; match main column height when both are visible. */
+        /* Unified layout: Timeline tab fills the grid row via CSS; other tabs hide the feed. */
         if (isUnified) {
-            $container.css('align-items', 'start');
-
             if ($('.main-content').length && $('.main-content').is(':visible')) {
                 $('.main-content').css('max-height', 'none');
                 $('.main-content').css('overflow-y', 'visible');
@@ -33,31 +31,34 @@
             }
 
             if (!$('.activity-feed').is(':visible') || $container.hasClass('crm-container--no-feed')) {
+                $container.css('align-items', '');
                 $('.activity-feed').css('max-height', '');
                 $('.activity-feed').css('height', '');
+                $('.activity-feed').css('min-height', '');
                 $('.activity-feed').css('overflow-y', '');
                 return;
             }
 
-            var windowHeight = $(window).height();
-            var maxAvailableHeight = windowHeight - 120;
-            var mainVisible = $('.main-content').is(':visible');
-            var mainContentHeight = mainVisible ? $('.main-content').outerHeight() : 0;
-            var activityFeedContentHeight = $('.activity-feed').prop('scrollHeight');
-            var hasSubstantialContent = activityFeedContentHeight > 100;
-            var targetHeight;
-
-            if (!mainVisible || $container.hasClass('crm-container--activity-tab')) {
-                targetHeight = maxAvailableHeight;
-            } else if (hasSubstantialContent) {
-                targetHeight = Math.max(mainContentHeight, maxAvailableHeight);
-            } else {
-                targetHeight = Math.min(mainContentHeight, maxAvailableHeight);
+            /* Dedicated Activity/Timeline tab: stretch feed to viewport (no fixed px height). */
+            if ($container.hasClass('crm-container--activity-tab')) {
+                $container.css('align-items', 'stretch');
+                $('.activity-feed').css('max-height', '');
+                $('.activity-feed').css('height', '');
+                $('.activity-feed').css('min-height', '');
+                $('.activity-feed').css('overflow-y', '');
+                return;
             }
 
-            $('.activity-feed').css('max-height', targetHeight + 'px');
-            $('.activity-feed').css('height', targetHeight + 'px');
-            $('.activity-feed').css('overflow-y', 'auto');
+            $container.css('align-items', 'start');
+
+            var $feed = $('.activity-feed');
+            var feedTop = $feed.offset() ? $feed.offset().top : 0;
+            var bottomGutter = 24;
+            var targetHeight = Math.max(320, $(window).height() - feedTop - bottomGutter);
+
+            $feed.css('max-height', targetHeight + 'px');
+            $feed.css('height', targetHeight + 'px');
+            $feed.css('overflow-y', 'auto');
             return;
         }
 
