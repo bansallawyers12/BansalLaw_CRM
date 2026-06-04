@@ -832,7 +832,17 @@ $(document).ready(function() {
 
     // Initialize Activity Feed visibility on page load (details tabs + Activity sidebar tab)
 
-    if ($('#personaldetails-tab').hasClass('active') || $('#companydetails-tab').hasClass('active') || $('#activityfeed-tab').hasClass('active')) {
+    var showFeedOnLoad = $('#personaldetails-tab').hasClass('active')
+        || $('#companydetails-tab').hasClass('active')
+        || $('#activityfeed-tab').hasClass('active');
+
+    if (window.SidebarTabs && typeof window.SidebarTabs.syncFeedGridLayout === 'function') {
+        window.SidebarTabs.syncFeedGridLayout(showFeedOnLoad);
+    } else if ($('.crm-container.crm-container--unified').length) {
+        $('.crm-container.crm-container--unified').toggleClass('crm-container--no-feed', !showFeedOnLoad);
+    }
+
+    if (showFeedOnLoad) {
 
         $('#activity-feed').show();
 
@@ -843,21 +853,13 @@ $(document).ready(function() {
             $('.crm-container').addClass('crm-container--activity-tab');
         }
 
-        
-
-        // Adjust Activity Feed height on initial load
-
         setTimeout(function() {
-
             adjustActivityFeedHeight();
-
         }, 150);
 
     } else {
 
         $('#activity-feed').hide();
-
-        //$('#main-content').css('flex', '0 0 100%');
 
     }
 

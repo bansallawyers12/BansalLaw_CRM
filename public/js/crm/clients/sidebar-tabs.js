@@ -45,6 +45,22 @@
         return tabId === 'personaldetails' || tabId === 'companydetails' || tabId === 'activityfeed';
     }
 
+    /**
+     * Toggle grid modifier so hidden feed does not reserve an empty right column.
+     * @param {boolean} showFeed
+     */
+    function syncFeedGridLayout(showFeed) {
+        var $container = $('.crm-container.crm-container--unified');
+        if (!$container.length) {
+            return;
+        }
+        if (showFeed) {
+            $container.removeClass('crm-container--no-feed');
+        } else {
+            $container.addClass('crm-container--no-feed');
+        }
+    }
+
     function setMainColumnForTab(tabId) {
         if (tabId === 'activityfeed') {
             $('#main-content').hide();
@@ -194,6 +210,7 @@
         
         // Handle activity feed visibility
         if (isActivityFeedTab(tabId)) {
+            syncFeedGridLayout(true);
             $('#activity-feed').show();
             if (tabId !== 'activityfeed') {
                 $('#main-content').css('flex', '1');
@@ -208,6 +225,7 @@
             }, 100);
         } else {
             handleMatterSpecificTab(tabId);
+            syncFeedGridLayout(false);
             $('#activity-feed').hide();
             setMainColumnForTab(tabId);
         }
@@ -424,6 +442,7 @@
         if (defaultTabs.includes(tabId)) {
             // The pane is already active from PHP; just apply feed + column visibility.
             if (isActivityFeedTab(tabId)) {
+                syncFeedGridLayout(true);
                 $('#activity-feed').show();
                 setMainColumnForTab(tabId);
                 setTimeout(function() {
@@ -432,6 +451,7 @@
                     }
                 }, 100);
             } else {
+                syncFeedGridLayout(false);
                 $('#activity-feed').hide();
                 setMainColumnForTab(tabId);
             }
@@ -468,6 +488,8 @@
     window.SidebarTabs = {
         init: init,
         activateTab: activateTab,
+        syncFeedGridLayout: syncFeedGridLayout,
+        isActivityFeedTab: isActivityFeedTab,
         syncAriaForTabs: syncAriaForTabs,
         ensureAllTabActive: ensureAllTabActive,
         filterNotesByMatter: filterNotesByMatter,

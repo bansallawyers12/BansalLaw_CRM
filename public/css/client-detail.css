@@ -2483,19 +2483,16 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   background: transparent;
 }
 
-/* Layout: full-width top bar; main + activity feed stacked below (each full width).
-   The old 2-column grid left an empty rail when #activity-feed was display:none (Tasks, Notes, etc.). */
+/* Layout: full-width top bar; main + activity feed side-by-side (feed on the right). */
 .crm-container.crm-container--unified {
   display: grid !important;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto auto auto;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
-    "cdn-topbar"
-    "cdn-main"
-    "cdn-feed";
+    "cdn-topbar cdn-topbar"
+    "cdn-main cdn-feed";
   gap: 16px;
   align-items: start;
-  /* Prevent min-height from stretching rows apart (Timeline tab looked like a huge gap under tabs). */
   align-content: start;
   width: 100%;
   max-width: none !important;
@@ -2576,18 +2573,25 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   grid-area: cdn-feed;
   min-width: 0;
   align-self: stretch;
-  width: 100% !important;
-  max-width: none !important;
-  flex: none !important;
   box-sizing: border-box;
 }
 
-/* Cancel legacy flex “sidebar width” when feed sits below main */
-.crm-container.crm-container--unified > aside.activity-feed.wide-mode {
-  width: 100% !important;
-  max-width: none !important;
-  min-width: 0 !important;
-  flex: none !important;
+/* Tabs without a feed (Tasks, Notes, etc.): single column — avoids empty right rail */
+.crm-container.crm-container--unified.crm-container--no-feed {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    "cdn-topbar"
+    "cdn-main";
+}
+
+.crm-container.crm-container--unified.crm-container--no-feed > aside.activity-feed {
+  display: none !important;
+}
+
+/* Wider activity rail when “expand width” is enabled */
+.crm-container.crm-container--unified:not(.crm-container--no-feed):has(> aside.activity-feed.wide-mode) {
+  grid-template-columns: minmax(0, 1fr) minmax(380px, 50%);
 }
 
 /* Activity-only tab: top bar + feed (main is display:none; two template rows) */
@@ -2853,6 +2857,26 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   /* Keep horizontal flush with viewport; gutter comes from .crm-container.crm-container--unified */
   .crm-container.crm-container--unified {
     padding: 12px 0 20px;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "cdn-topbar"
+      "cdn-main"
+      "cdn-feed";
+  }
+
+  .crm-container.crm-container--unified.crm-container--no-feed {
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "cdn-topbar"
+      "cdn-main";
+  }
+
+  .crm-container.crm-container--unified.crm-container--activity-tab {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "cdn-topbar"
+      "cdn-feed";
   }
 }
 

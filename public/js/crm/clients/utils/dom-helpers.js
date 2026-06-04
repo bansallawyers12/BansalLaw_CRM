@@ -22,22 +22,41 @@
             return;
         }
 
-        /* Unified layout: main and feed stack vertically; do not reserve a fixed-height side rail. */
+        /* Unified layout: feed in right column; match main column height when both are visible. */
         if (isUnified) {
-            $container.css('align-items', '');
+            $container.css('align-items', 'start');
+
             if ($('.main-content').length && $('.main-content').is(':visible')) {
                 $('.main-content').css('max-height', 'none');
                 $('.main-content').css('overflow-y', 'visible');
                 $('.main-content').css('height', 'auto');
             }
-            if (!$('.activity-feed').is(':visible')) {
+
+            if (!$('.activity-feed').is(':visible') || $container.hasClass('crm-container--no-feed')) {
                 $('.activity-feed').css('max-height', '');
                 $('.activity-feed').css('height', '');
                 $('.activity-feed').css('overflow-y', '');
                 return;
             }
-            $('.activity-feed').css('height', 'auto');
-            $('.activity-feed').css('max-height', 'min(560px, 70vh)');
+
+            var windowHeight = $(window).height();
+            var maxAvailableHeight = windowHeight - 120;
+            var mainVisible = $('.main-content').is(':visible');
+            var mainContentHeight = mainVisible ? $('.main-content').outerHeight() : 0;
+            var activityFeedContentHeight = $('.activity-feed').prop('scrollHeight');
+            var hasSubstantialContent = activityFeedContentHeight > 100;
+            var targetHeight;
+
+            if (!mainVisible || $container.hasClass('crm-container--activity-tab')) {
+                targetHeight = maxAvailableHeight;
+            } else if (hasSubstantialContent) {
+                targetHeight = Math.max(mainContentHeight, maxAvailableHeight);
+            } else {
+                targetHeight = Math.min(mainContentHeight, maxAvailableHeight);
+            }
+
+            $('.activity-feed').css('max-height', targetHeight + 'px');
+            $('.activity-feed').css('height', targetHeight + 'px');
             $('.activity-feed').css('overflow-y', 'auto');
             return;
         }
