@@ -5,6 +5,7 @@
             <h2 class="cdn-tasks-tab-title">
                 <span class="cdn-tasks-tab-title__icon" aria-hidden="true"><i class="fas fa-tasks"></i></span>
                 <span>Tasks</span>
+                <span id="cdn-matter-task-stats" class="cdn-tasks-tab-stats" aria-live="polite"></span>
             </h2>
 
             <div id="cdn-matter-tasks" class="cdn-matter-tasks">

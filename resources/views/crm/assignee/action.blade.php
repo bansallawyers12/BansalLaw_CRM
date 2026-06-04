@@ -1351,6 +1351,16 @@ $(function () {
         table.ajax.reload(); // Trigger DataTables reload with the new search term
     });
 
+    // Deep link from client Tasks tab (note_id query param)
+    (function () {
+        var params = new URLSearchParams(window.location.search);
+        var noteId = params.get('note_id');
+        if (noteId && /^\d+$/.test(noteId)) {
+            $('#searchInput').val(noteId);
+            table.ajax.reload();
+        }
+    })();
+
     // Helper function to escape HTML to prevent XSS
     function escapeHtml(text) {
         if (!text) return '';

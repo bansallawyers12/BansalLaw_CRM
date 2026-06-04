@@ -52,6 +52,7 @@ class ClientMatterTaskController extends Controller
 
         $tasks = ClientMatterTask::query()
             ->where('client_id', $clientId)
+            ->with(['creator:id,first_name,last_name'])
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();

@@ -2952,6 +2952,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 
 .cdn-tasks-tab-title {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
   margin: 0 0 1rem;
@@ -2973,6 +2974,13 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   background: color-mix(in srgb, var(--cdn-primary, #1e3a5f) 12%, transparent);
   color: var(--cdn-primary, #1e3a5f);
   font-size: 0.95rem;
+}
+
+.cdn-tasks-tab-stats {
+  margin-left: auto;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--cdn-muted, #64748b);
 }
 
 .cdn-matter-tasks {
@@ -3029,16 +3037,149 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   margin: 0;
 }
 
+.cdn-matter-task__section + .cdn-matter-task__done-panel,
+.cdn-matter-task__all-done + .cdn-matter-task__done-panel {
+  margin-top: 0.65rem;
+}
+
+.cdn-matter-task__done-panel {
+  border: 1px solid var(--cdn-border, #e2e8f0);
+  border-radius: var(--cdn-radius, 12px);
+  background: #f8fafc;
+  padding: 0.35rem 0.5rem 0.5rem;
+}
+
+.cdn-matter-task__done-summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--cdn-muted, #64748b);
+  padding: 0.35rem 0.25rem;
+  list-style: none;
+}
+
+.cdn-matter-task__done-summary::-webkit-details-marker {
+  display: none;
+}
+
+.cdn-matter-task__done-summary::before {
+  content: '▸';
+  display: inline-block;
+  margin-right: 0.35rem;
+  transition: transform 0.15s ease;
+}
+
+.cdn-matter-task__done-panel[open] .cdn-matter-task__done-summary::before {
+  transform: rotate(90deg);
+}
+
+.cdn-matter-task__ul--done {
+  margin-top: 0.35rem;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.cdn-matter-task__skeleton {
+  border: 1px solid var(--cdn-border, #e2e8f0);
+  border-radius: var(--cdn-radius, 12px);
+  padding: 0.65rem 0.75rem;
+  background: var(--cdn-card, #fff);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.cdn-matter-task__skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.cdn-matter-task__skeleton-box {
+  flex: 0 0 1.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 0.2rem;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: cdn-matter-task-shimmer 1.2s ease-in-out infinite;
+}
+
+.cdn-matter-task__skeleton-line {
+  flex: 1 1 auto;
+  height: 0.85rem;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: cdn-matter-task-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes cdn-matter-task-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.cdn-matter-task__status--empty .cdn-matter-task__empty {
+  text-align: center;
+  padding: 1.25rem 1rem;
+  border: 1px dashed var(--cdn-border, #e2e8f0);
+  border-radius: var(--cdn-radius, 12px);
+  background: #f8fafc;
+}
+
+.cdn-matter-task__empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 50%;
+  background: rgba(30, 58, 95, 0.08);
+  color: var(--cdn-primary, #1e3a5f);
+  font-size: 1.1rem;
+}
+
+.cdn-matter-task__empty-title {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  color: var(--cdn-text, #0f172a);
+}
+
+.cdn-matter-task__empty-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--cdn-muted, #64748b);
+  line-height: 1.45;
+}
+
 .cdn-matter-task__row {
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
   list-style: none;
   margin: 0;
-  padding: 0.35rem 0.25rem;
+  padding: 0.45rem 0.35rem;
   border: none;
   border-bottom: none;
+  border-radius: 8px;
+  transition: opacity 0.2s ease, background 0.12s ease;
+}
+
+.cdn-matter-task__row--removing {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.cdn-matter-task__row.is-done-row {
+  opacity: 0.72;
+  background: rgba(248, 250, 252, 0.85);
 }
 
 .cdn-matter-task__row-main {
@@ -3072,12 +3213,17 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   border-radius: 0.2rem;
 }
 
+.cdn-matter-task__text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .cdn-matter-task__row .cdn-matter-task__label {
   display: block;
   flex: 1 1 auto;
   min-width: 0;
   margin: 0 !important;
-  padding: 0.15rem 0 0 0;
+  padding: 0.1rem 0 0 0;
   line-height: 1.45;
   font-size: 0.92rem;
   font-weight: 400;
@@ -3088,9 +3234,73 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   overflow-wrap: break-word;
 }
 
+.cdn-matter-task__meta {
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--cdn-muted, #64748b);
+}
+
 .cdn-matter-task__label.is-done {
   text-decoration: line-through;
-  color: var(--cdn-muted, #64748b);
+  text-decoration-thickness: 1px;
+  color: #94a3b8;
+}
+
+.cdn-matter-task__row.is-done-row .cdn-matter-task__meta {
+  color: #a8b4c4;
+}
+
+.cdn-matter-task__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.cdn-matter-task__action-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--cdn-primary, #1e3a5f);
+  text-decoration: none;
+  border-radius: 0.4rem;
+  white-space: nowrap;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+
+.cdn-matter-task__action-link:hover {
+  color: #0f2744;
+  background: rgba(30, 58, 95, 0.08);
+  text-decoration: none;
+}
+
+.cdn-matter-task__action-link--disabled {
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+@media (max-width: 520px) {
+  .cdn-matter-task__action-link-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+.cdn-matter-tasks--busy .cdn-matter-task__cb,
+.cdn-matter-tasks--busy .cdn-matter-task__del {
+  cursor: wait;
 }
 
 .cdn-matter-task__del {

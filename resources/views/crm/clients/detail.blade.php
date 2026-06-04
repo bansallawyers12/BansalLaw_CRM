@@ -1476,6 +1476,7 @@ $(document).ready(function() {
             matterTaskIndex: '{{ route("clients.matterTask.index") }}',
             matterTaskStore: '{{ route("clients.matterTask.store") }}',
             matterTaskBase: '{{ url("/clients/matter-tasks") }}',
+            assigneeAction: '{{ route("assignee.action") }}',
             updatePersonalCategory: '{{ route("clients.documents.updatePersonalDocCategory") }}',
             updateVisaCategory: '{{ route("clients.documents.updateVisaDocCategory") }}',
             updateNominationCategory: '{{ route("clients.documents.updateNominationDocCategory") }}',
