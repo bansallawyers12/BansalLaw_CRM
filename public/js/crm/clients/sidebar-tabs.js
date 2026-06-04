@@ -299,19 +299,20 @@
      * Filter notes by matter
      */
     function filterNotesByMatter(matterId) {
-        // Get the active task group tab (default to 'All' if none active)
         const activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
+        const matterMatches = (window.ClientDetailShared && window.ClientDetailShared.noteMatchesSelectedMatter)
+            ? window.ClientDetailShared.noteMatchesSelectedMatter
+            : function (cardMatter, sel) {
+                if (!sel) return true;
+                const c = cardMatter == null ? '' : String(cardMatter).trim();
+                return c === '' || c === 'null' || c === '0' || c === String(sel);
+            };
 
         $('#noteterm-tab').find('.note-card-redesign').each(function() {
             const $note = $(this);
             const noteType = $note.data('type');
-
             const typeMatch = (activeTaskGroup === 'All' || noteType === activeTaskGroup);
-
-            let matterMatch = true;
-            if (matterId && matterId !== '') {
-                matterMatch = ($note.data('matterid') == matterId);
-            }
+            const matterMatch = matterMatches($note.attr('data-matterid'), matterId);
 
             if (typeMatch && matterMatch) {
                 $note.show();
@@ -319,6 +320,10 @@
                 $note.hide();
             }
         });
+
+        if (typeof window.filterNotes === 'function') {
+            window.filterNotes();
+        }
     }
 
     /**
