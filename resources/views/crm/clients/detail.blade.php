@@ -65,13 +65,11 @@ use App\Http\Controllers\Controller;
                 }
             }
 
-            $cdnUpdatedHuman = null;
-            if (! empty($fetchedData->updated_at)) {
-                try {
-                    $cdnUpdatedHuman = \Carbon\Carbon::parse($fetchedData->updated_at)->diffForHumans();
-                } catch (\Throwable $e) {
-                }
-            }
+            $cdnLastUpdateAt = \App\Models\ActivitiesLog::clientLastActivityAt(
+                (int) $fetchedData->id,
+                $fetchedData->updated_at ?? null
+            );
+            $cdnUpdatedHuman = $cdnLastUpdateAt ? $cdnLastUpdateAt->diffForHumans() : null;
 
             $cdnMatterRow = null;
             $cdnMatterRefLabel = null;
@@ -139,11 +137,8 @@ use App\Http\Controllers\Controller;
             $cdnHeroShowMatterDocsForConvertedLead = ! $__crmIsLeadType
                 && strtolower(trim((string) ($fetchedData->lead_status ?? ''))) === 'converted';
             $cdnHeroLastUpdateOn = null;
-            if (($cdnHeroIsMatterIdInUrl || $cdnHeroMatterCntForLastUpdate > 0 || $cdnHeroShowMatterDocsForConvertedLead) && ! empty($fetchedData->updated_at)) {
-                try {
-                    $cdnHeroLastUpdateOn = \Carbon\Carbon::parse($fetchedData->updated_at)->format('d/m/Y');
-                } catch (\Throwable $e) {
-                }
+            if (($cdnHeroIsMatterIdInUrl || $cdnHeroMatterCntForLastUpdate > 0 || $cdnHeroShowMatterDocsForConvertedLead) && $cdnLastUpdateAt) {
+                $cdnHeroLastUpdateOn = $cdnLastUpdateAt->format('d/m/Y');
             }
         @endphp
 

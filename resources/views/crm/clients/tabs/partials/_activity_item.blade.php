@@ -1,7 +1,10 @@
 @php
+    $isLeadConverted = ($activity->activity_type ?? '') === 'lead_converted'
+        || str_contains(strtolower($activity->subject ?? ''), 'lead converted');
+
     $noteTypeClass = '';
     $noteIcon = 'fa-sticky-note';
-    if ($activity->activity_type === 'note') {
+    if ($activity->activity_type === 'note' && ! $isLeadConverted) {
         $subject = strtolower($activity->subject ?? '');
         if (str_contains($subject, 'call')) {
             $noteTypeClass = 'activity-type-note-call';
@@ -59,13 +62,15 @@
     }
     $detailId = 'feed-detail-' . (int) $activity->id;
 @endphp
-<li class="feed-item feed-item--{{ $activity->activity_type === 'stage' ? 'stage' : 'email' }}{{ $isExpandable ? '' : ' feed-item--no-expand' }} activity {{ $activity->activity_type ? 'activity-type-' . $activity->activity_type : '' }} {{ $noteTypeClass ?? '' }}"
+<li class="feed-item feed-item--{{ $activity->activity_type === 'stage' ? 'stage' : 'email' }}{{ $isExpandable ? '' : ' feed-item--no-expand' }} activity {{ $isLeadConverted ? 'activity-type-lead_converted' : ($activity->activity_type ? 'activity-type-' . $activity->activity_type : '') }}{{ $isLeadConverted ? '' : ' ' . ($noteTypeClass ?? '') }}"
     id="activity_{{ $activity->id }}"
     data-created-at="{{ $activity->created_at ? \Carbon\Carbon::parse($activity->created_at)->format('Y-m-d') : '' }}">
     <span
-        class="feed-icon {{ $activity->activity_type === 'sms' ? 'feed-icon-sms' : '' }} {{ $activity->activity_type === 'activity' ? 'feed-icon-activity' : '' }} {{ $activity->activity_type === 'stage' ? 'feed-icon-stage' : '' }} {{ $activity->activity_type === 'financial' ? 'feed-icon-accounting' : '' }} {{ $activity->activity_type === 'signature' ? 'feed-icon-signature' : '' }} {{ $activity->activity_type === 'note' ? 'feed-icon-note ' . str_replace('activity-type-', 'feed-icon-', $noteTypeClass) : '' }}">
+        class="feed-icon {{ $activity->activity_type === 'sms' ? 'feed-icon-sms' : '' }} {{ $activity->activity_type === 'activity' ? 'feed-icon-activity' : '' }} {{ $activity->activity_type === 'stage' ? 'feed-icon-stage' : '' }} {{ $activity->activity_type === 'financial' ? 'feed-icon-accounting' : '' }} {{ $activity->activity_type === 'signature' ? 'feed-icon-signature' : '' }} {{ $isLeadConverted ? 'feed-icon-lead-converted' : '' }} {{ ! $isLeadConverted && $activity->activity_type === 'note' ? 'feed-icon-note ' . str_replace('activity-type-', 'feed-icon-', $noteTypeClass) : '' }}">
         @if($activity->activity_type === 'sms')
             <i class="fas fa-sms"></i>
+        @elseif($isLeadConverted)
+            <i class="fas fa-user-check"></i>
         @elseif($activity->activity_type === 'note')
             <i class="fas {{ $noteIcon }}"></i>
         @elseif($activity->activity_type === 'activity')

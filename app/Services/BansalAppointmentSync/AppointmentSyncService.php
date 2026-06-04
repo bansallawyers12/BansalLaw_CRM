@@ -513,13 +513,13 @@ class AppointmentSyncService
         $serviceTitle = 'Appointment';
         
         if ($serviceId == 2) {
-            $subject = 'scheduled an free appointment';
+            $subject = 'scheduled a free appointment';
             $serviceTitle = 'Free Consultation';
         } elseif ($serviceId == 1) {
-            $subject = 'scheduled an paid appointment';
+            $subject = 'scheduled a paid appointment';
             $serviceTitle = 'Comprehensive Migration Advice';
         } elseif ($serviceId == 3) {
-            $subject = 'scheduled an paid appointment';
+            $subject = 'scheduled a paid appointment';
             $serviceTitle = 'Overseas Applicant Enquiry';
         }
 

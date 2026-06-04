@@ -20,6 +20,11 @@
         return (raw || '').toLowerCase();
     }
 
+    function isLeadConvertedItem($item) {
+        return $item.hasClass('activity-type-lead_converted')
+            || /lead converted/i.test(getActivityRowHeadlineText($item));
+    }
+
     var FEED_NO_RESULTS_HTML = '<li class="feed-item feed-item-no-results" style="text-align: center; padding: 20px; color: #6c757d;">' +
         '<i class="fas fa-filter" style="font-size: 1.5em; margin-bottom: 8px; opacity: 0.5;"></i>' +
         '<p class="mb-0 small">No activities match your filters</p></li>';
@@ -36,6 +41,22 @@
         setupWidthToggle();
         setupExtendedFilters();
         setupRefreshButton();
+        ensureTimelineFiltersVisible();
+    }
+
+    /**
+     * On the dedicated Timeline tab, always show search/date filters (not only via expand-width).
+     */
+    function ensureTimelineFiltersVisible() {
+        var onActivityTab = $('.crm-container').hasClass('crm-container--activity-tab');
+        if (!onActivityTab) {
+            if (!$('#increase-activity-feed-width').is(':checked')) {
+                $('#activity-feed-filter-bar').hide();
+            }
+            return;
+        }
+        $('#activity-feed-filter-bar').show();
+        initActivityFeedDatepickers();
     }
 
     /**
@@ -87,13 +108,14 @@
         } else if (filterType === 'activity') {
             $rows.each(function() {
                 var $item = $(this);
-                var show = $item.hasClass('activity-type-activity') || $item.hasClass('activity-type-sms') || $item.hasClass('activity-type-stage');
+                var show = $item.hasClass('activity-type-activity') || $item.hasClass('activity-type-sms') || $item.hasClass('activity-type-stage') || isLeadConvertedItem($item);
                 $item.toggleClass(FILTER_HIDDEN_CLASS, !show);
             });
         } else if (filterType === 'note') {
             $rows.each(function() {
                 var $item = $(this);
-                var show = !$item.hasClass('activity-type-sms') &&
+                var show = !isLeadConvertedItem($item) &&
+                    !$item.hasClass('activity-type-sms') &&
                     !$item.hasClass('activity-type-activity') &&
                     !$item.hasClass('activity-type-stage') &&
                     !$item.hasClass('activity-type-document') &&
@@ -307,10 +329,10 @@
     function matchesTypeFilter($item, filterType) {
         if (filterType === 'all') return true;
         if (filterType === 'activity') {
-            return $item.hasClass('activity-type-activity') || $item.hasClass('activity-type-sms') || $item.hasClass('activity-type-stage');
+            return $item.hasClass('activity-type-activity') || $item.hasClass('activity-type-sms') || $item.hasClass('activity-type-stage') || isLeadConvertedItem($item);
         }
         if (filterType === 'note') {
-            return !$item.hasClass('activity-type-sms') && !$item.hasClass('activity-type-activity') &&
+            return !isLeadConvertedItem($item) && !$item.hasClass('activity-type-sms') && !$item.hasClass('activity-type-activity') &&
                 !$item.hasClass('activity-type-stage') &&
                 !$item.hasClass('activity-type-document') && !$item.hasClass('activity-type-signature') &&
                 !$item.hasClass('activity-type-financial');
@@ -403,6 +425,9 @@
         if (activityType === 'financial') {
             return { html: '<i class="fas fa-dollar-sign"></i>', cls: 'feed-icon-accounting' };
         }
+        if (activityType === 'lead_converted' || sl.indexOf('lead converted') !== -1) {
+            return { html: '<i class="fas fa-user-check"></i>', cls: 'feed-icon-lead-converted' };
+        }
         if (activityType === 'note') {
             var nt = getNoteTypeClass(subject);
             var ic = (subject || '').toLowerCase().indexOf('call') !== -1 ? 'fa-phone' : (sl.indexOf('email') !== -1 ? 'fa-envelope' : (sl.indexOf('in-person') !== -1 ? 'fa-user-friends' : (sl.indexOf('attention') !== -1 ? 'fa-exclamation-triangle' : (sl.indexOf('others') !== -1 ? 'fa-ellipsis-h' : 'fa-sticky-note'))));
@@ -438,6 +463,10 @@
             }
             var activityType = v.activity_type || 'note';
             var subject = v.subject || '';
+            var sl = subject.toLowerCase();
+            if (activityType !== 'lead_converted' && sl.indexOf('lead converted') !== -1) {
+                activityType = 'lead_converted';
+            }
             var icon = getActivityIconElement(activityType, subject);
             var noteAdd = (activityType === 'note' ? getNoteTypeClass(subject) : { li: '', feedIcon: '' });
             var messageHtml = v.message != null && v.message !== undefined ? String(v.message) : '';
@@ -623,7 +652,8 @@
     window.ActivityFeed = {
         init: init,
         filterActivities: filterActivities,
-        reapplyFilters: reapplyFilters
+        reapplyFilters: reapplyFilters,
+        ensureTimelineFiltersVisible: ensureTimelineFiltersVisible
     };
 
 })(jQuery);

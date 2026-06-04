@@ -201,6 +201,34 @@ class ActivitiesLog extends Authenticatable
 	}
 
 	/**
+	 * Latest meaningful update for a client: max of record updated_at and activity log created_at.
+	 */
+	public static function clientLastActivityAt(int $clientId, $clientUpdatedAt = null): ?\Carbon\Carbon
+	{
+		$latest = null;
+
+		$fromActivities = static::where('client_id', $clientId)->max('created_at');
+		if ($fromActivities) {
+			try {
+				$latest = \Carbon\Carbon::parse($fromActivities);
+			} catch (\Throwable $e) {
+			}
+		}
+
+		if ($clientUpdatedAt) {
+			try {
+				$clientCarbon = \Carbon\Carbon::parse($clientUpdatedAt);
+				if ($latest === null || $clientCarbon->gt($latest)) {
+					$latest = $clientCarbon;
+				}
+			} catch (\Throwable $e) {
+			}
+		}
+
+		return $latest;
+	}
+
+	/**
 	 * Client portal signature activities are stored with created_by = responsible staff (for notifications),
 	 * but the subject already starts with the client/signer name. Activity feed should not prepend staff name.
 	 */

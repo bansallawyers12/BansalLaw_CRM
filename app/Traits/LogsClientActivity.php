@@ -82,6 +82,22 @@ trait LogsClientActivity
         return $this->logClientActivity($clientId, $subject, $description, $activityType);
     }
 
+    protected function bulkUploadActivitySubject(int $count, string $docLabel = '', ?string $matterRef = null): string
+    {
+        $word = $count === 1 ? 'document' : 'documents';
+        $label = $docLabel !== '' ? "{$docLabel} " : '';
+        $core = "bulk uploaded {$count} {$label}{$word}";
+
+        return ($matterRef !== null && $matterRef !== '') ? "{$core} - {$matterRef}" : $core;
+    }
+
+    protected function bulkUploadActivityDescription(int $count, string $docLabel = 'personal'): string
+    {
+        $word = $count === 1 ? 'document' : 'documents';
+
+        return "<p>Bulk uploaded {$count} {$docLabel} {$word}</p>";
+    }
+
     /**
      * Format a value for display in activity log
      * 

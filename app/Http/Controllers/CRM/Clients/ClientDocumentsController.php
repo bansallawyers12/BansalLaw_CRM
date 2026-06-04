@@ -3391,10 +3391,8 @@ class ClientDocumentsController extends Controller
             if ($uploadedCount > 0) {
                 // Log activity
                 $matterRef = $this->getMatterReference($clientid);
-                $subject = !empty($matterRef) 
-                    ? "bulk uploaded {$uploadedCount} documents - {$matterRef}"
-                    : "bulk uploaded {$uploadedCount} documents";
-                $description = "<p>Bulk uploaded {$uploadedCount} personal documents</p>";
+                $subject = $this->bulkUploadActivitySubject($uploadedCount, '', $matterRef ?: null);
+                $description = $this->bulkUploadActivityDescription($uploadedCount, 'personal');
                 
                 $this->logClientActivity(
                     $clientid,
@@ -3632,10 +3630,8 @@ class ClientDocumentsController extends Controller
                 // Log activity
                 $matterRef = $this->getMatterReference($clientid, $matterid);
                 $docLabel = $doctype === 'nomination' ? 'nomination' : 'matter';
-                $subject = !empty($matterRef) 
-                    ? "bulk uploaded {$uploadedCount} {$docLabel} documents - {$matterRef}"
-                    : "bulk uploaded {$uploadedCount} {$docLabel} documents";
-                $description = "<p>Bulk uploaded {$uploadedCount} {$docLabel} documents</p>";
+                $subject = $this->bulkUploadActivitySubject($uploadedCount, $docLabel, $matterRef ?: null);
+                $description = $this->bulkUploadActivityDescription($uploadedCount, $docLabel);
                 
                 $this->logClientActivity(
                     $clientid,

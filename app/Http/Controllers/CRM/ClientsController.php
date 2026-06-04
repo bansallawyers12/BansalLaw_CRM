@@ -6094,6 +6094,7 @@ class ClientsController extends Controller
                         $activity->created_by = Auth::user()->id;
                         $activity->subject = 'Lead converted to client. Matter '.$matter->client_unique_matter_no. ' created';
                         $activity->description = 'Lead converted to client. Matter '.$matter->client_unique_matter_no. ' created';
+                        $activity->activity_type = 'lead_converted';
                         $activity->task_status = 0;
                         $activity->pin = 0;
                         $activity->save();
@@ -6170,6 +6171,7 @@ class ClientsController extends Controller
         $activity->created_by = Auth::user()->id;
         $activity->subject = 'Lead converted to client';
         $activity->description = 'Lead converted to client';
+        $activity->activity_type = 'lead_converted';
         $activity->task_status = 0;
         $activity->pin = 0;
         $activity->save();
@@ -7473,13 +7475,13 @@ class ClientsController extends Controller
         $serviceTitle = 'Appointment';
         
         if ($serviceId == 2) {
-            $subject = 'scheduled an free appointment';
+            $subject = 'scheduled a free appointment';
             $serviceTitle = 'Promo — free consultation';
         } elseif ($serviceId == 1) {
-            $subject = 'scheduled an paid appointment';
+            $subject = 'scheduled a paid appointment';
             $serviceTitle = 'Paid consultation';
         } elseif ($serviceId == 3) {
-            $subject = 'scheduled an paid appointment';
+            $subject = 'scheduled a paid appointment';
             $serviceTitle = 'Overseas Applicant Enquiry';
         }
 

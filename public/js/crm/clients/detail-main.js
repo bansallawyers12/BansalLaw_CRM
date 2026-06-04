@@ -846,6 +846,9 @@ $(document).ready(function() {
         $('#activity-feed').show();
         $('#main-content').hide();
         $('.crm-container').addClass('crm-container--activity-tab');
+        if (window.ActivityFeed && typeof window.ActivityFeed.ensureTimelineFiltersVisible === 'function') {
+            window.ActivityFeed.ensureTimelineFiltersVisible();
+        }
 
         setTimeout(function() {
             adjustActivityFeedHeight();

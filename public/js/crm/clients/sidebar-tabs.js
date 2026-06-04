@@ -65,9 +65,15 @@
         if (tabId === 'activityfeed') {
             $('#main-content').hide();
             $('.crm-container').addClass('crm-container--activity-tab');
+            if (window.ActivityFeed && typeof window.ActivityFeed.ensureTimelineFiltersVisible === 'function') {
+                window.ActivityFeed.ensureTimelineFiltersVisible();
+            }
         } else {
             $('#main-content').show();
             $('.crm-container').removeClass('crm-container--activity-tab');
+            if (window.ActivityFeed && typeof window.ActivityFeed.ensureTimelineFiltersVisible === 'function') {
+                window.ActivityFeed.ensureTimelineFiltersVisible();
+            }
         }
     }
 

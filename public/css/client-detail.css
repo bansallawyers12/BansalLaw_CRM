@@ -22,6 +22,11 @@
     display: none !important;
 }
 
+/* Timeline tab: search and date filters always visible */
+.crm-container--activity-tab #activity-feed-filter-bar {
+    display: block !important;
+}
+
 /* Normal state - when compact-mode is NOT active */
 .main-content .content-grid { 
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important; 
@@ -1207,6 +1212,19 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 
 .feed-icon-activity i {
     color: #fff !important;
+}
+
+.feed-icon-lead-converted {
+    background: linear-gradient(135deg, #28a745, #1e7e34) !important;
+    color: #fff !important;
+}
+
+.feed-icon-lead-converted i {
+    color: #fff !important;
+}
+
+.activity-type-lead_converted .feed-content {
+    background: #f0fff4;
 }
 
 .activity-type-activity .feed-content {
