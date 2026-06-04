@@ -67,22 +67,99 @@
         setupWidthToggle();
         setupExtendedFilters();
         setupRefreshButton();
+        setupFilterBarToggle();
         ensureTimelineFiltersVisible();
     }
 
+    function isOnActivityTab() {
+        return $('.crm-container').hasClass('crm-container--activity-tab');
+    }
+
+    function isFilterBarCollapsed() {
+        return $('#activity-feed').data('filtersCollapsed') === true;
+    }
+
+    function setFilterBarCollapsed(collapsed) {
+        $('#activity-feed').data('filtersCollapsed', collapsed);
+    }
+
+    function updateFilterToggleUi(collapsed) {
+        var $toggle = $('#activity-feed-filter-toggle');
+        if (!$toggle.length) {
+            return;
+        }
+        $toggle.attr('aria-expanded', collapsed ? 'false' : 'true');
+        $toggle.attr('title', collapsed ? 'Show filters' : 'Hide filters');
+        $toggle.find('i')
+            .toggleClass('fa-chevron-up', !collapsed)
+            .toggleClass('fa-chevron-down', collapsed);
+    }
+
+    function setFilterBarVisible(visible, animate) {
+        var $bar = $('#activity-feed-filter-bar');
+        if (!$bar.length) {
+            return;
+        }
+        if (visible) {
+            $bar.removeClass('activity-feed-filter-bar--collapsed');
+            setFilterBarCollapsed(false);
+            updateFilterToggleUi(false);
+            if (animate) {
+                $bar.stop(true, true).slideDown(200, afterFilterBarLayoutChange);
+            } else {
+                $bar.show();
+                afterFilterBarLayoutChange();
+            }
+            initActivityFeedDatepickers();
+        } else {
+            $bar.addClass('activity-feed-filter-bar--collapsed');
+            setFilterBarCollapsed(true);
+            updateFilterToggleUi(true);
+            if (animate) {
+                $bar.stop(true, true).slideUp(200, afterFilterBarLayoutChange);
+            } else {
+                $bar.hide();
+                afterFilterBarLayoutChange();
+            }
+        }
+    }
+
+    function afterFilterBarLayoutChange() {
+        if (typeof adjustActivityFeedHeight === 'function') {
+            adjustActivityFeedHeight();
+            setTimeout(adjustActivityFeedHeight, 150);
+        }
+    }
+
     /**
-     * On the dedicated Timeline tab, always show search/date filters (not only via expand-width).
+     * Timeline tab: show filter toggle; other tabs: hide bar unless expand-width is checked.
      */
     function ensureTimelineFiltersVisible() {
-        var onActivityTab = $('.crm-container').hasClass('crm-container--activity-tab');
-        if (!onActivityTab) {
+        var $toggle = $('#activity-feed-filter-toggle');
+        if (!isOnActivityTab()) {
+            $toggle.attr('hidden', 'hidden');
             if (!$('#increase-activity-feed-width').is(':checked')) {
-                $('#activity-feed-filter-bar').hide();
+                $('#activity-feed-filter-bar').hide().removeClass('activity-feed-filter-bar--collapsed');
             }
             return;
         }
-        $('#activity-feed-filter-bar').show();
-        initActivityFeedDatepickers();
+        $toggle.removeAttr('hidden');
+        if (isFilterBarCollapsed()) {
+            $('#activity-feed-filter-bar').hide().addClass('activity-feed-filter-bar--collapsed');
+            updateFilterToggleUi(true);
+        } else {
+            setFilterBarVisible(true, false);
+        }
+    }
+
+    function setupFilterBarToggle() {
+        $('#activity-feed-filter-toggle').on('click', function() {
+            if (!isOnActivityTab()) {
+                return;
+            }
+            setFilterBarVisible(isFilterBarCollapsed(), true);
+            reapplyFilters();
+        });
     }
 
     /**
@@ -252,33 +329,21 @@
      */
     function setupWidthToggle() {
         $('#increase-activity-feed-width').on('change', function() {
-            var onActivityTab = $('.crm-container').hasClass('crm-container--activity-tab');
+            if (isOnActivityTab()) {
+                return;
+            }
             if ($(this).is(':checked')) {
-                // On the full-width Activity tab the feed already fills the viewport —
-                // only open the filter bar; don't add wide-mode / compact-mode.
-                if (!onActivityTab) {
-                    $('.activity-feed').addClass('wide-mode');
-                    if ($('.main-content').is(':visible')) {
-                        $('.main-content').addClass('compact-mode');
-                    }
+                $('.activity-feed').addClass('wide-mode');
+                if ($('.main-content').is(':visible')) {
+                    $('.main-content').addClass('compact-mode');
                 }
-                $('#activity-feed-filter-bar').slideDown(200);
-                initActivityFeedDatepickers();
+                setFilterBarVisible(true, true);
             } else {
-                $('#activity-feed-filter-bar').slideUp(200);
-                if (!onActivityTab) {
-                    $('.activity-feed').removeClass('wide-mode');
-                    $('.main-content').removeClass('compact-mode');
-                }
+                setFilterBarVisible(false, true);
+                $('.activity-feed').removeClass('wide-mode');
+                $('.main-content').removeClass('compact-mode');
             }
-            
-            // Adjust Activity Feed height after layout change
-            if (typeof adjustActivityFeedHeight === 'function') {
-                adjustActivityFeedHeight();
-                setTimeout(function() {
-                    adjustActivityFeedHeight();
-                }, 150);
-            }
+            reapplyFilters();
         });
     }
 

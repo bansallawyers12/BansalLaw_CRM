@@ -22,9 +22,20 @@
     display: none !important;
 }
 
-/* Timeline tab: search and date filters always visible */
-.crm-container--activity-tab #activity-feed-filter-bar {
-    display: block !important;
+/* Timeline tab: filter toggle in header (bar visibility controlled by JS) */
+.activity-feed-filter-toggle {
+    display: none;
+    color: #6c757d;
+}
+.activity-feed-filter-toggle:hover {
+    color: #0d6efd;
+}
+.crm-container--activity-tab .activity-feed-filter-toggle {
+    display: inline-flex;
+    align-items: center;
+}
+.crm-container--activity-tab #activity-feed-filter-bar.activity-feed-filter-bar--collapsed {
+    display: none !important;
 }
 
 /* Normal state - when compact-mode is NOT active */

@@ -3,6 +3,9 @@
     <div class="activity-feed-header">
         <h2><i class="fas fa-history"></i> Activity Feed</h2>
         <div class="activity-feed-header-actions">
+            <button type="button" class="btn btn-sm btn-link p-0 activity-feed-filter-toggle" id="activity-feed-filter-toggle" title="Hide filters" aria-expanded="true" aria-controls="activity-feed-filter-bar" hidden>
+                <i class="fas fa-chevron-up" aria-hidden="true"></i>
+            </button>
             <button type="button" class="btn btn-sm btn-link p-0 activity-feed-refresh" id="activity-feed-refresh" title="Refresh">
                 <i class="fas fa-sync-alt"></i>
             </button>
