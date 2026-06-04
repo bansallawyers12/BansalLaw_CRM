@@ -25,6 +25,32 @@
             || /lead converted/i.test(getActivityRowHeadlineText($item));
     }
 
+    /** Tasks/actions and other non-note timeline events (incl. legacy rows stored as activity_type note). */
+    var TASK_ACTION_SUBJECT_RE = /\b(?:set action for|updated action for|completed action for|action completed for|new action assigned for|deleted(?:\s+completed)?\s+action|appointment created|booking appointment|converted activity to note|extended note deadline|note added to booking appointment)\b/i;
+
+    function isTaskOrActionTimelineItem($item) {
+        if ($item.hasClass('activity-type-activity')) {
+            return true;
+        }
+        return TASK_ACTION_SUBJECT_RE.test(getActivityRowHeadlineText($item));
+    }
+
+    /** Strict: only client notes (activity_type note), not tasks mis-tagged as note. */
+    function isClientNoteTimelineItem($item) {
+        if (isLeadConvertedItem($item) || isTaskOrActionTimelineItem($item)) {
+            return false;
+        }
+        var cls = $item.attr('class') || '';
+        return /\bactivity-type-note(?:-|$|\s)/.test(cls);
+    }
+
+    function isTimelineActivityItem($item) {
+        return $item.hasClass('activity-type-sms')
+            || $item.hasClass('activity-type-stage')
+            || isLeadConvertedItem($item)
+            || isTaskOrActionTimelineItem($item);
+    }
+
     var FEED_NO_RESULTS_HTML = '<li class="feed-item feed-item-no-results" style="text-align: center; padding: 20px; color: #6c757d;">' +
         '<i class="fas fa-filter" style="font-size: 1.5em; margin-bottom: 8px; opacity: 0.5;"></i>' +
         '<p class="mb-0 small">No activities match your filters</p></li>';
@@ -108,20 +134,12 @@
         } else if (filterType === 'activity') {
             $rows.each(function() {
                 var $item = $(this);
-                var show = $item.hasClass('activity-type-activity') || $item.hasClass('activity-type-sms') || $item.hasClass('activity-type-stage') || isLeadConvertedItem($item);
-                $item.toggleClass(FILTER_HIDDEN_CLASS, !show);
+                $item.toggleClass(FILTER_HIDDEN_CLASS, !isTimelineActivityItem($item));
             });
         } else if (filterType === 'note') {
             $rows.each(function() {
                 var $item = $(this);
-                var show = !isLeadConvertedItem($item) &&
-                    !$item.hasClass('activity-type-sms') &&
-                    !$item.hasClass('activity-type-activity') &&
-                    !$item.hasClass('activity-type-stage') &&
-                    !$item.hasClass('activity-type-document') &&
-                    !$item.hasClass('activity-type-signature') &&
-                    !$item.hasClass('activity-type-financial');
-                $item.toggleClass(FILTER_HIDDEN_CLASS, !show);
+                $item.toggleClass(FILTER_HIDDEN_CLASS, !isClientNoteTimelineItem($item));
             });
         } else if (filterType === 'document') {
             var documentPatterns = [
@@ -329,13 +347,10 @@
     function matchesTypeFilter($item, filterType) {
         if (filterType === 'all') return true;
         if (filterType === 'activity') {
-            return $item.hasClass('activity-type-activity') || $item.hasClass('activity-type-sms') || $item.hasClass('activity-type-stage') || isLeadConvertedItem($item);
+            return isTimelineActivityItem($item);
         }
         if (filterType === 'note') {
-            return !isLeadConvertedItem($item) && !$item.hasClass('activity-type-sms') && !$item.hasClass('activity-type-activity') &&
-                !$item.hasClass('activity-type-stage') &&
-                !$item.hasClass('activity-type-document') && !$item.hasClass('activity-type-signature') &&
-                !$item.hasClass('activity-type-financial');
+            return isClientNoteTimelineItem($item);
         }
         if (filterType === 'document') {
             if ($item.hasClass('activity-type-document')) return true;

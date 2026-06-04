@@ -147,6 +147,7 @@ class AssigneeController extends Controller
                 $objs->task_group = $taskGroup;
                 $objs->task_status = 1; //marked completed
                 $objs->pin = 0;
+                $objs->activity_type = 'activity';
                 $objs->save();
 
                 app(ClientMatterTaskSyncService::class)->syncCompletionFromNote($note_data, true);
@@ -624,6 +625,7 @@ class AssigneeController extends Controller
             $objs->task_group = @$appointment->task_group;
             $objs->task_status = 0;
             $objs->pin = 0;
+            $objs->activity_type = 'activity';
             $objs->save();
             return redirect()->route('assignee.assigned_by_me')->with('success','Activity deleted successfully');
         }
@@ -665,6 +667,7 @@ class AssigneeController extends Controller
             $objs->task_group = @$appointment->task_group;
             $objs->task_status = 0;
             $objs->pin = 0;
+            $objs->activity_type = 'activity';
             $objs->save();
             echo json_encode(array('success' => true, 'message' => 'Activity deleted successfully'));
             exit;
@@ -699,6 +702,7 @@ class AssigneeController extends Controller
             $objs->task_group = @$appointment->task_group;
             $objs->task_status = 0;
             $objs->pin = 0;
+            $objs->activity_type = 'activity';
             $objs->save();
             return redirect()->route('assignee.action_completed')->with('success','Action deleted successfully');
         }
@@ -788,6 +792,7 @@ class AssigneeController extends Controller
                 $completionLog->task_group = $currentAction->task_group;
                 $completionLog->task_status = 1; // Marked as completed
                 $completionLog->pin = 0;
+                $completionLog->activity_type = 'activity';
                 $completionLog->save();
             }
 
@@ -833,6 +838,7 @@ class AssigneeController extends Controller
                 $newActionLog->task_group = $validated['task_group'];
                 $newActionLog->task_status = 0; // New action is incomplete
                 $newActionLog->pin = 0;
+                $newActionLog->activity_type = 'activity';
                 $newActionLog->save();
             }
 

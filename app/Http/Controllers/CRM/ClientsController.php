@@ -5933,10 +5933,11 @@ class ClientsController extends Controller
 				$activityLog->client_id = $request->client_id;
 				$activityLog->created_by = Auth::user()->id;
 				$activityLog->description = '<span class="text-semi-bold">Activity Converted to Note</span><p>Activity "' . $activity->subject . '" has been converted to a note.</p>';
-				$activityLog->subject = 'converted activity to note';
-				$activityLog->task_status = 0;
-				$activityLog->pin = 0;
-				$activityLog->save();
+                $activityLog->subject = 'converted activity to note';
+                $activityLog->activity_type = 'activity';
+                $activityLog->task_status = 0;
+                $activityLog->pin = 0;
+                $activityLog->save();
 
 				// Update client matter timestamp
 				$clientMatter->updated_at = date('Y-m-d H:i:s');
@@ -6336,6 +6337,7 @@ class ClientsController extends Controller
 
                     $objs->followup_date = $requestData['followup_datetime'] ?? null;
                     $objs->task_group = $requestData['task_group'] ?? null;
+                    $objs->activity_type = 'activity';
                     $objs->save();
                 }
             }
@@ -6618,6 +6620,7 @@ class ClientsController extends Controller
                 }
                 $activityLog->followup_date = isset($action->action_date) ? $action->action_date : null;
                 $activityLog->task_group = $action->task_group;
+                $activityLog->activity_type = 'activity';
                 $activityLog->save();
             }
 
@@ -6810,6 +6813,7 @@ class ClientsController extends Controller
             $activityLog->client_id = $matter->client_id;
             $activityLog->created_by = Auth::id();
             $activityLog->subject = $activitySubject;
+            $activityLog->activity_type = 'activity';
             $activityLog->task_status = 0;
             $activityLog->pin = 0;
             $activityLog->save();
@@ -6893,10 +6897,11 @@ class ClientsController extends Controller
             $activityLog->created_by = Auth::id();
             $activityLog->subject = 'Appointment created: ' . $requestData['title'];
             $activityLog->description = $requestData['description'] ?? '';
-            $activityLog->followup_date = $followupDateTime->toDateTimeString();
-            $activityLog->task_status = 0;
-            $activityLog->pin = 0;
-            $activityLog->save();
+                $activityLog->followup_date = $followupDateTime->toDateTimeString();
+                $activityLog->activity_type = 'activity';
+                $activityLog->task_status = 0;
+                $activityLog->pin = 0;
+                $activityLog->save();
 
             // Return JSON response matching expected format (status instead of success)
             if ($request->expectsJson() || $request->ajax()) {

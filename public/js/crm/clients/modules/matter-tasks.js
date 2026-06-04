@@ -57,37 +57,36 @@
         }
     }
 
-    function notifyUndo(message, onUndo) {
+    function notifyUndo(title, onUndo) {
+        var label = esc(title || 'Task');
         if (typeof iziToast !== 'undefined' && typeof iziToast.show === 'function') {
             iziToast.destroy();
             iziToast.show({
                 title: 'Task removed',
-                message:
-                    message +
-                    ' <button type="button" class="cdn-matter-task-undo-btn btn btn-sm btn-light ms-2">Undo</button>',
+                message: label,
                 position: 'topRight',
                 timeout: UNDO_MS,
                 close: true,
                 progressBar: true,
-                onOpened: function () {
-                    $(document).off('click.cdnMatterTaskUndo', '.cdn-matter-task-undo-btn');
-                    $(document).on('click.cdnMatterTaskUndo', '.cdn-matter-task-undo-btn', function (e) {
-                        e.preventDefault();
-                        iziToast.destroy();
-                        if (typeof onUndo === 'function') {
-                            onUndo();
-                        }
-                    });
-                },
-                onClosed: function () {
-                    $(document).off('click.cdnMatterTaskUndo', '.cdn-matter-task-undo-btn');
-                }
+                displayMode: 2,
+                buttons: [
+                    [
+                        '<button type="button"><b>Undo</b></button>',
+                        function (instance, toast) {
+                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                            if (typeof onUndo === 'function') {
+                                onUndo();
+                            }
+                        },
+                        true
+                    ]
+                ]
             });
             return;
         }
         if (typeof window.crmNotify !== 'undefined' && typeof window.crmNotify.info === 'function') {
             window.crmNotify.info({
-                message: message + ' Undo is available for a few seconds — refresh the tab if you need to restore it.'
+                message: (title || 'Task') + ' removed. Refresh the tab if you need to restore it.'
             });
         }
     }
@@ -328,15 +327,24 @@
         pendingDelete = null;
     }
 
-    function flushPendingDelete() {
+    function flushPendingDelete(onComplete) {
         if (!pendingDelete) {
+            if (typeof onComplete === 'function') {
+                onComplete();
+            }
             return;
         }
         var id = pendingDelete.id;
         var cid = clientId();
         var base = taskBase();
+        if (pendingDelete.timer) {
+            clearTimeout(pendingDelete.timer);
+        }
         pendingDelete = null;
         if (!id || !cid || !base) {
+            if (typeof onComplete === 'function') {
+                onComplete();
+            }
             return;
         }
         $.ajax({
@@ -349,14 +357,24 @@
                 Accept: 'application/json'
             },
             data: { client_id: cid, _token: csrf() },
+            complete: function () {
+                if (typeof onComplete === 'function') {
+                    onComplete();
+                }
+            },
             error: function () {
                 notifyError('Could not delete task.');
-                reload();
             }
         });
     }
 
     function reload() {
+        if (pendingDelete) {
+            flushPendingDelete(function () {
+                reload();
+            });
+            return;
+        }
         var $wrap = $('#cdn-matter-tasks');
         if (!$wrap.length) {
             return;
@@ -567,16 +585,23 @@
                 return;
             }
 
-            cancelPendingDelete();
+            if (pendingDelete) {
+                flushPendingDelete();
+            }
             var title = $row.find('.cdn-matter-task__label').text() || 'Task';
             $row.addClass('cdn-matter-task__row--removing');
 
             pendingDelete = { id: id, timer: null };
             pendingDelete.timer = setTimeout(function () {
-                flushPendingDelete();
+                flushPendingDelete(function () {
+                    var $list = $('#cdn-matter-tasks .cdn-matter-task__list');
+                    if ($list.find('.cdn-matter-task__row').length === 0) {
+                        $list.html(renderList([]));
+                    }
+                });
             }, UNDO_MS);
 
-            notifyUndo(esc(title), function () {
+            notifyUndo(title, function () {
                 cancelPendingDelete();
                 reload();
             });

@@ -2998,6 +2998,14 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   line-height: 1.45;
 }
 
+.cdn-matter-task__status--error {
+  color: #b91c1c;
+}
+
+.cdn-matter-task__status--muted {
+  color: var(--cdn-muted, #64748b);
+}
+
 .cdn-matter-task-composer {
   display: flex;
   flex-wrap: wrap;

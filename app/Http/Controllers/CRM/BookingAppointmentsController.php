@@ -981,6 +981,7 @@ class BookingAppointmentsController extends Controller
                                        ($request->cancellation_reason ? '<p><strong>Reason:</strong> ' . e($request->cancellation_reason) . '</p>' : '');
             $activityLog->task_status = 0;
             $activityLog->pin = 0;
+            $activityLog->activity_type = 'activity';
             $activityLog->save();
         }
 
@@ -1047,6 +1048,7 @@ class BookingAppointmentsController extends Controller
                 $activityLog->description = '<p><strong>Consultant assigned:</strong> ' . ($consultant ? e($consultant->name) : 'N/A') . '</p>';
                 $activityLog->task_status = 0;
                 $activityLog->pin = 0;
+                $activityLog->activity_type = 'activity';
                 $activityLog->save();
             }
 
@@ -1167,6 +1169,7 @@ class BookingAppointmentsController extends Controller
                 $activityLog->description = '<p><strong>Meeting type changed:</strong> ' . $oldDisplay . ' → ' . $newDisplay . '</p>';
                 $activityLog->task_status = 0;
                 $activityLog->pin = 0;
+                $activityLog->activity_type = 'activity';
                 $activityLog->save();
             }
 
@@ -1427,6 +1430,7 @@ class BookingAppointmentsController extends Controller
             $activityLog->created_by = Auth::id();
             $activityLog->task_status = 0;
             $activityLog->pin = 0;
+            $activityLog->activity_type = 'activity';
 
             $descriptionParts = [];
             
@@ -1663,6 +1667,7 @@ class BookingAppointmentsController extends Controller
             $activityLog->description = '<p>' . e($request->note) . '</p>';
             $activityLog->task_status = 0;
             $activityLog->pin = 0;
+            $activityLog->activity_type = 'activity';
             $activityLog->save();
         }
 
