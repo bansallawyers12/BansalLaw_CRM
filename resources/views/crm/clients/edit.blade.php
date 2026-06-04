@@ -429,6 +429,13 @@
                             </div>
                         </div>
                     </section>
+
+                    <x-client-edit.address-section
+                        :clientAddresses="$clientAddresses"
+                        :searchRoute="route('clients.searchAddressFull')"
+                        :detailsRoute="route('clients.getPlaceDetails')"
+                        :csrfToken="csrf_token()"
+                    />
                 </section>
 
                 {{-- Lead Source & Assignment Section --}}
@@ -661,15 +668,8 @@
                     </section>
                 </section>
 
-                <!-- Address & Travel Section -->
-                <section id="addressTravelSection" class="content-section">
-                    <x-client-edit.address-section 
-                        :clientAddresses="$clientAddresses"
-                        :searchRoute="route('clients.searchAddressFull')"
-                        :detailsRoute="route('clients.getPlaceDetails')"
-                        :csrfToken="csrf_token()"
-                    />
-                    
+                <!-- Travel Section (address editing is on Client Info tab) -->
+                <section id="addressTravelSection" class="content-section" style="display:none">
                     <!-- Travel Information Section -->
                     <section class="form-section" style="display:none">
                         <div class="section-header">

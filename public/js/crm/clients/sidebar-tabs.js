@@ -40,9 +40,9 @@
         return s;
     }
 
-    /** Tabs where the right-rail activity feed should be visible (details tabs + dedicated Activity nav). */
+    /** Tabs where the activity feed should be visible (Timeline tab only). */
     function isActivityFeedTab(tabId) {
-        return tabId === 'personaldetails' || tabId === 'companydetails' || tabId === 'activityfeed';
+        return tabId === 'activityfeed';
     }
 
     /**

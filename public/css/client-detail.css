@@ -2574,6 +2574,10 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   min-width: 0;
   align-self: stretch;
   box-sizing: border-box;
+  /* Cancel legacy flex-era width overrides so the grid track controls sizing */
+  width: 100% !important;
+  max-width: none !important;
+  flex: none !important;
 }
 
 /* Tabs without a feed (Tasks, Notes, etc.): single column — avoids empty right rail */

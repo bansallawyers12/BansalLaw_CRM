@@ -18,10 +18,9 @@ use App\Http\Controllers\Controller;
 ?>
 @php
     $cdnActiveTabSlug = strtolower((string) ($activeTab ?? 'personaldetails'));
-    $cdnShowFeedOnLoad = in_array($cdnActiveTabSlug, ['personaldetails', 'companydetails', 'activityfeed'], true);
     $cdnActivityTabOnly = $cdnActiveTabSlug === 'activityfeed';
 @endphp
-<div class="crm-container crm-container--unified{{ $cdnShowFeedOnLoad ? '' : ' crm-container--no-feed' }}{{ $cdnActivityTabOnly ? ' crm-container--activity-tab' : '' }}" data-client-id="{{ $fetchedData->id }}">
+<div class="crm-container crm-container--unified{{ $cdnActivityTabOnly ? ' crm-container--activity-tab' : ' crm-container--no-feed' }}" data-client-id="{{ $fetchedData->id }}">
     <!-- Collapsed Toggle Button (shown when sidebar is collapsed) -->
     <button id="collapsed-toggle" class="collapsed-toggle-btn" title="Show Sidebar">
         ☰

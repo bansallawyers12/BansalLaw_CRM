@@ -830,11 +830,9 @@ $(document).ready(function() {
 
 
 
-    // Initialize Activity Feed visibility on page load (details tabs + Activity sidebar tab)
+    // Initialize Activity Feed visibility on page load (Timeline tab only)
 
-    var showFeedOnLoad = $('#personaldetails-tab').hasClass('active')
-        || $('#companydetails-tab').hasClass('active')
-        || $('#activityfeed-tab').hasClass('active');
+    var showFeedOnLoad = $('#activityfeed-tab').hasClass('active');
 
     if (window.SidebarTabs && typeof window.SidebarTabs.syncFeedGridLayout === 'function') {
         window.SidebarTabs.syncFeedGridLayout(showFeedOnLoad);
