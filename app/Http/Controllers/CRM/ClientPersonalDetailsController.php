@@ -3779,6 +3779,17 @@ class ClientPersonalDetailsController extends Controller
                 // Track which address IDs should be kept (both updated and newly created)
                 $addressIdsToKeep = [];
                 
+                // Single current address per client — only process the first submitted entry
+                foreach ([
+                    'zip', 'address_id', 'address_line_1', 'address_line_2',
+                    'suburb', 'state', 'country', 'regional_code',
+                    'address_start_date', 'address_end_date',
+                ] as $addressField) {
+                    if (isset($requestData[$addressField]) && is_array($requestData[$addressField])) {
+                        $requestData[$addressField] = array_slice($requestData[$addressField], 0, 1);
+                    }
+                }
+                
                 // Process each address in the request
                 foreach ($requestData['zip'] as $key => $zip) {
                     $address_line_1 = $requestData['address_line_1'][$key] ?? null;
@@ -3875,7 +3886,8 @@ class ClientPersonalDetailsController extends Controller
                                 'zip' => $zip,
                                 'regional_code' => $regional_code,
                                 'start_date' => $formatted_start_date,
-                                'end_date' => $formatted_end_date
+                                'end_date' => $formatted_end_date,
+                                'is_current' => true,
                             ]);
                             // Track this ID to keep it
                             $addressIdsToKeep[] = $address_id;
@@ -3895,7 +3907,8 @@ class ClientPersonalDetailsController extends Controller
                                 'zip' => $zip,
                                 'regional_code' => $regional_code,
                                 'start_date' => $formatted_start_date,
-                                'end_date' => $formatted_end_date
+                                'end_date' => $formatted_end_date,
+                                'is_current' => true,
                             ]);
                             // Track newly created ID to keep it
                             $addressIdsToKeep[] = $newAddress->id;
@@ -3915,7 +3928,8 @@ class ClientPersonalDetailsController extends Controller
                             'zip' => $zip,
                             'regional_code' => $regional_code,
                             'start_date' => $formatted_start_date,
-                            'end_date' => $formatted_end_date
+                            'end_date' => $formatted_end_date,
+                            'is_current' => true,
                         ]);
                         // Track newly created ID to keep it
                         $addressIdsToKeep[] = $newAddress->id;

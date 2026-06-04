@@ -298,9 +298,11 @@ class ClientEditService
      */
     protected function getClientAddresses(int $clientId)
     {
-        return ClientAddress::where('client_id', $clientId)
+        $currentAddress = ClientAddress::where('client_id', $clientId)
             ->orderByRaw('start_date DESC NULLS LAST, created_at DESC')
-            ->get() ?? [];
+            ->first();
+
+        return $currentAddress ? collect([$currentAddress]) : collect();
     }
 
     /**

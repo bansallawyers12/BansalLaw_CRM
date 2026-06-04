@@ -1,14 +1,8 @@
-{{-- Single Address Entry Component --}}
-@props(['index', 'address' => null, 'showRemoveButton' => true])
+{{-- Current Address Fields --}}
+@props(['index', 'address' => null])
 
 <div class="address-entry-wrapper" data-address-index="{{ $index }}">
-    @if($showRemoveButton)
-        <button type="button" class="remove-address-btn" onclick="removeAddressEntry(this)" title="Remove Address">
-            <i class="fas fa-times"></i>
-        </button>
-    @endif
-    
-    <input type="hidden" name="address_id[]" value="{{ $address->id ?? '' }}">
+    <input type="hidden" name="address_id[]" value="{{ $address?->id ?? '' }}">
     
     {{-- Address Search --}}
     <div class="form-group address-search-container">
@@ -20,7 +14,7 @@
                placeholder="Start typing an address..."
                autocomplete="off"
                data-address-index="{{ $index }}"
-               value="{{ $address ? ($address->address_line_1 ? $address->address_line_1 . ', ' . $address->suburb . ', ' . $address->state : $address->address) : '' }}">
+               value="{{ $address ? ($address->address_line_1 ? $address->address_line_1 . ', ' . $address->suburb . ', ' . $address->state : ($address->address ?? '')) : '' }}">
     </div>
     
     {{-- Structured Address Fields --}}
@@ -30,7 +24,7 @@
             <input type="text" 
                    id="address_line_1_{{ $index }}" 
                    name="address_line_1[]" 
-                   value="{{ $address->address_line_1 ?? '' }}"
+                   value="{{ $address?->address_line_1 ?? '' }}"
                    placeholder="Street number and name"
                    class="address-required">
         </div>
@@ -40,7 +34,7 @@
             <input type="text" 
                    id="address_line_2_{{ $index }}" 
                    name="address_line_2[]" 
-                   value="{{ $address->address_line_2 ?? '' }}"
+                   value="{{ $address?->address_line_2 ?? '' }}"
                    placeholder="Apartment, suite, unit, etc.">
         </div>
     </div>
@@ -51,7 +45,7 @@
             <input type="text" 
                    id="suburb_{{ $index }}" 
                    name="suburb[]" 
-                   value="{{ $address ? ($address->suburb ?? '') : '' }}"
+                   value="{{ $address?->suburb ?? '' }}"
                    placeholder="Suburb"
                    class="address-required">
         </div>
@@ -61,7 +55,7 @@
             <input type="text" 
                    id="state_{{ $index }}" 
                    name="state[]" 
-                   value="{{ $address->state ?? '' }}"
+                   value="{{ $address?->state ?? '' }}"
                    placeholder="State"
                    class="address-required">
         </div>
@@ -73,7 +67,7 @@
             <input type="text" 
                    id="zip_{{ $index }}" 
                    name="zip[]" 
-                   value="{{ $address->zip ?? '' }}"
+                   value="{{ $address?->zip ?? '' }}"
                    placeholder="Postcode"
                    class="address-required">
         </div>
@@ -83,7 +77,7 @@
             <input type="text" 
                    id="country_{{ $index }}" 
                    name="country[]" 
-                   value="{{ $address ? ($address->country ?? 'Australia') : 'Australia' }}"
+                   value="{{ $address?->country ?? 'Australia' }}"
                    placeholder="Country"
                    class="address-required">
         </div>
@@ -94,32 +88,9 @@
         <input type="text" 
                id="regional_code_{{ $index }}" 
                name="regional_code[]" 
-               value="{{ $address->regional_code ?? '' }}"
+               value="{{ $address?->regional_code ?? '' }}"
                placeholder="Regional code (auto-calculated)"
                class="regional-code-field"
                readonly>
     </div>
-    
-    <div class="date-fields">
-        <div class="form-group">
-            <label for="address_start_date_{{ $index }}">Start Date</label>
-            <input type="text" 
-                   id="address_start_date_{{ $index }}" 
-                   name="address_start_date[]" 
-                   value="{{ $address && $address->start_date ? date('d/m/Y', strtotime($address->start_date)) : '' }}"
-                   placeholder="dd/mm/yyyy"
-                   class="date-picker date-picker-past-only">
-        </div>
-        
-        <div class="form-group">
-            <label for="address_end_date_{{ $index }}">End Date</label>
-            <input type="text" 
-                   id="address_end_date_{{ $index }}" 
-                   name="address_end_date[]" 
-                   value="{{ $address && $address->end_date ? date('d/m/Y', strtotime($address->end_date)) : '' }}"
-                   placeholder="dd/mm/yyyy"
-                   class="date-picker date-picker-past-only">
-        </div>
-    </div>
 </div>
-

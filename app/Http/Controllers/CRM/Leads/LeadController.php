@@ -991,9 +991,10 @@ class LeadController extends Controller
             ->with('matter:id,title,nick_name')
             ->get() ?? collect();
         $clientPassports = \App\Models\ClientPassportInformation::where('client_id', $id)->get() ?? collect();
-        $clientAddresses = \App\Models\ClientAddress::where('client_id', $id)
+        $currentAddress = \App\Models\ClientAddress::where('client_id', $id)
             ->orderByRaw('start_date DESC NULLS LAST, created_at DESC')
-            ->get() ?? collect();
+            ->first();
+        $clientAddresses = $currentAddress ? collect([$currentAddress]) : collect();
         $clientTravels = \App\Models\ClientTravelInformation::where('client_id', $id)
             ->orderByRaw('travel_arrival_date DESC NULLS LAST, created_at DESC')
             ->get() ?? collect();

@@ -2152,7 +2152,10 @@ class ClientsController extends Controller
                 }
 
                 //Fetch other client-related data
-                $clientAddresses = ClientAddress::where('client_id', $id)->orderByRaw('start_date DESC NULLS LAST, created_at DESC')->get();
+                $currentAddress = ClientAddress::where('client_id', $id)
+                    ->orderByRaw('start_date DESC NULLS LAST, created_at DESC')
+                    ->first();
+                $clientAddresses = $currentAddress ? collect([$currentAddress]) : collect();
                 $clientContacts = ClientContact::where('client_id', $id)->get();
                 $emails = ClientEmail::where('client_id', $id)->get() ?? [];
                 $qualifications = ClientQualification::where('client_id', $id)->orderByRaw('finish_date DESC NULLS LAST')->get() ?? [];

@@ -1,74 +1,59 @@
-{{-- Address Information Section Component --}}
+{{-- Current Address Section Component --}}
 @props(['clientAddresses', 'searchRoute', 'detailsRoute', 'csrfToken'])
+
+@php
+    $currentAddress = collect($clientAddresses)->first();
+@endphp
 
 <section class="form-section">
     <div class="section-header">
-        <h3><i class="fas fa-home"></i> Address Information</h3>
+        <h3><i class="fas fa-home"></i> Current Address</h3>
         <div class="section-actions">
             <button type="button" class="edit-section-btn" onclick="toggleEditMode('addressInfo')">
                 <i class="fas fa-pen"></i>
-            </button>
-            <button type="button" class="add-section-btn" onclick="addAddress()" title="Add Address">
-                <i class="fas fa-plus"></i>
             </button>
         </div>
     </div>
     
     {{-- Summary View --}}
     <div id="addressInfoSummary" class="summary-view">
-        @if($clientAddresses->count() > 0)
-            <div>
-                @foreach($clientAddresses as $index => $address)
-                    <div class="address-entry-compact">
-                        <div class="address-compact-grid">
-                            <div class="summary-item-inline">
-                                <span class="summary-label">ADDRESS:</span>
-                                <span class="summary-value">
-                                    @php
-                                        $addressParts = array_filter([
-                                            $address->address_line_1,
-                                            $address->address_line_2,
-                                            $address->suburb,
-                                            $address->state,
-                                            $address->zip,
-                                            ($address->country && $address->country !== 'Australia') ? $address->country : null
-                                        ]);
-                                        
-                                        if (!empty($addressParts)) {
-                                            echo implode(', ', $addressParts);
-                                        } elseif ($address->address) {
-                                            echo $address->address;
-                                        } else {
-                                            echo 'Not set';
-                                        }
-                                    @endphp
-                                </span>
-                            </div>
-                            @if($address->start_date)
-                            <div class="summary-item-inline">
-                                <span class="summary-label">START DATE:</span>
-                                <span class="summary-value">{{ date('d/m/Y', strtotime($address->start_date)) }}</span>
-                            </div>
-                            @endif
-                            @if($address->end_date)
-                            <div class="summary-item-inline">
-                                <span class="summary-label">END DATE:</span>
-                                <span class="summary-value">{{ date('d/m/Y', strtotime($address->end_date)) }}</span>
-                            </div>
-                            @endif
-                            @if($address->regional_code)
-                            <div class="summary-item-inline">
-                                <span class="summary-label">REGIONAL CODE:</span>
-                                <span class="summary-value strong">{{ $address->regional_code }}</span>
-                            </div>
-                            @endif
-                        </div>
+        @if($currentAddress)
+            <div class="address-entry-compact">
+                <div class="address-compact-grid">
+                    <div class="summary-item-inline">
+                        <span class="summary-label">ADDRESS:</span>
+                        <span class="summary-value">
+                            @php
+                                $addressParts = array_filter([
+                                    $currentAddress->address_line_1,
+                                    $currentAddress->address_line_2,
+                                    $currentAddress->suburb,
+                                    $currentAddress->state,
+                                    $currentAddress->zip,
+                                    ($currentAddress->country && $currentAddress->country !== 'Australia') ? $currentAddress->country : null
+                                ]);
+                                
+                                if (!empty($addressParts)) {
+                                    echo implode(', ', $addressParts);
+                                } elseif ($currentAddress->address) {
+                                    echo $currentAddress->address;
+                                } else {
+                                    echo 'Not set';
+                                }
+                            @endphp
+                        </span>
                     </div>
-                @endforeach
+                    @if($currentAddress->regional_code)
+                    <div class="summary-item-inline">
+                        <span class="summary-label">REGIONAL CODE:</span>
+                        <span class="summary-value strong">{{ $currentAddress->regional_code }}</span>
+                    </div>
+                    @endif
+                </div>
             </div>
         @else
             <div class="empty-state">
-                <p>No addresses added yet.</p>
+                <p>No current address on file.</p>
             </div>
         @endif
     </div>
@@ -79,30 +64,14 @@
          data-search-route="{{ $searchRoute }}"
          data-details-route="{{ $detailsRoute }}"
          data-csrf-token="{{ $csrfToken }}"
-         data-address-count="{{ count($clientAddresses) }}">
+         data-address-count="{{ $currentAddress ? 1 : 0 }}">
         
         <div id="addresses-container">
-            @if(count($clientAddresses) > 0)
-                @foreach($clientAddresses as $index => $address)
-                    <x-client-edit.address-field 
-                        :index="$index" 
-                        :address="$address" 
-                        :showRemoveButton="$index > 0" 
-                    />
-                @endforeach
-            @else
-                {{-- Default empty address entry --}}
-                <x-client-edit.address-field 
-                    :index="0" 
-                    :address="null" 
-                    :showRemoveButton="false" 
-                />
-            @endif
+            <x-client-edit.address-field 
+                :index="0" 
+                :address="$currentAddress" 
+            />
         </div>
-        
-        <button type="button" class="add-another-address" onclick="addAnotherAddress()">
-            <i class="fas fa-plus"></i> Add Another Address
-        </button>
 
         <div class="edit-actions">
             <button type="button" class="btn btn-primary" onclick="saveAddressInfo()">Save</button>
@@ -110,4 +79,3 @@
         </div>
     </div>
 </section>
-

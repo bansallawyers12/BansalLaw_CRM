@@ -39,28 +39,6 @@
     background-color: #fafafa;
 }
 
-.address-entry-wrapper:last-child {
-    border: 2px dashed #ccc;
-    background-color: #fff;
-}
-
-.remove-address-btn {
-    float: right;
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    cursor: pointer;
-    margin-top: -10px;
-    margin-right: -10px;
-}
-
-.remove-address-btn:hover {
-    background: #c82333;
-}
-
 .address-fields-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -94,26 +72,5 @@
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
-}
-
-.date-fields {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-
-
-.add-another-address {
-    background: #28a745;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-top: 20px;
-}
-
-.add-another-address:hover {
-    background: #218838;
 }
 

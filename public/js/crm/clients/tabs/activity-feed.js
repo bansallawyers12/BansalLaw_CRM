@@ -79,6 +79,14 @@
         return $('#activity-feed').data('filtersCollapsed') === true;
     }
 
+    /** Whether search/date filters should affect the feed (not the same as DOM :visible during slide animations). */
+    function isExtendedFiltersActive() {
+        if (isOnActivityTab()) {
+            return !isFilterBarCollapsed();
+        }
+        return $('#activity-feed-filter-bar').is(':visible');
+    }
+
     function setFilterBarCollapsed(collapsed) {
         $('#activity-feed').data('filtersCollapsed', collapsed);
     }
@@ -105,7 +113,10 @@
             setFilterBarCollapsed(false);
             updateFilterToggleUi(false);
             if (animate) {
-                $bar.stop(true, true).slideDown(200, afterFilterBarLayoutChange);
+                $bar.stop(true, true).slideDown(200, function() {
+                    afterFilterBarLayoutChange();
+                    reapplyFilters();
+                });
             } else {
                 $bar.show();
                 afterFilterBarLayoutChange();
@@ -141,14 +152,17 @@
             if (!$('#increase-activity-feed-width').is(':checked')) {
                 $('#activity-feed-filter-bar').hide().removeClass('activity-feed-filter-bar--collapsed');
             }
+            reapplyFilters();
             return;
         }
         $toggle.removeAttr('hidden');
         if (isFilterBarCollapsed()) {
             $('#activity-feed-filter-bar').hide().addClass('activity-feed-filter-bar--collapsed');
             updateFilterToggleUi(true);
+            reapplyFilters();
         } else {
             setFilterBarVisible(true, false);
+            reapplyFilters();
         }
     }
 
@@ -157,8 +171,11 @@
             if (!isOnActivityTab()) {
                 return;
             }
-            setFilterBarVisible(isFilterBarCollapsed(), true);
-            reapplyFilters();
+            var expanding = isFilterBarCollapsed();
+            setFilterBarVisible(expanding, true);
+            if (!expanding) {
+                reapplyFilters();
+            }
         });
     }
 
@@ -189,7 +206,7 @@
         $root.find('.activity-filter-btn').on('click', function() {
             $root.find('.activity-filter-btn').removeClass('active');
             $(this).addClass('active');
-            if ($('#activity-feed-filter-bar').is(':visible')) {
+            if (isExtendedFiltersActive()) {
                 applyExtendedFilters();
             } else {
                 filterActivities($(this).data('filter'));
@@ -315,7 +332,7 @@
     function reapplyFilters() {
         var $root = feedRoot();
         if (!$root.length) return;
-        if ($('#activity-feed-filter-bar').is(':visible')) {
+        if (isExtendedFiltersActive()) {
             applyExtendedFilters();
         } else {
             var activeType = $root.find('.activity-filter-btn.active').data('filter') || 'all';
