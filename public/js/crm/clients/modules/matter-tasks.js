@@ -211,7 +211,7 @@
         var title = esc(it.title || '');
         var cbId = 'cdn-mtask-' + rowId;
         var noteId = safeId(it.note_id);
-        var actionHref = noteId ? esc(actionPageUrl(noteId)) : '';
+        var actionHref = urlMap().assigneeAction ? esc(actionPageUrl(noteId)) : '';
 
         var html = '<li class="cdn-matter-task__row' + (done ? ' is-done-row' : '') + '" data-id="' + rowId + '"';
         if (noteId) {
