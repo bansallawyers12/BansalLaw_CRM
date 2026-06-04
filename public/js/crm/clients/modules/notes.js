@@ -60,18 +60,14 @@
                         $('.subtab8-button.pill-tab[data-subtab8="All"]').addClass('active');
                         $('#noteterm-tab').find('.note-card-redesign').show();
                     } else {
-                        var matterMatches = (window.ClientDetailShared && window.ClientDetailShared.noteMatchesSelectedMatter)
-                            ? window.ClientDetailShared.noteMatchesSelectedMatter
-                            : function (cardMatter, sel) {
-                                if (!sel) return true;
-                                var c = cardMatter == null ? '' : String(cardMatter).trim();
-                                return c === '' || c === 'null' || c === '0' || c === String(sel);
-                            };
-
                         $('#noteterm-tab').find('.note-card-redesign').each(function() {
                             var noteType = $(this).data('type');
                             var typeMatch = (activeTaskGroup === 'All' || noteType === activeTaskGroup);
-                            var matterMatch = matterMatches($(this).attr('data-matterid'), selectedMatter);
+
+                            var matterMatch = true;
+                            if (selectedMatter && selectedMatter !== '') {
+                                matterMatch = ($(this).data('matterid') == selectedMatter);
+                            }
 
                             if (typeMatch && matterMatch) {
                                 $(this).show();

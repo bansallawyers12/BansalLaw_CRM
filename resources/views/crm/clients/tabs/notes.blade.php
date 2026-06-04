@@ -306,35 +306,44 @@
             <script>
             // Make filterNotes globally accessible
             window.filterNotes = function() {
+                    // Get search text
                     const searchText = document.getElementById('notes-search-input')?.value.toLowerCase().trim() || '';
-                    const selectedMatter = (window.ClientDetailShared && window.ClientDetailShared.getSelectedClientDetailMatterId)
-                        ? window.ClientDetailShared.getSelectedClientDetailMatterId()
-                        : ($('.general_matter_checkbox_client_detail').is(':checked')
-                            ? $('.general_matter_checkbox_client_detail').val()
-                            : $('#sel_matter_id_client_detail').val());
-                    const matterMatches = (window.ClientDetailShared && window.ClientDetailShared.noteMatchesSelectedMatter)
-                        ? window.ClientDetailShared.noteMatchesSelectedMatter
-                        : function (cardMatter, sel) {
-                            if (!sel) return true;
-                            const c = cardMatter == null ? '' : String(cardMatter).trim();
-                            return c === '' || c === 'null' || c === '0' || c === String(sel);
-                        };
+                    
+                    // Get selected matter
+                    let selectedMatter;
+                    if ($('.general_matter_checkbox_client_detail').is(':checked')) {
+                        selectedMatter = $('.general_matter_checkbox_client_detail').val();
+                    } else {
+                        selectedMatter = $('#sel_matter_id_client_detail').val();
+                    }
+                    
+                    // Get active type (default to 'All' if no active tab)
                     const activeTab = document.querySelector('.subtab8-button.pill-tab.active');
                     const type = activeTab ? activeTab.getAttribute('data-subtab8') : 'All';
-                    const listRoot = document.querySelector('#noteterm-tab .note_term_list');
-                    const cards = listRoot
-                        ? listRoot.querySelectorAll('.note-card-redesign')
-                        : document.querySelectorAll('#noteterm-tab .note-card-redesign');
-
-                    cards.forEach(card => {
+                    
+                    // Filter notes
+                    document.querySelectorAll('.note-card-redesign').forEach(card => {
                         const cardType = card.getAttribute('data-type');
+                        
+                        // Type matching
                         const typeMatch = (type === 'All' || cardType === type);
-                        const matterMatch = matterMatches(card.getAttribute('data-matterid'), selectedMatter);
+                        
+                        // Matter matching: filter by selected matter
+                        let matterMatch = true;
+                        if (selectedMatter && selectedMatter !== '') {
+                            const cardMatter = card.getAttribute('data-matterid');
+                            matterMatch = (cardMatter == selectedMatter);
+                        }
+                        
+                        // Text search matching
                         let searchMatch = true;
                         if (searchText) {
-                            searchMatch = card.textContent.toLowerCase().includes(searchText);
+                            // Get all text content from the note card
+                            const noteText = card.textContent.toLowerCase();
+                            searchMatch = noteText.includes(searchText);
                         }
-
+                        
+                        // Show/hide based on all conditions
                         if (typeMatch && matterMatch && searchMatch) {
                             card.style.display = '';
                         } else {
