@@ -16,66 +16,16 @@
                 var leadsHistoryPrefix  = @json($crmLeadsHistoryPrefix);
                 var allClientsUrl       = @json($crmGetAllClientsUrl);
 
-                initTS('.js-data-example-ajaxccsearch', {
-                    valueField: 'id',
-                    labelField: 'name',
-                    searchField: ['name', 'email'],
-                    loadThrottle: 300,
-                    preload: false,
-                    placeholder: 'Search',
+                if (typeof buildGetAllClientsTomSelectConfig !== 'function') {
+                    return;
+                }
+
+                initTS('.js-data-example-ajaxccsearch', buildGetAllClientsTomSelectConfig({
+                    url: allClientsUrl,
                     dropdownParent: 'body',
-                    shouldLoad: function (q) { return q.length > 0; },
-                    load: function (query, callback) {
-                        var url = allClientsUrl + (allClientsUrl.indexOf('?') >= 0 ? '&' : '?')
-                                + 'q=' + encodeURIComponent(query);
-                        fetch(url, {
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json'
-                            },
-                            credentials: 'same-origin'
-                        })
-                        .then(function (r) { return r.json(); })
-                        .then(function (data) { callback(data.items || []); })
-                        .catch(function () { callback(); });
-                    },
-                    render: {
-                        option: function (repo, escape) {
-                            var statClass = (repo.status === 'Archived')
-                                ? 'ui label select2-result-repository__statistics'
-                                : 'ui label yellow select2-result-repository__statistics';
-                            var badges = '';
-                            if (repo.locked) {
-                                var ui = repo.access_ui || {};
-                                if (ui.show_quick)      { badges += '<span class="ui label tiny">Quick</span> '; }
-                                if (ui.show_supervisor) { badges += '<span class="ui label tiny">Supervisor</span> '; }
-                            }
-                            return '<div class="selectclient ag-flex ag-space-between ag-align-center'
-                                + (repo.locked ? ' opacity-75' : '') + '"'
-                                + ' data-cid="' + escape((repo.cid || '').toString()) + '">'
-                                + '<div class="ag-flex ag-align-start">'
-                                    + '<div class="ag-flex ag-flex-column col-hr-1">'
-                                        + '<div class="ag-flex"><span class="select2-result-repository__title text-semi-bold">'
-                                        + (repo.locked ? '&#128274; ' : '')
-                                        + escape(repo.name || '')
-                                        + '</span>&nbsp;</div>'
-                                        + '<div class="ag-flex ag-align-center"><small class="select2-result-repository__description">'
-                                        + escape(repo.email || '')
-                                        + '</small></div>'
-                                    + '</div>'
-                                + '</div>'
-                                + '<div class="ag-flex ag-flex-column ag-align-end">'
-                                    + '<span class="select2resultrepositorystatistics">'
-                                    + badges
-                                    + '<span class="' + statClass + '">' + escape(repo.status || '') + '</span>'
-                                    + '</span>'
-                                + '</div>'
-                                + '</div>';
-                        },
-                        item: function (repo, escape) {
-                            return '<div>' + escape(repo.name || repo.text || '') + '</div>';
-                        }
-                    },
+                    placeholder: 'Search',
+                    loadThrottle: 300,
+                    showAccessBadges: true,
                     onChange: function (value) {
                         if (!value) { return; }
                         var item = this.options[value];
@@ -94,5 +44,5 @@
                             window.location = leadsHistoryPrefix + '/' + s[0];
                         }
                     }
-                });
+                }));
             }());

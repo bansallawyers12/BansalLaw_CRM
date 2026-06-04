@@ -3126,11 +3126,50 @@ class ClientsController extends Controller
                 return !in_array($r['cid'], $contactPersonIdsToExclude);
             }));
 
+            $results = $this->enrichGlobalSearchResultRefs($results);
+
             return response()->json(['items' => $results]);
         }
         
         // Return empty array when query is empty
         return response()->json(['items' => []]);
+    }
+
+    /**
+     * Add client/matter reference fields for global search UI (Tom Select display + optional local match).
+     *
+     * @param  list<array<string, mixed>>  $results
+     * @return list<array<string, mixed>>
+     */
+    private function enrichGlobalSearchResultRefs(array $results): array
+    {
+        if ($results === []) {
+            return $results;
+        }
+
+        $cids = array_values(array_unique(array_filter(array_column($results, 'cid'))));
+        $clientRefs = $cids === []
+            ? collect()
+            : \App\Models\Admin::query()->whereIn('id', $cids)->pluck('client_id', 'id');
+
+        foreach ($results as &$row) {
+            $cid = (int) ($row['cid'] ?? 0);
+            $clientRef = trim((string) ($clientRefs[$cid] ?? ''));
+            $matterRef = '';
+
+            if (! empty($row['id']) && preg_match('#/Matter/([^/]+)$#', (string) $row['id'], $matterMatch)) {
+                $matterRef = trim((string) ($matterMatch[1] ?? ''));
+            }
+
+            $row['client_id'] = $clientRef;
+            $row['matter_ref'] = $matterRef;
+            $row['search_label'] = $matterRef !== ''
+                ? trim($clientRef . ' / ' . $matterRef)
+                : $clientRef;
+        }
+        unset($row);
+
+        return $results;
     }
 
     /**

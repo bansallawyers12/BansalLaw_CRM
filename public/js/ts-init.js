@@ -87,10 +87,10 @@
 
   /**
    * Single-select AJAX client picker for GET /clients/get-allclients?q=
-   * Items: { id, name, email, status, cid, ... } (same shape as legacy Select2).
+   * Items: { id, name, email, status, cid, client_id, matter_ref, search_label, ... }.
    * Important: if popover content is cloned from a hidden template, the same id may exist twice in the DOM;
    * always pass the visible tip element into initTS (e.g. $tip.find('#assign_client_id')), never rely on $('#id') alone.
-   * @param {{ url: string, dropdownParent?: string|HTMLElement, placeholder?: string, loadThrottle?: number, minQueryLength?: number }} opts
+   * @param {{ url: string, dropdownParent?: string|HTMLElement, placeholder?: string, loadThrottle?: number, minQueryLength?: number, showAccessBadges?: boolean, onChange?: function }} opts
    */
   function buildGetAllClientsTomSelectConfig(opts) {
     opts = opts || {};
@@ -99,8 +99,42 @@
     var placeholder = opts.placeholder || 'Search client...';
     var loadThrottle = opts.loadThrottle != null ? opts.loadThrottle : 250;
     var minQueryLen = opts.minQueryLength != null ? opts.minQueryLength : 1;
+    var showAccessBadges = !!opts.showAccessBadges;
 
-    return {
+    function buildClientSearchDescription(item, escape) {
+      var parts = [];
+      if (item.email) {
+        parts.push(escape(String(item.email)));
+      }
+      var refLabel = item.search_label || item.client_id || '';
+      if (refLabel) {
+        parts.push(escape(String(refLabel)));
+      }
+      return parts.join(' · ');
+    }
+
+    function buildClientSearchStatusHtml(item, escape) {
+      var status = item.status || '';
+      var badges = '';
+      if (showAccessBadges && item.locked) {
+        var ui = item.access_ui || {};
+        if (ui.show_quick) {
+          badges += '<span class="ui label tiny">Quick</span> ';
+        }
+        if (ui.show_supervisor) {
+          badges += '<span class="ui label tiny">Supervisor</span> ';
+        }
+      }
+      var statClass = status === 'Archived'
+        ? 'ui label select2-result-repository__statistics'
+        : 'ui label yellow select2-result-repository__statistics';
+      if (status) {
+        badges += '<span class="' + statClass + '">' + escape(status) + '</span>';
+      }
+      return badges;
+    }
+
+    var cfg = {
       maxItems: 1,
       plugins: ['clear_button'],
       allowEmptyOption: true,
@@ -109,7 +143,9 @@
       dropdownParent: dropdownParent,
       valueField: 'id',
       labelField: 'name',
-      searchField: ['name', 'email'],
+      // Server already filters by name, email, phone, client ref, matter ref, etc.
+      filter: false,
+      searchField: ['name', 'email', 'client_id', 'matter_ref', 'search_label'],
       loadThrottle: loadThrottle,
       shouldLoad: function (query) {
         return String(query || '').length >= minQueryLen;
@@ -120,20 +156,15 @@
             return '<div class="crm-ts-client-loading">…</div>';
           }
           var cidAttr = escape(String(item.cid != null ? item.cid : ''));
-          var name = escape(item.name || item.text || '');
-          var email = escape(item.email || '');
-          var status = item.status || '';
-          var statInner = '';
-          if (status === 'Archived') {
-            statInner = '<span class="ui label select2-result-repository__statistics">' + escape(status) + '</span>';
-          } else if (status) {
-            statInner = '<span class="ui label yellow select2-result-repository__statistics">' + escape(status) + '</span>';
-          }
+          var name = (showAccessBadges && item.locked ? '&#128274; ' : '') + escape(item.name || item.text || '');
+          var description = buildClientSearchDescription(item, escape);
+          var statInner = buildClientSearchStatusHtml(item, escape);
+          var lockedClass = showAccessBadges && item.locked ? ' opacity-75' : '';
           return (
-            '<div data-id="' + cidAttr + '" class="selectclient select2-result-repository ag-flex ag-space-between ag-align-center">' +
+            '<div data-id="' + cidAttr + '" class="selectclient select2-result-repository ag-flex ag-space-between ag-align-center' + lockedClass + '">' +
             '<div class="ag-flex ag-align-start">' +
             '<div class="ag-flex ag-flex-column col-hr-1"><div class="ag-flex"><span class="select2-result-repository__title text-semi-bold">' + name + '</span>&nbsp;</div>' +
-            '<div class="ag-flex ag-align-center"><small class="select2-result-repository__description">' + email + '</small></div>' +
+            (description ? '<div class="ag-flex ag-align-center"><small class="select2-result-repository__description">' + description + '</small></div>' : '') +
             '</div></div>' +
             '<div class="ag-flex ag-flex-column ag-align-end">' +
             '<span class="select2resultrepositorystatistics">' + statInner + '</span>' +
@@ -153,7 +184,10 @@
         var qEnc = encodeURIComponent(String(query));
         fetch(url + sep + 'q=' + qEnc, {
           credentials: 'same-origin',
-          headers: { Accept: 'application/json' }
+          headers: {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
         })
           .then(function (r) {
             if (!r.ok) {
@@ -169,6 +203,12 @@
           });
       }
     };
+
+    if (typeof opts.onChange === 'function') {
+      cfg.onChange = opts.onChange;
+    }
+
+    return cfg;
   }
 
   /**
