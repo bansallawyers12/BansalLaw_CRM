@@ -13,7 +13,7 @@
                 <i class="fas fa-pen"></i>
             </button>
             @if($currentAddress)
-            <button type="button" class="delete-section-btn" onclick="deleteCurrentAddress()" title="Delete Current Address">
+            <button type="button" class="delete-section-btn" onclick="window.deleteCurrentAddress()" title="Delete Current Address">
                 <i class="fas fa-trash"></i>
             </button>
             @endif
