@@ -184,7 +184,8 @@ class EmailRendererService:
         
         # Extract metadata
         sent_date = email_data.get('sent_date', '')
-        recipients = email_data.get('recipients', [])
+        recipients = email_data.get('to_recipients') or email_data.get('recipients', [])
+        cc_recipients = email_data.get('cc_recipients', [])
         
         # Format date
         formatted_date = ''
@@ -301,6 +302,7 @@ class EmailRendererService:
             <div class="email-meta">
                 <strong>From:</strong> {self._escape_html(sender_name or sender_email)}<br>
                 {f'<strong>To:</strong> {", ".join([self._escape_html(r) for r in recipients[:3]])}' if recipients else ''}
+                {f'<br><strong>Cc:</strong> {", ".join([self._escape_html(r) for r in cc_recipients[:5]])}' if cc_recipients else ''}
                 {f'<br><strong>Date:</strong> {formatted_date}' if formatted_date else ''}
             </div>
         </div>

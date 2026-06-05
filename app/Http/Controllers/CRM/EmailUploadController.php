@@ -400,9 +400,8 @@ class EmailUploadController extends Controller
             $mailReport = new EmailLog();
             $mailReport->user_id = Auth::user()->id;
             $mailReport->from_mail = $parsedData['sender_email'] ?? '';
-            $mailReport->to_mail = isset($parsedData['recipients']) && is_array($parsedData['recipients']) 
-                ? implode(',', $parsedData['recipients']) 
-                : '';
+            $mailReport->to_mail = $this->formatParsedRecipientList($parsedData, 'to_recipients', 'recipients');
+            $mailReport->cc = $this->formatParsedRecipientList($parsedData, 'cc_recipients');
             $mailReport->subject = $parsedData['subject'] ?? '';
             $mailReport->message = $parsedData['html_content'] ?? $parsedData['text_content'] ?? '';
             $mailReport->mail_type = 1;
@@ -967,6 +966,38 @@ class EmailUploadController extends Controller
         }
         
         return $sanitizedFilename;
+    }
+
+    /**
+     * Join parsed recipient lists from the Python service for email_logs storage.
+     *
+     * @param array  $parsedData
+     * @param string $primaryKey   e.g. to_recipients, cc_recipients
+     * @param string|null $fallbackKey Legacy key (recipients = To only)
+     */
+    protected function formatParsedRecipientList(array $parsedData, string $primaryKey, ?string $fallbackKey = null): string
+    {
+        $list = $parsedData[$primaryKey] ?? null;
+        if ((! is_array($list) || $list === []) && $fallbackKey !== null) {
+            $list = $parsedData[$fallbackKey] ?? [];
+        }
+        if (! is_array($list) || $list === []) {
+            return '';
+        }
+
+        $normalized = [];
+        foreach ($list as $entry) {
+            if ($entry === null) {
+                continue;
+            }
+            $entry = trim((string) $entry);
+            if ($entry === '' || str_contains($entry, 'object at 0x')) {
+                continue;
+            }
+            $normalized[] = $entry;
+        }
+
+        return $normalized !== [] ? implode(',', array_values(array_unique($normalized))) : '';
     }
 
     /**

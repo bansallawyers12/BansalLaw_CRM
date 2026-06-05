@@ -4062,7 +4062,8 @@ class ClientsController extends Controller
                     $q->where('subject', 'LIKE', "%{$search}%")
                       ->orWhere('message', 'LIKE', "%{$search}%")
                       ->orWhere('from_mail', 'LIKE', "%{$search}%")
-                      ->orWhere('to_mail', 'LIKE', "%{$search}%");
+                      ->orWhere('to_mail', 'LIKE', "%{$search}%")
+                      ->orWhere('cc', 'LIKE', "%{$search}%");
                 });
             }
 
@@ -4336,7 +4337,8 @@ class ClientsController extends Controller
                     $q->where('subject', 'LIKE', "%{$search}%")
                       ->orWhere('message', 'LIKE', "%{$search}%")
                       ->orWhere('from_mail', 'LIKE', "%{$search}%")
-                      ->orWhere('to_mail', 'LIKE', "%{$search}%");
+                      ->orWhere('to_mail', 'LIKE', "%{$search}%")
+                      ->orWhere('cc', 'LIKE', "%{$search}%");
                 });
             }
 
@@ -4477,7 +4479,8 @@ class ClientsController extends Controller
                     $q->where('subject', 'LIKE', "%{$search}%")
                       ->orWhere('message', 'LIKE', "%{$search}%")
                       ->orWhere('from_mail', 'LIKE', "%{$search}%")
-                      ->orWhere('to_mail', 'LIKE', "%{$search}%");
+                      ->orWhere('to_mail', 'LIKE', "%{$search}%")
+                      ->orWhere('cc', 'LIKE', "%{$search}%");
                 });
             }
 

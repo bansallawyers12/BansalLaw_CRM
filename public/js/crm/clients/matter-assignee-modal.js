@@ -133,6 +133,10 @@
                 : $('#sel_matter_id_client_detail').val();
         }
 
+        if (!matterId && window.ClientDetailConfig && window.ClientDetailConfig.clientMatterId) {
+            matterId = String(window.ClientDetailConfig.clientMatterId);
+        }
+
         if (!matterId) {
             if (typeof iziToast !== 'undefined' && iziToast.warning) {
                 iziToast.warning({ title: 'Select Matter', message: 'Please select a matter first.', position: 'topRight' });

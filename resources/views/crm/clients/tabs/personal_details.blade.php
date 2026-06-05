@@ -717,14 +717,10 @@
                     if($matter_cnt >0)
                     {
                     ?>
-                        <div class="card">
-                            <h3><i class="fas fa-user"></i> Matter assignee
-                                <a style="margin-left: 24px;" class="changeMatterAssignee" href="javascript:;" role="button">Edit details</a>
-                            </h3>
-
-                            <?php
+                        <?php
+                            $overviewClientMatterId = null;
                             $matter_dis_ref_info_arr = null;
-                            $matterAssigneeCols = [];
+                            $matterAssigneeCols = ['id'];
                             if ($detailHasMatterTeam) {
                                 $matterAssigneeCols = array_merge($matterAssigneeCols, ['sel_legal_practitioner', 'sel_person_responsible', 'sel_person_assisting', 'office_id']);
                             }
@@ -754,7 +750,18 @@
                                     }
                                 }
                             }
+                            if ($matter_dis_ref_info_arr && ! empty($matter_dis_ref_info_arr->id)) {
+                                $overviewClientMatterId = (int) $matter_dis_ref_info_arr->id;
+                            }
                             ?>
+                        <div class="card">
+                            <h3><i class="fas fa-user"></i> Matter assignee
+                                @if($overviewClientMatterId)
+                                <a style="margin-left: 24px;" class="changeMatterAssignee" href="javascript:;" role="button" data-client-matter-id="{{ $overviewClientMatterId }}">Edit details</a>
+                                @else
+                                <a style="margin-left: 24px;" class="changeMatterAssignee" href="javascript:;" role="button">Edit details</a>
+                                @endif
+                            </h3>
 
                             <div class="field-group">
                                 <span class="field-label">Principal Solicitor</span>
@@ -823,6 +830,20 @@
                             <h3><i class="fas fa-briefcase"></i> Matter Details</h3>
                             @php
                                 $mdRows = [];
+                                if ($matter_dis_ref_info_arr && $__sch::hasColumn('client_matters', 'incidence_type')) {
+                                    $subtype = trim((string) ($matter_dis_ref_info_arr->incidence_type ?? ''));
+                                    if ($subtype !== '') {
+                                        $mdRows[] = ['label' => 'Matter subtype', 'value' => $subtype];
+                                    }
+                                }
+                                if ($matter_dis_ref_info_arr && $__sch::hasColumn('client_matters', 'date_of_incidence') && ! empty($matter_dis_ref_info_arr->date_of_incidence)) {
+                                    try {
+                                        $doiLabel = \Carbon\Carbon::parse($matter_dis_ref_info_arr->date_of_incidence)->format('d/m/Y');
+                                    } catch (\Throwable $e) {
+                                        $doiLabel = (string) $matter_dis_ref_info_arr->date_of_incidence;
+                                    }
+                                    $mdRows[] = ['label' => 'Date of incidence', 'value' => $doiLabel];
+                                }
                                 if ($__sch::hasColumn('client_matters', 'case_detail')) {
                                     $rawCaseDetail = ($matter_dis_ref_info_arr && isset($matter_dis_ref_info_arr->case_detail)) ? trim((string) $matter_dis_ref_info_arr->case_detail) : '';
                                     if ($rawCaseDetail !== '') {
@@ -833,13 +854,13 @@
                                                 [$cdLabel, $cdVal] = explode(':', $cdLine, 2);
                                                 $mdRows[] = ['label' => trim($cdLabel), 'value' => trim($cdVal)];
                                             } else {
-                                                $mdRows[] = ['label' => '', 'value' => $cdLine];
+                                                $mdRows[] = ['label' => 'Case detail', 'value' => $cdLine];
                                             }
                                         }
                                     }
                                 }
                             @endphp
-                            @foreach($mdRows as $mdRow)
+                            @forelse($mdRows as $mdRow)
                             <div class="field-group">
                                 @if($mdRow['label'] !== '')
                                 <span class="field-label">{{ $mdRow['label'] }}</span>
@@ -848,7 +869,9 @@
                                 <span class="field-value">{{ $mdRow['value'] }}</span>
                                 @endif
                             </div>
-                            @endforeach
+                            @empty
+                            <p class="text-muted mb-0" style="font-size:0.9rem;">No matter details recorded yet. Use <strong>Edit details</strong> on Matter assignee to add subtype, dates, or case notes.</p>
+                            @endforelse
                         </div>
                     <?php
                     } ?>

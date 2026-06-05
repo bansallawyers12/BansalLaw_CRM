@@ -8,15 +8,18 @@ Provides comprehensive email data extraction including metadata, content, and at
 import json
 import sys
 import os
+import re
 import base64
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple
 
 try:
     import extract_msg
+    from extract_msg.enums import RecipientType
 except ImportError as e:
     print(f"Warning: extract_msg not installed: {e}")
+    RecipientType = None
 
 from utils.logger import setup_logger
 
@@ -75,8 +78,13 @@ class EmailParserService:
                 email_data['sender_name'] = sender_info['name']
                 email_data['sender_email'] = sender_info['email']
                 
-                # Extract recipients
-                email_data['recipients'] = self._extract_recipients(msg)
+                # Extract recipients (To / Cc / Bcc)
+                recipient_groups = self._extract_recipient_groups(msg)
+                email_data['to_recipients'] = recipient_groups['to']
+                email_data['cc_recipients'] = recipient_groups['cc']
+                email_data['bcc_recipients'] = recipient_groups['bcc']
+                # Backward compatibility for consumers expecting a single list
+                email_data['recipients'] = recipient_groups['to']
                 
                 # Set received date (usually same as sent date for incoming emails)
                 if email_data['sent_date']:
@@ -165,45 +173,110 @@ class EmailParserService:
         name, email = self._extract_email_from_string(str(sender_info))
         return {'name': name or '', 'email': email or ''}
     
-    def _extract_recipients(self, msg) -> list:
-        """Extract recipient information from message."""
-        recipient_fields = [
-            'to', 'recipients', 'toRecipients', 'toAddress', 'toAddresses',
-            'toEmail', 'toEmails', 'toEmailAddress', 'toEmailAddresses',
-            'toName', 'toNames', 'toDisplayName', 'toDisplayNames',
-            'recipient', 'recipientAddress', 'recipientAddresses',
-            'recipientEmail', 'recipientEmails', 'recipientEmailAddress',
-            'recipientEmailAddresses', 'recipientName', 'recipientNames'
-        ]
-        
-        recipients = []
-        for field in recipient_fields:
-            try:
-                if hasattr(msg, field):
-                    value = getattr(msg, field)
-                    if value:
-                        if isinstance(value, str):
-                            recipients.extend([r.strip() for r in value.split(',')])
-                        elif isinstance(value, list):
-                            recipients.extend([str(r).strip() for r in value])
-                        elif hasattr(value, '__iter__') and not isinstance(value, (str, bytes)):
-                            recipients.extend([str(r).strip() for r in value])
-            except:
+    def _extract_recipient_groups(self, msg) -> Dict[str, List[str]]:
+        """Extract To, Cc, and Bcc recipients from a parsed .msg message."""
+        groups: Dict[str, List[str]] = {'to': [], 'cc': [], 'bcc': []}
+
+        type_map = {}
+        if RecipientType is not None:
+            type_map = {
+                RecipientType.TO: 'to',
+                RecipientType.CC: 'cc',
+                RecipientType.BCC: 'bcc',
+            }
+
+        # Primary: typed Recipient objects from extract_msg
+        try:
+            if hasattr(msg, 'recipients') and msg.recipients:
+                for recipient in msg.recipients:
+                    try:
+                        rtype = getattr(recipient, 'type', None)
+                        group_key = type_map.get(rtype)
+                        if not group_key:
+                            continue
+                        entry = self._format_recipient_entry(recipient)
+                        if entry:
+                            groups[group_key].append(entry)
+                    except Exception as e:
+                        logger.warning(f"Error processing recipient object: {str(e)}")
+        except Exception as e:
+            logger.warning(f"Error reading typed recipients: {str(e)}")
+
+        # Fallback: header/string fields when typed extraction is empty
+        string_field_map = {
+            'to': 'to',
+            'cc': 'cc',
+            'bcc': 'bcc',
+        }
+        for group_key, attr in string_field_map.items():
+            if groups[group_key]:
                 continue
-        
-        # Remove duplicates and empty values
-        recipients = list(set([r for r in recipients if r]))
-        
-        # Extract email addresses from recipient strings
-        processed_recipients = []
-        for recipient in recipients:
-            name, email = self._extract_email_from_string(recipient)
+            try:
+                if hasattr(msg, attr):
+                    value = getattr(msg, attr)
+                    if value:
+                        groups[group_key] = self._parse_recipient_string(str(value))
+            except Exception as e:
+                logger.warning(f"Error reading {attr} field: {str(e)}")
+
+        for group_key in groups:
+            groups[group_key] = self._dedupe_preserve_order(groups[group_key])
+
+        return groups
+
+    def _format_recipient_entry(self, recipient) -> Optional[str]:
+        """Normalize a Recipient object to an email address or display name."""
+        try:
+            if hasattr(recipient, 'formatted') and recipient.formatted:
+                name, email = self._extract_email_from_string(str(recipient.formatted))
+                if email:
+                    return email
+                if name:
+                    return name
+
+            if hasattr(recipient, 'email') and recipient.email:
+                email = str(recipient.email).strip()
+                if email:
+                    return email
+
+            if hasattr(recipient, 'name') and recipient.name:
+                name = str(recipient.name).strip()
+                if name:
+                    return name
+        except Exception as e:
+            logger.warning(f"Error formatting recipient entry: {str(e)}")
+
+        return None
+
+    def _parse_recipient_string(self, text: str) -> List[str]:
+        """Parse a To/Cc/Bcc header string (comma or semicolon separated)."""
+        if not text:
+            return []
+
+        results: List[str] = []
+        for part in re.split(r'[;,]', text):
+            part = part.strip()
+            if not part:
+                continue
+            name, email = self._extract_email_from_string(part)
             if email:
-                processed_recipients.append(email)
+                results.append(email)
             elif name:
-                processed_recipients.append(name)
-        
-        return processed_recipients
+                results.append(name)
+
+        return results
+
+    def _dedupe_preserve_order(self, items: List[str]) -> List[str]:
+        """Remove duplicate recipient entries while preserving order."""
+        seen = set()
+        deduped: List[str] = []
+        for item in items:
+            key = item.strip().lower()
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            deduped.append(item.strip())
+        return deduped
     
     def _extract_email_from_string(self, text: str) -> Tuple[Optional[str], Optional[str]]:
         """Extract email address from string that might contain name and email."""

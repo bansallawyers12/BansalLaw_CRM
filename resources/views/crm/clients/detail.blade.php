@@ -1399,6 +1399,7 @@ $(document).ready(function() {
         activeTab: @json(($activeTab ?? 'personaldetails')),
         cdnShowMattersDocSubtab: @json(!empty($cdnShowMattersDocSubtab)),
         matterRefNo: @json(($id1 ?? '')),
+        clientMatterId: @json($cdnMatterRow?->id ?? null),
         clientFirstName: @json(($fetchedData->first_name ?? 'client')),
         notPickedCallSmsDefault: @json($notPickedCallSmsDefault ?? ''),
         detailBaseUrl: '{{ url("/clients/detail") }}',
