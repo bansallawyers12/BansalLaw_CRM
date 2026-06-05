@@ -3743,6 +3743,77 @@ class ClientPersonalDetailsController extends Controller
             $requestData = $request->all();
             
             Log::info('Address save request data:', $requestData);
+
+            // Handle explicit address deletion request
+            if ($request->boolean('delete_address')) {
+                $existingAddresses = ClientAddress::where('client_id', $client->id)->get();
+
+                if ($existingAddresses->isEmpty()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'No address to delete',
+                    ]);
+                }
+
+                $addressId = $request->input('address_id');
+                if ($addressId) {
+                    $addressToDelete = ClientAddress::where('id', $addressId)
+                        ->where('client_id', $client->id)
+                        ->first();
+
+                    if (!$addressToDelete) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Address not found',
+                        ], 404);
+                    }
+                }
+
+                $oldAddressDisplay = [];
+                foreach ($existingAddresses as $existing) {
+                    $display = [];
+                    if ($existing->address_line_1) {
+                        $display[] = $existing->address_line_1;
+                    }
+                    if ($existing->suburb) {
+                        $display[] = $existing->suburb;
+                    }
+                    if ($existing->state) {
+                        $display[] = $existing->state;
+                    }
+                    if ($existing->zip) {
+                        $display[] = $existing->zip;
+                    }
+                    if ($existing->country) {
+                        $display[] = $existing->country;
+                    }
+                    $oldAddressDisplay[] = !empty($display) ? implode(', ', $display) : 'Address record';
+                }
+                $oldAddressDisplayStr = !empty($oldAddressDisplay) ? implode(' | ', $oldAddressDisplay) : '(empty)';
+
+                ClientAddress::where('client_id', $client->id)->delete();
+
+                try {
+                    $this->logClientActivityWithChanges(
+                        $client->id,
+                        'deleted current address',
+                        ['Address Information' => [
+                            'old' => $oldAddressDisplayStr,
+                            'new' => '(empty)',
+                        ]],
+                        'activity'
+                    );
+                } catch (\Exception $e) {
+                    Log::warning('Failed to log address deletion activity', [
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Current address deleted successfully',
+                ]);
+            }
             
             // Get existing addresses before update for change tracking
             $existingAddresses = ClientAddress::where('client_id', $client->id)->get();

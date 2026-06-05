@@ -1035,7 +1035,8 @@ input:checked + .slider:before {
 }
 
 .edit-section-btn,
-.add-section-btn {
+.add-section-btn,
+.delete-section-btn {
     background: none;
     border: 1px solid var(--primary-color);
     color: var(--primary-color);
@@ -1050,9 +1051,19 @@ input:checked + .slider:before {
     height: 32px;
 }
 
+.delete-section-btn {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
 .edit-section-btn:hover,
 .add-section-btn:hover {
     background: var(--primary-color);
+    color: white;
+}
+
+.delete-section-btn:hover {
+    background: #dc3545;
     color: white;
 }
 

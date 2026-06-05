@@ -2391,6 +2391,36 @@ window.saveAddressInfo = function() {
     console.log('🚀 ====== saveAddressInfo END ======');
 };
 
+/**
+ * Delete the current address with confirmation
+ */
+window.deleteCurrentAddress = function() {
+    const $entry = $('#addresses-container .address-entry-wrapper').first();
+    const addressId = $entry.find('input[name="address_id[]"]').val();
+
+    if (!addressId) {
+        showNotification('No address found to delete.', 'error');
+        return;
+    }
+
+    if (!confirm('Are you sure you want to delete the current address? This action cannot be undone.')) {
+        return;
+    }
+
+    if (typeof saveSectionData !== 'function') {
+        showNotification('Error: Save function not available. Please refresh the page and try again.', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('delete_address', '1');
+    formData.append('address_id', addressId);
+
+    saveSectionData('addressInfo', formData, function() {
+        window.location.reload();
+    });
+};
+
 function updateAddressSummary($entries) {
     const summaryView = document.getElementById('addressInfoSummary');
     if (!summaryView) {

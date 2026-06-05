@@ -9,9 +9,14 @@
     <div class="section-header">
         <h3><i class="fas fa-home"></i> Current Address</h3>
         <div class="section-actions">
-            <button type="button" class="edit-section-btn" onclick="toggleEditMode('addressInfo')">
+            <button type="button" class="edit-section-btn" onclick="toggleEditMode('addressInfo')" title="Edit Address">
                 <i class="fas fa-pen"></i>
             </button>
+            @if($currentAddress)
+            <button type="button" class="delete-section-btn" onclick="deleteCurrentAddress()" title="Delete Current Address">
+                <i class="fas fa-trash"></i>
+            </button>
+            @endif
         </div>
     </div>
     
