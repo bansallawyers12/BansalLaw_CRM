@@ -1330,7 +1330,7 @@ $(document).ready(function() {
 </script>
 
 {{-- Newly added external JS placeholders for progressive migration --}}
-<script src="{{ URL::asset('js/crm/clients/shared.js') }}" defer></script>
+<script src="{{ URL::asset('js/crm/clients/shared.js') }}?v={{ time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/detail.js') }}" defer></script>
 
 {{-- Client detail utilities (must load before detail-main.js) --}}

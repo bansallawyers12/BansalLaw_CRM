@@ -33,139 +33,34 @@
             adjustActivityFeedHeight();
         });
 
-       // On page load, check if the URL contains a matter ID and set the dropdown/checkbox state
+       // On page load, sync matter dropdown from URL (supports .../FAM_1/noteterm — tab is not the matter ref)
 
-        var currentUrl = window.location.href;
+        var matterRefInUrl = (window.ClientDetailShared && window.ClientDetailShared.parseClientDetailMatterRefFromUrl)
+            ? window.ClientDetailShared.parseClientDetailMatterRefFromUrl()
+            : '';
 
-        var urlSegments = currentUrl.split('/');
-
-        var matterIdInUrl = urlSegments.length > 7 ? urlSegments[urlSegments.length - 1] : null;
-
-
-
-        if (matterIdInUrl === null) {
-
-            // Case 1: No matter ID in URL - Don't auto-select any matter
-
-            selectedMatter = '';
-
-            //console.log('No matter ID in URL, no matter selected - showing all notes');
-
-        }
-
-        else {
-
-            // Case 2: Matter ID exists in URL
-
-            let matchFound = false;
-
-
-
-            // a) First check the dropdown for a matching option
-
+        if (!matterRefInUrl) {
+            selectedMatter = $('#sel_matter_id_client_detail').val() || '';
+        } else if (window.ClientDetailShared && window.ClientDetailShared.selectClientDetailMatterByRef) {
+            selectedMatter = window.ClientDetailShared.selectClientDetailMatterByRef(matterRefInUrl);
+        } else {
+            var matterDropdownMatched = false;
             $('#sel_matter_id_client_detail option').each(function() {
-
-                var uniqueMatterNo = $(this).data('clientuniquematterno');
-
-                if (uniqueMatterNo === matterIdInUrl) {
-
+                if ($(this).data('clientuniquematterno') === matterRefInUrl) {
                     $('#sel_matter_id_client_detail').val($(this).val()).trigger('change');
-
                     selectedMatter = $(this).val();
-
-                    matchFound = true;
-
-                    //console.log('Matter ID found in URL, selected matching dropdown option:', selectedMatter);
-
+                    matterDropdownMatched = true;
+                    return false;
                 }
-
             });
-
-
-
-            // If no matching option in dropdown, proceed with further checks
-
-            if (!matchFound) {
-
-                // b) Check for a matching checkbox
-
-                let checkboxMatchFound = false;
-
-                $('.general_matter_checkbox_client_detail').each(function() {
-
-                    var uniqueMatterNo = $(this).data('clientuniquematterno');
-
-                    if (uniqueMatterNo === matterIdInUrl) {
-
-                        $(this).prop('checked', true).trigger('change');
-
-                        selectedMatter = $(this).val();
-
-                        checkboxMatchFound = true;
-
-                        //console.log('Matter ID in URL, checked matching checkbox:', selectedMatter);
-
-                        return false; // Exit the loop once a match is found
-
-                    }
-
-                });
-
-
-
-                // If no matching checkbox, check the first non-empty dropdown option
-
-                if (!checkboxMatchFound) {
-
-                    let firstNonEmptyOption = $('#sel_matter_id_client_detail option').filter(function() {
-
-                        return $(this).val() !== '';
-
-                    }).first();
-
-
-
-                    if (firstNonEmptyOption.length) {
-
-                        // If a non-empty option exists in the dropdown, select it
-
-                        $('#sel_matter_id_client_detail').val(firstNonEmptyOption.val()).trigger('change');
-
-                        selectedMatter = firstNonEmptyOption.val();
-
-                        //console.log('Matter ID in URL, no checkbox match, selected first non-empty dropdown option:', selectedMatter);
-
-                    } else {
-
-                        // If no non-empty dropdown options, check the first checkbox
-
-                        let firstCheckbox = $('.general_matter_checkbox_client_detail').first();
-
-                        if (firstCheckbox.length) {
-
-                            firstCheckbox.prop('checked', true).trigger('change');
-
-                            selectedMatter = firstCheckbox.val();
-
-                            //console.log('Matter ID in URL, no dropdown match, checked first checkbox:', selectedMatter);
-
-                        } else {
-
-                            selectedMatter = '';
-
-                            //console.log('Matter ID in URL, no matches in dropdown or checkboxes');
-
-                        }
-
-                    }
-
-                }
-
+            if (!matterDropdownMatched) {
+                selectedMatter = $('#sel_matter_id_client_detail').val() || '';
             }
-
         }
 
-        
+        if (typeof window.filterNotes === 'function') {
+            window.filterNotes();
+        }
 
         // Set flag to false after initialization is complete
 
@@ -1798,14 +1693,18 @@ success: function(response) {
 
                 const activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
                 
+                var noteMatterMatches = (window.ClientDetailShared && window.ClientDetailShared.noteMatchesSelectedMatter)
+                    ? window.ClientDetailShared.noteMatchesSelectedMatter
+                    : function (cardMatter, sel) {
+                        if (!sel) return true;
+                        return !cardMatter || cardMatter === '' || String(cardMatter) === String(sel);
+                    };
+
                 $('#noteterm-tab').find('.note-card-redesign').each(function() {
                     const noteType = $(this).data('type');
                     const typeMatch = (activeTaskGroup === 'All' || noteType === activeTaskGroup);
-
-                    let matterMatch = true;
-                    if (selectedMatter && selectedMatter !== '') {
-                        matterMatch = ($(this).data('matterid') == selectedMatter);
-                    }
+                    const cardMatter = $(this).attr('data-matterid');
+                    const matterMatch = noteMatterMatches(cardMatter, selectedMatter);
 
                     if (typeMatch && matterMatch) {
                         $(this).show();
