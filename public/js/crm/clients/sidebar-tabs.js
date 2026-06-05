@@ -265,9 +265,13 @@
         // Filter content by matter
         switch(tabId) {
             case 'noteterm':
-                // Ensure All tab is active and trigger initial filtering
-                ensureAllTabActive();
-                filterNotesByMatter(SidebarTabs.selectedMatter);
+                if (window.ClientDetailShared && typeof window.ClientDetailShared.refreshNotesTabDisplay === 'function') {
+                    window.ClientDetailShared.refreshNotesTabDisplay({ syncMatterFromUrl: true });
+                } else {
+                    ensureAllTabActive();
+                    filterNotesByMatter(SidebarTabs.selectedMatter);
+                }
+                SidebarTabs.selectedMatter = $('#sel_matter_id_client_detail').val();
                 break;
             case 'matterdocuments':
                 filtermatterdocumentsByMatter(SidebarTabs.selectedMatter);
@@ -305,6 +309,11 @@
      * Filter notes by matter
      */
     function filterNotesByMatter(matterId) {
+        if (window.ClientDetailShared && typeof window.ClientDetailShared.refreshNotesTabDisplay === 'function') {
+            window.ClientDetailShared.refreshNotesTabDisplay({ syncMatterFromUrl: false, deferredPass: false });
+            return;
+        }
+
         const activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
         const matterMatches = (window.ClientDetailShared && window.ClientDetailShared.noteMatchesSelectedMatter)
             ? window.ClientDetailShared.noteMatchesSelectedMatter
