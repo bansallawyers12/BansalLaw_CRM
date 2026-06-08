@@ -62,7 +62,7 @@ class AssigneeController extends Controller
     public function index(Request $request)
     {
         $query = QueryBuilder::for(Note::class)
-            ->allowedSorts(['first_name', 'action_date', 'task_group', 'created_at'])
+            ->allowedSorts('first_name', 'action_date', 'task_group', 'created_at')
             ->with(['noteStaff','noteClient.company','lead.service','assigned_staff'])
             ->where('type','client')
             ->where('is_action', 1)

@@ -192,7 +192,6 @@ return [
         App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\AppointmentSyncServiceProvider::class,
-		Maatwebsite\Excel\ExcelServiceProvider::class,
         Mews\Captcha\CaptchaServiceProvider::class,
         Yajra\DataTables\DataTablesServiceProvider::class,
 
@@ -249,7 +248,6 @@ return [
         'Carbon' => Carbon\Carbon::class,
 		'Html' => Spatie\Html\Facades\Html::class,
 		'PDF' => Barryvdh\DomPDF\Facade\Pdf::class,
-		'Excel' =>  Maatwebsite\Excel\Facades\Excel::class,
 		'Settings' => App\Helpers\Settings::class,
         'Helper' => App\Helpers\Helper::class,
         'Captcha' => Mews\Captcha\Facades\Captcha::class,

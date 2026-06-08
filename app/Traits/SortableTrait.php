@@ -34,8 +34,8 @@ trait SortableTrait
         }
 
         return QueryBuilder::for(static::class)
-            ->allowedSorts($allowedSorts)
-            ->allowedFilters($allowedFilters);
+            ->allowedSorts(...$allowedSorts)
+            ->allowedFilters(...$allowedFilters);
     }
 
     /**
