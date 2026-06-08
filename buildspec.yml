@@ -10,8 +10,8 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      php: 8.2
-      nodejs: 20
+      php: 8.3
+      nodejs: 22
     commands:
       # Provide a minimal .env so Composer's post-install hook (package:discover) can run.
       # CodeBuild has no production .env; ext-sodium is skipped here (production EC2 has it).

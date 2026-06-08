@@ -37,7 +37,7 @@
         "symfony/http-client": "^7.0",
         "symfony/mailgun-mailer": "^7.0",
         "symfony/postmark-mailer": "^7.0",
-        "twilio/sdk": "^7.13",
+        "twilio/sdk": "^8.0",
         "yajra/laravel-datatables-oracle": "^13.0"
     },
     "require-dev": {
