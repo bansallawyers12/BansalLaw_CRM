@@ -106,6 +106,265 @@
         return token ? token.getAttribute('content') : '';
     }
 
+    const MAX_EMAIL_FILES = 10;
+    const MAX_EMAIL_FILE_BYTES = (typeof window.__CRM_EMAIL_MAX_FILE_BYTES__ === 'number' && window.__CRM_EMAIL_MAX_FILE_BYTES__ > 0)
+        ? window.__CRM_EMAIL_MAX_FILE_BYTES__
+        : (30 * 1024 * 1024);
+
+    function isSessionOrSecurityError(message) {
+        if (!message) {
+            return false;
+        }
+        const lower = String(message).toLowerCase();
+        return lower.includes('session') ||
+            lower.includes('security token') ||
+            lower.includes('unauthenticated') ||
+            lower.includes('log in again');
+    }
+
+    /**
+     * Map failed upload HTTP responses to user-facing messages.
+     */
+    function resolveUploadHttpError(status, errorText) {
+        const text = errorText || '';
+        let parsed = null;
+
+        try {
+            parsed = JSON.parse(text);
+        } catch (e) {
+            parsed = null;
+        }
+
+        if (parsed && typeof parsed === 'object') {
+            if (status === 403 && (parsed.error_type === 'forbidden' || parsed.message === 'Unauthorized')) {
+                return 'You do not have permission to upload emails for this client.';
+            }
+            if (status === 401 || parsed.message === 'Unauthenticated.') {
+                return 'Your session has expired. Please refresh the page and log in again.';
+            }
+            if (status === 422) {
+                let detail = 'Only Outlook .msg files are allowed (max ' + MAX_EMAIL_FILES + ' files, ' + formatFileSize(MAX_EMAIL_FILE_BYTES) + ' each). Check your selection and try again.';
+                if (parsed.errors && typeof parsed.errors === 'object') {
+                    const flat = Object.values(parsed.errors)
+                        .flat()
+                        .map(function(v) { return v == null ? '' : String(v); })
+                        .filter(Boolean);
+                    if (flat.length) {
+                        detail = flat.join(' ');
+                    }
+                } else if (parsed.message && String(parsed.message).trim() !== '' && parsed.message !== 'Validation failed') {
+                    detail = String(parsed.message);
+                }
+                return detail;
+            }
+            if (status === 400) {
+                let errorMsg = parsed.message || 'Upload failed';
+                if (parsed.errors && Array.isArray(parsed.errors) && parsed.errors.length > 0) {
+                    const details = parsed.errors.map(function(e, i) {
+                        return (i + 1) + '. ' + (e.filename || 'Unknown file') + ': ' + (e.error || 'Unknown error');
+                    }).join('\n');
+                    errorMsg += '\n\nDetails:\n' + details;
+                }
+                return errorMsg;
+            }
+        }
+
+        if (status === 419 || text.includes('CSRF token mismatch')) {
+            return 'Security token expired. Please refresh the page and try again.';
+        }
+        if (status === 413) {
+            return 'File too large. Maximum file size is ' + formatFileSize(MAX_EMAIL_FILE_BYTES) + ' per file.';
+        }
+        if (status === 403) {
+            if (text.includes('CSRF')) {
+                return 'Session expired or security token invalid. Please refresh the page and try again.';
+            }
+            return 'The server blocked this upload (403). Try smaller .msg files or refresh the page. If it persists, contact your administrator.';
+        }
+
+        if (text.includes('403 Forbidden') || (status === 403 && text.includes('Forbidden'))) {
+            return 'The server blocked this upload. Try smaller files or refresh the page and try again.';
+        }
+        if (text.includes('419') || text.includes('CSRF')) {
+            return 'Security token expired. Please refresh the page and try again.';
+        }
+
+        if (status > 0) {
+            return 'Upload failed: ' + status + ' ' + (text.substring(0, 500) || 'Unknown error');
+        }
+
+        return 'Server returned an invalid response. Please refresh the page and try again.';
+    }
+
+    function buildEmailUploadFormData(file, clientId, matterId, csrfToken) {
+        const formData = new FormData();
+        formData.append('email_files[]', file);
+        formData.append('client_id', clientId);
+        formData.append('type', 'client');
+        formData.append(
+            currentMailType === 'sent' ? 'upload_sent_mail_client_matter_id' : 'upload_inbox_mail_client_matter_id',
+            matterId
+        );
+        formData.append('_token', csrfToken);
+        return formData;
+    }
+
+    /**
+     * POST one .msg file to the upload endpoint and return parsed JSON.
+     */
+    async function postEmailUpload(file, clientId, matterId, csrfToken, uploadPath) {
+        const formData = buildEmailUploadFormData(file, clientId, matterId, csrfToken);
+        const response = await fetch(
+            crmUrl(uploadPath),
+            {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: formData,
+                credentials: 'same-origin'
+            }
+        );
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(resolveUploadHttpError(response.status, errorText));
+        }
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const errorText = await response.text();
+            throw new Error(resolveUploadHttpError(0, errorText));
+        }
+
+        return response.json();
+    }
+
+    function renderUploadBatchResult(data, uploadProgress, fileStatus, fileCountBadge) {
+        console.log('Upload response:', data);
+
+        if (data.status || data.success) {
+            const failedCount = data.failed || 0;
+            const uploadedCount = data.uploaded || 0;
+
+            if (failedCount > 0) {
+                if (uploadProgress) {
+                    uploadProgress.className = 'upload-progress error';
+                }
+                fileStatus.textContent = 'Upload completed with errors';
+
+                let errorMessage = data.message || ('Upload failed: ' + failedCount + ' file(s) failed');
+
+                if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+                    const errorDetails = data.errors.map(function(err, index) {
+                        const filename = err.filename || 'Unknown file';
+                        const error = err.error || 'Unknown error';
+                        const fileSize = err.file_size ? (' (' + formatFileSize(err.file_size) + ')') : '';
+                        return (index + 1) + '. ' + filename + fileSize + '\n   ' + error;
+                    }).join('\n\n');
+                    errorMessage += '\n\nError Details:\n' + errorDetails;
+
+                    if (uploadedCount === 0 && failedCount > 0) {
+                        errorMessage += '\n\nTip: Ensure the Python service is running and the .msg files are valid Outlook email files.';
+                    }
+                }
+
+                showNotification(errorMessage, 'error');
+
+                if (data.errors) {
+                    console.error('Upload errors:', data.errors);
+                }
+
+                setTimeout(function() {
+                    fileStatus.textContent = 'Ready to upload';
+                    if (uploadProgress) {
+                        uploadProgress.className = 'upload-progress';
+                    }
+                    if (fileCountBadge && uploadedCount === 0) {
+                        fileCountBadge.classList.remove('show');
+                    }
+                }, 5000);
+
+                if (uploadedCount > 0) {
+                    loadEmails();
+                }
+            } else {
+                if (uploadProgress) {
+                    uploadProgress.className = 'upload-progress success';
+                }
+                fileStatus.textContent = 'Upload successful!';
+                showNotification(data.message || 'Files uploaded successfully!', 'success');
+
+                setTimeout(function() {
+                    const fileInputEl = document.getElementById('emailFileInput');
+                    if (fileInputEl) {
+                        fileInputEl.value = '';
+                    }
+                    fileStatus.textContent = 'Ready to upload';
+                    if (uploadProgress) {
+                        uploadProgress.className = 'upload-progress';
+                    }
+                    if (fileCountBadge) {
+                        fileCountBadge.classList.remove('show');
+                    }
+                }, 2000);
+
+                loadEmails();
+            }
+        } else {
+            if (uploadProgress) {
+                uploadProgress.className = 'upload-progress error';
+            }
+            fileStatus.textContent = 'Upload failed';
+
+            let errorMessage = data.message || 'Upload failed';
+
+            if (data.errors) {
+                if (typeof data.errors === 'object' && !Array.isArray(data.errors)) {
+                    const errorDetails = [];
+                    for (const key of Object.keys(data.errors)) {
+                        const value = data.errors[key];
+                        const fieldName = key.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+                        if (Array.isArray(value)) {
+                            errorDetails.push('• ' + fieldName + ': ' + value.join(', '));
+                        } else {
+                            errorDetails.push('• ' + fieldName + ': ' + value);
+                        }
+                    }
+                    if (errorDetails.length > 0) {
+                        errorMessage += '\n\nValidation Errors:\n' + errorDetails.join('\n');
+                    }
+                } else if (Array.isArray(data.errors) && data.errors.length > 0) {
+                    const errorDetails = data.errors.map(function(err, index) {
+                        if (typeof err === 'string') {
+                            return (index + 1) + '. ' + err;
+                        }
+                        if (err.filename && err.error) {
+                            return (index + 1) + '. ' + err.filename + ': ' + err.error;
+                        }
+                        return (index + 1) + '. ' + JSON.stringify(err);
+                    }).join('\n');
+                    errorMessage += '\n\nErrors:\n' + errorDetails;
+                }
+                console.error('Upload errors:', data.errors);
+            }
+
+            if (data.technical_error && data.technical_error !== errorMessage) {
+                console.error('Technical error:', data.technical_error);
+            }
+
+            showNotification(errorMessage, 'error');
+
+            setTimeout(function() {
+                fileStatus.textContent = 'Ready to upload';
+                if (uploadProgress) {
+                    uploadProgress.className = 'upload-progress';
+                }
+            }, 5000);
+        }
+    }
+
     /**
      * filterEmails may return a raw array of emails, or { status, emails, message }
      * when the schema is not migrated / integration not configured (see ClientsController::filterEmails).
@@ -496,6 +755,35 @@
                 showNotification(`Only ${msgFiles.length} of ${files.length} files are .msg files`, 'info');
             }
 
+            if (msgFiles.length > MAX_EMAIL_FILES) {
+                showNotification('Maximum ' + MAX_EMAIL_FILES + ' email files allowed per upload.', 'error');
+                fileStatus.textContent = 'Too many files selected';
+                fileStatus.parentElement.className = 'upload-progress error';
+                setTimeout(function() {
+                    fileStatus.textContent = 'Ready to upload';
+                    fileStatus.parentElement.className = 'upload-progress';
+                }, 3000);
+                return;
+            }
+
+            const oversizedFiles = msgFiles.filter(function(file) {
+                return file.size > MAX_EMAIL_FILE_BYTES;
+            });
+            if (oversizedFiles.length > 0) {
+                const names = oversizedFiles.map(function(f) { return f.name; }).join(', ');
+                showNotification(
+                    oversizedFiles.length + ' file(s) exceed the ' + formatFileSize(MAX_EMAIL_FILE_BYTES) + ' limit: ' + names,
+                    'error'
+                );
+                fileStatus.textContent = 'File too large';
+                fileStatus.parentElement.className = 'upload-progress error';
+                setTimeout(function() {
+                    fileStatus.textContent = 'Ready to upload';
+                    fileStatus.parentElement.className = 'upload-progress';
+                }, 4000);
+                return;
+            }
+
             // Update file count badge
             updateFileCount(msgFiles.length);
 
@@ -522,7 +810,7 @@
     };
 
     /**
-     * Upload files to server
+     * Upload files to server (one request per file to avoid post_max_size / WAF limits)
      */
     async function uploadFiles(files) {
         const clientId = getClientId();
@@ -544,265 +832,76 @@
         const uploadProgress = document.getElementById('upload-progress');
         const fileCountBadge = document.getElementById('file-count');
         
-        // Update UI - uploading state
         if (uploadProgress) {
             uploadProgress.className = 'upload-progress uploading';
         }
-        fileStatus.textContent = `Uploading ${files.length} file(s)...`;
+        fileStatus.textContent = 'Uploading ' + files.length + ' file(s)...';
 
         try {
-            const formData = new FormData();
-            
-            // Add files
-            files.forEach(file => {
-                formData.append('email_files[]', file);
-            });
-
-            // Add required fields based on current mail type (inbox or sent)
-            formData.append('client_id', clientId);
-            formData.append('type', 'client');
-            
-            // Add matter ID - this is now REQUIRED for matter-specific emails
-            formData.append(
-                currentMailType === 'sent' ? 'upload_sent_mail_client_matter_id' : 'upload_inbox_mail_client_matter_id',
-                matterId
-            );
-
-            // Validate and add CSRF token (both in header and form data for compatibility)
             const csrfToken = getCsrfToken();
             if (!csrfToken) {
                 throw new Error('Security token not found. Please refresh the page and try again.');
             }
-            formData.append('_token', csrfToken);
 
-            var uploadPath = currentMailType === 'sent' ? '/upload-sent-fetch-mail' : '/upload-fetch-mail';
-            console.log('Uploading to:', crmUrl(uploadPath));
+            const uploadPath = currentMailType === 'sent' ? '/upload-sent-fetch-mail' : '/upload-fetch-mail';
+            console.log('Uploading to:', crmUrl(uploadPath), '(' + files.length + ' file(s), sequential)');
 
-            // Note: Don't set Content-Type header when using FormData - browser sets it automatically with boundary
-            const response = await fetch(
-                crmUrl(uploadPath),
-                {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json'
-                        // Don't set Content-Type - browser will set it with multipart/form-data boundary
-                    },
-                    body: formData,
-                    credentials: 'same-origin' // Include cookies for session/CSRF
-                }
-            );
+            let totalUploaded = 0;
+            let totalFailed = 0;
+            const allErrors = [];
+            let stoppedEarly = false;
 
-            // Validate response before parsing JSON
-            if (!response.ok) {
-                const errorText = await response.text();
-                
-                // Handle specific error codes with user-friendly messages
-                if (response.status === 403) {
-                    if (errorText.includes('CSRF') || errorText.includes('Forbidden')) {
-                        console.error('CSRF token error - page may need to be refreshed');
-                        throw new Error('Session expired or security token invalid. Please refresh the page and try again.');
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                fileStatus.textContent = 'Uploading ' + (i + 1) + ' of ' + files.length + ': ' + file.name + '...';
+
+                try {
+                    const data = await postEmailUpload(file, clientId, matterId, csrfToken, uploadPath);
+                    const fileUploaded = data.uploaded || 0;
+                    const fileFailed = data.failed || 0;
+                    totalUploaded += fileUploaded;
+                    totalFailed += fileFailed;
+
+                    if (data.errors && Array.isArray(data.errors)) {
+                        allErrors.push.apply(allErrors, data.errors);
+                    } else if (fileUploaded === 0 && fileFailed === 0 && !data.status) {
+                        totalFailed += 1;
+                        allErrors.push({
+                            filename: file.name,
+                            error: data.message || 'Upload failed'
+                        });
                     }
-                    throw new Error('Access denied. You may not have permission to upload emails, or your session has expired. Please refresh the page and try again.');
-                } else if (response.status === 419) {
-                    // Laravel's CSRF token mismatch status code
-                    console.error('CSRF token mismatch - page needs refresh');
-                    throw new Error('Security token expired. Please refresh the page and try again.');
-                } else if (response.status === 413) {
-                    throw new Error('File too large. Maximum file size is 30MB per file.');
-                } else if (response.status === 422) {
-                    // Laravel validation — do not throw inside try/catch or the catch masks our message.
-                    let detail = 'Only Outlook .msg files are allowed (max 10 files, 30MB each). Check your selection and try again.';
-                    try {
-                        const errorData = JSON.parse(errorText);
-                        if (errorData.errors && typeof errorData.errors === 'object') {
-                            const flat = Object.values(errorData.errors)
-                                .flat()
-                                .map((v) => (v == null ? '' : String(v)))
-                                .filter(Boolean);
-                            if (flat.length) {
-                                detail = flat.join(' ');
-                            }
-                        } else if (errorData.message && String(errorData.message).trim() !== '' && errorData.message !== 'Validation failed') {
-                            detail = String(errorData.message);
-                        }
-                    } catch (parseErr) {
-                        console.warn('Email upload 422: response was not JSON', parseErr);
-                    }
-                    throw new Error(detail);
-                } else if (response.status === 400) {
-                    // Processing error - parse JSON for detailed per-file errors
-                    try {
-                        const errorData = JSON.parse(errorText);
-                        let errorMsg = errorData.message || 'Upload failed';
-                        if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
-                            const details = errorData.errors.map((e, i) =>
-                                `${i + 1}. ${e.filename || 'Unknown file'}: ${e.error || 'Unknown error'}`
-                            ).join('\n');
-                            errorMsg += '\n\nDetails:\n' + details;
-                        }
-                        throw new Error(errorMsg);
-                    } catch (jsonErr) {
-                        if (jsonErr.message && !jsonErr.message.startsWith('Unexpected')) {
-                            throw jsonErr; // re-throw our formatted error
-                        }
-                        throw new Error(`Upload failed: ${errorText.substring(0, 500)}`);
+                } catch (fileError) {
+                    console.error('Upload error for file:', file.name, fileError);
+                    totalFailed += 1;
+                    allErrors.push({
+                        filename: file.name,
+                        error: fileError.message || 'Upload failed'
+                    });
+
+                    if (isSessionOrSecurityError(fileError.message)) {
+                        stoppedEarly = true;
+                        break;
                     }
                 }
-                
-                throw new Error(`Upload failed: ${response.status} ${response.statusText}. ${errorText.substring(0, 500)}`);
             }
 
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                const errorText = await response.text();
-                console.error('Server returned non-JSON response:', errorText.substring(0, 500));
-                
-                // Check for common HTML error pages
-                if (errorText.includes('403 Forbidden') || errorText.includes('Forbidden')) {
-                    throw new Error('Access denied. Your session may have expired. Please refresh the page and try again.');
-                } else if (errorText.includes('419') || errorText.includes('CSRF')) {
-                    throw new Error('Security token expired. Please refresh the page and try again.');
-                }
-                
-                throw new Error('Server returned invalid response format. Please try again or contact support if the issue persists.');
-            }
+            const batchResult = {
+                status: totalUploaded > 0 || totalFailed === 0,
+                success: totalUploaded > 0 && totalFailed === 0,
+                uploaded: totalUploaded,
+                failed: totalFailed,
+                errors: allErrors,
+                message: stoppedEarly
+                    ? (allErrors[0] && allErrors[0].error) || 'Upload stopped due to a session or security error.'
+                    : (totalUploaded > 0 && totalFailed > 0
+                        ? 'Partially successful: ' + totalUploaded + ' uploaded, ' + totalFailed + ' failed'
+                        : (totalUploaded > 0
+                            ? 'Successfully uploaded ' + totalUploaded + ' email' + (totalUploaded > 1 ? 's' : '')
+                            : 'Upload failed: ' + totalFailed + ' email' + (totalFailed > 1 ? 's' : '') + ' could not be processed'))
+            };
 
-            const data = await response.json();
-            console.log('Upload response:', data);
-
-            if (data.status || data.success) {
-                // Check if there were any failures
-                const failedCount = data.failed || 0;
-                const uploadedCount = data.uploaded || 0;
-                
-                if (failedCount > 0) {
-                    // Partial or complete failure
-                    if (uploadProgress) {
-                        uploadProgress.className = 'upload-progress error';
-                    }
-                    fileStatus.textContent = 'Upload completed with errors';
-                    
-                    // Build detailed error message
-                    let errorMessage = data.message || `Upload failed: ${failedCount} file(s) failed`;
-                    
-                    // Add specific error details if available
-                    if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
-                        const errorDetails = data.errors.map((err, index) => {
-                            const filename = err.filename || 'Unknown file';
-                            const error = err.error || 'Unknown error';
-                            const fileSize = err.file_size ? ` (${formatFileSize(err.file_size)})` : '';
-                            return `${index + 1}. ${filename}${fileSize}\n   ${error}`;
-                        }).join('\n\n');
-                        errorMessage += '\n\nError Details:\n' + errorDetails;
-                        
-                        // Add helpful tip if all files failed
-                        if (uploadedCount === 0 && failedCount > 0) {
-                            errorMessage += '\n\n💡 Tip: Ensure the Python service is running and the .msg files are valid Outlook email files.';
-                        }
-                    }
-                    
-                    showNotification(errorMessage, 'error');
-                    
-                    // Log errors to console for debugging
-                    if (data.errors) {
-                        console.error('Upload errors:', data.errors);
-                    }
-                    
-                    // Reset after delay
-                    setTimeout(() => {
-                        fileStatus.textContent = 'Ready to upload';
-                        if (uploadProgress) {
-                            uploadProgress.className = 'upload-progress';
-                        }
-                        if (fileCountBadge && uploadedCount === 0) {
-                            fileCountBadge.classList.remove('show');
-                        }
-                    }, 5000); // Longer delay for error messages
-                    
-                    // Only reload if some files were successfully uploaded
-                    if (uploadedCount > 0) {
-                        loadEmails();
-                    }
-                } else {
-                    // Complete success
-                    if (uploadProgress) {
-                        uploadProgress.className = 'upload-progress success';
-                    }
-                    fileStatus.textContent = 'Upload successful!';
-                    showNotification(data.message || 'Files uploaded successfully!', 'success');
-                    
-                    // Reset form after delay
-                    setTimeout(() => {
-                        document.getElementById('emailFileInput').value = '';
-                        fileStatus.textContent = 'Ready to upload';
-                        if (uploadProgress) {
-                            uploadProgress.className = 'upload-progress';
-                        }
-                        if (fileCountBadge) {
-                            fileCountBadge.classList.remove('show');
-                        }
-                    }, 2000);
-                    
-                    // Reload email list
-                    loadEmails();
-                }
-            } else {
-                // Complete error state
-                if (uploadProgress) {
-                    uploadProgress.className = 'upload-progress error';
-                }
-                fileStatus.textContent = 'Upload failed';
-                
-                // Build error message with details
-                let errorMessage = data.message || 'Upload failed';
-                
-                // Add validation errors if available
-                if (data.errors) {
-                    if (typeof data.errors === 'object' && !Array.isArray(data.errors)) {
-                        const errorDetails = [];
-                        for (const [key, value] of Object.entries(data.errors)) {
-                            if (Array.isArray(value)) {
-                                const fieldName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                                errorDetails.push(`• ${fieldName}: ${value.join(', ')}`);
-                            } else {
-                                const fieldName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                                errorDetails.push(`• ${fieldName}: ${value}`);
-                            }
-                        }
-                        if (errorDetails.length > 0) {
-                            errorMessage += '\n\nValidation Errors:\n' + errorDetails.join('\n');
-                        }
-                    } else if (Array.isArray(data.errors) && data.errors.length > 0) {
-                        // Handle array of errors
-                        const errorDetails = data.errors.map((err, index) => {
-                            if (typeof err === 'string') {
-                                return `${index + 1}. ${err}`;
-                            } else if (err.filename && err.error) {
-                                return `${index + 1}. ${err.filename}: ${err.error}`;
-                            }
-                            return `${index + 1}. ${JSON.stringify(err)}`;
-                        }).join('\n');
-                        errorMessage += '\n\nErrors:\n' + errorDetails;
-                    }
-                    console.error('Upload errors:', data.errors);
-                }
-                
-                // Add technical error for debugging (if available)
-                if (data.technical_error && data.technical_error !== errorMessage) {
-                    console.error('Technical error:', data.technical_error);
-                }
-                
-                showNotification(errorMessage, 'error');
-                
-                // Reset after delay
-                setTimeout(() => {
-                    fileStatus.textContent = 'Ready to upload';
-                    if (uploadProgress) {
-                        uploadProgress.className = 'upload-progress';
-                    }
-                }, 5000);
-            }
+            renderUploadBatchResult(batchResult, uploadProgress, fileStatus, fileCountBadge);
 
         } catch (error) {
             console.error('Upload error:', error);
@@ -812,8 +911,7 @@
             fileStatus.textContent = 'Upload failed';
             showNotification('Upload failed: ' + error.message, 'error');
             
-            // Reset after delay
-            setTimeout(() => {
+            setTimeout(function() {
                 fileStatus.textContent = 'Ready to upload';
                 if (uploadProgress) {
                     uploadProgress.className = 'upload-progress';

@@ -1050,7 +1050,7 @@ class EmailUploadController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'email_files' => 'required|array|min:1',
-            'email_files.*' => 'file|max:30720', // 30MB max (kilobytes)
+            'email_files.*' => 'file|max:' . (int) config('crm.email_upload_max_kb', 30720),
             'client_id' => 'required',
             'type' => 'required|in:client,lead',
         ], [

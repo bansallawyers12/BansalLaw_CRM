@@ -165,7 +165,10 @@
 
 <!-- Include necessary CSS and JavaScript -->
 <link rel="stylesheet" href="{{ asset('css/emails.css') }}?v={{ file_exists(public_path('css/emails.css')) ? filemtime(public_path('css/emails.css')) : 1 }}">
-<script>window.__CRM_BASE__ = @json(rtrim((string) url('/'), '/'));</script>
+<script>
+window.__CRM_BASE__ = @json(rtrim((string) url('/'), '/'));
+window.__CRM_EMAIL_MAX_FILE_BYTES__ = @json((int) config('crm.email_upload_max_kb', 30720) * 1024);
+</script>
 <script src="{{ asset('js/emails.js') }}?v={{ file_exists(public_path('js/emails.js')) ? filemtime(public_path('js/emails.js')) : 1 }}"></script>
 
 <script>

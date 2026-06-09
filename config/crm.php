@@ -184,4 +184,11 @@ return [
         ? $__fdCheckinRoles
         : [1, 12, 14, 17]),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Email .msg upload limits (matches EmailUploadController validation)
+    |--------------------------------------------------------------------------
+    */
+    'email_upload_max_kb' => max(1, (int) env('EMAIL_UPLOAD_MAX_KB', 30720)),
+
 ];
