@@ -180,8 +180,16 @@ class EmailLog extends Authenticatable
             $q->where('subject', 'like', "%{$search}%")
               ->orWhere('from_mail', 'like', "%{$search}%")
               ->orWhere('to_mail', 'like', "%{$search}%")
-              ->orWhere('message', 'like', "%{$search}%");
+              ->orWhere('text_preview', 'like', "%{$search}%");
         });
+    }
+
+    /**
+     * The PDF document generated from this uploaded email.
+     */
+    public function pdfDocument(): BelongsTo
+    {
+        return $this->belongsTo(Document::class, 'pdf_doc_id');
     }
 
     /**

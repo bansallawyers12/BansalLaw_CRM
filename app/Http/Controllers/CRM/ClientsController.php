@@ -4043,7 +4043,7 @@ class ClientsController extends Controller
                 ->where('mail_type', 1)
                 ->where('conversion_type', 'conversion_email_fetch')
                 ->where('mail_body_type', 'inbox')
-                ->with(['labels', 'attachments'])
+                ->with(['labels', 'attachments', 'pdfDocument'])
                 ->orderBy('created_at', 'DESC');
 
             if ($status !== null && $status !== '') {
@@ -4308,7 +4308,7 @@ class ClientsController extends Controller
                                 ->where('mail_body_type', 'sent');
                         });
                 })
-                ->with(['labels', 'attachments']) // Load labels and attachments relationships
+                ->with(['labels', 'attachments', 'pdfDocument'])
                 ->orderBy('created_at', 'DESC');
 
             // Filter by type
@@ -4463,7 +4463,7 @@ class ClientsController extends Controller
                                 ->where('mail_body_type', 'sent');
                         });
                 })
-                ->with(['labels', 'attachments'])
+                ->with(['labels', 'attachments', 'pdfDocument'])
                 ->orderBy('created_at', 'DESC');
 
             if ($status !== null && $status !== '') {
@@ -7835,9 +7835,11 @@ class ClientsController extends Controller
             return '';
         }
 
-        $pdfDoc = \App\Models\Document::select('id', 'myfile', 'myfile_key')
-            ->where('id', $email->pdf_doc_id)
-            ->first();
+        // Use already-loaded pdfDocument relationship to avoid N+1 queries.
+        // Falls back to a direct query when the relationship was not eager-loaded.
+        $pdfDoc = $email->relationLoaded('pdfDocument')
+            ? $email->pdfDocument
+            : \App\Models\Document::select('id', 'myfile')->where('id', $email->pdf_doc_id)->first();
 
         if (!$pdfDoc || empty($pdfDoc->myfile)) {
             return '';
