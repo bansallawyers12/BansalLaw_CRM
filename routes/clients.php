@@ -11,6 +11,7 @@ use App\Http\Controllers\CRM\PhoneVerificationController;
 use App\Http\Controllers\CRM\EmailVerificationController;
 use App\Http\Controllers\CRM\CRMUtilityController;
 use App\Http\Controllers\CRM\EmailUploadController;
+use App\Http\Controllers\CRM\SmartEmailImportController;
 use App\Http\Controllers\CRM\EmailLabelController;
 use App\Http\Controllers\CRM\EmailLogAttachmentController;
 use App\Http\Controllers\CRM\ClientMatterHubController;
@@ -88,6 +89,12 @@ Route::post('/upload-mail', [ClientsController::class, 'uploadmail']);
 Route::post('/upload-fetch-mail', [EmailUploadController::class, 'uploadInboxEmails'])->name('email.upload.inbox');
 Route::post('/upload-sent-fetch-mail', [EmailUploadController::class, 'uploadSentEmails'])->name('email.upload.sent');
 Route::get('/email/check-service', [EmailUploadController::class, 'checkPythonService'])->name('email.check.service');
+
+Route::prefix('emails/smart-import')->name('emails.smart-import.')->group(function () {
+    Route::get('/', [SmartEmailImportController::class, 'index'])->name('index');
+    Route::post('/analyze', [SmartEmailImportController::class, 'analyze'])->name('analyze');
+    Route::post('/confirm', [SmartEmailImportController::class, 'confirm'])->name('confirm');
+});
 
 Route::post('/reassiginboxemail', [ClientsController::class, 'reassiginboxemail'])->name('clients.reassiginboxemail');
 Route::post('/reassigsentemail', [ClientsController::class, 'reassigsentemail'])->name('clients.reassigsentemail');

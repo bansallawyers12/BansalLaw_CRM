@@ -6,7 +6,6 @@ use App\Models\Admin;
 use App\Models\ClientEmail;
 use App\Models\ClientMatter;
 use App\Support\StaffClientVisibility;
-use Illuminate\Support\Facades\DB;
 
 class EmailMatchingService
 {

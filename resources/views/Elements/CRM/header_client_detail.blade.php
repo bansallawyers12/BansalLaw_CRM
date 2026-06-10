@@ -51,6 +51,7 @@
                 <div class="icon-dropdown-menu">
                     <a class="dropdown-item" href="{{route('clients.index')}}"><i class="fas fa-list mr-2"></i> Client List</a>
                     <a class="dropdown-item" href="{{route('clients.clientsmatterslist')}}"><i class="fas fa-folder-open mr-2"></i> Matter List</a>
+                    <a class="dropdown-item" href="{{ route('emails.smart-import.index') }}"><i class="fas fa-file-import mr-2"></i> Smart Email Import</a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{route('leads.index')}}"><i class="fas fa-list-alt mr-2"></i> Lead List</a>
                     <a class="dropdown-item" href="{{route('leads.create')}}"><i class="fas fa-plus-circle mr-2"></i> Add Lead</a>
