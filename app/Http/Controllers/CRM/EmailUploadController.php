@@ -448,7 +448,7 @@ class EmailUploadController extends Controller
             $mailReport->to_mail = $this->formatParsedRecipientList($parsedData, 'to_recipients', 'recipients');
             $mailReport->cc = $this->formatParsedRecipientList($parsedData, 'cc_recipients');
             $mailReport->subject = $parsedData['subject'] ?? '';
-            $mailReport->message = $parsedData['html_content'] ?? $parsedData['text_content'] ?? '';
+            $mailReport->message = null; // Full body stored as PDF on S3 (pdf_doc_id); text_preview used for search/quoting
             $mailReport->mail_type = 1;
             $mailReport->type = $request->type; // Set type to 'client' or 'lead' as required by filter
             $mailReport->client_id = $clientId;

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Admin;
-use App\Models\ClientEmail;
 use App\Models\ClientMatter;
 use App\Support\StaffClientVisibility;
 
@@ -132,8 +131,11 @@ class EmailMatchingService
         }
 
         $matches = [];
-        $query = ClientMatter::query()
-            ->join('admins', 'admins.id', '=', 'client_matters.client_id')
+
+        // Start from Admin::query() so restrictAdminEloquentQuery works correctly
+        // (it uses getModel()->getTable() internally which must return 'admins').
+        $query = Admin::query()
+            ->join('client_matters', 'client_matters.client_id', '=', 'admins.id')
             ->leftJoin('matters', 'matters.id', '=', 'client_matters.sel_matter_id')
             ->whereIn('admins.type', ['client', 'lead'])
             ->whereNull('admins.is_deleted')
@@ -284,8 +286,9 @@ class EmailMatchingService
             );
         }
 
-        $clientEmailMatches = ClientEmail::query()
-            ->join('admins', 'admins.id', '=', 'client_emails.client_id')
+        // Start from Admin::query() so restrictAdminEloquentQuery works correctly.
+        $clientEmailMatches = Admin::query()
+            ->join('client_emails', 'client_emails.client_id', '=', 'admins.id')
             ->whereIn('admins.type', ['client', 'lead'])
             ->whereNull('admins.is_deleted')
             ->where('admins.is_archived', 0)

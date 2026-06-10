@@ -176,7 +176,21 @@
         }
     }
 
+    function destroyAllClientSelects() {
+        Object.keys(state.clientSelects).forEach(function (index) {
+            try {
+                var ts = state.clientSelects[index];
+                if (ts && typeof ts.destroy === 'function') {
+                    ts.destroy();
+                }
+            } catch (ignore) {}
+        });
+        state.clientSelects = {};
+    }
+
     function renderReviewPanel(data) {
+        destroyAllClientSelects();
+
         $('smart-import-upload-panel').style.display = 'none';
         $('smart-import-review-panel').style.display = 'block';
 
@@ -472,10 +486,10 @@
     }
 
     function resetPage() {
+        destroyAllClientSelects();
         state.batchToken = null;
         state.items = [];
         state.selectedFiles = [];
-        state.clientSelects = {};
         state.matterSelects = {};
 
         $('smart-import-review-panel').style.display = 'none';

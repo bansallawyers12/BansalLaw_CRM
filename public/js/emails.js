@@ -1595,7 +1595,7 @@
         const cc = cleanRecipients(email.cc);
         const date = formatDate(getEmailDate(email));
         const subject = email.subject || '(No subject)';
-        const message = email.text_preview || email.message || '(No content)';
+        const message = email.text_preview || '(No content)';
         
         let quotedText = '';
         

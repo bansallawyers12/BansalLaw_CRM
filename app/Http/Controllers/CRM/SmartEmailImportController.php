@@ -133,7 +133,7 @@ class SmartEmailImportController extends EmailUploadController
     public function confirm(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'batch_token' => 'required|string',
+            'batch_token' => 'required|uuid',
             'assignments' => 'required|array|min:1',
             'assignments.*.item_id' => 'required|string',
             'assignments.*.client_id' => 'required|integer|min:1',
@@ -172,7 +172,6 @@ class SmartEmailImportController extends EmailUploadController
         $itemsById = collect($meta['items'] ?? [])->keyBy('id');
         $saved = 0;
         $failed = [];
-        $skipped = 0;
 
         foreach ($request->input('assignments', []) as $assignment) {
             $itemId = (string) $assignment['item_id'];
@@ -254,7 +253,6 @@ class SmartEmailImportController extends EmailUploadController
                 : 'No emails were imported.',
             'saved' => $saved,
             'failed' => $failed,
-            'skipped' => $skipped,
         ]);
     }
 

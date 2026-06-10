@@ -452,15 +452,15 @@ class EmailRendererService:
             text = re.sub(r'\s+', ' ', text)
             text = text.strip()
             
-            # Limit length
-            if len(text) > 500:
-                text = text[:500] + "..."
+            # Limit length — enough for quoting in reply/forward, far smaller than full HTML body
+            if len(text) > 2000:
+                text = text[:2000] + "..."
             
             return text
             
         except Exception as e:
             logger.warning(f"Error creating text preview: {str(e)}")
-            return content[:500] if content else ""
+            return content[:2000] if content else ""
     
     def _escape_html(self, text: str) -> str:
         """Escape HTML special characters."""
