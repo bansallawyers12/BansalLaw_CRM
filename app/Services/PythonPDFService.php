@@ -13,7 +13,7 @@ class PythonPDFService
 
     public function __construct()
     {
-        $this->baseUrl = config('services.python_pdf.url', 'http://127.0.0.1:5000');
+        $this->baseUrl = config('services.python_pdf.url', 'http://127.0.0.1:5002');
         $this->timeout = config('services.python_pdf.timeout', 30);
     }
 

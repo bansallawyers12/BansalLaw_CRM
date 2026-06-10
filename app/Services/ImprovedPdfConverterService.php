@@ -16,7 +16,7 @@ class ImprovedPdfConverterService
     public function __construct()
     {
         $this->pythonConverter = app(\App\Services\PythonConverterService::class);
-        $this->apiUrl = env('PYTHON_CONVERTER_URL', 'http://localhost:5000');
+        $this->apiUrl = env('PYTHON_CONVERTER_URL', 'http://localhost:5002');
         $this->timeout = env('PYTHON_CONVERTER_TIMEOUT', 120);
     }
 

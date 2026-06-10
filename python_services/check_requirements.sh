@@ -108,19 +108,19 @@ else
     print_status 1 "start_services.sh not found"
 fi
 
-# Check port 5000 availability
+# Check port 5002 availability
 print_info "Checking port availability..."
 if command -v lsof &> /dev/null; then
-    if lsof -Pi :5000 -sTCP:LISTEN -t &> /dev/null; then
-        print_warning "Port 5000 is already in use"
+    if lsof -Pi :5002 -sTCP:LISTEN -t &> /dev/null; then
+        print_warning "Port 5002 is already in use"
     else
-        print_status 0 "Port 5000 is available"
+        print_status 0 "Port 5002 is available"
     fi
 elif command -v netstat &> /dev/null; then
-    if netstat -tuln | grep -q ":5000 "; then
-        print_warning "Port 5000 may be in use"
+    if netstat -tuln | grep -q ":5002 "; then
+        print_warning "Port 5002 may be in use"
     else
-        print_status 0 "Port 5000 appears available"
+        print_status 0 "Port 5002 appears available"
     fi
 else
     print_warning "Cannot check port availability (lsof/netstat not found)"

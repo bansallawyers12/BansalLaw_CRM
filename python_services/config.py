@@ -14,7 +14,7 @@ SERVICE_VERSION = "1.0.0"
 
 # Server configuration
 HOST = os.getenv('SERVICE_HOST', '127.0.0.1')
-PORT = int(os.getenv('SERVICE_PORT', '5001'))
+PORT = int(os.getenv('SERVICE_PORT', '5002'))
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 RELOAD = os.getenv('RELOAD', 'False').lower() == 'true'
 

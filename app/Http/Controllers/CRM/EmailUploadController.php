@@ -38,7 +38,7 @@ class EmailUploadController extends Controller
     public function __construct()
     {
         $this->middleware('auth:admin');
-        $this->pythonServiceUrl = env('PYTHON_SERVICE_URL', 'http://127.0.0.1:5001');
+        $this->pythonServiceUrl = env('PYTHON_SERVICE_URL', 'http://127.0.0.1:5002');
     }
 
     /**

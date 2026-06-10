@@ -49,7 +49,7 @@ return [
     */
 
     'python' => [
-        'url' => env('PYTHON_SERVICE_URL', 'http://localhost:5001'),
+        'url' => env('PYTHON_SERVICE_URL', 'http://localhost:5002'),
         'timeout' => env('PYTHON_SERVICE_TIMEOUT', 120),
         'max_retries' => env('PYTHON_SERVICE_MAX_RETRIES', 3),
         'health_check_interval' => env('PYTHON_SERVICE_HEALTH_CHECK_INTERVAL', 60),
@@ -65,13 +65,13 @@ return [
     */
 
     'python_pdf' => [
-        'url' => env('PYTHON_PDF_SERVICE_URL', 'http://127.0.0.1:5001'),
+        'url' => env('PYTHON_PDF_SERVICE_URL', 'http://127.0.0.1:5002'),
         'timeout' => env('PYTHON_PDF_SERVICE_TIMEOUT', 60),
     ],
 
     'python_converter' => [
         // Falls back to PYTHON_SERVICE_URL so one .env line suffices when both use the same process
-        'url' => env('PYTHON_CONVERTER_URL') ?: env('PYTHON_SERVICE_URL', 'http://localhost:5001'),
+        'url' => env('PYTHON_CONVERTER_URL') ?: env('PYTHON_SERVICE_URL', 'http://localhost:5002'),
         'timeout' => env('PYTHON_CONVERTER_TIMEOUT', 120),
     ],
 

@@ -57,7 +57,7 @@ Type=simple
 User=$SERVICE_USER
 WorkingDirectory=$SCRIPT_DIR
 Environment="PATH=/usr/local/bin:/usr/bin:/bin"
-ExecStart=$(which python3) $SCRIPT_DIR/main.py --host 127.0.0.1 --port 5000
+ExecStart=$(which python3) $SCRIPT_DIR/main.py --host 127.0.0.1 --port 5002
 Restart=always
 RestartSec=10
 StandardOutput=journal

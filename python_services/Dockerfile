@@ -37,12 +37,12 @@ RUN useradd -m -u 1000 appuser && \
 USER appuser
 
 # Expose port
-EXPOSE 5001
+EXPOSE 5002
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:5001/health || exit 1
+    CMD curl -f http://localhost:5002/health || exit 1
 
 # Start the service
-CMD ["python3", "main.py", "--host", "0.0.0.0", "--port", "5001"]
+CMD ["python3", "main.py", "--host", "0.0.0.0", "--port", "5002"]
 

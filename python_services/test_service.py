@@ -41,14 +41,14 @@ def test_health_endpoint():
     try:
         # Start service in background
         process = subprocess.Popen([
-            sys.executable, 'main.py', '--host', '127.0.0.1', '--port', '5000'
+            sys.executable, 'main.py', '--host', '127.0.0.1', '--port', '5002'
         ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         # Wait for service to start
         time.sleep(3)
         
         # Test health endpoint
-        response = requests.get('http://127.0.0.1:5000/health', timeout=5)
+        response = requests.get('http://127.0.0.1:5002/health', timeout=5)
         
         if response.status_code == 200:
             print("OK - Health endpoint working")

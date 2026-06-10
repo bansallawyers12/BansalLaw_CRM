@@ -63,14 +63,14 @@ REM Start the service
 echo.
 echo 🚀 Starting Migration Manager Python Services...
 echo    Host: 127.0.0.1
-echo    Port: 5001
-echo    URL: http://127.0.0.1:5001
-echo    Health: http://127.0.0.1:5001/health
+echo    Port: 5002
+echo    URL: http://127.0.0.1:5002
+echo    Health: http://127.0.0.1:5002/health
 echo.
 echo Press Ctrl+C to stop the service
 echo ============================================================
 
-python main.py --host 127.0.0.1 --port 5001
+python main.py --host 127.0.0.1 --port 5002
 
 echo.
 echo ⏹️  Service stopped

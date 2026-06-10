@@ -32,7 +32,7 @@ WorkingDirectory=/var/www/bansal-law-crm/python_services
 Environment="PATH=/usr/local/bin:/usr/bin:/bin"
 Environment="PYTHONUNBUFFERED=1"
 Environment="SERVICE_HOST=127.0.0.1"
-Environment="SERVICE_PORT=5000"
+Environment="SERVICE_PORT=5002"
 Environment="LOG_LEVEL=INFO"
 Environment="DEBUG=False"
 
@@ -41,13 +41,13 @@ Environment="DEBUG=False"
 
 # Command to start the service
 # Using system Python
-ExecStart=/usr/bin/python3 /var/www/bansal-law-crm/python_services/main.py --host 127.0.0.1 --port 5000
+ExecStart=/usr/bin/python3 /var/www/bansal-law-crm/python_services/main.py --host 127.0.0.1 --port 5002
 
 # If using virtual environment, use this instead:
-# ExecStart=/var/www/bansal-law-crm/python_services/venv/bin/python /var/www/bansal-law-crm/python_services/main.py --host 127.0.0.1 --port 5000
+# ExecStart=/var/www/bansal-law-crm/python_services/venv/bin/python /var/www/bansal-law-crm/python_services/main.py --host 127.0.0.1 --port 5002
 
 # If using Gunicorn for better performance, use this:
-# ExecStart=/usr/bin/python3 -m gunicorn main:app --bind 127.0.0.1:5000 --workers 4 --worker-class uvicorn.workers.UvicornWorker --timeout 300
+# ExecStart=/usr/bin/python3 -m gunicorn main:app --bind 127.0.0.1:5002 --workers 4 --worker-class uvicorn.workers.UvicornWorker --timeout 300
 
 # Restart Policy
 Restart=always

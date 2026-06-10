@@ -21,7 +21,7 @@ class PythonService
 
     public function __construct()
     {
-        $this->baseUrl = config('services.python.url', 'http://localhost:5000');
+        $this->baseUrl = config('services.python.url', 'http://localhost:5002');
         $this->timeout = config('services.python.timeout', 120);
         $this->maxRetries = config('services.python.max_retries', 3);
     }

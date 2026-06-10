@@ -77,7 +77,7 @@ def install_dependencies():
         print(f"❌ Failed to install dependencies: {e}")
         return False
 
-def start_service(host='127.0.0.1', port=5001, reload=False):
+def start_service(host='127.0.0.1', port=5002, reload=False):
     """Start the Python service."""
     print(f"\n🚀 Starting Migration Manager Python Services...")
     print(f"   Host: {host}")
@@ -153,7 +153,7 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description='Start Migration Manager Python Services')
     parser.add_argument('--host', default='127.0.0.1', help='Host to bind to')
-    parser.add_argument('--port', type=int, default=5001, help='Port to bind to')
+    parser.add_argument('--port', type=int, default=5002, help='Port to bind to')
     parser.add_argument('--reload', action='store_true', help='Enable auto-reload for development')
     parser.add_argument('--install-deps', action='store_true', help='Install dependencies and exit')
     parser.add_argument('--windows-service', action='store_true', help='Show Windows service setup instructions')

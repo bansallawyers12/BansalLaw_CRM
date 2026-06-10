@@ -14,7 +14,7 @@ class DocxToPdfService
 
     public function __construct()
     {
-        $this->pythonApiUrl = config('services.python_converter.url', 'http://localhost:5000');
+        $this->pythonApiUrl = config('services.python_converter.url', 'http://localhost:5002');
         $this->timeout = config('services.python_converter.timeout', 300);
     }
 
