@@ -14,7 +14,7 @@ import re
 import json
 import base64
 import mimetypes
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
 from urllib.parse import urlparse, urljoin
 from pathlib import Path
@@ -488,3 +488,76 @@ class EmailRendererService:
             'rendering_timestamp': datetime.now().isoformat(),
             'error': 'Rendering failed'
         }
+
+    def render_to_pdf(self, email_data: Dict[str, Any]) -> Tuple[Optional[bytes], Optional[str], Optional[str]]:
+        """
+        Render parsed email data to a PDF byte stream.
+
+        Returns:
+            (pdf_bytes, text_preview, error_message)
+        """
+        try:
+            rendering = self.render_email(email_data)
+            text_preview = rendering.get('text_preview') or email_data.get('text_content', '')
+
+            rendered_html = rendering.get('rendered_html', '')
+            if not rendered_html:
+                return None, text_preview, 'No rendered HTML available for PDF conversion'
+
+            attachments = email_data.get('attachments') or []
+            pdf_html = self._replace_cid_with_data_uris(rendered_html, attachments)
+
+            try:
+                from weasyprint import HTML
+            except ImportError:
+                return None, text_preview, 'WeasyPrint is not installed'
+
+            pdf_bytes = HTML(string=pdf_html).write_pdf()
+            if not pdf_bytes:
+                return None, text_preview, 'WeasyPrint returned empty PDF'
+
+            logger.info(
+                f"PDF generated for email: {email_data.get('subject', 'No subject')} "
+                f"({len(pdf_bytes)} bytes)"
+            )
+            return pdf_bytes, text_preview, None
+
+        except Exception as e:
+            logger.error(f"Error generating email PDF: {str(e)}")
+            return None, email_data.get('text_content', ''), str(e)
+
+    def _replace_cid_with_data_uris(self, html_content: str, attachments: List[Dict[str, Any]]) -> str:
+        """Replace cid: image references with inline data URIs for PDF rendering."""
+        if not html_content or not attachments:
+            return html_content
+
+        cid_map: Dict[str, str] = {}
+        for attachment in attachments:
+            if not isinstance(attachment, dict):
+                continue
+
+            content_id = str(attachment.get('content_id') or '').strip().strip('<>')
+            data_b64 = attachment.get('data')
+            if not content_id or not data_b64:
+                continue
+
+            content_type = attachment.get('content_type') or 'application/octet-stream'
+            if not str(content_type).lower().startswith('image/'):
+                continue
+
+            cid_map[content_id.lower()] = f"data:{content_type};base64,{data_b64}"
+
+            filename = str(attachment.get('filename') or '').strip()
+            if filename:
+                cid_map[filename.lower()] = cid_map[content_id.lower()]
+
+        if not cid_map:
+            return html_content
+
+        def replace_cid(match: re.Match) -> str:
+            cid_value = match.group(1).strip().strip('<>').lower()
+            if cid_value in cid_map:
+                return f'src="{cid_map[cid_value]}"'
+            return match.group(0)
+
+        return re.sub(r'src=["\']cid:([^"\']+)["\']', replace_cid, html_content, flags=re.IGNORECASE)

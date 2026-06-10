@@ -34,6 +34,7 @@ class EmailLog extends Authenticatable
         'mail_body_type',
         'fetch_mail_sent_time',
         'uploaded_doc_id',
+        'pdf_doc_id',
         'mail_is_read',
         // Python analysis fields
         'python_analysis',

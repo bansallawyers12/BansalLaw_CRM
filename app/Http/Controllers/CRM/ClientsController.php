@@ -4136,6 +4136,7 @@ class ClientsController extends Controller
                 
                 // Add preview_url to the array
                 $emailArray['preview_url'] = $previewUrl;
+                $emailArray['pdf_preview_url'] = $this->resolveEmailPdfPreviewUrl($email);
                 
                 return $emailArray;
             });
@@ -4410,6 +4411,7 @@ class ClientsController extends Controller
 				
 				// Add preview_url and ensure required fields have defaults
 				$emailArray['preview_url'] = $previewUrl;
+				$emailArray['pdf_preview_url'] = $this->resolveEmailPdfPreviewUrl($email);
 				$emailArray['from_mail'] = $emailArray['from_mail'] ?? '';
 				$emailArray['to_mail'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['to_mail'] ?? '', $email->type ?? null);
 				$emailArray['subject'] = $emailArray['subject'] ?? '';
@@ -4540,6 +4542,7 @@ class ClientsController extends Controller
                     })->values()->toArray()
                     : [];
                 $emailArray['preview_url'] = $previewUrl;
+                $emailArray['pdf_preview_url'] = $this->resolveEmailPdfPreviewUrl($email);
                 $emailArray['from_mail'] = $emailArray['from_mail'] ?? '';
                 $emailArray['to_mail'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['to_mail'] ?? '', $email->type ?? 'lead');
                 $emailArray['subject'] = $emailArray['subject'] ?? '';
@@ -7821,6 +7824,26 @@ class ClientsController extends Controller
             });
         
         return response()->json(['results' => $results]);
+    }
+
+    /**
+     * Resolve S3 URL for the generated PDF viewer document linked to an email log.
+     */
+    protected function resolveEmailPdfPreviewUrl($email): string
+    {
+        if (empty($email->pdf_doc_id)) {
+            return '';
+        }
+
+        $pdfDoc = \App\Models\Document::select('id', 'myfile', 'myfile_key')
+            ->where('id', $email->pdf_doc_id)
+            ->first();
+
+        if (!$pdfDoc || empty($pdfDoc->myfile)) {
+            return '';
+        }
+
+        return (string) $pdfDoc->myfile;
     }
 
     /**

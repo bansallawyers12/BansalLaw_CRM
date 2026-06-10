@@ -1310,26 +1310,11 @@
         const to = cleanRecipients(email.to_mail) || 'Unknown';
         const cc = cleanRecipients(email.cc);
         const date = formatDate(getEmailDate(email));
-        let message = email.message || '(No content)';
 
         // Get all attachments (including inline) - show all so users can download important files like payment receipts
-        // Even if they're displayed inline in the email body, they should also be available as downloadable attachments
         const allAttachments = email.attachments && Array.isArray(email.attachments) ? email.attachments : [];
-        const regularAttachments = allAttachments; // Show all attachments, not just non-inline
+        const regularAttachments = allAttachments;
         const hasAttachments = regularAttachments.length > 0;
-        
-        // Replace cid: references in email message with actual preview URLs for inline images
-        message = replaceCidReferences(message, allAttachments);
-        
-        // Debug logging
-        console.log('Loading email detail:', {
-            id: email.id,
-            subject: email.subject,
-            attachments: email.attachments,
-            allAttachments: allAttachments,
-            regularAttachments: regularAttachments,
-            hasAttachments: hasAttachments
-        });
 
         // Build attachment list HTML
         let attachmentHtml = '';
@@ -1389,12 +1374,24 @@
             previewSection = `
                 <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
                     <h4 style="margin-bottom: 10px; font-weight: 600;">Original Email File</h4>
-                    <a href="${email.preview_url}" target="_blank" class="btn btn-sm btn-primary">
-                        <i class="fas fa-download"></i> Download .msg File
+                    <a href="${escapeHtml(email.preview_url)}" target="_blank" class="btn btn-sm btn-primary">
+                        <i class="fas fa-download"></i> Download Original .msg
                     </a>
                 </div>
             `;
         }
+
+        const pdfBodyHtml = email.pdf_preview_url
+            ? `<iframe src="${escapeHtml(email.pdf_preview_url)}" type="application/pdf"
+                       style="width:100%; height:680px; border:none; border-radius:4px;"
+                       title="Email PDF preview"></iframe>`
+            : `<div class="pdf-unavailable-notice" style="padding:24px; text-align:center; color:#666; background:#f9f9f9; border-radius:4px;">
+                    <i class="fas fa-file-pdf" style="font-size:24px; margin-bottom:8px; display:block;"></i>
+                    PDF preview not available for this email.
+                    ${email.preview_url
+                        ? `<br><a href="${escapeHtml(email.preview_url)}" target="_blank" style="margin-top:8px; display:inline-block;">Download original .msg</a>`
+                        : ''}
+               </div>`;
 
         // Render complete email detail
         emailContentView.innerHTML = `
@@ -1408,7 +1405,7 @@
                 </div>
             </div>
             <div class="email-content-body">
-                ${message}
+                ${pdfBodyHtml}
             </div>
             ${attachmentHtml}
             ${previewSection}
@@ -1598,7 +1595,7 @@
         const cc = cleanRecipients(email.cc);
         const date = formatDate(getEmailDate(email));
         const subject = email.subject || '(No subject)';
-        const message = email.message || '(No content)';
+        const message = email.text_preview || email.message || '(No content)';
         
         let quotedText = '';
         

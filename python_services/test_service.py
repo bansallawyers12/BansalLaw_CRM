@@ -108,6 +108,46 @@ def test_email_analysis():
         print(f"FAILED - Email analysis test failed: {e}")
         return False
 
+def test_pdf_generation():
+    """Test email PDF generation functionality."""
+    print("\nTesting email PDF generation...")
+
+    try:
+        from services.email_renderer_service import EmailRendererService
+
+        renderer = EmailRendererService()
+        email_data = {
+            'subject': 'Test Email Subject',
+            'html_content': '<p>This is a <strong>test</strong> email body.</p>',
+            'text_content': 'This is a test email body.',
+            'sender_email': 'sender@example.com',
+            'sender_name': 'Test Sender',
+            'sent_date': '2026-06-10T10:00:00+00:00',
+            'to_recipients': ['recipient@example.com'],
+            'cc_recipients': [],
+            'attachments': [],
+        }
+
+        pdf_bytes, text_preview, error = renderer.render_to_pdf(email_data)
+
+        if pdf_bytes and len(pdf_bytes) > 0:
+            print("OK - Email PDF generation working")
+            print(f"   PDF size: {len(pdf_bytes)} bytes")
+            print(f"   Text preview length: {len(text_preview or '')}")
+            return True
+
+        if error and 'WeasyPrint is not installed' in error:
+            print("WARNING - WeasyPrint not installed (PDF generation unavailable)")
+            return True
+
+        print(f"FAILED - Email PDF generation failed: {error}")
+        return False
+
+    except Exception as e:
+        print(f"FAILED - Email PDF generation test failed: {e}")
+        return False
+
+
 def test_email_rendering():
     """Test email rendering functionality."""
     print("\nTesting email rendering...")
@@ -152,6 +192,7 @@ def main():
         test_service_startup,
         test_email_analysis,
         test_email_rendering,
+        test_pdf_generation,
         test_health_endpoint
     ]
     

@@ -42,6 +42,39 @@ class EmailUploadController extends Controller
     }
 
     /**
+     * Import a parsed .msg file with explicit client/matter context (smart import flow).
+     *
+     * @param \Illuminate\Http\UploadedFile $file
+     * @return array{success: bool, document_id?: int, email_log_id?: int, error?: string}
+     */
+    public function importEmailFromContext($file, int $clientId, string $mailType, int $clientMatterId, string $recordType = 'client'): array
+    {
+        $this->ensureCrmRecordAccess($clientId);
+
+        $clientInfo = Admin::select('client_id', 'type')->where('id', $clientId)->first();
+        if (! $clientInfo) {
+            return ['success' => false, 'error' => 'Client not found.'];
+        }
+
+        $clientUniqueId = (string) ($clientInfo->client_id ?? '');
+        $resolvedType = in_array($clientInfo->type, ['client', 'lead'], true) ? $clientInfo->type : $recordType;
+
+        $payload = [
+            'client_id' => $clientId,
+            'type' => $resolvedType,
+        ];
+        if ($mailType === 'sent') {
+            $payload['upload_sent_mail_client_matter_id'] = $clientMatterId;
+        } else {
+            $payload['upload_inbox_mail_client_matter_id'] = $clientMatterId;
+        }
+
+        $request = Request::create('/', 'POST', $payload);
+
+        return $this->processEmailFile($file, $clientId, $clientUniqueId, $mailType, $request);
+    }
+
+    /**
      * Upload and process inbox emails using Python microservice
      * 
      * Modern replacement for uploadfetchmail method
@@ -396,6 +429,18 @@ class EmailUploadController extends Controller
                 throw new \Exception('Failed to save document record: ' . ($e->errorInfo[2] ?? $e->getMessage()));
             }
 
+            $pdfDocumentId = $this->saveEmailPdfDocument(
+                $parsedData,
+                $fileName,
+                $sanitizedClientId,
+                $docType,
+                $mailType,
+                $uniqueFileName,
+                $clientId,
+                $request,
+                $document->client_matter_id
+            );
+
             // 4. Save to EmailLog
             $mailReport = new EmailLog();
             $mailReport->user_id = Auth::user()->id;
@@ -410,7 +455,12 @@ class EmailUploadController extends Controller
             $mailReport->conversion_type = $docType;
             $mailReport->mail_body_type = $mailType;
             $mailReport->uploaded_doc_id = $document->id;
+            $mailReport->pdf_doc_id = $pdfDocumentId;
             $mailReport->client_matter_id = $document->client_matter_id;
+
+            if (!empty($parsedData['text_preview'])) {
+                $mailReport->text_preview = $parsedData['text_preview'];
+            }
             
             // Sent time: store a real datetime for PostgreSQL — never locale strings like d/m/Y (DateStyle-dependent)
             if (!empty($parsedData['sent_date'])) {
@@ -531,7 +581,7 @@ class EmailUploadController extends Controller
                     $subject = substr($subject, 0, 97) . '...';
                 }
                 
-                $from = $parsedData['from'] ?? 'Unknown';
+                $from = $parsedData['sender_email'] ?? $parsedData['sender_name'] ?? 'Unknown';
                 $description = "<p>From: {$from}</p>";
                 
                 $this->logClientActivity(
@@ -617,6 +667,81 @@ class EmailUploadController extends Controller
     }
 
     /**
+     * Save generated PDF to S3 and create a documents row (soft-fail returns null).
+     *
+     * @return int|null Document id for the PDF, or null if PDF was not generated/saved
+     */
+    protected function saveEmailPdfDocument(
+        array $parsedData,
+        string $fileName,
+        string $sanitizedClientId,
+        string $docType,
+        string $mailType,
+        string $uniqueFileName,
+        int $clientId,
+        Request $request,
+        $clientMatterId
+    ): ?int {
+        if (empty($parsedData['pdf_base64'])) {
+            if (!empty($parsedData['pdf_error'])) {
+                Log::warning('Email PDF not generated', [
+                    'file' => $fileName,
+                    'error' => $parsedData['pdf_error'],
+                ]);
+            }
+            return null;
+        }
+
+        try {
+            $pdfBytes = base64_decode($parsedData['pdf_base64'], true);
+            if ($pdfBytes === false || strlen($pdfBytes) === 0) {
+                Log::warning('Failed to decode email PDF from Python service', ['file' => $fileName]);
+                return null;
+            }
+
+            $pdfUniqueFileName = preg_replace('/\.msg$/i', '.pdf', $uniqueFileName);
+            if ($pdfUniqueFileName === $uniqueFileName) {
+                $pdfUniqueFileName = pathinfo($uniqueFileName, PATHINFO_FILENAME) . '.pdf';
+            }
+
+            $pdfFilePath = $sanitizedClientId . '/' . $docType . '/' . $mailType . '/' . $pdfUniqueFileName;
+
+            $uploadResult = Storage::disk('s3')->put($pdfFilePath, $pdfBytes);
+            if (!$uploadResult) {
+                Log::warning('Failed to upload email PDF to S3', [
+                    'file' => $fileName,
+                    's3_path' => $pdfFilePath,
+                ]);
+                return null;
+            }
+
+            $pdfFileUrl = Storage::disk('s3')->url($pdfFilePath);
+
+            $pdfDocument = new Document();
+            $pdfDocument->file_name = pathinfo($fileName, PATHINFO_FILENAME);
+            $pdfDocument->filetype = 'pdf';
+            $pdfDocument->user_id = Auth::user()->id;
+            $pdfDocument->myfile = $pdfFileUrl;
+            $pdfDocument->myfile_key = $pdfUniqueFileName;
+            $pdfDocument->client_id = $clientId;
+            $pdfDocument->type = $request->type;
+            $pdfDocument->mail_type = $mailType;
+            $pdfDocument->file_size = strlen($pdfBytes);
+            $pdfDocument->doc_type = $docType;
+            $pdfDocument->client_matter_id = $clientMatterId;
+            $pdfDocument->save();
+
+            return (int) $pdfDocument->id;
+        } catch (\Exception $e) {
+            Log::warning('Email PDF save failed (upload continues)', [
+                'file' => $fileName,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
      * Parse email file using Python microservice
      * 
      * @param \Illuminate\Http\UploadedFile $file
@@ -629,10 +754,10 @@ class EmailUploadController extends Controller
             $originalFileName = $file->getClientOriginalName();
             $sanitizedFileName = $this->sanitizeFilename($originalFileName);
             
-            // Call Python microservice (use sanitized filename in attachment)
-            $response = Http::timeout(30)
+            // Call Python microservice: parse .msg and generate PDF for viewer (use sanitized filename in attachment)
+            $response = Http::timeout(90)
                 ->attach('file', file_get_contents($file->getPathname()), $sanitizedFileName)
-                ->post($this->pythonServiceUrl . '/email/parse');
+                ->post($this->pythonServiceUrl . '/email/parse-render-pdf');
 
             if ($response->successful()) {
                 // Safely parse JSON response - handle cases where service returns HTML error pages

@@ -14,9 +14,11 @@ Version: 1.0.0
 """
 
 import sys
+import time
+import base64
 import logging
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.responses import JSONResponse, FileResponse
@@ -141,6 +143,12 @@ async def health_check():
             converter_status = "unavailable"
             converter_message = "No conversion method available"
     
+    try:
+        import weasyprint  # noqa: F401
+        weasyprint_status = "ready"
+    except ImportError:
+        weasyprint_status = "unavailable"
+
     return {
         "status": "healthy",
         "services": {
@@ -148,6 +156,7 @@ async def health_check():
             "email_parser": "ready",
             "email_analyzer": "ready",
             "email_renderer": "ready",
+            "weasyprint": weasyprint_status,
             "docx_converter": converter_status
         },
         "docx_converter_details": {
@@ -411,34 +420,107 @@ async def convert_docx_to_pdf_json(file: UploadFile = File(...)):
 # Email Service Endpoints
 # ============================================================================
 
+def _cleanup_temp_file(temp_path: Optional[Path]) -> None:
+    """Remove a temporary upload file with retry for Windows file locking."""
+    if not temp_path or not temp_path.exists():
+        return
+
+    for attempt in range(3):
+        try:
+            temp_path.unlink()
+            return
+        except PermissionError:
+            if attempt < 2:
+                time.sleep(0.1)
+            else:
+                logger.warning(f"Could not delete temp file {temp_path}")
+        except Exception as cleanup_error:
+            logger.warning(f"Error during cleanup of {temp_path}: {str(cleanup_error)}")
+            return
+
+
 @app.post("/email/parse")
 async def parse_email(file: UploadFile = File(...)):
     """Parse .msg file and extract email data."""
+    temp_path = None
     try:
         logger.info(f"Parsing email file: {file.filename}")
-        
-        # Validate file
+
         if not validate_file_type(file.filename, ['.msg']):
             raise HTTPException(status_code=400, detail="Invalid file type. Only .msg files are allowed.")
-        
-        # Save file temporarily
-        temp_path = Path(f"temp/{file.filename}")
+
+        temp_filename = f"{int(time.time() * 1000)}_{file.filename}"
+        temp_path = Path(f"temp/{temp_filename}")
         temp_path.parent.mkdir(exist_ok=True)
-        
+
         content = await file.read()
         temp_path.write_bytes(content)
-        
-        # Parse email
+
         result = email_parser.parse_msg_file(str(temp_path))
-        
-        # Clean up
-        temp_path.unlink()
-        
         return JSONResponse(content=result)
-        
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error parsing email: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        _cleanup_temp_file(temp_path)
+
+
+@app.post("/email/parse-render-pdf")
+async def parse_render_pdf_email(file: UploadFile = File(...)):
+    """
+    Parse .msg file, render metadata + body HTML, and generate a PDF for CRM viewing.
+    Returns parsed email data plus optional pdf_base64 (soft-fail if PDF generation fails).
+    """
+    temp_path = None
+    try:
+        logger.info(f"Parsing and rendering PDF for email file: {file.filename}")
+
+        if not validate_file_type(file.filename, ['.msg']):
+            raise HTTPException(status_code=400, detail="Invalid file type. Only .msg files are allowed.")
+
+        temp_filename = f"{int(time.time() * 1000)}_{file.filename}"
+        temp_path = Path(f"temp/{temp_filename}")
+        temp_path.parent.mkdir(exist_ok=True)
+
+        content = await file.read()
+        temp_path.write_bytes(content)
+
+        parsed_data = email_parser.parse_msg_file(str(temp_path))
+
+        if parsed_data.get('success') is False or parsed_data.get('error'):
+            return JSONResponse(content=parsed_data, status_code=500)
+
+        pdf_bytes, text_preview, pdf_error = email_renderer.render_to_pdf(parsed_data)
+
+        result = dict(parsed_data)
+        if text_preview:
+            result['text_preview'] = text_preview
+
+        if pdf_bytes:
+            result['pdf_base64'] = base64.b64encode(pdf_bytes).decode('ascii')
+            result['pdf_size'] = len(pdf_bytes)
+            result['pdf_generated'] = True
+        else:
+            result['pdf_base64'] = None
+            result['pdf_size'] = 0
+            result['pdf_generated'] = False
+            result['pdf_error'] = pdf_error or 'PDF generation failed'
+            logger.warning(
+                f"PDF generation skipped for {file.filename}: {result['pdf_error']}"
+            )
+
+        return JSONResponse(content=result)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in parse-render-pdf pipeline: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        _cleanup_temp_file(temp_path)
 
 
 @app.post("/email/analyze")
@@ -486,66 +568,41 @@ async def parse_analyze_render_email(file: UploadFile = File(...)):
     temp_path = None
     try:
         logger.info(f"Processing email file: {file.filename}")
-        
-        # Validate file
+
         if not validate_file_type(file.filename, ['.msg']):
             raise HTTPException(status_code=400, detail="Invalid file type. Only .msg files are allowed.")
-        
-        # Save file temporarily with unique name to avoid conflicts
-        import time
+
         temp_filename = f"{int(time.time() * 1000)}_{file.filename}"
         temp_path = Path(f"temp/{temp_filename}")
         temp_path.parent.mkdir(exist_ok=True)
-        
+
         content = await file.read()
         temp_path.write_bytes(content)
-        
-        # Step 1: Parse email
+
         parsed_data = email_parser.parse_msg_file(str(temp_path))
-        
+
         if 'error' in parsed_data:
             return JSONResponse(content=parsed_data, status_code=500)
-        
-        # Step 2: Analyze email
+
         analysis = email_analyzer.analyze_content(parsed_data)
-        
-        # Step 3: Render email
         rendering = email_renderer.render_email(parsed_data)
-        
-        # Combine results
+
         result = {
             **parsed_data,
             'analysis': analysis,
             'rendering': rendering,
             'processing_status': 'success'
         }
-        
-        # Clean up - retry mechanism for Windows file locking
-        if temp_path and temp_path.exists():
-            import time
-            for attempt in range(3):
-                try:
-                    temp_path.unlink()
-                    break
-                except PermissionError as pe:
-                    if attempt < 2:
-                        time.sleep(0.1)  # Wait 100ms before retry
-                    else:
-                        logger.warning(f"Could not delete temp file {temp_path}: {str(pe)}")
-                except Exception as cleanup_error:
-                    logger.warning(f"Error during cleanup of {temp_path}: {str(cleanup_error)}")
-        
+
         return JSONResponse(content=result)
-        
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error in email processing pipeline: {str(e)}")
-        # Attempt cleanup on error
-        if temp_path and temp_path.exists():
-            try:
-                temp_path.unlink()
-            except:
-                logger.warning(f"Could not clean up temp file on error: {temp_path}")
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        _cleanup_temp_file(temp_path)
 
 
 # ============================================================================

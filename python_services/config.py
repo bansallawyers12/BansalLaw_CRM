@@ -30,7 +30,7 @@ PDF_SUPPORTED_FORMATS = ['PNG', 'JPEG', 'PDF']
 
 # Email processing configuration
 EMAIL_PARSE_TIMEOUT = int(os.getenv('EMAIL_PARSE_TIMEOUT', '60'))
-EMAIL_MAX_ATTACHMENT_SIZE = int(os.getenv('EMAIL_MAX_ATTACHMENT_SIZE', '10485760'))  # 10MB
+EMAIL_MAX_ATTACHMENT_SIZE = int(os.getenv('EMAIL_MAX_ATTACHMENT_SIZE', '31457280'))  # 30MB
 
 # Document Conversion Configuration
 LIBREOFFICE_PATH = os.getenv('LIBREOFFICE_PATH', None)

@@ -506,6 +506,7 @@ class PythonService
                 'pdf_convert' => $this->baseUrl . '/pdf/convert-to-images',
                 'pdf_merge' => $this->baseUrl . '/pdf/merge',
                 'email_parse' => $this->baseUrl . '/email/parse',
+                'email_parse_render_pdf' => $this->baseUrl . '/email/parse-render-pdf',
                 'email_analyze' => $this->baseUrl . '/email/analyze',
                 'email_render' => $this->baseUrl . '/email/render',
                 'email_process' => $this->baseUrl . '/email/parse-analyze-render'

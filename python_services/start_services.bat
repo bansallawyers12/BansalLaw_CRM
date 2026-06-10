@@ -45,7 +45,7 @@ if not exist "requirements.txt" (
 REM Install dependencies if needed (FastAPI, Uvicorn, PDF libraries, etc.)
 echo 📦 Checking dependencies...
 REM Check for key dependencies: FastAPI (web framework), Uvicorn (ASGI server), extract_msg (email parsing)
-python -c "import fastapi, uvicorn, extract_msg" >nul 2>&1
+python -c "import fastapi, uvicorn, extract_msg, weasyprint" >nul 2>&1
 if %errorlevel% neq 0 (
     echo 📦 Installing dependencies...
     python -m pip install -r requirements.txt
