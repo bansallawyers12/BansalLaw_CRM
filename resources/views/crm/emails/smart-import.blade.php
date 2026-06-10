@@ -56,6 +56,24 @@
     .smart-import-client-select { min-width: 220px; }
     .smart-import-matter-select { min-width: 180px; }
     .smart-import-status { min-height: 24px; font-size: 13px; color: #5a6b7d; }
+    .smart-import-suggestion-pick {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+    .smart-import-field-label {
+        display: block;
+        font-size: 11px;
+        color: #6b7c93;
+        margin-bottom: 3px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    .smart-import-review-hint {
+        font-size: 13px;
+        color: #5a6b7d;
+        margin-bottom: 12px;
+    }
 </style>
 @endsection
 
@@ -69,7 +87,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <div>
                         <h4 class="mb-1">Smart Email Import</h4>
-                        <small class="text-muted">Upload Outlook .msg files, review suggested client/matter matches, then confirm import.</small>
+                        <small class="text-muted">Upload .msg files, review suggestions, then manually pick client/matter or confirm matches before import.</small>
                     </div>
                     <span id="python-service-status" class="badge badge-secondary">Checking service...</span>
                 </div>
@@ -92,17 +110,25 @@
 
                     <div id="smart-import-review-panel" style="display:none;">
                         <div class="smart-import-summary" id="smart-import-summary"></div>
+                        <p class="smart-import-review-hint">
+                            Suggestions are pre-filled but editable. Search for any client, pick a matter, tick <strong>Import</strong>, then use <strong>Confirm row</strong> or <strong>Confirm Selected</strong>.
+                        </p>
 
                         <div class="table-responsive">
                             <table class="table table-sm" id="smart-import-table">
                                 <thead>
                                     <tr>
-                                        <th style="width:28%;">Email</th>
-                                        <th style="width:14%;">Type</th>
-                                        <th style="width:22%;">Client</th>
+                                        <th style="width:24%;">Email</th>
+                                        <th style="width:10%;">Type</th>
+                                        <th style="width:24%;">Client</th>
                                         <th style="width:18%;">Matter</th>
                                         <th style="width:8%;">Match</th>
-                                        <th style="width:10%;"></th>
+                                        <th style="width:8%;" class="text-center">
+                                            <label class="mb-0" style="font-weight:600;cursor:pointer;">
+                                                <input type="checkbox" id="smart-import-select-all" title="Select all"> Import
+                                            </label>
+                                        </th>
+                                        <th style="width:8%;"></th>
                                     </tr>
                                 </thead>
                                 <tbody id="smart-import-table-body"></tbody>

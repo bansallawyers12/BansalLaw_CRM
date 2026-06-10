@@ -8,6 +8,7 @@
         selectedFiles: [],
         clientSelects: {},
         matterSelects: {},
+        isConfirming: false,
     };
 
     function $(id) {
@@ -43,6 +44,34 @@
         return keys.map(function (key) {
             return labels[key] || key;
         }).join(', ');
+    }
+
+    function suggestionOptionLabel(suggestion) {
+        var parts = [
+            suggestion.client_name || suggestion.client_ref || ('Client #' + suggestion.client_id),
+            suggestion.matter_no || '',
+            suggestion.confidence ? suggestion.confidence + '%' : '',
+        ].filter(Boolean);
+        return parts.join(' · ');
+    }
+
+    function buildSuggestionPickerHtml(index, item) {
+        var suggestions = item.suggestions || [];
+        if (!suggestions.length) {
+            return '';
+        }
+        var options = suggestions.map(function (s, sIdx) {
+            return '<option value="' + sIdx + '">' + escapeHtml(suggestionOptionLabel(s)) + '</option>';
+        }).join('');
+        return (
+            '<div class="smart-import-suggestion-pick">' +
+                '<label class="smart-import-field-label">Use suggestion</label>' +
+                '<select class="form-control form-control-sm suggestion-pick-select" data-index="' + index + '">' +
+                    '<option value="">— Pick a suggestion —</option>' +
+                    options +
+                '</select>' +
+            '</div>'
+        );
     }
 
     function setStatus(el, message, type) {
@@ -160,7 +189,7 @@
 
             state.batchToken = data.batch_token;
             state.items = (data.items || []).map(function (item) {
-                item.include = !!item.is_high_confidence;
+                item.include = false;
                 item.selected_client_id = item.suggested_client_id || null;
                 item.selected_client_matter_id = item.suggested_client_matter_id || null;
                 item.selected_record_type = item.suggested_record_type || 'client';
@@ -232,19 +261,30 @@
                     '</div>' +
                 '</td>' +
                 '<td>' +
+                    '<label class="smart-import-field-label">Mail type</label>' +
                     '<select class="form-control form-control-sm mail-type-select" data-index="' + index + '">' +
                         '<option value="inbox"' + (item.mail_type === 'inbox' ? ' selected' : '') + '>Inbox</option>' +
                         '<option value="sent"' + (item.mail_type === 'sent' ? ' selected' : '') + '>Sent</option>' +
                     '</select>' +
                 '</td>' +
-                '<td><select class="form-control form-control-sm smart-import-client-select" id="' + clientSelectId + '" data-index="' + index + '"></select></td>' +
-                '<td><select class="form-control form-control-sm smart-import-matter-select" id="' + matterSelectId + '" data-index="' + index + '"><option value="">Select matter</option></select></td>' +
+                '<td>' +
+                    buildSuggestionPickerHtml(index, item) +
+                    '<label class="smart-import-field-label">Client (search manually)</label>' +
+                    '<select class="form-control form-control-sm smart-import-client-select" id="' + clientSelectId + '" data-index="' + index + '"></select>' +
+                '</td>' +
+                '<td>' +
+                    '<label class="smart-import-field-label">Matter (select manually)</label>' +
+                    '<select class="form-control form-control-sm smart-import-matter-select" id="' + matterSelectId + '" data-index="' + index + '"><option value="">Select matter</option></select>' +
+                '</td>' +
                 '<td>' +
                     '<div class="' + confidenceClass(item.confidence) + '">' + confidenceLabel(item.confidence) + '</div>' +
                     '<small class="text-muted">' + escapeHtml(matchedByLabel(item.matched_by)) + '</small>' +
                 '</td>' +
                 '<td class="text-center">' +
                     '<input type="checkbox" class="include-checkbox" data-index="' + index + '"' + (item.include ? ' checked' : '') + '>' +
+                '</td>' +
+                '<td class="text-center">' +
+                    '<button type="button" class="btn btn-sm btn-outline-primary confirm-row-btn" data-index="' + index + '" title="Confirm this email only">Confirm row</button>' +
                 '</td>';
 
             tbody.appendChild(tr);
@@ -255,6 +295,48 @@
         });
 
         bindReviewEvents();
+    }
+
+    function setClientSelectValue(index, clientId, label, extra) {
+        extra = extra || {};
+        var ts = state.clientSelects[index];
+        if (!ts || !clientId) {
+            return;
+        }
+        var valueKey = 'client-' + clientId;
+        if (!ts.options[valueKey]) {
+            ts.addOption({
+                id: valueKey,
+                cid: clientId,
+                name: label || ('Client #' + clientId),
+                email: extra.email || '',
+                client_id: extra.client_ref || '',
+                record_type: extra.record_type || 'client',
+            });
+        }
+        ts.setValue(valueKey, true);
+        state.items[index].selected_client_id = clientId;
+        if (extra.record_type) {
+            state.items[index].selected_record_type = extra.record_type;
+        }
+    }
+
+    function applySuggestion(index, suggestion) {
+        if (!suggestion) {
+            return;
+        }
+        setClientSelectValue(index, suggestion.client_id, suggestion.client_name || suggestion.client_ref, {
+            email: suggestion.email,
+            client_ref: suggestion.client_ref,
+            record_type: suggestion.record_type,
+        });
+        loadMattersForRow(index, suggestion.client_id, suggestion.client_matter_id);
+        state.items[index].include = true;
+        var checkbox = document.querySelector('.include-checkbox[data-index="' + index + '"]');
+        if (checkbox) {
+            checkbox.checked = true;
+        }
+        syncSelectAllCheckbox();
     }
 
     function initClientSelect(selectId, index, item) {
@@ -268,11 +350,28 @@
         var ts = initTS(el, buildGetAllClientsTomSelectConfig({
             url: config.urls.getAllClients,
             dropdownParent: 'body',
-            placeholder: 'Search client...',
+            placeholder: 'Search client by name, email, ref...',
             onChange: function (value) {
+                if (!value) {
+                    state.items[index].selected_client_id = null;
+                    state.items[index].selected_client_matter_id = null;
+                    loadMattersForRow(index, null, null);
+                    return;
+                }
+                var option = this.options[value] || {};
+                if (option.locked) {
+                    this.clear(true);
+                    if (typeof window.openCrmAccessModal === 'function') {
+                        window.openCrmAccessModal(option);
+                    }
+                    return;
+                }
                 var cid = extractClientIdFromTomSelectValue(value, this);
                 state.items[index].selected_client_id = cid;
                 state.items[index].selected_client_matter_id = null;
+                if (option.record_type) {
+                    state.items[index].selected_record_type = option.record_type;
+                }
                 loadMattersForRow(index, cid, null);
             },
         }));
@@ -283,26 +382,31 @@
             var suggestion = (item.suggestions || []).find(function (s) {
                 return s.client_id === item.suggested_client_id;
             }) || {};
-            var label = suggestion.client_name || suggestion.client_ref || ('Client #' + item.suggested_client_id);
-            ts.addOption({
-                id: String(item.suggested_client_id),
-                cid: item.suggested_client_id,
-                name: label,
-                email: suggestion.email || '',
-                client_id: suggestion.client_ref || '',
+            setClientSelectValue(index, item.suggested_client_id, suggestion.client_name || suggestion.client_ref, {
+                email: suggestion.email,
+                client_ref: suggestion.client_ref,
+                record_type: suggestion.record_type || item.suggested_record_type,
             });
-            ts.setValue(String(item.suggested_client_id), true);
         }
     }
 
     function extractClientIdFromTomSelectValue(value, tsInstance) {
         if (!value) return null;
         var option = tsInstance && tsInstance.options ? tsInstance.options[value] : null;
-        if (option && option.cid) {
-            return parseInt(option.cid, 10);
+        if (option && option.cid != null && option.cid !== '') {
+            var fromCid = parseInt(option.cid, 10);
+            if (!isNaN(fromCid)) {
+                return fromCid;
+            }
         }
-        var numeric = parseInt(String(value).split('/')[0], 10);
-        return isNaN(numeric) ? null : numeric;
+        var str = String(value);
+        if (str.indexOf('client-') === 0) {
+            var fromKey = parseInt(str.slice(7), 10);
+            if (!isNaN(fromKey)) {
+                return fromKey;
+            }
+        }
+        return null;
     }
 
     async function loadMattersForRow(index, clientId, selectedMatterId) {
@@ -375,8 +479,53 @@
             checkbox.addEventListener('change', function () {
                 var index = parseInt(checkbox.getAttribute('data-index'), 10);
                 state.items[index].include = checkbox.checked;
+                syncSelectAllCheckbox();
             });
         });
+
+        document.querySelectorAll('.suggestion-pick-select').forEach(function (select) {
+            select.addEventListener('change', function () {
+                var index = parseInt(select.getAttribute('data-index'), 10);
+                var sIdx = select.value;
+                if (sIdx === '') {
+                    return;
+                }
+                var suggestion = (state.items[index].suggestions || [])[parseInt(sIdx, 10)];
+                applySuggestion(index, suggestion);
+            });
+        });
+
+        document.querySelectorAll('.confirm-row-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var index = parseInt(btn.getAttribute('data-index'), 10);
+                var item = state.items[index];
+                if (!item) {
+                    return;
+                }
+                item.include = true;
+                var checkbox = document.querySelector('.include-checkbox[data-index="' + index + '"]');
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+                confirmImports([item]);
+            });
+        });
+
+        var selectAll = $('smart-import-select-all');
+        if (selectAll) {
+            selectAll.onchange = function () {
+                var checked = selectAll.checked;
+                state.items.forEach(function (item, index) {
+                    item.include = checked;
+                    var cb = document.querySelector('.include-checkbox[data-index="' + index + '"]');
+                    if (cb) {
+                        cb.checked = checked;
+                    }
+                });
+            };
+        }
+
+        syncSelectAllCheckbox();
 
         var confirmHighBtn = $('smart-import-confirm-high-btn');
         var confirmSelectedBtn = $('smart-import-confirm-selected-btn');
@@ -389,6 +538,7 @@
                     var checkbox = document.querySelector('.include-checkbox[data-index="' + index + '"]');
                     if (checkbox) checkbox.checked = item.include;
                 });
+                syncSelectAllCheckbox();
                 confirmImports(state.items.filter(function (item) {
                     return item.include && item.is_high_confidence;
                 }));
@@ -408,7 +558,34 @@
         }
     }
 
+    function syncSelectAllCheckbox() {
+        var selectAll = $('smart-import-select-all');
+        if (!selectAll || !state.items.length) {
+            return;
+        }
+        var allChecked = state.items.every(function (item) { return item.include; });
+        var noneChecked = state.items.every(function (item) { return !item.include; });
+        selectAll.checked = allChecked;
+        selectAll.indeterminate = !allChecked && !noneChecked;
+    }
+
+    function setConfirmingUi(isConfirming) {
+        state.isConfirming = isConfirming;
+        ['smart-import-confirm-high-btn', 'smart-import-confirm-selected-btn', 'smart-import-reset-btn'].forEach(function (id) {
+            var btn = $(id);
+            if (btn) {
+                btn.disabled = isConfirming;
+            }
+        });
+        document.querySelectorAll('.confirm-row-btn').forEach(function (btn) {
+            btn.disabled = isConfirming;
+        });
+    }
+
     async function confirmImports(itemsToImport) {
+        if (state.isConfirming) {
+            return;
+        }
         if (!itemsToImport.length) {
             setStatus($('smart-import-confirm-status'), 'Select at least one email to import.', 'error');
             return;
@@ -427,6 +604,7 @@
         }
 
         var statusEl = $('smart-import-confirm-status');
+        setConfirmingUi(true);
         setStatus(statusEl, 'Importing ' + itemsToImport.length + ' email(s)...', 'info');
 
         var assignments = itemsToImport.map(function (item) {
@@ -458,17 +636,22 @@
                 throw new Error(data.message || 'Import failed');
             }
 
-            var failedCount = (data.failed || []).length;
+            var failed = data.failed || [];
+            var failedCount = failed.length;
             var message = data.message || 'Import complete';
-            if (failedCount) {
-                message += ' ' + failedCount + ' failed.';
-            }
-            setStatus(statusEl, message, data.saved > 0 ? 'success' : 'error');
+            setStatus(statusEl, message, data.saved > 0 ? (failedCount ? 'info' : 'success') : 'error');
 
-            if (data.saved > 0) {
-                var importedIds = assignments.map(function (a) { return a.item_id; });
+            if (failedCount) {
+                var failedNames = failed.map(function (f) {
+                    return (f.filename || f.item_id) + ': ' + (f.error || 'failed');
+                }).join('; ');
+                setStatus(statusEl, message + ' ' + failedNames, data.saved > 0 ? 'info' : 'error');
+            }
+
+            var savedIds = data.saved_item_ids || [];
+            if (savedIds.length) {
                 state.items = state.items.filter(function (item) {
-                    return importedIds.indexOf(item.id) === -1;
+                    return savedIds.indexOf(item.id) === -1;
                 });
 
                 if (!state.items.length) {
@@ -482,11 +665,14 @@
             }
         } catch (error) {
             setStatus(statusEl, error.message || 'Import failed', 'error');
+        } finally {
+            setConfirmingUi(false);
         }
     }
 
     function resetPage() {
         destroyAllClientSelects();
+        setConfirmingUi(false);
         state.batchToken = null;
         state.items = [];
         state.selectedFiles = [];

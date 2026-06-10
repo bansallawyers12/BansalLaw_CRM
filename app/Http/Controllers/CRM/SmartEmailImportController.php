@@ -4,6 +4,7 @@ namespace App\Http\Controllers\CRM;
 
 use App\Models\ClientMatter;
 use App\Services\EmailMatchingService;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
@@ -135,7 +136,7 @@ class SmartEmailImportController extends EmailUploadController
         $validator = Validator::make($request->all(), [
             'batch_token' => 'required|uuid',
             'assignments' => 'required|array|min:1',
-            'assignments.*.item_id' => 'required|string',
+            'assignments.*.item_id' => 'required|uuid',
             'assignments.*.client_id' => 'required|integer|min:1',
             'assignments.*.client_matter_id' => 'required|integer|min:1',
             'assignments.*.mail_type' => 'required|in:inbox,sent',
@@ -172,6 +173,7 @@ class SmartEmailImportController extends EmailUploadController
         $itemsById = collect($meta['items'] ?? [])->keyBy('id');
         $saved = 0;
         $failed = [];
+        $savedItemIds = [];
 
         foreach ($request->input('assignments', []) as $assignment) {
             $itemId = (string) $assignment['item_id'];
@@ -227,12 +229,19 @@ class SmartEmailImportController extends EmailUploadController
                 }
 
                 $saved++;
+                $savedItemIds[] = $itemId;
                 @unlink($storedPath);
+            } catch (HttpResponseException $e) {
+                $failed[] = [
+                    'item_id' => $itemId,
+                    'filename' => $itemMeta['filename'] ?? $itemId,
+                    'error' => 'You do not have access to this client.',
+                ];
             } catch (\Throwable $e) {
                 $failed[] = [
                     'item_id' => $itemId,
                     'filename' => $itemMeta['filename'] ?? $itemId,
-                    'error' => $e->getMessage(),
+                    'error' => $e->getMessage() ?: 'Import failed',
                 ];
                 Log::error('Smart email import confirm failed', [
                     'item_id' => $itemId,
@@ -241,17 +250,32 @@ class SmartEmailImportController extends EmailUploadController
             }
         }
 
+        if ($savedItemIds !== []) {
+            $meta['items'] = array_values(array_filter(
+                $meta['items'] ?? [],
+                static fn (array $item): bool => ! in_array($item['id'] ?? '', $savedItemIds, true)
+            ));
+            file_put_contents($metaPath, json_encode($meta, JSON_THROW_ON_ERROR));
+        }
+
         $remaining = glob($batchDir . DIRECTORY_SEPARATOR . '*.msg') ?: [];
         if ($remaining === []) {
             File::deleteDirectory($batchDir);
         }
 
+        $failedCount = count($failed);
+        $message = $saved > 0
+            ? "Imported {$saved} email(s) successfully."
+            : 'No emails were imported.';
+        if ($saved > 0 && $failedCount > 0) {
+            $message = "Imported {$saved} email(s); {$failedCount} failed.";
+        }
+
         return response()->json([
             'status' => $saved > 0,
-            'message' => $saved > 0
-                ? "Imported {$saved} email(s) successfully."
-                : 'No emails were imported.',
+            'message' => $message,
             'saved' => $saved,
+            'saved_item_ids' => $savedItemIds,
             'failed' => $failed,
         ]);
     }
