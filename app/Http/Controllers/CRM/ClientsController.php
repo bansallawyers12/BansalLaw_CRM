@@ -5551,6 +5551,7 @@ class ClientsController extends Controller
         }
 
         $hearing->update($updateData);
+        $hearing->refresh();
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'hearing' => $hearing]);

@@ -1076,8 +1076,16 @@ document.addEventListener('DOMContentLoaded', function() {
             : 'Custom';
     }
 
+    function normalizeCourtHearingReminderMinutes(value) {
+        if (value == null || value === '') {
+            return '';
+        }
+        const parsed = parseInt(String(value), 10);
+        return Number.isFinite(parsed) && parsed > 0 ? String(parsed) : '';
+    }
+
     function buildCourtHearingReminderOptions(selected) {
-        const current = selected != null && selected !== '' ? String(selected) : '';
+        const current = normalizeCourtHearingReminderMinutes(selected);
         return COURT_HEARING_REMINDER_OPTIONS.map(function (opt) {
             return '<option value="' + escapeHtml(opt.value) + '"' +
                 (current === opt.value ? ' selected' : '') + '>' +
@@ -1337,6 +1345,17 @@ document.addEventListener('DOMContentLoaded', function() {
         showCourtHearingViewMode();
     }
 
+    function syncCourtHearingPropsToEvent(props) {
+        if (!_activeCourtHearingState || !_activeCourtHearingState.event || !props) {
+            return;
+        }
+        const event = _activeCourtHearingState.event;
+        if (typeof event.setExtendedProp === 'function') {
+            event.setExtendedProp('reminder_minutes', props.reminder_minutes);
+            event.setExtendedProp('reminder_sms_sent_at', props.reminder_sms_sent_at || null);
+        }
+    }
+
     function applySavedHearingToProps(props, hearing) {
         props.hearing_type = hearing.hearing_type || null;
         props.court_name = hearing.court_name || null;
@@ -1347,8 +1366,16 @@ document.addEventListener('DOMContentLoaded', function() {
         props.notes = hearing.notes || null;
         props.client_matter_id = hearing.client_matter_id || null;
         props.location = hearing.court_name || null;
-        props.reminder_minutes = hearing.reminder_minutes != null ? hearing.reminder_minutes : null;
-        props.reminder_sms_sent_at = hearing.reminder_sms_sent_at || null;
+        if (Object.prototype.hasOwnProperty.call(hearing, 'reminder_minutes')) {
+            const mins = hearing.reminder_minutes;
+            props.reminder_minutes = mins != null && mins !== '' ? parseInt(String(mins), 10) : null;
+            if (!Number.isFinite(props.reminder_minutes)) {
+                props.reminder_minutes = null;
+            }
+        }
+        if (Object.prototype.hasOwnProperty.call(hearing, 'reminder_sms_sent_at')) {
+            props.reminder_sms_sent_at = hearing.reminder_sms_sent_at || null;
+        }
 
         const datePart = String(hearing.hearing_date || '').slice(0, 10);
         const timeRaw = hearing.hearing_time ? String(hearing.hearing_time).slice(0, 5) : '';
@@ -1415,9 +1442,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(errText);
             }
 
+            props.reminder_minutes = newValue ? parseInt(newValue, 10) : null;
             if (data.hearing) {
                 applySavedHearingToProps(props, data.hearing);
             }
+            syncCourtHearingPropsToEvent(props);
             if (typeof iziToast !== 'undefined' && iziToast.success) {
                 iziToast.success({
                     title: 'Saved',
@@ -1425,7 +1454,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     position: 'topRight'
                 });
             }
-            document.getElementById('eventModalBody').innerHTML = renderCourtHearingViewBody(props);
+            showCourtHearingViewMode();
         } catch (err) {
             reminderEl.value = previousValue;
             const message = err && err.message ? err.message : 'Could not save reminder.';
@@ -1539,6 +1568,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.hearing) {
                 applySavedHearingToProps(_activeCourtHearingState.props, data.hearing);
             }
+            syncCourtHearingPropsToEvent(_activeCourtHearingState.props);
             showCourtHearingViewMode();
             calendar.refetchEvents();
             if (typeof iziToast !== 'undefined' && iziToast.success) {
