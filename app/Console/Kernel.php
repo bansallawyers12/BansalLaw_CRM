@@ -69,15 +69,16 @@ class Kernel extends ConsoleKernel
         // $schedule->command('inspire')
         //          ->hourly();
 	$schedule->command('CronJob:cronjob')->daily();
-        //$schedule->command('CompleteTaskRemoval:daily')->daily();
+        
 
         //InPerson Complete Task Removal daily 1 time
-        $schedule->command('InPersonCompleteTaskRemoval:daily')->daily();
+        /*$schedule->command('InPersonCompleteTaskRemoval:daily')->daily();
         // Appointment Sync System - Sync from public booking website every 5 minutes (look back 24 hours)
         $schedule->command('booking:sync-appointments --minutes=1440')
             ->everyFiveMinutes()
             ->withoutOverlapping(5) // Max 5 minutes lock time
             ->appendOutputTo(storage_path('logs/appointment-sync.log'));
+        
         
         // Appointment Sync System - Send reminders daily at 9 AM
         $schedule->command('booking:send-reminders')
@@ -85,6 +86,7 @@ class Kernel extends ConsoleKernel
             ->timezone('Australia/Melbourne')
             ->withoutOverlapping(10)
             ->appendOutputTo(storage_path('logs/appointment-reminders.log'));
+        */
 
         // Court hearing SMS reminders to clients (1 hr / 1 day / 1 week before)
         $schedule->command('court-hearings:send-reminders')
@@ -94,14 +96,14 @@ class Kernel extends ConsoleKernel
             ->appendOutputTo(storage_path('logs/court-hearing-reminders.log'));
         
         // Signature Management - Archive old drafts daily at 2 AM
-        $schedule->command('signatures:archive-drafts --days=30')
+        /*$schedule->command('signatures:archive-drafts --days=30')
             ->daily()
             ->at('02:00')
             ->timezone('Australia/Melbourne')
             ->appendOutputTo(storage_path('logs/signature-archive.log'));
         
         // Signature Management - Send auto-reminders daily at 10 AM
-        /*$schedule->command('signatures:send-auto-reminders --days=7')
+        $schedule->command('signatures:send-auto-reminders --days=7')
             ->daily()
             ->at('10:00')
             ->timezone('Australia/Melbourne')
@@ -109,12 +111,12 @@ class Kernel extends ConsoleKernel
             ->appendOutputTo(storage_path('logs/signature-auto-reminders.log'));*/
         
         // Client Age Management - Update ages bi-weekly (1st and 15th of each month) at 2 AM
-        $schedule->command('clients:update-ages --smart')
+       /* $schedule->command('clients:update-ages --smart')
             ->twiceMonthly(1, 15)
             ->at('02:00')
             ->timezone('Australia/Melbourne')
             ->withoutOverlapping(30)
-            ->appendOutputTo(storage_path('logs/age-updates.log'));
+            ->appendOutputTo(storage_path('logs/age-updates.log'));*/
 
         $schedule->command('access:expire-grants')->hourly();
         $schedule->command('access:cache-grant-stats')->hourly();
