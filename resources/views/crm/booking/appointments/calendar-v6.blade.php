@@ -134,7 +134,7 @@
 
 <!-- Event Detail Modal (scoped styles: .booking-calendar-modal — portaled next to body) -->
 <div class="modal fade booking-calendar-modal" id="eventModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog" id="eventModalDialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Appointment Details</h5>
@@ -147,6 +147,13 @@
             </div>
             <div class="modal-footer">
                 <a href="#" id="viewFullDetails" class="btn btn-primary" target="_blank">View Full Details</a>
+                <button type="button" id="courtHearingEditBtn" class="btn btn-outline-primary d-none">
+                    <i class="fas fa-edit"></i> Edit Appointment
+                </button>
+                <button type="button" id="courtHearingSaveBtn" class="btn btn-primary d-none">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <button type="button" id="courtHearingCancelEditBtn" class="btn btn-secondary d-none">Cancel</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -502,6 +509,20 @@ function formatCalendarDetail(value) {
     }
     return s;
 }
+
+function escapeHtml(value) {
+    if (value === undefined || value === null) {
+        return '';
+    }
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+const COURT_HEARING_API_BASE = @json(url('/clients/court-hearings'));
+const CLIENT_MATTERS_API_BASE = @json(url('/get-client-matters'));
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Waiting for FullCalendar v6 to load...');
@@ -870,12 +891,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             document.getElementById('eventModalBody').innerHTML = modalBody;
             const vfd = document.getElementById('viewFullDetails');
+            setEventModalCourtHearingFooter('hidden');
+            vfd.textContent = 'View Full Details';
             if (canManage) {
                 vfd.classList.remove('d-none');
                 vfd.href = BOOKING_WEB_BASE + '/appointments/' + manageId;
             } else {
                 vfd.classList.add('d-none');
             }
+            document.getElementById('eventModalDialog').classList.remove('modal-lg');
             $('#eventModal').modal('show');
         },
         
@@ -992,34 +1016,216 @@ document.addEventListener('DOMContentLoaded', function() {
         return dateStr + 'T' + timeStr + ':00';
     }
 
-    function showCourtHearingEventModal(event, props) {
-        const utcDate = new Date(props.appointment_datetime || event.startStr);
-        const formattedDate = utcDate.toLocaleString('en-AU', {
-            timeZone: 'Australia/Melbourne',
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-        });
+    function setEventModalCourtHearingFooter(mode) {
+        const editBtn = document.getElementById('courtHearingEditBtn');
+        const saveBtn = document.getElementById('courtHearingSaveBtn');
+        const cancelBtn = document.getElementById('courtHearingCancelEditBtn');
+        const vfd = document.getElementById('viewFullDetails');
+        if (!editBtn || !saveBtn || !cancelBtn) {
+            return;
+        }
+        if (mode === 'view') {
+            editBtn.classList.remove('d-none');
+            saveBtn.classList.add('d-none');
+            cancelBtn.classList.add('d-none');
+            if (vfd) {
+                vfd.classList.remove('d-none');
+            }
+        } else if (mode === 'edit') {
+            editBtn.classList.add('d-none');
+            saveBtn.classList.remove('d-none');
+            cancelBtn.classList.remove('d-none');
+            if (vfd) {
+                vfd.classList.add('d-none');
+            }
+        } else {
+            editBtn.classList.add('d-none');
+            saveBtn.classList.add('d-none');
+            cancelBtn.classList.add('d-none');
+        }
+    }
+
+    let _activeCourtHearingState = null;
+
+    const COURT_HEARING_TYPE_OPTIONS = [
+        'First Hearing', 'Evidence Hearing', 'Arguments', 'Judgment', 'Bail Hearing',
+        'Stay Application', 'Case Management', 'Mediation', 'Mention', 'Other'
+    ];
+
+    const COURT_HEARING_STATUS_OPTIONS = ['Scheduled', 'Completed', 'Adjourned', 'Cancelled'];
+
+    function getCourtHearingId(props) {
+        if (props.court_hearing_id != null && props.court_hearing_id !== '') {
+            return parseInt(props.court_hearing_id, 10);
+        }
+        const rawId = props.id || '';
+        const match = String(rawId).match(/^court-(\d+)$/);
+        return match ? parseInt(match[1], 10) : null;
+    }
+
+    function getCourtHearingMelbourneParts(props) {
+        const utcDate = new Date(props.appointment_datetime || props.starts_at);
+        const allDay = !!props.is_all_day;
+        return {
+            date: utcDate.toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' }),
+            time: allDay ? '' : utcDate.toLocaleTimeString('en-US', {
+                timeZone: 'Australia/Melbourne',
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit'
+            }),
+            formattedDate: utcDate.toLocaleString('en-AU', {
+                timeZone: 'Australia/Melbourne',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            }),
+            allDay: allDay
+        };
+    }
+
+    function buildCourtHearingClientLink(props) {
         let clientLink = formatCalendarDetail(props.client_name);
         if (props.client_id_encoded) {
-            clientLink = '<a href="/clients/detail/' + props.client_id_encoded + '" target="_blank" class="booking-calendar-link">' +
-                formatCalendarDetail(props.client_name) + '</a>';
+            clientLink = '<a href="/clients/detail/' + escapeHtml(props.client_id_encoded) + '" target="_blank" class="booking-calendar-link">' +
+                escapeHtml(formatCalendarDetail(props.client_name)) + '</a>';
         }
-        const body = `
-            <div class="alert alert-info py-2"><i class="fas fa-gavel"></i> From client profile — edit on the client <strong>Court Dates</strong> tab.</div>
-            <p><strong>Client:</strong> ${clientLink}</p>
-            <p><strong>When:</strong> ${formattedDate}</p>
-            <p><strong>Hearing type:</strong> ${formatCalendarDetail(props.hearing_type)}</p>
-            <p><strong>Court:</strong> ${formatCalendarDetail(props.court_name)}</p>
-            <p><strong>Case number:</strong> ${formatCalendarDetail(props.case_number)}</p>
-            <p><strong>Judge:</strong> ${formatCalendarDetail(props.judge_name)}</p>
-            <p><strong>Status:</strong> ${formatCalendarDetail(props.hearing_status || props.status_label)}</p>
-            <p><strong>Notes:</strong> ${formatCalendarDetail(props.notes)}</p>
+        return clientLink;
+    }
+
+    function renderCourtHearingViewBody(props) {
+        const parts = getCourtHearingMelbourneParts(props);
+        const clientLink = buildCourtHearingClientLink(props);
+        return `
+            <div class="court-hearing-details">
+                <p><strong>Client:</strong> ${clientLink}</p>
+                <p><strong>When:</strong> ${escapeHtml(parts.formattedDate)}</p>
+                <p><strong>Hearing type:</strong> ${escapeHtml(formatCalendarDetail(props.hearing_type))}</p>
+                <p><strong>Court:</strong> ${escapeHtml(formatCalendarDetail(props.court_name))}</p>
+                <p><strong>Case number:</strong> ${escapeHtml(formatCalendarDetail(props.case_number))}</p>
+                <p><strong>Judge:</strong> ${escapeHtml(formatCalendarDetail(props.judge_name))}</p>
+                <p><strong>Status:</strong> ${escapeHtml(formatCalendarDetail(props.hearing_status || props.status_label))}</p>
+                <p><strong>Notes:</strong> ${escapeHtml(formatCalendarDetail(props.notes))}</p>
+            </div>
         `;
-        document.getElementById('eventModalBody').innerHTML = body;
+    }
+
+    function buildCourtHearingTypeOptions(selected) {
+        const current = selected || '';
+        let html = '<option value="">— Select Hearing Type —</option>';
+        COURT_HEARING_TYPE_OPTIONS.forEach(function (type) {
+            html += '<option value="' + escapeHtml(type) + '"' + (current === type ? ' selected' : '') + '>' +
+                escapeHtml(type) + '</option>';
+        });
+        if (current && COURT_HEARING_TYPE_OPTIONS.indexOf(current) === -1) {
+            html += '<option value="' + escapeHtml(current) + '" selected>' + escapeHtml(current) + '</option>';
+        }
+        return html;
+    }
+
+    function buildCourtHearingStatusOptions(selected) {
+        const current = selected || 'Scheduled';
+        return COURT_HEARING_STATUS_OPTIONS.map(function (status) {
+            return '<option value="' + status + '"' + (current === status ? ' selected' : '') + '>' + status + '</option>';
+        }).join('');
+    }
+
+    function renderCourtHearingEditBody(props, matterOptionsHtml) {
+        const parts = getCourtHearingMelbourneParts(props);
+        const clientLink = buildCourtHearingClientLink(props);
+        return `
+            <div class="court-hearing-edit">
+                <div id="courtHearingEditError" class="alert alert-danger d-none"></div>
+                <p><strong>Client:</strong> ${clientLink}</p>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="courtHearingEditDate">Hearing date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="courtHearingEditDate" value="${escapeHtml(parts.date)}" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="courtHearingEditTime">Hearing time <small class="text-muted">(optional)</small></label>
+                        <input type="time" class="form-control" id="courtHearingEditTime" value="${escapeHtml(parts.time)}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="courtHearingEditType">Hearing type</label>
+                        <select class="form-control" id="courtHearingEditType">${buildCourtHearingTypeOptions(props.hearing_type)}</select>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="courtHearingEditStatus">Status</label>
+                        <select class="form-control" id="courtHearingEditStatus">${buildCourtHearingStatusOptions(props.hearing_status || props.status_label)}</select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="courtHearingEditCourt">Court</label>
+                    <input type="text" class="form-control" id="courtHearingEditCourt" maxlength="255"
+                           value="${escapeHtml(formatCalendarDetail(props.court_name) === 'N/A' ? '' : props.court_name)}">
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="courtHearingEditCaseNumber">Case number</label>
+                        <input type="text" class="form-control" id="courtHearingEditCaseNumber" maxlength="100"
+                               value="${escapeHtml(formatCalendarDetail(props.case_number) === 'N/A' ? '' : props.case_number)}">
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="courtHearingEditJudge">Judge / bench</label>
+                        <input type="text" class="form-control" id="courtHearingEditJudge" maxlength="150"
+                               value="${escapeHtml(formatCalendarDetail(props.judge_name) === 'N/A' ? '' : props.judge_name)}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="courtHearingEditMatter">Linked matter <small class="text-muted">(optional)</small></label>
+                    <select class="form-control" id="courtHearingEditMatter">
+                        <option value="">— Not linked to a specific matter —</option>
+                        ${matterOptionsHtml || ''}
+                    </select>
+                </div>
+                <div class="form-group mb-0">
+                    <label for="courtHearingEditNotes">Notes</label>
+                    <textarea class="form-control" id="courtHearingEditNotes" rows="3" maxlength="5000">${escapeHtml(formatCalendarDetail(props.notes) === 'N/A' ? '' : props.notes)}</textarea>
+                </div>
+            </div>
+        `;
+    }
+
+    async function fetchCourtHearingMatterOptions(clientId, selectedMatterId) {
+        if (!clientId) {
+            return '';
+        }
+        try {
+            const response = await fetch(CLIENT_MATTERS_API_BASE + '/' + encodeURIComponent(clientId), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success || !Array.isArray(data.matters)) {
+                return '';
+            }
+            const selected = selectedMatterId != null ? String(selectedMatterId) : '';
+            return data.matters.map(function (matter) {
+                const id = String(matter.id);
+                const label = matter.display_name || matter.client_unique_matter_no || ('Matter #' + id);
+                return '<option value="' + escapeHtml(id) + '"' + (selected === id ? ' selected' : '') + '>' +
+                    escapeHtml(label) + '</option>';
+            }).join('');
+        } catch (e) {
+            console.warn('Could not load client matters for court hearing edit', e);
+            return '';
+        }
+    }
+
+    function showCourtHearingViewMode() {
+        if (!_activeCourtHearingState) {
+            return;
+        }
+        const props = _activeCourtHearingState.props;
+        document.getElementById('eventModalBody').innerHTML = renderCourtHearingViewBody(props);
+        document.querySelector('#eventModal .modal-title').textContent = 'Appointment Details';
+        document.getElementById('eventModalDialog').classList.remove('modal-lg');
         const vfd = document.getElementById('viewFullDetails');
         if (props.client_id_encoded) {
             vfd.classList.remove('d-none');
@@ -1028,6 +1234,173 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             vfd.classList.add('d-none');
         }
+        setEventModalCourtHearingFooter(getCourtHearingId(props) ? 'view' : 'hidden');
+        _activeCourtHearingState.editMode = false;
+    }
+
+    async function enterCourtHearingEditMode() {
+        if (!_activeCourtHearingState || !getCourtHearingId(_activeCourtHearingState.props)) {
+            return;
+        }
+        const props = _activeCourtHearingState.props;
+        const matterOptionsHtml = await fetchCourtHearingMatterOptions(props.client_id, props.client_matter_id);
+        document.getElementById('eventModalBody').innerHTML = renderCourtHearingEditBody(props, matterOptionsHtml);
+        document.querySelector('#eventModal .modal-title').textContent = 'Edit Appointment';
+        document.getElementById('eventModalDialog').classList.add('modal-lg');
+        setEventModalCourtHearingFooter('edit');
+        _activeCourtHearingState.editMode = true;
+    }
+
+    function cancelCourtHearingEditMode() {
+        showCourtHearingViewMode();
+    }
+
+    function applySavedHearingToProps(props, hearing) {
+        props.hearing_type = hearing.hearing_type || null;
+        props.court_name = hearing.court_name || null;
+        props.case_number = hearing.case_number || null;
+        props.judge_name = hearing.judge_name || null;
+        props.hearing_status = hearing.status || 'Scheduled';
+        props.status_label = hearing.status || 'Scheduled';
+        props.notes = hearing.notes || null;
+        props.client_matter_id = hearing.client_matter_id || null;
+        props.location = hearing.court_name || null;
+
+        const datePart = String(hearing.hearing_date || '').slice(0, 10);
+        const timeRaw = hearing.hearing_time ? String(hearing.hearing_time).slice(0, 5) : '';
+        props.is_all_day = !timeRaw;
+        props.appointment_datetime = timeRaw ? (datePart + 'T' + timeRaw + ':00') : (datePart + 'T09:00:00');
+        props.starts_at = props.appointment_datetime;
+    }
+
+    async function saveCourtHearingFromModal() {
+        if (!_activeCourtHearingState) {
+            return;
+        }
+        const hearingId = getCourtHearingId(_activeCourtHearingState.props);
+        if (!hearingId) {
+            return;
+        }
+
+        const errorEl = document.getElementById('courtHearingEditError');
+        const dateEl = document.getElementById('courtHearingEditDate');
+        const timeEl = document.getElementById('courtHearingEditTime');
+        const typeEl = document.getElementById('courtHearingEditType');
+        const statusEl = document.getElementById('courtHearingEditStatus');
+        const courtEl = document.getElementById('courtHearingEditCourt');
+        const caseEl = document.getElementById('courtHearingEditCaseNumber');
+        const judgeEl = document.getElementById('courtHearingEditJudge');
+        const matterEl = document.getElementById('courtHearingEditMatter');
+        const notesEl = document.getElementById('courtHearingEditNotes');
+        const saveBtn = document.getElementById('courtHearingSaveBtn');
+
+        if (errorEl) {
+            errorEl.classList.add('d-none');
+            errorEl.textContent = '';
+        }
+
+        if (!dateEl || !dateEl.value) {
+            if (errorEl) {
+                errorEl.textContent = 'Hearing date is required.';
+                errorEl.classList.remove('d-none');
+            }
+            return;
+        }
+
+        const fd = new FormData();
+        fd.append('_token', bookingCalendarCsrfToken());
+        fd.append('hearing_date', dateEl.value);
+        if (timeEl && timeEl.value) {
+            fd.append('hearing_time', timeEl.value);
+        }
+        if (typeEl && typeEl.value) {
+            fd.append('hearing_type', typeEl.value);
+        }
+        if (courtEl && courtEl.value.trim()) {
+            fd.append('court_name', courtEl.value.trim());
+        }
+        if (caseEl && caseEl.value.trim()) {
+            fd.append('case_number', caseEl.value.trim());
+        }
+        if (judgeEl && judgeEl.value.trim()) {
+            fd.append('judge_name', judgeEl.value.trim());
+        }
+        if (matterEl && matterEl.value) {
+            fd.append('client_matter_id', matterEl.value);
+        }
+        if (statusEl && statusEl.value) {
+            fd.append('status', statusEl.value);
+        }
+        if (notesEl && notesEl.value.trim()) {
+            fd.append('notes', notesEl.value.trim());
+        }
+
+        const originalHtml = saveBtn ? saveBtn.innerHTML : '';
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+        }
+
+        try {
+            const response = await fetch(COURT_HEARING_API_BASE + '/' + hearingId + '/update', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': bookingCalendarCsrfToken()
+                },
+                body: fd
+            });
+            const data = await response.json().catch(function () { return {}; });
+            if (!response.ok || !data.success) {
+                let errText = data.message || 'Could not save appointment.';
+                if (data.errors) {
+                    errText += ' ' + Object.values(data.errors).flat().join(' ');
+                }
+                throw new Error(errText);
+            }
+
+            if (data.hearing) {
+                applySavedHearingToProps(_activeCourtHearingState.props, data.hearing);
+            }
+            showCourtHearingViewMode();
+            calendar.refetchEvents();
+            if (typeof iziToast !== 'undefined' && iziToast.success) {
+                iziToast.success({ title: 'Saved', message: 'Appointment updated.', position: 'topRight' });
+            }
+        } catch (err) {
+            const message = err && err.message ? err.message : 'Could not save appointment.';
+            if (errorEl) {
+                errorEl.textContent = message;
+                errorEl.classList.remove('d-none');
+            } else if (typeof iziToast !== 'undefined' && iziToast.error) {
+                iziToast.error({ title: 'Error', message: message, position: 'topRight' });
+            } else {
+                alert(message);
+            }
+        } finally {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalHtml;
+            }
+        }
+    }
+
+    function showCourtHearingEventModal(event, props) {
+        _activeCourtHearingState = { event: event, props: props, editMode: false };
+        document.getElementById('eventModalBody').innerHTML = renderCourtHearingViewBody(props);
+        const vfd = document.getElementById('viewFullDetails');
+        if (props.client_id_encoded) {
+            vfd.classList.remove('d-none');
+            vfd.href = '/clients/detail/' + props.client_id_encoded;
+            vfd.textContent = 'Open Client';
+        } else {
+            vfd.classList.add('d-none');
+        }
+        document.querySelector('#eventModal .modal-title').textContent = 'Appointment Details';
+        document.getElementById('eventModalDialog').classList.remove('modal-lg');
+        setEventModalCourtHearingFooter(getCourtHearingId(props) ? 'view' : 'hidden');
         $('#eventModal').modal('show');
     }
 
@@ -1381,6 +1754,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const disabled = this.checked;
         document.getElementById('importantEventStartTime').disabled = disabled;
         document.getElementById('importantEventEndTime').disabled = disabled;
+    });
+
+    document.getElementById('courtHearingEditBtn').addEventListener('click', function () {
+        enterCourtHearingEditMode();
+    });
+    document.getElementById('courtHearingSaveBtn').addEventListener('click', function () {
+        saveCourtHearingFromModal();
+    });
+    document.getElementById('courtHearingCancelEditBtn').addEventListener('click', function () {
+        cancelCourtHearingEditMode();
+    });
+    document.getElementById('eventModal').addEventListener('hidden.bs.modal', function () {
+        _activeCourtHearingState = null;
+        setEventModalCourtHearingFooter('hidden');
+        document.getElementById('eventModalDialog').classList.remove('modal-lg');
+        const titleEl = document.querySelector('#eventModal .modal-title');
+        if (titleEl) {
+            titleEl.textContent = 'Appointment Details';
+        }
+        const vfd = document.getElementById('viewFullDetails');
+        if (vfd) {
+            vfd.textContent = 'View Full Details';
+        }
     });
     
     // Global functions for modal actions
