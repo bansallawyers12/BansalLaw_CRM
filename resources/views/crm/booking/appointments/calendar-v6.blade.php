@@ -1046,6 +1046,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     let _activeCourtHearingState = null;
+    let _courtHearingReminderSaving = false;
 
     const COURT_HEARING_TYPE_OPTIONS = [
         'First Hearing', 'Evidence Hearing', 'Arguments', 'Judgment', 'Bail Hearing',
@@ -1126,9 +1127,32 @@ document.addEventListener('DOMContentLoaded', function() {
         return clientLink;
     }
 
+    function formatCourtHearingReminderSentAt(iso) {
+        if (!iso) {
+            return '';
+        }
+        try {
+            return new Date(iso).toLocaleString('en-AU', {
+                timeZone: 'Australia/Melbourne',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        } catch (e) {
+            return '';
+        }
+    }
+
     function renderCourtHearingViewBody(props) {
         const parts = getCourtHearingMelbourneParts(props);
         const clientLink = buildCourtHearingClientLink(props);
+        const smsSentHint = props.reminder_sms_sent_at
+            ? '<small class="text-success d-block mt-1"><i class="fas fa-check-circle"></i> SMS sent ' +
+                escapeHtml(formatCourtHearingReminderSentAt(props.reminder_sms_sent_at)) + '</small>'
+            : '';
         return `
             <div class="court-hearing-details">
                 <p><strong>Client:</strong> ${clientLink}</p>
@@ -1138,7 +1162,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p><strong>Case number:</strong> ${escapeHtml(formatCalendarDetail(props.case_number))}</p>
                 <p><strong>Judge:</strong> ${escapeHtml(formatCalendarDetail(props.judge_name))}</p>
                 <p><strong>Status:</strong> ${escapeHtml(formatCalendarDetail(props.hearing_status || props.status_label))}</p>
-                <p><strong>Reminder before:</strong> ${escapeHtml(courtHearingReminderLabel(props.reminder_minutes))}</p>
+                <div class="form-group mb-2 court-hearing-view-reminder">
+                    <label for="courtHearingViewReminder">
+                        <i class="fas fa-bell mr-1 text-warning"></i>Reminder before
+                    </label>
+                    <select class="form-control" id="courtHearingViewReminder">${buildCourtHearingReminderOptions(props.reminder_minutes)}</select>
+                    <small class="text-muted">SMS reminder is sent to the client at their phone number on file.</small>
+                    <small id="courtHearingViewReminderStatus" class="d-none"></small>
+                    ${smsSentHint}
+                </div>
                 <p><strong>Notes:</strong> ${escapeHtml(formatCalendarDetail(props.notes))}</p>
             </div>
         `;
@@ -1311,6 +1343,93 @@ document.addEventListener('DOMContentLoaded', function() {
         props.is_all_day = !timeRaw;
         props.appointment_datetime = timeRaw ? (datePart + 'T' + timeRaw + ':00') : (datePart + 'T09:00:00');
         props.starts_at = props.appointment_datetime;
+    }
+
+    async function saveCourtHearingReminderFromView(reminderEl) {
+        if (!_activeCourtHearingState || _activeCourtHearingState.editMode || _courtHearingReminderSaving) {
+            return;
+        }
+        const hearingId = getCourtHearingId(_activeCourtHearingState.props);
+        if (!hearingId || !reminderEl) {
+            return;
+        }
+
+        const props = _activeCourtHearingState.props;
+        const parts = getCourtHearingMelbourneParts(props);
+        const previousValue = props.reminder_minutes != null && props.reminder_minutes !== ''
+            ? String(props.reminder_minutes)
+            : '';
+        const newValue = reminderEl.value || '';
+
+        if (newValue === previousValue) {
+            return;
+        }
+
+        _courtHearingReminderSaving = true;
+        const statusEl = document.getElementById('courtHearingViewReminderStatus');
+        reminderEl.disabled = true;
+        if (statusEl) {
+            statusEl.textContent = 'Saving…';
+            statusEl.classList.remove('d-none', 'text-danger', 'text-success');
+            statusEl.classList.add('text-muted');
+        }
+
+        const fd = new FormData();
+        fd.append('_token', bookingCalendarCsrfToken());
+        fd.append('hearing_date', parts.date);
+        if (parts.time) {
+            fd.append('hearing_time', parts.time);
+        }
+        fd.append('status', props.hearing_status || props.status_label || 'Scheduled');
+        fd.append('reminder_minutes', newValue);
+
+        try {
+            const response = await fetch(COURT_HEARING_API_BASE + '/' + hearingId + '/update', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': bookingCalendarCsrfToken()
+                },
+                body: fd
+            });
+            const data = await response.json().catch(function () { return {}; });
+            if (!response.ok || !data.success) {
+                let errText = data.message || 'Could not save reminder.';
+                if (data.errors) {
+                    errText += ' ' + Object.values(data.errors).flat().join(' ');
+                }
+                throw new Error(errText);
+            }
+
+            if (data.hearing) {
+                applySavedHearingToProps(props, data.hearing);
+            }
+            if (typeof iziToast !== 'undefined' && iziToast.success) {
+                iziToast.success({
+                    title: 'Saved',
+                    message: 'Reminder preference updated.',
+                    position: 'topRight'
+                });
+            }
+            document.getElementById('eventModalBody').innerHTML = renderCourtHearingViewBody(props);
+        } catch (err) {
+            reminderEl.value = previousValue;
+            const message = err && err.message ? err.message : 'Could not save reminder.';
+            if (statusEl) {
+                statusEl.textContent = message;
+                statusEl.classList.remove('text-muted', 'text-success');
+                statusEl.classList.add('text-danger');
+            } else if (typeof iziToast !== 'undefined' && iziToast.error) {
+                iziToast.error({ title: 'Error', message: message, position: 'topRight' });
+            } else {
+                alert(message);
+            }
+        } finally {
+            reminderEl.disabled = false;
+            _courtHearingReminderSaving = false;
+        }
     }
 
     async function saveCourtHearingFromModal() {
@@ -1798,6 +1917,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const disabled = this.checked;
         document.getElementById('importantEventStartTime').disabled = disabled;
         document.getElementById('importantEventEndTime').disabled = disabled;
+    });
+
+    document.getElementById('eventModalBody').addEventListener('change', function (e) {
+        if (e.target && e.target.id === 'courtHearingViewReminder') {
+            saveCourtHearingReminderFromView(e.target);
+        }
     });
 
     document.getElementById('courtHearingEditBtn').addEventListener('click', function () {
