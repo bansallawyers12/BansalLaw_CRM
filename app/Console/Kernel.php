@@ -24,6 +24,7 @@ class Kernel extends ConsoleKernel
         // Appointment Sync System Commands
         '\App\Console\Commands\SyncBansalAppointments',
         '\App\Console\Commands\SendAppointmentReminders',
+        '\App\Console\Commands\SendCourtHearingReminders',
         '\App\Console\Commands\TestBansalApiConnection',
         '\App\Console\Commands\BackfillBansalAppointments',
         
@@ -84,6 +85,13 @@ class Kernel extends ConsoleKernel
             ->timezone('Australia/Melbourne')
             ->withoutOverlapping(10)
             ->appendOutputTo(storage_path('logs/appointment-reminders.log'));
+
+        // Court hearing SMS reminders to clients (1 hr / 1 day / 1 week before)
+        $schedule->command('court-hearings:send-reminders')
+            ->everyFifteenMinutes()
+            ->timezone('Australia/Melbourne')
+            ->withoutOverlapping(10)
+            ->appendOutputTo(storage_path('logs/court-hearing-reminders.log'));
         
         // Signature Management - Archive old drafts daily at 2 AM
         $schedule->command('signatures:archive-drafts --days=30')

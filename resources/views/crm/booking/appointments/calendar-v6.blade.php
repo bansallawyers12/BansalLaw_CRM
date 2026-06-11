@@ -1054,6 +1054,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const COURT_HEARING_STATUS_OPTIONS = ['Scheduled', 'Completed', 'Adjourned', 'Cancelled'];
 
+    const COURT_HEARING_REMINDER_OPTIONS = [
+        { value: '', label: 'No reminder' },
+        { value: '60', label: '1 hour before' },
+        { value: '1440', label: '1 day before' },
+        { value: '10080', label: '1 week before' }
+    ];
+
+    function courtHearingReminderLabel(mins) {
+        if (mins == null || mins === '' || Number(mins) <= 0) {
+            return 'None';
+        }
+        const value = String(mins);
+        const match = COURT_HEARING_REMINDER_OPTIONS.find(function (opt) { return opt.value === value; });
+        if (match) {
+            return match.label.replace(' before', '');
+        }
+        return typeof bookingCalReminderMinutesLabel === 'function'
+            ? bookingCalReminderMinutesLabel(Number(mins))
+            : 'Custom';
+    }
+
+    function buildCourtHearingReminderOptions(selected) {
+        const current = selected != null && selected !== '' ? String(selected) : '';
+        return COURT_HEARING_REMINDER_OPTIONS.map(function (opt) {
+            return '<option value="' + escapeHtml(opt.value) + '"' +
+                (current === opt.value ? ' selected' : '') + '>' +
+                escapeHtml(opt.label) + '</option>';
+        }).join('');
+    }
+
     function getCourtHearingId(props) {
         if (props.court_hearing_id != null && props.court_hearing_id !== '') {
             return parseInt(props.court_hearing_id, 10);
@@ -1108,6 +1138,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p><strong>Case number:</strong> ${escapeHtml(formatCalendarDetail(props.case_number))}</p>
                 <p><strong>Judge:</strong> ${escapeHtml(formatCalendarDetail(props.judge_name))}</p>
                 <p><strong>Status:</strong> ${escapeHtml(formatCalendarDetail(props.hearing_status || props.status_label))}</p>
+                <p><strong>Reminder before:</strong> ${escapeHtml(courtHearingReminderLabel(props.reminder_minutes))}</p>
                 <p><strong>Notes:</strong> ${escapeHtml(formatCalendarDetail(props.notes))}</p>
             </div>
         `;
@@ -1159,6 +1190,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         <label for="courtHearingEditStatus">Status</label>
                         <select class="form-control" id="courtHearingEditStatus">${buildCourtHearingStatusOptions(props.hearing_status || props.status_label)}</select>
                     </div>
+                </div>
+                <div class="form-group">
+                    <label for="courtHearingEditReminder">
+                        <i class="fas fa-bell mr-1 text-warning"></i>Reminder before
+                    </label>
+                    <select class="form-control" id="courtHearingEditReminder">${buildCourtHearingReminderOptions(props.reminder_minutes)}</select>
+                    <small class="text-muted">SMS reminder is sent to the client at their phone number on file.</small>
                 </div>
                 <div class="form-group">
                     <label for="courtHearingEditCourt">Court</label>
@@ -1265,6 +1303,8 @@ document.addEventListener('DOMContentLoaded', function() {
         props.notes = hearing.notes || null;
         props.client_matter_id = hearing.client_matter_id || null;
         props.location = hearing.court_name || null;
+        props.reminder_minutes = hearing.reminder_minutes != null ? hearing.reminder_minutes : null;
+        props.reminder_sms_sent_at = hearing.reminder_sms_sent_at || null;
 
         const datePart = String(hearing.hearing_date || '').slice(0, 10);
         const timeRaw = hearing.hearing_time ? String(hearing.hearing_time).slice(0, 5) : '';
@@ -1292,6 +1332,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const judgeEl = document.getElementById('courtHearingEditJudge');
         const matterEl = document.getElementById('courtHearingEditMatter');
         const notesEl = document.getElementById('courtHearingEditNotes');
+        const reminderEl = document.getElementById('courtHearingEditReminder');
         const saveBtn = document.getElementById('courtHearingSaveBtn');
 
         if (errorEl) {
@@ -1333,6 +1374,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (notesEl && notesEl.value.trim()) {
             fd.append('notes', notesEl.value.trim());
+        }
+        if (reminderEl) {
+            fd.append('reminder_minutes', reminderEl.value || '');
         }
 
         const originalHtml = saveBtn ? saveBtn.innerHTML : '';

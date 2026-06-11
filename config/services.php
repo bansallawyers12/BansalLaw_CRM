@@ -137,8 +137,8 @@ return [
 
     'twilio' => [
         'account_sid' => env('TWILIO_SID'),
-        'auth_token' => env('TWILIO_TOKEN'),
-        'from' => env('TWILIO_FROM'),
+        'auth_token' => env('TWILIO_TOKEN', env('TWILIO_AUTH_TOKEN')),
+        'from' => env('TWILIO_FROM', env('TWILIO_PHONE_NUMBER')),
         'timeout' => env('TWILIO_TIMEOUT', 30),
     ],
 

@@ -258,6 +258,10 @@ class StaffCalendarFeedService
             'notes' => $hearing->notes,
             'status' => 'court',
             'status_label' => $hearing->status ?? 'Scheduled',
+            'reminder_minutes' => $hearing->reminder_minutes,
+            'reminder_sms_sent_at' => $hearing->reminder_sms_sent_at
+                ? Carbon::parse($hearing->reminder_sms_sent_at)->timezone($tz)->toIso8601String()
+                : null,
         ];
     }
 

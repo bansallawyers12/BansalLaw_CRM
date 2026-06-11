@@ -5458,6 +5458,10 @@ class ClientsController extends Controller
      */
     public function storeCourtHearing(Request $request)
     {
+        if ($request->has('reminder_minutes') && $request->input('reminder_minutes') === '') {
+            $request->merge(['reminder_minutes' => null]);
+        }
+
         $validated = $request->validate([
             'client_id'         => 'required|integer|exists:admins,id',
             'client_matter_id'  => 'nullable|integer|exists:client_matters,id',
@@ -5469,6 +5473,7 @@ class ClientsController extends Controller
             'hearing_type'      => 'nullable|string|max:100',
             'notes'             => 'nullable|string|max:5000',
             'status'            => 'nullable|string|max:50',
+            'reminder_minutes'  => 'nullable|integer|in:60,1440,10080',
         ]);
 
         $hearing = \App\Models\ClientCourtHearing::create([
@@ -5482,6 +5487,7 @@ class ClientsController extends Controller
             'hearing_type'     => $validated['hearing_type'] ?? null,
             'notes'            => $validated['notes'] ?? null,
             'status'           => $validated['status'] ?? 'Scheduled',
+            'reminder_minutes' => $validated['reminder_minutes'] ?? null,
         ]);
 
         if ($request->expectsJson()) {
@@ -5494,6 +5500,10 @@ class ClientsController extends Controller
     {
         $hearing = \App\Models\ClientCourtHearing::findOrFail($id);
 
+        if ($request->has('reminder_minutes') && $request->input('reminder_minutes') === '') {
+            $request->merge(['reminder_minutes' => null]);
+        }
+
         $validated = $request->validate([
             'client_matter_id' => 'nullable|integer|exists:client_matters,id',
             'court_name'       => 'nullable|string|max:255',
@@ -5504,9 +5514,19 @@ class ClientsController extends Controller
             'hearing_type'     => 'nullable|string|max:100',
             'notes'            => 'nullable|string|max:5000',
             'status'           => 'nullable|string|max:50',
+            'reminder_minutes' => 'nullable|integer|in:60,1440,10080',
         ]);
 
-        $hearing->update([
+        $oldDate = $hearing->hearing_date->format('Y-m-d');
+        $oldTime = $hearing->hearing_time
+            ? substr((string) $hearing->hearing_time, 0, 5)
+            : null;
+        $newTime = $validated['hearing_time'] ?? null;
+        $newReminder = array_key_exists('reminder_minutes', $validated)
+            ? $validated['reminder_minutes']
+            : $hearing->reminder_minutes;
+
+        $updateData = [
             'client_matter_id' => $validated['client_matter_id'] ?? null,
             'court_name'       => $validated['court_name'] ?? null,
             'case_number'      => $validated['case_number'] ?? null,
@@ -5516,7 +5536,21 @@ class ClientsController extends Controller
             'hearing_type'     => $validated['hearing_type'] ?? null,
             'notes'            => $validated['notes'] ?? null,
             'status'           => $validated['status'] ?? 'Scheduled',
-        ]);
+        ];
+
+        if (array_key_exists('reminder_minutes', $validated)) {
+            $updateData['reminder_minutes'] = $validated['reminder_minutes'];
+        }
+
+        if (
+            $validated['hearing_date'] !== $oldDate
+            || $newTime !== $oldTime
+            || $newReminder != $hearing->reminder_minutes
+        ) {
+            $updateData['reminder_sms_sent_at'] = null;
+        }
+
+        $hearing->update($updateData);
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'hearing' => $hearing]);
