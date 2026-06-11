@@ -1084,6 +1084,22 @@ document.addEventListener('DOMContentLoaded', function() {
         return Number.isFinite(parsed) && parsed > 0 ? String(parsed) : '';
     }
 
+    function cloneCourtHearingProps(props) {
+        return Object.assign({}, props || {});
+    }
+
+    function refreshCourtHearingViewReminderSelect(props) {
+        const sel = document.getElementById('courtHearingViewReminder');
+        if (!sel || !props) {
+            return;
+        }
+        const value = normalizeCourtHearingReminderMinutes(props.reminder_minutes);
+        sel.value = value;
+        Array.prototype.forEach.call(sel.options, function (opt) {
+            opt.selected = opt.value === value;
+        });
+    }
+
     function buildCourtHearingReminderOptions(selected) {
         const current = normalizeCourtHearingReminderMinutes(selected);
         return COURT_HEARING_REMINDER_OPTIONS.map(function (opt) {
@@ -1368,8 +1384,12 @@ document.addEventListener('DOMContentLoaded', function() {
         props.location = hearing.court_name || null;
         if (Object.prototype.hasOwnProperty.call(hearing, 'reminder_minutes')) {
             const mins = hearing.reminder_minutes;
-            props.reminder_minutes = mins != null && mins !== '' ? parseInt(String(mins), 10) : null;
-            if (!Number.isFinite(props.reminder_minutes)) {
+            if (mins != null && mins !== '') {
+                const parsed = parseInt(String(mins), 10);
+                if (Number.isFinite(parsed) && parsed > 0) {
+                    props.reminder_minutes = parsed;
+                }
+            } else if (mins === null || mins === '') {
                 props.reminder_minutes = null;
             }
         }
@@ -1395,9 +1415,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const props = _activeCourtHearingState.props;
         const parts = getCourtHearingMelbourneParts(props);
-        const previousValue = props.reminder_minutes != null && props.reminder_minutes !== ''
-            ? String(props.reminder_minutes)
-            : '';
+        const previousValue = normalizeCourtHearingReminderMinutes(props.reminder_minutes);
         const newValue = reminderEl.value || '';
 
         if (newValue === previousValue) {
@@ -1442,10 +1460,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(errText);
             }
 
-            props.reminder_minutes = newValue ? parseInt(newValue, 10) : null;
+            const savedReminderMinutes = newValue === '' ? null : parseInt(newValue, 10);
             if (data.hearing) {
                 applySavedHearingToProps(props, data.hearing);
             }
+            props.reminder_minutes = Number.isFinite(savedReminderMinutes) && savedReminderMinutes > 0
+                ? savedReminderMinutes
+                : null;
             syncCourtHearingPropsToEvent(props);
             if (typeof iziToast !== 'undefined' && iziToast.success) {
                 iziToast.success({
@@ -1455,6 +1476,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
             showCourtHearingViewMode();
+            refreshCourtHearingViewReminderSelect(props);
         } catch (err) {
             reminderEl.value = previousValue;
             const message = err && err.message ? err.message : 'Could not save reminder.';
@@ -1593,8 +1615,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showCourtHearingEventModal(event, props) {
-        _activeCourtHearingState = { event: event, props: props, editMode: false };
-        document.getElementById('eventModalBody').innerHTML = renderCourtHearingViewBody(props);
+        _activeCourtHearingState = { event: event, props: cloneCourtHearingProps(props), editMode: false };
+        document.getElementById('eventModalBody').innerHTML = renderCourtHearingViewBody(_activeCourtHearingState.props);
         const vfd = document.getElementById('viewFullDetails');
         if (props.client_id_encoded) {
             vfd.classList.remove('d-none');

@@ -5554,9 +5554,36 @@ class ClientsController extends Controller
         $hearing->refresh();
 
         if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'hearing' => $hearing]);
+            return response()->json([
+                'success' => true,
+                'hearing' => $this->courtHearingJsonPayload($hearing),
+            ]);
         }
         return redirect()->back()->with('success', 'Court hearing updated.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function courtHearingJsonPayload(\App\Models\ClientCourtHearing $hearing): array
+    {
+        return [
+            'id'                   => $hearing->id,
+            'client_id'            => $hearing->client_id,
+            'client_matter_id'     => $hearing->client_matter_id,
+            'court_name'           => $hearing->court_name,
+            'case_number'          => $hearing->case_number,
+            'judge_name'           => $hearing->judge_name,
+            'hearing_date'         => $hearing->hearing_date?->format('Y-m-d'),
+            'hearing_time'         => $hearing->hearing_time
+                ? substr((string) $hearing->hearing_time, 0, 5)
+                : null,
+            'hearing_type'         => $hearing->hearing_type,
+            'notes'                => $hearing->notes,
+            'status'               => $hearing->status,
+            'reminder_minutes'     => $hearing->reminder_minutes,
+            'reminder_sms_sent_at' => $hearing->reminder_sms_sent_at?->toIso8601String(),
+        ];
     }
 
     public function deleteCourtHearing(Request $request, $id)
