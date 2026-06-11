@@ -1057,9 +1057,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const COURT_HEARING_REMINDER_OPTIONS = [
         { value: '', label: 'No reminder' },
-        { value: '60', label: '1 hour before' },
-        { value: '1440', label: '1 day before' },
-        { value: '10080', label: '1 week before' }
+        { value: '60', label: '1 hour' },
+        { value: '1440', label: '1 day' },
+        { value: '10080', label: '1 week' }
     ];
 
     function courtHearingReminderLabel(mins) {
@@ -1069,7 +1069,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const value = String(mins);
         const match = COURT_HEARING_REMINDER_OPTIONS.find(function (opt) { return opt.value === value; });
         if (match) {
-            return match.label.replace(' before', '');
+            return match.label;
         }
         return typeof bookingCalReminderMinutesLabel === 'function'
             ? bookingCalReminderMinutesLabel(Number(mins))
@@ -1163,10 +1163,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p><strong>Judge:</strong> ${escapeHtml(formatCalendarDetail(props.judge_name))}</p>
                 <p><strong>Status:</strong> ${escapeHtml(formatCalendarDetail(props.hearing_status || props.status_label))}</p>
                 <div class="form-group mb-2 court-hearing-view-reminder">
-                    <label for="courtHearingViewReminder">
-                        <i class="fas fa-bell mr-1 text-warning"></i>Reminder before
-                    </label>
-                    <select class="form-control" id="courtHearingViewReminder">${buildCourtHearingReminderOptions(props.reminder_minutes)}</select>
+                    <div class="form-row align-items-center">
+                        <div class="col-auto">
+                            <label for="courtHearingViewReminder" class="mb-0">
+                                <i class="fas fa-bell mr-1 text-warning"></i>Reminder before
+                            </label>
+                        </div>
+                        <div class="col">
+                            <select class="form-control" id="courtHearingViewReminder">${buildCourtHearingReminderOptions(props.reminder_minutes)}</select>
+                        </div>
+                    </div>
                     <small class="text-muted">SMS reminder is sent to the client at their phone number on file.</small>
                     <small id="courtHearingViewReminderStatus" class="d-none"></small>
                     ${smsSentHint}
@@ -1224,10 +1230,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="courtHearingEditReminder">
-                        <i class="fas fa-bell mr-1 text-warning"></i>Reminder before
-                    </label>
-                    <select class="form-control" id="courtHearingEditReminder">${buildCourtHearingReminderOptions(props.reminder_minutes)}</select>
+                    <div class="form-row align-items-center">
+                        <div class="col-auto">
+                            <label for="courtHearingEditReminder" class="mb-0">
+                                <i class="fas fa-bell mr-1 text-warning"></i>Reminder before
+                            </label>
+                        </div>
+                        <div class="col">
+                            <select class="form-control" id="courtHearingEditReminder">${buildCourtHearingReminderOptions(props.reminder_minutes)}</select>
+                        </div>
+                    </div>
                     <small class="text-muted">SMS reminder is sent to the client at their phone number on file.</small>
                 </div>
                 <div class="form-group">
