@@ -13,6 +13,7 @@ class BackfillEmailPdfPreviews extends Command
                             {--client-id= : Only process emails for this client_id}
                             {--email-log-id= : Process a single email_logs row}
                             {--dry-run : Show what would be processed without making changes}
+                            {--replace : Regenerate PDFs even when pdf_doc_id already exists}
                             {--force : Skip confirmation prompt}';
 
     protected $description = 'Generate PDF previews for uploaded .msg emails missing pdf_doc_id';
@@ -25,11 +26,16 @@ class BackfillEmailPdfPreviews extends Command
             return self::FAILURE;
         }
 
+        $replace = (bool) $this->option('replace');
+
         $query = EmailLog::query()
-            ->whereNull('pdf_doc_id')
             ->whereNotNull('uploaded_doc_id')
             ->where('conversion_type', 'conversion_email_fetch')
             ->orderBy('id');
+
+        if (! $replace) {
+            $query->whereNull('pdf_doc_id');
+        }
 
         if ($this->option('email-log-id')) {
             $query->where('id', (int) $this->option('email-log-id'));
@@ -43,7 +49,9 @@ class BackfillEmailPdfPreviews extends Command
         $emails = $query->limit($limit)->get();
 
         if ($emails->isEmpty()) {
-            $this->info('No uploaded emails need PDF backfill.');
+            $this->info($replace
+                ? 'No uploaded emails matched for PDF regeneration.'
+                : 'No uploaded emails need PDF backfill.');
 
             return self::SUCCESS;
         }
@@ -51,10 +59,11 @@ class BackfillEmailPdfPreviews extends Command
         $dryRun = (bool) $this->option('dry-run');
 
         $this->info(sprintf(
-            'Found %d email(s) to %s (limit %d).',
+            'Found %d email(s) to %s (limit %d%s).',
             $emails->count(),
             $dryRun ? 'inspect' : 'process',
-            $limit
+            $limit,
+            $replace ? ', replace mode' : ''
         ));
 
         if (! $dryRun && ! $this->option('force')) {
@@ -73,10 +82,11 @@ class BackfillEmailPdfPreviews extends Command
         ];
 
         foreach ($emails as $email) {
-            $fresh = EmailLog::query()
-                ->where('id', $email->id)
-                ->whereNull('pdf_doc_id')
-                ->first();
+            $freshQuery = EmailLog::query()->where('id', $email->id);
+            if (! $replace) {
+                $freshQuery->whereNull('pdf_doc_id');
+            }
+            $fresh = $freshQuery->first();
 
             if (! $fresh) {
                 $counts['skipped']++;
@@ -84,7 +94,7 @@ class BackfillEmailPdfPreviews extends Command
                 continue;
             }
 
-            $result = $backfillService->backfillEmailLog($fresh, $dryRun);
+            $result = $backfillService->backfillEmailLog($fresh, $dryRun, $replace);
             $status = $result['status'];
             $counts[$status] = ($counts[$status] ?? 0) + 1;
 

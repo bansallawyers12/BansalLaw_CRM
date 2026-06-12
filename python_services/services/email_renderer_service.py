@@ -222,7 +222,7 @@ class EmailRendererService:
             background: white;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
+            overflow: visible;
         }}
         .email-header {{
             background: #f8f9fa;
@@ -245,6 +245,9 @@ class EmailRendererService:
         }}
         .email-content {{
             padding: 30px;
+            overflow-wrap: anywhere;
+            word-wrap: break-word;
+            max-width: 100%;
         }}
         .email-content img {{
             max-width: 100%;
@@ -252,13 +255,17 @@ class EmailRendererService:
         }}
         .email-content table {{
             width: 100%;
+            max-width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
         }}
         .email-content th,
         .email-content td {{
             padding: 8px 12px;
             text-align: left;
             border-bottom: 1px solid #dee2e6;
+            overflow-wrap: anywhere;
+            word-wrap: break-word;
         }}
         .email-content th {{
             background-color: #f8f9fa;
@@ -508,11 +515,13 @@ class EmailRendererService:
             pdf_html = self._replace_cid_with_data_uris(rendered_html, attachments)
 
             try:
-                from weasyprint import HTML
+                from weasyprint import HTML, CSS
             except ImportError:
                 return None, text_preview, 'WeasyPrint is not installed'
 
-            pdf_bytes = HTML(string=pdf_html).write_pdf()
+            pdf_bytes = HTML(string=pdf_html).write_pdf(
+                stylesheets=[self._get_pdf_layout_stylesheet()]
+            )
             if not pdf_bytes:
                 return None, text_preview, 'WeasyPrint returned empty PDF'
 
@@ -525,6 +534,66 @@ class EmailRendererService:
         except Exception as e:
             logger.error(f"Error generating email PDF: {str(e)}")
             return None, email_data.get('text_content', ''), str(e)
+
+    def _get_pdf_layout_stylesheet(self):
+        """PDF-only CSS to prevent clipped text in WeasyPrint output."""
+        from weasyprint import CSS
+
+        return CSS(string='''
+            @page {
+                size: A4;
+                margin: 1.2cm;
+            }
+            body {
+                max-width: 100%;
+                padding: 0;
+                background-color: #fff;
+            }
+            .email-container {
+                overflow: visible !important;
+                box-shadow: none;
+            }
+            .email-content {
+                overflow: visible;
+                overflow-wrap: anywhere;
+                word-wrap: break-word;
+                word-break: break-word;
+                max-width: 100%;
+            }
+            .email-content p,
+            .email-content div,
+            .email-content span,
+            .email-content li,
+            .email-content td,
+            .email-content th,
+            .email-content blockquote,
+            .email-content a {
+                overflow-wrap: anywhere;
+                word-wrap: break-word;
+                word-break: break-word;
+                max-width: 100%;
+            }
+            .email-content table {
+                width: 100% !important;
+                max-width: 100% !important;
+                table-layout: fixed;
+            }
+            .email-content blockquote {
+                margin-left: 0;
+                padding-left: 10px;
+                border-left: 3px solid #ccc;
+            }
+            .email-content pre,
+            .email-content code {
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+                word-wrap: break-word;
+            }
+            .email-content img {
+                max-width: 100% !important;
+                height: auto !important;
+            }
+        ''')
 
     def _replace_cid_with_data_uris(self, html_content: str, attachments: List[Dict[str, Any]]) -> str:
         """Replace cid: image references with inline data URIs for PDF rendering."""

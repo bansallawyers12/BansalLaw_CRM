@@ -21,9 +21,9 @@ class EmailPdfBackfillService
     /**
      * @return array{status: string, message: string, pdf_doc_id?: int}
      */
-    public function backfillEmailLog(EmailLog $email, bool $dryRun = false): array
+    public function backfillEmailLog(EmailLog $email, bool $dryRun = false, bool $replace = false): array
     {
-        if (! empty($email->pdf_doc_id)) {
+        if (! empty($email->pdf_doc_id) && ! $replace) {
             return ['status' => 'skipped', 'message' => 'PDF preview already linked'];
         }
 
@@ -58,7 +58,9 @@ class EmailPdfBackfillService
         }
 
         if ($dryRun) {
-            return ['status' => 'dry_run', 'message' => 'Would backfill from S3 key: ' . $s3Key];
+            $action = ($replace && ! empty($email->pdf_doc_id)) ? 'replace PDF for' : 'backfill';
+
+            return ['status' => 'dry_run', 'message' => 'Would ' . $action . ' from S3 key: ' . $s3Key];
         }
 
         $tempPath = null;
@@ -88,11 +90,17 @@ class EmailPdfBackfillService
                 ];
             }
 
+            $existingPdfDocument = null;
+            if ($replace && ! empty($email->pdf_doc_id)) {
+                $existingPdfDocument = Document::find($email->pdf_doc_id);
+            }
+
             $pdfDocumentId = $this->saveEmailPdfDocument(
                 $parsedData,
                 $originalFileName,
                 $sourceDocument,
-                $email
+                $email,
+                $existingPdfDocument
             );
 
             if ($pdfDocumentId === null) {
@@ -111,11 +119,14 @@ class EmailPdfBackfillService
             Log::info('Email PDF backfill succeeded', [
                 'email_log_id' => $email->id,
                 'pdf_doc_id' => $pdfDocumentId,
+                'replaced' => $replace && $existingPdfDocument !== null,
             ]);
 
             return [
                 'status' => 'success',
-                'message' => 'PDF preview created',
+                'message' => ($replace && $existingPdfDocument !== null)
+                    ? 'PDF preview replaced'
+                    : 'PDF preview created',
                 'pdf_doc_id' => $pdfDocumentId,
             ];
         } catch (\Throwable $e) {
@@ -208,7 +219,8 @@ class EmailPdfBackfillService
         array $parsedData,
         string $fileName,
         Document $sourceDocument,
-        EmailLog $email
+        EmailLog $email,
+        ?Document $existingPdfDocument = null
     ): ?int {
         if (empty($parsedData['pdf_base64'])) {
             return null;
@@ -233,6 +245,28 @@ class EmailPdfBackfillService
         $pdfUniqueFileName = preg_replace('/\.msg$/i', '.pdf', $uniqueFileName);
         if ($pdfUniqueFileName === $uniqueFileName) {
             $pdfUniqueFileName = pathinfo($uniqueFileName, PATHINFO_FILENAME) . '.pdf';
+        }
+
+        if ($existingPdfDocument !== null) {
+            $pdfFilePath = $this->resolveDocumentS3Key($existingPdfDocument, $email);
+            if ($pdfFilePath === null) {
+                $pdfFilePath = $sanitizedClientId . '/' . $docType . '/' . $mailType . '/' . $pdfUniqueFileName;
+            }
+
+            if (! Storage::disk('s3')->put($pdfFilePath, $pdfBytes)) {
+                return null;
+            }
+
+            $existingPdfDocument->file_size = strlen($pdfBytes);
+            if (empty($existingPdfDocument->myfile)) {
+                $existingPdfDocument->myfile = Storage::disk('s3')->url($pdfFilePath);
+            }
+            if (empty($existingPdfDocument->myfile_key)) {
+                $existingPdfDocument->myfile_key = $pdfUniqueFileName;
+            }
+            $existingPdfDocument->save();
+
+            return (int) $existingPdfDocument->id;
         }
 
         $pdfFilePath = $sanitizedClientId . '/' . $docType . '/' . $mailType . '/' . $pdfUniqueFileName;
