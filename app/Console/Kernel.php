@@ -56,6 +56,8 @@ class Kernel extends ConsoleKernel
 
         '\App\Console\Commands\ExpireCrmAccessGrants',
         '\App\Console\Commands\CacheAccessGrantGlobalCounts',
+
+        '\App\Console\Commands\BackfillEmailPdfPreviews',
     ];
 
     /**
