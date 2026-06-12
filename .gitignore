@@ -45,5 +45,8 @@ python_services/*/__pycache__/
 python_pdf_service/
 python_services/start_services.sh
 
+# Local GTK runtime for WeasyPrint (installed by setup_weasyprint_windows.ps1)
+python_services/vendor/GTK3-Runtime/
+
 # Zip archives
 *.zip

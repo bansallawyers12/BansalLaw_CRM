@@ -44,19 +44,19 @@ if not exist "requirements.txt" (
 
 REM Install dependencies if needed (FastAPI, Uvicorn, PDF libraries, etc.)
 echo 📦 Checking dependencies...
-REM Check for key dependencies: FastAPI (web framework), Uvicorn (ASGI server), extract_msg (email parsing)
-python -c "import fastapi, uvicorn, extract_msg, weasyprint" >nul 2>&1
+python -m pip install -r requirements.txt >nul 2>&1
+
+REM Configure GTK/Cairo for WeasyPrint on Windows (email PDF preview only)
+echo 🔍 Checking WeasyPrint (email PDF preview)...
+python check_weasyprint.py
 if %errorlevel% neq 0 (
-    echo 📦 Installing dependencies...
-    python -m pip install -r requirements.txt
-    if %errorlevel% neq 0 (
-        echo ❌ Failed to install dependencies
-        pause
-        exit /b 1
-    )
-    echo ✅ Dependencies installed
+    echo.
+    echo ⚠️  WeasyPrint is not ready — email PDF preview will be unavailable.
+    echo    Other services (PDF merge, .msg parsing, DOCX convert) will still start.
+    echo    To fix: powershell -ExecutionPolicy Bypass -File setup_weasyprint_windows.ps1
+    echo.
 ) else (
-    echo ✅ Dependencies are up to date
+    echo ✅ WeasyPrint is ready
 )
 
 REM Start the service

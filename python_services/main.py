@@ -34,7 +34,10 @@ from services.email_analyzer_service import EmailAnalyzerService
 from services.email_renderer_service import EmailRendererService
 from services.docx_converter_service import DocxConverterService
 from utils.logger import setup_logger
+from utils.weasyprint_env import configure_weasyprint_dll_paths
 from utils.validators import validate_file_type, validate_file_size
+
+configure_weasyprint_dll_paths()
 
 # Setup logging
 logger = setup_logger(__name__)
