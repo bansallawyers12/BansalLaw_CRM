@@ -10,6 +10,7 @@ class BackfillEmailPdfPreviews extends Command
 {
     protected $signature = 'emails:backfill-pdf
                             {--limit=50 : Maximum number of emails to process}
+                            {--offset=0 : Number of matching emails to skip before processing}
                             {--client-id= : Only process emails for this client_id}
                             {--email-log-id= : Process a single email_logs row}
                             {--dry-run : Show what would be processed without making changes}
@@ -46,6 +47,12 @@ class BackfillEmailPdfPreviews extends Command
         }
 
         $limit = max(1, (int) $this->option('limit'));
+        $offset = max(0, (int) $this->option('offset'));
+
+        if ($offset > 0 && ! $this->option('email-log-id')) {
+            $query->offset($offset);
+        }
+
         $emails = $query->limit($limit)->get();
 
         if ($emails->isEmpty()) {
@@ -59,10 +66,11 @@ class BackfillEmailPdfPreviews extends Command
         $dryRun = (bool) $this->option('dry-run');
 
         $this->info(sprintf(
-            'Found %d email(s) to %s (limit %d%s).',
+            'Found %d email(s) to %s (limit %d, offset %d%s).',
             $emails->count(),
             $dryRun ? 'inspect' : 'process',
             $limit,
+            $offset,
             $replace ? ', replace mode' : ''
         ));
 
@@ -113,6 +121,16 @@ class BackfillEmailPdfPreviews extends Command
             ['Result', 'Count'],
             collect($counts)->map(fn ($count, $key) => [$key, $count])->values()->all()
         );
+
+        if ($emails->count() === $limit && ! $this->option('email-log-id')) {
+            $nextOffset = $offset + $limit;
+            $this->newLine();
+            $this->comment(sprintf(
+                'Next batch: php artisan emails:backfill-pdf --replace --limit=%d --offset=%d --force',
+                $limit,
+                $nextOffset
+            ));
+        }
 
         return ($counts['failed'] ?? 0) > 0 ? self::FAILURE : self::SUCCESS;
     }
