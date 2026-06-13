@@ -148,6 +148,71 @@ def test_pdf_generation():
         return False
 
 
+def test_pdf_wide_signature_layout():
+    """Ensure wide Outlook-style signatures are normalized for PDF output."""
+    print("\nTesting PDF layout normalization for wide signatures...")
+
+    try:
+        from services.email_renderer_service import EmailRendererService
+
+        renderer = EmailRendererService()
+        wide_signature = '''
+            <table width="800" style="width:800px; table-layout:fixed;">
+                <tr>
+                    <td width="400" style="width:400px; white-space:nowrap; overflow:hidden;">
+                        MIGRATION LAW GROUP - VISA SUPPORT TEAM
+                    </td>
+                    <td width="400" style="width:400px; white-space:nowrap;">
+                        T: 0396021330 M: 0412345678
+                    </td>
+                </tr>
+            </table>
+        '''
+        email_data = {
+            'subject': 'Signature layout test',
+            'html_content': wide_signature,
+            'text_content': 'Signature layout test',
+            'sender_email': 'sender@example.com',
+            'sender_name': 'Test Sender',
+            'sent_date': '2026-06-10T10:00:00+00:00',
+            'to_recipients': ['recipient@example.com'],
+            'cc_recipients': [],
+            'attachments': [],
+        }
+
+        rendering = renderer.render_email(email_data)
+        rendered_html = rendering.get('rendered_html', '')
+        prepared_html = renderer._prepare_html_for_pdf(rendered_html)
+
+        try:
+            from bs4 import BeautifulSoup
+            content_html = str(BeautifulSoup(prepared_html, 'html.parser').select_one('.email-content'))
+        except ImportError:
+            content_html = prepared_html
+
+        assert 'width="800"' not in content_html
+        assert 'width:800px' not in content_html.replace(' ', '')
+        assert 'white-space:nowrap' not in content_html.lower()
+
+        pdf_bytes, _, error = renderer.render_to_pdf(email_data)
+
+        if pdf_bytes and len(pdf_bytes) > 0:
+            print("OK - Wide signature PDF generation working")
+            print(f"   PDF size: {len(pdf_bytes)} bytes")
+            return True
+
+        if error and 'WeasyPrint is not installed' in error:
+            print("OK - PDF layout normalization checks passed (WeasyPrint not installed)")
+            return True
+
+        print(f"FAILED - Wide signature PDF generation failed: {error}")
+        return False
+
+    except Exception as e:
+        print(f"FAILED - Wide signature PDF test failed: {e}")
+        return False
+
+
 def test_email_rendering():
     """Test email rendering functionality."""
     print("\nTesting email rendering...")
@@ -193,6 +258,7 @@ def main():
         test_email_analysis,
         test_email_rendering,
         test_pdf_generation,
+        test_pdf_wide_signature_layout,
         test_health_endpoint
     ]
     

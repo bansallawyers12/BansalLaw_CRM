@@ -513,6 +513,7 @@ class EmailRendererService:
 
             attachments = email_data.get('attachments') or []
             pdf_html = self._replace_cid_with_data_uris(rendered_html, attachments)
+            pdf_html = self._prepare_html_for_pdf(pdf_html)
 
             try:
                 from weasyprint import HTML, CSS
@@ -535,6 +536,141 @@ class EmailRendererService:
             logger.error(f"Error generating email PDF: {str(e)}")
             return None, email_data.get('text_content', ''), str(e)
 
+    _PDF_LAYOUT_TAGS = frozenset({
+        'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
+        'colgroup', 'col', 'div', 'span', 'p', 'center', 'font',
+    })
+    _PDF_STYLE_PROPS_TO_REMOVE = frozenset({
+        'width', 'min-width', 'max-width',
+        'overflow', 'overflow-x', 'overflow-y',
+        'table-layout',
+    })
+
+    def _parse_pixel_width(self, value: str) -> Optional[int]:
+        """Return pixel width from an HTML width attribute/style value, if parseable."""
+        if not value:
+            return None
+        value = str(value).strip().lower()
+        match = re.match(r'^(\d+(?:\.\d+)?)\s*px?$', value)
+        if match:
+            return int(float(match.group(1)))
+        if value.isdigit():
+            return int(value)
+        return None
+
+    def _clean_inline_style_for_pdf(self, style: str) -> str:
+        """Remove layout constraints from inline styles that clip content in WeasyPrint."""
+        if not style:
+            return ''
+
+        cleaned: List[str] = []
+        for part in style.split(';'):
+            part = part.strip()
+            if not part or ':' not in part:
+                continue
+
+            prop, _, raw_value = part.partition(':')
+            prop = prop.strip().lower()
+            value = raw_value.strip()
+
+            if prop in self._PDF_STYLE_PROPS_TO_REMOVE:
+                continue
+            if prop == 'white-space' and value.lower() in ('nowrap', 'pre'):
+                cleaned.append('white-space: normal')
+                continue
+
+            cleaned.append(f'{prop}: {value}')
+
+        return '; '.join(cleaned)
+
+    def _should_remove_width_attr_for_pdf(self, tag_name: str, width_val: str) -> bool:
+        """Decide whether a width attribute should be stripped before PDF rendering."""
+        if tag_name == 'img':
+            px = self._parse_pixel_width(width_val)
+            return px is None or px > 480
+
+        return tag_name in self._PDF_LAYOUT_TAGS
+
+    def _normalize_layout_tag_for_pdf(self, tag) -> None:
+        """Strip fixed widths and nowrap styles from a single tag (BeautifulSoup element)."""
+        tag_name = (tag.name or '').lower()
+        if tag_name not in self._PDF_LAYOUT_TAGS and tag_name != 'img':
+            return
+
+        width_val = tag.attrs.get('width')
+        if width_val is not None and self._should_remove_width_attr_for_pdf(tag_name, str(width_val)):
+            del tag.attrs['width']
+
+        if tag_name == 'img':
+            height_val = tag.attrs.get('height')
+            if height_val is not None:
+                px = self._parse_pixel_width(str(height_val))
+                if px is None or px > 480:
+                    del tag.attrs['height']
+            return
+
+        style = tag.attrs.get('style')
+        if style:
+            cleaned_style = self._clean_inline_style_for_pdf(str(style))
+            if cleaned_style:
+                tag.attrs['style'] = cleaned_style
+            else:
+                del tag.attrs['style']
+
+    def _prepare_html_for_pdf_with_soup(self, html_content: str) -> str:
+        soup = BeautifulSoup(html_content, 'html.parser')
+        content_root = soup.select_one('.email-content') or soup.body or soup
+
+        for tag in content_root.find_all(True):
+            self._normalize_layout_tag_for_pdf(tag)
+
+        return str(soup)
+
+    def _prepare_html_for_pdf_with_regex(self, html_content: str) -> str:
+        """Best-effort layout normalization when BeautifulSoup is unavailable."""
+        cleaned = html_content
+
+        cleaned = re.sub(
+            r'(<(?:table|td|th|colgroup|col|div|span|p|center)\b[^>]*?)\s+width\s*=\s*["\'][^"\']*["\']',
+            r'\1',
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+        cleaned = re.sub(
+            r'(<img\b[^>]*?)\s+width\s*=\s*["\'](?:[5-9]\d{2}|\d{4,})[^"\']*["\']',
+            r'\1',
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+        cleaned = re.sub(
+            r'style\s*=\s*["\']([^"\']*)["\']',
+            lambda match: (
+                f'style="{self._clean_inline_style_for_pdf(match.group(1))}"'
+                if self._clean_inline_style_for_pdf(match.group(1))
+                else ''
+            ),
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+        return cleaned
+
+    def _prepare_html_for_pdf(self, html_content: str) -> str:
+        """
+        Normalize wide Outlook-style HTML for PDF output only.
+
+        Does not affect render_email() output used for previews, links, or images.
+        """
+        if not html_content:
+            return html_content
+
+        try:
+            if BeautifulSoup:
+                return self._prepare_html_for_pdf_with_soup(html_content)
+            return self._prepare_html_for_pdf_with_regex(html_content)
+        except Exception as e:
+            logger.warning(f"Error preparing HTML for PDF: {str(e)}")
+            return html_content
+
     def _get_pdf_layout_stylesheet(self):
         """PDF-only CSS to prevent clipped text in WeasyPrint output."""
         from weasyprint import CSS
@@ -544,21 +680,34 @@ class EmailRendererService:
                 size: A4;
                 margin: 1.2cm;
             }
-            body {
-                max-width: 100%;
-                padding: 0;
+            *, *::before, *::after {
+                box-sizing: border-box;
+            }
+            html, body {
+                max-width: 100% !important;
+                width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
                 background-color: #fff;
             }
             .email-container {
+                width: 100% !important;
+                max-width: 100% !important;
                 overflow: visible !important;
                 box-shadow: none;
+                border-radius: 0;
+            }
+            .email-header,
+            .email-content,
+            .email-footer {
+                padding: 12px !important;
             }
             .email-content {
-                overflow: visible;
+                overflow: visible !important;
                 overflow-wrap: anywhere;
                 word-wrap: break-word;
                 word-break: break-word;
-                max-width: 100%;
+                max-width: 100% !important;
             }
             .email-content p,
             .email-content div,
@@ -567,16 +716,26 @@ class EmailRendererService:
             .email-content td,
             .email-content th,
             .email-content blockquote,
-            .email-content a {
+            .email-content a,
+            .email-content font,
+            .email-content center {
+                overflow: visible !important;
                 overflow-wrap: anywhere;
                 word-wrap: break-word;
                 word-break: break-word;
-                max-width: 100%;
+                white-space: normal !important;
+                max-width: 100% !important;
             }
             .email-content table {
                 width: 100% !important;
                 max-width: 100% !important;
-                table-layout: fixed;
+                table-layout: auto !important;
+                border-collapse: collapse;
+            }
+            .email-content col,
+            .email-content colgroup {
+                width: auto !important;
+                max-width: 100% !important;
             }
             .email-content blockquote {
                 margin-left: 0;
@@ -585,7 +744,7 @@ class EmailRendererService:
             }
             .email-content pre,
             .email-content code {
-                white-space: pre-wrap;
+                white-space: pre-wrap !important;
                 overflow-wrap: anywhere;
                 word-wrap: break-word;
             }
