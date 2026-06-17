@@ -1,4 +1,6 @@
 @extends('layouts.crm_client_detail')
+@include('components.require-datatables')
+@include('components.require-tinymce')
 @section('title', 'Client Detail')
 
 @section('content')
@@ -1133,7 +1135,7 @@ use App\Http\Controllers\Controller;
 	<div class="modal-dialog modal-dialog-centered" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="googleReviewReminderModalLabel"><i class="fab fa-google mr-2" aria-hidden="true"></i>Google review reminder</h5>
+				<h5 class="modal-title" id="googleReviewReminderModalLabel"><i class="fab fa-google me-2" aria-hidden="true"></i>Google review reminder</h5>
 				<button type="button" class="close grr-modal-close-btn js-google-review-reminder" data-action="snooze_one_day" aria-label="Close and remind again tomorrow" title="Close — ask again tomorrow">
 					<span aria-hidden="true">&times;</span>
 				</button>
@@ -1144,7 +1146,7 @@ use App\Http\Controllers\Controller;
 			</div>
 			<div class="modal-footer flex-wrap justify-content-stretch gap-2 grr-modal-footer">
 				<button type="button" class="btn w-100 m-0 js-google-review-send-sms grr-btn grr-btn-sms">
-					<i class="fas fa-sms mr-1" aria-hidden="true"></i>Send SMS with review link
+					<i class="fas fa-sms me-1" aria-hidden="true"></i>Send SMS with review link
 				</button>
 				<button type="button" class="btn flex-grow-1 m-0 js-google-review-reminder grr-btn grr-btn-not-interested" data-action="not_interested">Not interested</button>
 				<button type="button" class="btn flex-grow-1 m-0 js-google-review-reminder grr-btn grr-btn-snooze" data-action="snooze">Remind me in 1 week</button>
@@ -1157,8 +1159,6 @@ use App\Http\Controllers\Controller;
 
 @endsection
 @push('scripts')
-<!-- TinyMCE Editor -->
-<script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
 <script>
 // TinyMCE Configuration for Email Modals
 var tinymceEmailConfig = {
@@ -1189,6 +1189,9 @@ var tinymceEmailConfig = {
 
 // Initialize TinyMCE for all email modals
 function initTinyMCEForModals() {
+    if (typeof tinymce === 'undefined') {
+        return;
+    }
     // Compose Email Modal
     if ($('#compose_email_message').length && !tinymce.get('compose_email_message')) {
         tinymce.init({
@@ -1245,28 +1248,28 @@ function initTinyMCEForModals() {
 
 // Helper functions to save TinyMCE content before form validation
 window.saveComposeEmail = function() {
-    if (tinymce.get('compose_email_message')) {
+    if (typeof tinymce !== 'undefined' && tinymce.get('compose_email_message')) {
         tinymce.get('compose_email_message').save();
     }
     customValidate('sendmail');
 };
 
 window.saveSendMessage = function() {
-    if (tinymce.get('sendmsg_message')) {
+    if (typeof tinymce !== 'undefined' && tinymce.get('sendmsg_message')) {
         tinymce.get('sendmsg_message').save();
     }
     customValidate('sendmsg');
 };
 
 window.saveApplicationEmail = function() {
-    if (tinymce.get('matter_email_message')) {
+    if (typeof tinymce !== 'undefined' && tinymce.get('matter_email_message')) {
         tinymce.get('matter_email_message').save();
     }
     customValidate('appkicationsendmail');
 };
 
 window.saveUploadMail = function() {
-    if (tinymce.get('uploadmail_message')) {
+    if (typeof tinymce !== 'undefined' && tinymce.get('uploadmail_message')) {
         tinymce.get('uploadmail_message').save();
     }
     customValidate('uploadmail');
@@ -1281,7 +1284,7 @@ window.setTinyMCEContent = function(editorId, content) {
         // Try to initialize if not already initialized
         setTimeout(function() {
             initTinyMCEForModals();
-            if (tinymce.get(editorId)) {
+            if (typeof tinymce !== 'undefined' && tinymce.get(editorId)) {
                 tinymce.get(editorId).setContent(content || '');
             }
         }, 200);

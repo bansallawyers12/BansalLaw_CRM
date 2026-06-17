@@ -24,19 +24,19 @@
                 </a>
                 <div class="icon-dropdown-menu">
                     <a class="dropdown-item" href="{{ route('booking.appointments.index') }}">
-                        <i class="fas fa-list mr-2"></i> All Bookings
+                        <i class="fas fa-list me-2"></i> All Bookings
                     </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}">
-                        <i class="fas fa-calendar-alt mr-2"></i> Ajay Calendar
+                        <i class="fas fa-calendar-alt me-2"></i> Ajay Calendar
                     </a>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}">
-                        <i class="fas fa-calendar-alt mr-2"></i> Michael
+                        <i class="fas fa-calendar-alt me-2"></i> Michael
                     </a>
                     @if($_crmTopAdminish)
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ route('booking.sync.dashboard') }}">
-                        <i class="fas fa-sync mr-2"></i> Sync Status
+                        <i class="fas fa-sync me-2"></i> Sync Status
                     </a>
                     @endif
                 </div>
@@ -49,30 +49,30 @@
             <div class="icon-dropdown js-dropdown">
                 <a href="{{route('clients.index')}}" class="icon-btn" title="Clients"><i class="fas fa-users"></i></a>
                 <div class="icon-dropdown-menu">
-                    <a class="dropdown-item" href="{{route('clients.index')}}"><i class="fas fa-list mr-2"></i> Client List</a>
-                    <a class="dropdown-item" href="{{route('clients.clientsmatterslist')}}"><i class="fas fa-folder-open mr-2"></i> Matter List</a>
-                    <a class="dropdown-item" href="{{ route('emails.smart-import.index') }}"><i class="fas fa-file-import mr-2"></i> Smart Email Import</a>
+                    <a class="dropdown-item" href="{{route('clients.index')}}"><i class="fas fa-list me-2"></i> Client List</a>
+                    <a class="dropdown-item" href="{{route('clients.clientsmatterslist')}}"><i class="fas fa-folder-open me-2"></i> Matter List</a>
+                    <a class="dropdown-item" href="{{ route('emails.smart-import.index') }}"><i class="fas fa-file-import me-2"></i> Smart Email Import</a>
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{route('leads.index')}}"><i class="fas fa-list-alt mr-2"></i> Lead List</a>
-                    <a class="dropdown-item" href="{{route('leads.create')}}"><i class="fas fa-plus-circle mr-2"></i> Add Lead</a>
+                    <a class="dropdown-item" href="{{route('leads.index')}}"><i class="fas fa-list-alt me-2"></i> Lead List</a>
+                    <a class="dropdown-item" href="{{route('leads.create')}}"><i class="fas fa-plus-circle me-2"></i> Add Lead</a>
                 </div>
             </div>
             <div class="icon-dropdown js-dropdown">
                 <a href="{{route('clients.invoicelist')}}" class="icon-btn" title="Accounts"><i class="fas fa-briefcase"></i></a>
                 <div class="icon-dropdown-menu">
                     @if($_crmTopAdminish)
-                    <a class="dropdown-item" href="{{route('clients.analytics-dashboard')}}" style="background: linear-gradient(135deg, var(--navy)15 0%, var(--sidebar-active)15 100%); font-weight: 600;"><i class="fas fa-chart-line mr-2" style="color: var(--navy);"></i> Analytics Dashboard</a>
+                    <a class="dropdown-item" href="{{route('clients.analytics-dashboard')}}" style="background: linear-gradient(135deg, var(--navy)15 0%, var(--sidebar-active)15 100%); font-weight: 600;"><i class="fas fa-chart-line me-2" style="color: var(--navy);"></i> Analytics Dashboard</a>
                     <div class="dropdown-divider"></div>
                     @endif
-                    <a class="dropdown-item" href="{{route('clients.clientreceiptlist')}}"><i class="fas fa-receipt mr-2"></i> Client Receipts</a>
-                    <a class="dropdown-item" href="{{route('clients.invoicelist')}}"><i class="fas fa-file-invoice-dollar mr-2"></i> Invoice Lists</a>
-                    <a class="dropdown-item" href="{{route('clients.officereceiptlist')}}"><i class="fas fa-building mr-2"></i> Office Receipts</a>
-                    <a class="dropdown-item" href="{{route('clients.journalreceiptlist')}}"><i class="fas fa-book mr-2"></i> Journal Receipts</a>
+                    <a class="dropdown-item" href="{{route('clients.clientreceiptlist')}}"><i class="fas fa-receipt me-2"></i> Client Receipts</a>
+                    <a class="dropdown-item" href="{{route('clients.invoicelist')}}"><i class="fas fa-file-invoice-dollar me-2"></i> Invoice Lists</a>
+                    <a class="dropdown-item" href="{{route('clients.officereceiptlist')}}"><i class="fas fa-building me-2"></i> Office Receipts</a>
+                    <a class="dropdown-item" href="{{route('clients.journalreceiptlist')}}"><i class="fas fa-book me-2"></i> Journal Receipts</a>
                     @if($_trustSuperAdmin)
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ route('trust-accounting.periods.index') }}"><i class="fas fa-lock mr-2"></i> Trust period locks</a>
-                    <a class="dropdown-item" href="{{ route('trust-accounting.reports.index') }}"><i class="fas fa-file-export mr-2"></i> Trust reports (exam pack)</a>
-                    <a class="dropdown-item" href="{{ route('trust-accounting.audit-log.index') }}"><i class="fas fa-clipboard-list mr-2"></i> Trust audit log</a>
+                    <a class="dropdown-item" href="{{ route('trust-accounting.periods.index') }}"><i class="fas fa-lock me-2"></i> Trust period locks</a>
+                    <a class="dropdown-item" href="{{ route('trust-accounting.reports.index') }}"><i class="fas fa-file-export me-2"></i> Trust reports (exam pack)</a>
+                    <a class="dropdown-item" href="{{ route('trust-accounting.audit-log.index') }}"><i class="fas fa-clipboard-list me-2"></i> Trust audit log</a>
                     @endif
                     <div class="dropdown-divider"></div>
                 </div>
@@ -92,12 +92,12 @@
             @php
                 $_saElevated = $_staffTop->hasEffectiveSuperAdminPrivileges();
             @endphp
-            <form action="{{ route('crm.session.super-admin-mode') }}" method="post" class="d-inline align-middle mr-1" style="vertical-align: middle;">
+            <form action="{{ route('crm.session.super-admin-mode') }}" method="post" class="d-inline align-middle me-1" style="vertical-align: middle;">
                 @csrf
                 <input type="hidden" name="elevated" value="{{ $_saElevated ? '0' : '1' }}">
                 <button type="submit" class="icon-btn {{ $_saElevated ? 'text-primary' : '' }}" title="{{ $_saElevated ? 'Using Super Admin access — click to return to normal role' : 'Switch to Super Admin access (full privileges)' }}" style="white-space: nowrap;">
                     <i class="fas fa-user-shield"></i>
-                    <span class="d-none d-xl-inline ml-1" style="font-size: 12px; font-weight: 600;">{{ $_saElevated ? 'Super Admin' : 'Normal' }}</span>
+                    <span class="d-none d-xl-inline ms-1" style="font-size: 12px; font-weight: 600;">{{ $_saElevated ? 'Super Admin' : 'Normal' }}</span>
                 </button>
             </form>
         @endif

@@ -1,4 +1,4 @@
-﻿@extends('layouts.crm_client_detail')
+@extends('layouts.crm_client_detail')
 @section('title', 'Clients Closed Matters')
 
 @section('styles')
@@ -233,7 +233,7 @@
                             </div>
                             <div class="row">
                                 <div class="col-md-12 text-center">
-                                    <button type="submit" class="btn btn-primary btn-theme-lg mr-3">Search</button>
+                                    <button type="submit" class="btn btn-primary btn-theme-lg me-3">Search</button>
                                     <a class="btn btn-info" href="{{ route('clients.closedmatterslist') }}">Reset</a>
                                 </div>
                             </div>

@@ -1,4 +1,5 @@
 @extends('layouts.crm_client_detail')
+@include('components.require-datatables')
 @section('title', 'Action')
 
 @section('content')
@@ -1285,7 +1286,8 @@ $(function () {
         $(this).popover(popoverOpts);
     });
 
-    var table = $('.yajra-datatable').DataTable({
+    var table = ($.fn.DataTable && $('.yajra-datatable').length)
+        ? $('.yajra-datatable').DataTable({
         processing: true,
         serverSide: true,
         ajax: {
@@ -1344,11 +1346,11 @@ $(function () {
         "order": [[4, 'desc']], // Default sorting by assign_date descending
         "responsive": false,
         "autoWidth": false
-    });
+    }) : null;
 
     // Search functionality
     $('#searchInput').on('keyup', function() {
-        table.ajax.reload(); // Trigger DataTables reload with the new search term
+        if (table) { table.ajax.reload(); } // Trigger DataTables reload with the new search term
     });
 
     // Deep link from client Tasks tab (note_id query param)
@@ -1357,7 +1359,7 @@ $(function () {
         var noteId = params.get('note_id');
         if (noteId && /^\d+$/.test(noteId)) {
             $('#searchInput').val(noteId);
-            table.ajax.reload();
+            if (table) { table.ajax.reload(); }
         }
     })();
 
@@ -1609,7 +1611,7 @@ $(function () {
     $('.tabs .tab-button').on('click', function() {
         $('.tabs .tab-button').removeClass('active');
         $(this).addClass('active');
-        table.ajax.reload();
+        if (table) { table.ajax.reload(); }
     });
 
     // Handle Update Task button click
@@ -1730,7 +1732,7 @@ $(function () {
             },
             success: function(response) {
                 $('.update_task').popover('hide');
-                table.draw(false);
+                if (table) { table.draw(false); }
                 if (typeof iziToast !== 'undefined') {
                     iziToast.success({ title: 'Updated', message: 'Task updated successfully.', position: 'topRight', timeout: 3000 });
                 }
@@ -1773,7 +1775,7 @@ $(function () {
                 dataType: 'json',
                 data: {method: '_DELETE', submit: true}
             }).done(function(data) {
-                table.draw(false);
+                if (table) { table.draw(false); }
                 if (typeof iziToast !== 'undefined') {
                     iziToast.success({ title: 'Deleted', message: 'Task deleted.', position: 'topRight', timeout: 2500 });
                 }
@@ -1848,7 +1850,7 @@ $(function () {
                 currentTaskGroupId = null;
                 
                 // Reload table
-                table.draw(false);
+                if (table) { table.draw(false); }
                 
                 // Show success notification
                 if (typeof iziToast !== 'undefined') {
@@ -1925,10 +1927,10 @@ $(function () {
                             } catch (e) { /* ignore */ }
                         });
                         $('.popover-backdrop').removeClass('show');
-                        table.draw(false);
+                        if (table) { table.draw(false); }
                     } else {
                         alert(response && response.message ? response.message : 'An error occurred');
-                        table.draw(false);
+                        if (table) { table.draw(false); }
                     }
                 },
                 error: function(xhr, status, error) {

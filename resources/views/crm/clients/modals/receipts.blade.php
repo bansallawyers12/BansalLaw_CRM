@@ -170,17 +170,17 @@
 				<!-- Radio Button Selection -->
 				<div class="form-group">
 			  		<label><strong>Select Entry Type:</strong></label><br>
-			  		<label class="mr-3">
+			  		<label class="me-3">
 						<input type="radio" name="receipt_type" value="client_receipt" checked>
 						<i class="fas fa-university text-success"></i> Trust Account Entry
 			  		</label>
 
-			  		<label class="mr-3">
+			  		<label class="me-3">
 						<input type="radio" name="receipt_type" value="invoice_receipt">
 						<i class="fas fa-file-invoice-dollar text-info"></i> Tax Invoice
 			  		</label>
 
-			  		<label class="mr-3">
+			  		<label class="me-3">
 						<input type="radio" name="receipt_type" value="office_receipt">
 						<i class="fas fa-hand-holding-usd text-primary"></i> Office Receipt
 			  		</label>

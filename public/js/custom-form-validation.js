@@ -1508,19 +1508,20 @@ function customValidate(formName, savetype = '')
 										type:'GET',
 										data:{clientid:client_id},
 										success: function(responses){
-											 $('#my-datatable').DataTable().destroy();
 											$('.taskdata').html(responses);
-											$('#my-datatable').DataTable({
-												"searching": false,
-												"lengthChange": false,
-											  "columnDefs": [
-												{ "orderable": false, "targets": [0, 2, 3] }
-											  ],
-											  order: [[1, "desc"]] //column indexes is zero based
-
-
-											}).draw();
-
+											if ($.fn.dataTable && $('#my-datatable').length) {
+												if ($.fn.dataTable.isDataTable('#my-datatable')) {
+													$('#my-datatable').DataTable().destroy();
+												}
+												$('#my-datatable').DataTable({
+													"searching": false,
+													"lengthChange": false,
+													"columnDefs": [
+														{ "orderable": false, "targets": [0, 2, 3] }
+													],
+													order: [[1, "desc"]]
+												}).draw();
+											}
 										}
 									});
 

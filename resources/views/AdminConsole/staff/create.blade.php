@@ -157,7 +157,7 @@
                                 <div class="form-group">
                                     <label class="d-flex align-items-center mb-0">
                                         <input type="hidden" name="quick_access_enabled" value="0">
-                                        <input type="checkbox" name="quick_access_enabled" value="1" class="mr-2"
+                                        <input type="checkbox" name="quick_access_enabled" value="1" class="me-2"
                                             @if(old('quick_access_enabled')) checked @endif>
                                         <span>Quick access enabled ({{ config('crm_access.quick_grant_minutes', 15) }}-minute cross-access requests)</span>
                                     </label>
@@ -191,7 +191,7 @@
 							<div class="card-body">
 								<div class="form-group">
 									<label class="d-flex align-items-center">
-										<input type="checkbox" id="is_solicitor" name="is_solicitor" value="1" class="mr-2" @if(old('is_solicitor')) checked @endif>
+										<input type="checkbox" id="is_solicitor" name="is_solicitor" value="1" class="me-2" @if(old('is_solicitor')) checked @endif>
 										<h5 class="mb-0">Is this staff a Legal Practitioner?</h5>
 									</label>
 								</div>

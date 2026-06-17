@@ -41,7 +41,7 @@
 										<td>
 											{{ $list->name ?: config('constants.empty', '—') }}
 											@if($stageFrozen)
-											<span class="badge badge-secondary ml-1 align-middle" title="This stage cannot be renamed or deleted">Protected</span>
+											<span class="badge badge-secondary ms-1 align-middle" title="This stage cannot be renamed or deleted">Protected</span>
 											@endif
 										</td>
 										<td>{{ $countmatters }}</td>

@@ -1,4 +1,5 @@
 @extends('layouts.crm_client_detail')
+@include('components.require-tinymce')
 @section('title', 'Clients')
 
 @section('styles')
@@ -468,7 +469,7 @@
                             <div class="row mt-4">
                                 <div class="col-md-12 text-center">
                                     <div class="filter-buttons-container">
-                                        <button type="submit" class="btn btn-primary btn-theme-lg mr-3">Apply Filters</button>
+                                        <button type="submit" class="btn btn-primary btn-theme-lg me-3">Apply Filters</button>
                                         <a class="btn btn-info" href="{{URL::to('/clients')}}">Reset</a>
                                     </div>
                                 </div>

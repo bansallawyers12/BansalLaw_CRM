@@ -1,4 +1,5 @@
 @extends('layouts.crm_client_detail')
+@include('components.require-tinymce')
 @section('title', 'Leads')
 
 @section('content')

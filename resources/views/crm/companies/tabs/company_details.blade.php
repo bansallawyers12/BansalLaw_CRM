@@ -369,7 +369,7 @@
             <h3><i class="fas fa-address-card"></i> Tag(s):   
                 <span class="float-right text-muted" style="margin-left:180px;">
                 <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-primary opentagspopup btn-sm">Add Tag</a>
-                <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-outline-danger openredtagspopup btn-sm ml-1" title="Add Tag (hidden by default)">
+                <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-outline-danger openredtagspopup btn-sm ms-1" title="Add Tag (hidden by default)">
                     <i class="fas fa-exclamation-triangle"></i> Add Tag
                 </a>
                 </span>

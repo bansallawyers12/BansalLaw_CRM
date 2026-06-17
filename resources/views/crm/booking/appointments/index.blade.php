@@ -358,7 +358,7 @@
             <div class="card">
                 <div class="card-header">
                     <h4>
-                        <i class="fas fa-calendar-check mr-2"></i>
+                        <i class="fas fa-calendar-check me-2"></i>
                         Bookings
                         <small class="text-muted">(Leads &amp; clients, appointments, and consultants from CRM)</small>
                     </h4>

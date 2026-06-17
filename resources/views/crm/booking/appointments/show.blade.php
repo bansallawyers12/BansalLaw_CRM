@@ -70,7 +70,7 @@ html, body {
             <div class="card">
                 <div class="card-header">
                     <h4>
-                        <i class="fas fa-calendar-check mr-2"></i>
+                        <i class="fas fa-calendar-check me-2"></i>
                         Appointment Details - #{{ $appointment->id }}
                     </h4>
                     <div class="card-header-action">

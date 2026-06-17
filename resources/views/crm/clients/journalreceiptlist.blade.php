@@ -1,4 +1,4 @@
-﻿@extends('layouts.crm_client_detail')
+@extends('layouts.crm_client_detail')
 @section('title', 'Journal Receipt List')
 
 @section('styles')
@@ -440,14 +440,14 @@
                             <div class="row">
                                 <div class="col-md-12 text-center">
                                     <div class="filter-buttons-container">
-                                        <button type="submit" class="btn btn-primary btn-theme-lg mr-3">
+                                        <button type="submit" class="btn btn-primary btn-theme-lg me-3">
                                             <i class="fas fa-search"></i> Search
                                         </button>
                                         <a class="btn btn-info" href="{{URL::to('/clients/journalreceiptlist')}}">
                                             <i class="fas fa-redo"></i> Reset All
                                         </a>
                                         @if(request()->hasAny(['date_filter_type', 'from_date', 'to_date', 'financial_year']))
-                                            <button type="button" class="clear-filter-btn ml-2" id="clearDateFilters">
+                                            <button type="button" class="clear-filter-btn ms-2" id="clearDateFilters">
                                                 <i class="fas fa-times-circle"></i> Clear Date Filters
                                             </button>
                                         @endif

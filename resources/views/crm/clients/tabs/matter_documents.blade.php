@@ -274,17 +274,17 @@
                                                         <td colspan="3" style="padding: 10px 16px;">
                                                             <div class="d-flex flex-wrap align-items-center gap-2" style="flex-wrap: wrap;">
                                                                 <button type="button" class="btn btn-sm btn-primary visa-sig-send-btn" data-doc-id="<?= $fetch->id ?>" <?= $docStatus === 'sent' ? 'disabled' : '' ?>>
-                                                                    <i class="fas fa-paper-plane mr-1"></i> Send
+                                                                    <i class="fas fa-paper-plane me-1"></i> Send
                                                                 </button>
                                                                 <button type="button" class="btn btn-sm btn-outline-secondary visa-sig-revise-btn" data-doc-id="<?= $fetch->id ?>">
-                                                                    <i class="fas fa-edit mr-1"></i> Revise
+                                                                    <i class="fas fa-edit me-1"></i> Revise
                                                                 </button>
                                                                 <button type="button" class="btn btn-sm btn-outline-danger visa-sig-remove-btn" data-doc-id="<?= $fetch->id ?>">
-                                                                    <i class="fas fa-times mr-1"></i> Remove
+                                                                    <i class="fas fa-times me-1"></i> Remove
                                                                 </button>
                                                                 <?php if ($docStatus === 'sent' && $signingUrl && $signerId): ?>
                                                                 <button type="button" class="btn btn-sm btn-outline-info visa-sig-reminder-btn" data-doc-id="<?= $fetch->id ?>" data-signer-id="<?= $signerId ?>">
-                                                                    <i class="fas fa-bell mr-1"></i> Reminder
+                                                                    <i class="fas fa-bell me-1"></i> Reminder
                                                                 </button>
                                                                 <?php endif; ?>
                                                             </div>
@@ -696,10 +696,10 @@
                     var docId = $(this).data('doc-id');
                     if (!docId) return;
                     var $btn = $(this);
-                    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1"></span>Sending...');
+                    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Sending...');
                     $.post('{{ url("/signatures") }}/' + docId + '/send', { _token: '{{ csrf_token() }}' })
                         .done(function() { location.reload(); })
-                        .fail(function(xhr) { alert(xhr.responseJSON?.message || 'Failed to send'); $btn.prop('disabled', false).html('<i class="fas fa-paper-plane mr-1"></i> Send'); });
+                        .fail(function(xhr) { alert(xhr.responseJSON?.message || 'Failed to send'); $btn.prop('disabled', false).html('<i class="fas fa-paper-plane me-1"></i> Send'); });
                 });
                 $(document).on('click', '.visa-sig-revise-btn', function() {
                     var docId = $(this).data('doc-id');

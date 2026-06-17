@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="{{asset('css/style.css')}}">
     <link rel="stylesheet" href="{{asset('css/components.css')}}">
     <link rel="stylesheet" href="{{asset('css/custom.css')}}">
-    <link rel="stylesheet" href="{{asset('css/dataTables.bootstrap5.min.css')}}">
+    @stack('datatables-styles')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>window.__CRM_APP_NAME__=@json(config('app.name'));</script>
@@ -1597,6 +1597,7 @@
             z-index: 99999 !important;
         }
     </style>
+    @stack('styles')
     @yield('styles')
     <link rel="stylesheet" href="{{ asset('css/crm-theme.css') }}">
 </head>
@@ -1694,10 +1695,8 @@
     };
     </script>
     <script src="{{asset('js/app.min.js')}}"></script>
-    <script src="{{asset('js/datatables.min.js')}}"></script>
-    <script src="{{asset('js/dataTables.bootstrap5.min.js')}}"></script>
-    <!-- TinyMCE is self-hosted and loaded per page as needed -->
-    <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
+    @stack('datatables')
+    @stack('tinymce')
     @include('components.flatpickr-scripts')
     <script src="{{asset('js/crm-flatpickr.js')}}"></script>
     <script src="{{asset('js/tom-select.complete.min.js')}}"></script>

@@ -6169,25 +6169,25 @@ success: function(response) {
             });
         }
 
+        if ($.fn.dataTable && $('#mychecklist-datatable').length && !$.fn.dataTable.isDataTable('#mychecklist-datatable')) {
         $('#mychecklist-datatable').dataTable({"searching": true,});
+        }
 
-        $(".invoicetable").dataTable({
-
-            "searching": false,
-
-            "lengthChange": false,
-
-            "columnDefs": [
-
-            { "orderable": false, "targets": [0, 2, 3] }
-
-        ],
-
-        order: [[1, "desc"]] //column indexes is zero based
-
-
-
-        });
+        if ($.fn.dataTable && $('.invoicetable').length) {
+            $('.invoicetable').each(function () {
+                if ($.fn.dataTable.isDataTable(this)) {
+                    return;
+                }
+                $(this).dataTable({
+                    "searching": false,
+                    "lengthChange": false,
+                    "columnDefs": [
+                        { "orderable": false, "targets": [0, 2, 3] }
+                    ],
+                    order: [[1, "desc"]]
+                });
+            });
+        }
 
 
 

@@ -17,11 +17,11 @@
             <i class="fas fa-user-shield" aria-hidden="true"></i>
             Access approvals
             @if($dashCrmAccessPending > 0)
-                <span class="badge badge-access-pending ml-1" id="crm-access-approvals-count">{{ $dashCrmAccessPending }}</span>
+                <span class="badge badge-access-pending ms-1" id="crm-access-approvals-count">{{ $dashCrmAccessPending }}</span>
             @endif
         </h3>
         <a href="{{ route('crm.access.queue') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="fas fa-inbox mr-1" aria-hidden="true"></i> Full access queue
+            <i class="fas fa-inbox me-1" aria-hidden="true"></i> Full access queue
         </a>
     </div>
     <div id="crm-access-dashboard-mini-queue" class="access-approvals-queue px-1 py-2" style="min-height: 2rem;">Loading…</div>
@@ -61,7 +61,7 @@
                             if (h3) {
                                 var span = document.createElement('span');
                                 span.id = 'crm-access-approvals-count';
-                                span.className = 'badge badge-access-pending ml-1';
+                                span.className = 'badge badge-access-pending ms-1';
                                 span.textContent = String(pendingCount);
                                 h3.appendChild(span);
                                 badge = span;

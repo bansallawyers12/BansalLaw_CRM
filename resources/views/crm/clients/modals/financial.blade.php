@@ -329,7 +329,7 @@
                         <div class="row mt-2 mb-3">
                             <div class="col-12">
                                 <button type="button" class="btn btn-outline-secondary btn-sm btn-add-disbursement-row">
-                                    <i class="fas fa-plus mr-1"></i> Add Disbursement
+                                    <i class="fas fa-plus me-1"></i> Add Disbursement
                                 </button>
                             </div>
                         </div>
@@ -534,7 +534,7 @@
                         <div class="row mt-2 mb-3">
                             <div class="col-12">
                                 <button type="button" class="btn btn-outline-secondary btn-sm btn-add-disbursement-row-lead">
-                                    <i class="fas fa-plus mr-1"></i> Add Disbursement
+                                    <i class="fas fa-plus me-1"></i> Add Disbursement
                                 </button>
                             </div>
                         </div>

@@ -7,7 +7,7 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4>
-                    <i class="fas fa-edit mr-2"></i>
+                    <i class="fas fa-edit me-2"></i>
                     Edit Appointment - #{{ $appointment->id }}
                 </h4>
                 <a href="{{ route('booking.appointments.show', $appointment->id) }}" class="btn btn-sm btn-secondary">
@@ -207,7 +207,7 @@
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> Update Appointment
                             </button>
-                            <a href="{{ route('booking.appointments.index') }}" class="btn btn-light ml-2">Cancel</a>
+                            <a href="{{ route('booking.appointments.index') }}" class="btn btn-light ms-2">Cancel</a>
                         </div>
                     </form>
                 </div>

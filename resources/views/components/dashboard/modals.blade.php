@@ -52,7 +52,7 @@
                                     <div class="staff-item modern-staff-item" data-name="{{ strtolower($admin->first_name.' '.$admin->last_name.' '.@$branchname->office_name) }}">
                                         <label class="modern-staff-label">
                                             <input type="checkbox" class="checkbox-item modern-checkbox dashboard-checkbox-item" value="{{ $admin->id }}" data-name="{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})">
-                                            <i class="fas fa-user-circle mr-2 text-muted"></i>
+                                            <i class="fas fa-user-circle me-2 text-muted"></i>
                                             <span class="staff-name">{{ $admin->first_name }} {{ $admin->last_name }}</span>
                                             <span class="staff-branch text-muted">({{ @$branchname->office_name }})</span>
                                         </label>
@@ -103,7 +103,7 @@
 
                     <div class="simple-form-group">
                         <label class="simple-form-label d-flex align-items-center">
-                            <input class="note_deadline_checkbox mr-2" type="checkbox" id="dashboard_note_deadline_checkbox" name="note_deadline_checkbox" value="">
+                            <input class="note_deadline_checkbox me-2" type="checkbox" id="dashboard_note_deadline_checkbox" name="note_deadline_checkbox" value="">
                             <i class="fas fa-clock text-primary"></i> Note Deadline
                         </label>
                         <input type="date" class="simple-form-control" id="dashboard_note_deadline" name="note_deadline" value="{{ date('Y-m-d', strtotime('+1 day')) }}" disabled>

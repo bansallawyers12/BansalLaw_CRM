@@ -4,7 +4,7 @@
 		<div class="modal-content">
 			<div class="modal-header appointment-schedule-modal-header">
 				<h5 class="modal-title" id="interestModalLabel">
-					<i class="fas fa-calendar-plus mr-2"></i>Schedule Appointment
+					<i class="fas fa-calendar-plus me-2"></i>Schedule Appointment
 				</h5>
 				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
@@ -60,12 +60,12 @@
 										<div class="service-card-compact" style="border: 1.5px solid #dee2e6; border-radius: 8px; padding: 14px; background-color: #ffffff; cursor: pointer;" data-service-id="promo_free">
 											<div class="d-flex align-items-center">
 												<input type="radio" class="services_item mt-1" name="radioGroup" value="promo_free" id="service_promo_free">
-												<div class="ml-3 flex-grow-1 d-flex justify-content-between align-items-center">
+												<div class="ms-3 flex-grow-1 d-flex justify-content-between align-items-center">
 													<div>
 														<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Promo — free consultation</h6>
 														<small style="color: #6c757d; font-size: 13px;">15 minutes</small>
 													</div>
-													<span class="badge badge-success font-weight-bold ml-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">Free</span>
+													<span class="badge badge-success font-weight-bold ms-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">Free</span>
 												</div>
 											</div>
 										</div>
@@ -74,12 +74,12 @@
 										<div class="service-card-compact" style="border: 1.5px solid #dee2e6; border-radius: 8px; padding: 14px; background-color: #ffffff; cursor: pointer;" data-service-id="paid">
 											<div class="d-flex align-items-center">
 												<input type="radio" class="services_item mt-1" name="radioGroup" value="paid" id="service_paid">
-												<div class="ml-3 flex-grow-1 d-flex justify-content-between align-items-center">
+												<div class="ms-3 flex-grow-1 d-flex justify-content-between align-items-center">
 													<div>
 														<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Paid consultation</h6>
 														<small style="color: #6c757d; font-size: 13px;">30 minutes</small>
 													</div>
-													<span class="badge badge-success font-weight-bold ml-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">$150</span>
+													<span class="badge badge-success font-weight-bold ms-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">$150</span>
 												</div>
 											</div>
 										</div>
@@ -145,7 +145,7 @@
                                         <!-- Date & Time Label at Top -->
                                         <div class="form-group">
                                             <label for="description" class="font-weight-bold text-dark mb-3" style="font-size: 16px;">
-                                                <i class="fas fa-calendar-clock mr-2" style="color: var(--navy);"></i>
+                                                <i class="fas fa-calendar-clock me-2" style="color: var(--navy);"></i>
                                                 Date & Time <span class="span_req">*</span>
                                             </label>
 
@@ -208,14 +208,14 @@
                                                 <div class="custom-control custom-checkbox">
                                                     <input type="checkbox" class="custom-control-input" name="slot_overwrite" id="slot_overwrite" value="0">
                                                     <label class="custom-control-label" for="slot_overwrite">
-                                                        <i class="fas fa-unlock-alt mr-2"></i>Slot Overwrite
+                                                        <i class="fas fa-unlock-alt me-2"></i>Slot Overwrite
                                                     </label>
                                                     <input type="hidden" name="slot_overwrite_hidden" id="slot_overwrite_hidden" value="0">
                                                 </div>
                                                 <div class="custom-control custom-checkbox mt-2">
                                                     <input type="checkbox" class="custom-control-input" name="send_confirmation_email" id="send_confirmation_email" value="1" checked>
                                                     <label class="custom-control-label" for="send_confirmation_email">
-                                                        <i class="fas fa-envelope mr-2"></i>Send confirmation email to client
+                                                        <i class="fas fa-envelope me-2"></i>Send confirmation email to client
                                                     </label>
                                                 </div>
                                             </div>
@@ -263,10 +263,10 @@
 
                         <div class="col-12 col-md-12 col-lg-12 text-right pt-3 appointment-modal-actions-row">
 							<button onclick="customValidate('appointform')" type="button" class="btn btn-primary btn-lg px-4" id="appointform_save">
-								<i class="fas fa-calendar-check mr-2"></i>Schedule Appointment
+								<i class="fas fa-calendar-check me-2"></i>Schedule Appointment
 							</button>
-							<button type="button" class="btn btn-outline-secondary btn-lg px-4 ml-2" data-bs-dismiss="modal">
-								<i class="fas fa-times mr-2"></i>Cancel
+							<button type="button" class="btn btn-outline-secondary btn-lg px-4 ms-2" data-bs-dismiss="modal">
+								<i class="fas fa-times me-2"></i>Cancel
 							</button>
 						</div>
 					</div>

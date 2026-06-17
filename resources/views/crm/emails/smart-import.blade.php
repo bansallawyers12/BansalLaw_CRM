@@ -103,7 +103,7 @@
                         <div class="smart-import-status mt-2" id="smart-import-upload-status"></div>
                         <div class="smart-import-actions">
                             <button type="button" class="btn btn-primary btn-theme-lg" id="smart-import-analyze-btn" disabled>
-                                <i class="fas fa-search mr-1"></i> Analyze &amp; Match
+                                <i class="fas fa-search me-1"></i> Analyze &amp; Match
                             </button>
                         </div>
                     </div>
@@ -137,13 +137,13 @@
 
                         <div class="smart-import-actions">
                             <button type="button" class="btn btn-success" id="smart-import-confirm-high-btn">
-                                <i class="fas fa-check-double mr-1"></i> Confirm High Confidence
+                                <i class="fas fa-check-double me-1"></i> Confirm High Confidence
                             </button>
                             <button type="button" class="btn btn-primary btn-theme-lg" id="smart-import-confirm-selected-btn">
-                                <i class="fas fa-check mr-1"></i> Confirm Selected
+                                <i class="fas fa-check me-1"></i> Confirm Selected
                             </button>
                             <button type="button" class="btn btn-outline-secondary" id="smart-import-reset-btn">
-                                <i class="fas fa-redo mr-1"></i> Upload More
+                                <i class="fas fa-redo me-1"></i> Upload More
                             </button>
                         </div>
                         <div class="smart-import-status mt-2" id="smart-import-confirm-status"></div>

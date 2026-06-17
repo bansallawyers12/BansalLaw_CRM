@@ -89,7 +89,7 @@ html, body {
             <div class="card">
                 <div class="card-header">
                     <h4>
-                        <i class="fas fa-sync-alt mr-2"></i>
+                        <i class="fas fa-sync-alt me-2"></i>
                         Appointment Sync Dashboard
                     </h4>
                     <div class="card-header-action">
@@ -125,7 +125,7 @@ html, body {
                         <div class="col-md-4">
                             <div class="card">
                                 <div class="card-body">
-                                    <h5><i class="fas fa-clock mr-2"></i>Last Sync</h5>
+                                    <h5><i class="fas fa-clock me-2"></i>Last Sync</h5>
                                     <p class="mb-0">
                                         @if($lastSync)
                                             <strong>{{ $lastSync->created_at->diffForHumans() }}</strong><br>
@@ -142,7 +142,7 @@ html, body {
                         <div class="col-md-4">
                             <div class="card">
                                 <div class="card-body">
-                                    <h5><i class="fas fa-calendar-check mr-2"></i>Next Scheduled Sync</h5>
+                                    <h5><i class="fas fa-calendar-check me-2"></i>Next Scheduled Sync</h5>
                                     <p class="mb-0">
                                         <strong>{{ $nextSync ?? 'Within 10 minutes' }}</strong><br>
                                         <small class="text-muted">Runs every 10 minutes</small>
@@ -197,7 +197,7 @@ html, body {
             <!-- Recent Sync History -->
             <div class="card">
                 <div class="card-header">
-                    <h4><i class="fas fa-history mr-2"></i>Recent Sync History</h4>
+                    <h4><i class="fas fa-history me-2"></i>Recent Sync History</h4>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -277,7 +277,7 @@ html, body {
             <!-- API Configuration -->
             <div class="card">
                 <div class="card-header">
-                    <h4><i class="fas fa-cog mr-2"></i>API Configuration</h4>
+                    <h4><i class="fas fa-cog me-2"></i>API Configuration</h4>
                 </div>
                 <div class="card-body">
                     <div class="row">

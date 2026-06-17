@@ -1,4 +1,6 @@
 @extends('layouts.crm_client_detail')
+@include('components.require-datatables')
+@include('components.require-tinymce')
 @section('title', 'Company Detail')
 
 @section('content')
@@ -969,8 +971,6 @@ use App\Http\Controllers\Controller;
 
 @endsection
 @push('scripts')
-<!-- TinyMCE Editor -->
-<script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
 <script>
 // TinyMCE Configuration for Email Modals
 var tinymceEmailConfig = {
@@ -1001,6 +1001,9 @@ var tinymceEmailConfig = {
 
 // Initialize TinyMCE for all email modals
 function initTinyMCEForModals() {
+    if (typeof tinymce === 'undefined') {
+        return;
+    }
     // Compose Email Modal
     if ($('#compose_email_message').length && !tinymce.get('compose_email_message')) {
         tinymce.init({
@@ -1057,28 +1060,28 @@ function initTinyMCEForModals() {
 
 // Helper functions to save TinyMCE content before form validation
 window.saveComposeEmail = function() {
-    if (tinymce.get('compose_email_message')) {
+    if (typeof tinymce !== 'undefined' && tinymce.get('compose_email_message')) {
         tinymce.get('compose_email_message').save();
     }
     customValidate('sendmail');
 };
 
 window.saveSendMessage = function() {
-    if (tinymce.get('sendmsg_message')) {
+    if (typeof tinymce !== 'undefined' && tinymce.get('sendmsg_message')) {
         tinymce.get('sendmsg_message').save();
     }
     customValidate('sendmsg');
 };
 
 window.saveApplicationEmail = function() {
-    if (tinymce.get('matter_email_message')) {
+    if (typeof tinymce !== 'undefined' && tinymce.get('matter_email_message')) {
         tinymce.get('matter_email_message').save();
     }
     customValidate('appkicationsendmail');
 };
 
 window.saveUploadMail = function() {
-    if (tinymce.get('uploadmail_message')) {
+    if (typeof tinymce !== 'undefined' && tinymce.get('uploadmail_message')) {
         tinymce.get('uploadmail_message').save();
     }
     customValidate('uploadmail');
@@ -1093,7 +1096,7 @@ window.setTinyMCEContent = function(editorId, content) {
         // Try to initialize if not already initialized
         setTimeout(function() {
             initTinyMCEForModals();
-            if (tinymce.get(editorId)) {
+            if (typeof tinymce !== 'undefined' && tinymce.get(editorId)) {
                 tinymce.get(editorId).setContent(content || '');
             }
         }, 200);

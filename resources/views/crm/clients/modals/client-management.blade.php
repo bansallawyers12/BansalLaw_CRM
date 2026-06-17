@@ -24,7 +24,7 @@
 					<input type="hidden" name="client_id" value="{{ $fetchedData->id }}">
 					<input type="hidden" name="user_id" value="{{ @Auth::user()->id }}">
 					<button type="submit" class="btn btn-success">
-						<i class="fas fa-user-check mr-1"></i> Convert to Client only
+						<i class="fas fa-user-check me-1"></i> Convert to Client only
 					</button>
 				</form>
 				<hr class="my-4">
@@ -650,7 +650,7 @@
         <div class="modal-content assign-staff-modal">
             <div class="modal-header assign-staff-header">
                 <div class="modal-title-section">
-                    <i class="fas fa-user-plus text-white mr-2"></i>
+                    <i class="fas fa-user-plus text-white me-2"></i>
                     <h5 class="modal-title mb-0" id="create_action_popupLabel">Assign Staff</h5>
                 </div>
                 <div class="modal-actions">
@@ -665,7 +665,7 @@
                     <div class="col-12">
                         <div class="form-group enhanced-form-group">
                             <label for="staff-search-input" class="form-label">
-                                <i class="fas fa-users text-muted mr-1"></i>
+                                <i class="fas fa-users text-muted me-1"></i>
                                 Select Assignee <span class="text-danger">*</span>
                             </label>
                             <div class="dropdown-multi-select modern-dropdown">
@@ -695,7 +695,7 @@
                                         <div class="staff-item modern-staff-item" data-name="{{ strtolower($admin->first_name.' '.$admin->last_name.' '.@$branchname->office_name) }}">
                                             <label class="modern-staff-label">
                                                 <input type="checkbox" class="checkbox-item modern-checkbox" value="{{ $admin->id }}" data-name="{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})">
-                                                <i class="fas fa-user-circle mr-2 text-muted"></i>
+                                                <i class="fas fa-user-circle me-2 text-muted"></i>
                                                 <span class="staff-name">{{ $admin->first_name }} {{ $admin->last_name }}</span>
                                                 <span class="staff-branch text-muted">({{ @$branchname->office_name }})</span>
                                             </label>
@@ -718,7 +718,7 @@
                     <div class="col-12">
                         <div class="form-group enhanced-form-group">
                             <label for="assignnote" class="form-label">
-                                <i class="fas fa-sticky-note text-muted mr-1"></i>
+                                <i class="fas fa-sticky-note text-muted me-1"></i>
                                 Note <span class="text-danger">*</span>
                             </label>
                             <div class="input-group">
@@ -733,7 +733,7 @@
                     <div class="col-12 col-md-6">
                         <div class="form-group enhanced-form-group">
                             <label for="popoverdatetime" class="form-label">
-                                <i class="fas fa-calendar text-muted mr-1"></i>
+                                <i class="fas fa-calendar text-muted me-1"></i>
                                 Date <span class="text-danger">*</span>
                             </label>
                             <div class="input-group">
@@ -748,7 +748,7 @@
                     <div class="col-12 col-md-6">
                         <div class="form-group enhanced-form-group">
                             <label for="task_group" class="form-label">
-                                <i class="fas fa-tag text-muted mr-1"></i>
+                                <i class="fas fa-tag text-muted me-1"></i>
                                 Group <span class="text-danger">*</span>
                             </label>
                             <div class="input-group">
@@ -772,8 +772,8 @@
                             <div class="row align-items-center">
                                 <div class="col-12 col-md-4">
                                     <label class="form-label d-flex align-items-center">
-                                        <input class="note_deadline_checkbox mr-2" type="checkbox" id="note_deadline_checkbox" name="note_deadline_checkbox" value="">
-                                        <i class="fas fa-clock text-muted mr-1"></i>
+                                        <input class="note_deadline_checkbox me-2" type="checkbox" id="note_deadline_checkbox" name="note_deadline_checkbox" value="">
+                                        <i class="fas fa-clock text-muted me-1"></i>
                                         Note Deadline
                                     </label>
                                 </div>
@@ -795,10 +795,10 @@
                 
                 <div class="modal-footer-buttons">
                     <button class="btn btn-primary btn-lg btn-assign-staff" id="assignStaff">
-                        <i class="fas fa-user-plus mr-2"></i>Assign Staff
+                        <i class="fas fa-user-plus me-2"></i>Assign Staff
                     </button>
                     <button type="button" class="btn btn-outline-secondary btn-lg" data-bs-dismiss="modal">
-                        <i class="fas fa-times mr-2"></i>Cancel
+                        <i class="fas fa-times me-2"></i>Cancel
                     </button>
                 </div>
             </div>

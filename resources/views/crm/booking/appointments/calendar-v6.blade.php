@@ -17,7 +17,7 @@
                 <a href="{{ route('booking.appointments.index') }}" class="btn btn-sm btn-secondary">
                     <i class="fas fa-arrow-left"></i> Back to List
                 </a>
-                <div class="btn-group ml-2" role="group">
+                <div class="btn-group ms-2" role="group">
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}" 
                        class="btn btn-sm {{ $type === 'ajay' ? 'btn-primary' : 'btn-outline-primary' }}">
                         <i class="fas fa-calendar-alt"></i> Ajay Calendar
@@ -32,12 +32,12 @@
             <div class="card">
                 <div class="card-header">
                     <h4>
-                        <i class="fas fa-calendar-alt mr-2"></i>
+                        <i class="fas fa-calendar-alt me-2"></i>
                         {{ $calendarTitle }}
                         <small class="text-muted">(Website Bookings - v6)</small>
                     </h4>
                     <div class="card-header-action">
-                        <button type="button" class="btn btn-sm btn-success mr-2" id="btnAddImportantEvent">
+                        <button type="button" class="btn btn-sm btn-success me-2" id="btnAddImportantEvent">
                             <i class="fas fa-plus"></i> Add Important Event
                         </button>
                         <button type="button" onclick="location.reload()" class="btn btn-sm btn-primary booking-calendar-page__refresh">
@@ -212,7 +212,7 @@
                 {{-- row 3: client search --}}
                 <div class="form-group">
                     <label for="importantEventClientSelect">
-                        <i class="fas fa-user mr-1"></i>Link to client
+                        <i class="fas fa-user me-1"></i>Link to client
                         <small class="text-muted">(optional)</small>
                     </label>
                     <input type="hidden" id="importantEventClientId" value="">
@@ -239,7 +239,7 @@
                 <div class="form-row">
                     <div class="form-group col-md-6">
                         <label for="importantEventReminder">
-                            <i class="fas fa-bell mr-1 text-warning"></i>Pop-up reminder
+                            <i class="fas fa-bell me-1 text-warning"></i>Pop-up reminder
                         </label>
                         <select class="form-control" id="importantEventReminder">
                             <option value="">No reminder</option>
@@ -762,7 +762,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p><strong>Meeting Type:</strong> 
                                 <span id="meetingTypeDisplay-${slotKey}" class="booking-calendar-link booking-calendar-link--action" onclick="showMeetingTypeDropdown('${slotKey}', '${meetingTypeRaw}')" title="Click to change meeting type">
                                     ${meetingTypeDisplay}
-                                    <i class="fas fa-edit ml-1" style="font-size: 0.8em;"></i>
+                                    <i class="fas fa-edit ms-1" style="font-size: 0.8em;"></i>
                                 </span>
                                 <select id="meetingTypeSelect-${slotKey}" class="form-control form-control-sm d-none" style="max-width: 200px; display: inline-block;" onchange="updateAppointmentMeetingType(${manageId}, '${slotKey}', this.value)" data-is-paid="${props.is_paid}">
                                     <option value="in_person" ${props.meeting_type === 'in_person' ? 'selected' : ''}>In Person</option>
@@ -1190,7 +1190,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="form-row align-items-center">
                         <div class="col-auto">
                             <label for="courtHearingViewReminder" class="mb-0">
-                                <i class="fas fa-bell mr-1 text-warning"></i>Reminder before
+                                <i class="fas fa-bell me-1 text-warning"></i>Reminder before
                             </label>
                         </div>
                         <div class="col">
@@ -1257,7 +1257,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="form-row align-items-center">
                         <div class="col-auto">
                             <label for="courtHearingEditReminder" class="mb-0">
-                                <i class="fas fa-bell mr-1 text-warning"></i>Reminder before
+                                <i class="fas fa-bell me-1 text-warning"></i>Reminder before
                             </label>
                         </div>
                         <div class="col">
@@ -2469,7 +2469,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     ).join(' ');
                     
                     // Update display text
-                    display.innerHTML = `${newDisplay} <i class="fas fa-edit ml-1" style="font-size: 0.8em;"></i>`;
+                    display.innerHTML = `${newDisplay} <i class="fas fa-edit ms-1" style="font-size: 0.8em;"></i>`;
                     
                     // Update select value
                     select.value = newMeetingType;

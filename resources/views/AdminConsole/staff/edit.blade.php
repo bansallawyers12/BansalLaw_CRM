@@ -172,7 +172,7 @@
                                 <div class="form-group">
                                     <label class="d-flex align-items-center mb-0">
                                         <input type="hidden" name="quick_access_enabled" value="0">
-                                        <input type="checkbox" name="quick_access_enabled" value="1" class="mr-2"
+                                        <input type="checkbox" name="quick_access_enabled" value="1" class="me-2"
                                             @if(old('quick_access_enabled', $fetchedData->quick_access_enabled ?? false)) checked @endif>
                                         <span>Quick access enabled ({{ config('crm_access.quick_grant_minutes', 15) }}-minute cross-access requests)</span>
                                     </label>
@@ -185,7 +185,7 @@
                                         <input type="hidden" name="grant_super_admin_access" value="0">
                                     @endif
                                     <label class="d-flex align-items-center mb-0">
-                                        <input type="checkbox" name="grant_super_admin_access" value="1" class="mr-2"
+                                        <input type="checkbox" name="grant_super_admin_access" value="1" class="me-2"
                                             @if(old('grant_super_admin_access', $fetchedData->grant_super_admin_access ?? false)) checked @endif
                                             @if(!$_isSuperAdminActor) disabled @endif>
                                         <span>Do u want this user to grant Super admin access level?</span>
@@ -201,7 +201,7 @@
                                 <div class="form-group">
                                     <input type="hidden" name="trust_rule42_supervisor" value="0">
                                     <label class="d-flex align-items-center mb-0">
-                                        <input type="checkbox" name="trust_rule42_supervisor" value="1" class="mr-2"
+                                        <input type="checkbox" name="trust_rule42_supervisor" value="1" class="me-2"
                                             @if(old('trust_rule42_supervisor', $fetchedData->trust_rule42_supervisor ?? false)) checked @endif>
                                         <span>Rule 42 trust supervisor</span>
                                     </label>
@@ -261,7 +261,7 @@
 								<div class="form-group">
 									<label class="d-flex align-items-center">
 										<input type="checkbox" id="is_solicitor" name="is_solicitor" value="1" 
-											@if($fetchedData->is_solicitor == 1) checked @endif class="mr-2">
+											@if($fetchedData->is_solicitor == 1) checked @endif class="me-2">
 										<h5 class="mb-0">Is this staff a Legal Practitioner?</h5>
 									</label>
 								</div>
