@@ -25,7 +25,6 @@
 @endphp
 
 @push('styles')
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ asset('css/address-autocomplete.css') }}">
     <link rel="stylesheet" href="{{asset('css/client-forms.css')}}">
     <link rel="stylesheet" href="{{asset('css/clients/edit-client-components.css')}}">
@@ -147,22 +146,22 @@
 
                 function showCompanyMatterTab(tabId) {
                     if (!window.jQuery) return;
-                    $('.main-content-area .tab-pane').hide().removeClass('in active');
+                    $('.main-content-area .tab-pane').removeClass('show active').css('display', '');
                     var $pane = $('#' + tabId);
                     if ($pane.length) {
-                        $pane.css('display', 'block').show().addClass('in active');
+                        $pane.addClass('show active');
                     }
-                    $('.client-edit-top-pills li').removeClass('active');
-                    $('.client-edit-top-pills a[href="#' + tabId + '"]').closest('li').addClass('active');
+                    $('.client-edit-top-pills .nav-link').removeClass('active');
+                    $('.client-edit-top-pills a[href="#' + tabId + '"]').addClass('active');
                 }
             </script>
 
             <!-- Main Content Area -->
             <div class="main-content-area">
-                <ul class="nav nav-pills client-edit-top-pills">
-                    <li class="active"><a href="#companyEditHome" onclick="showCompanyMatterTab('companyEditHome'); return false;"><i class="fas fa-building"></i> Company Profile</a></li>
-                    <li><a href="#menu2" onclick="showCompanyMatterTab('menu2'); return false;"><i class="fas fa-briefcase"></i> Matter Details</a></li>
-                    <li><a href="#menu4" onclick="showCompanyMatterTab('menu4'); return false;"><i class="fas fa-gavel"></i> Court Dates &amp; Hearings</a></li>
+                <ul class="nav nav-pills client-edit-top-pills" role="tablist">
+                    <li class="nav-item" role="presentation"><a class="nav-link active" href="#companyEditHome" role="tab" onclick="showCompanyMatterTab('companyEditHome'); return false;"><i class="fas fa-building"></i> Company Profile</a></li>
+                    <li class="nav-item" role="presentation"><a class="nav-link" href="#menu2" role="tab" onclick="showCompanyMatterTab('menu2'); return false;"><i class="fas fa-briefcase"></i> Matter Details</a></li>
+                    <li class="nav-item" role="presentation"><a class="nav-link" href="#menu4" role="tab" onclick="showCompanyMatterTab('menu4'); return false;"><i class="fas fa-gavel"></i> Court Dates &amp; Hearings</a></li>
                 </ul>
                 <div class="tab-content">
                 <form id="editCompanyForm" action="{{ route('clients.update') }}" method="POST">
@@ -170,7 +169,7 @@
                     <input type="hidden" name="id" value="{{ $fetchedData->id }}">
                     <input type="hidden" name="type" value="{{ $fetchedData->type }}">
 
-                <div id="companyEditHome" class="tab-pane fade in active">
+                <div id="companyEditHome" class="tab-pane fade show active" role="tabpanel">
                 <!-- Company Information Section -->
                 <section id="companySection" class="content-section">
                     <section class="form-section">
@@ -426,7 +425,7 @@
                                 <div class="form-group full-width">
                                     <label for="contactPersonSearch">Search Contact Person <span class="text-danger">*</span></label>
                                     <select id="contactPersonSearch" name="contact_person_id" 
-                                            class="form-control select2-contact-person" 
+                                            class="form-control crm-ts-contact-person" 
                                             data-placeholder="Type phone, email, name, or client ID to search..."
                                             style="width: 100%;">
                                         @if($contactPerson)

@@ -1,13 +1,7 @@
 /**
- * Thin helpers around Tom Select (vendored alongside Select2 during migration).
+ * Thin helpers around Tom Select (v2.6.1).
  *
- * Select2 → Tom Select (internal reference — verify against pinned Tom Select version):
- * - ajax.transport + processResults  → load(query, callback) + fetch; items must match valueField / labelField
- * - templateResult / templateSelection → render.option / render.item (return HTMLElement or markup as needed)
- * - dropdownParent → dropdownParent (string selector or HTMLElement; test inside modals)
- * - minimumResultsForSearch hide search → case-by-case (plugins / controlInput settings)
- * - select2:select / clear → item_add / change / clear etc. (payload shape differs — rewrite handlers)
- * - .select2('destroy') → destroyTS(el); .select2('open') → openTS(el)
+ * Public API: initTS, destroyTS, openTS, setDisabledTS, and build*TomSelectConfig helpers.
  */
 
 (function (global) {
@@ -126,8 +120,8 @@
         }
       }
       var statClass = status === 'Archived'
-        ? 'ui label select2-result-repository__statistics'
-        : 'ui label yellow select2-result-repository__statistics';
+        ? 'ui label crm-ts-result__statistics'
+        : 'ui label yellow crm-ts-result__statistics';
       if (status) {
         badges += '<span class="' + statClass + '">' + escape(status) + '</span>';
       }
@@ -161,13 +155,13 @@
           var statInner = buildClientSearchStatusHtml(item, escape);
           var lockedClass = showAccessBadges && item.locked ? ' opacity-75' : '';
           return (
-            '<div data-id="' + cidAttr + '" class="selectclient select2-result-repository ag-flex ag-space-between ag-align-center' + lockedClass + '">' +
+            '<div data-id="' + cidAttr + '" class="selectclient crm-ts-result ag-flex ag-space-between ag-align-center' + lockedClass + '">' +
             '<div class="ag-flex ag-align-start">' +
-            '<div class="ag-flex ag-flex-column col-hr-1"><div class="ag-flex"><span class="select2-result-repository__title text-semi-bold">' + name + '</span>&nbsp;</div>' +
-            (description ? '<div class="ag-flex ag-align-center"><small class="select2-result-repository__description">' + description + '</small></div>' : '') +
+            '<div class="ag-flex ag-flex-column col-hr-1"><div class="ag-flex"><span class="crm-ts-result__title text-semi-bold">' + name + '</span>&nbsp;</div>' +
+            (description ? '<div class="ag-flex ag-align-center"><small class="crm-ts-result__description">' + description + '</small></div>' : '') +
             '</div></div>' +
             '<div class="ag-flex ag-flex-column ag-align-end">' +
-            '<span class="select2resultrepositorystatistics">' + statInner + '</span>' +
+            '<span class="crm-ts-result__statistics-wrap">' + statInner + '</span>' +
             '</div></div>'
           );
         },
@@ -241,13 +235,13 @@
           var email = escape(item.email || '');
           var status = escape(item.status || '');
           return (
-            '<div class="select2-result-repository ag-flex ag-space-between ag-align-center">' +
+            '<div class="crm-ts-result ag-flex ag-space-between ag-align-center">' +
             '<div class="ag-flex ag-align-start">' +
-            '<div class="ag-flex ag-flex-column col-hr-1"><div class="ag-flex"><span class="select2-result-repository__title text-semi-bold">' + name + '</span>&nbsp;</div>' +
-            '<div class="ag-flex ag-align-center"><small class="select2-result-repository__description">' + email + '</small></div>' +
+            '<div class="ag-flex ag-flex-column col-hr-1"><div class="ag-flex"><span class="crm-ts-result__title text-semi-bold">' + name + '</span>&nbsp;</div>' +
+            '<div class="ag-flex ag-align-center"><small class="crm-ts-result__description">' + email + '</small></div>' +
             '</div></div>' +
             '<div class="ag-flex ag-flex-column ag-align-end">' +
-            '<span class="ui label yellow select2-result-repository__statistics">' + status + '</span>' +
+            '<span class="ui label yellow crm-ts-result__statistics">' + status + '</span>' +
             '</div></div>'
           );
         },
@@ -296,7 +290,7 @@
       allowEmptyOption: true,
       dropdownParent: opts.dropdownParent !== undefined ? opts.dropdownParent : 'body'
     };
-    /** Short static lists: hide typeahead filtering (≈ Select2 minimumResultsForSearch: Infinity). */
+    /** Short static lists: hide typeahead filtering (minimalSearch). */
     if (opts.minimalSearch) {
       cfg.searchField = [];
     }
@@ -387,8 +381,8 @@
             return '<div class="crm-ts-partner-loading">Searching…</div>';
           }
           return (
-            '<div class="select2-result-partner" style="padding: 8px;">' +
-            '<div class="select2-result-partner__title" style="font-weight: 600; color: #333; font-size: 14px;">' +
+            '<div class="crm-ts-result-partner" style="padding: 8px;">' +
+            '<div class="crm-ts-result-partner__title" style="font-weight: 600; color: #333; font-size: 14px;">' +
             escape(item.text || '') +
             '</div></div>'
           );
@@ -520,6 +514,134 @@
     return instance;
   }
 
+  /**
+   * In-person assignee picker injected via AJAX (#changeassignee).
+   * @param {Element|string|JQuery} [root] scope to search within (default document)
+   * @param {{ dropdownParent?: string|HTMLElement, width?: string }} [opts]
+   */
+  function initChangeAssigneeTS(root, opts) {
+    opts = opts || {};
+    if (typeof initTS !== 'function') return null;
+
+    var scope = root || document;
+    if (scope && scope.jquery) scope = scope[0];
+    if (typeof scope === 'string') {
+      try {
+        scope = document.querySelector(scope);
+      } catch (e) {
+        scope = null;
+      }
+    }
+    var el = scope && scope.querySelector ? scope.querySelector('#changeassignee') : document.getElementById('changeassignee');
+    if (!el) return null;
+
+    if (typeof destroyTS === 'function') destroyTS(el);
+    var cfg = { create: false, allowEmptyOption: true };
+    if (opts.dropdownParent !== undefined) {
+      cfg.dropdownParent = opts.dropdownParent;
+    } else if (el.closest) {
+      var modal = el.closest('.modal');
+      if (modal) cfg.dropdownParent = modal;
+    }
+    var ts = initTS(el, cfg);
+    if (ts && ts.wrapper && opts.width) {
+      ts.wrapper.style.width = opts.width;
+      ts.wrapper.style.maxWidth = '100%';
+    }
+    return ts;
+  }
+
+  /** After /get-checkin-detail HTML is inserted. */
+  function crmAfterCheckinDetailHtml(root) {
+    return initChangeAssigneeTS(root, { width: '220px' });
+  }
+
+  /**
+   * Staff / task-group selects inside Bootstrap popovers (.crm-ts-assignee).
+   * @param {JQuery|Element} container popover body or shell
+   * @param {Element} dropdownParent
+   */
+  function initAssigneePopoverSelects(container, dropdownParent) {
+    if (typeof initTS !== 'function' || typeof jQuery === 'undefined') return;
+
+    var $root = container && container.jquery ? container : jQuery(container);
+    if (!$root.length) return;
+
+    $root.find('.crm-ts-assignee').each(function () {
+      if (typeof destroyTS === 'function') destroyTS(this);
+      initTS(this, {
+        create: false,
+        allowEmptyOption: true,
+        dropdownParent: dropdownParent || document.body
+      });
+      var ts = this.tomselect;
+      if (ts && ts.wrapper) {
+        ts.wrapper.style.width = '100%';
+        ts.wrapper.style.maxWidth = '100%';
+      }
+    });
+  }
+
+  /** Matter-email modal template picker (.selectmattertemplate). */
+  function initMatterEmailTemplateSelect() {
+    if (typeof initTS !== 'function' || typeof jQuery === 'undefined') return;
+    jQuery('#matteremailmodal select.selectmattertemplate').each(function () {
+      if (typeof destroyTS === 'function') destroyTS(this);
+      initTS(this, {
+        dropdownParent: '#matteremailmodal',
+        create: false,
+        allowEmptyOption: true
+      });
+    });
+  }
+
+  /** E-sign document preview modal template picker (#preview_email_modal .selecttemplate). */
+  function initPreviewEmailTemplateSelect(modalEl) {
+    if (typeof initTS !== 'function' || typeof jQuery === 'undefined') return;
+    var $modal = modalEl ? jQuery(modalEl) : jQuery('#preview_email_modal');
+    if (!$modal.length) return;
+    $modal.find('select.selecttemplate').each(function () {
+      if (typeof destroyTS === 'function') destroyTS(this);
+      initTS(this, {
+        dropdownParent: $modal[0],
+        create: false,
+        allowEmptyOption: true
+      });
+    });
+  }
+
+  /**
+   * Bootstrap 5 popovers for legacy markup using data-role="popover" (not data-bs-toggle).
+   * @param {Element|string|JQuery} [root] optional subtree; defaults to document
+   */
+  function initDataRolePopovers(root) {
+    if (typeof jQuery === 'undefined' || typeof jQuery.fn.popover !== 'function') return;
+
+    var $els;
+    if (!root) {
+      $els = jQuery('[data-role="popover"]');
+    } else if (root.jquery) {
+      $els = root.find('[data-role="popover"]');
+    } else if (typeof root === 'string') {
+      $els = jQuery(root).find('[data-role="popover"]');
+    } else {
+      $els = jQuery(root).find('[data-role="popover"]');
+      if (root.getAttribute && root.getAttribute('data-role') === 'popover') {
+        $els = $els.add(root);
+      }
+    }
+
+    $els.each(function () {
+      var el = this;
+      try {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Popover && bootstrap.Popover.getInstance(el)) {
+          return;
+        }
+      } catch (e) { /* no-op */ }
+      jQuery(el).popover({ trigger: 'click', html: true });
+    });
+  }
+
   global.initTS = initTS;
   global.destroyTS = destroyTS;
   global.openTS = openTS;
@@ -532,4 +654,52 @@
   global.buildContactPersonSearchTomSelectConfig = buildContactPersonSearchTomSelectConfig;
   global.buildPlainSingleTomSelectConfig = buildPlainSingleTomSelectConfig;
   global.buildPartnerSearchMultiTomSelectConfig = buildPartnerSearchMultiTomSelectConfig;
+  global.initChangeAssigneeTS = initChangeAssigneeTS;
+  global.crmAfterCheckinDetailHtml = crmAfterCheckinDetailHtml;
+  global.initAssigneePopoverSelects = initAssigneePopoverSelects;
+  global.initMatterEmailTemplateSelect = initMatterEmailTemplateSelect;
+  global.initPreviewEmailTemplateSelect = initPreviewEmailTemplateSelect;
+  global.initDataRolePopovers = initDataRolePopovers;
+
+  if (typeof jQuery !== 'undefined') {
+    jQuery(function ($) {
+      initDataRolePopovers();
+
+      $(document).on('shown.bs.popover', '[data-role="popover"]:not(.update_task)', function () {
+        var $shell = $('.popover.show').last();
+        if (!$shell.find('.crm-ts-assignee').length) return;
+        var $body = $shell.find('.popover-body');
+        initAssigneePopoverSelects($body.length ? $body : $shell, $shell[0] || document.body);
+      });
+
+      $(document).on('hide.bs.popover', '[data-role="popover"]:not(.update_task)', function () {
+        $('.popover .crm-ts-assignee').each(function () {
+          if (typeof destroyTS === 'function') destroyTS(this);
+        });
+      });
+
+      $(document).delegate('.openassignee', 'click', function () {
+        var $trigger = $(this);
+        setTimeout(function () {
+          var $ctx = $trigger.closest('.showchecindetail, .modal-body');
+          var root = $ctx.length ? $ctx[0] : document;
+          initChangeAssigneeTS(root, { width: '220px' });
+        }, 0);
+      });
+
+      $(document).on('shown.bs.modal', '#matteremailmodal', function () {
+        initMatterEmailTemplateSelect();
+      });
+
+      $(document).on('shown.bs.modal', '#preview_email_modal', function () {
+        initPreviewEmailTemplateSelect(this);
+      });
+
+      $(document).on('hidden.bs.modal', '#preview_email_modal', function () {
+        $(this).find('select.selecttemplate').each(function () {
+          if (typeof destroyTS === 'function') destroyTS(this);
+        });
+      });
+    });
+  }
 })(typeof window !== 'undefined' ? window : this);

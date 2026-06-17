@@ -324,12 +324,12 @@ $(function () {
     container: "body"
   });
 
-  // Tom Select — `.crm-ts-plain` plus legacy class `select2` (hook name only; Select2 library removed).
+  // Tom Select — plain static/native selects (`.crm-ts-plain`).
   // Skip Bootstrap modals: init with dropdownParent on shown.bs.modal (see matter-assignee-modal.js, detail-main.js).
   // Skip `.selecttemplate`: listings / email modal init those with the correct parent.
   if (typeof TomSelect !== 'undefined' && typeof initTS === 'function') {
-    $('.crm-ts-plain, .select2')
-      .not('.modal .crm-ts-plain, .modal .select2')
+    $('.crm-ts-plain')
+      .not('.modal .crm-ts-plain')
       .each(function () {
         var $el = $(this);
         if ($el.hasClass('selecttemplate')) {

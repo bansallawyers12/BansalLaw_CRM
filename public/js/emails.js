@@ -1709,17 +1709,17 @@
             }
         }
 
-        // Set "To" field (Select2)
+        // Set "To" field (Tom Select)
         if (data.to && data.to.length > 0) {
             const toSelect = document.querySelector('select[name="email_to[]"]');
             if (toSelect && typeof jQuery !== 'undefined') {
                 const setToField = () => {
-                    // Wait a bit for Select2 to be initialized
+                    // Wait a bit for Tom Select to be initialized
                     setTimeout(() => {
                         // Clear existing selections
                         jQuery(toSelect).val(null).trigger('change');
                         
-                        // For Select2 AJAX, we need to create options and select them
+                        // For AJAX Tom Select, we need to create options and select them
                         const emailAddresses = data.to.map(email => extractEmailAddress(email)).filter(addr => addr);
                         
                         if (emailAddresses.length > 0) {
@@ -1736,7 +1736,7 @@
                                 }
                             });
                             
-                            // Update Select2 with the selected values
+                            // Update Tom Select with the selected values
                             jQuery(toSelect).val(emailAddresses).trigger('change');
                         }
                     }, 200);

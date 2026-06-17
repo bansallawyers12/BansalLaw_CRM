@@ -962,7 +962,7 @@ $(document).ready(function() {
                     $(window).off('scroll.matterSwitchDd resize.matterSwitchDd');
                 }
             });
-            // Add class for long-name option wrapping (equivalent to Select2 dropdownCssClass)
+            // Add class for long-name option wrapping on Tom Select dropdown
             if (_tsMatterDetail && _tsMatterDetail.dropdown) {
                 _tsMatterDetail.dropdown.classList.add('matter-dropdown-wrap');
             }
@@ -3141,14 +3141,10 @@ success: function(response) {
 
 
         // In-person assignee (check-in panel HTML): Tom Select, fixed width
-        var $changeAssignee = $('#changeassignee');
-        if ($changeAssignee.length) {
-            initTS($changeAssignee[0], { create: false });
-            var _caTs = $changeAssignee[0].tomselect;
-            if (_caTs && _caTs.wrapper) {
-                _caTs.wrapper.style.width = '220px';
-                _caTs.wrapper.style.maxWidth = '100%';
-            }
+        if (typeof crmAfterCheckinDetailHtml === 'function') {
+            crmAfterCheckinDetailHtml(document);
+        } else if (typeof initChangeAssigneeTS === 'function') {
+            initChangeAssigneeTS(document, { width: '220px' });
         }
 
 

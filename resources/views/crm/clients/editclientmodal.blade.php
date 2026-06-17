@@ -66,7 +66,7 @@
 						<div class="col-12 col-md-12 col-lg-12 is_not_note" style="display:none;">
 							<div class="form-group">
 								<label for="contact_name">Contact Name <span class="span_req">*</span></label> 	
-								<select data-valid="" class="form-control contact_name select2" name="contact_name">
+								<select data-valid="" class="form-control contact_name crm-ts-plain" name="contact_name">
 									<option value="">Choose Contact</option>
 									<option value="Amit">Amit</option>
 								</select>

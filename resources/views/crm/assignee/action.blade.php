@@ -701,8 +701,8 @@
                             </div>
                         </div>
                     </template>
-                    {{-- Do not use class "tab-button" here: global tab handler calls table.ajax.reload() on every .tab-button click and breaks this popover/Select2. --}}
-                    {{-- Do not use data-role="popover": legacy public/js/popover.js conflicts with BS5 (re-inits empty popover + Select2 without dropdownParent). --}}
+                    {{-- Do not use class "tab-button" here: global tab handler calls table.ajax.reload() on every .tab-button click and breaks this popover/Tom Select. --}}
+                    {{-- Do not use data-role="popover": legacy public/js/popover.js conflicts with BS5 (re-inits empty popover + Tom Select without dropdownParent). --}}
                     <button type="button" class="btn btn-primary add_my_task add-my-task-header-btn" data-bs-toggle="popover" data-container="body" data-placement="bottom-start" data-html="true">
                         <i class="fas fa-plus"></i> Add My Task
                     </button>
@@ -839,7 +839,7 @@
         top: 50% !important;
         transform: translate(-50%, -50%) !important;
         margin: 0 !important;
-        overflow: visible !important; /* Select2 dropdown is clipped by overflow:hidden on .popover */
+        overflow: visible !important; /* Tom Select dropdown is clipped by overflow:hidden on .popover */
     }
     
     /* Hide arrow for centered Add My Task popover */
@@ -970,12 +970,12 @@
     min-width: 100% !important;
 }
 
-.popover .select2-container {
+.popover .ts-wrapper {
     width: 100% !important;
     max-width: 100% !important;
 }
 
-.popover .assigneeselect2 {
+.popover .crm-ts-assignee {
     width: 100% !important;
     max-width: 100% !important;
 }
@@ -1204,8 +1204,8 @@
         z-index: 99999 !important;
     }
 
-    /* Select2 dropdown above Add My Task popover when parent is body */
-    body > .select2-container--open {
+    /* Tom Select dropdown above Add My Task popover when parent is body */
+    body > .ts-dropdown {
         z-index: 10050 !important;
     }
 
@@ -1387,7 +1387,7 @@ $(function () {
             <div id="popover-content" class="modern-popover-content update-task-layout">
                 <div class="form-group">
                     <label class="control-label"><i class="fa fa-user"></i> Select Assignee</label>
-                    <select class="assigneeselect2 form-control" id="update_task_rem_cat" name="rem_cat">
+                    <select class="crm-ts-assignee form-control" id="update_task_rem_cat" name="rem_cat">
                         <option value="">Select Assignee...</option>
                         @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                             <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
@@ -1401,7 +1401,7 @@ $(function () {
                 
                 <div class="form-group">
                     <label class="control-label"><i class="fa fa-tag"></i> Task Group</label>
-                    <select class="assigneeselect2 form-control" id="update_task_task_group" name="task_group">
+                    <select class="crm-ts-assignee form-control" id="update_task_task_group" name="task_group">
                         <option value="">Select Group...</option>
                         <option value="Call" ${taskGroup == 'Call' ? 'selected' : ''}>📞 Call</option>
                         <option value="Checklist" ${taskGroup == 'Checklist' ? 'selected' : ''}>✓ Checklist</option>
@@ -1459,7 +1459,7 @@ $(function () {
             });
 
             setTimeout(function() {
-                initializeClientSelect2($popover, triggerEl, getAddTaskPopoverTip);
+                initializeClientTomSelect($popover, triggerEl, getAddTaskPopoverTip);
             }, 120);
         }
 
@@ -1498,7 +1498,7 @@ $(function () {
      * @param {HTMLElement} triggerEl - popover trigger (for aria-describedby retries)
      * @param {function(HTMLElement): JQuery} resolveTip
      */
-    function initializeClientSelect2($rootPopover, triggerEl, resolveTip) {
+    function initializeClientTomSelect($rootPopover, triggerEl, resolveTip) {
         var attempts = 0;
         var maxAttempts = 40;
         resolveTip = resolveTip || getAddTaskPopoverTip;
@@ -1553,7 +1553,7 @@ $(function () {
             $popover = $shell;
         }
         var ddParent = $shell.length ? $shell[0] : document.body;
-        $popover.find('.assigneeselect2').each(function() {
+        $popover.find('.crm-ts-assignee').each(function() {
             if (typeof destroyTS === 'function') destroyTS(this);
             if (typeof initTS === 'function') {
                 initTS(this, { create: false, dropdownParent: ddParent });
@@ -1567,7 +1567,7 @@ $(function () {
     });
 
     $(document).on('hide.bs.popover', '.update_task', function() {
-        $('.popover .assigneeselect2').each(function() {
+        $('.popover .crm-ts-assignee').each(function() {
             if (typeof destroyTS === 'function') destroyTS(this);
         });
     });

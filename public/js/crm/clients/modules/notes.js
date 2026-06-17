@@ -1,5 +1,5 @@
 /**
- * Notes module - Create, edit, view notes; getallnotes; legacy formatRepo helpers for inline scripts
+ * Notes module - Create, edit, view notes; getallnotes.
  * Extracted from detail-main.js - Phase 3b refactoring.
  * Requires: jQuery, ClientDetailConfig, clearEditor, setEditorContent, adjustActivityFeedHeight
  */
@@ -14,29 +14,6 @@
         if (typeof r === 'string' && r.trim()) { try { return JSON.parse(r); } catch(e) { return null; } }
         return null;
     }
-
-    function formatRepo(repo) {
-        if (repo.loading) {
-            return repo.text;
-        }
-        var $container = $(
-            "<div class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-            "<div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
-            "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small></div></div></div>" +
-            "<div class='ag-flex ag-flex-column ag-align-end'><span class='ui label yellow select2-result-repository__statistics'></span></div></div>"
-        );
-        $container.find(".select2-result-repository__title").text(repo.name);
-        $container.find(".select2-result-repository__description").text(repo.email);
-        $container.find(".select2-result-repository__statistics").append(repo.status);
-        return $container;
-    }
-
-    function formatRepoSelection(repo) {
-        return repo.name || repo.text;
-    }
-
-    window.formatRepo = formatRepo;
-    window.formatRepoSelection = formatRepoSelection;
 
     function getallnotes() {
         var notesUrl = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.getNotes) ? window.ClientDetailConfig.urls.getNotes : baseUrl + '/get-notes';

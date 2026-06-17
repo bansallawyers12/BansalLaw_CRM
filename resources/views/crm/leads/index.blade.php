@@ -1,4 +1,4 @@
-﻿@extends('layouts.crm_client_detail')
+@extends('layouts.crm_client_detail')
 @section('title', 'Leads')
 
 @section('styles')
@@ -494,7 +494,7 @@
         <div class="form-group row">
             <div class="col-sm-12">
                 <input id="mlead_id" name="mlead_id" type="hidden" value="">
-                <select name="assignto" class="form-control select2 " style="width: 100%;" data-select2-id="1" tabindex="-1" aria-hidden="true">
+                <select name="assignto" class="form-control crm-ts-plain " style="width: 100%;">
                     <option value="">Select</option>
                     @foreach(\App\Models\Staff::where('status', 1)->orderBy('first_name')->get() as $ulist)
                     <option value="{{@$ulist->id}}">{{@$ulist->first_name}} {{@$ulist->last_name}}</option>
@@ -622,7 +622,7 @@
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="template">Templates </label>
-								<select data-valid="" class="form-control select2 selecttemplate" name="template">
+								<select data-valid="" class="form-control crm-ts-plain selecttemplate" name="template">
 									<option value="">Select</option>
 									@foreach(\App\Models\EmailTemplate::crm()->orderBy('id', 'desc')->get() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>

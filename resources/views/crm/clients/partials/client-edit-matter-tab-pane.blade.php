@@ -69,7 +69,7 @@
             <button type="button" class="btn btn-primary" onclick="openMatterFormFromDropdown()" style="border-radius:8px;">
               <i class="fas fa-plus-circle"></i> Add this Matter
             </button>
-            <button type="button" class="btn btn-default" onclick="resetMatterDropdown()" style="margin-left:8px;border-radius:8px;">
+            <button type="button" class="btn btn-secondary" onclick="resetMatterDropdown()" style="margin-left:8px;border-radius:8px;">
               <i class="fas fa-times"></i> Clear
             </button>
           </div>
@@ -175,9 +175,9 @@
                                   <td>{{ $cmatter->workflowStage->name ?? '—' }}</td>
                                   <td>
                                       @if((int) $cmatter->matter_status === 1)
-                                          <span class="label label-success">Active</span>
+                                          <span class="badge bg-success">Active</span>
                                       @else
-                                          <span class="label label-default">Closed</span>
+                                          <span class="badge bg-secondary">Closed</span>
                                       @endif
                                   </td>
                                   <td>
@@ -195,10 +195,10 @@
                                       @endif
                                   </td>
                                   <td class="text-nowrap text-end">
-                                      <button type="button" class="btn btn-xs btn-primary changeMatterAssignee" data-client-matter-id="{{ $cmatter->id }}" title="Edit matter details">
+                                      <button type="button" class="btn btn-sm btn-primary changeMatterAssignee" data-client-matter-id="{{ $cmatter->id }}" title="Edit matter details">
                                           <i class="fas fa-pen"></i>
                                       </button>
-                                      <a href="{{ $detailUrl }}" class="btn btn-xs btn-default" title="View full matter details">
+                                      <a href="{{ $detailUrl }}" class="btn btn-sm btn-secondary" title="View full matter details">
                                           <i class="fas fa-external-link-alt"></i>
                                       </a>
                                   </td>

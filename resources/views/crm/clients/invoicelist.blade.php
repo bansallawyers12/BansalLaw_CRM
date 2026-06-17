@@ -1,4 +1,4 @@
-﻿@extends('layouts.crm_client_detail')
+@extends('layouts.crm_client_detail')
 @section('title', 'Clients Invoice List')
 
 @section('styles')
@@ -966,7 +966,7 @@
                                         <label for="client_id" class="col-form-label" style="color:#4a5568 !important;">
                                             <i class="fas fa-user"></i> Client ID
                                         </label>
-                                        <select name="client_id" id="client_id" class="form-control select2">
+                                        <select name="client_id" id="client_id" class="form-control crm-ts-plain">
                                             <option value="">Select Client</option>
                                             @foreach($clientIds as $client)
                                                 <option value="{{ $client->client_id }}" {{ request('client_id') == $client->client_id ? 'selected' : '' }}>
@@ -982,7 +982,7 @@
                                         <label for="client_matter_id" class="col-form-label" style="color:#4a5568 !important;">
                                             <i class="fas fa-briefcase"></i> Client Matter ID
                                         </label>
-                                        <select name="client_matter_id" id="client_matter_id" class="form-control select2">
+                                        <select name="client_matter_id" id="client_matter_id" class="form-control crm-ts-plain">
                                             <option value="">Select Matter</option>
                                             @foreach($matterIds as $matter)
                                                 <option value="{{ $matter->client_matter_id }}" {{ request('client_matter_id') == $matter->client_matter_id ? 'selected' : '' }}>

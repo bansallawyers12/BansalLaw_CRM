@@ -103,7 +103,7 @@
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="template">Templates </label>
-								<select data-valid="" class="form-control select2 selectmattertemplate" name="template">
+								<select data-valid="" class="form-control crm-ts-plain selectmattertemplate" name="template">
 									<option value="">Select</option>
 									@foreach(\App\Models\EmailTemplate::crm()->orderBy('id', 'desc')->get() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>

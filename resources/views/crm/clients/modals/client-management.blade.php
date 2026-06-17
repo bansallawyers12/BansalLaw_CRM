@@ -39,7 +39,7 @@
                         <div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
                                 <label for="sel_legal_practitioner_id">Legal Practitioner <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="legal_practitioner" id="sel_legal_practitioner_id">
+                                <select data-valid="required" class="form-control crm-ts-plain" name="legal_practitioner" id="sel_legal_practitioner_id">
                                     <option value="">Select responsible solicitor</option>
                                     @foreach(\App\Services\ClientEditService::staffSelectableForSolicitorRole() as $migAgntlist)
                                         <option value="{{$migAgntlist->id}}">{{@$migAgntlist->first_name}} {{@$migAgntlist->last_name}} ({{@$migAgntlist->email}})</option>
@@ -51,7 +51,7 @@
                         <div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
                                 <label for="person_responsible">Person Responsible <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="person_responsible" id="sel_person_responsible_id">
+                                <select data-valid="required" class="form-control crm-ts-plain" name="person_responsible" id="sel_person_responsible_id">
                                     <option value="">Select Person Responsible</option>
                                     @foreach(\App\Services\ClientEditService::staffSelectableForPersonResponsibleRole() as $perreslist)
                                         <option value="{{$perreslist->id}}">{{@$perreslist->first_name}} {{@$perreslist->last_name}}@if(!empty($perreslist->email)) ({{@$perreslist->email}})@endif</option>
@@ -63,7 +63,7 @@
                         <div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
                                 <label for="person_assisting">Person Assisting <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="person_assisting" id="sel_person_assisting_id">
+                                <select data-valid="required" class="form-control crm-ts-plain" name="person_assisting" id="sel_person_assisting_id">
                                     <option value="">Select Person Assisting</option>
                                     @foreach(\App\Services\ClientEditService::staffSelectableForPersonAssistingRole() as $perassislist)
                                         <option value="{{$perassislist->id}}">{{@$perassislist->first_name}} {{@$perassislist->last_name}} ({{@$perassislist->email}})</option>
@@ -75,7 +75,7 @@
                         <div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
                                 <label for="office_id">Handling Office <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="office_id" id="sel_office_id">
+                                <select data-valid="required" class="form-control crm-ts-plain" name="office_id" id="sel_office_id">
                                     <option value="">Select Office</option>
                                     @foreach(\App\Models\Branch::orderBy('office_name')->get() as $office)
                                         <option value="{{$office->id}}" 
@@ -100,7 +100,7 @@
 
                                 <label class="form-check-label">Or Select any option</label>
 
-                                <select class="form-control select2" name="matter_id_select" id="sel_matter_id">
+                                <select class="form-control crm-ts-plain" name="matter_id_select" id="sel_matter_id">
                                     <option value="">Select Matter</option>
                                     @php
                                         $matterQuery = \App\Models\Matter::select('id','title')->where('status',1)

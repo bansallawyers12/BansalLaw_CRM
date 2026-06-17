@@ -309,7 +309,7 @@
                                     $pdfurlforsign = url("/sign/{$selectedDocument->id}/{$token}");
                                     @endphp
                                     <input type="hidden" name="pdf_sign_token" value="{{$token}}">
-                                    <select class="form-control select2 selecttemplate" name="template" data-clientid="{{@$fetchedData->id}}" data-clientfirstname="{{@$fetchedData->first_name}}" data-clientvisaExpiry="{{@$fetchedData->visaExpiry}}" data-clientreference_number="{{@$fetchedData->client_id}}" data-clientassignee_name="{{@$fetchedData->first_name}}" data-mattertotalprofessionalfee="{{@$matter_info->TotalBLOCKFEE}}" data-mattertotaldepartmentfee="{{@$matter_info->additional_fee_1}}" data-mattertotalsurchargefee="{{@$matter_info->TotalDoHASurcharges}}" data-mattertotalpayablefee="{{@$mattertotalpayablefee}}" data-pdfurlforsign="{{@$pdfurlforsign}}" data-mattertitle="{{@$matter_info->title}}" required>
+                                    <select class="form-control crm-ts-plain selecttemplate" name="template" data-clientid="{{@$fetchedData->id}}" data-clientfirstname="{{@$fetchedData->first_name}}" data-clientvisaExpiry="{{@$fetchedData->visaExpiry}}" data-clientreference_number="{{@$fetchedData->client_id}}" data-clientassignee_name="{{@$fetchedData->first_name}}" data-mattertotalprofessionalfee="{{@$matter_info->TotalBLOCKFEE}}" data-mattertotaldepartmentfee="{{@$matter_info->additional_fee_1}}" data-mattertotalsurchargefee="{{@$matter_info->TotalDoHASurcharges}}" data-mattertotalpayablefee="{{@$mattertotalpayablefee}}" data-pdfurlforsign="{{@$pdfurlforsign}}" data-mattertitle="{{@$matter_info->title}}" required>
                                         <option value="">Select</option>
                                         @if($client_matter_info_arr && isset($client_matter_info_arr->sel_matter_id))
                                             @foreach( \App\Models\EmailTemplate::forMatter($client_matter_info_arr->sel_matter_id)->ofType(\App\Models\EmailTemplate::TYPE_MATTER_FIRST)->orderBy('id', 'asc')->get() as $list)
@@ -394,22 +394,36 @@
     @endif
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{asset('css/tom-select.bootstrap5.min.css')}}">
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <link rel="stylesheet" href="{{asset('css/dataTables.bootstrap5.min.css')}}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{asset('js/bootstrap5-jquery-compat.js')}}"></script>
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
 
     <script src="{{asset('js/datatables.min.js')}}"></script>
     <script src="{{asset('js/dataTables.bootstrap5.min.js')}}"></script>
+    <script src="{{asset('js/tom-select.complete.min.js')}}"></script>
+    <script src="{{asset('js/ts-init.js')}}"></script>
 
     <script>
     $(document).ready(function() {
 
         $('#mychecklist-datatable').dataTable({"searching": true,});
         $(document).delegate('.preview_email', 'click', function(){
-            $('#preview_email_modal').modal('show');
+            var modalEl = document.getElementById('preview_email_modal');
+            if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            } else {
+                $('#preview_email_modal').modal('show');
+            }
+            if (modalEl && typeof initPreviewEmailTemplateSelect === 'function') {
+                modalEl.addEventListener('shown.bs.modal', function onPreviewModalShown() {
+                    initPreviewEmailTemplateSelect(modalEl);
+                }, { once: true });
+            }
         });
 
         $(document).delegate('.selecttemplate', 'change', function(){

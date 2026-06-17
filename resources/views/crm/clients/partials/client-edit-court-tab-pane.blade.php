@@ -159,7 +159,7 @@
                           @endif
                         </td>
                         <td>
-                          <button type="button" class="btn btn-xs btn-danger" onclick="deleteHearing({{ $hearing->id }})" title="Delete">
+                          <button type="button" class="btn btn-sm btn-danger" onclick="deleteHearing({{ $hearing->id }})" title="Delete">
                             <i class="fas fa-trash"></i>
                           </button>
                         </td>

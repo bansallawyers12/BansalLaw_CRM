@@ -1675,6 +1675,9 @@
             success: function (html) {
                 window.jQuery('.popuploader').hide();
                 window.jQuery('.showchecindetail').html(html);
+                if (typeof window.crmAfterCheckinDetailHtml === 'function') {
+                    window.crmAfterCheckinDetailHtml('.showchecindetail');
+                }
             },
             error: function (xhr) {
                 window.jQuery('.popuploader').hide();
@@ -1770,7 +1773,7 @@
                 this.value =  this.value;
             });
 
-            @include('layouts.partials.select2-layout-client-search-toolbar')
+            @include('layouts.partials.tom-select-layout-client-search-toolbar')
 
 
             $(document).delegate('.opencheckin', 'click', function(){
@@ -1793,6 +1796,9 @@
                             success: function(res){
                                 $('.popuploader').hide();
                                 $('.showchecindetail').html(res);
+                                if (typeof window.crmAfterCheckinDetailHtml === 'function') {
+                                    window.crmAfterCheckinDetailHtml('.showchecindetail');
+                                }
                             }
                         });
                     }
@@ -1817,6 +1823,9 @@
                             success: function(res){
                                 $('.popuploader').hide();
                                 $('.showchecindetail').html(res);
+                                if (typeof window.crmAfterCheckinDetailHtml === 'function') {
+                                    window.crmAfterCheckinDetailHtml('.showchecindetail');
+                                }
                             }
                         });
                     }
@@ -1840,6 +1849,9 @@
                                 success: function(res){
                                     $('.popuploader').hide();
                                     $('.showchecindetail').html(res);
+                                    if (typeof window.crmAfterCheckinDetailHtml === 'function') {
+                                        window.crmAfterCheckinDetailHtml('.showchecindetail');
+                                    }
                                 }
                             });
                             $('.checindata #id_'+appliid).remove();
@@ -2242,7 +2254,7 @@
                 $('.card .card-body .grid_data').show();
             });
 
-            @include('layouts.partials.select2-layout-checkin-recipients')
+            @include('layouts.partials.tom-select-layout-checkin-recipients')
         });
 
         $(document).ready(function(){
@@ -2638,7 +2650,7 @@
                                     <?php
                                     $assignee = \App\Models\Staff::where('status', 1)->orderBy('first_name')->get();
                                     ?>
-                                    <select class="form-control assineeselect2" name="assignee">
+                                    <select class="form-control crm-ts-assignee" name="assignee">
                                     @foreach($assignee as $assigne)
                                         <option value="{{$assigne->id}}">{{$assigne->first_name}} ({{$assigne->email}})</option>
                                     @endforeach

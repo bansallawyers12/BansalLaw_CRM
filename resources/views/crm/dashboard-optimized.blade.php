@@ -1376,7 +1376,7 @@ $(function () {
         // Initialize client picker (Tom Select) — must use the visible popover tip, not the hidden
         // #add-task-popover-template clone (duplicate id would make $('#assign_client_id') match the wrong node).
         setTimeout(function() {
-            initializeClientSelect2($popover);
+            initializeClientTomSelect($popover);
         }, 100);
     });
     
@@ -1396,7 +1396,7 @@ $(function () {
     
     // Function to initialize Add My Task client picker (Tom Select)
     // @param {JQuery} [$popoverTip] - visible popover root (preferred); avoids hidden template duplicate #assign_client_id
-    function initializeClientSelect2($popoverTip) {
+    function initializeClientTomSelect($popoverTip) {
         var attempts = 0;
         var maxAttempts = 10;
         

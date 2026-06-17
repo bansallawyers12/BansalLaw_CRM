@@ -33,21 +33,21 @@
                     render: {
                         option: function (repo, escape) {
                             var statClass = (repo.status === 'Archived')
-                                ? 'ui label select2-result-repository__statistics'
-                                : 'ui label yellow select2-result-repository__statistics';
+                                ? 'ui label crm-ts-result__statistics'
+                                : 'ui label yellow crm-ts-result__statistics';
                             return '<div class="ag-flex ag-space-between ag-align-center">'
                                 + '<div class="ag-flex ag-align-start">'
                                     + '<div class="ag-flex ag-flex-column col-hr-1">'
-                                        + '<div class="ag-flex"><span class="select2-result-repository__title text-semi-bold">'
+                                        + '<div class="ag-flex"><span class="crm-ts-result__title text-semi-bold">'
                                         + escape(repo.name || '')
                                         + '</span>&nbsp;</div>'
-                                        + '<div class="ag-flex ag-align-center"><small class="select2-result-repository__description">'
+                                        + '<div class="ag-flex ag-align-center"><small class="crm-ts-result__description">'
                                         + escape(repo.email || '')
                                         + '</small></div>'
                                     + '</div>'
                                 + '</div>'
                                 + '<div class="ag-flex ag-flex-column ag-align-end">'
-                                    + '<span class="select2resultrepositorystatistics">'
+                                    + '<span class="crm-ts-result__statistics-wrap">'
                                     + '<span class="' + statClass + '">' + escape(repo.status || '') + '</span>'
                                     + '</span>'
                                 + '</div>'

@@ -809,7 +809,7 @@
                         <div class="col-6 col-md-6 col-lg-6">
                             <div class="form-group">
                                 <label for="agent_id">Agent <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="agent_id" id="sel_client_agent_id">
+                                <select data-valid="required" class="form-control crm-ts-plain" name="agent_id" id="sel_client_agent_id">
                                     <option value="">Select Agent</option>
                                     @foreach($__receiptModalAgents as $aplist)
                                         <option value="{{$aplist->id}}">{{@$aplist->full_name}} ({{@$aplist->email}})</option>
@@ -940,7 +940,7 @@
                         <div class="col-6 col-md-6 col-lg-6">
                             <div class="form-group">
                                 <label for="agent_id">Agent <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="agent_id" id="sel_invoice_agent_id">
+                                <select data-valid="required" class="form-control crm-ts-plain" name="agent_id" id="sel_invoice_agent_id">
                                     <option value="">Select Agent</option>
                                     @foreach($__receiptModalAgents as $aplist)
                                         <option value="{{$aplist->id}}">{{@$aplist->full_name}} ({{@$aplist->email}})</option>
@@ -1080,7 +1080,7 @@
                         <div class="col-6 col-md-6 col-lg-6">
                             <div class="form-group">
                                 <label for="agent_id">Agent <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="agent_id" id="sel_office_agent_id">
+                                <select data-valid="required" class="form-control crm-ts-plain" name="agent_id" id="sel_office_agent_id">
                                     <option value="">Select Agent</option>
                                     @foreach($__receiptModalAgents as $aplist)
                                         <option value="{{$aplist->id}}">{{@$aplist->full_name}} ({{@$aplist->email}})</option>
@@ -1232,7 +1232,7 @@
                         <div class="col-6 col-md-6 col-lg-6">
                             <div class="form-group">
                                 <label for="agent_id">Agent <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="agent_id" id="sel_journal_agent_id">
+                                <select data-valid="required" class="form-control crm-ts-plain" name="agent_id" id="sel_journal_agent_id">
                                     <option value="">Select Agent</option>
                                     @foreach($__receiptModalAgents as $aplist)
                                         <option value="{{$aplist->id}}">{{@$aplist->full_name}} ({{@$aplist->email}})</option>

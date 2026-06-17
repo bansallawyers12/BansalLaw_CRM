@@ -619,7 +619,7 @@ function customValidate(formName, savetype = '')
                             $('.popuploader').hide();
                             return;
                         }
-                        // Sync Select2 dropdown values to underlying selects so FormData includes changed options
+                        // Sync Tom Select dropdown values to underlying selects so FormData includes changed options
                         var selectIds = ['change_sel_legal_practitioner_id', 'change_sel_person_responsible_id', 'change_sel_person_assisting_id', 'change_office_id'];
                         for (var s = 0; s < selectIds.length; s++) {
                             var selEl = document.getElementById(selectIds[s]);

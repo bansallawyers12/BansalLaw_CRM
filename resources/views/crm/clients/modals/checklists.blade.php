@@ -30,7 +30,7 @@
                         <div class="col-6 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="checklist">Select Checklist<span class="span_req">*</span></label>
-								<select data-valid="required" class="form-control select2" name="checklist[]" id="checklist" multiple>
+								<select data-valid="required" class="form-control crm-ts-plain" name="checklist[]" id="checklist" multiple>
 									<option value="">Select</option>
 									<?php
 									$eduChkList = $__portalChecklistsOk
@@ -87,7 +87,7 @@
                         <div class="col-6 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="visa_checklist">Select Checklist<span class="span_req">*</span></label>
-								<select data-valid="required" class="form-control select2" name="visa_checklist[]" id="visa_checklist" multiple>
+								<select data-valid="required" class="form-control crm-ts-plain" name="visa_checklist[]" id="visa_checklist" multiple>
 									<option value="">Select</option>
 									<?php
 									$visaChkList = $__portalChecklistsOk
@@ -145,7 +145,7 @@
                         <div class="col-6 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="nomination_checklist">Select Checklist<span class="span_req">*</span></label>
-								<select data-valid="required" class="form-control select2" name="nomination_checklist[]" id="nomination_checklist" multiple>
+								<select data-valid="required" class="form-control crm-ts-plain" name="nomination_checklist[]" id="nomination_checklist" multiple>
 									<option value="">Select</option>
 									<?php
 									$nomChkList = $__portalChecklistsOk

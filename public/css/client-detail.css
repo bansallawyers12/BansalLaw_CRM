@@ -2675,7 +2675,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   min-width: 180px;
   max-width: 100%;
 }
-.crm-container.crm-container--unified .sidebar-matter-selection .select2-container {
+.crm-container.crm-container--unified .sidebar-matter-selection .ts-wrapper {
   width: 100% !important;
   max-width: 420px;
 }

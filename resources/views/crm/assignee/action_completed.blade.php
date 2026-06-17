@@ -1,4 +1,4 @@
-﻿@extends('layouts.crm_client_detail')
+@extends('layouts.crm_client_detail')
 @section('title', 'Completed Action')
 
 @section('styles')
@@ -393,7 +393,7 @@
                                                                         <div class='form-group row' style='margin-bottom:12px'>
                                                                             <label for='inputSub3' class='col-sm-3 control-label c6 f13' style='margin-top:8px'>Select Assignee</label>
                                                                             <div class='col-sm-9'>
-                                                                                <select class='assigneeselect2 form-control selec_reg' id='rem_cat' name='rem_cat'>
+                                                                                <select class='crm-ts-assignee form-control selec_reg' id='rem_cat' name='rem_cat'>
                                                                                     <option value=''>Select</option>
                                                                                     @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                                                                                         <?php $branchname = \App\Models\Branch::where('id', $admin->office_id)->first(); ?>
@@ -422,7 +422,7 @@
                                                                     <div class='form-group row' style='margin-bottom:12px'>
                                                                         <label for='inputSub3' class='col-sm-3 control-label c6 f13' style='margin-top:8px'>Group</label>
                                                                         <div class='col-sm-9'>
-                                                                            <select class='assigneeselect2 form-control selec_reg' id='task_group' name='task_group'>
+                                                                            <select class='crm-ts-assignee form-control selec_reg' id='task_group' name='task_group'>
                                                                                 <option value=''>Select</option>
                                                                                 <option value='Call'>Call</option>
                                                                                 <option value='Checklist'>Checklist</option>
@@ -510,7 +510,7 @@ jQuery(document).ready(function($){
         $('#assign_note_id').val(task_id);
     });
 
-    // Update task popover â€” populate fields + Select2 (dropdown parent = popover shell)
+    // Update task popover — populate fields + Tom Select (dropdown parent = popover shell)
     $(document).on('shown.bs.popover', '.listing-container .update_task', function() {
         var $trigger = $(this);
         var $shell = $('.popover.show').last();
@@ -528,12 +528,12 @@ jQuery(document).ready(function($){
             $popover.find('#popoverdatetime').val(followupdate_id.split(' ')[0]);
         }
 
-        $popover.find('.assigneeselect2').each(function() {
+        $popover.find('.crm-ts-assignee').each(function() {
             if (typeof destroyTS === 'function') destroyTS(this);
         });
         var ddParent = $shell.length ? $shell[0] : document.body;
         if (typeof initTS === 'function') {
-            $popover.find('.assigneeselect2').each(function() {
+            $popover.find('.crm-ts-assignee').each(function() {
                 initTS(this, { create: false, dropdownParent: ddParent });
                 var ts = this.tomselect;
                 if (ts && ts.wrapper) {
@@ -545,7 +545,7 @@ jQuery(document).ready(function($){
     });
 
     $(document).on('hide.bs.popover', '.listing-container .update_task', function() {
-        $('.popover .assigneeselect2').each(function() {
+        $('.popover .crm-ts-assignee').each(function() {
             if (typeof destroyTS === 'function') destroyTS(this);
         });
     });

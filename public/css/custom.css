@@ -19,7 +19,7 @@
 .card .card-body .profile_upload .upload_content span{font-size: 16px;line-height: 21px;color: #ccc;margin: 10px 0px 0px;}
 .card .card-body .profile_upload input{width: 100%;height: 100%;padding: 0px;margin: 0px;position: absolute;top: 0px;left: 0px;opacity: 0;}
 .card .card-body .form-group label span.span_req, .modal .modal-body .form-group label span.span_req{color:#ff0000;}
-.card .card-body .form-group .select2-container, .modal .modal-body .form-group .select2-container{display:block;}
+.card .card-body .form-group .ts-wrapper, .modal .modal-body .form-group .ts-wrapper{display:block;}
 .card .card-body .form-group .country_input button, .modal .modal-body .form-group .country_input button {font-size: 14px;padding: 10px 15px;height: 42px;background-color: #fdfdff;border: 1px solid #e4e6fc;border-radius: 0.25rem;box-shadow: inset 0 0 0 transparent;padding: 10px;width: 100%;text-align: left;color: #495057;}
 .card .card-body .form-group .country_input button>span, .modal .modal-body .form-group .country_input button>span {width: calc(100% - 8px);display: inline-block;}
 .card .card-body .form-group .country_input button:hover, .card .card-body .form-group .country_input button:focus, .modal .modal-body .form-group .country_input button:hover, .modal .modal-body .form-group .country_input button:focus{border: 1px solid #e4e6fc!important;background-color: #fdfdff;}
@@ -501,10 +501,10 @@ padding: 5px 10px;width:100%;background-color: #fdfdff;}
 .new_fee_option .modal-body table thead tr th{height:auto!important;padding:0px 5px!important;}
 .new_fee_option .modal-body table tbody tr td{height:auto!important;padding:0px!important;}
 .new_fee_option .modal-body table tbody tr td .form-control{height:auto;padding:6px;border-radius:0px;}
-.new_fee_option .modal-body .select2-container--default{min-width: 120px}
-.new_fee_option .modal-body .select2-container--default .select2-selection--single .select2-selection__rendered{min-height:35px;line-height: 35px;padding-left: 5px;padding-right: 5px;}
-.new_fee_option .modal-body .select2-container .select2-selection--single{min-height: 35px;}
-.new_fee_option .modal-body .select2-container--default .select2-selection--single .select2-selection__arrow{min-height: 35px;}
+.new_fee_option .modal-body .ts-wrapper{min-width: 120px}
+.new_fee_option .modal-body .ts-wrapper.single .ts-control{min-height:35px;line-height: 35px;padding-left: 5px;padding-right: 5px;}
+.new_fee_option .modal-body .ts-wrapper.single .ts-control{min-height: 35px;}
+.new_fee_option .modal-body .ts-wrapper.single .ts-control::after{min-height: 35px;}
 
 .fee_type_sec .fee_label{margin-bottom:10px;}
 .fee_type_sec .fee_label, .fee_type_sec .discount_fields{float: left;width: 100%;}
@@ -515,7 +515,7 @@ padding: 5px 10px;width:100%;background-color: #fdfdff;}
 .fee_type_sec .wd10{width:10%;}
 /* .fee_type_sec .fee_fields .fee_fields_row:first-child .field_col:nth-child(4){display:none;} */
 .fee_type_sec  .label_col label{font-size:14px;line-height:18px;color:#000;font-weight:bold;margin: 0px;}
-.fee_type_sec .fee_fields .select2-container{width:100%!important;}
+.fee_type_sec .fee_fields .ts-wrapper{width:100%!important;}
 .totalfee_addbtn{margin-top:15px;border-top: 1px solid rgba(0,0,0,.1);padding-top: 15px;float:left;width:100%;}
 .totalfee_addbtn .feetype_btn{float:left;width:50%;}
 .totalfee_addbtn .total_fee{float:right;width:50%;text-align:right;}
@@ -688,7 +688,7 @@ text-overflow: ellipsis;white-space: nowrap;}
 .lead_table_data .lead_stars i{font-size: 28px;}
 .lead_table_data .lead_stars span{position: absolute;top: 7px;left: 12px;color: #fff;font-size: 13px;line-height: 16px;}
 
-.select2-container--default .select2-dropdown{/*width: 330px!important;*/ width: 200px!important;}
+.ts-wrapper .ts-dropdown{/*width: 330px!important;*/ width: 200px!important;}
 
 .activity-detail .activity-head{display: flex;}
 .activity-detail .activity-title{margin-right: 60px;}

@@ -38,7 +38,7 @@ class OfficeVisitController extends Controller
 
 	public function checkin(Request $request){
 		try {
-			// Handle Select2 multiple select - get first value if array
+			// Handle Tom Select multiple select - get first value if array
 			$contactValue = $request->input('contact');
 			if (is_array($contactValue)) {
 				$contactValue = !empty($contactValue) ? $contactValue[0] : null;
@@ -354,7 +354,7 @@ class OfficeVisitController extends Controller
 						<div class="assignee" style="display:none;">
 						    <div class="row">
 						        <div class="col-md-8">
-						            <select class="form-control select2" id="changeassignee" name="changeassignee">
+						            <select class="form-control crm-ts-plain" id="changeassignee" name="changeassignee">
 						                 <?php
 											foreach(\App\Models\Staff::orderby('first_name','ASC')->get() as $admin){
 												$branchname = \App\Models\Branch::where('id',$admin->office_id)->first();

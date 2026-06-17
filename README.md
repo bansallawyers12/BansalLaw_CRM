@@ -100,7 +100,7 @@ Together, **what we have** is a full-featured legal-style CRM with a **migration
 ## Technology Stack
 
 - **Backend**: Laravel 12.x (PHP 8.2+)
-- **Frontend**: Bootstrap 4/5, jQuery, DataTables, Select2, Flatpickr, FullCalendar, Alpine.js, Tailwind CSS
+- **Frontend**: Bootstrap 4/5, jQuery, DataTables, Tom Select, Flatpickr, FullCalendar, Alpine.js, Tailwind CSS
 - **Build**: Vite 7.x
 - **Database**: PostgreSQL (Primary), MySQL (optional for migration), SQLite (Development)
 - **PDF Generation**: DomPDF for invoices and reports

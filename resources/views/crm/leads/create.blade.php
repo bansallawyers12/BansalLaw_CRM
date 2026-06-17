@@ -95,7 +95,7 @@
             grid-column: 1 / -1;
         }
         
-        .select2-contact-person {
+        .crm-ts-contact-person {
             width: 100% !important;
         }
     </style>
@@ -391,7 +391,7 @@
                                         <div class="form-group full-width">
                                             <label for="contactPersonEmail">Search Contact Person <span class="text-danger">*</span></label>
                                             <select id="contactPersonEmail" name="contact_person_id" 
-                                                    class="form-control select2-contact-person company-required" 
+                                                    class="form-control crm-ts-contact-person company-required" 
                                                     data-placeholder="Type phone, email, name, or client ID to search..."
                                                     style="width: 100%;">
                                                 @if(old('contact_person_id'))

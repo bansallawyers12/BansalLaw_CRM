@@ -1715,30 +1715,30 @@ body.sidebar-mini .adminconsole-upload-checklist-form select.form-control.upload
   opacity: 1 !important;
 }
 
-/* Offices branch form — Select2 (country / admin); docs/theme.md */
-body.sidebar-mini .adminconsole-offices-form .select2-container--default .select2-selection--single {
+/* Offices branch form — Tom Select (country / admin); docs/theme.md */
+body.sidebar-mini .adminconsole-offices-form .ts-wrapper.single .ts-control {
   border: 1px solid var(--border) !important;
   border-radius: 8px !important;
   min-height: 42px !important;
   background: var(--card-bg) !important;
 }
 
-body.sidebar-mini .adminconsole-offices-form .select2-container--default .select2-selection--single .select2-selection__rendered {
+body.sidebar-mini .adminconsole-offices-form .ts-wrapper.single .ts-control {
   color: var(--text-dark) !important;
   line-height: 40px !important;
   padding-left: 12px !important;
 }
 
-body.sidebar-mini .adminconsole-offices-form .select2-container--default .select2-selection--single .select2-selection__arrow {
+body.sidebar-mini .adminconsole-offices-form .ts-wrapper.single .ts-control::after {
   height: 40px !important;
 }
 
-body.sidebar-mini .adminconsole-offices-form .select2-container--default.select2-container--focus .select2-selection--single {
+body.sidebar-mini .adminconsole-offices-form .ts-wrapper.single.focus .ts-control {
   border-color: var(--sidebar-active) !important;
   box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
 }
 
-/* System — activity search (filters + Select2); docs/theme.md */
+/* System — activity search (filters + Tom Select); docs/theme.md */
 body.sidebar-mini .adminconsole-activity-search .card .form-label {
   color: var(--text-muted) !important;
   font-weight: 600 !important;
@@ -1752,24 +1752,24 @@ body.sidebar-mini .adminconsole-activity-search .card .form-label i {
   margin-right: 6px !important;
 }
 
-body.sidebar-mini .adminconsole-activity-search .select2-container--default .select2-selection--single {
+body.sidebar-mini .adminconsole-activity-search .ts-wrapper.single .ts-control {
   border: 1px solid var(--border) !important;
   border-radius: 8px !important;
   min-height: 42px !important;
   background: var(--card-bg) !important;
 }
 
-body.sidebar-mini .adminconsole-activity-search .select2-container--default .select2-selection--single .select2-selection__rendered {
+body.sidebar-mini .adminconsole-activity-search .ts-wrapper.single .ts-control {
   color: var(--text-dark) !important;
   line-height: 40px !important;
   padding-left: 12px !important;
 }
 
-body.sidebar-mini .adminconsole-activity-search .select2-container--default .select2-selection--single .select2-selection__arrow {
+body.sidebar-mini .adminconsole-activity-search .ts-wrapper.single .ts-control::after {
   height: 40px !important;
 }
 
-body.sidebar-mini .adminconsole-activity-search .select2-container--default.select2-container--focus .select2-selection--single {
+body.sidebar-mini .adminconsole-activity-search .ts-wrapper.single.focus .ts-control {
   border-color: var(--sidebar-active) !important;
   box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
 }
@@ -2921,11 +2921,11 @@ body.sidebar-mini .control-label {
   font-size: 0.85rem !important;
 }
 
-.topbar-center .topbar-search .select2-container {
+.topbar-center .topbar-search .ts-wrapper {
   width: 100% !important;
 }
 
-.topbar-center .topbar-search .select2-container--default .select2-selection--single {
+.topbar-center .topbar-search .ts-wrapper.single .ts-control {
   background-color: #fff !important;
   border: 1px solid #dee2e6 !important;
   border-radius: 8px !important;
@@ -2938,9 +2938,8 @@ body.sidebar-mini .control-label {
 
 .topbar-center
   .topbar-search
-  .select2-container--default
-  .select2-selection--single
-  .select2-selection__rendered {
+  .ts-wrapper.single
+  .ts-control {
   line-height: 38px !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
@@ -2949,9 +2948,8 @@ body.sidebar-mini .control-label {
 
 .topbar-center
   .topbar-search
-  .select2-container--default
-  .select2-selection--single
-  .select2-selection__arrow {
+  .ts-wrapper.single
+  .ts-control::after {
   height: 38px !important;
 }
 

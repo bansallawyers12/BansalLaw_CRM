@@ -18,8 +18,6 @@
 @endphp
 
 @push('styles')
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="{{ asset('css/address-autocomplete.css') }}">
     <link rel="stylesheet" href="{{asset('css/client-forms.css')}}">
     <link rel="stylesheet" href="{{asset('css/clients/edit-client-components.css')}}">
@@ -152,14 +150,13 @@
                 window.latestClientMatterRef = @json($latestMatterRefNo);
 
                function showTab(tabId){
-    // Hide every tab pane in this layout (all are under .main-content-area; avoids stray visible panes / double-stacking)
-    $(".main-content-area .tab-pane").hide().removeClass("in active");
+    $(".main-content-area .tab-pane").removeClass("show active").css("display", "");
     var $pane = $("#" + tabId);
     if ($pane.length) {
-        $pane.css("display", "block").show().addClass("in active");
+        $pane.addClass("show active");
     }
-    $(".client-edit-top-pills li").removeClass("active");
-    $(".client-edit-top-pills a[href='#" + tabId + "']").closest("li").addClass("active");
+    $(".client-edit-top-pills .nav-link").removeClass("active");
+    $(".client-edit-top-pills a[href='#" + tabId + "']").addClass("active");
                }
 
             </script>
@@ -167,10 +164,10 @@
             <!-- Main Content Area -->
             <div class="main-content-area">
 
-            <ul class="nav nav-pills client-edit-top-pills">
-    <li class="active"><a href="#home" onclick="showTab('home'); return false;"><i class="fas fa-user"></i> Client Info</a></li>
-    <li><a href="#menu2" onclick="showTab('menu2'); return false;"><i class="fas fa-briefcase"></i> Matter Details</a></li>
-    <li><a href="#menu4" onclick="showTab('menu4'); return false;"><i class="fas fa-gavel"></i> Court Dates &amp; Hearings</a></li>
+            <ul class="nav nav-pills client-edit-top-pills" role="tablist">
+    <li class="nav-item" role="presentation"><a class="nav-link active" href="#home" role="tab" onclick="showTab('home'); return false;"><i class="fas fa-user"></i> Client Info</a></li>
+    <li class="nav-item" role="presentation"><a class="nav-link" href="#menu2" role="tab" onclick="showTab('menu2'); return false;"><i class="fas fa-briefcase"></i> Matter Details</a></li>
+    <li class="nav-item" role="presentation"><a class="nav-link" href="#menu4" role="tab" onclick="showTab('menu4'); return false;"><i class="fas fa-gavel"></i> Court Dates &amp; Hearings</a></li>
     </ul>
   
   <div class="tab-content">
@@ -179,7 +176,7 @@
                     <input type="hidden" name="id" value="{{ $fetchedData->id }}">
                     <input type="hidden" name="type" value="{{ $fetchedData->type }}">
 
-    <div id="home" class="tab-pane fade in active">
+    <div id="home" class="tab-pane fade show active" role="tabpanel">
       <h3><i class="fas fa-user"></i> Client Info (Personal)</h3>
      
 
@@ -2071,11 +2068,11 @@
                     }
                     var $link = $('.client-edit-top-pills a[href="#' + targetId + '"]');
                     var $pane = $('#' + targetId);
-                    if (!$link.length || !$pane.length) return;
-                    $('.client-edit-top-pills li').removeClass('active');
-                    $link.closest('li').addClass('active');
-                    $('.main-content-area .tab-pane').removeClass('in active').hide();
-                    $pane.addClass('in active').css('display', 'block').show();
+                    if (!$pane.length) return;
+                    $('.client-edit-top-pills .nav-link').removeClass('active');
+                    if ($link.length) $link.addClass('active');
+                    $('.main-content-area .tab-pane').removeClass('show active').css('display', '');
+                    $pane.addClass('show active');
                     // Highlight matter row if ref given
                     if (targetId === 'menu2') {
                         var ref = qs.get('matter_ref');

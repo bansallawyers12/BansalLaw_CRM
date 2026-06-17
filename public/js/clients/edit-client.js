@@ -1621,10 +1621,10 @@ window.toggleEditMode = function(sectionType) {
                 initializeEmailSectionPolling();
             }, 100);
         } else if (sectionType === 'relatedFilesInfo') {
-            // Reinitialize Select2 when opening related files edit mode
-            console.log('🔗 Opening related files section - reinitializing Select2');
+            // Reinitialize Tom Select when opening related files edit mode
+            console.log('🔗 Opening related files section - reinitializing Tom Select');
             setTimeout(function() {
-                window.reinitializeRelatedFilesSelect2();
+                window.reinitializeRelatedFilesTomSelect();
             }, 100);
         }
     }
@@ -5381,19 +5381,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    initializeRelatedFilesSelect2();
+    initializeRelatedFilesTomSelect();
 
     setTimeout(function () {
         var el = document.getElementById('relatedFiles');
         if (el && !el.tomselect) {
-            initializeRelatedFilesSelect2();
+            initializeRelatedFilesTomSelect();
         }
     }, 1000);
 
     setTimeout(function () {
         var el = document.getElementById('relatedFiles');
         if (el && !el.tomselect) {
-            initializeRelatedFilesSelect2();
+            initializeRelatedFilesTomSelect();
         }
     }, 3000);
 });
@@ -5401,7 +5401,7 @@ document.addEventListener('DOMContentLoaded', function() {
 /**
  * Tom Select + POST /clients/search-partner for Related Files (multi).
  */
-function initializeRelatedFilesSelect2() {
+function initializeRelatedFilesTomSelect() {
     var relatedFilesSelect = document.getElementById('relatedFiles');
     if (!relatedFilesSelect) return;
 
@@ -5466,14 +5466,14 @@ function initializeRelatedFilesSelect2() {
 }
 
 /** Re-run when Related Files edit panel is toggled (kept name for callers). */
-window.reinitializeRelatedFilesSelect2 = function () {
+window.reinitializeRelatedFilesTomSelect = function () {
     var el = document.getElementById('relatedFiles');
     if (!el) return;
     if (typeof destroyTS === 'function') {
         destroyTS(el);
     }
     setTimeout(function () {
-        initializeRelatedFilesSelect2();
+        initializeRelatedFilesTomSelect();
     }, 100);
 };
 

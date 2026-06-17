@@ -23,7 +23,7 @@
                         <div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
                                 <label for="change_sel_legal_practitioner_id">Legal Practitioner <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="legal_practitioner" id="change_sel_legal_practitioner_id">
+                                <select data-valid="required" class="form-control crm-ts-plain" name="legal_practitioner" id="change_sel_legal_practitioner_id">
                                     <option value="">Select responsible solicitor</option>
                                     @foreach($__crmSolicitorStaff as $migAgntlist)
                                         <option value="{{$migAgntlist->id}}">{{@$migAgntlist->first_name}} {{@$migAgntlist->last_name}}@if(!empty($migAgntlist->email)) ({{@$migAgntlist->email}})@endif</option>
@@ -35,7 +35,7 @@
                         <div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
                                 <label for="person_responsible">Person Responsible <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="person_responsible" id="change_sel_person_responsible_id">
+                                <select data-valid="required" class="form-control crm-ts-plain" name="person_responsible" id="change_sel_person_responsible_id">
                                     <option value="">Select Person Responsible</option>
                                     @foreach($__crmPersonResponsibleStaff as $perreslist)
                                         <option value="{{$perreslist->id}}">{{@$perreslist->first_name}} {{@$perreslist->last_name}}@if(!empty($perreslist->email)) ({{@$perreslist->email}})@endif</option>
@@ -47,7 +47,7 @@
                         <div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
                                 <label for="person_assisting">Person Assisting <span class="span_req">*</span></label>
-                                <select data-valid="required" class="form-control select2" name="person_assisting" id="change_sel_person_assisting_id">
+                                <select data-valid="required" class="form-control crm-ts-plain" name="person_assisting" id="change_sel_person_assisting_id">
                                     <option value="">Select Person Assisting</option>
                                     @foreach($__crmPersonAssistingStaff as $perassislist)
                                         <option value="{{$perassislist->id}}">{{@$perassislist->first_name}} {{@$perassislist->last_name}}@if(!empty($perassislist->email)) ({{@$perassislist->email}})@endif</option>
@@ -59,7 +59,7 @@
                         <div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
                                 <label for="office_id">Handling Office</label>
-                                <select class="form-control select2" name="office_id" id="change_office_id">
+                                <select class="form-control crm-ts-plain" name="office_id" id="change_office_id">
                                     <option value="">Select Office</option>
                                     @foreach(\App\Models\Branch::orderBy('office_name')->get() as $office)
                                         <option value="{{$office->id}}">{{$office->office_name}}</option>
