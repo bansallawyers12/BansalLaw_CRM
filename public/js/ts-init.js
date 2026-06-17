@@ -614,18 +614,18 @@
    * Bootstrap 5 popovers for legacy markup using data-role="popover" (not data-bs-toggle).
    * @param {Element|string|JQuery} [root] optional subtree; defaults to document
    */
-  function initDataRolePopovers(root) {
+    function initDataRolePopovers(root) {
     if (typeof jQuery === 'undefined' || typeof jQuery.fn.popover !== 'function') return;
 
     var $els;
     if (!root) {
-      $els = jQuery('[data-role="popover"]');
+      $els = jQuery('[data-role="popover"]:not(.add_my_task)');
     } else if (root.jquery) {
-      $els = root.find('[data-role="popover"]');
+      $els = root.find('[data-role="popover"]:not(.add_my_task)');
     } else if (typeof root === 'string') {
-      $els = jQuery(root).find('[data-role="popover"]');
+      $els = jQuery(root).find('[data-role="popover"]:not(.add_my_task)');
     } else {
-      $els = jQuery(root).find('[data-role="popover"]');
+      $els = jQuery(root).find('[data-role="popover"]:not(.add_my_task)');
       if (root.getAttribute && root.getAttribute('data-role') === 'popover') {
         $els = $els.add(root);
       }

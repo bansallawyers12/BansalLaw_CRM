@@ -1714,31 +1714,36 @@
             const toSelect = document.querySelector('select[name="email_to[]"]');
             if (toSelect && typeof jQuery !== 'undefined') {
                 const setToField = () => {
-                    // Wait a bit for Tom Select to be initialized
+                    // Wait for Tom Select on the compose modal To field (initialized on client detail)
                     setTimeout(() => {
-                        // Clear existing selections
-                        jQuery(toSelect).val(null).trigger('change');
-                        
-                        // For AJAX Tom Select, we need to create options and select them
                         const emailAddresses = data.to.map(email => extractEmailAddress(email)).filter(addr => addr);
-                        
-                        if (emailAddresses.length > 0) {
-                            // Create options for each email
-                            emailAddresses.forEach(emailAddr => {
-                                // Check if option already exists
-                                let option = Array.from(toSelect.options).find(opt => opt.value === emailAddr || opt.text === emailAddr);
-                                if (!option) {
-                                    // Create new option
-                                    option = new Option(emailAddr, emailAddr, true, true);
-                                    toSelect.add(option);
-                                } else {
-                                    option.selected = true;
+                        if (!emailAddresses.length) return;
+
+                        const ts = toSelect.tomselect;
+                        if (ts) {
+                            ts.clear(true);
+                            emailAddresses.forEach(function (addr) {
+                                var key = String(addr);
+                                if (!ts.options[key]) {
+                                    ts.addOption({ id: key, name: key, email: key });
                                 }
+                                ts.addItem(key, true);
                             });
-                            
-                            // Update Tom Select with the selected values
-                            jQuery(toSelect).val(emailAddresses).trigger('change');
+                            return;
                         }
+
+                        // Native fallback if Tom Select is not ready
+                        jQuery(toSelect).val(null).trigger('change');
+                        emailAddresses.forEach(function (emailAddr) {
+                            let option = Array.from(toSelect.options).find(opt => opt.value === emailAddr || opt.text === emailAddr);
+                            if (!option) {
+                                option = new Option(emailAddr, emailAddr, true, true);
+                                toSelect.add(option);
+                            } else {
+                                option.selected = true;
+                            }
+                        });
+                        jQuery(toSelect).val(emailAddresses).trigger('change');
                     }, 200);
                 };
                 

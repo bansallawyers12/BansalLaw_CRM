@@ -5,10 +5,11 @@
                 $crmGetAllClientsUrl    = route('clients.getallclients');
             @endphp
 
-            initTS('.crm-ts-assignee', {
+            initTS('#checkinmodal .crm-ts-assignee', {
                 plugins: ['clear_button'],
                 dropdownParent: '#checkinmodal',
-                create: false
+                create: false,
+                allowEmptyOption: true
             });
 
             (function () {

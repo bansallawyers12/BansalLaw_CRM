@@ -510,7 +510,7 @@ $(document).ready(function() {
 
         $('#sel_legal_practitioner_id, #sel_person_responsible_id, #sel_person_assisting_id, #sel_office_id, #sel_matter_id').each(function(){
 
-            initTS(this, { dropdownParent: modal, create: false });
+            initTS(this, { dropdownParent: modal, create: false, allowEmptyOption: true });
 
         });
 
@@ -970,7 +970,9 @@ $(document).ready(function() {
 
 
 
-        $('.selecttemplate').each(function () { initTS(this, { dropdownParent: '#emailmodal', create: false }); });
+        $('.selecttemplate').each(function () {
+            initTS(this, { dropdownParent: '#emailmodal', create: false, allowEmptyOption: true });
+        });
 
 
 
@@ -6777,21 +6779,17 @@ success: function(response) {
 
             $("#folder_name").val($(this).attr('data-categoryid'));
 
-            $('.create_education_docs').modal('show');
-
-            initTS('#checklist', {
-
-                plugins: ['remove_button'],
-
-                allowEmptyOption: true,
-
-                closeAfterSelect: false,
-
-                dropdownParent: '.create_education_docs',
-
-                create: false
-
+            var $modal = $('#openeducationdocsmodal');
+            $modal.one('shown.bs.modal', function () {
+                initTS('#checklist', {
+                    plugins: ['remove_button'],
+                    allowEmptyOption: true,
+                    closeAfterSelect: false,
+                    dropdownParent: this,
+                    create: false
+                });
             });
+            $modal.modal('show');
 
         });
 
@@ -6869,21 +6867,17 @@ success: function(response) {
 
             $("#visa_folder_name").val($(this).attr('data-categoryid'));
 
-            $('.create_migration_docs').modal('show');
-
-            initTS('#visa_checklist', {
-
-                plugins: ['remove_button'],
-
-                allowEmptyOption: true,
-
-                closeAfterSelect: false,
-
-                dropdownParent: '#openmigrationdocsmodal',
-
-                create: false
-
+            var $modal = $('#openmigrationdocsmodal');
+            $modal.one('shown.bs.modal', function () {
+                initTS('#visa_checklist', {
+                    plugins: ['remove_button'],
+                    allowEmptyOption: true,
+                    closeAfterSelect: false,
+                    dropdownParent: this,
+                    create: false
+                });
             });
+            $modal.modal('show');
 
         });
 
@@ -6897,21 +6891,17 @@ success: function(response) {
 
             $("#nomination_folder_name").val($(this).attr('data-categoryid'));
 
-            $('.create_nomination_docs').modal('show');
-
-            initTS('#nomination_checklist', {
-
-                plugins: ['remove_button'],
-
-                allowEmptyOption: true,
-
-                closeAfterSelect: false,
-
-                dropdownParent: '#opennominationdocsmodal',
-
-                create: false
-
+            var $modal = $('#opennominationdocsmodal');
+            $modal.one('shown.bs.modal', function () {
+                initTS('#nomination_checklist', {
+                    plugins: ['remove_button'],
+                    allowEmptyOption: true,
+                    closeAfterSelect: false,
+                    dropdownParent: this,
+                    create: false
+                });
             });
+            $modal.modal('show');
 
         });
 

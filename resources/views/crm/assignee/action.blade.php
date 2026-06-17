@@ -1556,7 +1556,7 @@ $(function () {
         $popover.find('.crm-ts-assignee').each(function() {
             if (typeof destroyTS === 'function') destroyTS(this);
             if (typeof initTS === 'function') {
-                initTS(this, { create: false, dropdownParent: ddParent });
+                initTS(this, { create: false, allowEmptyOption: true, dropdownParent: ddParent });
             }
             var ts = this.tomselect;
             if (ts && ts.wrapper) {

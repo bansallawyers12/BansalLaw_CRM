@@ -434,7 +434,7 @@
             var ddParent = $shell.length ? $shell[0] : document.body;
             if (typeof initTS === 'function') {
                 $popover.find('.crm-ts-assignee').each(function() {
-                    initTS(this, { create: false, dropdownParent: ddParent });
+                    initTS(this, { create: false, allowEmptyOption: true, dropdownParent: ddParent });
                     var ts = this.tomselect;
                     if (ts && ts.wrapper) {
                         ts.wrapper.style.width = '100%';
