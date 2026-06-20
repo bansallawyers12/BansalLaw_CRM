@@ -8124,4 +8124,146 @@ class ClientsController extends Controller
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Show the Outlook style email interface
+     */
+    public function outlookEmails()
+    {
+        return view('crm.emails_outlook');
+    }
+
+    /**
+     * Fetch all emails across the system for the Outlook view
+     */
+    public function fetchAllOutlookEmails(Request $request)
+    {
+        $folder = $request->input('folder', 'inbox'); // inbox, sent, drafts, deleted
+        $search = $request->input('search');
+        $clientId = $request->input('client_id');
+        $clientMatterId = $request->input('client_matter_id');
+        $labelId = $request->input('label_id');
+        $senderFilter = $request->input('sender_filter');
+        $perPage = 15;
+
+        // Base query with attachments
+        $query = \App\Models\EmailLog::with('attachments');
+
+        // Apply client and matter filter if provided
+        if (!empty($clientId)) {
+            $query->where('client_id', $clientId);
+        }
+        if (!empty($clientMatterId)) {
+            $query->where('client_matter_id', $clientMatterId);
+        }
+
+        // Apply label filter
+        if (!empty($labelId)) {
+            $query->whereHas('labels', function($q) use ($labelId) {
+                $q->where('email_labels.id', $labelId);
+            });
+        }
+
+        // Apply sender filter
+        if (!empty($senderFilter)) {
+            $query->where('from_mail', $senderFilter);
+        }
+
+        // Apply folder logic
+        // 1 = Inbox/Received, 2 = Sent
+        if ($folder === 'inbox') {
+            $query->where('mail_type', 1);
+        } elseif ($folder === 'sent') {
+            $query->where('mail_type', 2);
+        } elseif ($folder === 'deleted') {
+            // No easy way to fetch deleted items if they are permanently deleted
+            $query->where('id', '<', 0); // Return empty for now
+        }
+
+        // Apply search filter if present
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('subject', 'like', "%{$search}%")
+                  ->orWhere('from_mail', 'like', "%{$search}%")
+                  ->orWhere('to_mail', 'like', "%{$search}%")
+                  ->orWhere('message', 'like', "%{$search}%");
+            });
+        }
+
+        // Sort latest first
+        $query->orderBy('created_at', 'desc');
+
+        // Paginate
+        $emails = $query->paginate($perPage);
+
+        // Prepare preview text and remove massive HTML for the list response
+        // Also map the .msg file URL if applicable
+        $url = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
+        $emails->getCollection()->transform(function ($email) use ($url) {
+            $preview = strip_tags($email->message);
+            $email->text_preview = mb_substr($preview, 0, 100);
+
+            $msgUrl = '';
+            if (!empty($email->uploaded_doc_id)) {
+                $docInfo = \App\Models\Document::select('id', 'doc_type', 'myfile', 'myfile_key', 'mail_type')
+                    ->where('id', $email->uploaded_doc_id)
+                    ->first();
+                if ($docInfo) {
+                    if (!empty($docInfo->myfile_key)) {
+                        $msgUrl = $docInfo->myfile;
+                    } else {
+                        $adminInfo = \App\Models\Admin::select('client_id')->where('id', $email->client_id)->first();
+                        $clientRef = ($adminInfo && $adminInfo->client_id) ? $adminInfo->client_id : ('client_' . ($email->client_id ?? 0));
+                        $msgUrl = $url . $clientRef . '/' . ($docInfo->doc_type ?? 'mail') . '/' . ($docInfo->mail_type ?? 'inbox') . '/' . ($docInfo->myfile ?? '');
+                    }
+                }
+            }
+            $email->msg_file_url = $msgUrl;
+
+            $pdfUrl = '';
+            if (!empty($email->pdf_doc_id)) {
+                $docInfo = \App\Models\Document::select('id', 'doc_type', 'myfile', 'myfile_key', 'mail_type')
+                    ->where('id', $email->pdf_doc_id)
+                    ->first();
+                if ($docInfo) {
+                    if (!empty($docInfo->myfile_key)) {
+                        $pdfUrl = $docInfo->myfile;
+                    } else {
+                        $adminInfo = \App\Models\Admin::select('client_id')->where('id', $email->client_id)->first();
+                        $clientRef = ($adminInfo && $adminInfo->client_id) ? $adminInfo->client_id : ('client_' . ($email->client_id ?? 0));
+                        $pdfUrl = $url . $clientRef . '/' . ($docInfo->doc_type ?? 'mail') . '/' . ($docInfo->mail_type ?? 'inbox') . '/' . ($docInfo->myfile ?? '');
+                    }
+                }
+            }
+            $email->pdf_file_url = $pdfUrl;
+
+            return $email;
+        });
+
+        // Fetch distinct senders for this client/matter (only received emails, mail_type = 1)
+        $sendersQuery = \App\Models\EmailLog::where('mail_type', 1)
+            ->whereNotNull('from_mail')
+            ->where('from_mail', '!=', '');
+            
+        if (!empty($clientId)) {
+            $sendersQuery->where('client_id', $clientId);
+        }
+        if (!empty($clientMatterId)) {
+            $sendersQuery->where('client_matter_id', $clientMatterId);
+        }
+        
+        $senders = $sendersQuery->distinct()->pluck('from_mail');
+
+        return response()->json([
+            'status' => 'success',
+            'emails' => $emails->items(),
+            'total' => $emails->total(),
+            'per_page' => $emails->perPage(),
+            'current_page' => $emails->currentPage(),
+            'last_page' => $emails->lastPage(),
+            'from' => $emails->firstItem() ?? 0,
+            'to' => $emails->lastItem() ?? 0,
+            'senders' => $senders
+        ]);
+    }
 }

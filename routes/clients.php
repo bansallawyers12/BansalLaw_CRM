@@ -374,3 +374,7 @@ Route::prefix('crm/access')->name('crm.access.')->group(function () {
     Route::get('/queue/mini', [AccessGrantController::class, 'queueMini'])->name('queue.mini');
 });
 Route::get('/email-logs/{id}/preview-html', [\App\Http\Controllers\CRM\ClientsController::class, 'getParsedEmailHtml'])->name('email-logs.preview-html');
+
+// Outlook style email
+Route::get('/clients/outlook-emails', [\App\Http\Controllers\CRM\ClientsController::class, 'outlookEmails'])->name('clients.outlook.emails');
+Route::get('/clients/outlook/fetch-all', [\App\Http\Controllers\CRM\ClientsController::class, 'fetchAllOutlookEmails'])->name('clients.outlook.fetchAll');
