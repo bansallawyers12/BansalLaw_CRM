@@ -8,7 +8,7 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="stylesheet" href="{{ URL::asset('css/client-detail.css') }}">
 @if(is_array($matterFormForLead ?? null))
-<link rel="stylesheet" href="{{ URL::asset('css/clients/edit-client-components.css') }}">
+<link rel="stylesheet" href="{{ URL::asset('css/clients/edit-client-components.css') }}"> 
 @endif
 <style>
 .lead-actions-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 18px; background: #f0f4ff; border-bottom: 1px solid #c7d7fa; }

@@ -19,10 +19,13 @@
     let currentSearch = '';
     let currentSort = 'date';
     let availableLabels = []; // Loaded from API
+    let currentSenderFilter = '';
+    let availableSenders = []; // Loaded from API
 
     // Expose function to set mail type (for external use)
     window.setEmailMailType = function(type) {
         currentMailType = type;
+        currentPage = 1;
         const mailTypeFilter = document.getElementById('mailTypeFilter');
         if (mailTypeFilter) {
             mailTypeFilter.value = type;
@@ -198,12 +201,13 @@
 
     function buildEmailUploadFormData(file, clientId, matterId, csrfToken) {
         const formData = new FormData();
+        const isLead = isLeadContext();
         formData.append('email_files[]', file);
         formData.append('client_id', clientId);
-        formData.append('type', 'client');
+        formData.append('type', isLead ? 'lead' : 'client');
         formData.append(
             currentMailType === 'sent' ? 'upload_sent_mail_client_matter_id' : 'upload_inbox_mail_client_matter_id',
-            matterId
+            (matterId !== null && matterId !== undefined) ? matterId : ''
         );
         formData.append('_token', csrfToken);
         return formData;
@@ -962,6 +966,18 @@
             });
         }
 
+        const senderFilter = document.getElementById('senderFilter');
+        if (senderFilter) {
+            senderFilter.addEventListener('change', function() {
+                currentSenderFilter = this.value;
+                currentPage = 1;
+                loadEmails();
+            });
+        }
+
+        // Fetch unique senders when module initializes
+        fetchSenders();
+
         console.log('Search module initialized');
     };
 
@@ -1024,8 +1040,8 @@
             );
 
             const requestBody = isLead
-                ? { client_id: clientId, search: currentSearch, status: '', label_id: currentLabelId }
-                : { client_id: clientId, client_matter_id: matterId, search: currentSearch, status: '', label_id: currentLabelId };
+                ? { client_id: clientId, search: currentSearch, status: '', label_id: currentLabelId, sender_filter: currentSenderFilter, page: currentPage }
+                : { client_id: clientId, client_matter_id: matterId, search: currentSearch, status: '', label_id: currentLabelId, sender_filter: currentSenderFilter, page: currentPage };
 
             console.log('Fetching emails from:', endpoint, requestBody);
 
@@ -1045,6 +1061,28 @@
 
             const raw = await response.json();
             console.log('Emails received:', raw);
+
+            if (raw && raw.current_page !== undefined) {
+                currentPage = raw.current_page;
+                lastPage = raw.last_page || 1;
+                
+                const prevBtn = document.getElementById('prevBtn');
+                const nextBtn = document.getElementById('nextBtn');
+                if (prevBtn) prevBtn.disabled = currentPage <= 1;
+                if (nextBtn) nextBtn.disabled = currentPage >= lastPage;
+                
+                const pageInfo = document.getElementById('pageInfo');
+                if (pageInfo) {
+                    const totalRecords = raw.total || 0;
+                    const from = raw.from || 0;
+                    const to = raw.to || 0;
+                    if (totalRecords > 0) {
+                        pageInfo.textContent = `Showing ${from}-${to} of ${totalRecords} (Page ${currentPage} of ${lastPage})`;
+                    } else {
+                        pageInfo.textContent = `0 records found (Page ${currentPage} of ${lastPage})`;
+                    }
+                }
+            }
 
             const emails = normalizeEmailListResponse(raw);
 
@@ -1290,7 +1328,7 @@
     }
 
     /**
-     * Load and display email details with attachments
+     * Load and display email details with attachments (Gmail-like preview)
      */
     function loadEmailDetail(email) {
         const emailContentView = document.getElementById('emailContentView');
@@ -1372,44 +1410,125 @@
         let previewSection = '';
         if (email.preview_url) {
             previewSection = `
-                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
-                    <h4 style="margin-bottom: 10px; font-weight: 600;">Original Email File</h4>
-                    <a href="${escapeHtml(email.preview_url)}" target="_blank" class="btn btn-sm btn-primary">
-                        <i class="fas fa-download"></i> Download Original .msg
-                    </a>
+                <div class="gmail-original-download">
+                    <i class="fas fa-file-alt"></i>
+                    <a href="${escapeHtml(email.preview_url)}" target="_blank">Download Original .msg</a>
                 </div>
             `;
         }
 
-        const pdfBodyHtml = email.pdf_preview_url
-            ? `<iframe src="${escapeHtml(email.pdf_preview_url)}" type="application/pdf"
-                       style="width:100%; height:680px; border:none; border-radius:4px;"
-                       title="Email PDF preview"></iframe>`
-            : `<div class="pdf-unavailable-notice" style="padding:24px; text-align:center; color:#666; background:#f9f9f9; border-radius:4px;">
-                    <i class="fas fa-file-pdf" style="font-size:24px; margin-bottom:8px; display:block;"></i>
-                    PDF preview not available for this email.
-                    ${email.preview_url
-                        ? `<br><a href="${escapeHtml(email.preview_url)}" target="_blank" style="margin-top:8px; display:inline-block;">Download original .msg</a>`
-                        : ''}
-               </div>`;
+        // --- Gmail-like email body (from database, rendered as HTML) ---
+        let emailBodyHtml = '';
+        const rawBody = email.enhanced_html || email.rendered_html || email.message || email.text_preview || '';
 
-        // Render complete email detail
+        if (rawBody && rawBody.trim() !== '') {
+            emailBodyHtml = '<div class="gmail-body-frame-wrap"><iframe class="gmail-body-frame" id="gmailBodyFrame_' + email.id + '" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" title="Email body"></iframe></div>';
+        } else {
+            emailBodyHtml = '<div class="gmail-body-empty"><i class="fas fa-envelope-open"></i><p>No email content available.</p></div>';
+        }
+
+        // Sender initial for avatar
+        const senderInitial = from.charAt(0).toUpperCase();
+
+        // Render complete Gmail-like email detail
         emailContentView.innerHTML = `
-            <div class="email-content-header">
-                <div class="email-content-subject">${escapeHtml(subject)}</div>
-                <div class="email-content-meta">
-                    <div><strong>From:</strong> ${escapeHtml(from)}</div>
-                    <div><strong>To:</strong> ${escapeHtml(to)}</div>
-                    ${cc ? `<div><strong>Cc:</strong> ${escapeHtml(cc)}</div>` : ''}
-                    <div><strong>Date:</strong> ${date}</div>
+            <div class="gmail-preview">
+                <div class="gmail-subject-row">
+                    <h2 class="gmail-subject">${escapeHtml(subject)}</h2>
                 </div>
+                <div class="gmail-header">
+                    <div class="gmail-avatar" style="background:${stringToColor(from)}">${senderInitial}</div>
+                    <div class="gmail-header-info">
+                        <div class="gmail-sender-row">
+                            <span class="gmail-sender-name">${escapeHtml(from)}</span>
+                            <span class="gmail-date">${date}</span>
+                        </div>
+                        <div class="gmail-recipient-row">
+                            <span class="gmail-to-label">to</span>
+                            <span class="gmail-to-value">${escapeHtml(to)}</span>
+                            ${cc ? `<span class="gmail-cc-label">cc</span><span class="gmail-cc-value">${escapeHtml(cc)}</span>` : ''}
+                            <button class="gmail-details-toggle" onclick="this.closest('.gmail-header').querySelector('.gmail-details-expanded').classList.toggle('show')">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="gmail-details-expanded">
+                            <div class="gmail-detail-line"><strong>From:</strong> ${escapeHtml(from)}</div>
+                            <div class="gmail-detail-line"><strong>To:</strong> ${escapeHtml(to)}</div>
+                            ${cc ? `<div class="gmail-detail-line"><strong>Cc:</strong> ${escapeHtml(cc)}</div>` : ''}
+                            <div class="gmail-detail-line"><strong>Date:</strong> ${date}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="gmail-body">
+                    ${emailBodyHtml}
+                </div>
+                ${attachmentHtml}
+                ${previewSection}
             </div>
-            <div class="email-content-body">
-                ${pdfBodyHtml}
-            </div>
-            ${attachmentHtml}
-            ${previewSection}
         `;
+
+        // Inject HTML content into sandboxed iframe after DOM is ready
+        if (rawBody && rawBody.trim() !== '') {
+            setTimeout(function() {
+                const iframe = document.getElementById('gmailBodyFrame_' + email.id);
+                if (iframe) {
+                    const bodyContent = rawBody;
+                    const resolvedBody = replaceCidReferences(bodyContent, allAttachments);
+
+                    // Check if content is already a full HTML document
+                    const isFullHtml = /<html[\s>]/i.test(resolvedBody);
+
+                    let iframeDoc;
+                    if (isFullHtml) {
+                        // Full HTML document (e.g. Outlook/Word generated) — inject directly
+                        // Patch in a small reset style to constrain images/tables inside the existing <head>
+                        const patchStyle = '<style>body{margin:0;padding:16px 4px 24px;overflow-x:hidden;word-wrap:break-word;overflow-wrap:break-word;}img{max-width:100%!important;height:auto!important;}table{max-width:100%!important;}blockquote{border-left:3px solid #dadce0;margin:8px 0;padding:0 12px;}</style>';
+                        if (/<head[\s>]/i.test(resolvedBody)) {
+                            iframeDoc = resolvedBody.replace(/(<head[^>]*>)/i, '$1' + patchStyle);
+                        } else {
+                            iframeDoc = resolvedBody.replace(/(<html[^>]*>)/i, '$1<head>' + patchStyle + '</head>');
+                        }
+                    } else {
+                        // HTML fragment — wrap in a clean document shell
+                        iframeDoc = '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>' +
+                            'body{margin:0;padding:16px 0 24px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#202124;word-wrap:break-word;overflow-wrap:break-word;}' +
+                            'img{max-width:100%;height:auto;}' +
+                            'a{color:#1a73e8;text-decoration:none;}' +
+                            'a:hover{text-decoration:underline;}' +
+                            'table{max-width:100%;border-collapse:collapse;}' +
+                            'pre,code{white-space:pre-wrap;word-wrap:break-word;max-width:100%;}' +
+                            'blockquote{margin:8px 0;padding:0 12px;border-left:3px solid #dadce0;color:#5f6368;}' +
+                            '</style></head><body>' + resolvedBody + '</body></html>';
+                    }
+
+                    iframe.srcdoc = iframeDoc;
+
+                    // Auto-resize iframe to content height
+                    iframe.onload = function() {
+                        try {
+                            const doc = iframe.contentDocument || iframe.contentWindow.document;
+                            const contentHeight = doc.documentElement.scrollHeight || doc.body.scrollHeight;
+                            iframe.style.height = Math.max(contentHeight + 20, 100) + 'px';
+                        } catch (e) {
+                            iframe.style.height = '500px';
+                        }
+                    };
+                }
+            }, 50);
+        }
+    }
+
+    /**
+     * Generate a consistent color from a string (for avatar)
+     */
+    function stringToColor(str) {
+        if (!str) return '#1a73e8';
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const colors = ['#1a73e8','#ea4335','#34a853','#fbbc04','#e37400','#a142f4','#24c1e0','#f538a0','#1e8e3e','#d93025','#5f6368','#185abc'];
+        return colors[Math.abs(hash) % colors.length];
     }
 
     /**
@@ -2099,6 +2218,70 @@
         
         // Close menu on scroll
         document.addEventListener('scroll', hideContextMenu, true);
+    }
+
+    // =========================================================================
+    // Sender Management
+    // =========================================================================
+
+    /**
+     * Fetch all unique senders for the current client/matter
+     */
+    window.fetchSenders = async function() {
+        const clientId = getClientId();
+        const matterId = getMatterId();
+        
+        if (!clientId) return;
+
+        try {
+            const response = await fetch(crmUrl('/clients/email-senders'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken()
+                },
+                body: JSON.stringify({
+                    client_id: clientId,
+                    client_matter_id: matterId || ''
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (data.success && Array.isArray(data.senders)) {
+                availableSenders = data.senders;
+                populateSenderFilter();
+            }
+        } catch (error) {
+            console.error('Error fetching senders:', error);
+        }
+    };
+
+    /**
+     * Populate sender filter dropdown
+     */
+    function populateSenderFilter() {
+        const senderFilter = document.getElementById('senderFilter');
+        if (!senderFilter) return;
+
+        // Clear existing options (except "All Senders")
+        while (senderFilter.options.length > 1) {
+            senderFilter.remove(1);
+        }
+
+        // Add sender options
+        availableSenders.forEach(sender => {
+            if (sender && sender.trim() !== '') {
+                const option = document.createElement('option');
+                option.value = sender;
+                option.textContent = sender;
+                senderFilter.appendChild(option);
+            }
+        });
     }
 
     // =========================================================================

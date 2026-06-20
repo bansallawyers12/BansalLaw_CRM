@@ -9,28 +9,41 @@
 <style>
     /* Page-specific styles for clients index page */
     /* Fix dropdown menu display for action buttons */
-    .listing-container .dropdown-menu {
-        position: absolute !important;
-        top: 100% !important;
-        right: 0 !important;
-        left: auto !important;
-        float: none !important;
-        min-width: 180px;
-        padding: 8px 0;
-        margin: 4px 0 0;
-        font-size: 14px;
-        text-align: left;
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border: 1px solid rgba(30, 61, 96, 0.2);
-        border-radius: 8px;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        background-clip: padding-box;
-        z-index: 9999 !important;
-        transform: none !important;
-        max-height: none !important;
-        overflow: visible !important;
-        backdrop-filter: blur(10px);
-    }
+    /* Apply this to the main container holding your list or grid */
+.listing-container-wrapper {
+    isolation: isolate !important; /* Forces a brand new global layer */
+}
+
+.listing-container-wrapper .listing-container {
+    position: relative !important;
+    z-index: 99999 !important; /* Pushes the parent container upward */
+}
+
+.listing-container-wrapper .listing-container .dropdown-menu {
+    position: absolute !important; /* Keeps it attached to the button */
+    top: 100% !important;
+    right: 0 !important;
+    left: auto !important;
+    z-index: 2147483647 !important; /* Max global z-index */
+    
+    /* Your existing styles */
+    float: none !important;
+    min-width: 180px;
+    padding: 8px 0;
+    margin: 4px 0 0;
+    font-size: 14px;
+    text-align: left;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 1px solid rgba(30, 61, 96, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    background-clip: padding-box;
+    transform: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    backdrop-filter: blur(10px);
+}
+
     
     .listing-container .dropdown-menu.show {
         display: block !important;

@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Document;
-use App\Models\Admin;
+use App\Models\Staff;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class DocumentFactory extends Factory
@@ -18,7 +18,7 @@ class DocumentFactory extends Factory
             'myfile' => 'documents/' . $this->faker->uuid() . '.pdf',
             'file_size' => $this->faker->numberBetween(1000, 5000000),
             'status' => $this->faker->randomElement(['draft', 'sent', 'signed']),
-            'created_by' => Admin::factory(),
+            'created_by' => Staff::query()->value('id'),
         ];
     }
 

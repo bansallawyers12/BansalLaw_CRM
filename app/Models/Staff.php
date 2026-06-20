@@ -33,7 +33,7 @@ class Staff extends Authenticatable
         'first_name',
         'last_name',
         'email',
-        'password',
+        'password', 
         'country_code',
         'phone',
         'status',

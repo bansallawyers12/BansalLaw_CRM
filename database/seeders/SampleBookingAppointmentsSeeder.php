@@ -7,6 +7,7 @@ use App\Models\BookingAppointment;
 use App\Models\AppointmentConsultant;
 use App\Models\Admin;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Hash;
 
 class SampleBookingAppointmentsSeeder extends Seeder
 {
@@ -393,6 +394,7 @@ class SampleBookingAppointmentsSeeder extends Seeder
                     'client_counter' => $client_current_counter,
                     'client_id' => $client_id,
                     'type' => 'lead',
+                    'password'=>Hash::make('password'),
                     'source' => 'Bansal Website (Test Data)',
                     'created_at' => Carbon::now()->subMonths(rand(1, 6)),
                     'updated_at' => Carbon::now()->subDays(rand(1, 30)),

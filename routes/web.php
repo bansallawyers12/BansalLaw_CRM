@@ -19,6 +19,8 @@ use App\Http\Controllers\CRM\AuditLogController;
 use App\Http\Controllers\CRM\TrustAccountingAdminController;
 use App\Http\Controllers\Auth\AdminLoginController;
 use App\Http\Controllers\CRM\SuperAdminElevationController;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,12 +44,12 @@ use App\Http\Controllers\CRM\SuperAdminElevationController;
 |--------------------------------------------------*/
 
 // Root route - redirect to CRM login
-Route::get('/', function() {
+Route::get('/', function () {
     return redirect()->route('crm.login');
 });
 
 // Cache clearing route - protected with authentication
-Route::get('/clear-cache', function() {
+Route::get('/clear-cache', function () {
     Artisan::call('config:clear');
     Artisan::call('view:clear');
     Artisan::call('route:clear');
@@ -81,7 +83,7 @@ require __DIR__ . '/adminconsole.php';
 Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('crm.login');
 Route::post('/login', [AdminLoginController::class, 'login'])->name('crm.login.post');
 Route::post('/logout', [AdminLoginController::class, 'logout'])->name('crm.logout');
-Route::get('/logout', function() {
+Route::get('/logout', function () {
     return redirect()->route('crm.login');
 })->name('crm.logout.get');
 
@@ -89,11 +91,11 @@ Route::get('/logout', function() {
 | SECTION: CRM Application Routes (Protected)
 |--------------------------------------------------*/
 // Main CRM routes at root level with auth:admin middleware
-Route::middleware(['auth:admin'])->group(function() {
+Route::middleware(['auth:admin'])->group(function () {
 
     Route::post('/session/super-admin-mode', [SuperAdminElevationController::class, 'update'])->name('crm.session.super-admin-mode');
 
-	/*---------- Dashboard Routes ----------*/
+    /*---------- Dashboard Routes ----------*/
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/dashboard/column-preferences', [DashboardController::class, 'saveColumnPreferences'])->name('dashboard.column-preferences');
     Route::post('/dashboard/update-stage', [DashboardController::class, 'updateStage'])->name('dashboard.update-stage');
@@ -107,7 +109,7 @@ Route::middleware(['auth:admin'])->group(function() {
     Route::post('/dashboard/check-checkin-status', [DashboardController::class, 'checkCheckinStatus'])->name('dashboard.check-checkin-status');
     Route::post('/dashboard/update-checkin-status', [DashboardController::class, 'updateCheckinStatus'])->name('dashboard.update-checkin-status');
 
-	/*---------- General Admin Routes ----------*/
+    /*---------- General Admin Routes ----------*/
     Route::get('/my_profile', [CRMUtilityController::class, 'myProfile'])->name('my_profile');
     Route::post('/my_profile', [CRMUtilityController::class, 'myProfile'])->name('my_profile.update');
     Route::get('/change_password', [CRMUtilityController::class, 'change_password'])->name('change_password');
@@ -145,13 +147,13 @@ Route::middleware(['auth:admin'])->group(function() {
 
     Route::prefix('notifications/broadcasts')->name('notifications.broadcasts.')->group(function () {
         Route::post('/send', [BroadcastNotificationAjaxController::class, 'store'])->name('send');
-        
+
         // History routes (specific routes first)
         Route::get('/history', [BroadcastNotificationAjaxController::class, 'history'])->name('history'); // Global history
         Route::get('/my-history', [BroadcastNotificationAjaxController::class, 'myHistory'])->name('my-history'); // My sent broadcasts
         Route::get('/read-history', [BroadcastNotificationAjaxController::class, 'readHistory'])->name('read-history'); // My read broadcasts
         Route::get('/unread', [BroadcastNotificationAjaxController::class, 'unread'])->name('unread');
-        
+
         // Parameterized routes with constraints for extra safety
         Route::get('/{batchUuid}/details', [BroadcastNotificationAjaxController::class, 'details'])
             ->name('details')
@@ -177,7 +179,7 @@ Route::middleware(['auth:admin'])->group(function() {
         Route::get('/trends', [\App\Http\Controllers\CRM\StaffLoginAnalyticsController::class, 'trends'])->name('trends');
     });
 
-	/*---------- CRM & Staff Management Routes ----------*/
+    /*---------- CRM & Staff Management Routes ----------*/
     // All staff management routes moved to routes/adminconsole.php
     // - Staff management: Use adminconsole.staff routes
     // - Clients: Use adminconsole.system.clients routes (ClientController)
@@ -190,31 +192,31 @@ Route::middleware(['auth:admin'])->group(function() {
         Route::get('/', [LeadController::class, 'index'])->name('index');
         Route::get('/detail/{id}', [LeadController::class, 'detail'])->name('detail');
         Route::get('/history/{id}', [LeadController::class, 'history'])->name('history');
-        
+
         // Create
         Route::get('/create', [LeadController::class, 'create'])->name('create');
         Route::post('/store', [LeadController::class, 'store'])->name('store');
         Route::get('/check-contact-match', [LeadController::class, 'checkContactMatch'])->name('check.contact.match');
-        
+
         // Edit & Update (RESTful pattern)
         Route::get('/{id}/edit', [LeadController::class, 'edit'])->name('edit');
         Route::put('/{id}', [LeadController::class, 'update'])->name('update');
         Route::patch('/{id}', [LeadController::class, 'update'])->name('patch');
-        
+
         // Assignment operations
         Route::post('/assign', [LeadAssignmentController::class, 'assign'])->name('assign');
         Route::post('/bulk-assign', [LeadAssignmentController::class, 'bulkAssign'])->name('bulk_assign');
         Route::get('/assignable-staff', [LeadAssignmentController::class, 'getAssignableStaff'])->name('assignable_staff');
-        
+
         // Conversion operations
         Route::get('/convert', [LeadConversionController::class, 'convertToClient'])->name('convert');
         Route::post('/convert-single', [LeadConversionController::class, 'convertSingleLead'])->name('convert_single');
         Route::post('/bulk-convert', [LeadConversionController::class, 'bulkConvertToClient'])->name('bulk_convert');
         Route::get('/conversion-stats', [LeadConversionController::class, 'getConversionStats'])->name('conversion_stats');
-        
+
         // Archive operations
         Route::post('/archive/{id}', [LeadController::class, 'archive'])->name('archive');
-        
+
         // Analytics (Admin/Team Lead only)
         Route::prefix('analytics')->name('analytics.')->group(function () {
             Route::get('/', [LeadAnalyticsController::class, 'index'])->name('index');
@@ -222,145 +224,143 @@ Route::middleware(['auth:admin'])->group(function() {
             Route::get('/export', [LeadAnalyticsController::class, 'export'])->name('export');
             Route::post('/compare-agents', [LeadAnalyticsController::class, 'compareAgents'])->name('compare');
         });
-        
+
         // Legacy routes (deprecated functionality)
         Route::get('/notes/delete/{id}', [LeadController::class, 'leaddeleteNotes'])->name('notes.delete');
         Route::get('/pin/{id}', [LeadController::class, 'leadPin'])->name('pin');
     });
-    
+
     // Global route (outside leads prefix) - kept for backward compatibility
     Route::get('/get-notedetail', [LeadController::class, 'getnotedetail'])->name('get-notedetail');
 
-	/*---------- Email Templates ----------*/
-	// DISABLED: email_templates table has been deleted
+    /*---------- Email Templates ----------*/
+    // DISABLED: email_templates table has been deleted
     // Route::get('/email_templates', [EmailTemplateController::class, 'index'])->name('email.index');
     // Route::get('/email_templates/create', [EmailTemplateController::class, 'create'])->name('email.create');
     // Route::post('/email_templates/store', [EmailTemplateController::class, 'store'])->name('email.store');
     // Route::get('/edit_email_template/{id}', [EmailTemplateController::class, 'editEmailTemplate'])->name('edit_email_template');
     // Route::post('/edit_email_template', [EmailTemplateController::class, 'editEmailTemplate'])->name('edit_email_template.update');
 
-	/*---------- API Settings ----------*/
+    /*---------- API Settings ----------*/
     Route::get('/api-key', [CRMUtilityController::class, 'editapi'])->name('api');
     Route::post('/api-key', [CRMUtilityController::class, 'editapi'])->name('api.update');
 
-	/*--------------------------------------------------
+    /*--------------------------------------------------
 	| SECTION: Client Management Routes
 	|--------------------------------------------------*/
-	// All client routes moved to routes/clients.php
-	// Includes: CRUD, documents, verification, invoices, notes, agreements
-	require __DIR__ . '/clients.php';
+    // All client routes moved to routes/clients.php
+    // Includes: CRUD, documents, verification, invoices, notes, agreements
+    require __DIR__ . '/clients.php';
 
-	/*--------------------------------------------------
+    /*--------------------------------------------------
 	| SECTION: Matter workflow, CRM matter hub, office visits, booking
 	|--------------------------------------------------*/
-	require __DIR__ . '/matter_workflow.php';
-	require __DIR__ . '/crm_matter_hub.php';
-	require __DIR__ . '/office_visits.php';
-	require __DIR__ . '/booking_admin.php';
+    require __DIR__ . '/matter_workflow.php';
+    require __DIR__ . '/crm_matter_hub.php';
+    require __DIR__ . '/office_visits.php';
+    require __DIR__ . '/booking_admin.php';
 
-	/*---------- Front-Desk Check-In Wizard ----------*/
-	Route::prefix('front-desk/checkin')->name('front-desk.checkin.')->group(function () {
-		Route::get('/', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'index'])->name('index');
-		Route::post('/lookup', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'lookupContact'])->name('lookup');
-		Route::post('/appointments', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'getAppointments'])->name('appointments');
-		Route::post('/submit', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'submit'])->name('submit');
-		Route::post('/create-lead', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'createLead'])->name('create-lead');
-	});
+    /*---------- Front-Desk Check-In Wizard ----------*/
+    Route::prefix('front-desk/checkin')->name('front-desk.checkin.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'index'])->name('index');
+        Route::post('/lookup', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'lookupContact'])->name('lookup');
+        Route::post('/appointments', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'getAppointments'])->name('appointments');
+        Route::post('/submit', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'submit'])->name('submit');
+        Route::post('/create-lead', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'createLead'])->name('create-lead');
+    });
 
-	/*---------- Audit Logs ----------*/
-	Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('auditlogs.index');
+    /*---------- Audit Logs ----------*/
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('auditlogs.index');
 
-	/*---------- Trust accounting (VLSB+C tooling) ----------*/
-	Route::prefix('trust-accounting')->name('trust-accounting.')->group(function () {
-		Route::get('/periods', [TrustAccountingAdminController::class, 'periodsIndex'])->name('periods.index');
-		Route::post('/periods', [TrustAccountingAdminController::class, 'periodsStore'])->name('periods.store');
-		Route::post('/periods/{period}/unlock', [TrustAccountingAdminController::class, 'periodsUnlock'])->name('periods.unlock');
-		Route::get('/audit-log', [TrustAccountingAdminController::class, 'auditLogIndex'])->name('audit-log.index');
-		Route::get('/reports', [TrustAccountingAdminController::class, 'reportsIndex'])->name('reports.index');
-		Route::get('/practice-sequences', [TrustAccountingAdminController::class, 'practiceSequencesIndex'])->name('practice-sequences.index');
-		Route::get('/guide', [TrustAccountingAdminController::class, 'guide'])->name('guide');
-		Route::get('/reports/trial-balance', [TrustAccountingAdminController::class, 'trialBalanceReport'])->name('reports.trial-balance');
-		Route::get('/reports/receipts-journal', [TrustAccountingAdminController::class, 'receiptsJournalReport'])->name('reports.receipts-journal');
-		Route::get('/reports/payments-journal', [TrustAccountingAdminController::class, 'paymentsJournalReport'])->name('reports.payments-journal');
-		Route::get('/reports/overdrawn-ledger', [TrustAccountingAdminController::class, 'overdrawnLedgerReport'])->name('reports.overdrawn-ledger');
-		Route::get('/reports/auditors-pack', [TrustAccountingAdminController::class, 'auditorsPack'])->name('reports.auditors-pack');
-		Route::get('/statements', [TrustAccountingAdminController::class, 'statementsIndex'])->name('statements.index');
-		Route::get('/statements/generate', [TrustAccountingAdminController::class, 'generateTrustStatement'])->name('statements.generate');
-		Route::get('/statements/annual', [TrustAccountingAdminController::class, 'statementsAnnualIndex'])->name('statements.annual');
-		Route::post('/statements/mark-sent', [TrustAccountingAdminController::class, 'markStatementSent'])->name('statements.mark-sent');
-		Route::get('/archives', [TrustAccountingAdminController::class, 'archivesIndex'])->name('archives.index');
-		Route::post('/archives', [TrustAccountingAdminController::class, 'archivesStore'])->name('archives.store');
-		Route::get('/archives/{archive}/download', [TrustAccountingAdminController::class, 'archivesDownload'])->name('archives.download');
-		Route::get('/bank-accounts', [TrustAccountingAdminController::class, 'bankAccountsIndex'])->name('bank-accounts.index');
-		Route::post('/bank-accounts', [TrustAccountingAdminController::class, 'bankAccountsStore'])->name('bank-accounts.store');
-		Route::get('/reconciliation', [TrustAccountingAdminController::class, 'reconciliationIndex'])->name('reconciliation.index');
-		Route::post('/reconciliation/lines', [TrustAccountingAdminController::class, 'reconciliationStoreLine'])->name('reconciliation.lines.store');
-		Route::delete('/reconciliation/lines/{line}', [TrustAccountingAdminController::class, 'reconciliationDestroyLine'])->name('reconciliation.lines.destroy');
-		Route::post('/reconciliation/match', [TrustAccountingAdminController::class, 'reconciliationMatch'])->name('reconciliation.match');
-		Route::post('/reconciliation/unmatch', [TrustAccountingAdminController::class, 'reconciliationUnmatch'])->name('reconciliation.unmatch');
-		Route::get('/rule42-withdrawal-authority-types', [TrustAccountingAdminController::class, 'withdrawalAuthorityTypesIndex'])->name('withdrawal-authority-types.index');
-		Route::post('/rule42-withdrawal-authority-types', [TrustAccountingAdminController::class, 'withdrawalAuthorityTypesStore'])->name('withdrawal-authority-types.store');
-		Route::put('/rule42-withdrawal-authority-types/{type}', [TrustAccountingAdminController::class, 'withdrawalAuthorityTypesUpdate'])->name('withdrawal-authority-types.update');
-	});
+    /*---------- Trust accounting (VLSB+C tooling) ----------*/
+    Route::prefix('trust-accounting')->name('trust-accounting.')->group(function () {
+        Route::get('/periods', [TrustAccountingAdminController::class, 'periodsIndex'])->name('periods.index');
+        Route::post('/periods', [TrustAccountingAdminController::class, 'periodsStore'])->name('periods.store');
+        Route::post('/periods/{period}/unlock', [TrustAccountingAdminController::class, 'periodsUnlock'])->name('periods.unlock');
+        Route::get('/audit-log', [TrustAccountingAdminController::class, 'auditLogIndex'])->name('audit-log.index');
+        Route::get('/reports', [TrustAccountingAdminController::class, 'reportsIndex'])->name('reports.index');
+        Route::get('/practice-sequences', [TrustAccountingAdminController::class, 'practiceSequencesIndex'])->name('practice-sequences.index');
+        Route::get('/guide', [TrustAccountingAdminController::class, 'guide'])->name('guide');
+        Route::get('/reports/trial-balance', [TrustAccountingAdminController::class, 'trialBalanceReport'])->name('reports.trial-balance');
+        Route::get('/reports/receipts-journal', [TrustAccountingAdminController::class, 'receiptsJournalReport'])->name('reports.receipts-journal');
+        Route::get('/reports/payments-journal', [TrustAccountingAdminController::class, 'paymentsJournalReport'])->name('reports.payments-journal');
+        Route::get('/reports/overdrawn-ledger', [TrustAccountingAdminController::class, 'overdrawnLedgerReport'])->name('reports.overdrawn-ledger');
+        Route::get('/reports/auditors-pack', [TrustAccountingAdminController::class, 'auditorsPack'])->name('reports.auditors-pack');
+        Route::get('/statements', [TrustAccountingAdminController::class, 'statementsIndex'])->name('statements.index');
+        Route::get('/statements/generate', [TrustAccountingAdminController::class, 'generateTrustStatement'])->name('statements.generate');
+        Route::get('/statements/annual', [TrustAccountingAdminController::class, 'statementsAnnualIndex'])->name('statements.annual');
+        Route::post('/statements/mark-sent', [TrustAccountingAdminController::class, 'markStatementSent'])->name('statements.mark-sent');
+        Route::get('/archives', [TrustAccountingAdminController::class, 'archivesIndex'])->name('archives.index');
+        Route::post('/archives', [TrustAccountingAdminController::class, 'archivesStore'])->name('archives.store');
+        Route::get('/archives/{archive}/download', [TrustAccountingAdminController::class, 'archivesDownload'])->name('archives.download');
+        Route::get('/bank-accounts', [TrustAccountingAdminController::class, 'bankAccountsIndex'])->name('bank-accounts.index');
+        Route::post('/bank-accounts', [TrustAccountingAdminController::class, 'bankAccountsStore'])->name('bank-accounts.store');
+        Route::get('/reconciliation', [TrustAccountingAdminController::class, 'reconciliationIndex'])->name('reconciliation.index');
+        Route::post('/reconciliation/lines', [TrustAccountingAdminController::class, 'reconciliationStoreLine'])->name('reconciliation.lines.store');
+        Route::delete('/reconciliation/lines/{line}', [TrustAccountingAdminController::class, 'reconciliationDestroyLine'])->name('reconciliation.lines.destroy');
+        Route::post('/reconciliation/match', [TrustAccountingAdminController::class, 'reconciliationMatch'])->name('reconciliation.match');
+        Route::post('/reconciliation/unmatch', [TrustAccountingAdminController::class, 'reconciliationUnmatch'])->name('reconciliation.unmatch');
+        Route::get('/rule42-withdrawal-authority-types', [TrustAccountingAdminController::class, 'withdrawalAuthorityTypesIndex'])->name('withdrawal-authority-types.index');
+        Route::post('/rule42-withdrawal-authority-types', [TrustAccountingAdminController::class, 'withdrawalAuthorityTypesStore'])->name('withdrawal-authority-types.store');
+        Route::put('/rule42-withdrawal-authority-types/{type}', [TrustAccountingAdminController::class, 'withdrawalAuthorityTypesUpdate'])->name('withdrawal-authority-types.update');
+    });
 
-	/*---------- Notifications ----------*/
-	Route::get('/fetch-notification', [CRMUtilityController::class, 'fetchnotification']);
-	Route::get('/fetch-messages', [CRMUtilityController::class, 'fetchmessages']);
-	Route::get('/fetch-office-visit-notifications', [CRMUtilityController::class, 'fetchOfficeVisitNotifications']);
-	Route::post('/mark-notification-seen', [CRMUtilityController::class, 'markNotificationSeen']);
-	Route::get('/check-checkin-status', [DashboardController::class, 'checkCheckinStatus']);
-	Route::post('/update-checkin-status', [DashboardController::class, 'updateCheckinStatus']);
-	Route::get('/all-notifications', [CRMUtilityController::class, 'allnotification'])->name('crm.all-notifications');
-	Route::get('/fetch-InPersonWaitingCount', [CRMUtilityController::class, 'fetchInPersonWaitingCount']);
-	Route::get('/fetch-TotalActivityCount', [CRMUtilityController::class, 'fetchTotalActivityCount']);
+    /*---------- Notifications ----------*/
+    Route::get('/fetch-notification', [CRMUtilityController::class, 'fetchnotification']);
+    Route::get('/fetch-messages', [CRMUtilityController::class, 'fetchmessages']);
+    Route::get('/fetch-office-visit-notifications', [CRMUtilityController::class, 'fetchOfficeVisitNotifications']);
+    Route::post('/mark-notification-seen', [CRMUtilityController::class, 'markNotificationSeen']);
+    Route::get('/check-checkin-status', [DashboardController::class, 'checkCheckinStatus']);
+    Route::post('/update-checkin-status', [DashboardController::class, 'updateCheckinStatus']);
+    Route::get('/all-notifications', [CRMUtilityController::class, 'allnotification'])->name('crm.all-notifications');
+    Route::get('/fetch-InPersonWaitingCount', [CRMUtilityController::class, 'fetchInPersonWaitingCount']);
+    Route::get('/fetch-TotalActivityCount', [CRMUtilityController::class, 'fetchTotalActivityCount']);
 
-	/*---------- Assignee Module ----------*/
-	// Explicit routes for assignee module (replaced resource route to avoid deprecated methods)
-	Route::get('/assignee', [AssigneeController::class, 'index'])->name('assignee.index');
-	Route::delete('/assignee/{assignee}', [AssigneeController::class, 'destroy'])->name('assignee.destroy');
-        Route::get('/assignee-completed', [AssigneeController::class, 'completed']); //completed list only
+    /*---------- Assignee Module ----------*/
+    // Explicit routes for assignee module (replaced resource route to avoid deprecated methods)
+    Route::get('/assignee', [AssigneeController::class, 'index'])->name('assignee.index');
+    Route::delete('/assignee/{assignee}', [AssigneeController::class, 'destroy'])->name('assignee.destroy');
+    Route::get('/assignee-completed', [AssigneeController::class, 'completed']); //completed list only
 
-        Route::post('/update-action-completed', [AssigneeController::class, 'updateActionCompleted']); //update action to be completed
-        Route::post('/update-action-not-completed', [AssigneeController::class, 'updateActionNotCompleted']); //update action to be not completed
+    Route::post('/update-action-completed', [AssigneeController::class, 'updateActionCompleted']); //update action to be completed
+    Route::post('/update-action-not-completed', [AssigneeController::class, 'updateActionNotCompleted']); //update action to be not completed
 
-        Route::get('/assigned_by_me', [AssigneeController::class, 'assigned_by_me'])->name('assignee.assigned_by_me'); //assigned by me
-        Route::get('/assigned_to_me', [AssigneeController::class, 'assigned_to_me'])->name('assignee.assigned_to_me'); //assigned to me
+    Route::get('/assigned_by_me', [AssigneeController::class, 'assigned_by_me'])->name('assignee.assigned_by_me'); //assigned by me
+    Route::get('/assigned_to_me', [AssigneeController::class, 'assigned_to_me'])->name('assignee.assigned_to_me'); //assigned to me
 
-        Route::delete('/destroy_by_me/{note_id}', [AssigneeController::class, 'destroy_by_me'])->name('assignee.destroy_by_me'); //assigned by me
-        Route::delete('/destroy_to_me/{note_id}', [AssigneeController::class, 'destroy_to_me'])->name('assignee.destroy_to_me'); //assigned to me
-        Route::get('/action_completed', [AssigneeController::class, 'action_completed'])->name('assignee.action_completed'); //action completed
-
-
-        Route::delete('/destroy_activity/{note_id}', [AssigneeController::class, 'destroy_activity'])->name('assignee.destroy_activity'); //delete activity
-        Route::delete('/destroy_complete_activity/{note_id}', [AssigneeController::class, 'destroy_complete_activity'])->name('assignee.destroy_complete_activity'); //delete completed activity
-
-	/*---------- Task Management ----------*/
-	// Task routes for email and contact uniqueness
-        Route::post('/is_email_unique', [LeadController::class, 'is_email_unique']);
-        Route::post('/is_contactno_unique', [LeadController::class, 'is_contactno_unique']);
-
-	// Activity management
-        Route::post('/extenddeadlinedate', [CRMUtilityController::class, 'extenddeadlinedate']);
-        Route::post('/update-stage', [CRMUtilityController::class, 'updateStage']);
-
-	// Get assigne list
-	Route::post('/get_assignee_list', [AssigneeController::class, 'get_assignee_list']);
-
-	// Update action
-        Route::post('/update-action', [AssigneeController::class, 'updateAction']);
-        Route::get('/action/counts', [AssigneeController::class, 'getActionCounts'])->name('action.counts');
-
-	// For datatable - Action list routes
-	Route::get('/action', [AssigneeController::class, 'action'])->name('assignee.action');
-	Route::get('/action/list', [AssigneeController::class, 'getAction'])->name('action.list');
-
-	/*---------- Matter Office Management ----------*/
-	Route::post('/matters/update-office', [ClientsController::class, 'updateMatterOffice'])->name('matters.update-office');
-
-	/*---------- End of Admin Routes ----------*/
+    Route::delete('/destroy_by_me/{note_id}', [AssigneeController::class, 'destroy_by_me'])->name('assignee.destroy_by_me'); //assigned by me
+    Route::delete('/destroy_to_me/{note_id}', [AssigneeController::class, 'destroy_to_me'])->name('assignee.destroy_to_me'); //assigned to me
+    Route::get('/action_completed', [AssigneeController::class, 'action_completed'])->name('assignee.action_completed'); //action completed
 
 
-	});
+    Route::delete('/destroy_activity/{note_id}', [AssigneeController::class, 'destroy_activity'])->name('assignee.destroy_activity'); //delete activity
+    Route::delete('/destroy_complete_activity/{note_id}', [AssigneeController::class, 'destroy_complete_activity'])->name('assignee.destroy_complete_activity'); //delete completed activity
+
+    /*---------- Task Management ----------*/
+    // Task routes for email and contact uniqueness
+    Route::post('/is_email_unique', [LeadController::class, 'is_email_unique']);
+    Route::post('/is_contactno_unique', [LeadController::class, 'is_contactno_unique']);
+
+    // Activity management
+    Route::post('/extenddeadlinedate', [CRMUtilityController::class, 'extenddeadlinedate']);
+    Route::post('/update-stage', [CRMUtilityController::class, 'updateStage']);
+
+    // Get assigne list
+    Route::post('/get_assignee_list', [AssigneeController::class, 'get_assignee_list']);
+
+    // Update action
+    Route::post('/update-action', [AssigneeController::class, 'updateAction']);
+    Route::get('/action/counts', [AssigneeController::class, 'getActionCounts'])->name('action.counts');
+
+    // For datatable - Action list routes
+    Route::get('/action', [AssigneeController::class, 'action'])->name('assignee.action');
+    Route::get('/action/list', [AssigneeController::class, 'getAction'])->name('action.list');
+
+    /*---------- Matter Office Management ----------*/
+    Route::post('/matters/update-office', [ClientsController::class, 'updateMatterOffice'])->name('matters.update-office');
+
+    /*---------- End of Admin Routes ----------*/
+});
 
 /*--------------------------------------------------
 | SECTION: Document Signature Routes (Admin & Public)
@@ -376,4 +376,3 @@ require __DIR__ . '/documents.php';
 
 // Public email verification route - no authentication required
 Route::get('/verify-email/{token}', [EmailVerificationController::class, 'verifyEmail'])->name('clients.email.verify');
-

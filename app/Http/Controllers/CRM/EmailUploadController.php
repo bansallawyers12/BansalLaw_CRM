@@ -82,6 +82,8 @@ class EmailUploadController extends Controller
     public function uploadInboxEmails(Request $request)
     {
         try {
+            set_time_limit(180); // Increase max execution time for uploading emails
+
             // Validate file input
             $validationResponse = $this->validateEmailUploadRequest($request);
             if ($validationResponse) {
@@ -217,6 +219,8 @@ class EmailUploadController extends Controller
     public function uploadSentEmails(Request $request)
     {
         try {
+            set_time_limit(180); // Increase max execution time for uploading emails
+
             // Validate file input
             $validationResponse = $this->validateEmailUploadRequest($request);
             if ($validationResponse) {
@@ -414,9 +418,10 @@ class EmailUploadController extends Controller
             $document->mail_type = $mailType;
             $document->file_size = $fileSize;
             $document->doc_type = $docType;
-            $document->client_matter_id = $mailType === 'sent' 
+            $matterId = $mailType === 'sent' 
                 ? $request->upload_sent_mail_client_matter_id 
                 : $request->upload_inbox_mail_client_matter_id;
+            $document->client_matter_id = empty($matterId) ? null : $matterId;
             try {
                 $document->save();
             } catch (QueryException $e) {
@@ -448,7 +453,7 @@ class EmailUploadController extends Controller
             $mailReport->to_mail = $this->formatParsedRecipientList($parsedData, 'to_recipients', 'recipients');
             $mailReport->cc = $this->formatParsedRecipientList($parsedData, 'cc_recipients');
             $mailReport->subject = $parsedData['subject'] ?? '';
-            $mailReport->message = null; // Full body stored as PDF on S3 (pdf_doc_id); text_preview used for search/quoting
+            $mailReport->message = $parsedData['html_content'] ?? $parsedData['text_content'] ?? null; // Full body stored in database as requested
             $mailReport->mail_type = 1;
             $mailReport->type = $request->type; // Set type to 'client' or 'lead' as required by filter
             $mailReport->client_id = $clientId;

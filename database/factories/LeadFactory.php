@@ -34,7 +34,7 @@ class LeadFactory extends Factory
         ];
     }
 
-    public function new(): self
+    public function asNewLead(): self
     {
         return $this->state(fn (array $attributes) => [
             'lead_status' => 'new',

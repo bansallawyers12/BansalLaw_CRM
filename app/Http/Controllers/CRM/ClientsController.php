@@ -4022,6 +4022,7 @@ class ClientsController extends Controller
             $status = $request->input('status');
             $search = $request->input('search');
             $label_id = $request->input('label_id');
+            $sender_filter = $request->input('sender_filter');
 
             if (!$client_matter_id) {
                 return response()->json([
@@ -4073,10 +4074,14 @@ class ClientsController extends Controller
                 });
             }
 
-            $emails = $query->get();
+            if (!empty($sender_filter)) {
+                $query->where('from_mail', $sender_filter);
+            }
+
+            $paginator = $query->paginate(5);
             $url = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
 
-            $emails = $emails->map(function ($email) use ($url, $client_id) {
+            $emails = collect($paginator->items())->map(function ($email) use ($url, $client_id) {
                 $DocInfo = \App\Models\Document::select('id','doc_type','myfile','myfile_key','mail_type')
                     ->where('id', $email->uploaded_doc_id)
                     ->first();
@@ -4141,7 +4146,15 @@ class ClientsController extends Controller
                 return $emailArray;
             });
 
-            return response()->json($emails, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            return response()->json([
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'total' => $paginator->total(),
+                'per_page' => $paginator->perPage(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+                'emails' => $emails->values()->toArray(),
+            ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         } catch (\Exception $e) {
             Log::error('Error in filterEmails: ' . $e->getMessage());
 
@@ -4288,6 +4301,7 @@ class ClientsController extends Controller
             $type = $request->input('type');
             $status = $request->input('status');
             $search = $request->input('search');
+            $sender_filter = $request->input('sender_filter');
 
             // Validate input
             if (!$client_matter_id) {
@@ -4343,14 +4357,18 @@ class ClientsController extends Controller
                 });
             }
 
+            if (!empty($sender_filter)) {
+                $query->where('from_mail', $sender_filter);
+            }
+
             // Fetch emails
-            $emails = $query->get();
+            $paginator = $query->paginate(5);
 
             // Base URL for AWS S3
             $url = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
 
             // Map emails with additional data (matches filterEmails logic)
-            $emails = $emails->map(function ($email) use ($url, $client_id) {
+            $emails = collect($paginator->items())->map(function ($email) use ($url, $client_id) {
                 $previewUrl = '';
                 if (!empty($email->uploaded_doc_id)) {
                     $docInfo = \App\Models\Document::select('id', 'doc_type', 'myfile', 'myfile_key', 'mail_type')
@@ -4420,7 +4438,15 @@ class ClientsController extends Controller
 				return $emailArray;
 			});
 
-			return response()->json($emails, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+			return response()->json([
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'total' => $paginator->total(),
+                'per_page' => $paginator->perPage(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+                'emails' => $emails->values()->toArray(),
+            ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 		} catch (\Exception $e) {
 			Log::error('Error in filterSentEmails: ' . $e->getMessage(), [
 				'request' => $request->all(),
@@ -4445,6 +4471,7 @@ class ClientsController extends Controller
             $status = $request->input('status');
             $search = $request->input('search');
             $label_id = $request->input('label_id');
+            $sender_filter = $request->input('sender_filter');
 
             if (!$client_id) {
                 return response()->json([
@@ -4492,10 +4519,14 @@ class ClientsController extends Controller
                 });
             }
 
-            $emails = $query->get();
+            if (!empty($sender_filter)) {
+                $query->where('from_mail', $sender_filter);
+            }
+
+            $paginator = $query->paginate(5);
             $url = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
 
-            $emails = $emails->map(function ($email) use ($url, $client_id) {
+            $emails = collect($paginator->items())->map(function ($email) use ($url, $client_id) {
                 $previewUrl = '';
                 if (!empty($email->uploaded_doc_id)) {
                     $docInfo = \App\Models\Document::select('id', 'doc_type', 'myfile', 'myfile_key', 'mail_type')
@@ -4550,7 +4581,15 @@ class ClientsController extends Controller
                 return $emailArray;
             });
 
-            return response()->json($emails, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            return response()->json([
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'total' => $paginator->total(),
+                'per_page' => $paginator->perPage(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+                'emails' => $emails->values()->toArray(),
+            ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         } catch (\Exception $e) {
             Log::error('Error in filterLeadEmails: ' . $e->getMessage());
             return response()->json([
@@ -8026,4 +8065,63 @@ class ClientsController extends Controller
         return $trimmed;
     }
 
+    public function getEmailSenders(Request $request)
+    {
+        $client_id = $request->client_id;
+        $client_matter_id = $request->client_matter_id;
+
+        $query = \App\Models\EmailLog::where('client_id', $client_id);
+        if ($client_matter_id) {
+            $query->where('client_matter_id', $client_matter_id);
+        }
+
+        $senders = $query->select('from_mail')
+                         ->whereNotNull('from_mail')
+                         ->where('from_mail', '!=', '')
+                         ->distinct()
+                         ->pluck('from_mail');
+
+        return response()->json(['success' => true, 'senders' => $senders]);
+    }
+
+    public function getParsedEmailHtml($id)
+    {
+        try {
+            $emailLog = \App\Models\EmailLog::findOrFail($id);
+            if (!$emailLog->s3_path) {
+                return response()->json(['error' => 'No S3 path found for this email'], 404);
+            }
+
+            $s3 = \Illuminate\Support\Facades\Storage::disk('s3');
+            if (!$s3->exists($emailLog->s3_path)) {
+                return response()->json(['error' => 'File not found in S3'], 404);
+            }
+
+            $fileContents = $s3->get($emailLog->s3_path);
+            
+            // Get original filename or use a default
+            $filename = basename($emailLog->s3_path) ?: 'email.msg';
+
+            $pythonServiceUrl = env('PYTHON_SERVICE_URL', 'http://127.0.0.1:5001');
+            
+            $response = \Illuminate\Support\Facades\Http::timeout(90)
+                ->attach('file', $fileContents, $filename)
+                ->post($pythonServiceUrl . '/email/parse-render-pdf');
+
+            if ($response->successful()) {
+                $result = $response->json();
+                $html = $result['html_body'] ?? $result['text_body'] ?? '<div style="padding:20px;">Could not extract email body.</div>';
+                return response()->json(['success' => true, 'html' => $html]);
+            }
+
+            return response()->json([
+                'success' => false, 
+                'error' => 'Failed to parse email. Python service returned: ' . $response->status()
+            ], 500);
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Dynamic email parse error: ' . $e->getMessage(), ['id' => $id]);
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
 }

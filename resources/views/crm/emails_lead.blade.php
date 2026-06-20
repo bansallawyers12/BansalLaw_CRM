@@ -21,6 +21,12 @@
                 <option value="">All Labels</option>
                 <!-- Populated dynamically -->
             </select>
+
+            <label for="senderFilter">Sender:</label>
+            <select id="senderFilter" class="filter-select" style="max-width: 200px;">
+                <option value="">All Senders</option>
+                <!-- Populated dynamically -->
+            </select>
         </div>
     </div>
 
@@ -39,9 +45,9 @@
             <div class="email-list-header">
                 <span class="results-count" id="resultsCount">0 results</span>
                 <div class="pagination-controls">
-                    <button class="pagination-btn" id="prevBtn">Prev</button>
+                    <button class="pagination-btn" id="prevBtn" title="Previous"><i class="fas fa-chevron-left"></i></button>
                     <span class="page-info" id="pageInfo">1/1</span>
-                    <button class="pagination-btn" id="nextBtn">Next</button>
+                    <button class="pagination-btn" id="nextBtn" title="Next"><i class="fas fa-chevron-right"></i></button>
                 </div>
             </div>
             

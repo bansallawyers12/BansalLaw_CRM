@@ -3,12 +3,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\Staff;
+use Database\Factories\LeadFactory;
 use Illuminate\Notifications\Notifiable;
 use Kyslik\ColumnSortable\Sortable;
 
 class Lead extends Admin
 {
     use Notifiable, Sortable;
+
+    protected static function newFactory(): LeadFactory
+    {
+        return LeadFactory::new();
+    }
 
     /**
      * Stored values for admins.type that represent a lead (includes legacy single-char "l" and "1").

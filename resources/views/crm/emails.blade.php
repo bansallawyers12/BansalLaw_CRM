@@ -45,6 +45,12 @@
                 <option value="">All Labels</option>
                 <!-- Populated dynamically -->
             </select>
+            
+            <label for="senderFilter">Sender:</label>
+            <select id="senderFilter" class="filter-select" style="max-width: 200px;">
+                <option value="">All Senders</option>
+                <!-- Populated dynamically -->
+            </select>
         </div>
     </div>
 
@@ -55,7 +61,7 @@
             <!-- Drag & Drop Upload Section -->
             <div class="upload-section-header">
                 <span class="upload-title">Upload Emails</span>
-            </div>
+            </div> 
             <div class="upload-section-container">
                 <div id="upload-area" class="drag-drop-zone">
                     <div class="drag-drop-content">
@@ -75,9 +81,9 @@
             <div class="email-list-header">
                 <span class="results-count" id="resultsCount">0 results</span>
                 <div class="pagination-controls">
-                    <button class="pagination-btn" id="prevBtn">Prev</button>
+                    <button class="pagination-btn" id="prevBtn" title="Previous"><i class="fas fa-chevron-left"></i></button>
                     <span class="page-info" id="pageInfo">1/1</span>
-                    <button class="pagination-btn" id="nextBtn">Next</button>
+                    <button class="pagination-btn" id="nextBtn" title="Next"><i class="fas fa-chevron-right"></i></button>
                 </div>
             </div>
             
@@ -173,7 +179,7 @@ window.__CRM_EMAIL_MAX_FILE_BYTES__ = @json((int) config('crm.email_upload_max_k
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Emails interface loaded');
+    console.log('Emails interface loaded'); 
     
     // Debug: Check if elements exist
     const fileInput = document.getElementById('emailFileInput');

@@ -104,6 +104,7 @@ Route::post('/updatemailreadbit', [ClientsController::class, 'updatemailreadbit'
 Route::post('/clients/filter-emails', [ClientsController::class, 'filterEmails'])->name('clients.filter.emails');
 Route::post('/clients/filter-sentemails', [ClientsController::class, 'filterSentEmails'])->name('clients.filter.sentmails');
 Route::post('/clients/filter-lead-emails', [ClientsController::class, 'filterLeadEmails'])->name('clients.filter.leademails');
+Route::post('/clients/email-senders', [ClientsController::class, 'getEmailSenders'])->name('clients.email.senders');
 Route::delete('/email-logs/{id}', [ClientsController::class, 'deleteEmailLog'])->name('email-logs.delete');
 // POST alias: some hosts/WAFs block HTTP DELETE; UI uses this route.
 Route::post('/email-logs/{id}/delete', [ClientsController::class, 'deleteEmailLog'])->name('email-logs.delete-post');
@@ -372,3 +373,4 @@ Route::prefix('crm/access')->name('crm.access.')->group(function () {
     Route::get('/dashboard/export', [AccessGrantController::class, 'dashboardExport'])->name('dashboard.export');
     Route::get('/queue/mini', [AccessGrantController::class, 'queueMini'])->name('queue.mini');
 });
+Route::get('/email-logs/{id}/preview-html', [\App\Http\Controllers\CRM\ClientsController::class, 'getParsedEmailHtml'])->name('email-logs.preview-html');

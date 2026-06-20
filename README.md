@@ -1,768 +1,1000 @@
 # Bansal Law CRM
 
-A comprehensive Laravel-based Customer Relationship Management (CRM) system for **Australian legal practice**. Core modules cover clients, matters, documents, billing, portal, and access control. Legacy **immigration-agency-only** artefacts (CRM “sheets”, visa-pricing config, visa-sheet checklist automation, English test band calculator, ART listing UI) have been **removed or neutralised** in favour of configurable matter types and neutral legal terminology; some labels (e.g. database table `visa_document_types`) remain as technical debt until a future rename.
+A Laravel-based Customer Relationship Management (CRM) platform for **Australian legal practice**. It covers the full client lifecycle—from lead intake through matter management, documents, billing, appointments, and trust accounting—with role-based staff access, row-level visibility controls, and optional real-time notifications.
 
-## Purpose
+---
 
-- Streamline matter-based client work from intake to closure
-- Centralize client information, documents, and communication in one platform
-- Automate appointment scheduling and reminders
-- Track matters, progress, and important deadlines
-- Manage invoices, payments, and financial transactions
-- Provide secure client portal access for document submission and status tracking
-- Offer comprehensive reporting for business insights and internal controls
+## Table of Contents
 
-## What this codebase provides today
+1. [Core Functions](#core-functions)
+2. [Business Workflows](#business-workflows)
+3. [Technology Stack & Package Versions](#technology-stack--package-versions)
+4. [Routes](#routes)
+5. [API Endpoints](#api-endpoints)
+6. [Authentication & Authorization](#authentication--authorization)
+7. [Installation](#installation)
+8. [Configuration](#configuration)
+9. [Project Structure](#project-structure)
 
-The following is implemented and usable in the current application (see **Features** and **Project Structure** for detail):
+---
 
-- **CRM core**: Multi-role staff access (`Admin` / `Staff` / related roles), dashboard, leads pipeline, client profiles (individual and company), notes/tasks (assignee actions), email logging, broadcasts, office visits.
-- **Matters**: Case tracking via `ClientMatter` and matter types—workflow and UI copy are oriented to **visa applications** rather than generic legal matter types.
-- **Employer / company track**: Company profiles, trading names, directors, trust entities, nominations, and sponsorship-style fields—aligned to **employer-sponsored migration** scenarios.
-- **Money**: Invoices, receipts, quotations; Stripe and PayU hooks; PDF generation (DomPDF); financial stats on dashboard.
-- **Documents**: Uploads, checklists, expiry tracking, e-signatures (templates and workflow), optional **DOCX→PDF** via `python_services/`.
-- **Scheduling**: Booking/appointments (FullCalendar), Flatpickr-based dates (**DD/MM/YYYY** already matches Australian date convention).
-- **Client portal**: Status, documents, invoices, bookings—with staff and legal-practitioner assignee fields on matters.
-- **Governance**: Row-level visibility, allocation, and **cross-access grants** (quick/supervisor approval, dashboards, CSV export)—see `docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md`.
-- **Infrastructure**: Laravel 12, PostgreSQL-first, Vite frontend, optional S3, queue-ready, SMS (Twilio / Cellcast), Windows/XAMPP-friendly docs.
+## Core Functions
 
-## Adapting for an Australian law firm
+### CRM & Staff Operations
 
-To meet a **general Australian law firm** (or a firm that mixes migration with other practice areas), plan changes across product copy, configuration, data, and compliance—not only rebranding.
+| Module | Description |
+|--------|-------------|
+| **Dashboard** | Matter pipeline, deadlines, actions, check-in status, financial stats, and notification feeds |
+| **Leads** | Lead capture, assignment, follow-up, analytics, bulk convert to clients |
+| **Clients** | Individual and company profiles, relationships, tags, archive, global search with access controls |
+| **Matters** | Per-client case tracking with configurable workflows, stages, deadlines, legal practitioner assignment |
+| **Notes & Tasks** | Client/lead notes, assignee actions, matter tasks, pinned items, activity logs |
+| **Assignee Module** | Tasks assigned to/by staff, completion tracking, action counts |
+| **Office Visits** | Walk-in queue (waiting → attending → completed), front-desk check-in wizard |
+| **Broadcasts** | In-app broadcast notifications to staff with read/unread history |
+| **Audit Logs** | Spatie activity log viewer for system changes |
+| **Staff Analytics** | Login analytics (daily/weekly/monthly/hourly trends) |
 
-### Terminology and user experience
+### Documents & Signatures
 
-- Replace **immigration-specific** labels in views, emails, PDFs, and reports (e.g. “visa”, “sponsorship”, “application” where used as the default frame) with **neutral legal language** (“matter”, “stage”, “court/tribunal dates” as appropriate) or **practice-area-specific** labels driven by configuration.
-- Clarify **roles**: Australian distinctions (e.g. solicitor, paralegal, Legal Practitioner) may differ from current role names and flags such as `is_solicitor` and `sel_legal_practitioner`; align permissions and portal behaviour with your firm’s structure.
-- Ensure **trust account vs general account** language on receipts/invoices if you separate client money (many AU firms require strict trust accounting; the current model may need extension or an external trust system).
+| Module | Description |
+|--------|-------------|
+| **Document Management** | Personal, matter, and nomination document checklists; upload, rename, move, bulk upload |
+| **E-Signatures** | Template-based signing workflow; staff sends link → client signs via token (no login) |
+| **DOCX → PDF** | Local and Python microservice conversion (`python_services/`) |
+| **Email Integration** | Compose/send mail, inbox/sent import (Python service), labels, attachments, smart import |
+| **Legal Forms** | Short costs disclosure, cost agreements, authority to act (DOCX generation) |
 
-### Practice areas and matter model
+### Financial & Trust
 
-- **Matter types and stages**: Today they reflect visa workflows. Add or migrate to **matter categories** that match your firm (e.g. property, family, litigation, estates, corporate, migration as one stream).
-- **Fields and checklists**: Document checklists and matter fields should map to **Australian forms and matter types**, not only immigration templates.
-- **Reporting**: Client/application reports filtered by “visa type” or country should be **generalised or duplicated** for AU-relevant dimensions (matter type, jurisdiction, lawyer, office).
+| Module | Description |
+|--------|-------------|
+| **Invoices** | Generate, adjust, void, email to client, PDF export |
+| **Receipts** | Client fund, office, and journal receipts with ledger tracking |
+| **Trust Accounting** | VLSB+C tooling: periods, trial balance, reconciliation, statements, auditors pack, Rule 42 authority types |
+| **Payments** | Stripe integration (PaymentIntents); PayU hooks for legacy flows |
+| **Quotations** | Service quotes with templates; convert accepted quotes to invoices |
 
-### Financial, tax, and commercial
+### Scheduling & Communications
 
-- Standardise on **AUD** for display, invoices, and gateway configuration; review any legacy currency assumptions in templates or seed data.
-- **GST**: Invoices and quotations should support **ABN**, **GST-inclusive / exclusive** lines, and wording consistent with **ATO** expectations (implement in templates and data model if not already present).
-- **Payment gateways**: Confirm **Stripe Australia** (and any other providers) match your merchant setup; **PayU** may be less relevant in AU—evaluate **BPAY**, direct debit, or other local methods if required.
-- **Professional costs and disclosures**: Cost agreements and engagement letters (including e-sign templates) may need **state-based or uniform law** compliant wording—legal review, not only software.
+| Module | Description |
+|--------|-------------|
+| **Booking / Appointments** | FullCalendar-based scheduling, consultant calendars, reminders, status updates, sync dashboard |
+| **SMS** | Twilio and Cellcast providers; templates, bulk send, webhooks (Admin Console) |
+| **Phone/Email Verification** | OTP and token-based verification on client contact records |
 
-### Privacy, records, and security
+### Administration (Admin Console)
 
-- Map data handling to the **Australian Privacy Act** and **APPs** (privacy policy, consent, overseas disclosure if using offshore hosting or processors).
-- Review **retention and destruction** rules: README currently mentions long retention in an immigration context; align **destruction and archive** policy with your firm’s obligations.
-- **Hosting**: Prefer AU or approved regions if policy requires; document subprocessors (email, SMS, S3, SendGrid, etc.).
+Accessible at `/adminconsole` by Super Admin and Admin roles only:
 
-### Addresses, identity, and locale
+- Matter types, workflows, and stages
+- Document types and checklists
+- Email and CRM email templates
+- Staff, roles, teams, branches
+- SMS dashboard, templates, and sending
+- E-signature audit export
 
-- **Addresses**: Prefer **Australian states/territories** and **postcodes** in forms and validation (postal “ZIP” fields have been moved toward string storage in migrations—continue normalising labels and validation for AU).
-- **Phone numbers**: Validate and format for **Australian** mobiles and landlines where the UI collects them.
-- **Time zones**: Default `APP_TIMEZONE` and scheduler behaviour to the firm’s primary state (e.g. `Australia/Melbourne`).
+### Access Control (Cross-Access)
 
-### Operations and integrations
+Row-level visibility for staff who are not allocated to a client/lead:
 
-- **Email/SMS**: Sender domains, **SPF/DKIM**, and Australian spam/commercial messaging expectations.
-- **Calendar**: Public holidays and court/tribunal calendars are not built-in; integrate or configure as needed.
+- **Quick access** — 15-minute grant (throttled)
+- **Supervisor approval** — 24-hour grant via approver queue
+- **Exempt roles/staff** — bypass allocation entirely (audited)
+- Grants dashboard with CSV export at `/crm/access/*`
 
-### Technical and configuration checklist (starter)
-
-- `APP_NAME`, `APP_URL`, mail “from” names, and invoice/quote PDF headers footers.
-- Database **seeders**: default matter types, visa types, and demo data—replace with AU firm defaults.
-- `config/app.php` **timezone** and **locale** where relevant.
-- Any **hard-coded country lists** or default country should favour **AU** for a domestic-first firm.
-
-Together, **what we have** is a full-featured legal-style CRM with a **migration-agency-shaped** domain layer; **what needs to change** is chiefly **domain modelling, labels, financial/compliance fields, and integrations** so day-to-day use matches **Australian legal practice** and your firm’s areas of law.
-
-## Features
-
-- **Client Management**: Complete client profiles with personal information, visa history, and documents
-- **Matter & Application Tracking**: Monitor visa applications via matters with workflow stages and status updates
-- **Appointment System**: Schedule consultations with calendar integration and automated reminders (Booking system)
-- **Invoice & Payment Management**: Generate invoices, track payments, and manage receipts
-- **Document Management**: Secure storage, electronic signatures, and organisation of client documents and checklists
-- **Lead Management**: Track potential clients from inquiry to conversion with analytics
-- **Office Visit Tracking**: Manage walk-in clients and office visit queues
-- **Email Integration**: Built-in email management with client correspondence tracking
-- **Quotation System**: Create and send professional service quotations
-- **Team & Staff Management**: Role-based access control; dedicated Staff model with login analytics
-- **Reporting & Analytics**: Comprehensive reports on clients, matters, and revenue
-- **Client Portal**: Secure portal for clients to view status and submit documents
-- **SMS Notifications**: Integrated SMS via Twilio and Cellcast providers
-- **Broadcast Notifications**: In-app broadcasts to staff/agents with history
-- **Cross-access & row-level visibility**: Staff see clients/leads they are allocated to (or hold a time-bound grant); exempt roles are fully audited; quick (15 min) and supervisor-approved (24 h) access from search; approver queue, grants dashboard, and CSV export (`/crm/access/*`)
-- **Electronic Signatures**: Full signature workflow with templates and dashboard
-- **Task Management**: Assignee/action system for tasks related to cases and clients
-- **Company & Employer Sponsorship**: Full employer sponsorship management with company profiles, directors, trading names, Trust entities, nominations, and sponsorship tracking
-- **Windows Friendly**: Optimized for XAMPP on Windows environments
-
-## Technology Stack
-
-- **Backend**: Laravel 12.x (PHP 8.2+)
-- **Frontend**: Bootstrap 4/5, jQuery, DataTables, Tom Select, Flatpickr, FullCalendar, Alpine.js, Tailwind CSS
-- **Build**: Vite 7.x
-- **Database**: PostgreSQL (Primary), MySQL (optional for migration), SQLite (Development)
-- **PDF Generation**: DomPDF for invoices and reports
-- **Document Processing**: Python API service (`python_services/`) for DOCX to PDF conversion
-- **Email System**: Laravel Mail with SMTP/IMAP integration
-- **Payment Integration**: Stripe, PayU payment gateways
-- **File Storage**: Local storage with S3 support for attachments
-- **Authentication**: Multi-role authentication (Admin, Staff, Agent, Client)
-- **Development Environment**: XAMPP on Windows
-
-## Prerequisites
-
-- PHP 8.2 or higher
-- Composer
-- Node.js and npm
-- Python 3.x (for document conversion, optional)
-- PostgreSQL 12+ (primary database)
-- XAMPP (optional, for Apache; PostgreSQL must be installed separately on Windows)
-
-## Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/bansallawyers12/BansalLaw_CRM.git
-   cd BansalLaw_CRM
-   ```
-
-2. **Install PHP dependencies**
-   ```bash
-   composer install
-   ```
-
-3. **Install Node.js dependencies**
-   ```bash
-   npm install
-   ```
-
-4. **Environment setup**
-   ```powershell
-   copy .env.example .env   # If the repo has no .env.example, create .env manually
-   php artisan key:generate
-   ```
-   - Optional: add **CRM access** variables (see [Configuration](#configuration) → CRM cross-access) for strict allocation, approvers, and grant TTLs.
-
-5. **Database setup**
-   - Create a PostgreSQL database
-   - Update `.env` file with your database credentials:
-   ```env
-   DB_CONNECTION=pgsql
-   DB_HOST=127.0.0.1
-   DB_PORT=5432
-   DB_DATABASE=bansal_law_crm
-   DB_USERNAME=postgres
-   DB_PASSWORD=
-   ```
-   - Ensure PHP has the `pdo_pgsql` extension enabled (e.g. `php -m` and confirm `pdo_pgsql` is listed, or enable it in `php.ini`)
-   - Run migrations and seeders:
-   ```bash
-   php artisan migrate --seed
-   ```
-
-6. **Storage setup**
-   ```bash
-   php artisan storage:link
-   ```
-   - Create necessary directories (PowerShell):
-   ```powershell
-   New-Item -ItemType Directory -Force -Path storage/app/public/agreements, storage/app/public/checklists, storage/app/public/attachments
-   ```
-
-7. **Configure mail settings**
-   Update `.env` with SendGrid and sender details:
-   ```env
-   MAIL_MAILER=sendgrid
-   MAIL_FROM_ADDRESS=your_sender@yourdomain.com
-   MAIL_FROM_NAME="Your Company Name"
-   SENDGRID_API_KEY=SG.your_api_key_here
-   SENDGRID_FROM_EMAIL=your_sender@yourdomain.com
-   SENDGRID_BASE_URL=https://api.sendgrid.com
-   ```
-
-8. **Build frontend assets**
-   ```bash
-   npm run copy:flatpickr   # Copies Flatpickr assets to public/ (required for date pickers)
-   npm run build
-   # Or for development:
-   npm run dev
-   ```
-
-9. **Install Python dependencies** (optional, for DOCX to PDF document conversion)
-   - If using document conversion, run from project root:
-   ```bash
-   cd python_services && pip install -r requirements.txt
-   ```
-   - LibreOffice may be required for high-quality DOCX conversion
-
-10. **Configure payment gateways** (Optional)
-    Add to `.env`:
-    ```env
-    STRIPE_KEY=your_stripe_publishable_key
-    STRIPE_SECRET=your_stripe_secret_key
-    
-    PAYU_MERCHANT_KEY=your_payu_merchant_key
-    PAYU_SALT=your_payu_salt
-    ```
-
-11. **Start the application**
-    - If using XAMPP:
-      - Point your virtual host to the `public` directory
-      - Or access via `http://localhost/BansalLaw_CRM/public` (adjust path if your folder name differs)
-    
-    - Using PHP's built-in server:
-      ```bash
-      php artisan serve
-      ```
-    
-    - For queue workers (run in separate terminal):
-      ```bash
-      php artisan queue:work
-      ```
-
-## Development
-
-### Running the application
-
-For development with XAMPP:
-1. Start Apache from XAMPP Control Panel; ensure PostgreSQL is running (install separately if needed)
-2. Access the application at `http://localhost/BansalLaw_CRM/public` (or `http://bansallaw-crm.local` if virtual host is configured)
-
-For development with PHP built-in server:
-```bash
-php artisan serve
-```
-
-Access at: `http://localhost:8000`
-
-### Background Jobs
-
-Start the queue worker for processing background jobs:
-```bash
-php artisan queue:work
-```
-
-### Default Login Credentials
-
-After running migrations with seed, use these credentials:
-
-**Admin:**
-- Email: admin@admin.com
-- Password: (check `database/seeders/AdminUserSeeder.php`)
-
-### Virtual Host Setup (XAMPP)
-
-Add to `C:\xampp\apache\conf\extra\httpd-vhosts.conf`:
-```apache
-<VirtualHost *:80>
-    DocumentRoot "C:/xampp/htdocs/BansalLaw_CRM/public"
-    ServerName bansallaw-crm.local
-    <Directory "C:/xampp/htdocs/BansalLaw_CRM/public">
-        AllowOverride All
-        Require all granted
-    </Directory>
-</VirtualHost>
-```
-
-Add to `C:\Windows\System32\drivers\etc\hosts`:
-```
-127.0.0.1 bansallaw-crm.local
-```
-
-## Usage Guide
-
-### 1) Manage Leads
-- Navigate to `Leads` to view all potential clients
-- Create new leads with inquiry details, source, and interested services (including company/trading names for employer leads)
-- Track lead status: New, Follow-up, Converted, Lost
-- Convert leads to clients when ready to proceed
-- View lead history, notes, and assignee actions
-
-### 2) Client Management
-- **Search & access**: Global header search may show records as **locked** if you are not allocated and have no active grant; use **Request access** to open the cross-access modal (quick or supervisor path per role). See `docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md` for product rules.
-- Go to `Clients` to view all active clients
-- Create detailed client profiles with personal information (individual or company)
-- For company clients: use Company Edit for employer sponsorship details (trading names, directors, Trust, nominations)
-- Upload client documents and visa history
-- Track client relationships (spouse, children, dependents)
-- View client summary with all applications, invoices, and documents
-- Access client portal credentials
-
-### 3) Matter & Application Tracking
-- Visa applications are tracked via **Matters** (client matters) on each client profile
-- Create matters linked to clients; select visa type and upload required documents
-- Track workflow stages, important dates (submission, interview, decision)
-- Add notes and updates for each matter
-
-### 4) Appointment Scheduling
-- Go to `Appointments` to manage client consultations
-- Use calendar view to see all scheduled appointments
-- Create appointments with date, time, and service type
-- Send automated appointment reminders to clients
-- Track appointment status: Scheduled, Completed, Cancelled
-- Handle walk-in appointments
-
-### 5) Invoice Management
-- Navigate to `Invoices` to create and manage invoices
-- Generate professional invoices for services
-- Track payment status: Paid, Unpaid, Partially Paid
-- Send invoices via email to clients
-- View invoice history and reports
-
-### 6) Document Management
-- Go to `Documents` to manage client documents
-- Organize documents by categories and checklists
-- Upload and download client documents securely
-- Track document expiry dates
-- Generate document requests for clients
-- Sign documents electronically
-
-### 7) Quotations
-- Navigate to `Quotations` to create service quotes
-- Use templates for standard services
-- Customize quotations with line items and pricing
-- Send quotations to potential clients
-- Track quotation status: Draft, Sent, Accepted, Rejected
-- Convert accepted quotations to invoices
-
-### 8) Reports & Analytics
-- Access `Reports` for business insights
-- View client reports by country, visa type, and status
-- Generate revenue reports and forecasts
-- Track application success rates
-- Monitor staff performance
-- Export reports to PDF or Excel
+---
 
 ## Business Workflows
 
-- **Lead to Client Process**: Capture lead inquiry → Follow up and qualify → Send quotation → Convert to client → Create client profile
-- **Client Onboarding**: Create client account → Collect personal information → Upload documents → Assign case manager → Set up client portal access
-- **Application Process**: Receive client documents → Review checklist → Prepare application → Submit to immigration → Track progress → Receive decision
-- **Invoice & Payment**: Generate invoice → Send to client → Process payment → Issue receipt → Update payment records
-- **Appointment Management**: Client requests appointment → Schedule consultation → Send reminders → Conduct meeting → Update client notes
-- **Document Processing**: Client uploads document → Staff reviews → Convert DOCX to PDF → Store securely → Track expiry dates
-- **Reporting**: Generate reports → Filter by criteria → Export data → Analyze trends → Make business decisions
-
-## Key Modules
-
-### Admin Module
-- Dashboard with key metrics
-- Complete client management
-- Matter/case tracking (visa applications)
-- Invoice and payment management
-- Staff and team management
-- System settings and configuration
-
-### Client Portal
-- View application status
-- Upload documents
-- Download receipts and invoices
-- Book appointments
-- Track visa expiry dates
-- Communication with case manager
-
-### Legal Practitioner (staff role)
-Staff can be flagged as solicitors (`is_solicitor`) and assigned as matter legal practitioners (`sel_legal_practitioner` on `client_matters`) with role-based permissions (e.g. verifying workflow stages in the client portal). They use the main Admin/CRM interface. A separate external-agent portal is not implemented.
-
-## Project Structure
-
-### Key Components
-
-- **Models**: 
-  - `Admin` - Multi-role CRM users (Staff, Agent roles); handles authentication for the CRM
-  - `Staff` - Dedicated staff model (separate from Admin)
-  - `Lead` - Lead tracking and conversion management
-  - `ClientMatter` - Matter/case tracking with visa workflow stages
-  - `Matter` - Case/matter categories and types
-  - `Document` - Document storage and electronic signatures
-  - `BookingAppointment` - Appointment scheduling and calendar
-  - `AccountAllInvoiceReceipt` / `AccountClientReceipt` - Invoice and receipt records
-  - `Company` - Company profiles for employer sponsorship (with trading names, directors, nominations)
-  - `CompanyTradingName` - Multiple trading names per company
-  - `CompanyDirector` - Company directors with optional client/lead linking
-  - `CompanyNomination` - Employer nomination tracking with nominated person linking
-  - `Note` - Client/lead notes and assignee tasks
-  - `EmailLog` - Email correspondence tracking
-  - `ClientAccessGrant` - Cross-access audit trail (quick, supervisor-approved, exempt rows)
-  
-- **Controllers**: 
-  - `ClientsController` - Client CRUD operations and relationship management
-  - `ClientPersonalDetailsController` - Per-section AJAX save for client/company details
-  - `ClientMatterHubController` - Matter hub routes (logs, notes, ownership, checklist helpers, legacy `/client-portal/*` paths)
-  - `ClientMatterWorkflowController` - Matter workflow tab API (`/client-portal/detail`, load/upsert)
-  - `ClientAccountsController` - Invoice, receipt, and payment management
-  - `BookingAppointmentsController` - Appointment scheduling and calendar
-  - `DocumentController` / `ClientDocumentsController` - Document upload, download, and signature handling
-  - `OfficeVisitController` - Walk-in client management
-  - `DashboardController` - Admin dashboard and metrics
-  - `LeadController` / `LeadConversionController` / `LeadAnalyticsController` - Lead management
-  - `AssigneeController` - Task/action assignment management
-  - `ReportController` - Reports and data export
-  - `BroadcastController` / `BroadcastNotificationAjaxController` - Broadcast notifications
-  - `AccessGrantController` - Cross-access meta, quick/supervisor requests, approver queue, mini-queue API, grants dashboard, CSV export
-  
-- **Services**:
-  - `PythonConverterService` - DOCX to PDF via Python HTTP API
-  - `EmailConfigService` - Resolves sender from DB (SendGrid)
-  - `StripePaymentService` - Stripe payment gateway integration
-  - `SignatureService` / `SignatureTemplateService` - Electronic document signing
-  - `Sms/UnifiedSmsManager` - SMS via Twilio or Cellcast providers
-  - `BroadcastNotificationService` - In-app broadcast notifications
-  - `ClientEditService` - Client/company section save logic
-  - `DashboardService` / `FinancialStatsService` - Dashboard and financial metrics
-  - `S3AttachmentStorageService` / `S3EmailStorageService` - S3 file storage
-  - `CrmAccess\CrmAccessService` - Grant lifecycle (request, approve, reject, revoke, expiry), approver notifications
-  
-- **Support / visibility** (`app/Support/`):
-  - `StaffClientVisibility` - `canAccessClientOrLead`, list/query restrictions (clients, leads, documents, bookings), search enrichment for locked rows, exempt daily logging
-  
-- **Python Services** (`python_services/`):
-  - `docx_converter_service.py` - DOCX to PDF conversion via HTTP API
-  - `PythonConverterService` (PHP) calls the Python API at `PYTHON_CONVERTER_URL` (default: `http://localhost:5000`)
-  
-- **Database Migrations**: 
-  - User roles and permissions
-  - Client and matter management tables
-  - Financial transactions
-  - Document storage
-  - Appointment scheduling (booking system)
-  
-- **Policies**: 
-  - Role-based access control for Admin, Staff, Agent, and Client
-  - Client data privacy and access restrictions
-
-### Storage Structure
-
-The application organizes files in the following structure:
+### 1. Lead → Client
 
 ```
-storage/app/public/
-├── agreements/           # Client service agreements
-├── checklists/          # Document checklists
-├── attachments/         # Email and document attachments
-└── documents/           # Client uploaded documents
-
-public/
-├── assets/              # UI assets and images
-├── css/                 # Custom stylesheets (includes flatpickr.min.css)
-├── js/                  # JavaScript files (flatpickr.min.js, crm-flatpickr.js, scripts.js)
-└── img/                 # Public images
+Inquiry (web form / phone / walk-in)
+  → Create lead (source, contact, interested services)
+  → Assign to staff member
+  → Follow-up notes & assignee actions
+  → Send quotation (optional)
+  → Convert to client (single or bulk)
+  → Client profile created with portal credentials
 ```
 
-### Date Picker (Flatpickr)
+### 2. Client Onboarding
 
-The CRM uses **Flatpickr** for all date inputs (replacing Bootstrap Datepicker/daterangepicker). A global `CRM_Flatpickr` helper provides:
+```
+Create/convert client
+  → Collect personal or company details (AJAX section saves)
+  → Verify phone (OTP) and email (token link)
+  → Upload personal documents & checklists
+  → Create matter(s) with workflow template
+  → Assign case manager & legal practitioner
+  → Generate cost agreement / legal forms
+  → Enable client portal access
+```
 
-- **initStandard** - Single date picker (DD/MM/YYYY)
-- **initPastDates** - Past-dates-only (max: today) for DOB, address dates, visa dates
-- **initDOB** - Date of birth with automatic age calculation
-- **initDateTime** - Date + time for appointments
-- **initRange** - Date range for report filters
+### 3. Matter Lifecycle
 
-Use `data-flatpickr="standard"`, `data-flatpickr="dob"`, `data-flatpickr="datetime"`, or `data-flatpickr="range"` for auto-initialization. Run `npm run copy:flatpickr` after `npm install` to copy Flatpickr assets to `public/`.
+```
+Create matter on client profile
+  → Select matter type & workflow
+  → Progress through workflow stages (next/previous, complete, back-stage)
+  → Attach matter documents & checklists
+  → Track deadlines, court hearings, important dates
+  → Notes, emails, and tasks on matter
+  → Discontinue / reopen / delete matter
+  → Close matter when complete
+```
 
-### Background Jobs & Scheduling
+### 4. Document & E-Signature
 
-- Use Laravel's scheduler for automated tasks:
-  - **`access:expire-grants`** (hourly) — marks time-expired active grants and very old pending supervisor requests as expired (`CrmAccessService::expireStaleGrants`)
-  - Appointment reminders
-  - Visa expiry notifications
-  - Follow-up reminders
-  - Invoice payment reminders
-- Queue workers handle:
-  - Email sending
-  - Document processing
-  - PDF generation
-  - Report generation
+```
+Staff prepares document (upload or template)
+  → Place signature fields
+  → Send signing link via email
+  → Client opens /sign/{id}/{token} (no login)
+  → Client signs (Signature Pad)
+  → Signed PDF stored; staff notified
+  → Download / audit trail in signature dashboard
+```
 
-### Document Conversion
+### 5. Invoice & Payment
 
-The system includes Python-based document conversion via `python_services/`:
+```
+Generate invoice on client/matter
+  → Email PDF to client
+  → Record payment (manual or Stripe)
+  → Issue receipt (client fund / office / journal)
+  → Update client ledger & trust accounts
+  → Void or adjust as needed
+```
 
-- **Purpose**: Convert DOCX documents to PDF format
-- **Usage**: `PythonConverterService` (PHP) calls the Python API; set `PYTHON_CONVERTER_URL` in `.env` (default: `http://localhost:5000`)
-- **Setup**: Run `python_services/start_services.py` or equivalent to start the conversion API
-- **Integration**: Documents uploaded as DOCX are converted via the API; conversion can run in background queue
+### 6. Appointment Booking
 
-## Main Routes
+```
+Client requests slot (public API or staff CRM)
+  → Calendar checks disabled dates/slots
+  → Appointment created with consultant & meeting type
+  → Reminders sent (email/SMS)
+  → Front-desk check-in on arrival
+  → Status: scheduled → completed / cancelled
+```
 
-### Public Routes
-- `GET /` - Welcome/Landing page
-- `GET /login` - Login page
-- `POST /login` - Authenticate user
-- `GET /register` - Registration page (if enabled)
+### 7. Cross-Access Grant
 
-### CRM Routes (Protected - Staff Access)
-- `GET /dashboard` - CRM dashboard with key metrics
-- **Clients:**
-  - `GET /clients` - List all clients
-  - `GET /clients/{id}` - View client details
-  - `GET /clients/{id}/edit` - Edit client
-  - `DELETE /clients/{id}` - Delete client
-  - Note: Clients are created by converting leads (see Lead Conversion below)
-  
-- **Matters** (visa/case tracking on client detail):
-  - Matters are managed within the client detail view; no standalone applications routes
-  
-- **Invoices:**
-  - `GET /invoices` - List invoices
-  - `GET /invoices/create` - Create invoice
-  - `GET /invoices/{id}` - View invoice
-  - `POST /invoices/{id}/send` - Email invoice
-  - `POST /invoices/{id}/payment` - Record payment
-  
-- **Appointments** (Booking system):
-  - Uses `BookingAppointmentsController`; see `routes/client_portal.php` for booking routes
-  
-- **Leads:**
-  - `GET /leads` - List leads
-  - `POST /leads` - Create lead
-  - `PUT /leads/{id}/convert` - Convert to client
+```
+Staff searches client not in their allocation
+  → Record shown as locked
+  → Request quick (15 min) or supervisor (24 h) access
+  → Approver reviews queue (/crm/access/queue)
+  → Grant approved → temporary access to client/lead
+  → Scheduled job expires stale grants (access:expire-grants)
+```
 
-- **Cross-access (staff)** — prefix `/crm/access/` (see `routes/clients.php`, `auth:admin`):
-  - `GET /crm/access/meta` — branches, teams, quick reasons, UI flags for the request modal
-  - `POST /crm/access/quick` — 15-minute quick grant (throttled)
-  - `POST /crm/access/supervisor` — supervisor approval request (throttled)
-  - `GET /crm/access/queue` — HTML pending queue (approvers / Super Admin)
-  - `GET /crm/access/queue/data` | `GET /crm/access/queue/mini` — JSON pending items (mini for header dropdown)
-  - `POST /crm/access/{grant}/approve` | `reject` — approve or reject (approvers)
-  - `GET /crm/access/my-grants` — staff’s own grants (HTML + JSON data route)
-  - `GET /crm/access/dashboard` — grants dashboard (filters, pending section, table, CSV export link)
-  - `GET /crm/access/dashboard/data` | `dashboard/export` — JSON and CSV for audits
-  
-- **Reports:**
-  - `GET /reports/clients` - Client reports
-  - `GET /reports/applications` - Application reports
-  - `GET /reports/revenue` - Financial reports
-  - `GET /reports/export` - Export data
+---
 
-### Client Portal Routes (Protected)
-- `GET /portal/dashboard` - Client dashboard
-- `GET /portal/applications` - View my applications
-- `GET /portal/documents` - View and upload documents
-- `GET /portal/invoices` - View invoices and payments
-- `GET /portal/appointments` - Book appointments
-- `POST /portal/documents/upload` - Upload document
+## Technology Stack & Package Versions
 
-## Configuration
+### Runtime Requirements
 
-### Environment Variables
+| Requirement | Version |
+|-------------|---------|
+| PHP | ^8.3 |
+| Node.js | >= 22.0.0 |
+| npm | >= 11.0.0 |
+| PostgreSQL | 12+ (primary) |
+| Python | 3.x (optional, for DOCX→PDF and email parsing) |
 
-Key environment variables in `.env`:
+### Backend (PHP / Composer)
+
+| Package | Locked Version | Purpose |
+|---------|----------------|---------|
+| `laravel/framework` | v13.14.0 | Application framework |
+| `laravel/passport` | v13.7.5 | OAuth2 API authentication |
+| `laravel/sanctum` | v4.3.2 | SPA / mobile token authentication |
+| `laravel/reverb` | v1.10.2 | WebSocket broadcasting |
+| `laravel/socialite` | v5.27.0 | OAuth social login |
+| `laravel/ui` | v4.6.3 | Auth scaffolding |
+| `laravel/tinker` | ^3.0 | REPL |
+| `aws/aws-sdk-php` | 3.384.4 | AWS S3 and services |
+| `league/flysystem-aws-s3-v3` | ^3.0 | S3 file storage driver |
+| `barryvdh/laravel-dompdf` | v3.1.2 | PDF generation (invoices, receipts) |
+| `phpoffice/phpword` | 1.4.0 | DOCX document generation |
+| `stripe/stripe-php` | v20.2.0 | Payment processing |
+| `twilio/sdk` | 8.11.6 | SMS (Twilio provider) |
+| `spatie/laravel-activitylog` | 4.12.3 | Audit logging |
+| `spatie/laravel-query-builder` | ^7.0 | API query filtering |
+| `spatie/laravel-html` | ^3.12 | HTML form builders |
+| `yajra/laravel-datatables-oracle` | v13.1.2 | Server-side DataTables |
+| `kyslik/column-sortable` | 8.0.0 | Sortable table columns |
+| `mews/captcha` | 3.5.0 | CAPTCHA on login |
+| `guzzlehttp/guzzle` | ^7.9 | HTTP client |
+| `symfony/mailgun-mailer` | ^7.0 | Mailgun mail transport |
+| `symfony/postmark-mailer` | ^7.0 | Postmark mail transport |
+| `pusher/pusher-php-server` | ^7.2 | Push notifications |
+| `ezyang/htmlpurifier` | ^4.19 | HTML sanitization |
+| `php-mime-mail-parser/php-mime-mail-parser` | ^1.0 | Email parsing |
+| `hfig/mapi` | ^1.4 | Outlook MSG parsing |
+| `salmanzafar/laravel-geocode` | ^1.0 | Geocoding |
+
+### Frontend (npm)
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `vite` | ^8.0.16 | Asset bundler |
+| `laravel-vite-plugin` | ^3.1.0 | Laravel Vite integration |
+| `tailwindcss` | ^3.4.0 | Utility CSS |
+| `@tailwindcss/forms` | ^0.5.11 | Form styling |
+| `alpinejs` | ^3.15.3 | Lightweight JS reactivity |
+| `axios` | ^1.11.0 | HTTP client |
+| `@fullcalendar/core` | ^6.1.20 | Calendar (daygrid, timegrid, list, interaction) |
+| `flatpickr` | ^4.6.13 | Date/time pickers (DD/MM/YYYY) |
+| `signature_pad` | ^5.1.1 | Canvas signatures |
+| `laravel-echo` | ^2.3.7 | WebSocket client |
+| `pusher-js` | ^8.5.0 | Real-time events |
+
+### Infrastructure & Services
+
+| Component | Details |
+|-----------|---------|
+| **Database** | PostgreSQL (primary); MySQL/SQLite supported for dev/migration |
+| **File Storage** | Local disk default; AWS S3 optional |
+| **Queue** | Database or Redis (`QUEUE_CONNECTION`) |
+| **Mail** | SendGrid, SMTP, Mailgun, Postmark |
+| **Real-time** | Laravel Reverb + Echo (optional) |
+| **Python Services** | `python_services/` — DOCX→PDF conversion, email upload parsing |
+| **Build** | Vite; run `npm run copy:flatpickr` after install |
+
+---
+
+## Routes
+
+The application defines **645 routes** across 13 route files (verified via `php artisan route:list`).
+
+> **Important:** Not every route file inherits `auth:admin` from `web.php`. Middleware depends on how each file is registered — see [Route registration](#route-registration) below.
+
+### Route registration
+
+Routes are loaded by `App\Providers\RouteServiceProvider`:
+
+| File | Loaded via | Middleware | Notes |
+|------|------------|------------|-------|
+| `routes/health.php` | `mapHealthRoutes()` | **None** | `/up` always reachable (ALB / CodeDeploy) |
+| `routes/api.php` | `mapApiRoutes()` | `api` + `/api` prefix | Stateless JSON API |
+| `routes/web.php` | `mapWebRoutes()` | `web` | Main CRM; includes nested requires |
+| `routes/sms.php` | `mapSmsRoutes()` | `web` only | Public SMS webhooks (no auth) |
+| `routes/channels.php` | `BroadcastServiceProvider` | — | WebSocket channel policies |
+| `routes/console.php` | Laravel kernel | — | Scheduled Artisan commands |
+
+Within `routes/web.php`:
+
+| Included file | Inside `auth:admin` group? | Effective middleware |
+|---------------|---------------------------|----------------------|
+| `adminconsole.php` | No (required before login routes) | `web` + `auth:admin` + `adminconsole` (declared in file) |
+| `clients.php` | Yes | `web` + `auth:admin` |
+| `matter_workflow.php` | Yes | `web` + `auth:admin` |
+| `crm_matter_hub.php` | Yes | `web` + `auth:admin` |
+| `office_visits.php` | Yes | `web` + `auth:admin` |
+| `booking_admin.php` | Yes | `web` + `auth:admin` |
+| `documents.php` | No (required after auth group) | Mixed — see [Documents & signatures](#documents--signatures) |
+
+### Route files
+
+| File | Prefix / scope | Purpose |
+|------|----------------|---------|
+| `routes/web.php` | `/` | Login, dashboard, leads, assignee, trust accounting, broadcasts, front-desk check-in, audit logs |
+| `routes/clients.php` | `/clients`, `/crm/access`, `/legal-forms`, `/documents/*` (client uploads) | Client CRUD, invoices, receipts, email, cross-access, legal forms |
+| `routes/adminconsole.php` | `/adminconsole` | Matter types, workflows, staff, roles, offices, SMS admin, templates |
+| `routes/matter_workflow.php` | `/client-portal/*`, `/clients/matter/*`, `/updatestage` | Matter stage progression (staff AJAX — not a public portal) |
+| `routes/crm_matter_hub.php` | `/client-portal/*`, `/crm/*`, `/add-checklists` | Matter logs, notes, ownership, checklist helpers |
+| `routes/booking_admin.php` | `/booking/*` | Appointment calendar, CRUD, sync, export |
+| `routes/office_visits.php` | `/office-visits/*`, `/checkin` | Walk-in queue management |
+| `routes/documents.php` | `/sign/*`, `/signatures/*`, `/documents/*` | E-signature workflow, public signing, admin document CRUD |
+| `routes/api.php` | `/api/*` | Public booking API, Sanctum staff auth, Stripe PaymentIntents |
+| `routes/sms.php` | `/webhooks/sms/*` | Twilio / Cellcast inbound webhooks (public) |
+| `routes/health.php` | `/up` | Health check (zero middleware) |
+
+### Middleware reference
+
+| Middleware | Applies to |
+|------------|------------|
+| *(none)* | `/up` |
+| `web` | All browser routes (session, CSRF) |
+| `auth:admin` | CRM staff session (`Staff` model via `admin` guard) |
+| `adminconsole` | Admin Console only (roles 1, 12, or elevated Super Admin) |
+| `api` | `/api/*` routes in `routes/api.php` |
+| `auth:sanctum` | `/api/logout`, `/api/logout-all` |
+| `auth` | `/clear-cache` (default guard: `admin`) |
+| `can:trigger-manual-sync` | `POST /booking/sync/manual` |
+
+### Public routes (no authentication)
+
+#### Authentication & health
+
+| Method | URI | Name | Description |
+|--------|-----|------|-------------|
+| GET | `/` | — | Redirect to `/login` |
+| GET | `/login` | `crm.login` | Staff login form |
+| POST | `/login` | `crm.login.post` | Authenticate staff |
+| POST | `/logout` | `crm.logout` | End session |
+| GET | `/logout` | `crm.logout.get` | Redirect to login |
+| GET | `/up` | `health.up` | Health check (plain `OK` response) |
+| GET/POST | `/exception` | `exception.index`, `exception.store` | Exception reporting form |
+
+#### Email verification
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/verify-email/{token}` | `clients.email.verify` |
+
+#### E-signature (token-based, no login)
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/sign/{id}/{token}` | `public.documents.sign` |
+| POST | `/documents/{document}/sign` | `public.documents.submitSignatures` |
+| GET | `/documents/{id?}` | `public.documents.index` |
+| GET | `/documents/{id}/page/{page}` | `public.documents.page` |
+| GET | `/documents/{id}/download-signed` | `public.documents.download.signed` |
+| GET | `/documents/{id}/download-signed-and-thankyou` | `public.documents.download_and_thankyou` |
+| GET | `/documents/thankyou/{id?}` | `public.documents.thankyou` |
+| POST | `/documents/{document}/send-reminder` | `public.documents.sendReminder` |
+
+#### SMS webhooks (`routes/sms.php`)
+
+| Method | URI | Name |
+|--------|-----|------|
+| POST | `/webhooks/sms/twilio/status` | `webhooks.sms.twilio.status` |
+| POST | `/webhooks/sms/twilio/incoming` | `webhooks.sms.twilio.incoming` |
+| POST | `/webhooks/sms/cellcast/status` | `webhooks.sms.cellcast.status` |
+| POST | `/webhooks/sms/cellcast/incoming` | `webhooks.sms.cellcast.incoming` |
+
+#### Unauthenticated web routes (`documents.php`, `web` middleware only)
+
+These routes have **no `auth:admin`** guard. They rely on CSRF for POST requests or are intended for dev/testing:
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/signatures` | `signatures.index` |
+| GET | `/signatures/create` | `signatures.create` |
+| POST | `/signatures` | `signatures.store` |
+| GET | `/signatures/{id}` | `signatures.show` |
+| POST | `/signatures/{id}/send` | `signatures.send` |
+| GET | `/signatures/api/client-matters/{clientId}` | `signatures.client-matters` |
+| GET | `/doc-to-pdf` | `doc-to-pdf.form` |
+| POST | `/doc-to-pdf/convert` | `doc-to-pdf.convert` |
+| GET | `/test-signature` | `test.signature` |
+
+> Admin document CRUD (`/documents/create`, `/documents/{id}/edit`, etc.) **does** require `auth:admin` via an explicit middleware group inside `documents.php`.
+
+---
+
+### CRM staff routes (`auth:admin`)
+
+All routes below require a valid staff session unless noted.
+
+#### Dashboard, profile & utilities
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/dashboard` | `dashboard` |
+| POST | `/dashboard/column-preferences` | `dashboard.column-preferences` |
+| POST | `/dashboard/update-stage` | `dashboard.update-stage` |
+| POST | `/dashboard/extend-deadline` | `dashboard.extend-deadline` |
+| GET | `/dashboard/active-staff` | `dashboard.active-staff` |
+| GET | `/my_profile` | `my_profile` |
+| POST | `/my_profile` | `my_profile.update` |
+| GET | `/change_password` | `change_password` |
+| POST | `/change_password` | `change_password.update` |
+| POST | `/session/super-admin-mode` | `crm.session.super-admin-mode` |
+| GET | `/audit-logs` | `auditlogs.index` |
+| GET | `/api-key` | `api` |
+| POST | `/api-key` | `api.update` |
+| GET | `/staff-login-analytics` | `staff-login-analytics.index` |
+
+#### Leads (`/leads`)
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/leads` | `leads.index` |
+| GET | `/leads/create` | `leads.create` |
+| POST | `/leads/store` | `leads.store` |
+| GET | `/leads/detail/{id}` | `leads.detail` |
+| GET | `/leads/history/{id}` | `leads.history` |
+| GET | `/leads/{id}/edit` | `leads.edit` |
+| PUT/PATCH | `/leads/{id}` | `leads.update` / `leads.patch` |
+| POST | `/leads/assign` | `leads.assign` |
+| POST | `/leads/bulk-assign` | `leads.bulk_assign` |
+| GET | `/leads/assignable-staff` | `leads.assignable_staff` |
+| GET | `/leads/convert` | `leads.convert` |
+| POST | `/leads/convert-single` | `leads.convert_single` |
+| POST | `/leads/bulk-convert` | `leads.bulk_convert` |
+| GET | `/leads/conversion-stats` | `leads.conversion_stats` |
+| POST | `/leads/archive/{id}` | `leads.archive` |
+| GET | `/leads/check-contact-match` | `leads.check.contact.match` |
+| GET | `/leads/analytics` | `leads.analytics.index` |
+| GET | `/leads/analytics/trends` | `leads.analytics.trends` |
+| GET | `/leads/analytics/export` | `leads.analytics.export` |
+| POST | `/leads/analytics/compare-agents` | `leads.analytics.compare` |
+
+#### Clients (`/clients`)
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/clients` | `clients.index` |
+| GET | `/clients/detail/{client_id}/{matter_ref?}/{tab?}` | `clients.detail` |
+| GET | `/clients/edit/{id}` | `clients.edit` |
+| POST | `/clients/edit` | `clients.update` |
+| POST | `/clients/store` | `clients.store` |
+| GET | `/clients/archived` | `clients.archived` |
+| POST | `/clients/archive/{id}` | `clients.archive` |
+| POST | `/clients/unarchive/{id}` | `clients.unarchive` |
+| GET | `/clientsmatterslist` | `clients.clientsmatterslist` |
+| GET | `/clientsclosedmatterslist` | `clients.closedmatterslist` |
+| GET | `/clients/invoicelist` | `clients.invoicelist` |
+| GET | `/clients/analytics-dashboard` | `clients.analytics-dashboard` |
+| GET | `/clients/insights` | `clients.insights` |
+| POST | `/clients/save-section` | `clients.saveSection` |
+| GET | `/clients/export/{id}` | `clients.export` |
+| POST | `/clients/import` | `clients.import` |
+
+Client phone/email verification: `/clients/phone/*`, `/clients/email/*`.  
+Client documents (upload/checklist): `/documents/add-*`, `/documents/upload-*`, `/documents/preview/{id}`, etc. (in `clients.php`).  
+Financial routes: `/clients/saveinvoicereport`, `/clients/genInvoice/{id}`, `/clients/clientreceiptlist`, `/void_invoice`, etc.
+
+#### Matter workflow
+
+> **Naming note:** `/client-portal/*` paths are **staff-only AJAX endpoints** loaded inside `auth:admin`. They are not a public client-facing portal.
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/client-portal/detail` | — |
+| POST | `/client-portal/load-matter-upsert` | — |
+| GET | `/updatestage` | — |
+| GET | `/completestage` | — |
+| GET | `/updatebackstage` | — |
+| POST | `/clients/matter/update-next-stage` | `clients.matter.update-next-stage` |
+| POST | `/clients/matter/update-previous-stage` | `clients.matter.update-previous-stage` |
+| POST | `/clients/matter/update-deadline` | `clients.matter.update-deadline` |
+| POST | `/clients/matter/change-workflow` | `clients.matter.change-workflow` |
+| POST | `/clients/matter/discontinue` | `clients.matter.discontinue` |
+| POST | `/clients/matter/reopen` | `clients.matter.reopen` |
+| POST | `/clients/matter/delete` | `clients.matter.delete` |
+| GET | `/client-portal/logs` | — |
+| GET | `/client-portal/notes` | — |
+| POST | `/client-portal/ownership` | — |
+| POST | `/add-checklists` | `crm.matter.addChecklist` |
+| GET | `/upload-checklists` | `upload_checklists.index` |
+
+#### Legal forms
+
+| Method | URI | Name |
+|--------|-----|------|
+| POST | `/legal-forms` | `legal-forms.store` |
+| GET | `/legal-forms/client-forms` | `legal-forms.client-forms` |
+| POST | `/legal-forms/generate-scope-ai` | `legal-forms.generate-scope-ai` |
+| GET | `/legal-forms/{legalForm}` | `legal-forms.show` |
+| PUT | `/legal-forms/{legalForm}` | `legal-forms.update` |
+| GET | `/legal-forms/{legalForm}/preview` | `legal-forms.preview` |
+| GET | `/legal-forms/{legalForm}/download` | `legal-forms.download` |
+
+#### Booking (`/booking`)
+
+Calendar `{type}` accepts **`ajay`** or **`kunal`** only. Legacy calendar URLs redirect to `/booking/calendar/ajay`.
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/booking/appointments` | `booking.appointments.index` |
+| GET | `/booking/appointments/{id}` | `booking.appointments.show` |
+| GET | `/booking/appointments/{id}/edit` | `booking.appointments.edit` |
+| PUT | `/booking/appointments/{id}` | `booking.appointments.update` |
+| GET | `/booking/appointments/{id}/json` | `booking.appointments.json` |
+| GET | `/booking/calendar/{type}` | `booking.appointments.calendar` |
+| POST | `/booking/appointments/{id}/update-status` | `booking.appointments.update-status` |
+| POST | `/booking/appointments/{id}/update-consultant` | `booking.appointments.update-consultant` |
+| POST | `/booking/appointments/{id}/update-meeting-type` | `booking.appointments.update-meeting-type` |
+| POST | `/booking/appointments/{id}/update-datetime` | `booking.appointments.update-datetime` |
+| POST | `/booking/appointments/{id}/add-note` | `booking.appointments.add-note` |
+| POST | `/booking/appointments/{id}/send-reminder` | `booking.appointments.send-reminder` |
+| POST | `/booking/appointments/bulk-update-status` | `booking.appointments.bulk-update-status` |
+| GET | `/booking/appointments/export` | `booking.appointments.export` |
+| GET | `/booking/sync/dashboard` | `booking.sync.dashboard` |
+| GET | `/booking/sync/stats` | `booking.sync.stats` |
+| POST | `/booking/sync/manual` | `booking.sync.manual` |
+| GET/POST | `/booking/api/appointments` | `booking.api.appointments` |
+| POST | `/booking/api/calendar-events` | `booking.api.calendar-events.store` |
+| PUT | `/booking/api/calendar-events/{id}` | `booking.api.calendar-events.update` |
+| DELETE | `/booking/api/calendar-events/{id}` | `booking.api.calendar-events.destroy` |
+| GET | `/booking/api/calendar-stats/{type}` | `booking.api.calendar-stats` |
+| GET | `/booking/api/calendar-events/reminders` | `booking.api.calendar-events.reminders` |
+
+#### Office visits & front desk
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/office-visits/waiting` | `officevisits.waiting` |
+| GET | `/office-visits/attending` | `officevisits.attending` |
+| GET | `/office-visits/completed` | `officevisits.completed` |
+| GET | `/office-visits/create` | `officevisits.create` |
+| POST | `/checkin` | — |
+| POST | `/attend_session` | — |
+| POST | `/complete_session` | — |
+| GET | `/front-desk/checkin` | `front-desk.checkin.index` |
+| POST | `/front-desk/checkin/lookup` | `front-desk.checkin.lookup` |
+| POST | `/front-desk/checkin/submit` | `front-desk.checkin.submit` |
+| POST | `/front-desk/checkin/create-lead` | `front-desk.checkin.create-lead` |
+
+#### Assignee & actions
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/assignee` | `assignee.index` |
+| GET | `/assignee-completed` | — |
+| GET | `/assigned_by_me` | `assignee.assigned_by_me` |
+| GET | `/assigned_to_me` | `assignee.assigned_to_me` |
+| GET | `/action` | `assignee.action` |
+| GET | `/action/list` | `action.list` |
+| GET | `/action/counts` | `action.counts` |
+| GET | `/action_completed` | `assignee.action_completed` |
+
+#### Cross-access (`/crm/access`)
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/crm/access/meta` | `crm.access.meta` |
+| POST | `/crm/access/quick` | `crm.access.quick` |
+| POST | `/crm/access/supervisor` | `crm.access.supervisor` |
+| GET | `/crm/access/queue` | `crm.access.queue` |
+| GET | `/crm/access/queue/data` | `crm.access.queue.data` |
+| GET | `/crm/access/queue/mini` | `crm.access.queue.mini` |
+| POST | `/crm/access/{grant}/approve` | `crm.access.approve` |
+| POST | `/crm/access/{grant}/reject` | `crm.access.reject` |
+| GET | `/crm/access/my-grants` | `crm.access.my-grants` |
+| GET | `/crm/access/my-grants/data` | `crm.access.my-grants.data` |
+| GET | `/crm/access/dashboard` | `crm.access.dashboard` |
+| GET | `/crm/access/dashboard/stats` | `crm.access.dashboard.stats` |
+| GET | `/crm/access/dashboard/summary` | `crm.access.dashboard.summary` |
+| GET | `/crm/access/dashboard/data` | `crm.access.dashboard.data` |
+| GET | `/crm/access/dashboard/export` | `crm.access.dashboard.export` |
+
+#### Trust accounting (`/trust-accounting`) — 29 routes
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/trust-accounting/periods` | `trust-accounting.periods.index` |
+| POST | `/trust-accounting/periods` | `trust-accounting.periods.store` |
+| POST | `/trust-accounting/periods/{period}/unlock` | `trust-accounting.periods.unlock` |
+| GET | `/trust-accounting/guide` | `trust-accounting.guide` |
+| GET | `/trust-accounting/practice-sequences` | `trust-accounting.practice-sequences.index` |
+| GET | `/trust-accounting/audit-log` | `trust-accounting.audit-log.index` |
+| GET | `/trust-accounting/bank-accounts` | `trust-accounting.bank-accounts.index` |
+| POST | `/trust-accounting/bank-accounts` | `trust-accounting.bank-accounts.store` |
+| GET | `/trust-accounting/reconciliation` | `trust-accounting.reconciliation.index` |
+| POST | `/trust-accounting/reconciliation/lines` | `trust-accounting.reconciliation.lines.store` |
+| POST | `/trust-accounting/reconciliation/match` | `trust-accounting.reconciliation.match` |
+| GET | `/trust-accounting/reports` | `trust-accounting.reports.index` |
+| GET | `/trust-accounting/reports/trial-balance` | `trust-accounting.reports.trial-balance` |
+| GET | `/trust-accounting/reports/receipts-journal` | `trust-accounting.reports.receipts-journal` |
+| GET | `/trust-accounting/reports/payments-journal` | `trust-accounting.reports.payments-journal` |
+| GET | `/trust-accounting/reports/overdrawn-ledger` | `trust-accounting.reports.overdrawn-ledger` |
+| GET | `/trust-accounting/reports/auditors-pack` | `trust-accounting.reports.auditors-pack` |
+| GET | `/trust-accounting/statements` | `trust-accounting.statements.index` |
+| GET | `/trust-accounting/statements/generate` | `trust-accounting.statements.generate` |
+| GET | `/trust-accounting/statements/annual` | `trust-accounting.statements.annual` |
+| POST | `/trust-accounting/statements/mark-sent` | `trust-accounting.statements.mark-sent` |
+| GET | `/trust-accounting/archives` | `trust-accounting.archives.index` |
+| GET | `/trust-accounting/archives/{archive}/download` | `trust-accounting.archives.download` |
+| GET | `/trust-accounting/rule42-withdrawal-authority-types` | `trust-accounting.withdrawal-authority-types.index` |
+
+#### Broadcasts & notifications
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/all-notifications` | `crm.all-notifications` |
+| POST | `/notifications/broadcasts/send` | `notifications.broadcasts.send` |
+| GET | `/notifications/broadcasts/history` | `notifications.broadcasts.history` |
+| GET | `/notifications/broadcasts/my-history` | `notifications.broadcasts.my-history` |
+| GET | `/notifications/broadcasts/unread` | `notifications.broadcasts.unread` |
+| GET | `/notifications/broadcasts/{batchUuid}/details` | `notifications.broadcasts.details` |
+
+#### Staff JSON helpers (session auth, `/api` prefix on web stack)
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/api/crm/matter-checklist-documents` | `clients.getChecklistDocuments` |
+| POST | `/api/crm/matter-checklist-delete-document` | `clients.deleteChecklistDocument` |
+| POST | `/api/crm/matter-checklist-update-document-status` | `clients.updateChecklistDocumentStatus` |
+| GET | `/api/search-contact-person` | `api.search.contact.person` |
+| GET | `/api/staff-login-analytics/daily` | `api.staff-login-analytics.daily` |
+| GET | `/api/staff-login-analytics/weekly` | `api.staff-login-analytics.weekly` |
+| GET | `/api/staff-login-analytics/monthly` | `api.staff-login-analytics.monthly` |
+| GET | `/api/staff-login-analytics/summary` | `api.staff-login-analytics.summary` |
+
+---
+
+### Documents & signatures
+
+| Scope | Middleware | Key routes |
+|-------|------------|------------|
+| Public signing | `web` only | `/sign/{id}/{token}`, `POST /documents/{document}/sign` |
+| Signature dashboard (file top) | `web` only | `/signatures`, `/signatures/create`, `/signatures/{id}` |
+| Admin document CRUD | `auth:admin` | `/documents/create`, `POST /documents`, `/documents/{id}/edit`, `PATCH /documents/{id}` |
+| Admin signing ops | `auth:admin` | `POST /documents/{document}/send-signing-link`, `GET /documents/{document}/sign` |
+| Admin signed PDF | `auth:admin` | `/documents/{id}/preview-signed`, `/documents/{id}/download-signed` |
+
+---
+
+### Admin Console (`auth:admin` + `adminconsole`)
+
+Prefix: `/adminconsole` — restricted to roles **1** (Super Admin) and **12** (Admin), unless the user has effective Super Admin elevation.
+
+#### Features (`/adminconsole/features/`)
+
+| Section | URI prefix | Route name prefix |
+|---------|------------|-------------------|
+| Matter types | `/matter` | `adminconsole.features.matter.*` |
+| Workflows & stages | `/workflow` | `adminconsole.features.workflow.*` |
+| Personal document types | `/personal-document-type` | `adminconsole.features.personaldocumenttype.*` |
+| Matter document types | `/matter-document-type` | `adminconsole.features.matterdocumenttype.*` |
+| Document checklists | `/document-checklist` | `adminconsole.features.documentchecklist.*` |
+| Email accounts | `/emails` | `adminconsole.features.emails.*` |
+| Email labels | `/email-labels` | `adminconsole.features.emaillabels.*` |
+| CRM email templates | `/crm-email-template` | `adminconsole.features.crmemailtemplate.*` |
+| Matter email templates | `/matter-email-template` | `adminconsole.features.matteremailtemplate.*` |
+| Matter other email templates | `/matter-other-email-template` | `adminconsole.features.matterotheremailtemplate.*` |
+| SMS | `/sms/dashboard`, `/sms/send`, `/sms/templates` | `adminconsole.features.sms.*` |
+| E-signature audit | `/esignature`, `/esignature/export` | `adminconsole.features.esignature.*` |
+
+Legacy redirect: `/adminconsole/features/visa-document-type` → `/matter-document-type`.
+
+#### Staff (`/adminconsole/staff/`)
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/adminconsole/staff` | `adminconsole.staff.index` |
+| GET | `/adminconsole/staff/active` | `adminconsole.staff.active` |
+| GET | `/adminconsole/staff/create` | `adminconsole.staff.create` |
+| POST | `/adminconsole/staff/store` | `adminconsole.staff.store` |
+| GET | `/adminconsole/staff/edit/{id}` | `adminconsole.staff.edit` |
+| PUT | `/adminconsole/staff/{id}` | `adminconsole.staff.update` |
+
+#### System (`/adminconsole/system/`)
+
+| Section | URI | Route name prefix |
+|---------|-----|-------------------|
+| Roles | `/roles` | `adminconsole.system.roles.*` |
+| Teams | `/teams` | `adminconsole.system.teams.*` |
+| Offices (branches) | `/offices` | `adminconsole.system.offices.*` |
+| System clients | `/clients` | `adminconsole.system.clients.*` |
+| Activity search | `/activity-search` | `adminconsole.system.activity-search.*` |
+
+### Inspecting routes locally
+
+```bash
+php artisan route:list
+php artisan route:list --path=clients
+php artisan route:list --path=booking
+php artisan route:list --name=crm.access
+```
+
+---
+
+## API Endpoints
+
+Base URL: `{APP_URL}/api`
+
+### Staff Authentication (Sanctum)
+
+| Method | URI | Auth | Description |
+|--------|-----|------|-------------|
+| POST | `/api/admin-login` | None | Staff login; returns Sanctum token (roles 1, 12, 13, 16) |
+| POST | `/api/logout` | `auth:sanctum` | Revoke current token |
+| POST | `/api/logout-all` | `auth:sanctum` | Revoke all tokens for user |
+
+**Login request body:**
+```json
+{
+  "email": "staff@example.com",
+  "password": "secret",
+  "device_name": "mobile-app",
+  "device_token": "optional-fcm-token"
+}
+```
+
+### Public Booking API (no auth)
+
+| Method | URI | Description |
+|--------|-----|-------------|
+| GET | `/api/countries` | Country list for forms |
+| POST | `/api/leads` | Create lead from external form |
+| POST | `/api/booking-appointments` | Create booking appointment |
+| GET | `/api/appointment-variable-lists` | Appointment configuration lists |
+| POST | `/api/appointments/add-appointment-without-login` | Book without CRM login |
+| POST | `/api/appointments/get-disabled-dates` | Calendar disabled dates |
+| POST | `/api/appointments/get-disabled-slots` | Disabled time slots for a date |
+| POST | `/api/appointments/get-booked-disabled-time-slots` | Booked slots to disable |
+| POST | `/api/appointments/record-payment-without-login` | Record Stripe payment for booking |
+| POST | `/api/appointments/record-payment-without-login-wallet` | Wallet payment variant |
+
+### Payments
+
+| Method | URI | Auth | Description |
+|--------|-----|------|-------------|
+| POST | `/api/payments/create-payment-intent` | None | Create Stripe PaymentIntent |
+
+### Service Account
+
+| Method | URI | Auth | Description |
+|--------|-----|------|-------------|
+| POST | `/api/service-account/generate-token` | Service credentials | Generate API token for integrations |
+
+### CRM session JSON (web stack, not `routes/api.php`)
+
+These URLs start with `/api/` but are registered in `routes/clients.php` and `routes/web.php` inside the **`web` + `auth:admin`** middleware group. They use the staff **session cookie**, not a Sanctum bearer token:
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/api/crm/matter-checklist-documents` | `clients.getChecklistDocuments` |
+| POST | `/api/crm/matter-checklist-delete-document` | `clients.deleteChecklistDocument` |
+| POST | `/api/crm/matter-checklist-update-document-status` | `clients.updateChecklistDocumentStatus` |
+| GET | `/api/search-contact-person` | `api.search.contact.person` |
+| GET | `/api/staff-login-analytics/daily` | `api.staff-login-analytics.daily` |
+| GET | `/api/staff-login-analytics/weekly` | `api.staff-login-analytics.weekly` |
+| GET | `/api/staff-login-analytics/monthly` | `api.staff-login-analytics.monthly` |
+| GET | `/api/staff-login-analytics/hourly` | `api.staff-login-analytics.hourly` |
+| GET | `/api/staff-login-analytics/summary` | `api.staff-login-analytics.summary` |
+| GET | `/api/staff-login-analytics/top-staff` | `api.staff-login-analytics.top-staff` |
+| GET | `/api/staff-login-analytics/trends` | `api.staff-login-analytics.trends` |
+| GET/POST | `/booking/api/appointments` | `booking.api.appointments` |
+| POST | `/booking/api/calendar-events` | `booking.api.calendar-events.store` |
+| GET | `/signatures/api/client-matters/{clientId}` | `signatures.client-matters` |
+
+---
+
+## Authentication & Authorization
+
+### Guards & Providers
+
+Configured in `config/auth.php`:
+
+| Guard | Driver | Provider | Model | Used For |
+|-------|--------|----------|-------|----------|
+| `admin` | session | `staff` | `App\Models\Staff` | **CRM web login** (`/login`) |
+| `web` | session | `admins` | `App\Models\Admin` | Legacy admin provider |
+| `api` | sanctum | `admins` | `App\Models\Admin` | API token auth |
+| `provider` | session | `providers` | `App\Provider` | External provider portal |
+
+Default guard: `admin`
+
+### Staff Web Login
+
+- **URL:** `GET/POST /login`
+- **Controller:** `App\Http\Controllers\Auth\AdminLoginController`
+- **Guard:** `auth:admin` (Staff model)
+- **Redirect after login:** `/dashboard`
+- **Optional:** Google reCAPTCHA when `services.recaptcha.key` is configured
+- **Middleware:** `guest:admin` on login; all CRM routes wrapped in `auth:admin`
+
+### Staff API Login (Sanctum)
+
+- **URL:** `POST /api/admin-login`
+- **Controller:** `App\Http\Controllers\API\StaffApiAuthController`
+- **Allowed roles:** 1, 12, 13, 16 (active staff only)
+- **Returns:** Sanctum bearer token + optional refresh token
+- **Protected routes:** `auth:sanctum` middleware
+
+### Admin Console Access
+
+- **Middleware:** `EnsureAdminConsoleAccess`
+- **Allowed roles:** 1 (Super Admin), 12 (Admin)
+- **Super Admin elevation:** Non–role-1 staff with effective super-admin privileges (via `CrmAccessService`) may also access
+- **Denied users:** Redirected to `/dashboard` with error message
+
+### Role-Based Permissions
+
+Staff roles (stored on `staff.role`) control feature access. Key role IDs referenced in code:
+
+| Role ID | Typical Role |
+|---------|--------------|
+| 1 | Super Admin |
+| 12 | Admin |
+| 13 | Staff (API login allowed) |
+| 14 | Calling Team (quick access only) |
+| 16 | Staff (API login allowed) |
+| 17 | Admin (cross-access exempt) |
+
+Admin Console, matter configuration, and staff management require roles 1 or 12.
+
+### Row-Level Visibility (Cross-Access)
+
+Implemented via `App\Support\StaffClientVisibility` and `App\Services\CrmAccess\CrmAccessService`:
+
+| Mechanism | Description |
+|-----------|-------------|
+| **Allocation** | Staff see clients/leads they are assigned to |
+| **Exempt roles** | Roles 1, 17 bypass all restrictions (configurable) |
+| **Exempt staff IDs** | Specific staff IDs bypass restrictions |
+| **Quick grant** | 15-minute temporary access (Calling Team limited to this path) |
+| **Supervisor grant** | 24-hour access after approver approval |
+| **Strict allocation** | When `CRM_ACCESS_STRICT_ALLOCATION=true`, non-exempt staff only see allocated records |
+| **Expiry job** | `access:expire-grants` (hourly scheduler) cleans stale grants |
+
+Configuration: `config/crm_access.php` and `.env` variables (see [Configuration](#configuration)).
+
+### Public Token Auth (No Login)
+
+| Flow | Mechanism |
+|------|-----------|
+| **E-signature** | `/sign/{id}/{token}` — HMAC token validated per document |
+| **Email verification** | `/verify-email/{token}` — one-time email confirmation |
+| **Public documents** | `/documents/{id}` — access controlled by document settings |
+
+### OAuth / Passport
+
+`laravel/passport` is installed for OAuth2 server capabilities. Sanctum handles most current API token needs; Passport is available for third-party OAuth integrations.
+
+### Real-Time Authorization
+
+`routes/channels.php` defines broadcast channel policies. Laravel Reverb + Echo provide WebSocket subscriptions when configured.
+
+---
+
+## Installation
+
+### 1. Clone and install dependencies
+
+```bash
+git clone https://github.com/bansallawyers12/BansalLaw_CRM.git
+cd BansalLaw_CRM
+composer install
+npm install
+npm run copy:flatpickr
+```
+
+### 2. Environment
+
+```powershell
+copy .env.example .env
+php artisan key:generate
+```
+
+Set database credentials (PostgreSQL recommended):
 
 ```env
-APP_NAME="Bansal Law CRM"
-APP_ENV=local
-APP_DEBUG=true
-APP_URL=http://localhost:8000
-
-# Database (PostgreSQL)
 DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
 DB_PORT=5432
 DB_DATABASE=bansal_law_crm
 DB_USERNAME=postgres
 DB_PASSWORD=
-
-# Mail Configuration (SendGrid)
-MAIL_MAILER=sendgrid
-MAIL_FROM_ADDRESS=your_sender@yourdomain.com
-MAIL_FROM_NAME="Your Company Name"
-SENDGRID_API_KEY=SG.your_api_key_here
-SENDGRID_FROM_EMAIL=your_sender@yourdomain.com
-SENDGRID_BASE_URL=https://api.sendgrid.com
-
-# Payment Gateways
-STRIPE_KEY=your_stripe_key
-STRIPE_SECRET=your_stripe_secret
-PAYU_MERCHANT_KEY=your_payu_key
-PAYU_SALT=your_payu_salt
-
-# File Storage
-FILESYSTEM_DISK=local
-
-# Queue Configuration (database or redis)
-QUEUE_CONNECTION=database
-QUEUE_RETRY_AFTER=90
-
-# Session & Cache
-SESSION_DRIVER=file
-CACHE_DRIVER=file
-
-# Logging
-LOG_CHANNEL=stack
-LOG_LEVEL=debug
+APP_TIMEZONE=Australia/Melbourne
 ```
 
-#### CRM cross-access (`config/crm_access.php`)
+### 3. Database
 
-Row-level visibility and temporary access grants are controlled in `config/crm_access.php` (parsed lists tolerate empty `.env` values with safe defaults). Add to `.env` as needed:
+```bash
+php artisan migrate --seed
+php artisan storage:link
+```
+
+### 4. Build assets
+
+```bash
+npm run build
+# Development:
+npm run dev
+```
+
+### 5. Run
+
+```bash
+php artisan serve
+# Separate terminal for queues:
+php artisan queue:work
+# Separate terminal for scheduler (production):
+php artisan schedule:work
+```
+
+Access at `http://localhost:8000` → redirects to `/login`.
+
+### Default credentials
+
+After seeding, check `database/seeders/SuperAdminBootstrapSeeder.php` for the bootstrap admin account.
+
+---
+
+## Configuration
+
+### Key Environment Variables
 
 ```env
-# Comma-separated role IDs that bypass allocation (default: 1,17 — Super Admin, Admin)
-CRM_ACCESS_EXEMPT_ROLE_IDS=1,17
+APP_NAME="Bansal Law CRM"
+APP_URL=http://localhost:8000
 
-# Optional: staff.id exempt list. Omit or leave blank so exempt mirrors approvers (see config/crm_access.php).
-# CRM_ACCESS_EXEMPT_STAFF_IDS=36834,36524,36692,36483,36484,36718,36523,36836,36830
+# Mail (SendGrid example)
+MAIL_MAILER=sendgrid
+SENDGRID_API_KEY=SG.xxxx
 
-# Comma-separated staff.id values who may approve supervisor requests (plus all active role-1 staff)
-CRM_ACCESS_APPROVER_STAFF_IDS=36834,36524,36692,36483,36484,36718,36523,36836,36830
+# Payments
+STRIPE_KEY=pk_live_xxx
+STRIPE_SECRET=sk_live_xxx
 
-# Roles that may only use quick access, not supervisor path (default: 14 — Calling Team)
-CRM_ACCESS_QUICK_ONLY_ROLE_IDS=14
+# Storage
+FILESYSTEM_DISK=local
+# AWS_BUCKET, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY for S3
 
-# When true, non-exempt staff only see allocated clients/leads (+ active grants)
-CRM_ACCESS_STRICT_ALLOCATION=false
+# Queue
+QUEUE_CONNECTION=database
 
-# Grant durations and caps
-CRM_ACCESS_QUICK_GRANT_MINUTES=15
-CRM_ACCESS_SUPERVISOR_GRANT_HOURS=24
-CRM_ACCESS_MAX_PENDING_SUPERVISOR_REQUESTS=5
-CRM_ACCESS_PENDING_TTL_DAYS=14
+# Python services
+PYTHON_CONVERTER_URL=http://localhost:5000
+
+# Reverb (optional real-time)
+REVERB_APP_ID, REVERB_APP_KEY, REVERB_APP_SECRET
 ```
 
-Full behaviour, HTTP surface, and QA checklist: **`docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md`**.
+### CRM Cross-Access
 
-### Database
+```env
+CRM_ACCESS_EXEMPT_ROLE_IDS=1,17
+CRM_ACCESS_APPROVER_STAFF_IDS=36834,36524,...
+CRM_ACCESS_QUICK_ONLY_ROLE_IDS=14
+CRM_ACCESS_STRICT_ALLOCATION=false
+CRM_ACCESS_QUICK_GRANT_MINUTES=15
+CRM_ACCESS_SUPERVISOR_GRANT_HOURS=24
+```
 
-The application uses **PostgreSQL** as the primary database (default in `config/database.php`). MySQL is supported for legacy migration from existing MySQL installations. For development, you can use SQLite by changing `DB_CONNECTION` to `sqlite` in `.env`.
+Full behaviour documented in `docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md`.
 
-## Contributing
+---
 
-1. Clone [bansallawyers12/BansalLaw_CRM](https://github.com/bansallawyers12/BansalLaw_CRM) (or fork it if you use a fork workflow)
-2. Create a feature branch
-3. Make your changes
-4. Run tests to ensure everything works
-5. Submit a pull request
+## Project Structure
+
+```
+app/
+├── Http/Controllers/
+│   ├── CRM/              # Clients, leads, booking, documents, dashboard
+│   ├── AdminConsole/     # System configuration
+│   ├── API/              # Public booking + Sanctum auth
+│   └── Auth/             # AdminLoginController
+├── Models/               # Staff, Lead, ClientMatter, Document, etc.
+├── Services/             # Stripe, SMS, signatures, CrmAccess, dashboard
+└── Support/              # StaffClientVisibility
+
+routes/
+├── web.php               # Main CRM routes
+├── clients.php           # Client & financial routes
+├── adminconsole.php      # Admin settings
+├── api.php               # REST API
+├── booking_admin.php     # Appointments
+├── documents.php         # E-signatures
+├── matter_workflow.php   # Matter stages
+└── crm_matter_hub.php    # Matter hub utilities
+
+resources/views/          # Blade templates
+resources/js/             # Vite entry (Alpine, Echo)
+public/build/             # Compiled assets
+python_services/          # DOCX→PDF, email parsing microservices
+database/migrations/      # Schema
+database/seeders/         # Bootstrap data
+config/                   # auth, crm_access, services, reverb
+```
+
+### Key Models
+
+| Model | Purpose |
+|-------|---------|
+| `Staff` | CRM users (authentication) |
+| `Admin` | Legacy admin records |
+| `Lead` | Pre-client inquiries |
+| `Admin` (client) | Client records (`admins` table) |
+| `ClientMatter` | Matter/case on a client |
+| `Document` | Uploaded and signed documents |
+| `BookingAppointment` | Scheduled appointments |
+| `ClientAccessGrant` | Cross-access audit trail |
+| `AccountAllInvoiceReceipt` | Invoices and receipts |
+
+---
 
 ## License
 
-This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
-## Recent Changes
-
-- **PostgreSQL**: Primary database is now PostgreSQL (default in config); MySQL supported for legacy migration.
-- **Laravel 12**: Upgraded from Laravel 10; requires PHP 8.2+.
-- **Matter-based tracking**: Legacy `applications` table removed; visa tracking is via `client_matters` (Matter model).
-- **Flatpickr migration**: All date pickers now use Flatpickr (DD/MM/YYYY format). Bootstrap Datepicker removed.
-- **Company Employer Sponsorship**: Full implementation including Trust entities, trading names, directors (with client/lead linking), nominations, sponsorship tracking, and per-section AJAX save.
-- **Assignee action view**: Dedicated action page for assigned tasks.
-- **CRM layouts**: Updated `crm_client_detail` and `crm_client_detail_dashboard` with Flatpickr components.
-- **Vite build**: Frontend built with Vite; includes FullCalendar, Flatpickr, Signature Pad, Alpine.js, Tailwind.
-- **Cross-access & allocated visibility**: `StaffClientVisibility`, `CrmAccessService`, `client_access_grants`, header search locked rows + modal, approver bell mini-queue, grants dashboard and CSV, booking/email/document gates when strict allocation is enabled; scheduled `access:expire-grants`.
-
-For cross-access product rules, routes, and rollout status, see **`docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md`**.
-
-## Important Notes
-
-- The application is optimized to work with XAMPP (Apache) on Windows; PostgreSQL must be installed separately
-- Run `npm run copy:flatpickr` after `npm install` so date pickers work correctly
-- Python API service (`python_services/`) handles DOCX to PDF conversion; optional if not using DOCX uploads
-- PostgreSQL is the primary database; ensure `pdo_pgsql` PHP extension is enabled
-- The application uses Laravel's built-in authentication with multi-role support
-- Document storage is handled locally by default, with optional S3 integration
-- Comprehensive logging is available in `storage/logs/laravel.log`
-- Email integration supports both SMTP and IMAP protocols
-- Payment gateways (Stripe, PayU) need to be configured for online payments
-- SMS providers (Twilio, Cellcast) need to be configured for SMS notifications
-- Client portal provides secure access for clients to track their applications
-- **CRM cross-access**: ensure `php artisan schedule:run` (or cron) runs in production so `access:expire-grants` executes; set `CRM_ACCESS_STRICT_ALLOCATION=true` only after UAT (see implementation plan)
-
-## Troubleshooting
-
-### Database Issues
-- **Connection refused**: Ensure PostgreSQL is running (XAMPP does not include PostgreSQL; install separately)
-- **pdo_pgsql not loaded**: Enable the `pdo_pgsql` extension in `php.ini`; run `php -m` and confirm `pdo_pgsql` appears in the list
-- **Access denied**: Verify database credentials in `.env` file
-- **Table not found**: Run `php artisan migrate --seed` to create tables
-
-### PDF / DOCX Conversion Issues
-- **DOCX conversion fails**: Ensure the Python conversion service is running (`python_services/`); set `PYTHON_CONVERTER_URL` in `.env` if not using default `http://localhost:5000`
-- **Permission denied**: Check storage folder permissions (775 or 777)
-
-### Email Issues
-- **Emails not sending**: Verify MAIL_* configuration in `.env`
-- **SMTP authentication failed**: Use app-specific passwords for Gmail
-- **Emails going to spam**: Configure SPF and DKIM records for your domain
-
-### Date Picker (Flatpickr) Issues
-- **Date pickers not appearing**: Run `npm run copy:flatpickr` to copy Flatpickr assets to `public/js/` and `public/css/`
-- **"flatpickr is not defined"**: Ensure `flatpickr-assets` and `flatpickr-scripts` components are included in the layout (see `layouts/crm_client_detail.blade.php`)
-
-### Performance Issues
-- **Slow page loads**: Run `php artisan optimize` and `npm run build`
-- **Queue not processing**: Ensure `php artisan queue:work` is running
-- **High memory usage**: Increase PHP memory_limit in php.ini
-
-## Security Best Practices
-
-- **Never commit `.env` file** - Contains sensitive credentials
-- **Use strong passwords** - Enforce password policies for users
-- **Enable HTTPS** - Use SSL certificates in production
-- **Regular backups** - Automated daily database backups recommended
-- **Update dependencies** - Run `composer update` and `npm update` regularly
-- **Role-based access** - Limit admin access to trusted staff only
-- **Two-factor authentication** - Consider implementing 2FA for admin accounts
-- **Data encryption** - Sensitive client data should be encrypted at rest
-
-## Backup & Data Management
-
-### What to Backup
-- **Database**: PostgreSQL database dumps (daily recommended)
-- **Storage folder**: `storage/app/public/` containing:
-  - Client documents
-  - Agreements
-  - Attachments
-  - Generated PDFs
-- **Environment file**: `.env` (store securely, not in repository)
-- **Uploaded files**: All content in `public/` except framework files
-
-### Backup Commands
-```powershell
-# PostgreSQL database backup (PowerShell)
-$date = Get-Date -Format "yyyyMMdd"
-pg_dump -U postgres bansal_law_crm | Out-File "backup_$date.sql"
-
-# Storage backup (use robocopy or 7-Zip on Windows)
-robocopy storage\app\public "backup_storage_$date" /E
-```
-
-### Data Retention
-- Keep client records for minimum 7 years (immigration regulations)
-- Archive old matters after case closure
-- Regularly clean up old logs and temporary files
-
-## FAQ
-
-**Q: Nothing appears after login**
-- Ensure migrations have been run: `php artisan migrate --seed`
-- Check that PostgreSQL is running (and Apache if using XAMPP)
-- Verify `.env` database configuration and `pdo_pgsql` extension
-
-**Q: PDF/DOCX conversion not working**
-- Ensure the Python conversion service (`python_services/`) is running and reachable at `PYTHON_CONVERTER_URL`
-- Check `storage/logs/laravel.log` for conversion errors
-
-**Q: Client portal not accessible**
-- Ensure client has portal access enabled in their profile
-- Client must use the email address registered in the system
-- Check that routes are properly configured in `routes/web.php`
-
-**Q: Payment gateway errors**
-- Verify Stripe/PayU credentials in `.env`
-- Ensure SSL is enabled for production payments
-- Test with sandbox/test keys before going live
-
-**Q: Can I customize invoice templates?**
-- Edit the invoice email template at `resources/views/emails/geninvoice.blade.php`
-- Receipt email templates: `resources/views/emails/reciept.blade.php`, `genofficereceipt.blade.php`, `genclientfundreceipt.blade.php`
-
-**Q: How to add new visa types?**
-- Go to Admin → Settings → Visa Types
-- Add new visa type with required documents checklist
-
-**Q: How to export client data?**
-- Use Reports section to generate and export data
-- Available formats: PDF, Excel, CSV
+MIT License — see [opensource.org/licenses/MIT](https://opensource.org/licenses/MIT).
