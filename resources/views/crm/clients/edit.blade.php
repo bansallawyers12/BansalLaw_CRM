@@ -193,21 +193,30 @@
     document.querySelectorAll('.sidebar-section-nav[data-tab-nav]').forEach(function (nav) {
         nav.hidden = nav.getAttribute('data-tab-nav') !== tabId;
     });
+    if (typeof window.__editClientUpdateSectionSpy === 'function') {
+        window.requestAnimationFrame(window.__editClientUpdateSectionSpy);
+    }
                }
+               window.showTab = showTab;
 
                function scrollToEditSection(sectionId, tabId) {
     if (tabId) {
         showTab(tabId);
     }
-    var el = document.getElementById(sectionId);
-    if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    var sidebar = document.getElementById('sidebarNav');
-    if (sidebar && window.innerWidth <= 768) {
-        sidebar.classList.remove('show');
-    }
+    window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(function () {
+            var el = document.getElementById(sectionId);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            var sidebar = document.getElementById('sidebarNav');
+            if (sidebar && window.innerWidth <= 1024) {
+                sidebar.classList.remove('open');
+            }
+        });
+    });
                }
+               window.scrollToEditSection = scrollToEditSection;
 
             </script>
 
@@ -2113,13 +2122,17 @@
                     if (!targetId || !['home','menu1','menu2','menu3','menu4'].includes(targetId)) {
                         return;
                     }
-                    var $link = $('.client-edit-top-pills a[href="#' + targetId + '"]');
-                    var $pane = $('#' + targetId);
-                    if (!$pane.length) return;
-                    $('.client-edit-top-pills .nav-link').removeClass('active');
-                    if ($link.length) $link.addClass('active');
-                    $('.main-content-area .tab-pane').removeClass('show active').css('display', '');
-                    $pane.addClass('show active');
+                    if (typeof window.showTab === 'function') {
+                        window.showTab(targetId);
+                    } else {
+                        var $link = $('.client-edit-top-pills a[href="#' + targetId + '"]');
+                        var $pane = $('#' + targetId);
+                        if (!$pane.length) return;
+                        $('.client-edit-top-pills .nav-link').removeClass('active');
+                        if ($link.length) $link.addClass('active');
+                        $('.main-content-area .tab-pane').removeClass('show active').css('display', '');
+                        $pane.addClass('show active');
+                    }
                     // Highlight matter row if ref given
                     if (targetId === 'menu2') {
                         var ref = qs.get('matter_ref');

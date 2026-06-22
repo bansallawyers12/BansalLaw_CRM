@@ -69,6 +69,26 @@ window.toggleSidebar = function() {
     }
 };
 
+/** Ensure contact summary container exists (phone/email use contact-row-list, not summary-grid). */
+function ensureContactRowList(summaryView) {
+    if (!summaryView) {
+        return null;
+    }
+    let list = summaryView.querySelector('.contact-row-list');
+    if (!list) {
+        summaryView.innerHTML = '<div class="contact-row-list"></div>';
+        list = summaryView.querySelector('.contact-row-list');
+    }
+    return list;
+}
+
+function closeMobileSidebar() {
+    const sidebar = document.getElementById('sidebarNav');
+    if (sidebar && window.innerWidth <= 1024) {
+        sidebar.classList.remove('open');
+    }
+}
+
 // Close sidebar when clicking outside on mobile
 document.addEventListener('click', function(event) {
     const sidebar = document.getElementById('sidebarNav');
@@ -81,64 +101,67 @@ document.addEventListener('click', function(event) {
     }
 });
 
-// Close sidebar when clicking on nav item on mobile
+// Close sidebar when clicking a section link on mobile
 document.addEventListener('click', function(event) {
-    if (event.target.closest('.nav-item') && window.innerWidth <= 1024) {
-        const sidebar = document.getElementById('sidebarNav');
-        if (sidebar) {
-            sidebar.classList.remove('open');
-        }
+    if (event.target.closest('.sidebar-section-link') && window.innerWidth <= 1024) {
+        closeMobileSidebar();
     }
 });
 
-// Scroll spy functionality - update active nav item based on scroll position
+// Scroll spy — highlight active sidebar section link for the current tab
 function initScrollSpy() {
-    const sections = document.querySelectorAll('.content-section');
-    const navItems = document.querySelectorAll('.nav-item:not(.summary-nav)');
-    
-    if (sections.length === 0 || navItems.length === 0) return;
-    
-    function updateActiveNav() {
-        let current = '';
-        const scrollPosition = window.scrollY + 100; // Offset for better detection
-        
-        sections.forEach(section => {
-            const sectionTop = section.offsetTop;
-            const sectionHeight = section.offsetHeight;
-            
-            if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
-                current = section.getAttribute('id');
+    const navBlocks = document.querySelectorAll('.sidebar-section-nav[data-tab-nav]');
+    if (navBlocks.length === 0) {
+        return;
+    }
+
+    function getVisibleNav() {
+        return document.querySelector('.sidebar-section-nav[data-tab-nav]:not([hidden])');
+    }
+
+    function sectionIdFromLink(link) {
+        const onclick = link.getAttribute('onclick') || '';
+        const match = onclick.match(/scrollToEditSection\('([^']+)'/);
+        return match ? match[1] : '';
+    }
+
+    function updateActiveSectionLink() {
+        const nav = getVisibleNav();
+        if (!nav) {
+            return;
+        }
+
+        const links = nav.querySelectorAll('.sidebar-section-link');
+        const scrollPos = window.scrollY + 120;
+        let currentId = '';
+
+        links.forEach(function (link) {
+            const sectionId = sectionIdFromLink(link);
+            const el = sectionId ? document.getElementById(sectionId) : null;
+            if (el && el.offsetTop <= scrollPos) {
+                currentId = sectionId;
             }
         });
-        
-        if (current) {
-            // Remove active class from all nav items
-            navItems.forEach(item => item.classList.remove('active'));
-            
-            // Add active class to current nav item
-            navItems.forEach(item => {
-                const onclick = item.getAttribute('onclick');
-                if (onclick && onclick.includes(current)) {
-                    item.classList.add('active');
-                }
-            });
-        }
+
+        links.forEach(function (link) {
+            link.classList.toggle('is-active', sectionIdFromLink(link) === currentId);
+        });
     }
-    
-    // Throttle scroll events for better performance
+
+    window.__editClientUpdateSectionSpy = updateActiveSectionLink;
+
     let ticking = false;
-    window.addEventListener('scroll', function() {
+    window.addEventListener('scroll', function () {
         if (!ticking) {
-            requestAnimationFrame(function() {
-                updateActiveNav();
+            requestAnimationFrame(function () {
+                updateActiveSectionLink();
                 ticking = false;
             });
             ticking = true;
         }
     });
-    
-    // Initial call
-    updateActiveNav();
+
+    updateActiveSectionLink();
 }
 
 // ===== GO TO TOP BUTTON FUNCTIONALITY =====
@@ -1890,10 +1913,10 @@ window.savePhoneNumbers = function() {
     saveSectionData('phoneNumbers', formData, function() {
         // Update summary view on success
         const summaryView = document.getElementById('phoneNumbersSummary');
-        const summaryGrid = summaryView.querySelector('.summary-grid');
-        
-        if (phoneNumbers.length > 0) {
-            summaryGrid.innerHTML = phoneNumbers.map((phone, index) => {
+        const contactList = ensureContactRowList(summaryView);
+
+        if (phoneNumbers.length > 0 && contactList) {
+            contactList.innerHTML = phoneNumbers.map((phone) => {
                 // Check if it's a placeholder number
                 const isPlaceholder = isPlaceholderNumber(phone.phone);
                 
@@ -1912,14 +1935,14 @@ window.savePhoneNumbers = function() {
                 }
                 
                 return `
-                    <div class="summary-item">
+                    <div class="summary-item contact-row">
                         <span class="summary-label">${phone.contact_type}:</span>
                         <span class="summary-value">${phone.country_code}${phone.phone}</span>
                         ${verificationButton}
                     </div>
                 `;
             }).join('');
-        } else {
+        } else if (summaryView) {
             summaryView.innerHTML = '<div class="empty-state"><p>No phone numbers added yet.</p></div>';
         }
         
@@ -1965,10 +1988,10 @@ window.saveEmailAddresses = function() {
         
         // Update summary view on success
         const summaryView = document.getElementById('emailAddressesSummary');
-        const summaryGrid = summaryView.querySelector('.summary-grid');
+        const contactList = ensureContactRowList(summaryView);
         
-        if (savedEmails.length > 0) {
-            summaryGrid.innerHTML = savedEmails.map((email, index) => {
+        if (savedEmails.length > 0 && contactList) {
+            contactList.innerHTML = savedEmails.map((email) => {
                 // Show verify button only for saved emails with valid ID
                 let verificationButton = '';
                 if (email.is_verified) {
@@ -1987,14 +2010,14 @@ window.saveEmailAddresses = function() {
                 }
                 
                 return `
-                    <div class="summary-item">
+                    <div class="summary-item contact-row">
                         <span class="summary-label">${email.email_type}:</span>
                         <span class="summary-value">${email.email}</span>
                         ${verificationButton}
                     </div>
                 `;
             }).join('');
-        } else {
+        } else if (summaryView) {
             summaryView.innerHTML = '<div class="empty-state"><p>No email addresses added yet.</p></div>';
         }
         

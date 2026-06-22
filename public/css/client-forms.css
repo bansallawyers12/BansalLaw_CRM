@@ -898,6 +898,13 @@ input:checked + .slider:before {
     border-left-color: var(--accent-gold, #c8992a);
 }
 
+.sidebar-section-link.is-active {
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--primary-color, #1e3d60);
+    border-left-color: var(--secondary-color, #3a6fa8);
+    font-weight: 600;
+}
+
 .sidebar-actions {
     padding: 12px 14px 14px;
 }
@@ -1021,7 +1028,8 @@ input:checked + .slider:before {
 }
 
 [id^="section-"],
-#matterTypeSelectorSection {
+#matterTypeSelectorSection,
+.form-section[id^="section-"] {
     scroll-margin-top: 96px;
 }
 
@@ -1359,14 +1367,6 @@ input:checked + .slider:before {
 
 .address-entry .summary-item:last-child {
     margin-bottom: 0;
-}
-
-/* Compact grid for phone/email sections */
-#phoneNumbersSummary .summary-grid,
-#emailAddressesSummary .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 15px;
 }
 
 /* Compact phone number input in edit mode */
