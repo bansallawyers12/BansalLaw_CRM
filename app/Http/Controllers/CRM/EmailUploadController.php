@@ -22,7 +22,7 @@ use Illuminate\Support\Carbon;
 /**
  * Modern Email Upload Controller
  * 
- * Uses Python microservice for email parsing instead of legacy PEAR libraries.
+ * Uses Python microservice for .msg email parsing and PDF rendering.
  * This provides better performance, modern code, and PHP 8.2+ compatibility.
  */
 class EmailUploadController extends Controller

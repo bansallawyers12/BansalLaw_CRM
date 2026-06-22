@@ -41,11 +41,6 @@ use App\Services\MatterAssigneeDefaults;
 use App\Support\NoteDescriptionHtml;
 use App\Support\StaffClientVisibility;
 
-use Hfig\MAPI;
-use Hfig\MAPI\OLE\Pear;
-use Hfig\MAPI\Message\Msg;
-use Hfig\MAPI\MapiMessageFactory;
-
 use DateTime;
 use DateTimeZone;
 

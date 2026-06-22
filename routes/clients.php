@@ -81,11 +81,7 @@ Route::post('/sendmail', [CRMUtilityController::class, 'sendmail'])->name('clien
 
 Route::post('/upload-mail', [ClientsController::class, 'uploadmail']);
 
-// LEGACY ROUTES (using PEAR - deprecated)
-// Route::post('/upload-fetch-mail', [ClientsController::class, 'uploadfetchmail']); //upload inbox email
-// Route::post('/upload-sent-fetch-mail', [ClientsController::class, 'uploadsentfetchmail']); //upload sent email
-
-// MODERN ROUTES (using Python microservice - recommended)
+// .msg upload routes (Python microservice)
 Route::post('/upload-fetch-mail', [EmailUploadController::class, 'uploadInboxEmails'])->name('email.upload.inbox');
 Route::post('/upload-sent-fetch-mail', [EmailUploadController::class, 'uploadSentEmails'])->name('email.upload.sent');
 Route::get('/email/check-service', [EmailUploadController::class, 'checkPythonService'])->name('email.check.service');

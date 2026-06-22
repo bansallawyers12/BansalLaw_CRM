@@ -15,11 +15,6 @@ use App\Models\Staff;
 
 use Auth;
 
-use Hfig\MAPI;
-use Hfig\MAPI\Message\Msg as Msg;
-
-
-
 class EmailController extends Controller
 {
     /**
@@ -30,50 +25,6 @@ class EmailController extends Controller
     public function __construct()
     {
         $this->middleware('auth:admin');
-    }
-
-    public function showForm()
-    {
-        return view('crm.clients.upload_email');
-    }
-
-    public function handleForm(Request $request)
-    {
-        $request->validate([
-            'email_file' => 'required|mimes:msg|max:2048',
-        ]);
-
-        // Upload Email File
-        $emailPath = $request->file('email_file')->store('emails', 'public');
-
-        // Parse Email
-        $emailData = $this->parseEmail(storage_path('app/public/' . $emailPath));
-
-        return view('crm.clients.email_details', compact('emailData'));
-    }
-
-    private function parseEmail($filePath)
-    {
-        try {
-
-            $msg = new Msg($filePath); dd('###'.$msg);
-
-            $from = $msg->getHeaders()['from'];
-            $to = $msg->getHeaders()['to'];
-            $subject = $msg->getSubject();
-            $body = $msg->getBodyText();
-
-            $emailData = [
-                'from'    => $from,
-                'to'      => $to,
-                'subject' => $subject,
-                'body'    => $body
-            ];
-
-            return $emailData;
-        } catch (\Exception $e) {
-            return ['error' => 'Failed to parse email: ' . $e->getMessage()];
-        }
     }
 
 	/**
