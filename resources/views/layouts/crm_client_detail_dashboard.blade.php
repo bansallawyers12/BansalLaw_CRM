@@ -1265,92 +1265,6 @@
         {
             /* Notification bell: href on .notification-toggle (route crm.all-notifications) */
 
-            /*function load_unseen_notification(view = '')
-            {
-                $.ajax({
-                    url:"{{URL::to('/fetch-notification')}}",
-                    method:"GET",
-                    dataType:"json",
-                    success:function(data)
-                    {
-                        //$('.showallnotifications').html(data.notification);
-                        if(data.unseen_notification > 0)
-                        {
-                            $('.countbell').html(data.unseen_notification);
-                        }
-                    }
-                });
-            }*/
-
-            /*function load_unseen_messages(view = '')
-            {
-                load_unseen_notification();
-                var playing = false;
-                $.ajax({
-                    url:"{{URL::to('/fetch-messages')}}",
-                    method:"GET",
-                    success:function(data)
-                    {
-                        if(data != 0){
-                            iziToast.show({
-                                backgroundColor: 'rgba(0,0,255,0.3)',
-                                messageColor: 'rgba(255,255,255)',
-                                title: '',
-                                message: data,
-                                position: 'bottomRight'
-                            });
-                            $(this).toggleClass("down");
-
-                            if (playing == false) {
-                                document.getElementById('player').play();
-                                playing = true;
-                                $(this).text("stop sound");
-
-                            } else {
-                                document.getElementById('player').pause();
-                                playing = false;
-                                $(this).text("restart sound");
-                            }
-                        }
-                    }
-                });
-            }*/
-
-            /*
-            function load_InPersonWaitingCount(view = '') {
-                $.ajax({
-                    url:"{{URL::to('/fetch-InPersonWaitingCount')}}",
-                    method:"GET",
-                    dataType:"json",
-                    success:function(data) {
-                        //$('.showallnotifications').html(data.notification);
-                        if(data.InPersonwaitingCount > 0){
-                            $('.countInPersonWaitingAction').html(data.InPersonwaitingCount);
-                        }
-                    }
-                });
-            }*/
-
-            /*function load_TotalActivityCount(view = '') {
-                $.ajax({
-                    url:"{{URL::to('/fetch-TotalActivityCount')}}",
-                    method:"GET",
-                    dataType:"json",
-                    success:function(data) {
-                        if(data.assigneesCount > 0){
-                            $('.countTotalActivityAction').html(data.assigneesCount);
-                        }
-                    }
-                });
-            }
-            */
-            setInterval(function(){
-                //load_unseen_notification();
-                //load_unseen_messages();
-                //load_InPersonWaitingCount();
-                //load_TotalActivityCount();
-            },5000);
-            
             // Teams-like notification functionality
             function crmEscapeTemplateLiteral(s) {
                 if (s == null || s === undefined) {
@@ -1534,7 +1448,7 @@
                 }
             };
             
-            // Office visit toasts: HTTP polling (WebSockets / Reverb removed)
+            // Office visit toasts: HTTP polling
             loadOfficeVisitNotifications();
             setInterval(loadOfficeVisitNotifications, 30000);
         

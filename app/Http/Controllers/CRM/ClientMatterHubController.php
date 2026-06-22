@@ -1550,14 +1550,6 @@ class ClientMatterHubController extends Controller
 				'seen'           => 0,
 			]);
 
-			// Broadcast notification count for live bell badge (client portal / mobile)
-			try {
-				$clientCount = DB::table('notifications')->where('receiver_id', $matter->client_id)->where('receiver_status', 0)->count();
-				broadcast(new \App\Events\NotificationCountUpdated($matter->client_id, $clientCount, $notificationMessage, '/documents'));
-			} catch (\Exception $e) {
-				Log::warning('Failed to broadcast notification count after checklist add', ['client_id' => $matter->client_id, 'error' => $e->getMessage()]);
-			}
-
 			// Push notification to client mobile app
 			try {
 				$fcmService = new FCMService();
@@ -2362,13 +2354,6 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 			'seen'              => 0,
 		]);
 
-		try {
-			$clientCount = (int) DB::table('notifications')->where('receiver_id', $clientMatter->client_id)->where('receiver_status', 0)->count();
-			broadcast(new \App\Events\NotificationCountUpdated($clientMatter->client_id, $clientCount, $message, '/documents'));
-		} catch (\Exception $e) {
-			Log::warning('Document status change: broadcast failed', ['client_id' => $clientMatter->client_id, 'error' => $e->getMessage()]);
-		}
-
 		$clientMatterModel = ClientMatter::find($clientMatter->id);
 		if ($clientMatterModel) {
 			$this->createMatterActionNotes($clientMatterModel, $message);
@@ -2406,13 +2391,6 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 			'receiver_status'   => 0,
 			'seen'              => 0,
 		]);
-
-		try {
-			$clientCount = (int) DB::table('notifications')->where('receiver_id', $clientMatter->client_id)->where('receiver_status', 0)->count();
-			broadcast(new \App\Events\NotificationCountUpdated($clientMatter->client_id, $clientCount, $message, '/documents'));
-		} catch (\Exception $e) {
-			Log::warning('Document delete: broadcast failed', ['client_id' => $clientMatter->client_id, 'error' => $e->getMessage()]);
-		}
 
 		$clientMatterModel = ClientMatter::find($clientMatter->id);
 		if ($clientMatterModel) {

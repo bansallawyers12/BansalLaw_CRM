@@ -2259,87 +2259,6 @@
         $(document).ready(function(){
             /* Notification bell navigates via href on .notification-toggle (route crm.all-notifications) */
 
-        /*function load_unseen_notification(view = '')  {
-            $.ajax({
-                url:"{{url('/fetch-notification')}}",
-                method:"GET",
-                dataType:"json",
-                success:function(data) {
-                    //$('.showallnotifications').html(data.notification);
-                    if(data.unseen_notification > 0){
-                        $('.countbell').html(data.unseen_notification);
-                    }
-                }
-            });
-        }*/
-
-        /*function load_unseen_messages(view = '')  {
-            load_unseen_notification();
-            var playing = false;
-            $.ajax({
-                url:"{{url('/fetch-messages')}}",
-                method:"GET",
-                success:function(data) {
-                    if(data != 0){
-                        iziToast.show({
-                            backgroundColor: 'rgba(0,0,255,0.3)',
-                            messageColor: 'rgba(255,255,255)',
-                            title: '',
-                            message: data,
-                            position: 'bottomRight'
-                        });
-                        $(this).toggleClass("down");
-
-                        if (playing == false) {
-                            document.getElementById('player').play();
-                            playing = true;
-                            $(this).text("stop sound");
-
-                        } else {
-                            document.getElementById('player').pause();
-                            playing = false;
-                            $(this).text("restart sound");
-                        }
-                    }
-                }
-            });
-        }*/
-
-        /*function load_InPersonWaitingCount(view = '') {
-            $.ajax({
-                url:"{{url('/fetch-InPersonWaitingCount')}}",
-                method:"GET",
-                dataType:"json",
-                success:function(data) {
-                    //$('.showallnotifications').html(data.notification);
-                    if(data.InPersonwaitingCount > 0){
-                        $('.countInPersonWaitingAction').html(data.InPersonwaitingCount);
-                    }
-                }
-            });
-        }*/
-
-        /*function load_TotalActivityCount(view = '') {
-            $.ajax({
-                url:"{{url('/fetch-TotalActivityCount')}}",
-                method:"GET",
-                dataType:"json",
-                success:function(data) {
-                    if(data.assigneesCount > 0){
-                        $('.countTotalActivityAction').html(data.assigneesCount);
-                    }
-                }
-            });
-        }*/
-
-
-        setInterval(function(){
-            //load_unseen_notification();
-            //load_unseen_messages();
-            //load_InPersonWaitingCount();
-            //load_TotalActivityCount();
-        },120000);
-        
         // Teams-like notification functionality
         /** Escape dynamic text for use inside JS template literals (backticks / ${ break parsing). */
         function crmEscapeTemplateLiteral(s) {
@@ -2524,7 +2443,7 @@
             }
         };
         
-        // Office visit toasts: HTTP polling (WebSockets / Reverb removed)
+        // Office visit toasts: HTTP polling
         loadOfficeVisitNotifications();
         setInterval(loadOfficeVisitNotifications, 30000);
     });

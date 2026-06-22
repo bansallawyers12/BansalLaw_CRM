@@ -2,8 +2,6 @@
 
 namespace App\Services\CrmAccess;
 
-use App\Events\BroadcastNotificationCreated;
-use App\Events\NotificationCountUpdated;
 use App\Models\Branch;
 use App\Models\ClientAccessGrant;
 use App\Models\Notification;
@@ -12,7 +10,6 @@ use App\Models\Team;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 class CrmAccessService
 {
@@ -376,9 +373,6 @@ class CrmAccessService
             return;
         }
 
-        $batchUuid = (string) Str::uuid();
-        $sentAt = Carbon::now();
-
         foreach ($approverIds as $receiverId) {
             try {
                 Notification::query()->create([
@@ -391,32 +385,9 @@ class CrmAccessService
                     'receiver_status' => 0,
                     'seen' => 0,
                 ]);
-                $unreadCount = (int) DB::table('notifications')
-                    ->where('receiver_id', (int) $receiverId)
-                    ->where('receiver_status', 0)
-                    ->count();
-                broadcast(new NotificationCountUpdated((int) $receiverId, $unreadCount, $msg, $url));
             } catch (\Throwable $e) {
                 Log::warning('access_request notification failed', ['e' => $e->getMessage()]);
             }
-        }
-
-        // Rich real-time toast for all approvers simultaneously
-        try {
-            broadcast(new BroadcastNotificationCreated(
-                batchUuid: $batchUuid,
-                message: $msg,
-                title: 'Access request',
-                senderId: (int) $requester->id,
-                senderName: $senderName,
-                channelRecipientIds: $approverIds,
-                payloadRecipientIds: count($approverIds) <= 50 ? $approverIds : [],
-                recipientCount: count($approverIds),
-                scope: 'specific',
-                sentAt: $sentAt
-            ));
-        } catch (\Throwable $e) {
-            Log::warning('access_request BroadcastNotificationCreated failed', ['e' => $e->getMessage()]);
         }
     }
 
@@ -427,18 +398,9 @@ class CrmAccessService
         $msg = $verb === 'approved'
             ? "Your supervisor access request was approved ({$hours}h from approval)."
             : 'Your supervisor access request was rejected.';
-        $title = $verb === 'approved' ? 'Access approved' : 'Access rejected';
 
         $senderId = (int) ($grant->approved_by_staff_id ?? 0);
         $notifUrl = url('/crm/access/my-grants');
-
-        $senderName = 'System';
-        if ($senderId > 0) {
-            $approver = Staff::query()->find($senderId);
-            if ($approver) {
-                $senderName = trim(($approver->first_name ?? '') . ' ' . ($approver->last_name ?? '')) ?: $approver->email;
-            }
-        }
 
         try {
             Notification::query()->create([
@@ -451,31 +413,8 @@ class CrmAccessService
                 'receiver_status' => 0,
                 'seen' => 0,
             ]);
-            $unreadCount = (int) DB::table('notifications')
-                ->where('receiver_id', $receiverId)
-                ->where('receiver_status', 0)
-                ->count();
-            broadcast(new NotificationCountUpdated($receiverId, $unreadCount, $msg, $notifUrl));
         } catch (\Throwable $e) {
             Log::warning('access_request result notification failed', ['e' => $e->getMessage()]);
-        }
-
-        // Rich real-time toast for the requester
-        try {
-            broadcast(new BroadcastNotificationCreated(
-                batchUuid: (string) Str::uuid(),
-                message: $msg,
-                title: $title,
-                senderId: $senderId > 0 ? $senderId : $receiverId,
-                senderName: $senderName,
-                channelRecipientIds: [$receiverId],
-                payloadRecipientIds: [$receiverId],
-                recipientCount: 1,
-                scope: 'specific',
-                sentAt: Carbon::now()
-            ));
-        } catch (\Throwable $e) {
-            Log::warning('access_request result BroadcastNotificationCreated failed', ['e' => $e->getMessage()]);
         }
     }
 }

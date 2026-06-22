@@ -21,7 +21,6 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         //
 		'api/*',
-		'broadcasting/auth', // Laravel broadcasting private channel auth (if using websockets)
 		'admin/update_visit_purpose',
 		'admin/update_visit_comment',
 		'admin/attend_session',

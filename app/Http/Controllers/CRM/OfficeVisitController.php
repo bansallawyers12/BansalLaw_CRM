@@ -13,7 +13,6 @@ use App\Models\ActivitiesLog;
 use App\Models\Admin;
 use App\Models\CheckinLog;
 use App\Models\CheckinHistory;
-use App\Events\OfficeVisitNotificationCreated;
 
 use Auth;
 
@@ -153,30 +152,6 @@ class OfficeVisitController extends Controller
 			if (!$notification->save()) {
 				throw new \Exception('Failed to save notification.');
 			}
-
-				// Broadcast notification event (wrap in try-catch to prevent failures)
-				try {
-					broadcast(new OfficeVisitNotificationCreated(
-						$notification->id,
-						$notification->receiver_id,
-						[
-							'id' => $notification->id,
-							'checkin_id' => $obj->id,
-							'message' => $notification->message,
-							'sender_name' => Auth::user()->first_name . ' ' . Auth::user()->last_name,
-							'client_name' => $obj->contactDisplayLabel(),
-							'visit_purpose' => $obj->visit_purpose,
-							'created_at' => $notification->created_at ? $notification->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A'),
-							'url' => $notification->url
-						]
-					));
-				} catch (\Exception $broadcastException) {
-					// Log broadcast error but don't fail the entire operation
-					Log::warning('Failed to broadcast office visit notification', [
-						'notification_id' => $notification->id,
-						'error' => $broadcastException->getMessage()
-					]);
-				}
 
 				// Create CheckinHistory
 				$checkinHistory = new CheckinHistory;
@@ -544,33 +519,8 @@ class OfficeVisitController extends Controller
 	    	$o->receiver_status = 0;   // Mark as unread by receiver
 	    	$o->sender_status = 1;     // Mark as sent by sender
 	    	$o->save();
-	    	
-	    	$notifyClientName = $objs->contactDisplayLabel();
 
-	    	// Broadcast notification event (wrap in try-catch)
-	    	try {
-	    	    broadcast(new OfficeVisitNotificationCreated(
-	    	        $o->id,
-	    	        $o->receiver_id,
-	    	        [
-	    	            'id' => $o->id,
-	    	            'checkin_id' => $objs->id,
-	    	            'message' => $o->message,
-	    	            'sender_name' => Auth::user()->first_name . ' ' . Auth::user()->last_name,
-	    	            'client_name' => $notifyClientName,
-	    	            'visit_purpose' => $objs->visit_purpose,
-	    	            'created_at' => $o->created_at ? $o->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A'),
-	    	            'url' => $o->url
-	    	        ]
-	    	    ));
-	    	} catch (\Exception $e) {
-	    	    Log::warning('Failed to broadcast office visit assignee notification', [
-	    	        'notification_id' => $o->id,
-	    	        'error' => $e->getMessage()
-	    	    ]);
-	    	}
-	    	
-			$response['status'] 	= 	true;
+	    	$response['status'] 	= 	true;
 			$response['message']	=	'Updated successfully';
 		}else{
 			$response['status'] 	= 	false;
@@ -614,29 +564,6 @@ class OfficeVisitController extends Controller
 		        $o->receiver_status = 0;   // Mark as unread by receiver
 		        $o->sender_status = 1;     // Mark as sent by sender
 		        $o->save();
-		        
-		        // Broadcast notification event (wrap in try-catch)
-		        try {
-		            broadcast(new OfficeVisitNotificationCreated(
-		                $o->id,
-		                $o->receiver_id,
-		                [
-		                    'id' => $o->id,
-		                    'checkin_id' => $obj->id,
-		                    'message' => $o->message,
-		                    'sender_name' => Auth::user()->first_name . ' ' . Auth::user()->last_name,
-		                    'client_name' => $obj->contactDisplayLabel(),
-		                    'visit_purpose' => $obj->visit_purpose,
-		                    'created_at' => $o->created_at ? $o->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A'),
-		                    'url' => $o->url
-		                ]
-		            ));
-		        } catch (\Exception $e) {
-		            Log::warning('Failed to broadcast office visit attend notification', [
-		                'notification_id' => $o->id,
-		                'error' => $e->getMessage()
-		            ]);
-		        }
 		    }
 		}
 

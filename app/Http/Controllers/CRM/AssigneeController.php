@@ -21,7 +21,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Services\ClientMatterTaskSyncService;
 use App\Services\FCMService;
-use App\Events\NotificationCountUpdated;
 use Yajra\DataTables\Facades\DataTables;
 use App\Helpers\Utf8Helper;
 use Illuminate\Support\Facades\URL;

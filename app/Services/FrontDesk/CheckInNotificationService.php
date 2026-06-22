@@ -6,7 +6,6 @@ use App\Models\BookingAppointment;
 use App\Models\FrontDeskCheckIn;
 use App\Models\Notification;
 use App\Models\Staff;
-use App\Events\OfficeVisitNotificationCreated;
 use Illuminate\Support\Facades\Log;
 
 class CheckInNotificationService
@@ -46,29 +45,6 @@ class CheckInNotificationService
             'receiver_status'   => 0,
             'sender_status'     => 1,
         ]);
-
-        // Broadcast office-visit event (no-op when BROADCAST_DRIVER=null)
-        try {
-            broadcast(new OfficeVisitNotificationCreated(
-                $notification->id,
-                $notification->receiver_id,
-                [
-                    'id'            => $notification->id,
-                    'checkin_id'    => $checkIn->id,
-                    'message'       => $message,
-                    'sender_name'   => $sender->full_name,
-                    'client_name'   => $clientName,
-                    'visit_purpose' => $checkIn->visit_reason ?? 'Front-desk check-in',
-                    'created_at'    => $notification->created_at?->format('d/m/Y h:i A') ?? now()->format('d/m/Y h:i A'),
-                    'url'           => $notification->url,
-                ]
-            ));
-        } catch (\Exception $e) {
-            Log::warning('[FrontDeskCheckIn] Broadcast failed (notification still saved)', [
-                'notification_id' => $notification->id,
-                'error'           => $e->getMessage(),
-            ]);
-        }
 
         // Persist who was notified and when
         $checkIn->update([
