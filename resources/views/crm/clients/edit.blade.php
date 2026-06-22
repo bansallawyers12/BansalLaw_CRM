@@ -119,42 +119,16 @@
                     </div>
                 </div>
 
-                <nav class="sidebar-section-nav" data-tab-nav="home" aria-label="Client info sections">
-                    <div class="sidebar-section-nav__label">On this page</div>
-                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('section-basic-info', 'home')">
-                        <i class="fas fa-user-circle"></i><span>Basic Information</span>
+                <nav class="sidebar-primary-nav" aria-label="Client record sections">
+                    <div class="sidebar-primary-nav__label">Sections</div>
+                    <button type="button" class="sidebar-primary-tab active" data-tab-id="home" onclick="showTab('home')">
+                        <i class="fas fa-user"></i><span>Client Info</span>
                     </button>
-                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('section-phone-numbers', 'home')">
-                        <i class="fas fa-mobile-alt"></i><span>Phone Numbers</span>
+                    <button type="button" class="sidebar-primary-tab" data-tab-id="menu2" onclick="showTab('menu2')">
+                        <i class="fas fa-briefcase"></i><span>Matter Details</span>
                     </button>
-                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('section-email-addresses', 'home')">
-                        <i class="fas fa-envelope"></i><span>Email Addresses</span>
-                    </button>
-                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('section-address', 'home')">
-                        <i class="fas fa-home"></i><span>Current Address</span>
-                    </button>
-                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('section-lead-source', 'home')">
-                        <i class="fas fa-funnel-dollar"></i><span>Lead Source</span>
-                    </button>
-                </nav>
-
-                <nav class="sidebar-section-nav" data-tab-nav="menu2" hidden aria-label="Matter sections">
-                    <div class="sidebar-section-nav__label">On this page</div>
-                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('matterTypeSelectorSection', 'menu2')">
-                        <i class="fas fa-list-alt"></i><span>Select Matter Type</span>
-                    </button>
-                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('section-existing-matters', 'menu2')">
-                        <i class="fas fa-folder-open"></i><span>Existing Matters</span>
-                    </button>
-                </nav>
-
-                <nav class="sidebar-section-nav" data-tab-nav="menu4" hidden aria-label="Court sections">
-                    <div class="sidebar-section-nav__label">On this page</div>
-                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('section-add-hearing', 'menu4')">
-                        <i class="fas fa-plus-circle"></i><span>Add Hearing</span>
-                    </button>
-                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('section-hearings-list', 'menu4')">
-                        <i class="fas fa-calendar-alt"></i><span>Hearings List</span>
+                    <button type="button" class="sidebar-primary-tab" data-tab-id="menu4" onclick="showTab('menu4')">
+                        <i class="fas fa-gavel"></i><span>Court Dates &amp; Hearings</span>
                     </button>
                 </nav>
 
@@ -182,53 +156,45 @@
                 window.currentClientType = @json($fetchedData->type);
                 window.latestClientMatterRef = @json($latestMatterRefNo);
 
-               function showTab(tabId){
-    $(".main-content-area .tab-pane").removeClass("show active").css("display", "");
+               function showTab(tabId, options){
+    options = options || {};
+    var shouldScroll = options.scroll !== false;
+
+    $(".main-content-area .tab-pane").removeClass("show active");
     var $pane = $("#" + tabId);
     if ($pane.length) {
         $pane.addClass("show active");
     }
-    $(".client-edit-top-pills .nav-link").removeClass("active");
-    $(".client-edit-top-pills a[href='#" + tabId + "']").addClass("active");
-    document.querySelectorAll('.sidebar-section-nav[data-tab-nav]').forEach(function (nav) {
-        nav.hidden = nav.getAttribute('data-tab-nav') !== tabId;
+
+    var menu3 = document.getElementById('menu3');
+    if (menu3) {
+        menu3.style.setProperty('display', 'none', 'important');
+    }
+
+    document.querySelectorAll('.sidebar-primary-tab').forEach(function (btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-tab-id') === tabId);
     });
-    if (typeof window.__editClientUpdateSectionSpy === 'function') {
-        window.requestAnimationFrame(window.__editClientUpdateSectionSpy);
+
+    if (shouldScroll) {
+        var mainArea = document.querySelector('.main-content-area');
+        if (mainArea) {
+            var top = mainArea.getBoundingClientRect().top + window.scrollY - 88;
+            window.scrollTo({ top: Math.max(top, 0), behavior: 'smooth' });
+        }
+    }
+
+    var sidebar = document.getElementById('sidebarNav');
+    if (sidebar && window.innerWidth <= 1024) {
+        sidebar.classList.remove('open');
     }
                }
                window.showTab = showTab;
-
-               function scrollToEditSection(sectionId, tabId) {
-    if (tabId) {
-        showTab(tabId);
-    }
-    window.requestAnimationFrame(function () {
-        window.requestAnimationFrame(function () {
-            var el = document.getElementById(sectionId);
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-            var sidebar = document.getElementById('sidebarNav');
-            if (sidebar && window.innerWidth <= 1024) {
-                sidebar.classList.remove('open');
-            }
-        });
-    });
-               }
-               window.scrollToEditSection = scrollToEditSection;
 
             </script>
 
             <!-- Main Content Area -->
             <div class="main-content-area">
 
-            <ul class="nav nav-pills client-edit-top-pills" role="tablist">
-    <li class="nav-item" role="presentation"><a class="nav-link active" href="#home" role="tab" onclick="showTab('home'); return false;"><i class="fas fa-user"></i> Client Info</a></li>
-    <li class="nav-item" role="presentation"><a class="nav-link" href="#menu2" role="tab" onclick="showTab('menu2'); return false;"><i class="fas fa-briefcase"></i> Matter Details</a></li>
-    <li class="nav-item" role="presentation"><a class="nav-link" href="#menu4" role="tab" onclick="showTab('menu4'); return false;"><i class="fas fa-gavel"></i> Court Dates &amp; Hearings</a></li>
-    </ul>
-  
   <div class="tab-content">
   <form  id="editClientForm" action="{{ route('clients.update') }}" method="POST">
                     @csrf
@@ -2123,15 +2089,19 @@
                         return;
                     }
                     if (typeof window.showTab === 'function') {
-                        window.showTab(targetId);
+                        window.showTab(targetId, { scroll: false });
                     } else {
-                        var $link = $('.client-edit-top-pills a[href="#' + targetId + '"]');
                         var $pane = $('#' + targetId);
                         if (!$pane.length) return;
-                        $('.client-edit-top-pills .nav-link').removeClass('active');
-                        if ($link.length) $link.addClass('active');
-                        $('.main-content-area .tab-pane').removeClass('show active').css('display', '');
+                        document.querySelectorAll('.sidebar-primary-tab').forEach(function (btn) {
+                            btn.classList.toggle('active', btn.getAttribute('data-tab-id') === targetId);
+                        });
+                        $('.main-content-area .tab-pane').removeClass('show active');
                         $pane.addClass('show active');
+                        var menu3 = document.getElementById('menu3');
+                        if (menu3) {
+                            menu3.style.setProperty('display', 'none', 'important');
+                        }
                     }
                     // Highlight matter row if ref given
                     if (targetId === 'menu2') {

@@ -101,68 +101,12 @@ document.addEventListener('click', function(event) {
     }
 });
 
-// Close sidebar when clicking a section link on mobile
+// Close sidebar when clicking a primary tab on mobile
 document.addEventListener('click', function(event) {
-    if (event.target.closest('.sidebar-section-link') && window.innerWidth <= 1024) {
+    if (event.target.closest('.sidebar-primary-tab') && window.innerWidth <= 1024) {
         closeMobileSidebar();
     }
 });
-
-// Scroll spy — highlight active sidebar section link for the current tab
-function initScrollSpy() {
-    const navBlocks = document.querySelectorAll('.sidebar-section-nav[data-tab-nav]');
-    if (navBlocks.length === 0) {
-        return;
-    }
-
-    function getVisibleNav() {
-        return document.querySelector('.sidebar-section-nav[data-tab-nav]:not([hidden])');
-    }
-
-    function sectionIdFromLink(link) {
-        const onclick = link.getAttribute('onclick') || '';
-        const match = onclick.match(/scrollToEditSection\('([^']+)'/);
-        return match ? match[1] : '';
-    }
-
-    function updateActiveSectionLink() {
-        const nav = getVisibleNav();
-        if (!nav) {
-            return;
-        }
-
-        const links = nav.querySelectorAll('.sidebar-section-link');
-        const scrollPos = window.scrollY + 120;
-        let currentId = '';
-
-        links.forEach(function (link) {
-            const sectionId = sectionIdFromLink(link);
-            const el = sectionId ? document.getElementById(sectionId) : null;
-            if (el && el.offsetTop <= scrollPos) {
-                currentId = sectionId;
-            }
-        });
-
-        links.forEach(function (link) {
-            link.classList.toggle('is-active', sectionIdFromLink(link) === currentId);
-        });
-    }
-
-    window.__editClientUpdateSectionSpy = updateActiveSectionLink;
-
-    let ticking = false;
-    window.addEventListener('scroll', function () {
-        if (!ticking) {
-            requestAnimationFrame(function () {
-                updateActiveSectionLink();
-                ticking = false;
-            });
-            ticking = true;
-        }
-    });
-
-    updateActiveSectionLink();
-}
 
 // ===== GO TO TOP BUTTON FUNCTIONALITY =====
 
@@ -3614,9 +3558,6 @@ $(document).ready(function() {
     
     // Initialize datepickers on page load
     initializeDatepickers();
-    
-    // Initialize scroll spy for sidebar navigation
-    initScrollSpy();
     
     // Initialize Go to Top button
     initGoToTopButton();

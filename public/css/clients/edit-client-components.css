@@ -186,9 +186,9 @@
     color: var(--text-muted-color, #5e7a90) !important;
 }
 
-/* Reduce gap between top pills and tab body (client-forms .tab-content has20px padding) */
+/* Reduce gap at top of tab body now that pills live in sidebar */
 .main-content-area > .tab-content {
-    padding-top: 4px;
+    padding-top: 0;
     padding-left: 0;
     padding-right: 0;
 }
