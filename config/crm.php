@@ -168,6 +168,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin Console (/adminconsole) — staff.role (user_roles.id)
+    |--------------------------------------------------------------------------
+    |
+    | Default: 1 = Super Admin, 12 = Person Responsible, 17 = Admin.
+    | Staff with grant_super_admin_access + session elevation also qualify.
+    | Override via CRM_ADMIN_CONSOLE_ROLE_IDS e.g. "1,12,17".
+    |
+    */
+    'admin_console_role_ids' => array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_ADMIN_CONSOLE_ROLE_IDS', '1,12,17'))
+    ), static fn (int $id) => $id > 0)),
+
+    /*
+    |--------------------------------------------------------------------------
     | Front-desk check-in wizard (header icon + /front-desk/checkin)
     |--------------------------------------------------------------------------
     |

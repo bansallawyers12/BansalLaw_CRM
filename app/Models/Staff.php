@@ -278,6 +278,28 @@ class Staff extends Authenticatable
     }
 
     /**
+     * Role IDs allowed to open Admin Console routes and menu entry.
+     *
+     * @see config('crm.admin_console_role_ids')
+     */
+    public static function adminConsoleRoleIds(): array
+    {
+        return config('crm.admin_console_role_ids', [1, 12, 17]);
+    }
+
+    /**
+     * Whether this staff member may access Admin Console (/adminconsole).
+     */
+    public function canAccessAdminConsole(): bool
+    {
+        if ($this->hasEffectiveSuperAdminPrivileges()) {
+            return true;
+        }
+
+        return in_array((int) ($this->role ?? 0), self::adminConsoleRoleIds(), true);
+    }
+
+    /**
      * Whether this staff member may use the front-desk check-in feature.
      */
     public function canAccessFrontDeskCheckIn(): bool

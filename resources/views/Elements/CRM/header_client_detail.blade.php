@@ -1,7 +1,6 @@
 @php
     $_staffTop = Auth::user();
-    $_crmTopAdminish = $_staffTop instanceof \App\Models\Staff
-        && (in_array((int) $_staffTop->role, [1, 12], true) || $_staffTop->hasEffectiveSuperAdminPrivileges());
+    $_crmTopAdminish = $_staffTop instanceof \App\Models\Staff && $_staffTop->canAccessAdminConsole();
     $_trustSuperAdmin = $_staffTop instanceof \App\Models\Staff && $_staffTop->hasEffectiveSuperAdminPrivileges();
 @endphp
 <nav class="main-topbar">
