@@ -20,21 +20,22 @@
 
 /* Phone Verification Styles */
 .btn-verify-phone {
-    background: #007bff;
+    background: var(--primary-color, #1e3d60);
     color: white;
     border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
+    padding: 6px 12px;
+    border-radius: 6px;
     font-size: 12px;
     cursor: pointer;
-    margin-left: 8px;
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    font-weight: 600;
+    flex-shrink: 0;
 }
 
 .btn-verify-phone:hover {
-    background: #0056b3;
+    background: var(--secondary-color, #3a6fa8);
 }
 
 .btn-verify-phone:disabled {
@@ -44,21 +45,22 @@
 
 /* Email Verification Styles */
 .btn-verify-email {
-    background: #007bff;
+    background: var(--primary-color, #1e3d60);
     color: white;
     border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
+    padding: 6px 12px;
+    border-radius: 6px;
     font-size: 12px;
     cursor: pointer;
-    margin-left: 8px;
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    font-weight: 600;
+    flex-shrink: 0;
 }
 
 .btn-verify-email:hover {
-    background: #0056b3;
+    background: var(--secondary-color, #3a6fa8);
 }
 
 .btn-verify-email:disabled {
@@ -83,44 +85,58 @@
     color: #ffffff;
 }
 
-/* Phone number summary items - inline layout for verification buttons */
-#phoneNumbersSummary .summary-item {
+/* Phone / email summary rows — compact list, verify action stays adjacent */
+.contact-row-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 720px;
+}
+
+#phoneNumbersSummary .contact-row,
+#emailAddressesSummary .contact-row {
+    display: grid;
+    grid-template-columns: minmax(88px, auto) 1fr auto;
+    gap: 10px 14px;
+    align-items: center;
+    padding: 10px 14px;
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 0;
+    flex-direction: row;
+}
+
+#phoneNumbersSummary .contact-row .summary-label,
+#emailAddressesSummary .contact-row .summary-label {
+    min-width: 0;
+    margin-bottom: 0;
+    text-transform: none;
+}
+
+#phoneNumbersSummary .contact-row .summary-value,
+#emailAddressesSummary .contact-row .summary-value {
+    flex: none;
+    margin-bottom: 0;
+    word-break: break-word;
+}
+
+#phoneNumbersSummary .contact-row .btn-verify-phone,
+#phoneNumbersSummary .contact-row .verified-badge,
+#emailAddressesSummary .contact-row .btn-verify-email,
+#emailAddressesSummary .contact-row .verified-badge {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Legacy summary-item flex rules (non-contact-row) */
+#phoneNumbersSummary .summary-item:not(.contact-row),
+#emailAddressesSummary .summary-item:not(.contact-row) {
     display: flex;
     align-items: center;
     gap: 10px;
     margin-bottom: 8px;
     flex-direction: row !important;
-}
-
-#phoneNumbersSummary .summary-item .summary-label {
-    font-weight: 600;
-    min-width: 80px;
-    margin-bottom: 0;
-}
-
-#phoneNumbersSummary .summary-item .summary-value {
-    flex: 1;
-    margin-bottom: 0;
-}
-
-#phoneNumbersSummary .summary-item .btn-verify-phone {
-    margin-left: auto;
-    margin-right: 0;
-}
-
-#phoneNumbersSummary .summary-item .verified-badge {
-    margin-left: auto;
-    margin-right: 0;
-}
-
-#emailAddressesSummary .summary-item .btn-verify-email {
-    margin-left: auto;
-    margin-right: 0;
-}
-
-#emailAddressesSummary .summary-item .verified-badge {
-    margin-left: auto;
-    margin-right: 0;
 }
 
 /* Email verification icons in detail views */
@@ -783,6 +799,136 @@ input:checked + .slider:before {
     padding: 10px 0;
 }
 
+/* Sidebar identity card (edit client) */
+.sidebar-identity {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.45);
+}
+
+.sidebar-identity__avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--primary-color, #1e3d60);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95em;
+    font-weight: 700;
+    flex-shrink: 0;
+    border: 2px solid var(--accent-gold, #c8992a);
+}
+
+.sidebar-identity__body {
+    min-width: 0;
+    flex: 1;
+}
+
+.sidebar-identity__name {
+    font-size: 1em;
+    font-weight: 700;
+    color: var(--primary-color, #1e3d60);
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+.sidebar-identity__id {
+    font-size: 0.82em;
+    color: var(--text-muted-color, #5e7a90);
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.sidebar-identity__matter {
+    font-size: 0.78em;
+    color: var(--secondary-color, #3a6fa8);
+    margin-top: 6px;
+    font-weight: 600;
+}
+
+/* Section jump nav in sidebar */
+.sidebar-section-nav {
+    padding: 12px 10px 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-section-nav__label {
+    font-size: 0.72em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted-color, #5e7a90);
+    padding: 0 10px 8px;
+}
+
+.sidebar-section-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 12px;
+    margin-bottom: 2px;
+    background: none;
+    border: none;
+    border-left: 3px solid transparent;
+    border-radius: 0 6px 6px 0;
+    text-align: left;
+    cursor: pointer;
+    color: var(--text-muted-color, #5e7a90);
+    font-size: 0.88em;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.sidebar-section-link i {
+    width: 16px;
+    text-align: center;
+    font-size: 0.95em;
+    color: var(--secondary-color, #3a6fa8);
+}
+
+.sidebar-section-link:hover {
+    background: rgba(255, 255, 255, 0.65);
+    color: var(--primary-color, #1e3d60);
+    border-left-color: var(--accent-gold, #c8992a);
+}
+
+.sidebar-actions {
+    padding: 12px 14px 14px;
+}
+
+.sidebar-back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 14px;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--border-color, #c8dcef);
+    border-radius: 8px;
+    color: var(--primary-color, #1e3d60);
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.sidebar-back-btn:hover {
+    background: #fff;
+    border-color: var(--secondary-color, #3a6fa8);
+    color: var(--primary-color, #1e3d60);
+}
+
+.sidebar-back-btn i {
+    font-size: 0.9em;
+}
+
 .nav-item {
     display: flex;
     align-items: center;
@@ -872,6 +1018,11 @@ input:checked + .slider:before {
     border-radius: 12px;
     box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
     border: 1px solid var(--border-color);
+}
+
+[id^="section-"],
+#matterTypeSelectorSection {
+    scroll-margin-top: 96px;
 }
 
 .content-section:hover {
@@ -1040,15 +1191,30 @@ input:checked + .slider:before {
     background: none;
     border: 1px solid var(--primary-color);
     color: var(--primary-color);
-    padding: 6px 10px;
-    border-radius: 4px;
+    padding: 6px 12px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 0.9em;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 6px;
     min-width: 32px;
     height: 32px;
+}
+
+@media (min-width: 768px) {
+    .section-actions .edit-section-btn::after {
+        content: 'Edit';
+        font-size: 0.85em;
+        font-weight: 600;
+    }
+
+    .section-actions .add-section-btn::after {
+        content: 'Add';
+        font-size: 0.85em;
+        font-weight: 600;
+    }
 }
 
 .delete-section-btn {
@@ -1078,9 +1244,14 @@ input:checked + .slider:before {
 
 .summary-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px 20px;
     align-items: start;
+    max-width: 960px;
+}
+
+.summary-grid--basic-info {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 /* Improved summary item styling */
@@ -1093,12 +1264,12 @@ input:checked + .slider:before {
 }
 
 .summary-label {
-    font-size: 0.85em;
+    font-size: 0.8em;
     color: var(--text-muted-color);
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    line-height: 1.2;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    line-height: 1.3;
 }
 
 .summary-value {
@@ -1671,9 +1842,23 @@ input:checked + .slider:before {
     }
     
     /* Mobile improvements for summary sections */
-    .summary-grid {
+    .summary-grid,
+    .summary-grid--basic-info {
         grid-template-columns: 1fr;
         gap: 10px;
+    }
+
+    #phoneNumbersSummary .contact-row,
+    #emailAddressesSummary .contact-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    #phoneNumbersSummary .contact-row .btn-verify-phone,
+    #phoneNumbersSummary .contact-row .verified-badge,
+    #emailAddressesSummary .contact-row .btn-verify-email,
+    #emailAddressesSummary .contact-row .verified-badge {
+        justify-self: start;
     }
     
     .passport-entry,
@@ -1703,5 +1888,12 @@ input:checked + .slider:before {
     
     .section-actions {
         align-self: flex-end;
+    }
+}
+
+@media (max-width: 992px) and (min-width: 577px) {
+    .summary-grid,
+    .summary-grid--basic-info {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

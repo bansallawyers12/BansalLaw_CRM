@@ -5,7 +5,7 @@
     $currentAddress = collect($clientAddresses)->first();
 @endphp
 
-<section class="form-section">
+<section id="section-address" class="form-section">
     <div class="section-header">
         <h3><i class="fas fa-home"></i> Current Address</h3>
         <div class="section-actions">

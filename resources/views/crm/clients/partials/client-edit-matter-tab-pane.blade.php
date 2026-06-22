@@ -1,5 +1,4 @@
 <div id="menu2" class="tab-pane fade matter-tab-pane">
-      <h3><i class="fas fa-briefcase"></i> Matter Details</h3>
       @php
           $__crmEditLeadType = isset($fetchedData) && (($fetchedData->type ?? null) === 1 || in_array(trim((string) ($fetchedData->type ?? '')), ['lead', 'l', '1'], true));
           $editMatterList = $clientMatters ?? collect();
@@ -121,7 +120,7 @@
       </section>
 
       {{-- ====== STEP 3: Existing Matters Table ====== --}}
-      <section class="content-section" style="padding: 20px;">
+      <section id="section-existing-matters" class="content-section" style="padding: 20px;">
         <section class="form-section matter-tab-section__card" style="margin-bottom: 0;">
           <div class="section-header matter-tab-section__header">
             <div>

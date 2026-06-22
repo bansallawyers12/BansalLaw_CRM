@@ -15,6 +15,18 @@
             $latestMatterRefNo = $latestMatter->client_unique_matter_no;
         }
     }
+
+    $editClientInitials = '';
+    if (isset($fetchedData)) {
+        $editFn = trim((string) ($fetchedData->first_name ?? ''));
+        $editLn = trim((string) ($fetchedData->last_name ?? ''));
+        $editClientInitials = strtoupper(mb_substr($editFn, 0, 1) . mb_substr($editLn, 0, 1));
+        if ($editClientInitials === '') {
+            $editCid = (string) ($fetchedData->client_id ?? '');
+            $editClientInitials = strtoupper(mb_substr($editCid !== '' ? $editCid : 'C', 0, 2));
+        }
+    }
+    $editIdLabel = ($fetchedData->type ?? '') === 'lead' ? 'Lead ID' : 'Client ID';
 @endphp
 
 @push('styles')
@@ -93,40 +105,61 @@
             <!-- Sidebar Navigation -->
             <div class="sidebar-navigation" id="sidebarNav">
                 <div class="nav-header">
-                    <h3><i class="fas {{ $fetchedData->type == 'client' ? 'fa-id-card' : 'fa-user-edit' }}"></i> {{ $fetchedData->type == 'lead' ? 'Edit Lead' : ($fetchedData->type == 'client' ? 'Client Details Form' : '') }} : {{ $fetchedData->first_name }} {{ $fetchedData->last_name }}</h3>
-                    <div class="client-id">
-                        {{ $fetchedData->type == 'lead' ? 'Lead ID' : ($fetchedData->type == 'client' ? 'Client ID' : '') }} : {{ $fetchedData->client_id }}
+                    <h3><i class="fas {{ $fetchedData->type == 'client' ? 'fa-id-card' : 'fa-user-edit' }}"></i> {{ $fetchedData->type == 'lead' ? 'Edit Lead' : 'Client Details Form' }}</h3>
+                </div>
+
+                <div class="sidebar-identity">
+                    <div class="sidebar-identity__avatar" aria-hidden="true">{{ $editClientInitials }}</div>
+                    <div class="sidebar-identity__body">
+                        <div class="sidebar-identity__name">{{ $fetchedData->first_name }} {{ $fetchedData->last_name }}</div>
+                        <div class="sidebar-identity__id">{{ $editIdLabel }}: {{ $fetchedData->client_id }}</div>
+                        @if($latestMatterRefNo)
+                            <div class="sidebar-identity__matter">Active matter: {{ $latestMatterRefNo }}</div>
+                        @endif
                     </div>
                 </div>
-                <nav class="nav-menu">
-                    <button class="nav-item " >
-                        <i class="fas fa-user-circle"></i>
-                        <span>Name :   {{ $fetchedData->first_name }} {{ $fetchedData->last_name }}
-                    </span>
+
+                <nav class="sidebar-section-nav" data-tab-nav="home" aria-label="Client info sections">
+                    <div class="sidebar-section-nav__label">On this page</div>
+                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('section-basic-info', 'home')">
+                        <i class="fas fa-user-circle"></i><span>Basic Information</span>
                     </button>
-                    <button class="nav-item" >
-                        <i class="fas fa-id-card"></i>
-                        <span>Client ID :   {{ $fetchedData->type == 'lead' ? 'Lead ID' : ($fetchedData->type == 'client' ? 'Client ID' : '') }} : {{ $fetchedData->client_id }}
-                        </span>
+                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('section-phone-numbers', 'home')">
+                        <i class="fas fa-mobile-alt"></i><span>Phone Numbers</span>
                     </button>
-                    <button class="nav-item" >
-                        <i class="fas fa fa-calendar"></i>
-                        <span>Date of Birth : {{ $fetchedData->dob ? date('d/m/Y', strtotime($fetchedData->dob)) : 'Not set' }}</span>
+                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('section-email-addresses', 'home')">
+                        <i class="fas fa-envelope"></i><span>Email Addresses</span>
                     </button>
-                    <button class="nav-item" >
-                        <i class="fas fa-info-circle"></i>
-                        <span>Gender : {{ $fetchedData->gender ?: 'Not set' }}</span>
+                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('section-address', 'home')">
+                        <i class="fas fa-home"></i><span>Current Address</span>
                     </button>
-                    <button class="nav-item" >
-                        <i class="fas fa-info-circle"></i>
-                        <span>Marital Status : {{ $fetchedData->marital_status ?: 'Not set' }}</span>
+                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('section-lead-source', 'home')">
+                        <i class="fas fa-funnel-dollar"></i><span>Lead Source</span>
                     </button>
-                   
                 </nav>
-                
-                <!-- Back Button in Sidebar -->
+
+                <nav class="sidebar-section-nav" data-tab-nav="menu2" hidden aria-label="Matter sections">
+                    <div class="sidebar-section-nav__label">On this page</div>
+                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('matterTypeSelectorSection', 'menu2')">
+                        <i class="fas fa-list-alt"></i><span>Select Matter Type</span>
+                    </button>
+                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('section-existing-matters', 'menu2')">
+                        <i class="fas fa-folder-open"></i><span>Existing Matters</span>
+                    </button>
+                </nav>
+
+                <nav class="sidebar-section-nav" data-tab-nav="menu4" hidden aria-label="Court sections">
+                    <div class="sidebar-section-nav__label">On this page</div>
+                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('section-add-hearing', 'menu4')">
+                        <i class="fas fa-plus-circle"></i><span>Add Hearing</span>
+                    </button>
+                    <button type="button" class="sidebar-section-link" onclick="scrollToEditSection('section-hearings-list', 'menu4')">
+                        <i class="fas fa-calendar-alt"></i><span>Hearings List</span>
+                    </button>
+                </nav>
+
                 <div class="sidebar-actions">
-                    <button type="button" class="nav-item summary-nav back-btn" onclick="goBackWithRefresh()">
+                    <button type="button" class="sidebar-back-btn" onclick="goBackWithRefresh()">
                         <i class="fas fa-arrow-left"></i>
                         <span>Back</span>
                     </button>
@@ -157,6 +190,23 @@
     }
     $(".client-edit-top-pills .nav-link").removeClass("active");
     $(".client-edit-top-pills a[href='#" + tabId + "']").addClass("active");
+    document.querySelectorAll('.sidebar-section-nav[data-tab-nav]').forEach(function (nav) {
+        nav.hidden = nav.getAttribute('data-tab-nav') !== tabId;
+    });
+               }
+
+               function scrollToEditSection(sectionId, tabId) {
+    if (tabId) {
+        showTab(tabId);
+    }
+    var el = document.getElementById(sectionId);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    var sidebar = document.getElementById('sidebarNav');
+    if (sidebar && window.innerWidth <= 768) {
+        sidebar.classList.remove('show');
+    }
                }
 
             </script>
@@ -177,12 +227,9 @@
                     <input type="hidden" name="type" value="{{ $fetchedData->type }}">
 
     <div id="home" class="tab-pane fade show active" role="tabpanel">
-      <h3><i class="fas fa-user"></i> Client Info (Personal)</h3>
-     
-
                 <!-- Personal Section -->
                 <section id="personalSection" class="content-section">
-                    <section class="form-section">
+                    <section id="section-basic-info" class="form-section">
                         <div class="section-header">
                             <h3><i class="fas fa-user-circle"></i> Basic Information</h3>
                             <div class="section-actions">
@@ -194,7 +241,7 @@
                         
                         <!-- Summary View -->
                         <div id="basicInfoSummary" class="summary-view">
-                            <div class="summary-grid">
+                            <div class="summary-grid summary-grid--basic-info">
                                 <div class="summary-item">
                                     <span class="summary-label">Name:</span>
                                     <span class="summary-value">{{ $fetchedData->first_name }} {{ $fetchedData->last_name }}</span>
@@ -310,7 +357,7 @@
                     </section>
 
                     <!-- Contact Information -->
-                    <section class="form-section">
+                    <section id="section-phone-numbers" class="form-section">
                         <div class="section-header">
                             <h3><i class="fas fa-mobile-alt"></i> Phone Numbers</h3>
                             <div class="section-actions">
@@ -326,9 +373,9 @@
                         <!-- Summary View -->
                         <div id="phoneNumbersSummary" class="summary-view">
                             @if($clientContacts->count() > 0)
-                                <div class="summary-grid">
+                                <div class="contact-row-list">
                                     @foreach($clientContacts as $index => $contact)
-                                        <div class="summary-item">
+                                        <div class="summary-item contact-row">
                                             <span class="summary-label">{{ $contact->contact_type }}:</span>
                                             <span class="summary-value">{{ $contact->country_code }}{{ $contact->phone }}</span>
                                             <!-- Verification Button/Badge -->
@@ -370,7 +417,7 @@
                     </section>
 
                     <!-- Email Addresses -->
-                    <section class="form-section">
+                    <section id="section-email-addresses" class="form-section">
                         <div class="section-header">
                             <h3><i class="fas fa-envelope"></i> Email Addresses</h3>
                             <div class="section-actions">
@@ -386,9 +433,9 @@
                         <!-- Summary View -->
                         <div id="emailAddressesSummary" class="summary-view">
                             @if($emails->count() > 0)
-                                <div class="summary-grid">
+                                <div class="contact-row-list">
                                     @foreach($emails as $index => $email)
-                                        <div class="summary-item">
+                                        <div class="summary-item contact-row">
                                             <span class="summary-label">{{ $email->email_type }}:</span>
                                             <span class="summary-value">{{ $email->email }}</span>
                                             <!-- Verification Button/Badge -->
@@ -436,7 +483,7 @@
                 </section>
 
                 {{-- Lead Source & Assignment Section --}}
-                <section class="content-section" style="margin-bottom:1.25rem;">
+                <section id="section-lead-source" class="content-section" style="margin-bottom:1.25rem;">
                     <section class="form-section">
                         <div class="section-header">
                             <h3><i class="fas fa-funnel-dollar"></i> Lead Source &amp; Assignment</h3>

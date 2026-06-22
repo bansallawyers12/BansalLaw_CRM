@@ -47,8 +47,10 @@
 /* ===== SUMMARY LABELS & VALUES ===== */
 .summary-label {
     font-weight: 600;
-    color: #6c757d;
-    font-size: 0.85em;
+    color: var(--text-muted-color, #5e7a90);
+    font-size: 0.8em;
+    text-transform: none;
+    letter-spacing: 0.02em;
 }
 
 .summary-value {
@@ -138,6 +140,12 @@
     text-decoration: none;
 }
 
+.main-content-area .client-edit-top-pills > li:not(.active) > a,
+.main-content-area .client-edit-top-pills .nav-link:not(.active) {
+    background: rgba(255, 255, 255, 0.55);
+    border-color: var(--border-color, #c8dcef);
+}
+
 .main-content-area .client-edit-top-pills > li.active > a,
 .main-content-area .client-edit-top-pills > li.active > a:hover,
 .main-content-area .client-edit-top-pills > li.active > a:focus,
@@ -156,7 +164,7 @@
     color: var(--primary-color, #1e3d60);
 }
 
-/* Tab pane lead headings (Client Info / Matter / Hearings) */
+/* Tab pane lead headings (Client Info / Matter / Hearings) — removed redundant tab-level h3; keep rule for any remaining headings */
 .main-content-area .tab-pane > h3 {
     font-size: 1.25rem;
     font-weight: 700;

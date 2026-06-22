@@ -1,8 +1,7 @@
     <div id="menu4" class="tab-pane fade">
-      <h3><i class="fas fa-gavel"></i> Court Dates &amp; Hearings</h3>
       
       {{-- Add Hearing Form --}}
-      <section class="content-section" style="margin-bottom: 20px; padding: 20px;">
+      <section id="section-add-hearing" class="content-section" style="margin-bottom: 20px; padding: 20px;">
         <section class="form-section" style="margin-bottom: 0;">
           <div class="section-header">
             <h3><i class="fas fa-plus-circle"></i> Add Court Hearing / Date</h3>
@@ -97,7 +96,7 @@
       </section>
 
       {{-- Existing Hearings List --}}
-      <section class="content-section" style="margin-top:1.5rem; margin-bottom: 20px; padding: 20px;">
+      <section id="section-hearings-list" class="content-section" style="margin-top:1.5rem; margin-bottom: 20px; padding: 20px;">
         <section class="form-section" style="margin-bottom: 0;">
           <div class="section-header">
             <h3><i class="fas fa-calendar-alt"></i> Scheduled &amp; Past Hearings</h3>
