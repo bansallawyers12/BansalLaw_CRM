@@ -119,7 +119,7 @@
 
 /* ===== CLIENT EDIT — TOP PILLS (Bootstrap 5) ===== */
 .main-content-area .client-edit-top-pills {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     border-bottom: 2px solid var(--border-color, #c8dcef);
     padding-bottom: 4px;
     display: flex;
@@ -158,11 +158,11 @@
 
 /* Tab pane lead headings (Client Info / Matter / Hearings) */
 .main-content-area .tab-pane > h3 {
-    font-size: 1.35rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: var(--primary-color, #1e3d60);
-    margin: 0 0 1.25rem 0;
-    padding: 1rem 0 0.5rem 0;
+    margin: 0 0 0.75rem 0;
+    padding: 0.5rem 0;
     border-bottom: 2px solid var(--border-color, #c8dcef);
     display: flex;
     align-items: center;
@@ -185,6 +185,11 @@
     padding-right: 0;
 }
 
+/* Fix Bootstrap 5 tab-pane hiding issue when wrapped in a form tag */
+.main-content-area .tab-content .tab-pane:not(.active) {
+    display: none !important;
+}
+
 /* Court Dates tab: tighten lead block */
 .main-content-area #menu4.tab-pane > h3 {
     margin-top: 0;
@@ -203,7 +208,7 @@
 
 .matter-tab-section.content-section {
     margin-bottom: 0;
-    padding: 24px 28px;
+    padding: 16px 20px;
 }
 
 .matter-tab-section__card.form-section {
@@ -218,8 +223,8 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
     border-bottom: 2px solid var(--border-color, #c8dcef);
 }
 

@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const baseUrl = outlookContainer ? outlookContainer.getAttribute('data-base-url') : '';
     const clientId = outlookContainer ? outlookContainer.getAttribute('data-client-id') : '';
     const matterId = outlookContainer ? outlookContainer.getAttribute('data-matter-id') : '';
+    const authEmail = outlookContainer ? outlookContainer.getAttribute('data-auth-email') : '';
 
     loadEmails();
 
@@ -97,10 +98,61 @@ document.addEventListener('DOMContentLoaded', function() {
         composeModal.classList.remove('active');
     });
 
-    // Send Mail (Mock)
-    document.getElementById('btnSend').addEventListener('click', () => {
-        alert('Email sent to ' + toInput.value);
-        composeModal.classList.remove('active');
+    // Send Mail
+    document.getElementById('btnSend').addEventListener('click', async () => {
+        const to = toInput.value.trim();
+        const subject = subjectInput.value.trim();
+        const message = composeEditor.value.trim();
+
+        if (!to || !subject || !message) {
+            alert('Please fill in To, Subject, and Message fields.');
+            return;
+        }
+
+        const btnSend = document.getElementById('btnSend');
+        const originalText = btnSend.textContent;
+        btnSend.textContent = 'Sending...';
+        btnSend.disabled = true;
+
+        const formData = new FormData();
+        if (clientId) formData.append('client_id', clientId);
+        if (matterId) formData.append('compose_client_matter_id', matterId);
+        formData.append('email_from', authEmail);
+        formData.append('email_to', to);
+        formData.append('subject', subject);
+        formData.append('message', message);
+        formData.append('type', 'client');
+        formData.append('mail_type', 2);
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+
+        try {
+            const response = await fetch(`${baseUrl}/sendmail`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+            const result = await response.json();
+            
+            if (result.success || response.ok) {
+                alert('Email sent successfully!');
+                composeModal.classList.remove('active');
+                // Refresh sent folder if we are currently in it
+                if (currentFolder === 'sent') {
+                    loadEmails();
+                }
+            } else {
+                alert(result.message || 'Failed to send email.');
+            }
+        } catch (error) {
+            console.error('Error sending email:', error);
+            alert('An error occurred while sending the email.');
+        } finally {
+            btnSend.textContent = originalText;
+            btnSend.disabled = false;
+        }
     });
 
     // Action Buttons (with null checks since they might be commented out)
@@ -167,6 +219,10 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const response = await fetch(uploadUrl, {
                     method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     body: formData
                 });
                 const result = await response.json();
@@ -246,7 +302,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (clientId) url.searchParams.append('client_id', clientId);
             if (matterId) url.searchParams.append('client_matter_id', matterId);
 
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
             const data = await response.json();
             
             emails = data.emails || [];
@@ -433,22 +494,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
         composeModal.classList.add('active');
 
+        const emailText = (email.text_content || (email.message ? email.message.replace(/<[^>]*>?/gm, '') : '')) + '\n';
+
         if (action === 'reply') {
             composeTitle.textContent = 'Reply';
             toInput.value = email.from_mail || '';
             subjectInput.value = 'Re: ' + (email.subject || '');
-            composeEditor.value = `\n\n--- Original Message ---\nFrom: ${email.from_mail}\nSent: ${email.created_at}\nSubject: ${email.subject}\n\n`;
+            composeEditor.value = `\n\n--- Original Message ---\nFrom: ${email.from_mail}\nSent: ${email.created_at}\nSubject: ${email.subject}\n\n${emailText}`;
         } else if (action === 'replyAll') {
             composeTitle.textContent = 'Reply All';
             const cc = email.cc ? `, ${email.cc}` : '';
             toInput.value = (email.from_mail || '') + cc;
             subjectInput.value = 'Re: ' + (email.subject || '');
-            composeEditor.value = `\n\n--- Original Message ---\nFrom: ${email.from_mail}\nSent: ${email.created_at}\nSubject: ${email.subject}\n\n`;
+            composeEditor.value = `\n\n--- Original Message ---\nFrom: ${email.from_mail}\nSent: ${email.created_at}\nSubject: ${email.subject}\n\n${emailText}`;
         } else if (action === 'forward') {
             composeTitle.textContent = 'Forward';
             toInput.value = '';
             subjectInput.value = 'Fwd: ' + (email.subject || '');
-            composeEditor.value = `\n\n--- Forwarded Message ---\nFrom: ${email.from_mail}\nSent: ${email.created_at}\nSubject: ${email.subject}\n\n`;
+            composeEditor.value = `\n\n--- Forwarded Message ---\nFrom: ${email.from_mail}\nSent: ${email.created_at}\nSubject: ${email.subject}\n\n${emailText}`;
         }
     }
 

@@ -1,4 +1,5 @@
-    <div id="menu2" class="tab-pane fade matter-tab-pane">
+<div id="menu2" class="tab-pane fade matter-tab-pane">
+      <h3><i class="fas fa-briefcase"></i> Matter Details</h3>
       @php
           $__crmEditLeadType = isset($fetchedData) && (($fetchedData->type ?? null) === 1 || in_array(trim((string) ($fetchedData->type ?? '')), ['lead', 'l', '1'], true));
           $editMatterList = $clientMatters ?? collect();
@@ -25,11 +26,9 @@
           $defaultIcon = ['icon' => 'fa-folder-open', 'color' => '#555'];
       @endphp
 
-      <h3><i class="fas fa-briefcase"></i> Matter Details</h3>
-
       {{-- ====== STEP 1: Matter Type Selector ====== --}}
-      <section class="content-section" id="matterTypeSelectorSection">
-        <section class="form-section">
+      <section class="content-section" id="matterTypeSelectorSection" style="margin-bottom: 20px; padding: 20px;">
+        <section class="form-section" style="margin-bottom: 0;">
           <div class="section-header">
             <h3><i class="fas fa-list-alt"></i> Select Matter Type</h3>
             <span class="badge" style="background:#e8f0fe;color:#3b5bdb;font-size:0.8em;padding:4px 10px;border-radius:12px;">Required to add a new matter</span>
@@ -77,8 +76,8 @@
       </section>
 
       {{-- ====== STEP 2: Dynamic Matter Form (shown after matter type selected) ====== --}}
-      <section class="content-section" id="matterDynamicFormSection" style="display:none;">
-        <section class="form-section">
+      <section class="content-section" id="matterDynamicFormSection" style="display:none; margin-bottom: 20px; padding: 20px;">
+        <section class="form-section" style="margin-bottom: 0;">
           <div class="section-header" style="align-items:center;">
             <h3 id="matterDynamicFormTitle"><i class="fas fa-folder-plus"></i> New Matter Details</h3>
             <button type="button" class="btn btn-sm btn-secondary" onclick="clearMatterTypeSelection()" style="margin-left:auto;">
@@ -122,8 +121,8 @@
       </section>
 
       {{-- ====== STEP 3: Existing Matters Table ====== --}}
-      <section class="content-section">
-        <section class="form-section matter-tab-section__card">
+      <section class="content-section" style="padding: 20px;">
+        <section class="form-section matter-tab-section__card" style="margin-bottom: 0;">
           <div class="section-header matter-tab-section__header">
             <div>
               <h3 class="matter-tab-section__title"><i class="fas fa-folder-open"></i> Existing Matters</h3>

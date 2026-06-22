@@ -14,6 +14,7 @@ use App\Models\ActivitiesLog;
 use App\Models\CpDocChecklist;
 use App\Models\Document;
 use App\Models\ClientMatter;
+use App\Models\EmailLog;
 use App\Models\WorkflowStage;
 use App\Services\MatterActionNoteService;
 use Illuminate\Support\Facades\Auth;
@@ -95,6 +96,8 @@ class ClientMatterHubController extends Controller
 		$clientMatter->matter_status = 0; // Discontinued/completed
 		$saved = $clientMatter->save();
 		if ($saved) {
+			// Delete email conversations from database (keep S3 attachments)
+			$this->deleteEmailConversationsForMatter($clientMatter->client_id, $clientMatter->id);
 			$response = ['status' => true, 'stage' => $stageName, 'width' => 100, 'message' => 'Matter has been successfully completed.'];
 		} else {
 			$response = ['status' => false, 'message' => 'Please try again'];
@@ -704,6 +707,9 @@ class ClientMatterHubController extends Controller
 			$saved = $clientMatter->save();
 
 			if ($saved) {
+				// Delete email conversations from database (keep S3 attachments)
+				$this->deleteEmailConversationsForMatter($clientMatter->client_id, $clientMatter->id);
+
 				// applications table removed
 
 				$description = 'Discontinued matter. Reason: <b>' . e($reason) . '</b>';
@@ -1264,6 +1270,10 @@ class ClientMatterHubController extends Controller
 		}
 		$obj->matter_status = 0;
 		$saved = $obj->save();
+		if ($saved) {
+			// Delete email conversations from database (keep S3 attachments)
+			$this->deleteEmailConversationsForMatter($obj->client_id, $obj->id);
+		}
 		echo json_encode(['status' => $saved, 'message' => $saved ? 'Matter successfully discontinued.' : 'Please try again']);
 	}
 
@@ -2375,6 +2385,53 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 		} catch (\Exception $e) {
 			Log::error('getDocumentCategoriesForMove error: ' . $e->getMessage());
 			return response()->json(['success' => false, 'message' => 'Failed to load categories.'], 500);
+		}
+	}
+
+	/**
+	 * Delete email conversations from the database for a closed matter.
+	 * Only removes database records (email_logs, email_log_attachments, email_label_email_log).
+	 * Does NOT delete any files from S3 cloud storage.
+	 *
+	 * @param int $clientId
+	 * @param int $matterId
+	 * @return void
+	 */
+	private function deleteEmailConversationsForMatter(int $clientId, int $matterId): void
+	{
+		try {
+			$emailLogIds = EmailLog::where('client_id', $clientId)
+				->where('client_matter_id', $matterId)
+				->pluck('id');
+
+			if ($emailLogIds->isEmpty()) {
+				return;
+			}
+
+			// Delete pivot records (email ↔ label associations)
+			DB::table('email_label_email_log')
+				->whereIn('email_log_id', $emailLogIds)
+				->delete();
+
+			// Delete attachment records from DB only (S3 files remain untouched)
+			DB::table('email_log_attachments')
+				->whereIn('email_log_id', $emailLogIds)
+				->delete();
+
+			// Delete email log records
+			EmailLog::whereIn('id', $emailLogIds)->delete();
+
+			Log::info('Deleted email conversations for closed matter', [
+				'client_id' => $clientId,
+				'matter_id' => $matterId,
+				'emails_deleted' => $emailLogIds->count(),
+			]);
+		} catch (\Exception $e) {
+			Log::error('Failed to delete email conversations for closed matter', [
+				'client_id' => $clientId,
+				'matter_id' => $matterId,
+				'error' => $e->getMessage(),
+			]);
 		}
 	}
 }

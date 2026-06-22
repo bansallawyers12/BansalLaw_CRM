@@ -736,6 +736,18 @@ class CRMUtilityController extends Controller
 							if($response) {
 								$status = 1;
 								$message = 'Record has been enabled successfully.';
+								// Delete email conversations from database (keep S3 attachments)
+								$matter = \App\Models\ClientMatter::find($requestData['id']);
+								if ($matter) {
+									$emailLogIds = \App\Models\EmailLog::where('client_id', $matter->client_id)
+										->where('client_matter_id', $matter->id)
+										->pluck('id');
+									if ($emailLogIds->isNotEmpty()) {
+										DB::table('email_label_email_log')->whereIn('email_log_id', $emailLogIds)->delete();
+										DB::table('email_log_attachments')->whereIn('email_log_id', $emailLogIds)->delete();
+										\App\Models\EmailLog::whereIn('id', $emailLogIds)->delete();
+									}
+								}
 							} else {
 								$message = config('constants.server_error');
 							}
@@ -1172,6 +1184,10 @@ public function getChapters(Request $request)
 			if ($recipientId === '' || $recipientId === null) {
 				continue;
 			}
+			if (filter_var($recipientId, FILTER_VALIDATE_EMAIL)) {
+				$resolvedTo[] = $recipientId;
+				continue;
+			}
 			if (($requestData['type'] ?? '') === 'agent') {
 				$r = \App\Models\AgentDetails::where('id', $recipientId)->first();
 				if ($r) {
@@ -1301,18 +1317,27 @@ public function getChapters(Request $request)
 		// Convert plain URLs to clickable links (open in new tab, copyable)
 		$message = $this->linkifyUrlsInHtml($message);
 
-		foreach($requestData['email_to'] as $l){
-			if(@$requestData['type'] == 'agent'){
-				$client = \App\Models\AgentDetails::Where('id', $l)->first();
-			    $subject = str_replace('{Client First Name}',$client->full_name, $subject);
-			    $message = str_replace('{Client First Name}',$client->full_name, $message);
-			}else{
-				$client = \App\Models\Admin::Where('id', $l)->first();
-			    $subject = str_replace('{Client First Name}',$client->first_name, $subject);
-			    $message = str_replace('{Client First Name}',$client->first_name, $message);
+		foreach($emailToList as $l){
+			if (filter_var($l, FILTER_VALIDATE_EMAIL)) {
+				$client = new \stdClass();
+				$client->first_name = '';
+				$client->full_name = '';
+				$client->email = $l;
+			} else {
+				if(@$requestData['type'] == 'agent'){
+					$client = \App\Models\AgentDetails::Where('id', $l)->first();
+				}else{
+					$client = \App\Models\Admin::Where('id', $l)->first();
+				}
 			}
 
-			$message = str_replace('{Client Assignee Name}',$client->first_name, $message);
+			if ($client) {
+				$firstName = $client->first_name ?? $client->full_name ?? '';
+				$subject = str_replace('{Client First Name}', $firstName, $subject);
+				$message = str_replace('{Client First Name}', $firstName, $message);
+				$message = str_replace('{Client Assignee Name}', $firstName, $message);
+			}
+
 			$message = str_replace('{Company Name}', optional(Auth::user())->company_name ?? '', $message);
 			$ccarray = array();
 			if(isset($requestData['email_cc']) && !empty($requestData['email_cc'])){

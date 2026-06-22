@@ -21,7 +21,7 @@
 <!-- Outlook CSS -->
 <link rel="stylesheet" href="{{ asset('css/outlook_emails.css') }}?v={{ time() }}">
 
-<div class="outlook-container" id="outlookContainer" data-base-url="{{ url('/') }}" data-client-id="{{ $clientData->id ?? '' }}" data-matter-id="{{ $matterId ?? '' }}">
+<div class="outlook-container" id="outlookContainer" data-base-url="{{ url('/') }}" data-client-id="{{ $clientData->id ?? '' }}" data-matter-id="{{ $matterId ?? '' }}" data-auth-email="{{ auth()->user()->email ?? '' }}">
     
     <!-- Drag & Drop Overlay -->
     <div id="dragDropOverlay" class="drag-drop-overlay" style="display: none;">
@@ -138,14 +138,11 @@
         <!-- Email Content (Hidden by default) -->
         <div style="display: none; flex-direction: column; height: 100%;" id="readingPane">
             <div class="reading-header">
-                <!-- Action buttons currently disabled
                 <div class="action-bar">
                     <button class="action-btn" id="btnReply"><i class="fas fa-reply"></i> Reply</button>
                     <button class="action-btn" id="btnReplyAll"><i class="fas fa-reply-all"></i> Reply All</button>
                     <button class="action-btn" id="btnForward"><i class="fas fa-share"></i> Forward</button>
-                    <button class="action-btn"><i class="fas fa-trash"></i> Delete</button>
                 </div>
-                -->
                 
                 <h2 class="email-full-subject" id="readSubject">Loading...</h2>
                 
