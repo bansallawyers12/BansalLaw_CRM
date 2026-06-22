@@ -459,32 +459,53 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const iframe = document.getElementById('readBody');
-        const content = email.message || email.html_content || email.text_content || '<p>No content available.</p>';
+        let contentStr = (email.message || email.html_content || email.text_content || '').trim();
         
-        iframe.srcdoc = `
-            <html>
-                <head>
-                    <style>
-                        body { font-family: 'Segoe UI', sans-serif; font-size: 14px; color: #333; line-height: 1.6; padding: 10px; margin: 0; }
-                        a { color: #0078d4; text-decoration: none; }
-                        a:hover { text-decoration: underline; }
-                        img { max-width: 100%; height: auto; }
-                    </style>
-                </head>
-                <body>${content}</body>
-            </html>
-        `;
-
-        iframe.onload = function() {
-            try {
-                const body = iframe.contentWindow.document.body;
-                const html = iframe.contentWindow.document.documentElement;
-                const height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
-                iframe.style.height = height + 'px';
-            } catch (e) {
-                console.error("Could not resize iframe", e);
+        let pdfToPreview = null;
+        if (!contentStr) {
+            if (email.pdf_file_url) {
+                pdfToPreview = email.pdf_file_url;
+            } else if (email.attachments && email.attachments.length > 0) {
+                const pdfAtt = email.attachments.find(a => a.file_name && a.file_name.toLowerCase().endsWith('.pdf'));
+                if (pdfAtt) {
+                    pdfToPreview = pdfAtt.file_path;
+                }
             }
-        };
+        }
+
+        if (pdfToPreview) {
+            iframe.onload = null;
+            iframe.removeAttribute('srcdoc');
+            iframe.src = pdfToPreview;
+            iframe.style.height = '800px';
+        } else {
+            iframe.removeAttribute('src');
+            const finalContent = contentStr || '<p>No content available.</p>';
+            iframe.srcdoc = `
+                <html>
+                    <head>
+                        <style>
+                            body { font-family: 'Segoe UI', sans-serif; font-size: 14px; color: #333; line-height: 1.6; padding: 10px; margin: 0; }
+                            a { color: #0078d4; text-decoration: none; }
+                            a:hover { text-decoration: underline; }
+                            img { max-width: 100%; height: auto; }
+                        </style>
+                    </head>
+                    <body>${finalContent}</body>
+                </html>
+            `;
+
+            iframe.onload = function() {
+                try {
+                    const body = iframe.contentWindow.document.body;
+                    const html = iframe.contentWindow.document.documentElement;
+                    const height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
+                    iframe.style.height = (height + 20) + 'px';
+                } catch (e) {
+                    console.error("Could not resize iframe", e);
+                }
+            };
+        }
     }
 
     function openCompose(action) {
