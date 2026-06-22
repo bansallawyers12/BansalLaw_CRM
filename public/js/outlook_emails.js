@@ -102,7 +102,10 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btnSend').addEventListener('click', async () => {
         const to = toInput.value.trim();
         const subject = subjectInput.value.trim();
-        const message = composeEditor.value.trim();
+        let message = composeEditor.value.trim();
+        if (typeof tinymce !== 'undefined' && tinymce.get('composeEditor')) {
+            message = tinymce.get('composeEditor').getContent().trim();
+        }
 
         if (!to || !subject || !message) {
             alert('Please fill in To, Subject, and Message fields.');
@@ -515,24 +518,61 @@ document.addEventListener('DOMContentLoaded', function() {
 
         composeModal.classList.add('active');
 
-        const emailText = (email.text_content || (email.message ? email.message.replace(/<[^>]*>?/gm, '') : '')) + '\n';
+        let isHtml = false;
+        let emailHtml = '';
+        if (email.html_content) {
+            isHtml = true;
+            emailHtml = email.html_content;
+        } else if (email.message && email.message.includes('<')) {
+            isHtml = true;
+            emailHtml = email.message;
+        } else if (email.text_content) {
+            emailHtml = escapeHtml(email.text_content).replace(/\n/g, '<br>');
+        } else if (email.message) {
+            emailHtml = escapeHtml(email.message).replace(/\n/g, '<br>');
+        }
+
+        let content = '';
 
         if (action === 'reply') {
             composeTitle.textContent = 'Reply';
             toInput.value = email.from_mail || '';
             subjectInput.value = 'Re: ' + (email.subject || '');
-            composeEditor.value = `\n\n--- Original Message ---\nFrom: ${email.from_mail}\nSent: ${email.created_at}\nSubject: ${email.subject}\n\n${emailText}`;
+            content = `<br><br><blockquote style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex"><b>From:</b> ${escapeHtml(email.from_mail)}<br><b>Sent:</b> ${escapeHtml(email.created_at)}<br><b>Subject:</b> ${escapeHtml(email.subject)}<br><br>${emailHtml}</blockquote>`;
         } else if (action === 'replyAll') {
             composeTitle.textContent = 'Reply All';
             const cc = email.cc ? `, ${email.cc}` : '';
             toInput.value = (email.from_mail || '') + cc;
             subjectInput.value = 'Re: ' + (email.subject || '');
-            composeEditor.value = `\n\n--- Original Message ---\nFrom: ${email.from_mail}\nSent: ${email.created_at}\nSubject: ${email.subject}\n\n${emailText}`;
+            content = `<br><br><blockquote style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex"><b>From:</b> ${escapeHtml(email.from_mail)}<br><b>Sent:</b> ${escapeHtml(email.created_at)}<br><b>Subject:</b> ${escapeHtml(email.subject)}<br><br>${emailHtml}</blockquote>`;
         } else if (action === 'forward') {
             composeTitle.textContent = 'Forward';
             toInput.value = '';
             subjectInput.value = 'Fwd: ' + (email.subject || '');
-            composeEditor.value = `\n\n--- Forwarded Message ---\nFrom: ${email.from_mail}\nSent: ${email.created_at}\nSubject: ${email.subject}\n\n${emailText}`;
+            content = `<br><br><div dir="ltr">---------- Forwarded message ---------<br>From: <strong>${escapeHtml(email.from_mail)}</strong><br>Date: ${escapeHtml(email.created_at)}<br>Subject: ${escapeHtml(email.subject)}<br></div><br><blockquote style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex">${emailHtml}</blockquote>`;
+        }
+
+        if (typeof tinymce !== 'undefined') {
+            let editor = tinymce.get('composeEditor');
+            if (!editor) {
+                const config = typeof tinymceFullConfig !== 'undefined' ? tinymceFullConfig : {
+                    height: 300,
+                    menubar: false,
+                    plugins: ['advlist autolink lists link image charmap print preview anchor', 'searchreplace visualblocks code fullscreen', 'insertdatetime media table paste code help wordcount'],
+                    toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help'
+                };
+                tinymce.init({
+                    ...config,
+                    selector: '#composeEditor',
+                    init_instance_callback: function (inst) {
+                        inst.setContent(content);
+                    }
+                });
+            } else {
+                editor.setContent(content);
+            }
+        } else {
+            composeEditor.value = content;
         }
     }
 
