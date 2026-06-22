@@ -94,6 +94,8 @@ class ClientMatterHubController extends Controller
 		}
 		$stageName = $clientMatter->workflowStage?->name ?? '';
 		$clientMatter->matter_status = 0; // Discontinued/completed
+		$clientMatter->closed_by = Auth::guard('admin')->id() ?? Auth::id();
+		$clientMatter->discontinue_reason = 'Completed';
 		$saved = $clientMatter->save();
 		if ($saved) {
 			// Delete email conversations from database (keep S3 attachments)
@@ -704,6 +706,9 @@ class ClientMatterHubController extends Controller
 			}
 
 			$clientMatter->matter_status = 0;
+			$clientMatter->closed_by = Auth::guard('admin')->id() ?? Auth::id();
+			$clientMatter->discontinue_reason = $reason;
+			$clientMatter->discontinue_notes = $notes;
 			$saved = $clientMatter->save();
 
 			if ($saved) {
@@ -806,6 +811,75 @@ class ClientMatterHubController extends Controller
 	}
 
 	/**
+	 * Request to reopen a discontinued client matter (non-admins).
+	 *
+	 * @param Request $request
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function requestReopenMatter(Request $request)
+	{
+		try {
+			$matterId = $request->input('matter_id');
+
+			if (!$matterId) {
+				return response()->json(['status' => false, 'message' => 'Matter ID is required'], 422);
+			}
+
+			$clientMatter = ClientMatter::find($matterId);
+
+			if (!$clientMatter) {
+				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
+			}
+
+			if ($clientMatter->matter_status == 1) {
+				return response()->json(['status' => false, 'message' => 'Matter is already open.'], 400);
+			}
+
+			$clientMatter->reopen_requested_by = Auth::guard('admin')->id() ?? Auth::id();
+			$saved = $clientMatter->save();
+
+			if ($saved) {
+				// Send notification to admins
+				$admins = \App\Models\Admin::where('role', 1)->where('is_deleted', null)->get();
+				$requesterName = Auth::user() ? Auth::user()->first_name . ' ' . Auth::user()->last_name : 'A team member';
+				$matterTitle = \App\Models\Matter::find($clientMatter->sel_matter_id)->title ?? 'Matter';
+				$url = '/clients/detail/' . base64_encode(convert_uuencode($clientMatter->client_id)) . '/' . $clientMatter->client_unique_matter_no;
+
+				foreach ($admins as $admin) {
+					\App\Models\Notification::create([
+						'sender_id' => Auth::guard('admin')->id() ?? Auth::id(),
+						'receiver_id' => $admin->id,
+						'module_id' => $clientMatter->id,
+						'url' => $url,
+						'notification_type' => 'Matter Reopen Request',
+						'message' => $requesterName . ' has requested to reopen ' . $matterTitle . ' (' . $clientMatter->client_unique_matter_no . ').',
+						'receiver_status' => 0,
+						'sender_status' => 0,
+						'seen' => 0
+					]);
+				}
+
+				return response()->json([
+					'status' => true,
+					'message' => 'Reopen request has been sent to admins.'
+				]);
+			}
+
+			return response()->json(['status' => false, 'message' => 'Failed to send reopen request.'], 500);
+
+		} catch (\Exception $e) {
+			Log::error('Error requesting to reopen client matter: ' . $e->getMessage(), [
+				'matter_id' => $request->input('matter_id'),
+				'trace' => $e->getTraceAsString()
+			]);
+			return response()->json([
+				'status' => false,
+				'message' => 'An error occurred while requesting to reopen the matter.'
+			], 500);
+		}
+	}
+
+	/**
 	 * Reopen a discontinued client matter (set matter_status = 1).
 	 *
 	 * @param Request $request
@@ -826,10 +900,32 @@ class ClientMatterHubController extends Controller
 				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
 			}
 
+			$requesterId = $clientMatter->reopen_requested_by;
+
 			$clientMatter->matter_status = 1;
+			$clientMatter->closed_by = null;
+			$clientMatter->discontinue_reason = null;
+			$clientMatter->discontinue_notes = null;
+			$clientMatter->reopen_requested_by = null;
 			$saved = $clientMatter->save();
 
 			if ($saved) {
+				// Send notification back to requester if applicable
+				if ($requesterId && $requesterId != (Auth::guard('admin')->id() ?? Auth::id())) {
+					$matterTitle = \App\Models\Matter::find($clientMatter->sel_matter_id)->title ?? 'Matter';
+					$url = '/clients/detail/' . base64_encode(convert_uuencode($clientMatter->client_id)) . '/' . $clientMatter->client_unique_matter_no;
+					\App\Models\Notification::create([
+						'sender_id' => Auth::guard('admin')->id() ?? Auth::id(),
+						'receiver_id' => $requesterId,
+						'module_id' => $clientMatter->id,
+						'url' => $url,
+						'notification_type' => 'Matter Reopened',
+						'message' => 'Your request to reopen ' . $matterTitle . ' (' . $clientMatter->client_unique_matter_no . ') has been approved.',
+						'receiver_status' => 0,
+						'sender_status' => 0,
+						'seen' => 0
+					]);
+				}
 				// applications table removed
 
 				// Activity feed: matter reopened from CRM (legacy hook always allows logging).
@@ -1269,6 +1365,9 @@ class ClientMatterHubController extends Controller
 			return;
 		}
 		$obj->matter_status = 0;
+		$obj->closed_by = Auth::guard('admin')->id() ?? Auth::id();
+		$obj->discontinue_reason = $request->workflow ?? 'Discontinued';
+		$obj->discontinue_notes = $request->note ?? '';
 		$saved = $obj->save();
 		if ($saved) {
 			// Delete email conversations from database (keep S3 attachments)
@@ -1284,6 +1383,10 @@ class ClientMatterHubController extends Controller
 			return;
 		}
 		$obj->matter_status = 1;
+		$obj->closed_by = null;
+		$obj->discontinue_reason = null;
+		$obj->discontinue_notes = null;
+		$obj->reopen_requested_by = null;
 		$saved = $obj->save();
 		$stage = $obj->workflowStage;
 		$workflowId = $stage->w_id ?? $obj->workflow_id;

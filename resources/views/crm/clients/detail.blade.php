@@ -184,6 +184,9 @@ use App\Http\Controllers\Controller;
                             @if(is_array($matterFormForLead ?? null))
                                 <button type="button" class="btn cdn-client-hero__matter-btn" id="cdn-open-add-matter" title="Add a new matter for this client" onclick="openAddMatterModal()">Add Matter</button>
                             @endif
+                            @if($cdnMatterRefLabel && isset($cdnMatterRow) && $cdnMatterRow)
+                                <button type="button" class="btn cdn-client-hero__matter-btn text-danger" title="Close this matter" data-matter-id="{{ $cdnMatterRow->id }}" onclick="openCloseMatterModal(this)" style="background: rgba(211, 47, 47, 0.1); border-color: rgba(211, 47, 47, 0.2); font-weight: 600;">Close Matter</button>
+                            @endif
                         </div>
                         <div class="cdn-client-hero__tags" aria-label="Tags">
                             @foreach($cdnHeroTagNames as $tname)
@@ -2157,5 +2160,22 @@ $(function () {
         });
     });
 })();
+</script>
+
+<script>
+function openCloseMatterModal(btn) {
+    var matterId = btn.getAttribute('data-matter-id');
+    if (!matterId) return;
+    document.getElementById('discontinue-matter-id').value = matterId;
+    var reasonEl = document.getElementById('discontinue-reason');
+    if (reasonEl) reasonEl.value = '';
+    var notesEl = document.getElementById('discontinue-notes');
+    if (notesEl) notesEl.value = '';
+    var errEl = document.querySelector('.discontinue-reason-error strong');
+    if (errEl) errEl.textContent = '';
+    if (typeof window.jQuery !== 'undefined') {
+        $('#discontinue-matter-modal').modal('show');
+    }
+}
 </script>
 @endpush

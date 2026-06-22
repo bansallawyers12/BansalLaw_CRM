@@ -128,6 +128,16 @@
                                     <button class="btn btn-primary btn-sm matter-detail-reopen-btn" id="workflow-tab-reopen" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Reopen Matter">
                                         <i class="fas fa-redo"></i> Reopen
                                     </button>
+                                    @else
+                                        @if($workflowSelectedMatter->reopen_requested_by)
+                                            <button class="btn btn-secondary btn-sm" disabled title="Reopen Requested">
+                                                <i class="fas fa-clock"></i> Reopen Requested
+                                            </button>
+                                        @else
+                                            <button class="btn btn-warning btn-sm matter-detail-request-reopen-btn" id="workflow-tab-request-reopen" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Request Admin to Reopen Matter">
+                                                <i class="fas fa-hand-paper"></i> Request Reopen
+                                            </button>
+                                        @endif
                                     @endif
                                     <button class="btn btn-outline-secondary btn-sm" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}" title="Change workflow for this matter">
                                         <i class="fas fa-exchange-alt"></i> Change Workflow
@@ -535,6 +545,41 @@
                     window.location.reload();
                 } else {
                     alert(data.message || 'Failed to reopen matter.');
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            })
+            .catch(function() {
+                alert('An error occurred. Please try again.');
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            });
+        });
+
+        // Request Reopen button (non-admins, workflow tab)
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('.matter-detail-request-reopen-btn');
+            if (!btn) return;
+            e.preventDefault();
+            var matterId = btn.getAttribute('data-matter-id');
+            if (!matterId) return;
+            if (!confirm('Send a request to the admin to reopen this matter?')) return;
+            btn.disabled = true;
+            var origHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Requesting...';
+            var currentTab = document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') || '';
+            fetch('{{ route("clients.matter.request-reopen") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '', 'Accept': 'application/json' },
+                body: JSON.stringify({ matter_id: matterId, current_tab: currentTab })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.status) {
+                    alert(data.message || 'Reopen request has been sent to admins.');
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Failed to request reopen.');
                     btn.disabled = false;
                     btn.innerHTML = origHtml;
                 }

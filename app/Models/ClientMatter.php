@@ -46,6 +46,10 @@ class ClientMatter extends Model
         'incidence_type',
         'our_party_role',
         'updated_at_type',
+        'closed_by',
+        'discontinue_reason',
+        'discontinue_notes',
+        'reopen_requested_by',
     ];
 
     /**

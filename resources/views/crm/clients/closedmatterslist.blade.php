@@ -265,11 +265,11 @@
                                     <th class="thCls">Person Responsible</th>
                                     <th class="thCls">Person Assisting</th>
                                     <th class="thCls">Status</th>
+                                    <th class="thCls">Closed By</th>
+                                    <th class="thCls">Reason</th>
                                     <th class="thCls sortable-header"><a href="{{ $buildSortUrl('cm.created_at') }}">Created At {!! $sortIcon('cm.created_at') !!}</a></th>
                                     <th class="thCls">Office</th>
-                                    @if($_cmEffectiveSa)
                                     <th class="thCls">Reopen</th>
-                                    @endif
                                 </tr>
                             </thead>
                             <tbody class="tdata">
@@ -281,6 +281,7 @@
                                         $person_responsible = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_responsible)->first();
                                         $person_assisting = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_assisting)->first();
                                         $matter_office = $list->office_id ? \App\Models\Branch::find($list->office_id) : null;
+                                        $closed_by_info = $list->closed_by ? \App\Models\Staff::select('first_name','last_name')->where('id', $list->closed_by)->first() : null;
                                         $statusLabel = ($list->matter_status ?? 1) == 0 ? 'Discontinued' : ($list->workflow_stage_name ?? 'Closed');
                                         $statusClass = ($list->matter_status ?? 1) == 0 ? 'badge-discontinued' : 'badge-closed';
                                         $isDiscontinued = ($list->matter_status ?? 1) == 0;
@@ -293,6 +294,13 @@
                                             <td class="tdCls">{{ @$person_responsible->first_name ?? '' }} {{ @$person_responsible->last_name ?? '' }}</td>
                                             <td class="tdCls">{{ @$person_assisting->first_name ?? '' }} {{ @$person_assisting->last_name ?? '' }}</td>
                                             <td class="tdCls"><span class="badge {{ $statusClass }}">{{ $statusLabel }}</span></td>
+                                            <td class="tdCls">{{ $list->closed_by ? (@$closed_by_info->first_name . ' ' . @$closed_by_info->last_name) : 'Unknown' }}</td>
+                                            <td class="tdCls">
+                                                {{ $list->discontinue_reason ?? '-' }}
+                                                @if(!empty($list->discontinue_notes))
+                                                    <br><small class="text-muted" title="{{ $list->discontinue_notes }}">{{ Str::limit($list->discontinue_notes, 30) }}</small>
+                                                @endif
+                                            </td>
                                             <td class="tdCls">{{ date('d/m/Y', strtotime($list->created_at)) }}</td>
                                             <td class="tdCls">
                                                 @if($matter_office)
@@ -301,15 +309,21 @@
                                                     <span class="badge badge-warning" style="font-size: 11px;"><i class="fas fa-exclamation-triangle"></i> Not Assigned</span>
                                                 @endif
                                             </td>
-                                            @if($_cmEffectiveSa)
                                             <td class="tdCls">
                                                 @if($isDiscontinued)
-                                                <button class="btn btn-primary btn-sm closed-matter-reopen" type="button" data-matter-id="{{ $list->id }}"><i class="fas fa-redo"></i> Reopen</button>
+                                                    @if($_cmEffectiveSa)
+                                                    <button class="btn btn-primary btn-sm closed-matter-reopen" type="button" data-matter-id="{{ $list->id }}"><i class="fas fa-redo"></i> Reopen</button>
+                                                    @else
+                                                        @if($list->reopen_requested_by)
+                                                            <button class="btn btn-secondary btn-sm" disabled type="button" title="Reopen Requested"><i class="fas fa-clock"></i> Requested</button>
+                                                        @else
+                                                            <button class="btn btn-warning btn-sm closed-matter-request-reopen" type="button" data-matter-id="{{ $list->id }}" title="Request Admin to Reopen Matter"><i class="fas fa-hand-paper"></i> Request</button>
+                                                        @endif
+                                                    @endif
                                                 @else
-                                                <span class="text-muted">â€”</span>
+                                                <span class="text-muted">—</span>
                                                 @endif
                                             </td>
-                                            @endif
                                         </tr>
                                         <?php $i++; ?>
                                     @endforeach
@@ -369,6 +383,8 @@ jQuery(document).ready(function($){
             success: function(resp){
                 if (resp.status && resp.redirect_url) {
                     window.location.href = resp.redirect_url;
+                } else if (resp.status) {
+                    window.location.reload();
                 } else {
                     alert(resp.message || 'Failed to reopen matter.');
                     $btn.prop('disabled', false).html('<i class="fas fa-redo"></i> Reopen');
@@ -377,6 +393,34 @@ jQuery(document).ready(function($){
             error: function(){
                 alert('An error occurred. Please try again.');
                 $btn.prop('disabled', false).html('<i class="fas fa-redo"></i> Reopen');
+            }
+        });
+    });
+
+    $(document).on('click', '.closed-matter-request-reopen', function(e){
+        e.preventDefault();
+        var matterId = $(this).data('matter-id');
+        if (!matterId) return;
+        if (!confirm('Send a request to the admin to reopen this matter?')) return;
+        var $btn = $(this);
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Requesting...');
+        $.ajax({
+            url: '{{ route("clients.matter.request-reopen") }}',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'), 'Accept': 'application/json' },
+            data: JSON.stringify({ matter_id: matterId, source: 'matter_list' }),
+            success: function(resp){
+                if (resp.status) {
+                    alert(resp.message || 'Reopen request has been sent to admins.');
+                    window.location.reload();
+                } else {
+                    alert(resp.message || 'Failed to request reopen.');
+                    $btn.prop('disabled', false).html('<i class="fas fa-hand-paper"></i> Request');
+                }
+            },
+            error: function(){
+                alert('An error occurred. Please try again.');
+                $btn.prop('disabled', false).html('<i class="fas fa-hand-paper"></i> Request');
             }
         });
     });
