@@ -119,8 +119,10 @@
                             </div>
                             <div class="stage-navigation-buttons">
                                 @php
+                                    $workflowViewer = Auth::guard('admin')->user();
                                     $workflowIsDiscontinued = ($workflowSelectedMatter->matter_status ?? 1) == 0;
-                                    $workflowCanReopen = ((Auth::guard('admin')->user()->role ?? 0) == 1);
+                                    $workflowCanReopen = ($workflowViewer instanceof \App\Models\Staff && ($workflowViewer->hasEffectiveSuperAdminPrivileges() || $workflowViewer->hasCrmModule('45')));
+                                    $workflowCanDiscontinue = ($workflowViewer instanceof \App\Models\Staff && ($workflowViewer->hasEffectiveSuperAdminPrivileges() || $workflowViewer->hasCrmModule('44')));
                                 @endphp
                                 @if($workflowIsDiscontinued)
                                     {{-- Discontinued matter: show Reopen (Admin only), Change Workflow --}}
@@ -173,9 +175,11 @@
                                     <button class="btn btn-success btn-sm" id="workflow-tab-proceed-to-next-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" data-next-stage-name="{{ $workflowNextStageName ?? '' }}" data-current-stage-name="{{ $workflowCurrentStageName ?? '' }}" data-is-verification-stage="{{ $workflowIsVerificationStage ? '1' : '0' }}" data-can-verify-and-proceed="{{ $workflowCanVerifyAndProceed ? '1' : '0' }}" title="{{ $workflowNextBtnTitle }}" {{ $workflowNextBtnDisabled ? 'disabled' : '' }}>
                                         Proceed to Next Stage <i class="fas fa-angle-right"></i>
                                     </button>
+                                    @if($workflowCanDiscontinue)
                                     <button class="btn btn-outline-danger btn-sm" id="workflow-tab-discontinue" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Discontinue Matter">
                                         <i class="fas fa-ban"></i> Discontinue
                                     </button>
+                                    @endif
                                     <button class="btn btn-outline-secondary btn-sm" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}" title="Change workflow for this matter">
                                         <i class="fas fa-exchange-alt"></i> Change Workflow
                                     </button>

@@ -687,6 +687,12 @@ class ClientMatterHubController extends Controller
 	public function discontinueClientMatter(Request $request)
 	{
 		try {
+			$user = Auth::guard('admin')->user();
+			$canDiscontinue = $user instanceof \App\Models\Staff && ($user->hasEffectiveSuperAdminPrivileges() || $user->hasCrmModule('44'));
+			if (!$canDiscontinue) {
+				return response()->json(['status' => false, 'message' => 'You do not have permission to close this matter.'], 403);
+			}
+
 			$matterId = $request->input('matter_id');
 			$reason = $request->input('discontinue_reason');
 			$notes = $request->input('discontinue_notes', '');
@@ -888,6 +894,12 @@ class ClientMatterHubController extends Controller
 	public function reopenClientMatter(Request $request)
 	{
 		try {
+			$user = Auth::guard('admin')->user();
+			$canReopen = $user instanceof \App\Models\Staff && ($user->hasEffectiveSuperAdminPrivileges() || $user->hasCrmModule('45'));
+			if (!$canReopen) {
+				return response()->json(['status' => false, 'message' => 'You do not have permission to reopen this matter.'], 403);
+			}
+
 			$matterId = $request->input('matter_id');
 
 			if (!$matterId) {

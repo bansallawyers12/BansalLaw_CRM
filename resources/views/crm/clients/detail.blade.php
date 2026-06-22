@@ -142,6 +142,9 @@ use App\Http\Controllers\Controller;
             if (($cdnHeroIsMatterIdInUrl || $cdnHeroMatterCntForLastUpdate > 0 || $cdnHeroShowMatterDocsForConvertedLead) && $cdnLastUpdateAt) {
                 $cdnHeroLastUpdateOn = $cdnLastUpdateAt->format('d/m/Y');
             }
+
+            $cdnHeroViewer = Auth::guard('admin')->user();
+            $cdnHeroCanDiscontinue = ($cdnHeroViewer instanceof \App\Models\Staff && ($cdnHeroViewer->hasEffectiveSuperAdminPrivileges() || $cdnHeroViewer->hasCrmModule('44')));
         @endphp
 
         <section class="cdn-client-hero" aria-label="Client summary">
@@ -184,7 +187,7 @@ use App\Http\Controllers\Controller;
                             @if(is_array($matterFormForLead ?? null))
                                 <button type="button" class="btn cdn-client-hero__matter-btn" id="cdn-open-add-matter" title="Add a new matter for this client" onclick="openAddMatterModal()">Add Matter</button>
                             @endif
-                            @if($cdnMatterRefLabel && isset($cdnMatterRow) && $cdnMatterRow)
+                            @if($cdnHeroCanDiscontinue && $cdnMatterRefLabel && isset($cdnMatterRow) && $cdnMatterRow)
                                 <button type="button" class="btn cdn-client-hero__matter-btn text-danger" title="Close this matter" data-matter-id="{{ $cdnMatterRow->id }}" onclick="openCloseMatterModal(this)" style="background: rgba(211, 47, 47, 0.1); border-color: rgba(211, 47, 47, 0.2); font-weight: 600;">Close Matter</button>
                             @endif
                         </div>

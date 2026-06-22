@@ -73,6 +73,7 @@
 @php
     $_cmViewer = Auth::user();
     $_cmEffectiveSa = $_cmViewer instanceof \App\Models\Staff && $_cmViewer->hasEffectiveSuperAdminPrivileges();
+    $_cmCanReopen = $_cmEffectiveSa || ($_cmViewer instanceof \App\Models\Staff && $_cmViewer->hasCrmModule('45'));
     $_cmInsightsBtn = $_cmViewer && ($_cmEffectiveSa || in_array((int) ($_cmViewer->role ?? 0), [1, 12], true));
 @endphp
 <div class="listing-container">
@@ -311,7 +312,7 @@
                                             </td>
                                             <td class="tdCls">
                                                 @if($isDiscontinued)
-                                                    @if($_cmEffectiveSa)
+                                                    @if($_cmCanReopen)
                                                     <button class="btn btn-primary btn-sm closed-matter-reopen" type="button" data-matter-id="{{ $list->id }}"><i class="fas fa-redo"></i> Reopen</button>
                                                     @else
                                                         @if($list->reopen_requested_by)
