@@ -1353,8 +1353,15 @@
 
         // NEW: Attachment indicator
         const hasAttachments = email.attachments && Array.isArray(email.attachments) && email.attachments.length > 0;
-        const attachmentIcon = hasAttachments 
+        const regularAttachments = hasAttachments ? getRegularAttachments(email.attachments) : [];
+        const attachmentIcon = hasAttachments
             ? `<i class="fas fa-paperclip attachment-indicator" title="${email.attachments.length} attachment(s)"></i>`
+            : '';
+        const attachmentNamesHtml = regularAttachments.length
+            ? `<div class="email-item-attachments">${regularAttachments.slice(0, 3).map(function(att) {
+                const name = att.filename || att.display_name || att.file_name || 'Attachment';
+                return `<span class="email-item-attachment-line"><i class="fas fa-file-alt"></i> ${escapeHtml(name)}</span>`;
+            }).join('')}${regularAttachments.length > 3 ? `<span class="email-item-attachment-more">+${regularAttachments.length - 3} more</span>` : ''}</div>`
             : '';
 
         // NEW: Label badges
@@ -1380,6 +1387,7 @@
             <div class="email-badges">
                 ${labelBadges}
             </div>
+            ${attachmentNamesHtml}
         `;
 
         // Add click handler to view email

@@ -42,6 +42,70 @@ class PythonConverterService
     }
 
     /**
+     * Convert office document bytes to PDF using the Python conversion API.
+     */
+    public function convertBytesToPdf(string $fileContent, string $filename, ?int $timeoutSeconds = null): array
+    {
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $allowedExtensions = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rtf', 'odt', 'ods', 'odp', 'csv'];
+
+        if (! in_array($extension, $allowedExtensions, true)) {
+            return [
+                'success' => false,
+                'error' => 'Unsupported file format for conversion.',
+            ];
+        }
+
+        $maxSize = 50 * 1024 * 1024;
+        if (strlen($fileContent) > $maxSize) {
+            return [
+                'success' => false,
+                'error' => 'File too large. Maximum size is 50MB.',
+            ];
+        }
+
+        try {
+            $client = $this->getHttpClient();
+            if ($timeoutSeconds !== null && $timeoutSeconds > 0) {
+                $client = $client->timeout($timeoutSeconds);
+            }
+
+            $response = $client
+                ->attach('file', $fileContent, $filename)
+                ->post($this->apiUrl . '/convert-json');
+
+            if ($response->successful()) {
+                $data = $response->json();
+
+                if (! empty($data['success'])) {
+                    return [
+                        'success' => true,
+                        'pdf_data' => base64_decode($data['pdf_data']),
+                        'filename' => $data['filename'] ?? (pathinfo($filename, PATHINFO_FILENAME) . '.pdf'),
+                        'method' => $data['method'] ?? 'python',
+                        'message' => $data['message'] ?? 'Conversion successful',
+                    ];
+                }
+
+                throw new \Exception($data['error'] ?? 'Conversion failed');
+            }
+
+            $errorData = $response->json();
+            throw new \Exception($errorData['error'] ?? 'HTTP request failed');
+        } catch (\Exception $e) {
+            Log::warning('Python office-to-PDF conversion failed', [
+                'error' => $e->getMessage(),
+                'file' => $filename,
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Convert a DOC/DOCX file to PDF using the Python API
      */
     public function convertToPdf(UploadedFile $file, string $outputPath = null): array
@@ -126,9 +190,21 @@ class PythonConverterService
     {
         try {
             $response = $this->getHttpClient()->get($this->apiUrl . '/health');
-            return $response->successful() && $response->json('status') === 'healthy';
+            if ($response->successful()) {
+                return ($response->json('status') === 'healthy');
+            }
         } catch (\Exception $e) {
             Log::warning('Python API health check failed', ['error' => $e->getMessage()]);
+        }
+
+        // Health may fail while convert-json still works; probe root as fallback.
+        try {
+            $response = $this->getHttpClient()->get($this->apiUrl . '/');
+
+            return $response->successful();
+        } catch (\Exception $e) {
+            Log::warning('Python API root check failed', ['error' => $e->getMessage()]);
+
             return false;
         }
     }

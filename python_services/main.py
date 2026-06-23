@@ -149,7 +149,7 @@ async def health_check():
     try:
         import weasyprint  # noqa: F401
         weasyprint_status = "ready"
-    except ImportError:
+    except (ImportError, OSError):
         weasyprint_status = "unavailable"
 
     return {
@@ -385,15 +385,25 @@ async def batch_convert_pages(request: Request):
 # DOCX Converter Endpoints
 # ============================================================================
 
+# Supported office formats for LibreOffice conversion to PDF
+OFFICE_TO_PDF_EXTENSIONS = [
+    '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+    '.rtf', '.odt', '.ods', '.odp', '.csv',
+]
+
+
 @app.post("/convert")
 async def convert_docx_to_pdf(file: UploadFile = File(...)):
-    """Convert DOCX/DOC file to PDF."""
+    """Convert office document to PDF."""
     try:
         logger.info(f"Converting document: {file.filename}")
         
         # Validate file
-        if not validate_file_type(file.filename, ['.doc', '.docx']):
-            raise HTTPException(status_code=400, detail="Invalid file type. Only DOC/DOCX files are allowed.")
+        if not validate_file_type(file.filename, OFFICE_TO_PDF_EXTENSIONS):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid file type. Supported: DOC, DOCX, XLS, XLSX, PPT, PPTX, RTF, ODT, ODS, ODP, CSV.",
+            )
         
         # Read file content
         content = await file.read()

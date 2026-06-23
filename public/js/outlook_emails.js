@@ -1104,6 +1104,172 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function resolveAttachmentDisplayName(att) {
+        if (!att) {
+            return 'Attachment';
+        }
+        return att.filename || att.file_name || att.display_name || 'Attachment';
+    }
+
+    function formatFileSize(bytes) {
+        const size = Number(bytes) || 0;
+        if (size <= 0) {
+            return '';
+        }
+        if (size < 1024) {
+            return size + ' B';
+        }
+        if (size < 1024 * 1024) {
+            return (size / 1024).toFixed(1) + ' KB';
+        }
+        return (size / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function getEmailAttachmentIconClass(att) {
+        const name = resolveAttachmentDisplayName(att).toLowerCase();
+        const ext = name.includes('.') ? name.split('.').pop() : '';
+        const type = String(att.content_type || '').toLowerCase();
+
+        if (ext === 'pdf' || type.includes('pdf')) {
+            return 'fa-file-pdf email-attachment-icon--pdf';
+        }
+        if (['doc', 'docx'].includes(ext) || type.includes('word')) {
+            return 'fa-file-word email-attachment-icon--word';
+        }
+        if (['xls', 'xlsx', 'csv'].includes(ext) || type.includes('excel') || type.includes('spreadsheet')) {
+            return 'fa-file-excel email-attachment-icon--excel';
+        }
+        if (['ppt', 'pptx'].includes(ext) || type.includes('powerpoint')) {
+            return 'fa-file-powerpoint email-attachment-icon--ppt';
+        }
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext) || type.startsWith('image/')) {
+            return 'fa-file-image email-attachment-icon--image';
+        }
+        if (['zip', 'rar', '7z'].includes(ext)) {
+            return 'fa-file-archive';
+        }
+        if (ext === 'msg') {
+            return 'fa-envelope';
+        }
+        return 'fa-file-alt';
+    }
+
+    function canPreviewEmailAttachment(att) {
+        const type = String(att.content_type || '').toLowerCase();
+        const name = resolveAttachmentDisplayName(att).toLowerCase();
+        return type.startsWith('image/')
+            || type.includes('pdf')
+            || /\.(pdf|png|jpe?g|gif|webp|bmp|txt|csv)$/.test(name);
+    }
+
+    function getAttachmentDownloadUrl(att) {
+        if (att.id) {
+            return baseUrl + '/mail-attachments/' + att.id + '/download';
+        }
+        return att.file_path || '#';
+    }
+
+    function getAttachmentPreviewUrl(att) {
+        if (att.id) {
+            return baseUrl + '/mail-attachments/' + att.id + '/preview';
+        }
+        return att.file_path || '#';
+    }
+
+    function collectEmailAttachmentItems(email) {
+        const items = [];
+
+        if (email.msg_file_url) {
+            items.push({
+                name: 'Original email.msg',
+                size: null,
+                downloadUrl: email.msg_file_url,
+                previewUrl: null,
+                icon: 'fa-envelope'
+            });
+        }
+
+        if (email.pdf_file_url) {
+            items.push({
+                name: 'Parsed email.pdf',
+                size: null,
+                downloadUrl: email.pdf_file_url,
+                previewUrl: email.pdf_file_url,
+                icon: 'fa-file-pdf email-attachment-icon--pdf'
+            });
+        }
+
+        (email.attachments || []).forEach(function(att) {
+            if (att.is_inline) {
+                return;
+            }
+
+            items.push({
+                id: att.id,
+                name: resolveAttachmentDisplayName(att),
+                size: att.file_size,
+                downloadUrl: getAttachmentDownloadUrl(att),
+                previewUrl: canPreviewEmailAttachment(att) ? getAttachmentPreviewUrl(att) : null,
+                icon: getEmailAttachmentIconClass(att)
+            });
+        });
+
+        return items;
+    }
+
+    function renderEmailAttachmentListSummary(email) {
+        const items = collectEmailAttachmentItems(email);
+        if (!items.length) {
+            return '';
+        }
+
+        const lines = items.slice(0, 3).map(function(item) {
+            return '<span class="email-item-attachment-line"><i class="fas fa-file-alt"></i> ' + escapeHtml(item.name) + '</span>';
+        }).join('');
+
+        const extra = items.length > 3
+            ? '<span class="email-item-attachment-more">+' + (items.length - 3) + ' more</span>'
+            : '';
+
+        return '<div class="email-item-attachments">' + lines + extra + '</div>';
+    }
+
+    function renderReadingPaneAttachments(email) {
+        const items = collectEmailAttachmentItems(email);
+        if (!items.length) {
+            return '';
+        }
+
+        const rows = items.map(function(item) {
+            const sizeLabel = formatFileSize(item.size);
+            const previewBtn = item.previewUrl
+                ? '<a href="' + item.previewUrl + '" target="_blank" rel="noopener" class="email-attachment-btn email-attachment-btn--preview" title="Preview ' + escapeHtml(item.name) + '"><i class="fas fa-eye"></i> Preview</a>'
+                : '';
+
+            return ''
+                + '<div class="email-attachment-row">'
+                + '  <div class="email-attachment-row__icon"><i class="fas ' + item.icon + '"></i></div>'
+                + '  <div class="email-attachment-row__info">'
+                + '    <div class="email-attachment-row__name" title="' + escapeHtml(item.name) + '">' + escapeHtml(item.name) + '</div>'
+                + (sizeLabel ? '    <div class="email-attachment-row__meta">' + escapeHtml(sizeLabel) + '</div>' : '')
+                + '  </div>'
+                + '  <div class="email-attachment-row__actions">'
+                + previewBtn
+                + '    <a href="' + item.downloadUrl + '" target="_blank" rel="noopener" class="email-attachment-btn email-attachment-btn--download" title="Download ' + escapeHtml(item.name) + '"><i class="fas fa-download"></i> Download</a>'
+                + '  </div>'
+                + '</div>';
+        }).join('');
+
+        return ''
+            + '<div class="email-attachments-panel">'
+            + '  <div class="email-attachments-panel__header">'
+            + '    <i class="fas fa-paperclip"></i>'
+            + '    <span>Attachments (' + items.length + ')</span>'
+            + '  </div>'
+            + '  <div class="email-attachments-panel__list">' + rows + '</div>'
+            + '</div>';
+    }
+
     function renderEmailList() {
         emailListContainer.innerHTML = '';
         
@@ -1124,7 +1290,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const preview = (email.text_preview || '').substring(0, 50);
             
             const hasAttachment = (email.attachments && email.attachments.length > 0) || email.msg_file_url || email.pdf_file_url;
-            const attachmentIcon = hasAttachment ? '<i class="fas fa-paperclip" title="Has attachments" style="color: #666; margin-left: 5px;"></i>' : '';
+            const attachmentIcon = hasAttachment ? '<i class="fas fa-paperclip email-list-clip" title="Has attachments"></i>' : '';
+            const attachmentSummary = renderEmailAttachmentListSummary(email);
 
             let dateStr = '';
             if (email.created_at) {
@@ -1137,6 +1304,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}</div>
                 <div class="email-subject">${escapeHtml(subject)}</div>
                 <div class="email-preview">${escapeHtml(preview)}</div>
+                ${attachmentSummary}
             `;
 
             el.addEventListener('click', () => {
@@ -1170,52 +1338,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Render Attachments if any exist
         const attachmentsContainer = document.getElementById('attachmentsContainer');
-        const hasAttachments = (email.attachments && email.attachments.length > 0) || email.msg_file_url || email.pdf_file_url;
+        const attachmentHtml = renderReadingPaneAttachments(email);
 
-        if (hasAttachments) {
-            attachmentsContainer.style.display = 'flex';
-            attachmentsContainer.innerHTML = ''; // clear
-            
-            if (email.msg_file_url) {
-                const msgBadge = document.createElement('a');
-                msgBadge.href = email.msg_file_url;
-                msgBadge.target = '_blank';
-                msgBadge.className = 'attachment-badge';
-                msgBadge.style.cssText = 'padding: 4px 8px; background: #e1dfdd; border: 1px solid #c8c6c4; border-radius: 4px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; color: #0078d4; text-decoration: none; font-weight: 600;';
-                msgBadge.innerHTML = `<i class="fas fa-download"></i> Download Original .msg`;
-                msgBadge.download = '';
-                attachmentsContainer.appendChild(msgBadge);
-            }
-
-            if (email.pdf_file_url) {
-                const pdfBadge = document.createElement('a');
-                pdfBadge.href = email.pdf_file_url;
-                pdfBadge.target = '_blank';
-                pdfBadge.className = 'attachment-badge';
-                pdfBadge.style.cssText = 'padding: 4px 8px; background: #fdf8f6; border: 1px solid #f2cfc7; border-radius: 4px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; color: #d83b01; text-decoration: none; font-weight: 600;';
-                pdfBadge.innerHTML = `<i class="fas fa-file-pdf"></i> Download Parsed PDF`;
-                pdfBadge.download = '';
-                attachmentsContainer.appendChild(pdfBadge);
-            }
-
-            if (email.attachments && email.attachments.length > 0) {
-                email.attachments.forEach(att => {
-                    const badge = document.createElement('a');
-                    badge.href = att.file_path || '#';
-                    badge.target = '_blank';
-                    badge.className = 'attachment-badge';
-                    badge.style.cssText = 'padding: 4px 8px; background: #f3f2f1; border: 1px solid #edebe9; border-radius: 4px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; color: #323130; text-decoration: none;';
-                    
-                    let iconClass = 'fa-paperclip';
-                    if (att.file_name && att.file_name.toLowerCase().endsWith('.pdf')) iconClass = 'fa-file-pdf';
-                    else if (att.file_name && (att.file_name.toLowerCase().endsWith('.jpg') || att.file_name.toLowerCase().endsWith('.png'))) iconClass = 'fa-file-image';
-
-                    badge.innerHTML = `<i class="fas ${iconClass}"></i> ${escapeHtml(att.file_name)}`;
-                    attachmentsContainer.appendChild(badge);
-                });
-            }
+        if (attachmentHtml) {
+            attachmentsContainer.style.display = 'block';
+            attachmentsContainer.innerHTML = attachmentHtml;
         } else {
             attachmentsContainer.style.display = 'none';
+            attachmentsContainer.innerHTML = '';
         }
 
         const iframe = document.getElementById('readBody');
@@ -1226,7 +1356,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (email.pdf_file_url) {
                 pdfToPreview = email.pdf_file_url;
             } else if (email.attachments && email.attachments.length > 0) {
-                const pdfAtt = email.attachments.find(a => a.file_name && a.file_name.toLowerCase().endsWith('.pdf'));
+                const pdfAtt = email.attachments.find(function(a) {
+                    const name = resolveAttachmentDisplayName(a).toLowerCase();
+                    return name.endsWith('.pdf');
+                });
                 if (pdfAtt) {
                     pdfToPreview = pdfAtt.file_path;
                 }

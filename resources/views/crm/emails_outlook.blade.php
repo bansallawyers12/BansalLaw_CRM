@@ -198,9 +198,7 @@
                     <div class="meta-date" id="readDate"></div>
                 </div>
 
-                <div id="attachmentsContainer" style="margin-top: 15px; display: none; gap: 10px; flex-wrap: wrap;">
-                    <!-- Attachments injected here via JS -->
-                </div>
+                <div id="attachmentsContainer" class="email-attachments-container"></div>
             </div>
             
             <div class="reading-body">

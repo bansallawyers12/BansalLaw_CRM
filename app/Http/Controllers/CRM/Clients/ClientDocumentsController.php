@@ -24,7 +24,9 @@ use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
 use App\Traits\LogsClientActivity;
 use App\Support\StaffClientVisibility;
+use App\Services\PythonConverterService;
 use Illuminate\Http\JsonResponse;
+use PhpOffice\PhpWord\IOFactory;
 use League\Flysystem\UnableToCheckFileExistence;
 
 class ClientDocumentsController extends Controller
@@ -2278,9 +2280,10 @@ class ClientDocumentsController extends Controller
     }
 
     /**
-     * Preview document in browser: redirects to a short-lived S3 presigned URL (inline).
+     * Preview document in browser. Use ?embed=1 for in-page iframe/img preview (streams via app).
+     * Without embed, S3 files redirect to a short-lived presigned URL (works in a new tab).
      */
-    public function preview_document(int $id)
+    public function preview_document(Request $request, int $id)
     {
         $document = Document::findOrFail($id);
         if (! StaffClientVisibility::canAccessClientOrLead((int) $document->client_id)) {
@@ -2294,11 +2297,55 @@ class ClientDocumentsController extends Controller
 
         $filename = basename($s3Key);
         $mime = $this->mimeTypeForS3Key($s3Key);
+        $downloadFilename = $this->resolveDocumentPreviewFilename($document, $filename);
+        $dispositionFilename = str_replace('"', '\\"', $downloadFilename);
+        $inlineDisposition = 'inline; filename="' . $dispositionFilename . '"';
+        $attachmentDisposition = 'attachment; filename="' . $dispositionFilename . '"';
+        $contentDisposition = $request->boolean('download') ? $attachmentDisposition : $inlineDisposition;
+
+        if ($request->boolean('embed')) {
+            try {
+                $displayFilename = $this->resolveDocumentPreviewFilename($document, $filename);
+
+                if ($this->isOfficeDocumentPreviewType($displayFilename, (string) ($document->filetype ?? ''))) {
+                    $fileContent = $this->s3Disk()->get($s3Key);
+                    $pdfBytes = $this->convertOfficeDocumentToPdfBytes($fileContent, $displayFilename);
+                    if ($pdfBytes !== null) {
+                        $pdfName = pathinfo($displayFilename, PATHINFO_FILENAME) . '.pdf';
+
+                        return response($pdfBytes, 200, [
+                            'Content-Type' => 'application/pdf',
+                            'Content-Disposition' => 'inline; filename="' . str_replace('"', '\\"', $pdfName) . '"',
+                        ]);
+                    }
+
+                    $htmlPreview = $this->convertOfficeDocumentToHtml($fileContent, $displayFilename);
+                    if ($htmlPreview !== null) {
+                        return response($htmlPreview, 200, [
+                            'Content-Type' => 'text/html; charset=UTF-8',
+                        ]);
+                    }
+
+                    return response($this->officePreviewErrorHtml(), 503)
+                        ->header('Content-Type', 'text/html; charset=UTF-8');
+                }
+
+                return $this->s3Disk()->response($s3Key, $filename, [
+                    'Content-Type' => $mime,
+                    'Content-Disposition' => $inlineDisposition,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('S3 embedded preview error: ' . $e->getMessage(), ['document_id' => $id]);
+
+                return abort(500, 'Error loading preview');
+            }
+        }
 
         if (! $this->documentsDiskUsesS3Driver()) {
-            return $this->s3Disk()->response($s3Key, $filename, [
+            return $this->s3Disk()->response($s3Key, $downloadFilename, [
                 'Content-Type' => $mime,
-            ], 'inline');
+                'Content-Disposition' => $contentDisposition,
+            ]);
         }
 
         try {
@@ -2306,7 +2353,7 @@ class ClientDocumentsController extends Controller
                 $s3Key,
                 now()->addMinutes(10),
                 [
-                    'ResponseContentDisposition' => 'inline; filename="' . str_replace('"', '\\"', $filename) . '"',
+                    'ResponseContentDisposition' => $contentDisposition,
                     'ResponseContentType' => $mime,
                 ]
             );
@@ -2317,6 +2364,253 @@ class ClientDocumentsController extends Controller
 
             return abort(500, 'Error generating preview link');
         }
+    }
+
+    /**
+     * Resolve a friendly filename for preview/conversion.
+     */
+    private function resolveDocumentPreviewFilename(Document $document, string $fallbackFilename): string
+    {
+        $fileName = trim((string) ($document->file_name ?? ''));
+        $fileType = strtolower(trim((string) ($document->filetype ?? '')));
+
+        if ($fileName !== '' && $fileType !== '') {
+            if (str_ends_with(strtolower($fileName), '.' . $fileType)) {
+                return $fileName;
+            }
+
+            return $fileName . '.' . $fileType;
+        }
+
+        return basename($fallbackFilename);
+    }
+
+    private function isOfficeDocumentPreviewType(string $filename, string $fileType = ''): bool
+    {
+        $ext = strtolower($fileType !== '' ? $fileType : pathinfo($filename, PATHINFO_EXTENSION));
+
+        return in_array($ext, ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rtf', 'odt', 'ods', 'odp'], true);
+    }
+
+    private function convertOfficeDocumentToPdfBytes(string $fileContent, string $filename): ?string
+    {
+        $converter = app(PythonConverterService::class);
+        $result = $converter->convertBytesToPdf($fileContent, $filename, 45);
+        if (! empty($result['success']) && ! empty($result['pdf_data'])) {
+            return $result['pdf_data'];
+        }
+
+        Log::warning('Python office preview conversion failed', [
+            'file' => $filename,
+            'error' => $result['error'] ?? 'unknown',
+        ]);
+
+        $pdfBytes = $this->convertOfficeDocumentToPdfWithMicrosoftOffice($fileContent, $filename);
+        if ($pdfBytes !== null) {
+            return $pdfBytes;
+        }
+
+        return $this->convertOfficeDocumentToPdfWithLibreOffice($fileContent, $filename);
+    }
+
+    private function convertOfficeDocumentToHtml(string $fileContent, string $filename): ?string
+    {
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        if (! in_array($extension, ['doc', 'docx', 'rtf', 'odt'], true)) {
+            return null;
+        }
+
+        $safeFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($filename)) ?: ('document.' . $extension);
+        $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'crm_office_html_' . uniqid('', true);
+
+        if (! @mkdir($tempDir, 0755, true) && ! is_dir($tempDir)) {
+            return null;
+        }
+
+        $inputPath = $tempDir . DIRECTORY_SEPARATOR . $safeFilename;
+        file_put_contents($inputPath, $fileContent);
+
+        try {
+            $phpWord = IOFactory::load($inputPath);
+            $writer = IOFactory::createWriter($phpWord, 'HTML');
+            ob_start();
+            $writer->save('php://output');
+            $body = ob_get_clean();
+
+            if ($body === false || trim($body) === '') {
+                return null;
+            }
+
+            return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Document preview</title>'
+                . '<style>body{font-family:Segoe UI,Calibri,Arial,sans-serif;font-size:14px;line-height:1.5;color:#222;margin:0;padding:20px;background:#fff;}'
+                . 'table{border-collapse:collapse;} td,th{border:1px solid #ccc;padding:4px 8px;}</style></head><body>'
+                . $body
+                . '</body></html>';
+        } catch (\Throwable $e) {
+            Log::warning('PhpWord HTML office preview failed', [
+                'file' => $filename,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        } finally {
+            foreach (glob($tempDir . DIRECTORY_SEPARATOR . '*') ?: [] as $tempFile) {
+                @unlink($tempFile);
+            }
+            @rmdir($tempDir);
+        }
+    }
+
+    private function convertOfficeDocumentToPdfWithMicrosoftOffice(string $fileContent, string $filename): ?string
+    {
+        if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN' || ! class_exists('COM')) {
+            return null;
+        }
+
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $progid = match (true) {
+            in_array($extension, ['doc', 'docx', 'rtf', 'odt'], true) => 'Word.Application',
+            in_array($extension, ['xls', 'xlsx', 'csv', 'ods'], true) => 'Excel.Application',
+            in_array($extension, ['ppt', 'pptx', 'odp'], true) => 'PowerPoint.Application',
+            default => null,
+        };
+
+        if ($progid === null) {
+            return null;
+        }
+
+        $safeFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($filename)) ?: ('document.' . $extension);
+        $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'crm_office_preview_' . uniqid('', true);
+
+        if (! @mkdir($tempDir, 0755, true) && ! is_dir($tempDir)) {
+            return null;
+        }
+
+        $inputPath = $tempDir . DIRECTORY_SEPARATOR . $safeFilename;
+        $pdfPath = $tempDir . DIRECTORY_SEPARATOR . pathinfo($safeFilename, PATHINFO_FILENAME) . '.pdf';
+        file_put_contents($inputPath, $fileContent);
+
+        try {
+            if ($progid === 'Word.Application') {
+                $app = new \COM('Word.Application');
+                $app->Visible = false;
+                $app->DisplayAlerts = 0;
+                $doc = $app->Documents->Open($inputPath, false, true);
+                $doc->ExportAsFixedFormat($pdfPath, 17);
+                $doc->Close(false);
+                $app->Quit(false);
+            } elseif ($progid === 'Excel.Application') {
+                $app = new \COM('Excel.Application');
+                $app->Visible = false;
+                $app->DisplayAlerts = false;
+                $workbook = $app->Workbooks->Open($inputPath, false, true);
+                $workbook->ExportAsFixedFormat(0, $pdfPath);
+                $workbook->Close(false);
+                $app->Quit();
+            } else {
+                $app = new \COM('PowerPoint.Application');
+                $app->Visible = 0;
+                $presentation = $app->Presentations->Open($inputPath, 0, 0, 0);
+                $presentation->SaveAs($pdfPath, 32);
+                $presentation->Close();
+                $app->Quit();
+            }
+
+            $pdfBytes = is_file($pdfPath) ? file_get_contents($pdfPath) : null;
+
+            return ($pdfBytes === false) ? null : $pdfBytes;
+        } catch (\Throwable $e) {
+            Log::warning('Microsoft Office preview conversion failed', [
+                'file' => $filename,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        } finally {
+            foreach (glob($tempDir . DIRECTORY_SEPARATOR . '*') ?: [] as $tempFile) {
+                @unlink($tempFile);
+            }
+            @rmdir($tempDir);
+        }
+    }
+
+    private function convertOfficeDocumentToPdfWithLibreOffice(string $fileContent, string $filename): ?string
+    {
+        $safeFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($filename)) ?: ('document.' . pathinfo($filename, PATHINFO_EXTENSION));
+        $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'crm_office_preview_' . uniqid('', true);
+
+        if (! @mkdir($tempDir, 0755, true) && ! is_dir($tempDir)) {
+            return null;
+        }
+
+        $inputPath = $tempDir . DIRECTORY_SEPARATOR . $safeFilename;
+        file_put_contents($inputPath, $fileContent);
+
+        $libreOfficePath = $this->resolveLibreOfficeExecutablePath();
+        if ($libreOfficePath === null) {
+            return null;
+        }
+
+        $command = escapeshellarg($libreOfficePath) . ' --headless --convert-to pdf --outdir '
+            . escapeshellarg($tempDir) . ' ' . escapeshellarg($inputPath);
+
+        exec($command . ' 2>&1', $output, $resultCode);
+
+        $pdfPath = $tempDir . DIRECTORY_SEPARATOR . pathinfo($safeFilename, PATHINFO_FILENAME) . '.pdf';
+        $pdfBytes = (is_file($pdfPath) && $resultCode === 0) ? file_get_contents($pdfPath) : null;
+
+        if ($pdfBytes === false) {
+            $pdfBytes = null;
+        }
+
+        foreach (glob($tempDir . DIRECTORY_SEPARATOR . '*') ?: [] as $tempFile) {
+            @unlink($tempFile);
+        }
+        @rmdir($tempDir);
+
+        if ($pdfBytes === null) {
+            Log::warning('LibreOffice office preview conversion failed', [
+                'file' => $filename,
+                'output' => implode("\n", $output),
+                'code' => $resultCode,
+            ]);
+        }
+
+        return $pdfBytes;
+    }
+
+    private function resolveLibreOfficeExecutablePath(): ?string
+    {
+        $configured = trim((string) env('LIBREOFFICE_PATH', ''));
+        if ($configured !== '' && is_file($configured)) {
+            return $configured;
+        }
+
+        $candidates = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN'
+            ? [
+                'C:\\Program Files\\LibreOffice\\program\\soffice.exe',
+                'C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe',
+            ]
+            : ['libreoffice', 'soffice', '/usr/bin/libreoffice', '/usr/bin/soffice'];
+
+        foreach ($candidates as $candidate) {
+            if ($candidate === 'libreoffice' || $candidate === 'soffice') {
+                return $candidate;
+            }
+            if (is_file($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private function officePreviewErrorHtml(): string
+    {
+        return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Preview unavailable</title></head><body style="font-family:Segoe UI,sans-serif;padding:24px;color:#444;">'
+            . '<p><strong>Unable to preview this Office file inline.</strong></p>'
+            . '<p>Install LibreOffice on this server for PDF preview, or use <strong>Download original</strong> to open the file.</p>'
+            . '</body></html>';
     }
 
     /**

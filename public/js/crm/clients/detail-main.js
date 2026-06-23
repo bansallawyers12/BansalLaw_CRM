@@ -756,113 +756,192 @@ $(document).ready(function() {
     }
 
 });
-    function previewFile(fileType, fileUrl, containerId) {
+    function renderPreviewLoadingOverlay(message) {
+        return `
+            <div class="preview-loading-overlay" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.96); z-index: 5;">
+                <div style="text-align: center; padding: 16px;">
+                    <i class="fas fa-spinner fa-spin fa-2x" style="color: #4a90e2;"></i>
+                    <p class="preview-loading-message" style="margin-top: 12px; margin-bottom: 0; color: #666; font-size: 14px;">${message}</p>
+                </div>
+            </div>
+        `;
+    }
 
-        //console.log('fileType='+fileType);
-
-        //console.log('fileUrl='+fileUrl);
-
-        //console.log('containerId='+containerId);
-
-        const container = $(`.${containerId}`);
-
-
-
-        // Show loading state
+    function mountIframePreview(container, options) {
+        const embeddedPreviewUrl = options.embeddedPreviewUrl;
+        const toolbarHtml = options.toolbarHtml || '';
+        const loadingMessage = options.loadingMessage || 'Loading preview…';
+        const slowMessage = options.slowMessage || 'Still loading preview… this may take up to a minute.';
+        const frameHeight = options.frameHeight || 'calc(100vh - 100px)';
+        const onError = typeof options.onError === 'function' ? options.onError : function() {};
 
         container.html(`
-
-            <div class="preview-content" style="flex: 1; display: flex; align-items: center; justify-content: center;">
-
-                <div style="text-align: center;">
-
-                    <i class="fas fa-spinner fa-spin fa-2x" style="color: #4a90e2;"></i>
-
-                    <p style="margin-top: 10px; color: #666;">Loading preview...</p>
-
+            <div class="preview-content preview-content-with-loader" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%; position: relative; min-height: 400px;">
+                ${toolbarHtml}
+                <div class="preview-iframe-wrap" style="flex: 1; position: relative; width: 100%; min-height: 360px;">
+                    ${renderPreviewLoadingOverlay(loadingMessage)}
+                    <iframe class="preview-iframe" src="${embeddedPreviewUrl}" title="Document preview" style="width: 100%; height: ${frameHeight}; min-height: 360px; border: none; background: #fff;"></iframe>
                 </div>
-
             </div>
-
         `);
 
+        const $overlay = container.find('.preview-loading-overlay');
+        const $iframe = container.find('.preview-iframe');
+        const $message = container.find('.preview-loading-message');
+        let finished = false;
 
+        const finishLoading = function() {
+            if (finished) {
+                return;
+            }
+            finished = true;
+            clearTimeout(slowTimer);
+            clearTimeout(hardTimeout);
+            $overlay.stop(true, true).fadeOut(200, function() {
+                $(this).remove();
+            });
+        };
 
-        // Determine content based on file type
+        const slowTimer = setTimeout(function() {
+            if (!finished && $message.length) {
+                $message.text(slowMessage);
+            }
+        }, 6000);
 
-        let content = '';
+        const hardTimeout = setTimeout(function() {
+            if (!finished) {
+                finished = true;
+                onError();
+            }
+        }, 120000);
 
+        $iframe.on('load', function() {
+            finishLoading();
+        });
 
-
-        if (fileType.toLowerCase().match(/(jpg|jpeg|png|gif)$/)) {
-
-            const img = new Image();
-
-            img.onload = function() {
-
-                container.html(`
-
-                    <div class="preview-content" style="flex: 1; overflow: auto; text-align: center;">
-
-                        <img src="${fileUrl}" alt="Document Preview" style="max-width: 100%; max-height: calc(100vh - 300px); margin: auto; display: block;" />
-
-                    </div>
-
-                `);
-
-            };
-
-            img.src = fileUrl;
-
-        } else if (fileType.toLowerCase() === 'pdf') {
-
-            container.html(`
-
-                <div class="preview-content" style="flex: 1; overflow: hidden;width: 475px !important;">
-
-                    <iframe src="${fileUrl}" type="application/pdf" style="width: 100%; height: calc(100vh - 100px); border: none;"></iframe>
-
-                </div>
-
-            `);
-
-        }
-
-        else if (fileType.toLowerCase().match(/^(docx?|xlsx?|pptx?)$/)) {
-
-            const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
-
-            container.html(`
-
-                <div class="preview-content" style="flex: 1; overflow: hidden; width: 100%;">
-
-                    <iframe src="${officeViewerUrl}" class="doc-viewer" style="width: 100%; height: calc(100vh - 100px); border: none;"></iframe>
-
-                </div>
-
-            `);
-
-        }
-
-        else {
-
-            container.html(`
-
-                <div class="preview-content" style="flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-
-                    <i class="fas fa-file fa-3x" style="color: #6c757d; margin-bottom: 15px;"></i>
-
-                    <p style="margin-bottom: 15px;">Preview not available for this file type.</p>
-
-                    <a href="${fileUrl}" target="_blank" class="btn btn-primary">Open File</a>
-
-                </div>
-
-            `);
-
-        }
-
+        $iframe.on('error', function() {
+            if (!finished) {
+                finished = true;
+                onError();
+            }
+        });
     }
+
+    function previewFile(fileType, fileUrl, containerId) {
+
+        const container = $(`.${containerId}`);
+        if (!container.length) {
+            console.error('Preview container not found:', containerId);
+            return;
+        }
+
+        const embeddedPreviewUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'embed=1';
+        const normalizedType = (fileType || '').toLowerCase();
+        const isOfficePreview = normalizedType.match(/^(docx?|xlsx?|pptx?|rtf|odt|ods|odp)$/);
+
+        container.html(`
+            <div class="preview-content" style="flex: 1; display: flex; align-items: center; justify-content: center;">
+                <div style="text-align: center;">
+                    <i class="fas fa-spinner fa-spin fa-2x" style="color: #4a90e2;"></i>
+                    <p style="margin-top: 10px; color: #666;">${isOfficePreview ? 'Converting document for preview…' : 'Loading preview…'}</p>
+                </div>
+            </div>
+        `);
+
+        if (container[0] && typeof container[0].scrollIntoView === 'function') {
+            container[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        const showPreviewError = function() {
+            container.html(`
+                <div class="preview-content" style="flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                    <i class="fas fa-exclamation-circle fa-3x" style="color: #dc3545; margin-bottom: 15px;"></i>
+                    <p style="margin-bottom: 15px;">Unable to load preview.</p>
+                    <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-primary">Open File</a>
+                </div>
+            `);
+        };
+
+        if (normalizedType.match(/(jpg|jpeg|png|gif|webp|bmp|tif|tiff)$/)) {
+            const img = new Image();
+            img.onload = function() {
+                container.html(`
+                    <div class="preview-content" style="flex: 1; overflow: auto; text-align: center;">
+                        <img src="${embeddedPreviewUrl}" alt="Document Preview" style="max-width: 100%; max-height: calc(100vh - 300px); margin: auto; display: block;" />
+                    </div>
+                `);
+            };
+            img.onerror = showPreviewError;
+            img.src = embeddedPreviewUrl;
+        } else if (normalizedType === 'pdf' || isOfficePreview) {
+            const iconClass = normalizedType.match(/^xls/) ? 'fa-file-excel'
+                : normalizedType.match(/^ppt/) ? 'fa-file-powerpoint'
+                : normalizedType.match(/^doc/) ? 'fa-file-word'
+                : 'fa-file-pdf';
+            const typeLabel = isOfficePreview ? normalizedType.toUpperCase() + ' preview' : 'PDF';
+            const downloadUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'download=1';
+            const toolbar = isOfficePreview ? `
+                    <div style="padding: 8px 12px; background: #f3f2f1; border-bottom: 1px solid #edebe9; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-shrink: 0;">
+                        <span style="font-size: 13px; color: #605e5c;"><i class="fas ${iconClass}" style="margin-right: 6px;"></i> ${typeLabel}</span>
+                        <a href="${downloadUrl}" class="btn btn-sm btn-outline-secondary">Download original</a>
+                    </div>` : '';
+
+            mountIframePreview(container, {
+                embeddedPreviewUrl: embeddedPreviewUrl,
+                toolbarHtml: toolbar,
+                loadingMessage: isOfficePreview ? 'Preparing document preview…' : 'Loading PDF preview…',
+                slowMessage: isOfficePreview
+                    ? 'Converting document for preview… please wait.'
+                    : 'Still loading PDF… please wait.',
+                frameHeight: 'calc(100vh - ' + (isOfficePreview ? '140' : '100') + 'px)',
+                onError: showPreviewError
+            });
+        } else if (normalizedType === 'txt') {
+            fetch(embeddedPreviewUrl, { credentials: 'same-origin', headers: { 'Accept': 'text/plain, */*' } })
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+                    return response.text();
+                })
+                .then(function(text) {
+                    const escaped = $('<div/>').text(text).html();
+                    container.html(`
+                        <div class="preview-content" style="flex: 1; overflow: auto; width: 100%; padding: 12px; background: #fff;">
+                            <pre style="white-space: pre-wrap; word-wrap: break-word; font-size: 13px; margin: 0;">${escaped}</pre>
+                        </div>
+                    `);
+                })
+                .catch(showPreviewError);
+        } else if (normalizedType === 'csv') {
+            fetch(embeddedPreviewUrl, { credentials: 'same-origin', headers: { 'Accept': 'text/plain, */*' } })
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+                    return response.text();
+                })
+                .then(function(text) {
+                    const escaped = $('<div/>').text(text).html();
+                    container.html(`
+                        <div class="preview-content" style="flex: 1; overflow: auto; width: 100%; padding: 12px; background: #fff;">
+                            <pre style="white-space: pre-wrap; word-wrap: break-word; font-size: 13px; margin: 0;">${escaped}</pre>
+                        </div>
+                    `);
+                })
+                .catch(showPreviewError);
+        } else {
+            container.html(`
+                <div class="preview-content" style="flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                    <i class="fas fa-file fa-3x" style="color: #6c757d; margin-bottom: 15px;"></i>
+                    <p style="margin-bottom: 15px;">Preview not available for this file type.</p>
+                    <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-primary">Open File</a>
+                </div>
+            `);
+        }
+    }
+
+    window.previewFile = previewFile;
 
 
 

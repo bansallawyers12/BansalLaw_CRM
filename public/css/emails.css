@@ -633,6 +633,35 @@
     margin-left: 8px;
 }
 
+.email-item-attachments {
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.email-item-attachment-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 11px;
+    color: #605e5c;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.email-item-attachment-line i {
+    margin-top: 2px;
+    flex-shrink: 0;
+    color: #3b82f6;
+}
+
+.email-item-attachment-more {
+    font-size: 11px;
+    color: #8a8886;
+    font-style: italic;
+}
+
 /* Priority Badges */
 .priority-badge {
     padding: 2px 8px;

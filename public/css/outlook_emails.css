@@ -1307,3 +1307,175 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
         grid-template-columns: 1fr;
     }
 }
+
+/* Email attachments — reading pane & list */
+.email-attachments-container {
+    margin-top: 14px;
+}
+
+.email-attachments-panel {
+    background: #faf9f8;
+    border: 1px solid #edebe9;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.email-attachments-panel__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #f3f2f1;
+    border-bottom: 1px solid #edebe9;
+    font-size: 13px;
+    font-weight: 600;
+    color: #323130;
+}
+
+.email-attachments-panel__list {
+    display: flex;
+    flex-direction: column;
+}
+
+.email-attachment-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: #fff;
+    border-bottom: 1px solid #f3f2f1;
+}
+
+.email-attachment-row:last-child {
+    border-bottom: none;
+}
+
+.email-attachment-row__icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3f2f1;
+    border-radius: 6px;
+    font-size: 18px;
+    color: #605e5c;
+}
+
+.email-attachment-icon--pdf { color: #d83b01; }
+.email-attachment-icon--word { color: #185abd; }
+.email-attachment-icon--excel { color: #107c41; }
+.email-attachment-icon--ppt { color: #c43e1c; }
+.email-attachment-icon--image { color: #0078d4; }
+
+.email-attachment-row__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.email-attachment-row__name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #201f1e;
+    word-break: break-word;
+    line-height: 1.35;
+}
+
+.email-attachment-row__meta {
+    margin-top: 2px;
+    font-size: 12px;
+    color: #605e5c;
+}
+
+.email-attachment-row__actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 6px;
+}
+
+.email-attachment-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+    border: 1px solid #c8c6c4;
+    background: #fff;
+    color: #323130;
+    white-space: nowrap;
+}
+
+.email-attachment-btn:hover {
+    background: #f3f2f1;
+    color: #201f1e;
+    text-decoration: none;
+}
+
+.email-attachment-btn--preview {
+    border-color: #0078d4;
+    color: #0078d4;
+}
+
+.email-attachment-btn--preview:hover {
+    background: #deecf9;
+}
+
+.email-attachment-btn--download {
+    border-color: #107c41;
+    color: #107c41;
+}
+
+.email-attachment-btn--download:hover {
+    background: #dff6dd;
+}
+
+.email-list-clip {
+    color: #666;
+    margin-left: 5px;
+    font-size: 12px;
+}
+
+.email-item-attachments {
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.email-item-attachment-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 11px;
+    color: #605e5c;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.email-item-attachment-line i {
+    margin-top: 2px;
+    flex-shrink: 0;
+    color: #0078d4;
+}
+
+.email-item-attachment-more {
+    font-size: 11px;
+    color: #8a8886;
+    font-style: italic;
+}
+
+@media (max-width: 720px) {
+    .email-attachment-row {
+        flex-wrap: wrap;
+    }
+
+    .email-attachment-row__actions {
+        width: 100%;
+        padding-left: 48px;
+    }
+}

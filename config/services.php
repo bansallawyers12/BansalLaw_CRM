@@ -70,8 +70,10 @@ return [
     ],
 
     'python_converter' => [
-        // Falls back to PYTHON_SERVICE_URL so one .env line suffices when both use the same process
-        'url' => env('PYTHON_CONVERTER_URL') ?: env('PYTHON_SERVICE_URL', 'http://localhost:5002'),
+        // On local dev, prefer the unified python_services process (PYTHON_SERVICE_URL).
+        'url' => env('APP_ENV') === 'local'
+            ? (env('PYTHON_SERVICE_URL') ?: env('PYTHON_CONVERTER_URL', 'http://127.0.0.1:5002'))
+            : (env('PYTHON_CONVERTER_URL') ?: env('PYTHON_SERVICE_URL', 'http://localhost:5002')),
         'timeout' => env('PYTHON_CONVERTER_TIMEOUT', 120),
     ],
 
