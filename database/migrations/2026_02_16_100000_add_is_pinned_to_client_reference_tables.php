@@ -18,7 +18,6 @@ return new class extends Migration
             'client_visitor_references',
             'client_pr_references',
             'client_employer_sponsored_references',
-            'client_art_references',
             'client_eoi_references',
         ];
 
@@ -47,7 +46,6 @@ return new class extends Migration
             'client_visitor_references',
             'client_pr_references',
             'client_employer_sponsored_references',
-            'client_art_references',
             'client_eoi_references',
         ];
 

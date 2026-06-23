@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('messages')) {
+            return;
+        }
+
         // Create message_recipients pivot table only if it doesn't exist
         if (!Schema::hasTable('message_recipients')) {
             Schema::create('message_recipients', function (Blueprint $table) {

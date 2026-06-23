@@ -6,6 +6,7 @@ use App\Models\Document;
 use App\Models\Signer;
 use App\Models\Admin;
 use App\Models\Lead;
+use App\Models\Staff;
 use App\Models\SignatureActivity;
 use App\Models\ActivitiesLog;
 use Illuminate\Support\Str;
@@ -28,6 +29,21 @@ class SignatureService
         $this->emailConfigService = $emailConfigService;
         $this->mailRouting = $mailRouting;
     }
+
+    /**
+     * Resolve staff id for signature_activities.created_by (FK to staff.id).
+     */
+    protected function activityCreatorId(): ?int
+    {
+        $id = Auth::guard('admin')->id();
+
+        if ($id === null) {
+            return null;
+        }
+
+        return Staff::whereKey($id)->exists() ? (int) $id : null;
+    }
+
     /**
      * Send a document for signature
      *
@@ -170,7 +186,7 @@ class SignatureService
             // Create activity note for successful email delivery
             SignatureActivity::create([
                 'document_id' => $document->id,
-                'created_by' => Auth::guard('admin')->id() ?? 1,
+                'created_by' => $this->activityCreatorId(),
                 'action_type' => 'email_sent',
                 'note' => "Email sent successfully to {$signer->name} ({$signer->email})",
                 'metadata' => [
@@ -194,7 +210,7 @@ class SignatureService
             try {
                 SignatureActivity::create([
                     'document_id' => $document->id,
-                    'created_by' => Auth::guard('admin')->id() ?? 1,
+                    'created_by' => $this->activityCreatorId(),
                     'action_type' => 'email_failed',
                     'note' => "Failed to send email to {$signer->name} ({$signer->email}): {$e->getMessage()}",
                     'metadata' => [
@@ -244,6 +260,11 @@ class SignatureService
             if ($signer->reminder_count >= 3) {
                 throw new \Exception('Maximum reminders already sent');
             }
+
+            if ($signer->last_reminder_sent_at?->isAfter(now()->subHours(24))) {
+                throw new \Exception('Reminder cooldown active. Please wait 24 hours between reminders.');
+            }
+
             $signingUrl = url("/sign/{$document->id}/{$signer->token}");
             $from = $this->resolveFrom($options['from_email'] ?? null);
 
@@ -271,7 +292,7 @@ class SignatureService
             // Create activity note for reminder email
             SignatureActivity::create([
                 'document_id' => $document->id,
-                'created_by' => Auth::guard('admin')->id() ?? 1,
+                'created_by' => $this->activityCreatorId(),
                 'action_type' => 'email_sent',
                 'note' => "Reminder #{$signer->reminder_count} sent to {$signer->name} ({$signer->email})",
                 'metadata' => [
@@ -295,7 +316,7 @@ class SignatureService
             try {
                 SignatureActivity::create([
                     'document_id' => $document->id,
-                    'created_by' => Auth::guard('admin')->id() ?? 1,
+                    'created_by' => $this->activityCreatorId(),
                     'action_type' => 'email_failed',
                     'note' => "Failed to send reminder to {$signer->name} ({$signer->email}): {$e->getMessage()}",
                     'metadata' => [
@@ -366,7 +387,7 @@ class SignatureService
             // Create audit trail entry in signature_activities
             SignatureActivity::create([
                 'document_id' => $document->id,
-                'created_by' => auth('admin')->id() ?? 1,
+                'created_by' => $this->activityCreatorId(),
                 'action_type' => 'associated',
                 'note' => $note ?? "Document associated with {$entityType}",
                 'metadata' => [
@@ -379,7 +400,7 @@ class SignatureService
             if ($entityType === 'client') {
                 ActivitiesLog::create([
                     'client_id' => $entityId,
-                    'created_by' => auth('admin')->id() ?? 1,
+                    'created_by' => $this->activityCreatorId(),
                     'activity_type' => 'document',
                     'subject' => "Document #{$document->id} attached",
                     'description' => $note ?? "Document '{$document->display_title}' was attached to this client",
@@ -441,7 +462,7 @@ class SignatureService
             // Create audit trail entry in signature_activities
             SignatureActivity::create([
                 'document_id' => $document->id,
-                'created_by' => auth('admin')->id() ?? 1,
+                'created_by' => $this->activityCreatorId(),
                 'action_type' => 'associated',
                 'note' => $note ?? "Document associated with {$entityType} ({$docCategory})",
                 'metadata' => [
@@ -458,7 +479,7 @@ class SignatureService
                 $matterText = $matterId ? " (Matter: #{$matterId})" : '';
                 ActivitiesLog::create([
                     'client_id' => $entityId,
-                    'created_by' => auth('admin')->id() ?? 1,
+                    'created_by' => $this->activityCreatorId(),
                     'activity_type' => 'document',
                     'subject' => "Document #{$document->id} attached to {$docCategory} documents{$matterText}",
                     'description' => $note ?? "Document '{$document->display_title}' was attached to this client's {$docCategory} documents",
@@ -507,7 +528,7 @@ class SignatureService
             // Create audit trail entry
             SignatureActivity::create([
                 'document_id' => $document->id,
-                'created_by' => auth('admin')->id() ?? 1,
+                'created_by' => $this->activityCreatorId(),
                 'action_type' => 'detached',
                 'note' => $reason ?? "Document detached from {$entityType}",
                 'metadata' => [
@@ -520,7 +541,7 @@ class SignatureService
             if ($oldClientId) {
                 ActivitiesLog::create([
                     'client_id' => $oldClientId,
-                    'created_by' => auth('admin')->id() ?? 1,
+                    'created_by' => $this->activityCreatorId(),
                     'activity_type' => 'document',
                     'subject' => "Document #{$document->id} detached",
                     'description' => $reason ?? "Document '{$document->display_title}' was detached from this client",

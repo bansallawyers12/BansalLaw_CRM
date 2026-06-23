@@ -2667,6 +2667,10 @@ class DocumentController extends Controller
             return redirect()->back()->with('error', 'Maximum reminders already sent.');
         }
 
+        if ($signer->last_reminder_sent_at?->isAfter(now()->subHours(24))) {
+            return redirect()->back()->with('error', 'Please wait 24 hours between reminders.');
+        }
+
         // Send reminder email via SignatureService (Zoho/SendGrid routing + proper From)
         app(\App\Services\SignatureService::class)->remind($signer);
 

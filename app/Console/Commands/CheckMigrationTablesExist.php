@@ -29,7 +29,6 @@ class CheckMigrationTablesExist extends Command
         'refresh_tokens',
         'phone_verifications',
         'email_verifications',
-        'message_recipients',
         'sms_logs',
         'sms_templates',
         'signature_activities',

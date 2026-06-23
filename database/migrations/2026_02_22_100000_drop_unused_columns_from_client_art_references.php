@@ -14,6 +14,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('client_art_references')) {
+            return;
+        }
+
         Schema::table('client_art_references', function (Blueprint $table) {
             // Drop foreign key before dropping verified_by
             $table->dropForeign(['verified_by']);

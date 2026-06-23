@@ -7,12 +7,12 @@ use App\Models\Document;
 use App\Models\Signer;
 use App\Models\Admin;
 use App\Models\Lead;
-use App\Models\Email;
+use App\Models\Staff;
 use App\Services\SignatureService;
 use App\Services\EmailConfigService;
 use App\Services\MailRoutingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -22,16 +22,23 @@ class SignatureServiceTest extends TestCase
 
     protected SignatureService $signatureService;
     protected EmailConfigService $emailConfigService;
+    protected MailRoutingService $mockMailRouting;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->emailConfigService = new EmailConfigService();
-        $this->signatureService = new SignatureService($this->emailConfigService, new MailRoutingService());
-        
+
+        // Mock MailRoutingService so sendClosure() is a no-op in tests.
+        // Mail::fake() only intercepts Mailable-based sends, not the closure-based
+        // API used by MailRoutingService::sendClosure(), so we stub it out directly.
+        $this->mockMailRouting = $this->createMock(MailRoutingService::class);
+
+        $this->signatureService = new SignatureService($this->emailConfigService, $this->mockMailRouting);
+
         Storage::fake('s3');
-        Mail::fake();
+        Auth::guard('admin')->logout();
     }
 
     #[Test]
@@ -52,6 +59,11 @@ class SignatureServiceTest extends TestCase
             'subject' => 'Please sign this document',
             'message' => 'Test message'
         ];
+
+        // Assert MailRoutingService::sendClosure is invoked once per signer
+        $this->mockMailRouting
+            ->expects($this->exactly(2))
+            ->method('sendClosure');
 
         // Send document for signature
         $result = $this->signatureService->send($document, $signers, $options);
@@ -74,8 +86,6 @@ class SignatureServiceTest extends TestCase
         $this->assertNotNull($firstSigner->token);
         $this->assertEquals(64, strlen($firstSigner->token));
 
-        // Assert emails were queued
-        Mail::assertSent(\Illuminate\Mail\Mailable::class, 2);
     }
 
     #[Test]
@@ -148,8 +158,9 @@ class SignatureServiceTest extends TestCase
     {
         $document = Document::factory()->create();
         $client = Admin::factory()->create(['role' => 2]);
-        
-        $this->actingAs($client, 'admin');
+        $staff = Staff::factory()->create();
+
+        $this->actingAs($staff, 'admin');
 
         $result = $this->signatureService->associate($document, 'client', $client->id, 'Test note');
 
@@ -165,9 +176,9 @@ class SignatureServiceTest extends TestCase
     {
         $document = Document::factory()->create();
         $lead = Lead::factory()->create();
-        
-        $admin = Admin::factory()->create(['role' => 1]);
-        $this->actingAs($admin, 'admin');
+
+        $staff = Staff::factory()->create();
+        $this->actingAs($staff, 'admin');
 
         $result = $this->signatureService->associate($document, 'lead', $lead->id, 'Test note');
 
@@ -187,7 +198,7 @@ class SignatureServiceTest extends TestCase
             'lead_id' => null
         ]);
 
-        $admin = Admin::factory()->create(['role' => 1]);
+        $admin = Staff::factory()->create();
         $this->actingAs($admin, 'admin');
 
         $result = $this->signatureService->detach($document, 'Test reason');

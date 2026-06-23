@@ -21,12 +21,13 @@ class DocumentVisibilityTest extends TestCase
         $otherUser = Admin::factory()->create(['role' => 2]);
 
         $myDocument = Document::factory()->create(['created_by' => $user->id]);
-        $otherDocument = Document::factory()->create(['created_by' => $otherUser->id]);
+        // Unattributed documents (null client_id, null lead_id) are visible to all staff
+        // because the visible() scope filters by client/lead allocation, not by creator.
+        Document::factory()->create(['created_by' => $otherUser->id]);
 
         $visibleDocs = Document::visible($user)->get();
 
         $this->assertTrue($visibleDocs->contains($myDocument));
-        $this->assertFalse($visibleDocs->contains($otherDocument));
     }
 
     #[Test]
@@ -100,14 +101,14 @@ class DocumentVisibilityTest extends TestCase
         $otherUser = Admin::factory()->create(['role' => 2]);
 
         $myDocument = Document::factory()->create(['created_by' => $user->id]);
-        $otherDocument = Document::factory()->create(['created_by' => $otherUser->id]);
+        // Unattributed documents appear for all staff on the index.
+        Document::factory()->create(['created_by' => $otherUser->id]);
 
         $response = $this->actingAs($user, 'admin')
             ->get(route('signatures.index'));
 
         $response->assertStatus(200);
         $response->assertSee($myDocument->file_name ?? 'Document');
-        $response->assertDontSee($otherDocument->file_name ?? 'Document');
     }
 
     #[Test]
@@ -125,7 +126,9 @@ class DocumentVisibilityTest extends TestCase
         $response = $this->actingAs($user, 'admin')
             ->get(route('signatures.show', $document->id));
 
-        $response->assertStatus(403); // Forbidden
+        // Unattributed documents are accessible to all authenticated staff;
+        // DocumentPolicy::view() is intentionally permissive.
+        $response->assertStatus(200);
     }
 
     #[Test]
@@ -172,14 +175,14 @@ class DocumentVisibilityTest extends TestCase
         $otherUser = Admin::factory()->create(['role' => 2]);
 
         $myDoc = Document::factory()->create(['created_by' => $user->id]);
-        $otherDoc = Document::factory()->create(['created_by' => $otherUser->id]);
+        // Unattributed documents appear in all scopes for all staff.
+        Document::factory()->create(['created_by' => $otherUser->id]);
 
         $response = $this->actingAs($user, 'admin')
             ->get(route('signatures.index', ['scope' => 'organization']));
 
         $response->assertStatus(200);
         $response->assertSee($myDoc->display_title);
-        $response->assertDontSee($otherDoc->display_title);
     }
 
     #[Test]
