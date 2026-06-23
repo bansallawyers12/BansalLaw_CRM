@@ -260,6 +260,23 @@
     </div>
 </div>
 
+<!-- Email upload loading overlay -->
+<div class="email-upload-loading-overlay" id="emailUploadLoadingOverlay" aria-hidden="true" aria-live="polite" aria-busy="false">
+    <div class="email-upload-loading-card" role="status">
+        <div class="email-upload-loading-icon" aria-hidden="true">
+            <i class="fas fa-envelope"></i>
+            <span class="email-upload-loading-spinner"></span>
+        </div>
+        <h3 class="email-upload-loading-title" id="emailUploadLoadingTitle">Uploading email</h3>
+        <p class="email-upload-loading-message" id="emailUploadLoadingMessage">Please wait while your email is being processed…</p>
+        <p class="email-upload-loading-filename" id="emailUploadLoadingFilename"></p>
+        <div class="email-upload-loading-progress" aria-hidden="true">
+            <div class="email-upload-loading-progress-bar" id="emailUploadLoadingProgressBar"></div>
+        </div>
+        <p class="email-upload-loading-hint">Do not close or refresh this page</p>
+    </div>
+</div>
+
 <!-- Duplicate email confirmation -->
 <div class="duplicate-email-modal-overlay" id="duplicateEmailModal" aria-hidden="true">
     <div class="duplicate-email-modal" role="dialog" aria-labelledby="duplicateEmailModalTitle" aria-modal="true">

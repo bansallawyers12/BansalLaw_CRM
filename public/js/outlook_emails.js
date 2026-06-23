@@ -210,15 +210,60 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnUploadEmail = document.getElementById('btnUploadEmail');
     const fileInput = document.getElementById('outlookEmailFileInput');
     const uploadStatus = document.getElementById('uploadStatus');
+    const emailUploadLoadingOverlay = document.getElementById('emailUploadLoadingOverlay');
+    const emailUploadLoadingTitle = document.getElementById('emailUploadLoadingTitle');
+    const emailUploadLoadingMessage = document.getElementById('emailUploadLoadingMessage');
+    const emailUploadLoadingFilename = document.getElementById('emailUploadLoadingFilename');
+    const emailUploadLoadingProgressBar = document.getElementById('emailUploadLoadingProgressBar');
+
+    let isEmailUploading = false;
+
+    function updateEmailUploadLoading(title, message, filename, progressPercent) {
+        if (emailUploadLoadingTitle && title) {
+            emailUploadLoadingTitle.textContent = title;
+        }
+        if (emailUploadLoadingMessage && message) {
+            emailUploadLoadingMessage.textContent = message;
+        }
+        if (emailUploadLoadingFilename) {
+            emailUploadLoadingFilename.textContent = filename || '';
+        }
+        if (emailUploadLoadingProgressBar) {
+            const pct = Math.max(0, Math.min(100, Number(progressPercent) || 0));
+            emailUploadLoadingProgressBar.style.width = pct + '%';
+        }
+    }
+
+    function showEmailUploadLoading(title, message, filename, progressPercent) {
+        if (!emailUploadLoadingOverlay) return;
+        updateEmailUploadLoading(title, message, filename, progressPercent);
+        emailUploadLoadingOverlay.classList.add('active');
+        emailUploadLoadingOverlay.setAttribute('aria-hidden', 'false');
+        emailUploadLoadingOverlay.setAttribute('aria-busy', 'true');
+        document.body.classList.add('email-upload-in-progress');
+    }
+
+    function hideEmailUploadLoading() {
+        if (!emailUploadLoadingOverlay) return;
+        emailUploadLoadingOverlay.classList.remove('active');
+        emailUploadLoadingOverlay.setAttribute('aria-hidden', 'true');
+        emailUploadLoadingOverlay.setAttribute('aria-busy', 'false');
+        document.body.classList.remove('email-upload-in-progress');
+        if (emailUploadLoadingProgressBar) {
+            emailUploadLoadingProgressBar.style.width = '0%';
+        }
+    }
 
     if (btnUploadEmail && fileInput) {
         btnUploadEmail.addEventListener('click', () => {
+            if (isEmailUploading) return;
             fileInput.click();
         });
 
         const inlineDropZone = document.getElementById('inlineDropZone');
         if (inlineDropZone) {
             inlineDropZone.addEventListener('click', () => {
+                if (isEmailUploading) return;
                 fileInput.click();
             });
         }
@@ -745,26 +790,56 @@ document.addEventListener('DOMContentLoaded', function() {
             return result;
         }
 
-        async function uploadSingleOutlookFile(file, uploadUrl) {
+        async function uploadSingleOutlookFile(file, uploadUrl, fileIndex, totalFiles) {
+            const baseProgress = totalFiles > 0 ? Math.round((fileIndex / totalFiles) * 100) : 0;
+
+            updateEmailUploadLoading(
+                'Uploading email',
+                'Analyzing email attachments…',
+                file.name,
+                baseProgress
+            );
+
             let attachmentStorage = null;
             try {
                 const previewAttachments = await previewEmailAttachments(file);
                 if (previewAttachments.length > 0) {
+                    hideEmailUploadLoading();
                     attachmentStorage = await showAttachmentStorageModal(previewAttachments);
                     if (attachmentStorage === null) {
                         return { uploaded: 0, failed: 0, rejected: 1, cancelled: true, errors: [] };
                     }
+                    showEmailUploadLoading(
+                        'Uploading email',
+                        'Saving attachments and uploading email…',
+                        file.name,
+                        baseProgress
+                    );
                 }
             } catch (previewError) {
                 console.warn('Attachment preview failed, continuing upload:', previewError);
             }
 
+            updateEmailUploadLoading(
+                'Uploading email',
+                'Uploading and processing email…',
+                file.name,
+                baseProgress + (totalFiles > 0 ? Math.round(50 / totalFiles) : 0)
+            );
+
             let result = await postOutlookEmailUpload(file, uploadUrl, false, attachmentStorage);
             const duplicateError = getDuplicateUploadError(result);
 
             if (duplicateError) {
+                hideEmailUploadLoading();
                 const acceptUpload = await showDuplicateEmailPrompt(file.name);
                 if (acceptUpload) {
+                    showEmailUploadLoading(
+                        'Uploading email',
+                        'Uploading duplicate email…',
+                        file.name,
+                        baseProgress
+                    );
                     result = await postOutlookEmailUpload(file, uploadUrl, true, attachmentStorage);
                 } else {
                     showUploadErrorAlert(DUPLICATE_EXISTS_MESSAGE);
@@ -782,6 +857,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const handleUploadFiles = async (files) => {
+            if (isEmailUploading) return;
             if (files.length === 0) return;
 
             const msgFiles = [];
@@ -800,9 +876,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? `${baseUrl}/upload-sent-fetch-mail`
                 : `${baseUrl}/upload-fetch-mail`;
 
-            uploadStatus.style.display = 'block';
-            uploadStatus.style.color = 'var(--outlook-blue)';
-            uploadStatus.textContent = `Uploading ${msgFiles.length} file(s)...`;
+            isEmailUploading = true;
+            showEmailUploadLoading(
+                'Uploading email',
+                `Preparing to upload ${msgFiles.length} email${msgFiles.length > 1 ? 's' : ''}…`,
+                '',
+                0
+            );
+
+            if (uploadStatus) {
+                uploadStatus.style.display = 'block';
+                uploadStatus.style.color = 'var(--outlook-blue)';
+                uploadStatus.textContent = `Uploading ${msgFiles.length} file(s)...`;
+            }
 
             let totalUploaded = 0;
             let totalFailed = 0;
@@ -812,10 +898,21 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 for (let i = 0; i < msgFiles.length; i++) {
                     const file = msgFiles[i];
-                    uploadStatus.textContent = `Uploading ${i + 1} of ${msgFiles.length}: ${file.name}...`;
+                    const progressPct = Math.round((i / msgFiles.length) * 100);
+
+                    showEmailUploadLoading(
+                        'Uploading email',
+                        `Processing email ${i + 1} of ${msgFiles.length}`,
+                        file.name,
+                        progressPct
+                    );
+
+                    if (uploadStatus) {
+                        uploadStatus.textContent = `Uploading ${i + 1} of ${msgFiles.length}: ${file.name}...`;
+                    }
 
                     try {
-                        const fileResult = await uploadSingleOutlookFile(file, uploadUrl);
+                        const fileResult = await uploadSingleOutlookFile(file, uploadUrl, i, msgFiles.length);
                         if (fileResult.cancelled) {
                             totalRejected += 1;
                             continue;
@@ -833,18 +930,31 @@ document.addEventListener('DOMContentLoaded', function() {
                             error: fileError.message || 'Upload failed'
                         });
                     }
+
+                    updateEmailUploadLoading(
+                        'Uploading email',
+                        `Completed ${i + 1} of ${msgFiles.length}`,
+                        file.name,
+                        Math.round(((i + 1) / msgFiles.length) * 100)
+                    );
                 }
 
                 const errorDetails = formatUploadErrorDetails(allErrors.filter(function(err) { return !err.rejected; }));
 
                 if (totalUploaded > 0 && totalFailed === 0 && totalRejected === 0) {
-                    uploadStatus.style.color = 'green';
-                    uploadStatus.textContent = 'Upload complete!';
+                    updateEmailUploadLoading('Upload complete', 'Your email was uploaded successfully.', '', 100);
+                    if (uploadStatus) {
+                        uploadStatus.style.color = 'green';
+                        uploadStatus.textContent = 'Upload complete!';
+                    }
                     showUploadSuccessToast('Successfully uploaded ' + totalUploaded + ' email' + (totalUploaded > 1 ? 's' : '') + '.');
                     loadEmails();
                 } else if (totalUploaded > 0) {
-                    uploadStatus.style.color = 'orange';
-                    uploadStatus.textContent = 'Upload completed with issues';
+                    updateEmailUploadLoading('Upload finished', 'Some emails were uploaded with issues.', '', 100);
+                    if (uploadStatus) {
+                        uploadStatus.style.color = 'orange';
+                        uploadStatus.textContent = 'Upload completed with issues';
+                    }
                     showUploadSuccessToast('Successfully uploaded ' + totalUploaded + ' email' + (totalUploaded > 1 ? 's' : '') + '.');
                     if (totalFailed > 0) {
                         let errorMsg = totalFailed + ' file' + (totalFailed > 1 ? 's' : '') + ' could not be processed.';
@@ -855,11 +965,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     loadEmails();
                 } else if (totalRejected > 0 && totalFailed === 0) {
-                    uploadStatus.style.color = 'orange';
-                    uploadStatus.textContent = 'Upload skipped';
+                    if (uploadStatus) {
+                        uploadStatus.style.color = 'orange';
+                        uploadStatus.textContent = 'Upload skipped';
+                    }
                 } else {
-                    uploadStatus.style.color = 'red';
-                    uploadStatus.textContent = 'Upload failed';
+                    updateEmailUploadLoading('Upload failed', 'The email could not be uploaded.', '', 100);
+                    if (uploadStatus) {
+                        uploadStatus.style.color = 'red';
+                        uploadStatus.textContent = 'Upload failed';
+                    }
                     let errorMsg = 'Upload failed. Please try again.';
                     if (errorDetails) {
                         errorMsg += '\n\nError details:\n' + errorDetails;
@@ -867,13 +982,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     showUploadErrorAlert(errorMsg);
                 }
             } catch (error) {
-                uploadStatus.style.color = 'red';
-                uploadStatus.textContent = 'Upload failed';
+                updateEmailUploadLoading('Upload failed', error.message || 'Upload failed. Please try again.', '', 100);
+                if (uploadStatus) {
+                    uploadStatus.style.color = 'red';
+                    uploadStatus.textContent = 'Upload failed';
+                }
                 showUploadErrorAlert(error.message || 'Upload failed. Please try again.');
                 console.error(error);
+            } finally {
+                isEmailUploading = false;
+                setTimeout(function() {
+                    hideEmailUploadLoading();
+                }, totalUploaded > 0 && totalFailed === 0 && totalRejected === 0 ? 600 : 900);
             }
 
-            setTimeout(() => { uploadStatus.style.display = 'none'; }, 5000);
+            if (uploadStatus) {
+                setTimeout(function() { uploadStatus.style.display = 'none'; }, 5000);
+            }
         };
 
         fileInput.addEventListener('change', (e) => {
@@ -888,6 +1013,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (outlookContainer && dragDropOverlay) {
             outlookContainer.addEventListener('dragenter', (e) => {
                 e.preventDefault();
+                if (isEmailUploading) return;
                 dragCounter++;
                 dragDropOverlay.style.display = 'flex';
             });
@@ -908,6 +1034,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 dragCounter = 0;
                 dragDropOverlay.style.display = 'none';
+
+                if (isEmailUploading) return;
                 
                 if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                     handleUploadFiles(e.dataTransfer.files);
