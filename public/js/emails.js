@@ -1878,7 +1878,7 @@
     }
 
     /**
-     * Prepend staff signature to a compose/reply/forward message body.
+     * Append staff signature below quoted reply/forward content.
      */
     function prependStaffSignatureToMessage(message, signature) {
         const sig = (signature || getStaffSignatureForComposeFrom() || '').trim();
@@ -1886,7 +1886,7 @@
             return message;
         }
         const quotedHtml = String(message || '').replace(/\n/g, '<br>');
-        return sig + '<br><br>' + quotedHtml;
+        return quotedHtml + '<br><br>' + sig;
     }
 
     /**

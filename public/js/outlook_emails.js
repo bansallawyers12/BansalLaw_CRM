@@ -24,7 +24,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const composeTitle = document.getElementById('composeTitle');
     const toInput = document.getElementById('composeTo');
     const subjectInput = document.getElementById('composeSubject');
-    const composeEditor = document.getElementById('composeEditor');
+    const composeReplyInput = document.getElementById('composeReplyInput');
+    const composeQuoteWrap = document.getElementById('composeQuoteWrap');
+    const composeQuotePanel = document.getElementById('composeQuotePanel');
+    const composeQuoteFrame = document.getElementById('composeQuoteFrame');
+    const composeQuoteToggle = document.getElementById('composeQuoteToggle');
+    const composeQuoteToggleLabel = document.getElementById('composeQuoteToggleLabel');
+    const composeSignatureWrap = document.getElementById('composeSignatureWrap');
+    const composeSignatureFrame = document.getElementById('composeSignatureFrame');
+    const composeFormatBar = document.getElementById('composeFormatBar');
+
+    let composeQuoteHtml = '';
+    let composeSignatureHtml = '';
 
     // Sidebar Toggle
     const toggleSidebarBtn = document.getElementById('toggleSidebar');
@@ -96,6 +107,29 @@ document.addEventListener('DOMContentLoaded', function() {
         loadEmails();
     });
 
+    if (composeFormatBar && composeReplyInput) {
+        composeFormatBar.addEventListener('click', (event) => {
+            const btn = event.target.closest('.compose-format-btn');
+            if (!btn) return;
+            event.preventDefault();
+            composeReplyInput.focus();
+            const cmd = btn.getAttribute('data-cmd');
+            if (cmd) {
+                document.execCommand(cmd, false, null);
+            }
+        });
+    }
+
+    if (composeQuoteToggle && composeQuoteWrap) {
+        composeQuoteToggle.addEventListener('click', () => {
+            const collapsed = composeQuoteWrap.classList.toggle('is-collapsed');
+            composeQuoteToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            if (composeQuoteToggleLabel) {
+                composeQuoteToggleLabel.textContent = collapsed ? 'Show quoted message' : 'Hide quoted message';
+            }
+        });
+    }
+
     // Close Modal
     document.getElementById('closeModal').addEventListener('click', () => {
         composeModal.classList.remove('active');
@@ -109,10 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btnSend').addEventListener('click', async () => {
         const to = toInput.value.trim();
         const subject = subjectInput.value.trim();
-        let message = composeEditor.value.trim();
-        if (typeof tinymce !== 'undefined' && tinymce.get('composeEditor')) {
-            message = tinymce.get('composeEditor').getContent().trim();
-        }
+        const message = getComposeMessageHtml();
 
         if (!to || !subject || !message) {
             alert('Please fill in To, Subject, and Message fields.');
@@ -1109,42 +1140,153 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function getComposeEditorConfig() {
-        const base = typeof tinymceFullConfig !== 'undefined' ? tinymceFullConfig : {
-            height: 300,
-            menubar: false,
-            plugins: ['advlist autolink lists link image charmap print preview anchor', 'searchreplace visualblocks code fullscreen', 'insertdatetime media table paste code help wordcount'],
-            toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help'
-        };
-        return {
-            ...base,
-            selector: '#composeEditor',
-            paste_data_images: true,
-            extended_valid_elements: 'img[src|alt|width|height|style|class]',
-        };
-    }
-
-    function formatSignatureBlock(signatureHtml) {
-        const sig = (signatureHtml || '').trim();
-        return sig ? sig + '<br><br>' : '';
-    }
-
-    function setComposeEditorContent(finalContent) {
-        if (typeof tinymce !== 'undefined') {
-            let editor = tinymce.get('composeEditor');
-            if (!editor) {
-                tinymce.init({
-                    ...getComposeEditorConfig(),
-                    init_instance_callback: function (inst) {
-                        inst.setContent(finalContent);
-                    }
-                });
-            } else {
-                editor.setContent(finalContent);
+    function renderHtmlIframe(iframe, html) {
+        if (!iframe) return;
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        const bodyHtml = html || '';
+        doc.open();
+        doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><base target="_blank"><style>' +
+            'html,body{margin:0;padding:0;}' +
+            'body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;line-height:1.5;color:#242424;word-wrap:break-word;overflow-wrap:break-word;padding:8px 12px;}' +
+            'img{max-width:100%;height:auto;}' +
+            'table{max-width:100%;}' +
+            'a{color:#0078d4;}' +
+            'blockquote{margin:0;}' +
+            '</style></head><body>' + bodyHtml + '</body></html>');
+        doc.close();
+        const resize = () => {
+            try {
+                const height = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight);
+                iframe.style.height = Math.max(height + 8, 48) + 'px';
+            } catch (e) {
+                iframe.style.height = '120px';
             }
-        } else if (composeEditor) {
-            composeEditor.value = finalContent;
+        };
+        doc.querySelectorAll('img').forEach(function(img) {
+            if (!img.complete) {
+                img.addEventListener('load', resize);
+                img.addEventListener('error', resize);
+            }
+        });
+        iframe.onload = resize;
+        setTimeout(resize, 50);
+        setTimeout(resize, 250);
+    }
+
+    function resetComposeEditor() {
+        composeQuoteHtml = '';
+        composeSignatureHtml = '';
+        if (composeReplyInput) {
+            composeReplyInput.innerHTML = '';
         }
+        if (composeQuoteWrap) {
+            composeQuoteWrap.hidden = true;
+            composeQuoteWrap.classList.remove('is-collapsed');
+        }
+        if (composeQuoteToggle) {
+            composeQuoteToggle.setAttribute('aria-expanded', 'true');
+        }
+        if (composeQuoteToggleLabel) {
+            composeQuoteToggleLabel.textContent = 'Hide quoted message';
+        }
+        if (composeQuoteFrame) {
+            composeQuoteFrame.style.height = '48px';
+            renderHtmlIframe(composeQuoteFrame, '');
+        }
+        if (composeSignatureWrap) {
+            composeSignatureWrap.hidden = true;
+        }
+        if (composeSignatureFrame) {
+            composeSignatureFrame.style.height = '48px';
+            renderHtmlIframe(composeSignatureFrame, '');
+        }
+    }
+
+    function setComposeQuote(quoteHtml) {
+        composeQuoteHtml = (quoteHtml || '').trim();
+        if (!composeQuoteWrap || !composeQuoteFrame) {
+            return;
+        }
+        if (!composeQuoteHtml) {
+            composeQuoteWrap.hidden = true;
+            return;
+        }
+        composeQuoteWrap.hidden = false;
+        composeQuoteWrap.classList.remove('is-collapsed');
+        if (composeQuoteToggle) {
+            composeQuoteToggle.setAttribute('aria-expanded', 'true');
+        }
+        if (composeQuoteToggleLabel) {
+            composeQuoteToggleLabel.textContent = 'Hide quoted message';
+        }
+        renderHtmlIframe(composeQuoteFrame, composeQuoteHtml);
+    }
+
+    function setComposeSignature(signatureHtml) {
+        composeSignatureHtml = (signatureHtml || '').trim();
+        if (!composeSignatureWrap || !composeSignatureFrame) {
+            return;
+        }
+        if (!composeSignatureHtml) {
+            composeSignatureWrap.hidden = true;
+            return;
+        }
+        composeSignatureWrap.hidden = false;
+        renderHtmlIframe(composeSignatureFrame, composeSignatureHtml);
+    }
+
+    function getComposeMessageHtml() {
+        const replyHtml = composeReplyInput ? composeReplyInput.innerHTML.trim() : '';
+        const parts = [];
+        if (replyHtml) {
+            parts.push(replyHtml);
+        }
+        if (composeQuoteHtml) {
+            parts.push(composeQuoteHtml);
+        }
+        if (composeSignatureHtml) {
+            parts.push('<br><br>' + composeSignatureHtml);
+        }
+        return parts.join('').trim();
+    }
+
+    function focusComposeReply() {
+        if (!composeReplyInput) return;
+        composeReplyInput.focus();
+        const selection = window.getSelection();
+        if (!selection) return;
+        const range = document.createRange();
+        range.selectNodeContents(composeReplyInput);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+
+    function buildQuoteHtml(email, action, emailHtml) {
+        if (action === 'forward') {
+            return '<br><br><div dir="ltr">---------- Forwarded message ---------<br>From: <strong>' +
+                escapeHtml(email.from_mail) + '</strong><br>Date: ' + escapeHtml(email.created_at) +
+                '<br>Subject: ' + escapeHtml(email.subject) +
+                '</div><br><blockquote style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex">' +
+                emailHtml + '</blockquote>';
+        }
+        return '<br><br><blockquote style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex">' +
+            '<b>From:</b> ' + escapeHtml(email.from_mail) + '<br><b>Sent:</b> ' + escapeHtml(email.created_at) +
+            '<br><b>Subject:</b> ' + escapeHtml(email.subject) + '<br><br>' + emailHtml + '</blockquote>';
+    }
+
+    function formatReplySubject(subject) {
+        const value = (subject || '').trim();
+        if (!value) return 'Re:';
+        if (/^re:/i.test(value)) return value;
+        return 'Re: ' + value;
+    }
+
+    function formatForwardSubject(subject) {
+        const value = (subject || '').trim();
+        if (!value) return 'Fwd:';
+        if (/^(fwd|fw):/i.test(value)) return value;
+        return 'Fwd: ' + value;
     }
 
     async function fetchLoggedInStaffSignature() {
@@ -1178,14 +1320,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!email) return;
 
         composeModal.classList.add('active');
+        resetComposeEditor();
 
-        let isHtml = false;
         let emailHtml = '';
         if (email.html_content) {
-            isHtml = true;
             emailHtml = email.html_content;
         } else if (email.message && email.message.includes('<')) {
-            isHtml = true;
             emailHtml = email.message;
         } else if (email.text_content) {
             emailHtml = escapeHtml(email.text_content).replace(/\n/g, '<br>');
@@ -1193,37 +1333,31 @@ document.addEventListener('DOMContentLoaded', function() {
             emailHtml = escapeHtml(email.message).replace(/\n/g, '<br>');
         }
 
-        let content = '';
-
         if (action === 'reply') {
             composeTitle.textContent = 'Reply';
             toInput.value = email.from_mail || '';
-            subjectInput.value = 'Re: ' + (email.subject || '');
-            content = `<br><br><blockquote style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex"><b>From:</b> ${escapeHtml(email.from_mail)}<br><b>Sent:</b> ${escapeHtml(email.created_at)}<br><b>Subject:</b> ${escapeHtml(email.subject)}<br><br>${emailHtml}</blockquote>`;
+            subjectInput.value = formatReplySubject(email.subject);
         } else if (action === 'replyAll') {
             composeTitle.textContent = 'Reply All';
             const cc = email.cc ? `, ${email.cc}` : '';
             toInput.value = (email.from_mail || '') + cc;
-            subjectInput.value = 'Re: ' + (email.subject || '');
-            content = `<br><br><blockquote style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex"><b>From:</b> ${escapeHtml(email.from_mail)}<br><b>Sent:</b> ${escapeHtml(email.created_at)}<br><b>Subject:</b> ${escapeHtml(email.subject)}<br><br>${emailHtml}</blockquote>`;
+            subjectInput.value = formatReplySubject(email.subject);
         } else if (action === 'forward') {
             composeTitle.textContent = 'Forward';
             toInput.value = '';
-            subjectInput.value = 'Fwd: ' + (email.subject || '');
-            content = `<br><br><div dir="ltr">---------- Forwarded message ---------<br>From: <strong>${escapeHtml(email.from_mail)}</strong><br>Date: ${escapeHtml(email.created_at)}<br>Subject: ${escapeHtml(email.subject)}<br></div><br><blockquote style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex">${emailHtml}</blockquote>`;
+            subjectInput.value = formatForwardSubject(email.subject);
         }
 
-        const applySignatureAndSetContent = (signatureHtml) => {
-            const finalContent = formatSignatureBlock(signatureHtml) + content;
-            setComposeEditorContent(finalContent);
-        };
+        setComposeQuote(buildQuoteHtml(email, action, emailHtml));
 
         try {
             const signatureHtml = await fetchLoggedInStaffSignature();
-            applySignatureAndSetContent(signatureHtml);
+            setComposeSignature(signatureHtml);
         } catch (e) {
-            applySignatureAndSetContent('');
+            setComposeSignature('');
         }
+
+        focusComposeReply();
     }
 
     function escapeHtml(unsafe) {

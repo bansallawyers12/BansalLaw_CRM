@@ -210,26 +210,53 @@
     </div>
 </div>
 
-<!-- Compose Modal (Mock) -->
+<!-- Compose Modal -->
 <div class="compose-modal" id="composeModal">
     <div class="compose-header">
-        <span class="compose-title" id="composeTitle">New Message</span>
-        <button class="compose-close" id="closeModal"><i class="fas fa-times"></i></button>
+        <div class="compose-header-main">
+            <i class="fas fa-envelope compose-header-icon" aria-hidden="true"></i>
+            <span class="compose-title" id="composeTitle">New Message</span>
+        </div>
+        <button type="button" class="compose-close" id="closeModal" aria-label="Close"><i class="fas fa-times"></i></button>
     </div>
     <div class="compose-body">
         <div class="compose-field">
-            <label>To</label>
-            <input type="text" id="composeTo">
+            <label for="composeTo">To</label>
+            <input type="text" id="composeTo" autocomplete="off">
         </div>
         <div class="compose-field">
-            <label>Subject</label>
-            <input type="text" id="composeSubject">
+            <label for="composeSubject">Subject</label>
+            <input type="text" id="composeSubject" autocomplete="off">
         </div>
-        <textarea class="compose-editor" id="composeEditor" placeholder="Type your message here..."></textarea>
+        <div class="compose-message-stack">
+            <div class="compose-format-bar" id="composeFormatBar" role="toolbar" aria-label="Formatting">
+                <button type="button" class="compose-format-btn" data-cmd="bold" title="Bold"><i class="fas fa-bold"></i></button>
+                <button type="button" class="compose-format-btn" data-cmd="italic" title="Italic"><i class="fas fa-italic"></i></button>
+                <button type="button" class="compose-format-btn" data-cmd="underline" title="Underline"><i class="fas fa-underline"></i></button>
+                <span class="compose-format-sep" aria-hidden="true"></span>
+                <button type="button" class="compose-format-btn" data-cmd="insertUnorderedList" title="Bullet list"><i class="fas fa-list-ul"></i></button>
+                <button type="button" class="compose-format-btn" data-cmd="insertOrderedList" title="Numbered list"><i class="fas fa-list-ol"></i></button>
+                <span class="compose-format-sep" aria-hidden="true"></span>
+                <button type="button" class="compose-format-btn" data-cmd="removeFormat" title="Clear formatting"><i class="fas fa-eraser"></i></button>
+            </div>
+            <div id="composeReplyInput" class="compose-reply-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Type your message..."></div>
+            <div id="composeQuoteWrap" class="compose-quote-wrap" hidden>
+                <button type="button" class="compose-quote-toggle" id="composeQuoteToggle" aria-expanded="true">
+                    <span class="compose-quote-toggle-dots" aria-hidden="true">•••</span>
+                    <span class="compose-quote-toggle-label" id="composeQuoteToggleLabel">Hide quoted message</span>
+                </button>
+                <div id="composeQuotePanel" class="compose-quote-panel">
+                    <iframe id="composeQuoteFrame" class="compose-quote-frame" title="Quoted message" tabindex="-1"></iframe>
+                </div>
+            </div>
+            <div id="composeSignatureWrap" class="compose-signature-wrap" hidden>
+                <iframe id="composeSignatureFrame" class="compose-signature-frame" title="Email signature" tabindex="-1"></iframe>
+            </div>
+        </div>
     </div>
     <div class="compose-footer">
-        <button class="btn-send" id="btnSend">Send</button>
-        <button class="btn-discard" id="btnDiscard">Discard</button>
+        <button type="button" class="btn-send" id="btnSend"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send</button>
+        <button type="button" class="btn-discard" id="btnDiscard">Discard</button>
     </div>
 </div>
 
