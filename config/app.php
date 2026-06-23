@@ -184,14 +184,12 @@ return [
         Illuminate\Translation\TranslationServiceProvider::class,
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
-		Spatie\Html\HtmlServiceProvider::class,
-		Barryvdh\DomPDF\ServiceProvider::class,
+	Barryvdh\DomPDF\ServiceProvider::class,
 
         App\Providers\AppServiceProvider::class,
         App\Providers\AuthServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\AppointmentSyncServiceProvider::class,
-        Mews\Captcha\CaptchaServiceProvider::class,
         Yajra\DataTables\DataTablesServiceProvider::class,
 
     ],
@@ -245,13 +243,10 @@ return [
         'Str' => Illuminate\Support\Str::class,
         'Arr' => Illuminate\Support\Arr::class,
         'Carbon' => Carbon\Carbon::class,
-		'Html' => Spatie\Html\Facades\Html::class,
-		'PDF' => Barryvdh\DomPDF\Facade\Pdf::class,
-		'Settings' => App\Helpers\Settings::class,
+	'PDF' => Barryvdh\DomPDF\Facade\Pdf::class,
+	'Settings' => App\Helpers\Settings::class,
         'Helper' => App\Helpers\Helper::class,
-        'Captcha' => Mews\Captcha\Facades\Captcha::class,
-         // 'Socialite' => Laravel\Socialite\Facades\Socialite::class,
-         'DataTables' => Yajra\DataTables\Facades\DataTables::class,
+        'DataTables' => Yajra\DataTables\Facades\DataTables::class,
 
     ],
     'debug_blacklist' => [

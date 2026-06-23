@@ -1,134 +1,137 @@
 <?php
 namespace App\Http\Controllers\Auth;
-use Illuminate\Support\Facades\Auth;
-
-use Illuminate\Support\Facades\Http;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
-use Illuminate\Foundation\Auth\AuthenticatesUsers;
-
 use Symfony\Component\HttpFoundation\IpUtils;
 use Cookie;
 
 class AdminLoginController extends Controller
 {
-	use AuthenticatesUsers;
-    /**
-     * Where to redirect users after login.
-     *
-     * @var string
-     */
     protected $redirectTo = '/dashboard';
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
+
     public function __construct()
     {
         $this->middleware('guest:admin')->except('logout');
     }
 
-    /**
-     * Show the application’s login form.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    public function username(): string
+    {
+        return 'email';
+    }
+
+    protected function guard()
+    {
+        return Auth::guard('admin');
+    }
+
     public function showLoginForm()
     {
         return view('auth.admin-login');
     }
 
-    protected function guard()
-	{
-        return Auth::guard('admin');
+    public function login(Request $request): mixed
+    {
+        $this->validateLogin($request);
+
+        $throttleKey = Str::lower($request->input($this->username())) . '|' . $request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            return redirect()->back()
+                ->withInput($request->only($this->username(), 'remember'))
+                ->withErrors([
+                    $this->username() => __('auth.throttle', [
+                        'seconds' => RateLimiter::availableIn($throttleKey),
+                        'minutes' => ceil(RateLimiter::availableIn($throttleKey) / 60),
+                    ]),
+                ]);
+        }
+
+        if ($this->attemptLogin($request)) {
+            RateLimiter::clear($throttleKey);
+            $request->session()->regenerate();
+            return $this->authenticated($request, $this->guard()->user())
+                ?: redirect()->intended($this->redirectTo);
+        }
+
+        RateLimiter::hit($throttleKey, 60);
+
+        return $this->sendFailedLoginResponse($request);
     }
 
+    protected function attemptLogin(Request $request): bool
+    {
+        return $this->guard()->attempt(
+            $request->only($this->username(), 'password'),
+            $request->boolean('remember')
+        );
+    }
 
-    protected function validateLogin(Request $request)
+    protected function validateLogin(Request $request): void
     {
         $rules = [
-            'email' => 'required|string',
+            'email'    => 'required|string',
             'password' => 'required|string',
         ];
-        
-        // Only require reCAPTCHA if it's configured
+
         if (config('services.recaptcha.key') && config('services.recaptcha.secret')) {
             $rules['g-recaptcha-response'] = 'required';
         }
-        
+
         $request->validate($rules);
     }
 
-	public function authenticated(Request $request, $user)
-    {   //dd($request->all());
-        //echo "<pre>";print_r($request->all());
-        //echo "<pre>user==";print_r($user);
-        //dd('###');
-
-        // Only verify reCAPTCHA if it's configured
+    public function authenticated(Request $request, $user): mixed
+    {
         if (config('services.recaptcha.key') && config('services.recaptcha.secret')) {
-            $recaptcha_response = $request->input('g-recaptcha-response');//dd($recaptcha_response);
+            $recaptcha_response = $request->input('g-recaptcha-response');
             if (is_null($recaptcha_response)) {
-                $errors = ['g-recaptcha-response' => 'Please Complete the Recaptcha to proceed'];
                 return redirect()->back()
-                ->withErrors($errors);
+                    ->withErrors(['g-recaptcha-response' => 'Please Complete the Recaptcha to proceed']);
             }
 
-            $url = "https://www.google.com/recaptcha/api/siteverify";
-
-           //echo "secret===".config('services.recaptcha.secret');
-            //echo "<br/>";
-           // echo "IpUtils===".IpUtils::anonymize($request->ip());
-            //die('@@@');
             $body = [
-                'secret' => config('services.recaptcha.secret'),
+                'secret'   => config('services.recaptcha.secret'),
                 'response' => $recaptcha_response,
-                'remoteip' => IpUtils::anonymize($request->ip()) //anonymize the ip to be GDPR compliant. Otherwise just pass the default ip address
+                'remoteip' => IpUtils::anonymize($request->ip()),
             ];
 
-            $response = Http::get($url, $body); //dd($response);
-            $result = json_decode($response); //dd($result);
+            $response = Http::get('https://www.google.com/recaptcha/api/siteverify', $body);
+            $result   = json_decode($response);
 
             if (!$response->successful() || $result->success != true) {
-                //return redirect()->back()->with('status', 'Please Complete the Recaptcha Again to proceed');
-                $errors = ['g-recaptcha-response' => 'Please Complete the Recaptcha Again to proceed'];
-                return redirect()->back()->withErrors($errors);
+                return redirect()->back()
+                    ->withErrors(['g-recaptcha-response' => 'Please Complete the Recaptcha Again to proceed']);
             }
         }
-        
-        // If reCAPTCHA is disabled or verification passed, proceed with login
-        if (true) { //dd('ifff');
-            //$request->authenticate();
 
-            //$request->session()->regenerate();
-
-            if(!empty($request->remember)) {
-                \Cookie::queue(\Cookie::make('email', $request->email, 3600));
-                \Cookie::queue(\Cookie::make('password', $request->password, 3600));
-            } else {
-                \Cookie::queue(\Cookie::forget('email'));
-                \Cookie::queue(\Cookie::forget('password'));
-            }
-
-            $obj = new \App\Models\StaffLoginLog;
-            $obj->level = 'info';
-            $obj->user_id = $user->id;
-            $obj->ip_address = $request->getClientIp();
-            $obj->user_agent = $_SERVER['HTTP_USER_AGENT'];
-            $obj->message = 'Logged in successfully';
-            $obj->save();
-
-            return redirect()->intended($this->redirectPath());
+        if (!empty($request->remember)) {
+            \Cookie::queue(\Cookie::make('email', $request->email, 3600));
+            \Cookie::queue(\Cookie::make('password', $request->password, 3600));
+        } else {
+            \Cookie::queue(\Cookie::forget('email'));
+            \Cookie::queue(\Cookie::forget('password'));
         }
+
+        $obj              = new \App\Models\StaffLoginLog;
+        $obj->level       = 'info';
+        $obj->user_id     = $user->id;
+        $obj->ip_address  = $request->getClientIp();
+        $obj->user_agent  = $_SERVER['HTTP_USER_AGENT'];
+        $obj->message     = 'Logged in successfully';
+        $obj->save();
+
+        return redirect()->intended($this->redirectTo);
     }
 
-	 protected function sendFailedLoginResponse(Request $request)
+    protected function sendFailedLoginResponse(Request $request): mixed
     {
         $errors = [$this->username() => trans('auth.failed')];
 
-        // Load staff from database (CRM login uses staff table)
         $staff = \App\Models\Staff::where($this->username(), $request->{$this->username()})->first();
 
         if ($staff && !\Hash::check($request->password, $staff->password)) {
@@ -138,31 +141,36 @@ class AdminLoginController extends Controller
         if ($request->expectsJson()) {
             return response()->json($errors, 422);
         }
-		$obj = new \App\Models\StaffLoginLog;
-		$obj->level = 'critical';
-		$obj->user_id = $staff ? $staff->id : null;
-		$obj->ip_address = $request->getClientIp();
-		$obj->user_agent = $_SERVER['HTTP_USER_AGENT'];
-		$obj->message = 'Invalid Email or Password !';
-		$obj->save();
-        return redirect()->back()->withInput($request->only($this->username(), 'remember'))->withErrors($errors);
+
+        $obj             = new \App\Models\StaffLoginLog;
+        $obj->level      = 'critical';
+        $obj->user_id    = $staff ? $staff->id : null;
+        $obj->ip_address = $request->getClientIp();
+        $obj->user_agent = $_SERVER['HTTP_USER_AGENT'];
+        $obj->message    = 'Invalid Email or Password !';
+        $obj->save();
+
+        return redirect()->back()
+            ->withInput($request->only($this->username(), 'remember'))
+            ->withErrors($errors);
     }
 
-	public function logout(Request $request)
+    public function logout(Request $request): mixed
     {
-		$user = $request->id;
+        $user = $request->id;
 
-		$obj = new \App\Models\StaffLoginLog;
-		$obj->level = 'info';
-		$obj->user_id = $user;
-		$obj->ip_address = $request->getClientIp();
-		$obj->user_agent = $_SERVER['HTTP_USER_AGENT'];
-		$obj->message = 'Logged out successfully';
-		$obj->save();
-		Auth::guard('admin')->logout();
+        $obj             = new \App\Models\StaffLoginLog;
+        $obj->level      = 'info';
+        $obj->user_id    = $user;
+        $obj->ip_address = $request->getClientIp();
+        $obj->user_agent = $_SERVER['HTTP_USER_AGENT'];
+        $obj->message    = 'Logged out successfully';
+        $obj->save();
+
+        Auth::guard('admin')->logout();
         $request->session()->flush();
         $request->session()->regenerate();
 
-		return redirect()->route('crm.login');
+        return redirect()->route('crm.login');
     }
 }

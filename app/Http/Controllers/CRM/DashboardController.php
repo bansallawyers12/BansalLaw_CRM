@@ -6,6 +6,7 @@ use App\Http\Requests\DashboardRequest;
 use App\Models\Staff;
 use App\Services\DashboardService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
@@ -119,7 +120,7 @@ class DashboardController extends Controller
             Log::error('Validation error in extendDeadlineDate:', $e->errors());
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed: ' . implode(', ', array_flatten($e->errors()))
+                'message' => 'Validation failed: ' . implode(', ', Arr::flatten($e->errors()))
             ], 422);
         } catch (\Exception $e) {
             Log::error('Error in extendDeadlineDate: ' . $e->getMessage(), [
@@ -159,7 +160,7 @@ class DashboardController extends Controller
             Log::error('Validation error in updateActionCompleted:', $e->errors());
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed: ' . implode(', ', array_flatten($e->errors()))
+                'message' => 'Validation failed: ' . implode(', ', Arr::flatten($e->errors()))
             ], 422);
         } catch (\Exception $e) {
             Log::error('Error in updateActionCompleted: ' . $e->getMessage(), [
