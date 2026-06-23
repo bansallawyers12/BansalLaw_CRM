@@ -268,7 +268,7 @@
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
 									<label for="Block_1_Ex_Tax">Block 1 Incl. GST</label>
-									{!! html()->text('Block_1_Ex_Tax')->class('form-control')->id('Block_1_Ex_Tax')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 1 Incl. GST' ) !!}
+									<input type="text" name="Block_1_Ex_Tax" id="Block_1_Ex_Tax" class="form-control" autocomplete="off" placeholder="Enter Block 1 Incl. GST">
 									@if ($errors->has('Block_1_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_1_Ex_Tax') }}</strong>
@@ -280,7 +280,7 @@
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
 									<label for="Block_2_Ex_Tax">Block 2 Incl. GST</label>
-									{!! html()->text('Block_2_Ex_Tax')->class('form-control')->id('Block_2_Ex_Tax')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 2 Incl. GST' ) !!}
+									<input type="text" name="Block_2_Ex_Tax" id="Block_2_Ex_Tax" class="form-control" autocomplete="off" placeholder="Enter Block 2 Incl. GST">
 									@if ($errors->has('Block_2_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_2_Ex_Tax') }}</strong>
@@ -294,7 +294,7 @@
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
 									<label for="Block_3_Ex_Tax">Block 3 Incl. GST</label>
-									{!! html()->text('Block_3_Ex_Tax')->class('form-control')->id('Block_3_Ex_Tax')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 3 Incl. GST' ) !!}
+									<input type="text" name="Block_3_Ex_Tax" id="Block_3_Ex_Tax" class="form-control" autocomplete="off" placeholder="Enter Block 3 Incl. GST">
 									@if ($errors->has('Block_3_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_3_Ex_Tax') }}</strong>
@@ -306,7 +306,7 @@
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
 									<label for="TotalBLOCKFEE">Total Block Fee</label>
-									{!! html()->text('TotalBLOCKFEE')->class('form-control')->id('TotalBLOCKFEE')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Total Block Fee')->attribute('readonly', 'readonly' ) !!}
+									<input type="text" name="TotalBLOCKFEE" id="TotalBLOCKFEE" class="form-control" autocomplete="off" placeholder="Enter Total Block Fee" readonly>
 								</div>
 							</div>
 						</div>
@@ -351,7 +351,7 @@
                             <div class="col-12 col-md-6 col-lg-6">
                                 <div class="form-group">
                                     <label for="additional_fee_1">Additional Fee1</label>
-                                    {!! html()->text('additional_fee_1')->class('form-control')->id('additional_fee_1')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Additional Fee' ) !!}
+                                    <input type="text" name="additional_fee_1" id="additional_fee_1" class="form-control" autocomplete="off" placeholder="Enter Additional Fee">
                                     @if ($errors->has('additional_fee_1'))
                                         <span class="custom-error" role="alert">
                                             <strong>{{ @$errors->first('additional_fee_1') }}</strong>
@@ -473,7 +473,7 @@
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
 									<label for="Block_1_Ex_Tax">Block 1 Incl. GST</label>
-									{!! html()->text('Block_1_Ex_Tax')->class('form-control')->id('Block_1_Ex_Tax_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 1 Incl. GST' ) !!}
+									<input type="text" name="Block_1_Ex_Tax" id="Block_1_Ex_Tax_lead" class="form-control" autocomplete="off" placeholder="Enter Block 1 Incl. GST">
 									@if ($errors->has('Block_1_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_1_Ex_Tax') }}</strong>
@@ -485,7 +485,7 @@
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
 									<label for="Block_2_Ex_Tax">Block 2 Incl. GST</label>
-									{!! html()->text('Block_2_Ex_Tax')->class('form-control')->id('Block_2_Ex_Tax_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 2 Incl. GST' ) !!}
+									<input type="text" name="Block_2_Ex_Tax" id="Block_2_Ex_Tax_lead" class="form-control" autocomplete="off" placeholder="Enter Block 2 Incl. GST">
 									@if ($errors->has('Block_2_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_2_Ex_Tax') }}</strong>
@@ -499,7 +499,7 @@
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
 									<label for="Block_3_Ex_Tax">Block 3 Incl. GST</label>
-									{!! html()->text('Block_3_Ex_Tax')->class('form-control')->id('Block_3_Ex_Tax_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Block 3 Incl. GST' ) !!}
+									<input type="text" name="Block_3_Ex_Tax" id="Block_3_Ex_Tax_lead" class="form-control" autocomplete="off" placeholder="Enter Block 3 Incl. GST">
 									@if ($errors->has('Block_3_Ex_Tax'))
 										<span class="custom-error" role="alert">
 											<strong>{{ @$errors->first('Block_3_Ex_Tax') }}</strong>
@@ -511,7 +511,7 @@
 							<div class="col-12 col-md-6 col-lg-6">
 								<div class="form-group">
 									<label for="TotalBLOCKFEE">Total Block Fee</label>
-									{!! html()->text('TotalBLOCKFEE')->class('form-control')->id('TotalBLOCKFEE_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Total Block Fee')->attribute('readonly', 'readonly' ) !!}
+									<input type="text" name="TotalBLOCKFEE" id="TotalBLOCKFEE_lead" class="form-control" autocomplete="off" placeholder="Enter Total Block Fee" readonly>
 								</div>
 							</div>
 						</div>
@@ -556,7 +556,7 @@
                             <div class="col-12 col-md-6 col-lg-6">
                                 <div class="form-group">
                                     <label for="additional_fee_1">Additional Fee1</label>
-                                    {!! html()->text('additional_fee_1')->class('form-control')->id('additional_fee_1_lead')->attribute('autocomplete', 'off')->attribute('placeholder', 'Enter Additional Fee' ) !!}
+                                    <input type="text" name="additional_fee_1" id="additional_fee_1_lead" class="form-control" autocomplete="off" placeholder="Enter Additional Fee">
                                     @if ($errors->has('additional_fee_1'))
                                         <span class="custom-error" role="alert">
                                             <strong>{{ @$errors->first('additional_fee_1') }}</strong>

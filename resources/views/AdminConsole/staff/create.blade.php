@@ -1,4 +1,5 @@
 @extends('layouts.crm_client_detail')
+@include('components.require-tinymce')
 @section('title', 'Staff')
 
 @section('content')
@@ -262,11 +263,22 @@
 						</div>
 					</div>
 
+					<div class="col-12 col-md-12 col-lg-12">
+						<div class="card">
+							<div class="card-body">
+								<h4>EMAIL SIGNATURE</h4>
+								<p class="text-muted mb-3">This signature is automatically added when the staff member composes, replies, or forwards emails using their login email address.</p>
+								<div class="form-group mb-0">
+									<label for="email_signature">Email Signature</label>
+									<textarea class="form-control tinymce-editor-full" name="email_signature" id="email_signature">{{ old('email_signature') }}</textarea>
+								</div>
+							</div>
+						</div>
+					</div>
+
 					<div class="col-12">
 						<div class="form-group float-right">
 							<input type="submit" value="Save Staff" class="btn btn-primary">
-						</div>
-							</div>
 						</div>
 					</div>
 				</div>
@@ -279,6 +291,13 @@
 @section('scripts')
 <script>
 $(document).ready(function() {
+	// Sync TinyMCE signature content before form submit
+	$('form[name="edit-staff"]').on('submit', function() {
+		if (typeof tinymce !== 'undefined') {
+			tinymce.triggerSave();
+		}
+	});
+
 	// Toggle Legal Practitioner details section
 	$('#is_solicitor').on('change', function() {
 		if ($(this).is(':checked')) {

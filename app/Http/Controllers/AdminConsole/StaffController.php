@@ -122,6 +122,9 @@ class StaffController extends Controller
                 $obj->first_name = @$requestData['first_name'];
                 $obj->last_name = @$requestData['last_name'];
                 $obj->email = @$requestData['email'];
+                if (Schema::hasColumn('staff', 'email_signature')) {
+                    $obj->email_signature = $requestData['email_signature'] ?? null;
+                }
                 $obj->country_code = @$requestData['country_code'];
                 $obj->position = @$requestData['position'];
                 $obj->password = Hash::make(@$requestData['password']);
@@ -263,6 +266,9 @@ class StaffController extends Controller
             $obj->first_name = @$requestData['first_name'];
             $obj->last_name = @$requestData['last_name'];
             $obj->email = @$requestData['email'];
+            if (Schema::hasColumn('staff', 'email_signature')) {
+                $obj->email_signature = $requestData['email_signature'] ?? null;
+            }
             $obj->country_code = @$requestData['country_code'];
             $obj->position = @$requestData['position'];
             $obj->phone = @$requestData['phone'];

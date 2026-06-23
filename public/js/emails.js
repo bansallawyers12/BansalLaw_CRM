@@ -199,7 +199,7 @@
         return 'Server returned an invalid response. Please refresh the page and try again.';
     }
 
-    function buildEmailUploadFormData(file, clientId, matterId, csrfToken) {
+    function buildEmailUploadFormData(file, clientId, matterId, csrfToken, forceUpload) {
         const formData = new FormData();
         const isLead = isLeadContext();
         formData.append('email_files[]', file);
@@ -210,14 +210,126 @@
             (matterId !== null && matterId !== undefined) ? matterId : ''
         );
         formData.append('_token', csrfToken);
+        if (forceUpload) {
+            formData.append('force_upload', '1');
+        }
         return formData;
+    }
+
+    const DUPLICATE_EXISTS_MESSAGE = 'This email already exists.';
+
+    function ensureDuplicateEmailPromptModal() {
+        let modal = document.getElementById('duplicateEmailModal');
+        if (modal) {
+            return modal;
+        }
+
+        if (!document.getElementById('duplicateEmailPromptStyles')) {
+            const style = document.createElement('style');
+            style.id = 'duplicateEmailPromptStyles';
+            style.textContent = `
+                .duplicate-email-modal-overlay{display:none;position:fixed;inset:0;background:rgba(50,49,48,.45);z-index:10050;align-items:center;justify-content:center;padding:20px}
+                .duplicate-email-modal-overlay.active{display:flex}
+                .duplicate-email-modal{width:100%;max-width:420px;background:#fff;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.18);padding:28px 24px 22px;text-align:center}
+                .duplicate-email-modal__icon{width:56px;height:56px;margin:0 auto 16px;border-radius:50%;background:#fff4e5;color:#d97706;display:flex;align-items:center;justify-content:center;font-size:24px}
+                .duplicate-email-modal__title{margin:0 0 10px;font-size:20px;font-weight:600;color:#323130}
+                .duplicate-email-modal__message{margin:0 0 8px;font-size:15px;color:#323130;font-weight:500}
+                .duplicate-email-modal__filename{margin:0 0 12px;font-size:13px;color:#605e5c;word-break:break-all}
+                .duplicate-email-modal__question{margin:0 0 22px;font-size:14px;color:#605e5c}
+                .duplicate-email-modal__actions{display:flex;gap:12px;justify-content:center}
+                .duplicate-email-modal__btn{min-width:110px;padding:10px 18px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid transparent}
+                .duplicate-email-modal__btn--reject{background:#fff;border-color:#c8c6c4;color:#323130}
+                .duplicate-email-modal__btn--accept{background:#0078d4;color:#fff}
+            `;
+            document.head.appendChild(style);
+        }
+
+        modal = document.createElement('div');
+        modal.id = 'duplicateEmailModal';
+        modal.className = 'duplicate-email-modal-overlay';
+        modal.setAttribute('aria-hidden', 'true');
+        modal.innerHTML = `
+            <div class="duplicate-email-modal" role="dialog" aria-labelledby="duplicateEmailModalTitle" aria-modal="true">
+                <div class="duplicate-email-modal__icon" aria-hidden="true"><i class="fas fa-envelope-open-text"></i></div>
+                <h3 class="duplicate-email-modal__title" id="duplicateEmailModalTitle">Duplicate Email</h3>
+                <p class="duplicate-email-modal__message">${DUPLICATE_EXISTS_MESSAGE}</p>
+                <p class="duplicate-email-modal__filename" id="duplicateEmailFileName"></p>
+                <p class="duplicate-email-modal__question">Do you want to upload it anyway?</p>
+                <div class="duplicate-email-modal__actions">
+                    <button type="button" class="duplicate-email-modal__btn duplicate-email-modal__btn--reject" id="duplicateEmailReject">Reject</button>
+                    <button type="button" class="duplicate-email-modal__btn duplicate-email-modal__btn--accept" id="duplicateEmailAccept">Accept</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        return modal;
+    }
+
+    function showDuplicateEmailPrompt(fileName) {
+        return new Promise(function(resolve) {
+            const modal = ensureDuplicateEmailPromptModal();
+            const fileNameEl = document.getElementById('duplicateEmailFileName');
+            const acceptBtn = document.getElementById('duplicateEmailAccept');
+            const rejectBtn = document.getElementById('duplicateEmailReject');
+
+            if (fileNameEl) {
+                fileNameEl.textContent = fileName ? ('File: ' + fileName) : '';
+            }
+
+            function cleanup() {
+                modal.classList.remove('active');
+                modal.setAttribute('aria-hidden', 'true');
+                acceptBtn.removeEventListener('click', onAccept);
+                rejectBtn.removeEventListener('click', onReject);
+                modal.removeEventListener('click', onOverlayClick);
+                document.removeEventListener('keydown', onKeyDown);
+            }
+
+            function onAccept() {
+                cleanup();
+                resolve(true);
+            }
+
+            function onReject() {
+                cleanup();
+                resolve(false);
+            }
+
+            function onOverlayClick(event) {
+                if (event.target === modal) {
+                    onReject();
+                }
+            }
+
+            function onKeyDown(event) {
+                if (event.key === 'Escape') {
+                    onReject();
+                }
+            }
+
+            acceptBtn.addEventListener('click', onAccept);
+            rejectBtn.addEventListener('click', onReject);
+            modal.addEventListener('click', onOverlayClick);
+            document.addEventListener('keydown', onKeyDown);
+
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            acceptBtn.focus();
+        });
+    }
+
+    function getDuplicateUploadError(data) {
+        if (!data || !Array.isArray(data.errors)) {
+            return null;
+        }
+        return data.errors.find(function(err) { return err && err.duplicate; }) || null;
     }
 
     /**
      * POST one .msg file to the upload endpoint and return parsed JSON.
      */
-    async function postEmailUpload(file, clientId, matterId, csrfToken, uploadPath) {
-        const formData = buildEmailUploadFormData(file, clientId, matterId, csrfToken);
+    async function postEmailUpload(file, clientId, matterId, csrfToken, uploadPath, forceUpload) {
+        const formData = buildEmailUploadFormData(file, clientId, matterId, csrfToken, forceUpload);
         const response = await fetch(
             crmUrl(uploadPath),
             {
@@ -433,6 +545,19 @@
      * Show notification message
      */
     function showNotification(message, type = 'info') {
+        if (typeof crmNotify !== 'undefined') {
+            // Replace newlines with <br> to preserve formatting in iziToast
+            const formattedMessage = message.replace(/\n/g, '<br>');
+            if (type === 'success') {
+                crmNotify.success({ title: 'Success', message: formattedMessage, position: 'topRight', transitionIn: 'fadeInDown', transitionOut: 'fadeOutUp' });
+            } else if (type === 'error') {
+                crmNotify.error({ title: 'Error', message: formattedMessage, position: 'topRight', timeout: 8000, transitionIn: 'fadeInDown', transitionOut: 'fadeOutUp' });
+            } else {
+                crmNotify.info({ title: 'Alert', message: formattedMessage, position: 'topRight', transitionIn: 'fadeInDown', transitionOut: 'fadeOutUp' });
+            }
+            return;
+        }
+
         const notification = document.createElement('div');
         notification.className = `email-notification email-notification-${type}`;
         notification.style.cssText = `
@@ -860,7 +985,26 @@
                 fileStatus.textContent = 'Uploading ' + (i + 1) + ' of ' + files.length + ': ' + file.name + '...';
 
                 try {
-                    const data = await postEmailUpload(file, clientId, matterId, csrfToken, uploadPath);
+                    let data = await postEmailUpload(file, clientId, matterId, csrfToken, uploadPath);
+                    const duplicateError = getDuplicateUploadError(data);
+
+                    if (duplicateError) {
+                        const acceptUpload = await showDuplicateEmailPrompt(file.name);
+                        if (acceptUpload) {
+                            data = await postEmailUpload(file, clientId, matterId, csrfToken, uploadPath, true);
+                        } else {
+                            totalFailed += 1;
+                            allErrors.push({
+                                filename: file.name,
+                                error: DUPLICATE_EXISTS_MESSAGE,
+                                duplicate: true,
+                                rejected: true
+                            });
+                            showNotification(DUPLICATE_EXISTS_MESSAGE, 'error');
+                            continue;
+                        }
+                    }
+
                     const fileUploaded = data.uploaded || 0;
                     const fileFailed = data.failed || 0;
                     totalUploaded += fileUploaded;
@@ -1682,6 +1826,100 @@
     let currentContextEmail = null; // Store email object for context menu actions
 
     /**
+     * Resolve From email for compose modal signature lookup.
+     */
+    function getComposeFromEmail() {
+        const fromSelect = document.querySelector('#emailmodal select.email-from-sendgrid, form[name="sendmail"] select.email-from-sendgrid');
+        let fromEmail = (fromSelect && fromSelect.value) ? fromSelect.value.trim() : '';
+        if (!fromEmail && window.__crmDefaultFromEmail) {
+            fromEmail = window.__crmDefaultFromEmail.trim();
+        }
+        return fromEmail;
+    }
+
+    /**
+     * Staff email signature for the selected From address.
+     */
+    function getStaffSignatureForComposeFrom() {
+        const signatures = window.__crmStaffEmailSignatures || {};
+        const fromEmail = getComposeFromEmail();
+        if (fromEmail) {
+            const matched = signatures[fromEmail.toLowerCase()];
+            if (matched) {
+                return matched;
+            }
+        }
+        if (window.__crmCurrentUserSignature) {
+            return window.__crmCurrentUserSignature;
+        }
+        const emailModal = document.getElementById('emailmodal');
+        if (emailModal) {
+            return emailModal.getAttribute('data-staff-signature') || '';
+        }
+        return '';
+    }
+
+    /**
+     * Fetch the latest staff signature from the server (always fresh from DB).
+     */
+    async function fetchStaffSignatureForCompose() {
+        const fromEmail = getComposeFromEmail();
+        if (typeof window.crmFetchStaffSignature === 'function') {
+            return (await window.crmFetchStaffSignature(fromEmail)).trim();
+        }
+        return (getStaffSignatureForComposeFrom() || '').trim();
+    }
+
+    /**
+     * Prepend staff signature to a compose/reply/forward message body.
+     */
+    function prependStaffSignatureToMessage(message, signature) {
+        const sig = (signature || getStaffSignatureForComposeFrom() || '').trim();
+        if (!sig) {
+            return message;
+        }
+        const quotedHtml = String(message || '').replace(/\n/g, '<br>');
+        return sig + '<br><br>' + quotedHtml;
+    }
+
+    /**
+     * Prepend staff signature using a fresh server lookup.
+     */
+    async function prependStaffSignatureToMessageAsync(message) {
+        const signature = await fetchStaffSignatureForCompose();
+        return prependStaffSignatureToMessage(message, signature);
+    }
+
+    /**
+     * Insert staff signature when opening a new compose with an empty message body.
+     */
+    async function insertStaffSignatureForNewCompose() {
+        const emailModal = document.getElementById('emailmodal');
+        if (emailModal && emailModal.dataset.signaturePrefill === 'skip') {
+            return;
+        }
+
+        const signature = await fetchStaffSignatureForCompose();
+        if (!signature) {
+            return;
+        }
+
+        const textarea = document.getElementById('compose_email_message');
+        const editor = typeof tinymce !== 'undefined' ? tinymce.get('compose_email_message') : null;
+        const current = editor ? editor.getContent().trim() : (textarea ? textarea.value.trim() : '');
+        if (current) {
+            return;
+        }
+
+        const content = signature + '<br><br>';
+        if (editor) {
+            editor.setContent(content);
+        } else if (textarea) {
+            textarea.value = content;
+        }
+    }
+
+    /**
      * Format reply subject (add "Re:" prefix if not already present)
      */
     function formatReplySubject(originalSubject) {
@@ -1781,6 +2019,8 @@
             showNotification('Compose email modal not found. Please ensure you are on the client detail page.', 'error');
             return;
         }
+
+        modal.dataset.signaturePrefill = (data.message && String(data.message).trim()) ? 'skip' : 'allow';
 
         // Always set matter ID - use provided one or get from dropdown
         const matterIdInput = document.getElementById('compose_client_matter_id');
@@ -1895,7 +2135,7 @@
     /**
      * Handle Reply action
      */
-    function handleReply(email) {
+    async function handleReply(email) {
         if (!email) {
             showNotification('No email selected for reply', 'error');
             return;
@@ -1914,8 +2154,8 @@
         // Format subject
         const replySubject = formatReplySubject(email.subject);
 
-        // Format message with quoted original
-        const replyMessage = formatQuotedMessage(email, false);
+        // Format message with quoted original and fresh staff signature
+        const replyMessage = await prependStaffSignatureToMessageAsync(formatQuotedMessage(email, false));
 
         // Open compose modal with reply data
         openComposeModal({
@@ -1931,7 +2171,7 @@
     /**
      * Handle Forward action
      */
-    function handleForward(email) {
+    async function handleForward(email) {
         if (!email) {
             showNotification('No email selected for forward', 'error');
             return;
@@ -1943,8 +2183,8 @@
         // Format subject
         const forwardSubject = formatForwardSubject(email.subject);
 
-        // Format message with forwarded content
-        const forwardMessage = formatQuotedMessage(email, true);
+        // Format message with forwarded content and fresh staff signature
+        const forwardMessage = await prependStaffSignatureToMessageAsync(formatQuotedMessage(email, true));
 
         // Open compose modal with forward data (no "To" pre-filled)
         openComposeModal({
@@ -2569,6 +2809,12 @@
         // Auto-set matter ID when compose modal opens (for all email composes)
         const composeModal = document.getElementById('emailmodal');
         if (composeModal) {
+            const applyComposeSignature = function() {
+                setTimeout(function() {
+                    insertStaffSignatureForNewCompose();
+                }, 250);
+            };
+
             // Listen for modal show event (Bootstrap 4)
             if (typeof jQuery !== 'undefined') {
                 jQuery(composeModal).on('show.bs.modal', function() {
@@ -2581,6 +2827,7 @@
                         }
                     }
                 });
+                jQuery(composeModal).on('shown.bs.modal', applyComposeSignature);
             }
             // Also listen for native modal show event
             composeModal.addEventListener('show.bs.modal', function() {
@@ -2593,6 +2840,14 @@
                     }
                 }
             });
+            composeModal.addEventListener('shown.bs.modal', applyComposeSignature);
+            const resetComposeSignaturePrefill = function() {
+                composeModal.dataset.signaturePrefill = 'allow';
+            };
+            if (typeof jQuery !== 'undefined') {
+                jQuery(composeModal).on('hidden.bs.modal', resetComposeSignaturePrefill);
+            }
+            composeModal.addEventListener('hidden.bs.modal', resetComposeSignaturePrefill);
         }
     }
 

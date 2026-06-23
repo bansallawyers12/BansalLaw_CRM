@@ -16,7 +16,77 @@ $(document).ready(function() {
 });
 
 function initializeDashboard() {
-    console.log('Dashboard initialized');
+    initDashboardClock();
+}
+
+/**
+ * Update dashboard date/time once per minute (aligned to clock minute).
+ * Uses native Intl APIs only — no polling, no network, minimal DOM updates.
+ */
+function initDashboardClock() {
+    var dateTimeEl = document.getElementById('dashboardDateTime');
+    if (!dateTimeEl) {
+        return;
+    }
+
+    var greetingEl = document.getElementById('dashboardGreeting');
+    var firstName = greetingEl ? (greetingEl.getAttribute('data-first-name') || '').trim() : '';
+    var timeZone = (dateTimeEl.getAttribute('data-timezone') || '').trim() || undefined;
+
+    var dateFormatter = new Intl.DateTimeFormat(undefined, {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: timeZone
+    });
+    var timeFormatter = new Intl.DateTimeFormat(undefined, {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: timeZone
+    });
+    var hourFormatter = new Intl.DateTimeFormat(undefined, {
+        hour: 'numeric',
+        hour12: false,
+        timeZone: timeZone
+    });
+
+    function greetingForHour(hour) {
+        if (hour < 12) {
+            return 'Good morning';
+        }
+        if (hour < 17) {
+            return 'Good afternoon';
+        }
+        return 'Good evening';
+    }
+
+    function tick() {
+        var now = new Date();
+        var dateLabel = dateFormatter.format(now);
+        var timeLabel = timeFormatter.format(now);
+        dateTimeEl.textContent = dateLabel + ' \u00b7 ' + timeLabel;
+        dateTimeEl.setAttribute('datetime', now.toISOString());
+
+        if (greetingEl && firstName) {
+            var hour = parseInt(hourFormatter.format(now), 10);
+            greetingEl.textContent = greetingForHour(hour) + ', ' + firstName;
+        }
+    }
+
+    tick();
+
+    var now = new Date();
+    var msUntilNextMinute = ((60 - now.getSeconds()) * 1000) - now.getMilliseconds();
+    if (msUntilNextMinute < 0) {
+        msUntilNextMinute = 0;
+    }
+
+    window.setTimeout(function() {
+        tick();
+        window.setInterval(tick, 60000);
+    }, msUntilNextMinute);
 }
 
 function initializeEventHandlers() {

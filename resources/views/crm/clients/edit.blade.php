@@ -31,8 +31,8 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/address-autocomplete.css') }}">
-    <link rel="stylesheet" href="{{asset('css/client-forms.css')}}">
-    <link rel="stylesheet" href="{{asset('css/clients/edit-client-components.css')}}">
+    <link rel="stylesheet" href="{{asset('css/client-forms.css')}}?v={{ time() }}">
+    <link rel="stylesheet" href="{{asset('css/clients/edit-client-components.css')}}?v={{ time() }}">
     <style>
         .tab-content{
             display:block !important

@@ -16,12 +16,54 @@
             ->first();
         $matterId = $clientMatter ? $clientMatter->id : null;
     }
+
+    $emailUploadPersonalFolders = [];
+    if ($clientData && \Illuminate\Support\Facades\Schema::hasTable('personal_document_types')) {
+        $emailUploadPersonalFolders = \App\Models\PersonalDocumentType::select('id', 'title')
+            ->where('status', 1)
+            ->where(function ($query) use ($clientData) {
+                $query->whereNull('client_id')
+                    ->orWhere('client_id', $clientData->id);
+            })
+            ->orderBy('id', 'ASC')
+            ->get()
+            ->map(fn ($row) => ['id' => (string) $row->id, 'title' => $row->title])
+            ->values()
+            ->all();
+    }
+
+    $emailUploadMatterFolders = [];
+    if ($clientData && $matterId && \Illuminate\Support\Facades\Schema::hasTable('visa_document_types')) {
+        $emailUploadMatterFolders = \App\Models\VisaDocumentType::select('id', 'title')
+            ->where('status', 1)
+            ->where(function ($query) use ($clientData, $matterId) {
+                $query->where(function ($q) {
+                    $q->whereNull('client_id')->whereNull('client_matter_id');
+                })->orWhere(function ($q) use ($clientData) {
+                    $q->where('client_id', $clientData->id)->whereNull('client_matter_id');
+                })->orWhere(function ($q) use ($clientData, $matterId) {
+                    $q->where('client_id', $clientData->id)->where('client_matter_id', $matterId);
+                });
+            })
+            ->orderBy('id', 'ASC')
+            ->get()
+            ->map(fn ($row) => ['id' => (string) $row->id, 'title' => $row->title])
+            ->values()
+            ->all();
+    }
 @endphp
 
 <!-- Outlook CSS -->
 <link rel="stylesheet" href="{{ asset('css/outlook_emails.css') }}?v={{ time() }}">
 
-<div class="outlook-container" id="outlookContainer" data-base-url="{{ url('/') }}" data-client-id="{{ $clientData->id ?? '' }}" data-matter-id="{{ $matterId ?? '' }}" data-auth-email="{{ auth()->user()->email ?? '' }}">
+<div class="outlook-container" id="outlookContainer"
+    data-base-url="{{ url('/') }}"
+    data-client-id="{{ $clientData->id ?? '' }}"
+    data-matter-id="{{ $matterId ?? '' }}"
+    data-auth-email="{{ auth()->user()->email ?? '' }}"
+    data-staff-signature-url="{{ route('crm.staff.email-signature') }}"
+    data-personal-folders='@json($emailUploadPersonalFolders)'
+    data-matter-folders='@json($emailUploadMatterFolders)'>
     
     <!-- Drag & Drop Overlay -->
     <div id="dragDropOverlay" class="drag-drop-overlay" style="display: none;">
@@ -187,6 +229,67 @@
     <div class="compose-footer">
         <button class="btn-send" id="btnSend">Send</button>
         <button class="btn-discard" id="btnDiscard">Discard</button>
+    </div>
+</div>
+
+<!-- Duplicate email confirmation -->
+<div class="duplicate-email-modal-overlay" id="duplicateEmailModal" aria-hidden="true">
+    <div class="duplicate-email-modal" role="dialog" aria-labelledby="duplicateEmailModalTitle" aria-modal="true">
+        <div class="duplicate-email-modal__icon" aria-hidden="true">
+            <i class="fas fa-envelope-open-text"></i>
+        </div>
+        <h3 class="duplicate-email-modal__title" id="duplicateEmailModalTitle">Duplicate Email</h3>
+        <p class="duplicate-email-modal__message">This email already exists.</p>
+        <p class="duplicate-email-modal__filename" id="duplicateEmailFileName"></p>
+        <p class="duplicate-email-modal__question">Do you want to upload it anyway?</p>
+        <div class="duplicate-email-modal__actions">
+            <button type="button" class="duplicate-email-modal__btn duplicate-email-modal__btn--reject" id="duplicateEmailReject">Reject</button>
+            <button type="button" class="duplicate-email-modal__btn duplicate-email-modal__btn--accept" id="duplicateEmailAccept">Accept</button>
+        </div>
+    </div>
+</div>
+
+<!-- Attachment storage modal -->
+<div class="attachment-storage-modal-overlay" id="attachmentStorageModal" aria-hidden="true">
+    <div class="attachment-storage-modal" role="dialog" aria-labelledby="attachmentStorageModalTitle" aria-modal="true">
+        <div class="attachment-storage-modal__header">
+            <div class="attachment-storage-modal__header-main">
+                <div class="attachment-storage-modal__icon" aria-hidden="true">
+                    <i class="fas fa-paperclip"></i>
+                </div>
+                <div>
+                    <h3 id="attachmentStorageModalTitle">Save Attachments to Documents</h3>
+                    <p class="attachment-storage-modal__subtitle">Choose where each file is stored in Documents. You can rename files before saving.</p>
+                </div>
+            </div>
+            <span class="attachment-storage-modal__count" id="attachmentStorageCount" aria-live="polite"></span>
+        </div>
+
+        <div class="attachment-storage-bulk" id="attachmentStorageBulk">
+            <div class="attachment-storage-bulk__intro">
+                <i class="fas fa-layer-group" aria-hidden="true"></i>
+                <span>Apply same location to all attachments</span>
+            </div>
+            <div class="attachment-storage-bulk__controls">
+                <select id="attachmentBulkType" class="attachment-storage-select" aria-label="Apply document type to all">
+                    <option value="email">Email attachments only</option>
+                    <option value="personal">Personal documents</option>
+                    <option value="matter">Matter documents</option>
+                </select>
+                <select id="attachmentBulkFolder" class="attachment-storage-select attachment-storage-select--folder" aria-label="Apply folder to all" style="display: none;">
+                    <option value="">Select folder</option>
+                </select>
+                <button type="button" id="attachmentBulkApply" class="attachment-storage-bulk__apply">Apply to all</button>
+            </div>
+        </div>
+
+        <div class="attachment-storage-modal__body" id="attachmentStorageModalBody"></div>
+        <div class="attachment-storage-modal__actions">
+            <button type="button" class="attachment-storage-modal__btn attachment-storage-modal__btn--cancel" id="attachmentStorageCancel">Cancel upload</button>
+            <button type="button" class="attachment-storage-modal__btn attachment-storage-modal__btn--confirm" id="attachmentStorageConfirm">
+                <i class="fas fa-upload" aria-hidden="true"></i> Continue upload
+            </button>
+        </div>
     </div>
 </div>
 

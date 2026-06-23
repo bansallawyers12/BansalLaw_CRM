@@ -4,9 +4,11 @@ namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
 use App\Models\Email;
+use App\Models\Staff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Returns compose "From" addresses for the CRM email UI.
@@ -22,18 +24,68 @@ class SendGridSendersController extends Controller
     {
         $zohoSenders = $this->getZohoComposeSenders();
         $sendgridSenders = $this->getSendGridVerifiedSenders();
+        $signaturesByEmail = $this->getStaffSignaturesByEmail();
 
         $list = collect($zohoSenders)
             ->merge($sendgridSenders)
             ->unique('email')
             ->values()
+            ->map(function (array $sender) use ($signaturesByEmail) {
+                $emailKey = strtolower(trim($sender['email'] ?? ''));
+                $sender['signature'] = $signaturesByEmail[$emailKey] ?? '';
+
+                return $sender;
+            })
             ->all();
 
         $defaultFrom = $this->resolveDefaultFrom($list);
+        $currentUserSignature = $this->resolveCurrentUserSignature($signaturesByEmail);
 
         return response()->json([
             'senders' => $list,
             'default_from' => $defaultFrom,
+            'signatures_by_email' => $signaturesByEmail,
+            'current_user_signature' => $currentUserSignature,
+        ]);
+    }
+
+    /**
+     * GET /crm/staff-email-signature?from_email=
+     * Returns the latest staff signature from the database (for compose/reply/forward).
+     */
+    public function staffSignature(Request $request)
+    {
+        if (! Schema::hasColumn('staff', 'email_signature')) {
+            return response()->json(['signature' => '']);
+        }
+
+        $authUser = auth('admin')->user();
+        if (! $authUser instanceof Staff) {
+            return response()->json(['signature' => '']);
+        }
+
+        $fromEmail = strtolower(trim((string) $request->query('from_email', '')));
+
+        if ($fromEmail !== '') {
+            $fromSignature = Staff::query()
+                ->where('status', 1)
+                ->whereRaw('LOWER(TRIM(email)) = ?', [$fromEmail])
+                ->whereNotNull('email_signature')
+                ->where('email_signature', '!=', '')
+                ->value('email_signature');
+
+            if ($fromSignature !== null && trim((string) $fromSignature) !== '') {
+                return response()->json(['signature' => (string) $fromSignature]);
+            }
+        }
+
+        $signature = Staff::query()
+            ->where('id', $authUser->id)
+            ->where('status', 1)
+            ->value('email_signature');
+
+        return response()->json([
+            'signature' => trim((string) ($signature ?? '')),
         ]);
     }
 
@@ -140,5 +192,34 @@ class SendGridSendersController extends Controller
         }
 
         return (string) $preferred;
+    }
+
+    /**
+     * @return array<string, string> Lowercase email => HTML signature
+     */
+    private function getStaffSignaturesByEmail(): array
+    {
+        if (! Schema::hasColumn('staff', 'email_signature')) {
+            return [];
+        }
+
+        return Staff::query()
+            ->where('status', 1)
+            ->whereNotNull('email_signature')
+            ->where('email_signature', '!=', '')
+            ->get(['email', 'email_signature'])
+            ->mapWithKeys(function (Staff $staff) {
+                $email = strtolower(trim((string) $staff->email));
+
+                return $email !== '' ? [$email => (string) $staff->email_signature] : [];
+            })
+            ->all();
+    }
+
+    private function resolveCurrentUserSignature(array $signaturesByEmail): string
+    {
+        $authEmail = strtolower(trim((string) optional(auth('admin')->user())->email));
+
+        return $authEmail !== '' ? ($signaturesByEmail[$authEmail] ?? '') : '';
     }
 }

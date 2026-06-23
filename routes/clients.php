@@ -77,6 +77,7 @@ Route::get('/clients/change_assignee', [ClientsController::class, 'change_assign
 Route::get('/get-templates', [CRMUtilityController::class, 'gettemplates'])->name('clients.gettemplates');
 Route::get('/get-compose-defaults', [CRMUtilityController::class, 'getComposeDefaults'])->name('clients.getComposeDefaults');
 Route::get('/crm/sendgrid-senders', [SendGridSendersController::class, 'senders'])->name('crm.sendgrid.senders');
+Route::get('/crm/staff-email-signature', [SendGridSendersController::class, 'staffSignature'])->name('crm.staff.email-signature');
 Route::post('/sendmail', [CRMUtilityController::class, 'sendmail'])->name('clients.sendmail');
 
 Route::post('/upload-mail', [ClientsController::class, 'uploadmail']);
@@ -84,6 +85,7 @@ Route::post('/upload-mail', [ClientsController::class, 'uploadmail']);
 // .msg upload routes (Python microservice)
 Route::post('/upload-fetch-mail', [EmailUploadController::class, 'uploadInboxEmails'])->name('email.upload.inbox');
 Route::post('/upload-sent-fetch-mail', [EmailUploadController::class, 'uploadSentEmails'])->name('email.upload.sent');
+Route::post('/preview-email-attachments', [EmailUploadController::class, 'previewEmailAttachments'])->name('email.upload.preview-attachments');
 Route::get('/email/check-service', [EmailUploadController::class, 'checkPythonService'])->name('email.check.service');
 
 Route::prefix('emails/smart-import')->name('emails.smart-import.')->group(function () {

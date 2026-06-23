@@ -41,6 +41,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const clientId = outlookContainer ? outlookContainer.getAttribute('data-client-id') : '';
     const matterId = outlookContainer ? outlookContainer.getAttribute('data-matter-id') : '';
     const authEmail = outlookContainer ? outlookContainer.getAttribute('data-auth-email') : '';
+    const staffSignatureUrl = outlookContainer ? (outlookContainer.getAttribute('data-staff-signature-url') || '') : '';
+    const personalFolders = outlookContainer
+        ? JSON.parse(outlookContainer.getAttribute('data-personal-folders') || '[]')
+        : [];
+    const matterFolders = outlookContainer
+        ? JSON.parse(outlookContainer.getAttribute('data-matter-folders') || '[]')
+        : [];
 
     loadEmails();
 
@@ -185,23 +192,482 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        const handleUploadFiles = async (files) => {
-            if (files.length === 0) return;
-
-            const formData = new FormData();
-            let msgFilesCount = 0;
-            for (let i = 0; i < files.length; i++) {
-                if (files[i].name.toLowerCase().endsWith('.msg')) {
-                    formData.append('email_files[]', files[i]);
-                    msgFilesCount++;
-                }
+        function formatUploadErrorDetails(errors) {
+            if (!errors || !Array.isArray(errors) || errors.length === 0) {
+                return '';
             }
+            return errors.map(function(err, index) {
+                const filename = err.filename || 'Unknown file';
+                const error = err.error || 'Unknown error';
+                return (index + 1) + '. ' + filename + '\n   ' + error;
+            }).join('\n\n');
+        }
 
-            if (msgFilesCount === 0) {
-                alert('Please upload .msg files only.');
+        function showUploadSuccessToast(message) {
+            if (typeof crmNotify !== 'undefined') {
+                crmNotify.success({
+                    title: 'Success',
+                    message: message,
+                    position: 'topRight',
+                    transitionIn: 'fadeInDown',
+                    transitionOut: 'fadeOutUp'
+                });
+            }
+        }
+
+        function showUploadErrorAlert(message) {
+            const text = message || 'Upload failed. Please try again.';
+            if (typeof crmNotify !== 'undefined') {
+                crmNotify.error({
+                    title: 'Upload Failed',
+                    message: text.replace(/\n/g, '<br>'),
+                    position: 'topRight',
+                    timeout: 10000,
+                    transitionIn: 'fadeInDown',
+                    transitionOut: 'fadeOutUp'
+                });
+            } else {
+                window.alert(text);
+            }
+        }
+
+        const DUPLICATE_EXISTS_MESSAGE = 'This email already exists.';
+
+        function showDuplicateEmailPrompt(fileName) {
+            return new Promise(function(resolve) {
+                const modal = document.getElementById('duplicateEmailModal');
+                const fileNameEl = document.getElementById('duplicateEmailFileName');
+                const acceptBtn = document.getElementById('duplicateEmailAccept');
+                const rejectBtn = document.getElementById('duplicateEmailReject');
+
+                if (!modal || !acceptBtn || !rejectBtn) {
+                    resolve(window.confirm(DUPLICATE_EXISTS_MESSAGE + '\n\nDo you want to upload it anyway?'));
+                    return;
+                }
+
+                if (fileNameEl) {
+                    fileNameEl.textContent = fileName ? ('File: ' + fileName) : '';
+                }
+
+                function cleanup() {
+                    modal.classList.remove('active');
+                    modal.setAttribute('aria-hidden', 'true');
+                    acceptBtn.removeEventListener('click', onAccept);
+                    rejectBtn.removeEventListener('click', onReject);
+                    modal.removeEventListener('click', onOverlayClick);
+                    document.removeEventListener('keydown', onKeyDown);
+                }
+
+                function onAccept() {
+                    cleanup();
+                    resolve(true);
+                }
+
+                function onReject() {
+                    cleanup();
+                    resolve(false);
+                }
+
+                function onOverlayClick(event) {
+                    if (event.target === modal) {
+                        onReject();
+                    }
+                }
+
+                function onKeyDown(event) {
+                    if (event.key === 'Escape') {
+                        onReject();
+                    }
+                }
+
+                acceptBtn.addEventListener('click', onAccept);
+                rejectBtn.addEventListener('click', onReject);
+                modal.addEventListener('click', onOverlayClick);
+                document.addEventListener('keydown', onKeyDown);
+
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                acceptBtn.focus();
+            });
+        }
+
+        function getDuplicateUploadError(data) {
+            if (!data || !Array.isArray(data.errors)) {
+                return null;
+            }
+            return data.errors.find(function(err) { return err && err.duplicate; }) || null;
+        }
+
+        function getAttachmentStem(filename) {
+            const lastDot = (filename || '').lastIndexOf('.');
+            if (lastDot <= 0) {
+                return filename || 'attachment';
+            }
+            return filename.substring(0, lastDot);
+        }
+
+        function getAttachmentExtension(filename) {
+            const lastDot = (filename || '').lastIndexOf('.');
+            if (lastDot <= 0) {
+                return '';
+            }
+            return filename.substring(lastDot);
+        }
+
+        function formatAttachmentFileSize(bytes) {
+            const size = Number(bytes) || 0;
+            if (size <= 0) {
+                return 'Unknown size';
+            }
+            if (size < 1024) {
+                return size + ' B';
+            }
+            if (size < 1024 * 1024) {
+                return (size / 1024).toFixed(1) + ' KB';
+            }
+            return (size / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function getAttachmentFileIcon(filename, contentType) {
+            const ext = getAttachmentExtension(filename).toLowerCase().replace('.', '');
+            if (ext === 'pdf' || (contentType && contentType.indexOf('pdf') !== -1)) {
+                return 'fa-file-pdf';
+            }
+            if (['doc', 'docx'].indexOf(ext) !== -1) {
+                return 'fa-file-word';
+            }
+            if (['xls', 'xlsx', 'csv'].indexOf(ext) !== -1) {
+                return 'fa-file-excel';
+            }
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].indexOf(ext) !== -1) {
+                return 'fa-file-image';
+            }
+            if (['zip', 'rar', '7z'].indexOf(ext) !== -1) {
+                return 'fa-file-archive';
+            }
+            return 'fa-file-alt';
+        }
+
+        function buildFolderOptionsHtml(storageType, selectedFolderId) {
+            const folders = storageType === 'personal' ? personalFolders : matterFolders;
+            if (!folders.length) {
+                return '<option value="">No folders available</option>';
+            }
+            let html = '<option value="">Select folder</option>';
+            folders.forEach(function(folder) {
+                const selected = String(selectedFolderId) === String(folder.id) ? ' selected' : '';
+                html += '<option value="' + escapeHtml(String(folder.id)) + '"' + selected + '>' + escapeHtml(folder.title) + '</option>';
+            });
+            return html;
+        }
+
+        function syncAttachmentFolderField(card, storageType, selectedFolderId) {
+            const folderField = card.querySelector('.attachment-storage-field--folder');
+            const folderSelect = card.querySelector('.attachment-folder-select');
+            if (!folderField || !folderSelect) {
                 return;
             }
 
+            if (storageType === 'personal' || storageType === 'matter') {
+                folderField.style.display = '';
+                folderSelect.innerHTML = buildFolderOptionsHtml(storageType, selectedFolderId || '');
+                folderSelect.disabled = false;
+            } else {
+                folderField.style.display = 'none';
+                folderSelect.innerHTML = '<option value="">Select folder</option>';
+                folderSelect.value = '';
+                folderSelect.disabled = true;
+            }
+        }
+
+        function setAttachmentCardStorageType(card, storageType, folderId) {
+            card.dataset.storageType = storageType;
+            card.classList.remove('has-error');
+            const errorEl = card.querySelector('.attachment-field-error');
+            if (errorEl) {
+                errorEl.textContent = '';
+            }
+
+            card.querySelectorAll('.attachment-loc-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.dataset.type === storageType);
+            });
+
+            syncAttachmentFolderField(card, storageType, folderId || '');
+        }
+
+        function populateBulkFolderSelect(bulkTypeSelect, bulkFolderSelect, storageType, selectedFolderId) {
+            if (!bulkFolderSelect) {
+                return;
+            }
+            if (storageType === 'personal' || storageType === 'matter') {
+                bulkFolderSelect.style.display = '';
+                bulkFolderSelect.innerHTML = buildFolderOptionsHtml(storageType, selectedFolderId || '');
+                bulkFolderSelect.disabled = false;
+            } else {
+                bulkFolderSelect.style.display = 'none';
+                bulkFolderSelect.innerHTML = '<option value="">Select folder</option>';
+                bulkFolderSelect.value = '';
+                bulkFolderSelect.disabled = true;
+            }
+        }
+
+        function renderAttachmentStorageCard(att, index) {
+            const stem = getAttachmentStem(att.filename);
+            const ext = getAttachmentExtension(att.filename);
+            const icon = getAttachmentFileIcon(att.filename, att.content_type);
+            const sizeLabel = formatAttachmentFileSize(att.file_size);
+
+            return `
+                <div class="attachment-storage-card" data-index="${index}" data-storage-type="email">
+                    <div class="attachment-storage-card__header">
+                        <div class="attachment-storage-card__icon"><i class="fas ${icon}"></i></div>
+                        <div class="attachment-storage-card__meta">
+                            <div class="attachment-storage-card__original" title="${escapeHtml(att.filename)}">${escapeHtml(att.filename)}</div>
+                            <div class="attachment-storage-card__size">${escapeHtml(sizeLabel)}</div>
+                        </div>
+                    </div>
+                    <div class="attachment-storage-card__fields">
+                        <div class="attachment-storage-field">
+                            <label for="attachmentName_${index}">Save as</label>
+                            <div class="attachment-rename-input">
+                                <input type="text" id="attachmentName_${index}" value="${escapeHtml(stem)}" data-original="${escapeHtml(att.filename)}" autocomplete="off">
+                                ${ext ? `<span class="attachment-rename-ext">${escapeHtml(ext)}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="attachment-storage-field">
+                            <label>Document location</label>
+                            <div class="attachment-location-tabs" role="group" aria-label="Document location for ${escapeHtml(att.filename)}">
+                                <button type="button" class="attachment-loc-btn active" data-type="email">Email only</button>
+                                <button type="button" class="attachment-loc-btn" data-type="personal">Personal</button>
+                                <button type="button" class="attachment-loc-btn" data-type="matter">Matter</button>
+                            </div>
+                        </div>
+                        <div class="attachment-storage-field attachment-storage-field--folder" style="display: none;">
+                            <label for="attachmentFolder_${index}">Folder</label>
+                            <select id="attachmentFolder_${index}" class="attachment-folder-select" disabled>
+                                <option value="">Select folder</option>
+                            </select>
+                            <span class="attachment-field-error">Please select a folder.</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function bindAttachmentStorageCardEvents(card) {
+            card.querySelectorAll('.attachment-loc-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    setAttachmentCardStorageType(card, btn.dataset.type || 'email', '');
+                });
+            });
+        }
+
+        async function previewEmailAttachments(file) {
+            const formData = new FormData();
+            formData.append('email_files[]', file);
+            formData.append('client_id', clientId);
+            formData.append('type', 'client');
+            formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+
+            const response = await fetch(baseUrl + '/preview-email-attachments', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+            if (!response.ok || !result.status) {
+                throw new Error(result.message || 'Failed to preview attachments');
+            }
+            return result.attachments || [];
+        }
+
+        function showAttachmentStorageModal(attachments) {
+            return new Promise(function(resolve) {
+                const modal = document.getElementById('attachmentStorageModal');
+                const body = document.getElementById('attachmentStorageModalBody');
+                const countEl = document.getElementById('attachmentStorageCount');
+                const bulkTypeSelect = document.getElementById('attachmentBulkType');
+                const bulkFolderSelect = document.getElementById('attachmentBulkFolder');
+                const bulkApplyBtn = document.getElementById('attachmentBulkApply');
+                const confirmBtn = document.getElementById('attachmentStorageConfirm');
+                const cancelBtn = document.getElementById('attachmentStorageCancel');
+
+                if (!modal || !body || !confirmBtn || !cancelBtn) {
+                    resolve(null);
+                    return;
+                }
+
+                if (countEl) {
+                    countEl.textContent = attachments.length + (attachments.length === 1 ? ' file' : ' files');
+                }
+
+                body.innerHTML = attachments.map(renderAttachmentStorageCard).join('');
+                body.querySelectorAll('.attachment-storage-card').forEach(bindAttachmentStorageCardEvents);
+
+                if (bulkTypeSelect) {
+                    bulkTypeSelect.value = 'email';
+                }
+                populateBulkFolderSelect(bulkTypeSelect, bulkFolderSelect, 'email', '');
+
+                function cleanup() {
+                    modal.classList.remove('active');
+                    modal.setAttribute('aria-hidden', 'true');
+                    confirmBtn.removeEventListener('click', onConfirm);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    if (bulkApplyBtn) {
+                        bulkApplyBtn.removeEventListener('click', onBulkApply);
+                    }
+                    if (bulkTypeSelect) {
+                        bulkTypeSelect.removeEventListener('change', onBulkTypeChange);
+                    }
+                    modal.removeEventListener('click', onOverlayClick);
+                    document.removeEventListener('keydown', onKeyDown);
+                }
+
+                function collectConfig() {
+                    return attachments.map(function(att, index) {
+                        const card = body.querySelector('.attachment-storage-card[data-index="' + index + '"]');
+                        const nameInput = document.getElementById('attachmentName_' + index);
+                        const folderSelect = document.getElementById('attachmentFolder_' + index);
+                        const storageType = card ? (card.dataset.storageType || 'email') : 'email';
+                        const folderId = folderSelect ? folderSelect.value : '';
+
+                        return {
+                            original_filename: att.filename,
+                            file_name: nameInput ? nameInput.value.trim() : getAttachmentStem(att.filename),
+                            storage_type: storageType,
+                            folder_id: folderId
+                        };
+                    });
+                }
+
+                function validateConfig(config) {
+                    let firstInvalidCard = null;
+                    body.querySelectorAll('.attachment-storage-card').forEach(function(card) {
+                        card.classList.remove('has-error');
+                        const errorEl = card.querySelector('.attachment-field-error');
+                        if (errorEl) {
+                            errorEl.textContent = 'Please select a folder.';
+                        }
+                    });
+
+                    config.forEach(function(item, index) {
+                        const card = body.querySelector('.attachment-storage-card[data-index="' + index + '"]');
+                        const nameInput = document.getElementById('attachmentName_' + index);
+                        const folderSelect = document.getElementById('attachmentFolder_' + index);
+
+                        if (nameInput && !nameInput.value.trim()) {
+                            if (card) {
+                                card.classList.add('has-error');
+                                const errorEl = card.querySelector('.attachment-field-error');
+                                if (errorEl) {
+                                    errorEl.textContent = 'Please enter a file name.';
+                                }
+                                if (!firstInvalidCard) {
+                                    firstInvalidCard = card;
+                                }
+                            }
+                        }
+
+                        if (item.storage_type !== 'email' && !item.folder_id) {
+                            if (card) {
+                                card.classList.add('has-error');
+                                if (!firstInvalidCard) {
+                                    firstInvalidCard = card;
+                                }
+                            }
+                            if (folderSelect) {
+                                folderSelect.focus();
+                            }
+                        }
+                    });
+
+                    if (firstInvalidCard) {
+                        firstInvalidCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        return false;
+                    }
+
+                    return true;
+                }
+
+                function onBulkTypeChange() {
+                    populateBulkFolderSelect(bulkTypeSelect, bulkFolderSelect, bulkTypeSelect.value, '');
+                }
+
+                function onBulkApply() {
+                    const storageType = bulkTypeSelect ? bulkTypeSelect.value : 'email';
+                    const folderId = bulkFolderSelect ? bulkFolderSelect.value : '';
+                    if ((storageType === 'personal' || storageType === 'matter') && !folderId) {
+                        showUploadErrorAlert('Please select a folder before applying to all attachments.');
+                        if (bulkFolderSelect) {
+                            bulkFolderSelect.focus();
+                        }
+                        return;
+                    }
+
+                    body.querySelectorAll('.attachment-storage-card').forEach(function(card) {
+                        setAttachmentCardStorageType(card, storageType, folderId);
+                    });
+                }
+
+                function onConfirm() {
+                    const config = collectConfig();
+                    if (!validateConfig(config)) {
+                        return;
+                    }
+                    cleanup();
+                    resolve(config);
+                }
+
+                function onCancel() {
+                    cleanup();
+                    resolve(null);
+                }
+
+                function onOverlayClick(event) {
+                    if (event.target === modal) {
+                        onCancel();
+                    }
+                }
+
+                function onKeyDown(event) {
+                    if (event.key === 'Escape') {
+                        onCancel();
+                    }
+                }
+
+                confirmBtn.addEventListener('click', onConfirm);
+                cancelBtn.addEventListener('click', onCancel);
+                if (bulkApplyBtn) {
+                    bulkApplyBtn.addEventListener('click', onBulkApply);
+                }
+                if (bulkTypeSelect) {
+                    bulkTypeSelect.addEventListener('change', onBulkTypeChange);
+                }
+                modal.addEventListener('click', onOverlayClick);
+                document.addEventListener('keydown', onKeyDown);
+
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                confirmBtn.focus();
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function buildOutlookUploadFormData(file, forceUpload, attachmentStorage) {
+            const formData = new FormData();
+            formData.append('email_files[]', file);
             formData.append('client_id', clientId);
             formData.append('type', 'client');
             if (currentFolder === 'sent') {
@@ -210,37 +676,169 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('upload_inbox_mail_client_matter_id', matterId);
             }
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+            if (forceUpload) {
+                formData.append('force_upload', '1');
+            }
+            if (attachmentStorage && attachmentStorage.length) {
+                formData.append('attachment_storage', JSON.stringify(attachmentStorage));
+            }
+            return formData;
+        }
 
-            const uploadUrl = currentFolder === 'sent' 
-                ? `${baseUrl}/upload-sent-fetch-mail` 
+        async function postOutlookEmailUpload(file, uploadUrl, forceUpload, attachmentStorage) {
+            const response = await fetch(uploadUrl, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: buildOutlookUploadFormData(file, forceUpload, attachmentStorage)
+            });
+
+            let result;
+            try {
+                result = await response.json();
+            } catch (parseError) {
+                throw new Error('The server returned an invalid response. Please refresh the page and try again.');
+            }
+
+            if (!response.ok) {
+                let errorMsg = result.message || ('Upload failed (HTTP ' + response.status + ').');
+                const details = formatUploadErrorDetails(result.errors);
+                if (details) {
+                    errorMsg += '\n\n' + details;
+                }
+                throw new Error(errorMsg);
+            }
+
+            return result;
+        }
+
+        async function uploadSingleOutlookFile(file, uploadUrl) {
+            let attachmentStorage = null;
+            try {
+                const previewAttachments = await previewEmailAttachments(file);
+                if (previewAttachments.length > 0) {
+                    attachmentStorage = await showAttachmentStorageModal(previewAttachments);
+                    if (attachmentStorage === null) {
+                        return { uploaded: 0, failed: 0, rejected: 1, cancelled: true, errors: [] };
+                    }
+                }
+            } catch (previewError) {
+                console.warn('Attachment preview failed, continuing upload:', previewError);
+            }
+
+            let result = await postOutlookEmailUpload(file, uploadUrl, false, attachmentStorage);
+            const duplicateError = getDuplicateUploadError(result);
+
+            if (duplicateError) {
+                const acceptUpload = await showDuplicateEmailPrompt(file.name);
+                if (acceptUpload) {
+                    result = await postOutlookEmailUpload(file, uploadUrl, true, attachmentStorage);
+                } else {
+                    showUploadErrorAlert(DUPLICATE_EXISTS_MESSAGE);
+                    return { uploaded: 0, failed: 0, rejected: 1, errors: [duplicateError] };
+                }
+            }
+
+            return {
+                uploaded: result.uploaded || 0,
+                failed: result.failed || 0,
+                rejected: 0,
+                errors: result.errors || [],
+                message: result.message || ''
+            };
+        }
+
+        const handleUploadFiles = async (files) => {
+            if (files.length === 0) return;
+
+            const msgFiles = [];
+            for (let i = 0; i < files.length; i++) {
+                if (files[i].name.toLowerCase().endsWith('.msg')) {
+                    msgFiles.push(files[i]);
+                }
+            }
+
+            if (msgFiles.length === 0) {
+                showUploadErrorAlert('Please upload .msg files only.');
+                return;
+            }
+
+            const uploadUrl = currentFolder === 'sent'
+                ? `${baseUrl}/upload-sent-fetch-mail`
                 : `${baseUrl}/upload-fetch-mail`;
 
             uploadStatus.style.display = 'block';
             uploadStatus.style.color = 'var(--outlook-blue)';
-            uploadStatus.textContent = `Uploading ${msgFilesCount} file(s)...`;
+            uploadStatus.textContent = `Uploading ${msgFiles.length} file(s)...`;
+
+            let totalUploaded = 0;
+            let totalFailed = 0;
+            let totalRejected = 0;
+            const allErrors = [];
 
             try {
-                const response = await fetch(uploadUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: formData
-                });
-                const result = await response.json();
-                
-                if (result.status) {
+                for (let i = 0; i < msgFiles.length; i++) {
+                    const file = msgFiles[i];
+                    uploadStatus.textContent = `Uploading ${i + 1} of ${msgFiles.length}: ${file.name}...`;
+
+                    try {
+                        const fileResult = await uploadSingleOutlookFile(file, uploadUrl);
+                        if (fileResult.cancelled) {
+                            totalRejected += 1;
+                            continue;
+                        }
+                        totalUploaded += fileResult.uploaded;
+                        totalFailed += fileResult.failed;
+                        totalRejected += fileResult.rejected || 0;
+                        if (fileResult.errors && fileResult.errors.length) {
+                            allErrors.push.apply(allErrors, fileResult.errors);
+                        }
+                    } catch (fileError) {
+                        totalFailed += 1;
+                        allErrors.push({
+                            filename: file.name,
+                            error: fileError.message || 'Upload failed'
+                        });
+                    }
+                }
+
+                const errorDetails = formatUploadErrorDetails(allErrors.filter(function(err) { return !err.rejected; }));
+
+                if (totalUploaded > 0 && totalFailed === 0 && totalRejected === 0) {
                     uploadStatus.style.color = 'green';
                     uploadStatus.textContent = 'Upload complete!';
-                    loadEmails(); // Refresh list
+                    showUploadSuccessToast('Successfully uploaded ' + totalUploaded + ' email' + (totalUploaded > 1 ? 's' : '') + '.');
+                    loadEmails();
+                } else if (totalUploaded > 0) {
+                    uploadStatus.style.color = 'orange';
+                    uploadStatus.textContent = 'Upload completed with issues';
+                    showUploadSuccessToast('Successfully uploaded ' + totalUploaded + ' email' + (totalUploaded > 1 ? 's' : '') + '.');
+                    if (totalFailed > 0) {
+                        let errorMsg = totalFailed + ' file' + (totalFailed > 1 ? 's' : '') + ' could not be processed.';
+                        if (errorDetails) {
+                            errorMsg += '\n\nError details:\n' + errorDetails;
+                        }
+                        showUploadErrorAlert(errorMsg);
+                    }
+                    loadEmails();
+                } else if (totalRejected > 0 && totalFailed === 0) {
+                    uploadStatus.style.color = 'orange';
+                    uploadStatus.textContent = 'Upload skipped';
                 } else {
                     uploadStatus.style.color = 'red';
-                    uploadStatus.textContent = result.message || 'Upload failed.';
+                    uploadStatus.textContent = 'Upload failed';
+                    let errorMsg = 'Upload failed. Please try again.';
+                    if (errorDetails) {
+                        errorMsg += '\n\nError details:\n' + errorDetails;
+                    }
+                    showUploadErrorAlert(errorMsg);
                 }
             } catch (error) {
                 uploadStatus.style.color = 'red';
-                uploadStatus.textContent = 'Upload error. See console.';
+                uploadStatus.textContent = 'Upload failed';
+                showUploadErrorAlert(error.message || 'Upload failed. Please try again.');
                 console.error(error);
             }
 
@@ -552,28 +1150,46 @@ document.addEventListener('DOMContentLoaded', function() {
             content = `<br><br><div dir="ltr">---------- Forwarded message ---------<br>From: <strong>${escapeHtml(email.from_mail)}</strong><br>Date: ${escapeHtml(email.created_at)}<br>Subject: ${escapeHtml(email.subject)}<br></div><br><blockquote style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex">${emailHtml}</blockquote>`;
         }
 
-        if (typeof tinymce !== 'undefined') {
-            let editor = tinymce.get('composeEditor');
-            if (!editor) {
-                const config = typeof tinymceFullConfig !== 'undefined' ? tinymceFullConfig : {
-                    height: 300,
-                    menubar: false,
-                    plugins: ['advlist autolink lists link image charmap print preview anchor', 'searchreplace visualblocks code fullscreen', 'insertdatetime media table paste code help wordcount'],
-                    toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help'
-                };
-                tinymce.init({
-                    ...config,
-                    selector: '#composeEditor',
-                    init_instance_callback: function (inst) {
-                        inst.setContent(content);
-                    }
-                });
-            } else {
-                editor.setContent(content);
+        const applySignatureAndSetContent = (signatureHtml) => {
+            let finalContent = content;
+            if (signatureHtml && signatureHtml.trim()) {
+                finalContent = signatureHtml.trim() + finalContent;
             }
-        } else {
-            composeEditor.value = content;
-        }
+
+            if (typeof tinymce !== 'undefined') {
+                let editor = tinymce.get('composeEditor');
+                if (!editor) {
+                    const config = typeof tinymceFullConfig !== 'undefined' ? tinymceFullConfig : {
+                        height: 300,
+                        menubar: false,
+                        plugins: ['advlist autolink lists link image charmap print preview anchor', 'searchreplace visualblocks code fullscreen', 'insertdatetime media table paste code help wordcount'],
+                        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help'
+                    };
+                    tinymce.init({
+                        ...config,
+                        selector: '#composeEditor',
+                        init_instance_callback: function (inst) {
+                            inst.setContent(finalContent);
+                        }
+                    });
+                } else {
+                    editor.setContent(finalContent);
+                }
+            } else {
+                composeEditor.value = finalContent;
+            }
+        };
+
+        const fetchSignature = (typeof window.crmFetchStaffSignature === 'function')
+            ? window.crmFetchStaffSignature(authEmail)
+            : (staffSignatureUrl
+                ? fetch(staffSignatureUrl + (authEmail ? '?from_email=' + encodeURIComponent(authEmail) : ''), {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin'
+                }).then(r => r.ok ? r.json() : {}).then(d => (d && d.signature) ? String(d.signature) : '')
+                : Promise.resolve(''));
+
+        fetchSignature.then(applySignatureAndSetContent).catch(() => applySignatureAndSetContent(''));
     }
 
     function escapeHtml(unsafe) {

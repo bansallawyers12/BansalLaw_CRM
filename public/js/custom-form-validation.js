@@ -6,6 +6,24 @@ var min = "This field should be greater than or equal to ";
 var max = "This field should be less than or equal to ";
 var equal = "This field should be equal to ";
 
+$(document).ready(function() {
+    var toastMsg = localStorage.getItem('toastMessage');
+    var toastType = localStorage.getItem('toastType');
+    if (toastMsg) {
+        setTimeout(function() {
+            if (typeof crmNotify !== 'undefined') {
+                if (toastType === 'success') {
+                    crmNotify.success({ title: 'Success', message: toastMsg, position: 'topRight', transitionIn: 'fadeInDown', transitionOut: 'fadeOutUp' });
+                } else {
+                    crmNotify.error({ title: 'Error', message: toastMsg, position: 'topRight', transitionIn: 'fadeInDown', transitionOut: 'fadeOutUp' });
+                }
+            }
+        }, 300); // short delay to ensure iziToast is fully initialized
+        localStorage.removeItem('toastMessage');
+        localStorage.removeItem('toastType');
+    }
+});
+
 function customValidate(formName, savetype = '')
 	{ //alert(formName);
 		if (formName === 'convert_lead_to_client') {
@@ -558,9 +576,11 @@ function customValidate(formName, savetype = '')
                                 if (response.status) {
                                     $('#uploadAndFetchMailModel').modal('hide');
 									localStorage.setItem('activeTab', 'emails');
+                                    localStorage.setItem('toastMessage', response.message);
+                                    localStorage.setItem('toastType', 'success');
                                     location.reload();
-                                    $('.custom-error-msg').html('<span class="alert alert-success">' + response.message + '</span>');
                                 } else {
+                                    if(typeof crmNotify !== 'undefined') { crmNotify.error(response.message); }
                                     $('.custom-error-msg').html('<span class="alert alert-danger">' + response.message + '</span>');
                                 }
                             },
@@ -569,6 +589,7 @@ function customValidate(formName, savetype = '')
                                     let errors = xhr.responseJSON.errors;
                                     displayValidationErrors(errors);
                                 } else {
+                                    if(typeof crmNotify !== 'undefined') { crmNotify.error('An unexpected error occurred. Please try again.'); }
                                     $('.custom-error-msg').html('<span class="alert alert-danger">An unexpected error occurred. Please try again.</span>');
                                 }
                             }
@@ -593,10 +614,11 @@ function customValidate(formName, savetype = '')
                                 if (response.status) {
                                     $('#uploadSentAndFetchMailModel').modal('hide');
 									localStorage.setItem('activeTab', 'emails');
+                                    localStorage.setItem('toastMessage', response.message);
+                                    localStorage.setItem('toastType', 'success');
                                     location.reload();
-
-                                    $('.custom-error-msg').html('<span class="alert alert-success">' + response.message + '</span>');
                                 } else {
+                                    if(typeof crmNotify !== 'undefined') { crmNotify.error(response.message); }
                                     $('.custom-error-msg').html('<span class="alert alert-danger">' + response.message + '</span>');
                                 }
                             },
@@ -605,6 +627,7 @@ function customValidate(formName, savetype = '')
                                     let errors = xhr.responseJSON.errors;
                                     displayValidationErrors2(errors);
                                 } else {
+                                    if(typeof crmNotify !== 'undefined') { crmNotify.error('An unexpected error occurred. Please try again.'); }
                                     $('.custom-error-msg').html('<span class="alert alert-danger">An unexpected error occurred. Please try again.</span>');
                                 }
                             }

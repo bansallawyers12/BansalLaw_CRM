@@ -2,18 +2,24 @@
 
 @section('content')
     @php
-        $hour = (int) now()->format('G');
-        $greeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
         $staffUser = auth('admin')->user();
         $staffFirstName = ($staffUser && ! empty($staffUser->first_name)) ? $staffUser->first_name : 'there';
+        $dashboardTz = ($staffUser && ! empty($staffUser->time_zone)) ? $staffUser->time_zone : config('app.timezone');
+        $dashboardNow = now()->timezone($dashboardTz);
+        $hour = (int) $dashboardNow->format('G');
+        $greeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
         $dashboardFiltersActive = ! empty(trim((string) ($filters['client_name'] ?? '')))
             || ! empty((string) ($filters['client_stage'] ?? ''));
     @endphp
     <main class="main-content">
         <header class="header">
             <div class="header-title-section">
-                <h1>{{ $greeting }}, {{ $staffFirstName }}</h1>
-                <p class="dashboard-header-meta">{{ now()->format('l, j F Y') }}</p>
+                <h1 id="dashboardGreeting" data-first-name="{{ $staffFirstName }}">{{ $greeting }}, {{ $staffFirstName }}</h1>
+                <p class="dashboard-header-meta">
+                    <time id="dashboardDateTime" datetime="{{ $dashboardNow->toIso8601String() }}" data-timezone="{{ $dashboardTz }}">
+                        {{ $dashboardNow->format('l, j F Y') }} · {{ $dashboardNow->format('g:i A') }}
+                    </time>
+                </p>
             </div>
             <div class="header-actions">
                 <a href="{{ route('adminconsole.system.clients.createclient') }}" class="action-btn action-btn-primary">
@@ -408,6 +414,10 @@
     font-size: 0.95rem;
     font-weight: 500;
     color: var(--text-muted-color);
+}
+
+.dashboard-header-meta time {
+    font-variant-numeric: tabular-nums;
 }
 
 .header-title-section h1 {

@@ -131,7 +131,9 @@ class EmailUploadController extends Controller
                         $failedCount++;
                         $errors[] = [
                             'filename' => $file->getClientOriginalName(),
-                            'error' => $result['error']
+                            'error' => $result['error'],
+                            'duplicate' => !empty($result['duplicate']),
+                            'existing' => $result['existing'] ?? null,
                         ];
                     }
                 } catch (\Exception $e) {
@@ -268,7 +270,9 @@ class EmailUploadController extends Controller
                         $failedCount++;
                         $errors[] = [
                             'filename' => $file->getClientOriginalName(),
-                            'error' => $result['error'] ?? 'Unknown error occurred while processing email'
+                            'error' => $result['error'] ?? 'Unknown error occurred while processing email',
+                            'duplicate' => !empty($result['duplicate']),
+                            'existing' => $result['existing'] ?? null,
                         ];
                     }
                 } catch (\Exception $e) {
@@ -337,6 +341,143 @@ class EmailUploadController extends Controller
     }
 
     /**
+     * Parse a .msg file and return non-inline attachment metadata for storage prompts.
+     */
+    public function previewEmailAttachments(Request $request)
+    {
+        try {
+            $validationResponse = $this->validateEmailUploadRequest($request);
+            if ($validationResponse) {
+                return $validationResponse;
+            }
+
+            $this->ensureCrmRecordAccess((int) $request->client_id);
+
+            $file = $request->file('email_files')[0] ?? null;
+            if (!$file) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No file uploaded',
+                ], 400);
+            }
+
+            $parsedData = $this->parseEmailWithPython($file);
+            if (!$parsedData || isset($parsedData['error']) || (isset($parsedData['success']) && !$parsedData['success'])) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $parsedData['error'] ?? 'Failed to parse email',
+                ], 400);
+            }
+
+            $attachments = [];
+            foreach ($parsedData['attachments'] ?? [] as $index => $attachmentData) {
+                if (!empty($attachmentData['is_inline'])) {
+                    continue;
+                }
+                $filename = $attachmentData['filename'] ?? ('attachment_' . ($index + 1));
+                $attachments[] = [
+                    'index' => $index,
+                    'filename' => $filename,
+                    'display_name' => $attachmentData['display_name'] ?? $filename,
+                    'file_size' => $attachmentData['file_size'] ?? $attachmentData['size'] ?? 0,
+                    'content_type' => $attachmentData['content_type'] ?? 'application/octet-stream',
+                ];
+            }
+
+            return response()->json([
+                'status' => true,
+                'attachments' => $attachments,
+                'has_attachments' => count($attachments) > 0,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Preview email attachments error', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to preview attachments: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Find an existing email log that matches the uploaded file for this client/matter.
+     */
+    protected function findExistingEmailLog(
+        int $clientId,
+        ?int $clientMatterId,
+        string $mailType,
+        string $recordType,
+        array $parsedData,
+        string $fileHash
+    ): ?EmailLog {
+        $query = EmailLog::query()
+            ->where('client_id', $clientId)
+            ->where('mail_body_type', $mailType)
+            ->where('type', $recordType);
+
+        if ($clientMatterId) {
+            $query->where('client_matter_id', $clientMatterId);
+        }
+
+        $byHash = (clone $query)->where('file_hash', $fileHash)->first();
+        if ($byHash) {
+            return $byHash;
+        }
+
+        $messageId = trim((string) ($parsedData['message_id'] ?? ''));
+        if ($messageId !== '') {
+            $byMessageId = (clone $query)->where('message_id', $messageId)->first();
+            if ($byMessageId) {
+                return $byMessageId;
+            }
+        }
+
+        $subject = trim((string) ($parsedData['subject'] ?? ''));
+        $sender = trim((string) ($parsedData['sender_email'] ?? ''));
+        if ($subject !== '' && $sender !== '') {
+            $dupQuery = (clone $query)
+                ->where('subject', $subject)
+                ->where('from_mail', $sender);
+
+            if (!empty($parsedData['sent_date'])) {
+                $sentDate = $this->parseEmailDateTimeForStorage($parsedData['sent_date']);
+                if ($sentDate) {
+                    $dupQuery->where('fetch_mail_sent_time', $sentDate);
+                }
+            }
+
+            $existing = $dupQuery->first();
+            if ($existing) {
+                return $existing;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Build a user-facing duplicate email message.
+     */
+    protected function buildDuplicateErrorMessage(EmailLog $existing): string
+    {
+        $subject = $existing->subject ?: '(No subject)';
+        $from = $existing->from_mail ?: 'Unknown sender';
+        $sent = $existing->fetch_mail_sent_time
+            ? $existing->fetch_mail_sent_time->format('d/m/Y H:i')
+            : null;
+
+        $message = 'This email already exists for this matter.';
+        $message .= ' Subject: "' . $subject . '" from ' . $from;
+        if ($sent) {
+            $message .= ' (sent ' . $sent . ')';
+        }
+
+        return $message;
+    }
+
+    /**
      * Process individual email file using Python microservice
      * 
      * @param \Illuminate\Http\UploadedFile $file
@@ -356,8 +497,47 @@ class EmailUploadController extends Controller
             $sanitizedFileName = $this->sanitizeFilename($fileName);
             $uniqueFileName = time() . '-' . $sanitizedFileName;
             $docType = 'conversion_email_fetch';
+
+            // 1. Parse email using Python microservice (before storage to allow duplicate check without S3 upload)
+            $parsedData = $this->parseEmailWithPython($file);
+
+            if (!$parsedData || isset($parsedData['error']) || (isset($parsedData['success']) && !$parsedData['success'])) {
+                throw new \Exception($parsedData['error'] ?? 'Failed to parse email');
+            }
+
+            $fileHash = md5_file($file->getRealPath());
+            $matterId = $mailType === 'sent'
+                ? $request->upload_sent_mail_client_matter_id
+                : $request->upload_inbox_mail_client_matter_id;
+            $matterId = empty($matterId) ? null : (int) $matterId;
+
+            if (!$request->boolean('force_upload')) {
+                $existing = $this->findExistingEmailLog(
+                    (int) $clientId,
+                    $matterId,
+                    $mailType,
+                    $request->type ?? 'client',
+                    $parsedData,
+                    $fileHash
+                );
+                if ($existing) {
+                    return [
+                        'success' => false,
+                        'duplicate' => true,
+                        'error' => $this->buildDuplicateErrorMessage($existing),
+                        'existing' => [
+                            'id' => $existing->id,
+                            'subject' => $existing->subject,
+                            'from_mail' => $existing->from_mail,
+                            'sent_date' => $existing->fetch_mail_sent_time
+                                ? $existing->fetch_mail_sent_time->format('d/m/Y H:i')
+                                : null,
+                        ],
+                    ];
+                }
+            }
             
-            // 1. Upload file to S3 (use sanitized filename in path)
+            // 2. Upload file to S3 (use sanitized filename in path)
             // Ensure all path components are sanitized to prevent 403 errors
             $sanitizedClientId = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $clientUniqueId);
             $filePath = $sanitizedClientId . '/' . $docType . '/' . $mailType . '/' . $uniqueFileName;
@@ -395,15 +575,6 @@ class EmailUploadController extends Controller
                     'error' => $urlException->getMessage()
                 ]);
                 throw new \Exception('File URL generation error: ' . $urlException->getMessage());
-            }
-
-            // 2. Parse email using Python microservice
-            $parsedData = $this->parseEmailWithPython($file);
-
-            // Check for error in response (Python service returns error field on failure, 
-            // but doesn't return success field on success - just the parsed data)
-            if (!$parsedData || isset($parsedData['error']) || (isset($parsedData['success']) && !$parsedData['success'])) {
-                throw new \Exception($parsedData['error'] ?? 'Failed to parse email');
             }
 
             // 3. Save document record
@@ -499,7 +670,7 @@ class EmailUploadController extends Controller
                 $mailReport->received_date = now();
             }
             
-            $mailReport->file_hash = md5_file($file->getRealPath());
+            $mailReport->file_hash = $fileHash;
             
             try {
                 $mailReport->save();
@@ -515,6 +686,8 @@ class EmailUploadController extends Controller
                 throw new \Exception('Failed to save email record: ' . ($e->errorInfo[2] ?? $e->getMessage()));
             }
 
+            $attachmentStorageMap = $this->parseAttachmentStorageMap($request);
+
             // NEW: Save attachments
             if (isset($parsedData['attachments']) && is_array($parsedData['attachments'])) {
                 Log::info('Processing attachments', [
@@ -524,7 +697,17 @@ class EmailUploadController extends Controller
                 
                 foreach ($parsedData['attachments'] as $attachmentData) {
                     try {
-                        $this->saveAttachment($mailReport->id, $attachmentData, $clientUniqueId);
+                        $origName = $attachmentData['filename'] ?? '';
+                        $storageConfig = $attachmentStorageMap[$origName] ?? null;
+                        $this->saveAttachment(
+                            $mailReport->id,
+                            $attachmentData,
+                            $clientUniqueId,
+                            $storageConfig,
+                            $request,
+                            (int) $clientId,
+                            $document->client_matter_id
+                        );
                     } catch (\Exception $e) {
                         Log::error('Error in saveAttachment loop', [
                             'error' => $e->getMessage(),
@@ -870,17 +1053,60 @@ class EmailUploadController extends Controller
     }
 
     /**
+     * Parse attachment storage preferences sent from the upload UI.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    protected function parseAttachmentStorageMap(Request $request): array
+    {
+        if (!$request->filled('attachment_storage')) {
+            return [];
+        }
+
+        $decoded = json_decode((string) $request->input('attachment_storage'), true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $map = [];
+        foreach ($decoded as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $key = $item['original_filename'] ?? $item['filename'] ?? null;
+            if ($key) {
+                $map[$key] = $item;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
      * Save attachment to database and S3
      * 
      * @param int $mailReportId
      * @param array $attachmentData
      * @param string $clientUniqueId
+     * @param array|null $storageConfig
+     * @param Request|null $request
+     * @param int|null $clientId
+     * @param int|null $clientMatterId
      */
-    protected function saveAttachment($mailReportId, $attachmentData, $clientUniqueId)
+    protected function saveAttachment(
+        $mailReportId,
+        $attachmentData,
+        $clientUniqueId,
+        $storageConfig = null,
+        $request = null,
+        $clientId = null,
+        $clientMatterId = null
+    )
     {
         $s3Path = null;
         $s3Key = null;
         $fileSize = $attachmentData['file_size'] ?? $attachmentData['size'] ?? 0;
+        $displayName = $attachmentData['display_name'] ?? ($attachmentData['filename'] ?? 'unknown');
         
         try {
             // Check for both 'content' and 'data' keys (Python service uses 'data')
@@ -893,6 +1119,7 @@ class EmailUploadController extends Controller
                 'expected_size' => $fileSize
             ]);
             
+            $decodedData = null;
             if (!empty($attachmentContent)) {
                 // Decode base64-encoded attachment data
                 $decodedData = base64_decode($attachmentContent, true);
@@ -928,49 +1155,7 @@ class EmailUploadController extends Controller
                         Log::warning('Decoded attachment data is empty', [
                             'filename' => $attachmentData['filename'] ?? 'unknown'
                         ]);
-                        // Continue to create attachment record without file
-                    } else {
-                        // Sanitize attachment filename for S3 path to prevent 403 errors
-                        $attachmentFileName = $attachmentData['filename'] ?? 'attachment';
-                        $sanitizedAttachmentFileName = $this->sanitizeFilename($attachmentFileName);
-                        // Generate unique S3 key with sanitized filename
-                        $s3Key = $clientUniqueId . '/attachments/' . time() . '_' . $sanitizedAttachmentFileName;
-                        
-                        try {
-                            // Upload to S3
-                            $uploadSuccess = Storage::disk('s3')->put($s3Key, $decodedData);
-                            
-                            if (!$uploadSuccess) {
-                                throw new \Exception('S3 upload returned false');
-                            }
-                            
-                            // Verify file exists in S3
-                            if (!Storage::disk('s3')->exists($s3Key)) {
-                                throw new \Exception('File not found in S3 after upload');
-                            }
-                            
-                            $s3Path = Storage::disk('s3')->url($s3Key);
-                            
-                            // Update file size to actual decoded size
-                            $fileSize = $actualSize;
-                            
-                            Log::info('Attachment saved successfully to S3', [
-                                'filename' => $attachmentData['filename'] ?? 'unknown',
-                                'size' => $actualSize,
-                                's3_key' => $s3Key,
-                                's3_path' => $s3Path
-                            ]);
-                        } catch (\Exception $s3Exception) {
-                            Log::error('S3 upload failed for attachment', [
-                                'filename' => $attachmentData['filename'] ?? 'unknown',
-                                's3_key' => $s3Key,
-                                'error' => $s3Exception->getMessage(),
-                                'trace' => $s3Exception->getTraceAsString()
-                            ]);
-                            // Reset s3_key and s3Path so we don't save invalid references
-                            $s3Key = null;
-                            $s3Path = null;
-                        }
+                        $decodedData = null;
                     }
                 }
             } else {
@@ -979,18 +1164,69 @@ class EmailUploadController extends Controller
                 ]);
             }
 
+            $storageType = is_array($storageConfig) ? ($storageConfig['storage_type'] ?? 'email') : 'email';
+            if ($decodedData !== null && in_array($storageType, ['personal', 'matter'], true)) {
+                $docResult = $this->saveEmailAttachmentAsDocument(
+                    $attachmentData,
+                    $storageConfig,
+                    $clientUniqueId,
+                    (int) $clientId,
+                    $clientMatterId ? (int) $clientMatterId : null,
+                    $request?->type ?? 'client',
+                    $decodedData
+                );
+                if ($docResult) {
+                    $s3Path = $docResult['file_path'];
+                    $s3Key = $docResult['s3_key'];
+                    $fileSize = $docResult['file_size'];
+                    $displayName = $docResult['display_name'];
+                }
+            } elseif ($decodedData !== null) {
+                // Default: store under client attachments path (email-only)
+                $attachmentFileName = $attachmentData['filename'] ?? 'attachment';
+                if (is_array($storageConfig) && !empty($storageConfig['file_name'])) {
+                    $extension = pathinfo($attachmentFileName, PATHINFO_EXTENSION);
+                    $customStem = $this->sanitizeAttachmentDisplayName((string) $storageConfig['file_name']);
+                    $displayName = $extension ? ($customStem . '.' . $extension) : $customStem;
+                    $attachmentFileName = $displayName;
+                }
+
+                $sanitizedAttachmentFileName = $this->sanitizeFilename($attachmentFileName);
+                $s3Key = $clientUniqueId . '/attachments/' . time() . '_' . $sanitizedAttachmentFileName;
+
+                try {
+                    $uploadSuccess = Storage::disk('s3')->put($s3Key, $decodedData);
+                    if (!$uploadSuccess) {
+                        throw new \Exception('S3 upload returned false');
+                    }
+                    if (!Storage::disk('s3')->exists($s3Key)) {
+                        throw new \Exception('File not found in S3 after upload');
+                    }
+                    $s3Path = Storage::disk('s3')->url($s3Key);
+                    $fileSize = strlen($decodedData);
+                } catch (\Exception $s3Exception) {
+                    Log::error('S3 upload failed for attachment', [
+                        'filename' => $attachmentData['filename'] ?? 'unknown',
+                        's3_key' => $s3Key,
+                        'error' => $s3Exception->getMessage(),
+                    ]);
+                    $s3Key = null;
+                    $s3Path = null;
+                }
+            }
+
             // Always create attachment record (even if file upload failed)
             \App\Models\EmailLogAttachment::create([
                 'email_log_id' => $mailReportId,
-                'filename' => $attachmentData['filename'] ?? 'unknown',
-                'display_name' => $attachmentData['display_name'] ?? ($attachmentData['filename'] ?? 'unknown'),
+                'filename' => $displayName,
+                'display_name' => $displayName,
                 'content_type' => $attachmentData['content_type'] ?? 'application/octet-stream',
                 'file_path' => $s3Path,
                 's3_key' => $s3Key,
                 'file_size' => $fileSize,
                 'content_id' => $attachmentData['content_id'] ?? null,
                 'is_inline' => $attachmentData['is_inline'] ?? false,
-                'extension' => pathinfo($attachmentData['filename'] ?? 'unknown', PATHINFO_EXTENSION),
+                'extension' => pathinfo($displayName, PATHINFO_EXTENSION),
             ]);
             
         } catch (\Exception $e) {
@@ -1002,6 +1238,84 @@ class EmailUploadController extends Controller
             // Don't re-throw - allow email upload to continue even if attachment fails
             // Attachment record will still be created (if we got that far) but without file
         }
+    }
+
+    /**
+     * Store an email attachment in personal or matter document folders.
+     *
+     * @return array{file_path: string, s3_key: string, file_size: int, display_name: string}|null
+     */
+    protected function saveEmailAttachmentAsDocument(
+        array $attachmentData,
+        array $storageConfig,
+        string $clientUniqueId,
+        int $clientId,
+        ?int $clientMatterId,
+        string $recordType,
+        string $decodedData
+    ): ?array {
+        $storageType = $storageConfig['storage_type'] ?? '';
+        if (!in_array($storageType, ['personal', 'matter'], true)) {
+            return null;
+        }
+
+        $folderId = (string) ($storageConfig['folder_id'] ?? '');
+        if ($folderId === '') {
+            return null;
+        }
+
+        $originalFilename = $attachmentData['filename'] ?? 'attachment';
+        $extension = pathinfo($originalFilename, PATHINFO_EXTENSION);
+        $customStem = $this->sanitizeAttachmentDisplayName(
+            (string) ($storageConfig['file_name'] ?? pathinfo($originalFilename, PATHINFO_FILENAME))
+        );
+        $displayName = $extension ? ($customStem . '.' . $extension) : $customStem;
+
+        $sanitizedClientId = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $clientUniqueId);
+        $uniqueFileName = time() . '_' . $this->sanitizeFilename($displayName);
+        $filePath = $sanitizedClientId . '/' . $storageType . '/' . $uniqueFileName;
+
+        $uploadSuccess = Storage::disk('s3')->put($filePath, $decodedData);
+        if (!$uploadSuccess) {
+            throw new \Exception('Failed to upload attachment to document storage.');
+        }
+
+        $fileUrl = Storage::disk('s3')->url($filePath);
+        $fileSize = strlen($decodedData);
+
+        $document = new Document();
+        $document->file_name = $customStem;
+        $document->filetype = $extension ?: pathinfo($displayName, PATHINFO_EXTENSION);
+        $document->user_id = Auth::user()->id;
+        $document->myfile = $fileUrl;
+        $document->myfile_key = $uniqueFileName;
+        $document->client_id = $clientId;
+        $document->type = $recordType;
+        $document->file_size = $fileSize;
+        $document->doc_type = $storageType;
+        $document->folder_name = $folderId;
+        $document->checklist = $customStem;
+        $document->client_matter_id = $storageType === 'matter' ? $clientMatterId : null;
+        $document->save();
+
+        return [
+            'file_path' => $fileUrl,
+            's3_key' => $filePath,
+            'file_size' => $fileSize,
+            'display_name' => $displayName,
+        ];
+    }
+
+    /**
+     * Sanitize a user-provided attachment display/file name.
+     */
+    protected function sanitizeAttachmentDisplayName(string $name): string
+    {
+        $name = trim($name);
+        $name = preg_replace('/[^a-zA-Z0-9_\-\.\s\$\(\),&+]/', '_', $name);
+        $name = preg_replace('/_+/', '_', trim((string) $name, '_'));
+
+        return $name !== '' ? $name : 'attachment';
     }
 
     /**
