@@ -62,6 +62,7 @@
     data-matter-id="{{ $matterId ?? '' }}"
     data-auth-email="{{ auth()->user()->email ?? '' }}"
     data-staff-signature-url="{{ route('crm.staff.email-signature') }}"
+    data-staff-id="{{ auth()->id() }}"
     data-personal-folders='@json($emailUploadPersonalFolders)'
     data-matter-folders='@json($emailUploadMatterFolders)'>
     
@@ -293,4 +294,5 @@
     </div>
 </div>
 
+@include('partials.staff-signature-script')
 <script src="{{ asset('js/outlook_emails.js') }}?v={{ time() }}"></script>

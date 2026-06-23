@@ -1861,11 +1861,18 @@
 
     /**
      * Fetch the latest staff signature from the server (always fresh from DB).
+     * @param {boolean} preferLoggedInStaff When true, use logged-in staff only (reply/forward).
      */
-    async function fetchStaffSignatureForCompose() {
-        const fromEmail = getComposeFromEmail();
+    async function fetchStaffSignatureForCompose(preferLoggedInStaff) {
         if (typeof window.crmFetchStaffSignature === 'function') {
+            if (preferLoggedInStaff) {
+                return (await window.crmFetchStaffSignature()).trim();
+            }
+            const fromEmail = getComposeFromEmail();
             return (await window.crmFetchStaffSignature(fromEmail)).trim();
+        }
+        if (preferLoggedInStaff && window.__crmCurrentUserSignature) {
+            return String(window.__crmCurrentUserSignature).trim();
         }
         return (getStaffSignatureForComposeFrom() || '').trim();
     }
@@ -1886,7 +1893,7 @@
      * Prepend staff signature using a fresh server lookup.
      */
     async function prependStaffSignatureToMessageAsync(message) {
-        const signature = await fetchStaffSignatureForCompose();
+        const signature = await fetchStaffSignatureForCompose(true);
         return prependStaffSignatureToMessage(message, signature);
     }
 

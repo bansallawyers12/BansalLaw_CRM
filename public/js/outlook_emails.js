@@ -1109,7 +1109,70 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function openCompose(action) {
+    function getComposeEditorConfig() {
+        const base = typeof tinymceFullConfig !== 'undefined' ? tinymceFullConfig : {
+            height: 300,
+            menubar: false,
+            plugins: ['advlist autolink lists link image charmap print preview anchor', 'searchreplace visualblocks code fullscreen', 'insertdatetime media table paste code help wordcount'],
+            toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help'
+        };
+        return {
+            ...base,
+            selector: '#composeEditor',
+            paste_data_images: true,
+            extended_valid_elements: 'img[src|alt|width|height|style|class]',
+        };
+    }
+
+    function formatSignatureBlock(signatureHtml) {
+        const sig = (signatureHtml || '').trim();
+        return sig ? sig + '<br><br>' : '';
+    }
+
+    function setComposeEditorContent(finalContent) {
+        if (typeof tinymce !== 'undefined') {
+            let editor = tinymce.get('composeEditor');
+            if (!editor) {
+                tinymce.init({
+                    ...getComposeEditorConfig(),
+                    init_instance_callback: function (inst) {
+                        inst.setContent(finalContent);
+                    }
+                });
+            } else {
+                editor.setContent(finalContent);
+            }
+        } else if (composeEditor) {
+            composeEditor.value = finalContent;
+        }
+    }
+
+    async function fetchLoggedInStaffSignature() {
+        if (typeof window.crmFetchStaffSignature === 'function') {
+            return (await window.crmFetchStaffSignature()).trim();
+        }
+        if (window.__crmCurrentUserSignature) {
+            return String(window.__crmCurrentUserSignature).trim();
+        }
+        if (!staffSignatureUrl) {
+            return '';
+        }
+        try {
+            const response = await fetch(staffSignatureUrl, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            });
+            if (!response.ok) {
+                return '';
+            }
+            const data = await response.json();
+            return (data && data.signature) ? String(data.signature).trim() : '';
+        } catch (e) {
+            return '';
+        }
+    }
+
+    async function openCompose(action) {
         if (!selectedEmailId) return;
         const email = emails.find(e => e.id === selectedEmailId);
         if (!email) return;
@@ -1151,45 +1214,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const applySignatureAndSetContent = (signatureHtml) => {
-            let finalContent = content;
-            if (signatureHtml && signatureHtml.trim()) {
-                finalContent = signatureHtml.trim() + finalContent;
-            }
-
-            if (typeof tinymce !== 'undefined') {
-                let editor = tinymce.get('composeEditor');
-                if (!editor) {
-                    const config = typeof tinymceFullConfig !== 'undefined' ? tinymceFullConfig : {
-                        height: 300,
-                        menubar: false,
-                        plugins: ['advlist autolink lists link image charmap print preview anchor', 'searchreplace visualblocks code fullscreen', 'insertdatetime media table paste code help wordcount'],
-                        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help'
-                    };
-                    tinymce.init({
-                        ...config,
-                        selector: '#composeEditor',
-                        init_instance_callback: function (inst) {
-                            inst.setContent(finalContent);
-                        }
-                    });
-                } else {
-                    editor.setContent(finalContent);
-                }
-            } else {
-                composeEditor.value = finalContent;
-            }
+            const finalContent = formatSignatureBlock(signatureHtml) + content;
+            setComposeEditorContent(finalContent);
         };
 
-        const fetchSignature = (typeof window.crmFetchStaffSignature === 'function')
-            ? window.crmFetchStaffSignature(authEmail)
-            : (staffSignatureUrl
-                ? fetch(staffSignatureUrl + (authEmail ? '?from_email=' + encodeURIComponent(authEmail) : ''), {
-                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    credentials: 'same-origin'
-                }).then(r => r.ok ? r.json() : {}).then(d => (d && d.signature) ? String(d.signature) : '')
-                : Promise.resolve(''));
-
-        fetchSignature.then(applySignatureAndSetContent).catch(() => applySignatureAndSetContent(''));
+        try {
+            const signatureHtml = await fetchLoggedInStaffSignature();
+            applySignatureAndSetContent(signatureHtml);
+        } catch (e) {
+            applySignatureAndSetContent('');
+        }
     }
 
     function escapeHtml(unsafe) {

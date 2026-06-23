@@ -1,47 +1,8 @@
 {{-- Populate Compose Email From dropdown (Zoho staff senders + SendGrid system senders) --}}
+@include('partials.staff-signature-script')
 <script>
 (function() {
 	var sendersUrl = '{{ route("crm.sendgrid.senders") }}';
-	var staffSignatureUrl = '{{ route("crm.staff.email-signature") }}';
-
-	window.crmFetchStaffSignature = function(fromEmail) {
-		fromEmail = (fromEmail || '').trim();
-		var url = staffSignatureUrl;
-		if (fromEmail) {
-			url += (url.indexOf('?') >= 0 ? '&' : '?') + 'from_email=' + encodeURIComponent(fromEmail);
-		}
-		return fetch(url, {
-			headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-			credentials: 'same-origin'
-		})
-			.then(function(r) {
-				if (!r.ok) throw new Error('HTTP ' + r.status);
-				return r.json();
-			})
-			.then(function(data) {
-				var sig = (data && data.signature) ? String(data.signature) : '';
-				if (!fromEmail && sig) {
-					window.__crmCurrentUserSignature = sig;
-				}
-				return sig;
-			})
-			.catch(function() {
-				var fallback = window.__crmCurrentUserSignature || '';
-				if (!fallback) {
-					var emailModal = document.getElementById('emailmodal');
-					if (emailModal) {
-						fallback = emailModal.getAttribute('data-staff-signature') || '';
-					}
-				}
-				if (!fallback) {
-					var outlookContainer = document.getElementById('outlookContainer');
-					if (outlookContainer) {
-						fallback = outlookContainer.getAttribute('data-staff-signature') || '';
-					}
-				}
-				return fallback;
-			});
-	};
 
 	function refreshEmailFromSenders() {
 		var selects = document.querySelectorAll('.email-from-sendgrid');

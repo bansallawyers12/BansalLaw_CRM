@@ -64,8 +64,19 @@ class SendGridSendersController extends Controller
             return response()->json(['signature' => '']);
         }
 
-        $fromEmail = strtolower(trim((string) $request->query('from_email', '')));
+        // Always use the logged-in staff member's signature first (reply/forward/compose).
+        $signature = Staff::query()
+            ->where('id', $authUser->id)
+            ->where('status', 1)
+            ->value('email_signature');
 
+        $signature = trim((string) ($signature ?? ''));
+        if ($signature !== '') {
+            return response()->json(['signature' => $signature]);
+        }
+
+        // Fallback: optional from_email when the logged-in user has no signature saved.
+        $fromEmail = strtolower(trim((string) $request->query('from_email', '')));
         if ($fromEmail !== '') {
             $fromSignature = Staff::query()
                 ->where('status', 1)
@@ -79,14 +90,7 @@ class SendGridSendersController extends Controller
             }
         }
 
-        $signature = Staff::query()
-            ->where('id', $authUser->id)
-            ->where('status', 1)
-            ->value('email_signature');
-
-        return response()->json([
-            'signature' => trim((string) ($signature ?? '')),
-        ]);
+        return response()->json(['signature' => '']);
     }
 
     private function getZohoComposeSenders(): array
