@@ -5,15 +5,12 @@ namespace App\Services;
 use App\Models\Document;
 use App\Models\Signer;
 use App\Models\Admin;
-use App\Models\Lead;
 use App\Models\Staff;
 use App\Models\SignatureActivity;
 use App\Models\ActivitiesLog;
 use Illuminate\Support\Str;
 use Illuminate\Mail\Message;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 class SignatureService
@@ -433,11 +430,9 @@ class SignatureService
     public function associateWithCategory(Document $document, string $entityType, int $entityId, ?int $matterId, string $docCategory, string $note = null): bool
     {
         try {
-            $documentableType = match($entityType) {
-                'client' => Admin::class,
-                'lead' => Lead::class,
-                default => throw new \InvalidArgumentException("Invalid entity type: {$entityType}")
-            };
+            if (! in_array($entityType, ['client', 'lead'], true)) {
+                throw new \InvalidArgumentException("Invalid entity type: {$entityType}");
+            }
 
             // Determine document type based on category
             $docType = match($docCategory) {
