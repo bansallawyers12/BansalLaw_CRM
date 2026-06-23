@@ -14,6 +14,7 @@ use App\Services\MailRoutingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Test;
 
 class SignatureServiceTest extends TestCase
 {
@@ -33,13 +34,13 @@ class SignatureServiceTest extends TestCase
         Mail::fake();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_send_document_for_signature()
     {
         // Create a test document
         $document = Document::factory()->create([
-            'status' => 'draft',
-            'title' => 'Test Agreement'
+            'status'    => 'draft',
+            'file_name' => 'Test Agreement.pdf',
         ]);
 
         $signers = [
@@ -77,7 +78,7 @@ class SignatureServiceTest extends TestCase
         Mail::assertSent(\Illuminate\Mail\Mailable::class, 2);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_send_reminder_to_signer()
     {
         $document = Document::factory()->create(['status' => 'sent']);
@@ -97,7 +98,7 @@ class SignatureServiceTest extends TestCase
         $this->assertNotNull($signer->last_reminder_sent_at);
     }
 
-    /** @test */
+    #[Test]
     public function it_prevents_too_many_reminders()
     {
         $document = Document::factory()->create(['status' => 'sent']);
@@ -114,7 +115,7 @@ class SignatureServiceTest extends TestCase
         $this->assertEquals(3, $signer->fresh()->reminder_count);
     }
 
-    /** @test */
+    #[Test]
     public function it_enforces_24_hour_cooldown_between_reminders()
     {
         $document = Document::factory()->create(['status' => 'sent']);
@@ -131,7 +132,7 @@ class SignatureServiceTest extends TestCase
         $this->assertEquals(1, $signer->fresh()->reminder_count);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_void_a_document()
     {
         $document = Document::factory()->create(['status' => 'sent']);
@@ -142,7 +143,7 @@ class SignatureServiceTest extends TestCase
         $this->assertEquals('voided', $document->fresh()->status);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_associate_document_with_client()
     {
         $document = Document::factory()->create();
@@ -159,7 +160,7 @@ class SignatureServiceTest extends TestCase
         $this->assertNull($document->lead_id);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_associate_document_with_lead()
     {
         $document = Document::factory()->create();
@@ -177,7 +178,7 @@ class SignatureServiceTest extends TestCase
         $this->assertNull($document->client_id);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_detach_document_from_association()
     {
         $client = Admin::factory()->create(['role' => 2]);
@@ -198,7 +199,7 @@ class SignatureServiceTest extends TestCase
         $this->assertNull($document->lead_id);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_suggest_association_by_email_for_client()
     {
         $client = Admin::factory()->create([
@@ -217,7 +218,7 @@ class SignatureServiceTest extends TestCase
         $this->assertEquals('client@example.com', $suggestion['email']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_suggest_association_by_email_for_lead()
     {
         $lead = Lead::factory()->create([
@@ -235,7 +236,7 @@ class SignatureServiceTest extends TestCase
         $this->assertEquals('lead@example.com', $suggestion['email']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_null_when_no_match_found()
     {
         $suggestion = $this->signatureService->suggestAssociation('nonexistent@example.com');
@@ -243,7 +244,7 @@ class SignatureServiceTest extends TestCase
         $this->assertNull($suggestion);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_archive_old_drafts()
     {
         // Create old drafts (35 days old)
@@ -270,7 +271,7 @@ class SignatureServiceTest extends TestCase
         $this->assertEquals(3, Document::where('status', 'archived')->count());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_get_pending_count_for_user()
     {
         $user = Admin::factory()->create(['role' => 1]);

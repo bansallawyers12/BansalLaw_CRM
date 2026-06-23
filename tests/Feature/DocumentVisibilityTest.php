@@ -8,12 +8,13 @@ use App\Models\Document;
 use App\Models\Lead;
 use App\Models\Signer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 
 class DocumentVisibilityTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[Test]
     public function user_only_sees_documents_they_created()
     {
         $user = Admin::factory()->create(['role' => 2]);
@@ -28,7 +29,7 @@ class DocumentVisibilityTest extends TestCase
         $this->assertFalse($visibleDocs->contains($otherDocument));
     }
 
-    /** @test */
+    #[Test]
     public function user_sees_documents_where_they_are_signer()
     {
         $user = Admin::factory()->create(['role' => 2, 'email' => 'test@example.com']);
@@ -45,7 +46,7 @@ class DocumentVisibilityTest extends TestCase
         $this->assertTrue($visibleDocs->contains($document));
     }
 
-    /** @test */
+    #[Test]
     public function user_sees_documents_associated_with_their_entities()
     {
         $user = Admin::factory()->create(['role' => 2]);
@@ -73,7 +74,7 @@ class DocumentVisibilityTest extends TestCase
         $this->assertFalse($visibleDocs->contains($otherLeadDoc));
     }
 
-    /** @test */
+    #[Test]
     public function admin_sees_all_documents()
     {
         $admin = Admin::factory()->create(['role' => 1]);
@@ -92,7 +93,7 @@ class DocumentVisibilityTest extends TestCase
         $this->assertTrue($visibleDocs->contains($doc3));
     }
 
-    /** @test */
+    #[Test]
     public function dashboard_index_enforces_visibility()
     {
         $user = Admin::factory()->create(['role' => 2]);
@@ -109,7 +110,7 @@ class DocumentVisibilityTest extends TestCase
         $response->assertDontSee($otherDocument->file_name ?? 'Document');
     }
 
-    /** @test */
+    #[Test]
     public function user_cannot_view_others_private_document()
     {
         $user = Admin::factory()->create(['role' => 2]);
@@ -127,7 +128,7 @@ class DocumentVisibilityTest extends TestCase
         $response->assertStatus(403); // Forbidden
     }
 
-    /** @test */
+    #[Test]
     public function user_can_view_associated_document()
     {
         $user = Admin::factory()->create(['role' => 2]);
@@ -147,7 +148,7 @@ class DocumentVisibilityTest extends TestCase
         $response->assertSee($document->display_title);
     }
 
-    /** @test */
+    #[Test]
     public function admin_can_view_all_documents_with_organization_scope()
     {
         $admin = Admin::factory()->create(['role' => 1]);
@@ -164,7 +165,7 @@ class DocumentVisibilityTest extends TestCase
         $response->assertSee($adminDoc->display_title);
     }
 
-    /** @test */
+    #[Test]
     public function regular_user_cannot_access_organization_scope()
     {
         $user = Admin::factory()->create(['role' => 2]);
@@ -181,7 +182,7 @@ class DocumentVisibilityTest extends TestCase
         $response->assertDontSee($otherDoc->display_title);
     }
 
-    /** @test */
+    #[Test]
     public function associated_documents_inherit_entity_permissions()
     {
         $user = Admin::factory()->create(['role' => 2]);
@@ -205,7 +206,7 @@ class DocumentVisibilityTest extends TestCase
             'User should see document associated with their lead');
     }
 
-    /** @test */
+    #[Test]
     public function visibility_scope_works_with_other_filters()
     {
         $user = Admin::factory()->create(['role' => 2]);
@@ -233,7 +234,7 @@ class DocumentVisibilityTest extends TestCase
         $this->assertFalse($visibleSent->contains($mySigned));
     }
 
-    /** @test */
+    #[Test]
     public function visibility_badge_shows_correct_type_for_owner()
     {
         $user = Admin::factory()->create(['role' => 2]);
@@ -248,7 +249,7 @@ class DocumentVisibilityTest extends TestCase
         $this->assertEquals('My Document', $badge['label']);
     }
 
-    /** @test */
+    #[Test]
     public function visibility_badge_shows_correct_type_for_signer()
     {
         $user = Admin::factory()->create(['role' => 2, 'email' => 'signer@test.com']);
@@ -269,7 +270,7 @@ class DocumentVisibilityTest extends TestCase
         $this->assertEquals('Need to Sign', $badge['label']);
     }
 
-    /** @test */
+    #[Test]
     public function visibility_badge_shows_correct_type_for_associated()
     {
         $user = Admin::factory()->create(['role' => 2]);

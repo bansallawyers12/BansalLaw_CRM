@@ -154,14 +154,14 @@ class SignatureService
                     if (is_array($attachment)) {
                         $path = $attachment['path'] ?? null;
                         if ($path && file_exists($path)) {
-                            $options = [];
+                            $attachOptions = [];
                             if (!empty($attachment['name'])) {
-                                $options['as'] = $attachment['name'];
+                                $attachOptions['as'] = $attachment['name'];
                             }
                             if (!empty($attachment['mime'])) {
-                                $options['mime'] = $attachment['mime'];
+                                $attachOptions['mime'] = $attachment['mime'];
                             }
-                            $mail->attach($path, $options);
+                            $mail->attach($path, $attachOptions);
                         }
                     }
                 }
@@ -227,6 +227,8 @@ class SignatureService
      */
     public function remind(Signer $signer, array $options = []): bool
     {
+        $document = $signer->document;
+
         try {
             // Check if signature is cancelled - cannot send reminders to cancelled signers
             if ($signer->status === 'cancelled') {
@@ -242,8 +244,6 @@ class SignatureService
             if ($signer->reminder_count >= 3) {
                 throw new \Exception('Maximum reminders already sent');
             }
-
-            $document = $signer->document;
             $signingUrl = url("/sign/{$document->id}/{$signer->token}");
             $from = $this->resolveFrom($options['from_email'] ?? null);
 

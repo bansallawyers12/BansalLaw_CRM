@@ -6,6 +6,7 @@ use Tests\TestCase;
 use App\Models\Email;
 use App\Services\EmailConfigService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 
 class EmailConfigServiceTest extends TestCase
 {
@@ -19,7 +20,7 @@ class EmailConfigServiceTest extends TestCase
         $this->service = new EmailConfigService();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_get_email_config_by_email_address()
     {
         Email::factory()->create([
@@ -34,7 +35,7 @@ class EmailConfigServiceTest extends TestCase
         $this->assertEquals('Test Sender', $config['from_name']);
     }
 
-    /** @test */
+    #[Test]
     public function it_throws_exception_when_email_not_found_by_id()
     {
         $this->expectException(\Exception::class);
@@ -43,7 +44,7 @@ class EmailConfigServiceTest extends TestCase
         $this->service->forAccountById(9999);
     }
 
-    /** @test */
+    #[Test]
     public function it_throws_exception_when_email_not_found_by_address()
     {
         $this->expectException(\Exception::class);
@@ -52,7 +53,7 @@ class EmailConfigServiceTest extends TestCase
         $this->service->forAccount('nonexistent@example.com');
     }
 
-    /** @test */
+    #[Test]
     public function it_only_finds_active_emails_when_searching_by_address()
     {
         Email::factory()->create([
@@ -65,7 +66,7 @@ class EmailConfigServiceTest extends TestCase
         $this->service->forAccount('inactive@example.com');
     }
 
-    /** @test */
+    #[Test]
     public function it_can_get_all_active_accounts()
     {
         Email::factory()->create([
@@ -88,7 +89,7 @@ class EmailConfigServiceTest extends TestCase
         $this->assertEquals('active2@example.com', $accounts[1]->email);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_get_default_account()
     {
         Email::factory()->create([
@@ -108,7 +109,7 @@ class EmailConfigServiceTest extends TestCase
         $this->assertEquals('first@example.com', $config['from_address']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_null_when_no_active_accounts_exist()
     {
         Email::factory()->create([
@@ -124,7 +125,7 @@ class EmailConfigServiceTest extends TestCase
         $this->assertNull($config);
     }
 
-    /** @test */
+    #[Test]
     public function it_falls_back_to_environment_config_when_no_active_accounts()
     {
         putenv('MAIL_FROM_ADDRESS=env@example.com');
@@ -140,7 +141,7 @@ class EmailConfigServiceTest extends TestCase
         putenv('MAIL_FROM_NAME');
     }
 
-    /** @test */
+    #[Test]
     public function build_config_returns_only_from_address_from_name_and_email_signature()
     {
         $email = Email::factory()->create([
@@ -163,7 +164,7 @@ class EmailConfigServiceTest extends TestCase
         $this->assertEquals('<p>Signature</p>', $config['email_signature']);
     }
 
-    /** @test */
+    #[Test]
     public function get_default_account_falls_back_to_mail_from_address_env_var()
     {
         putenv('MAIL_FROM_ADDRESS=fallback@example.com');

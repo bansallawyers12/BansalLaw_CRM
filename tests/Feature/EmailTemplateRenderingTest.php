@@ -4,10 +4,11 @@ namespace Tests\Feature;
 
 use Tests\TestCase;
 use Illuminate\Support\Facades\View;
+use PHPUnit\Framework\Attributes\Test;
 
 class EmailTemplateRenderingTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function signature_send_template_renders_correctly()
     {
         $data = [
@@ -38,7 +39,7 @@ class EmailTemplateRenderingTest extends TestCase
         $this->assertStringContainsString(config('app.brand.website_label'), $html);
     }
 
-    /** @test */
+    #[Test]
     public function signature_send_template_handles_optional_fields()
     {
         $data = [
@@ -59,7 +60,7 @@ class EmailTemplateRenderingTest extends TestCase
         $this->assertNotEmpty($html);
     }
 
-    /** @test */
+    #[Test]
     public function signature_send_agreement_template_renders_correctly()
     {
         $data = [
@@ -89,7 +90,7 @@ class EmailTemplateRenderingTest extends TestCase
         $this->assertStringContainsString('#10b981', $html);
     }
 
-    /** @test */
+    #[Test]
     public function signature_reminder_template_renders_correctly()
     {
         $data = [
@@ -119,7 +120,7 @@ class EmailTemplateRenderingTest extends TestCase
         $this->assertStringContainsString('#fca5a5', $html);
     }
 
-    /** @test */
+    #[Test]
     public function all_templates_have_responsive_design()
     {
         $data = [
@@ -149,7 +150,7 @@ class EmailTemplateRenderingTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function all_templates_have_proper_html_structure()
     {
         $data = [
@@ -185,7 +186,7 @@ class EmailTemplateRenderingTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function templates_escape_user_input_properly()
     {
         $data = [
@@ -219,7 +220,7 @@ class EmailTemplateRenderingTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function templates_have_call_to_action_buttons()
     {
         $data = [
@@ -254,7 +255,7 @@ class EmailTemplateRenderingTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function templates_include_footer_with_contact_information()
     {
         $data = [

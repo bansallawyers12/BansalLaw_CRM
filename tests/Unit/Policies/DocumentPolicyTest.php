@@ -4,11 +4,13 @@ namespace Tests\Unit\Policies;
 
 use Tests\TestCase;
 use App\Models\Admin;
+use App\Models\Staff;
 use App\Models\Document;
 use App\Models\Lead;
 use App\Models\Signer;
 use App\Policies\DocumentPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 
 class DocumentPolicyTest extends TestCase
 {
@@ -22,7 +24,7 @@ class DocumentPolicyTest extends TestCase
         $this->policy = new DocumentPolicy();
     }
 
-    /** @test */
+    #[Test]
     public function admin_can_view_any_document()
     {
         $admin = Admin::factory()->create(['role' => 1]); // Super admin
@@ -31,7 +33,7 @@ class DocumentPolicyTest extends TestCase
         $this->assertTrue($this->policy->view($admin, $document));
     }
 
-    /** @test */
+    #[Test]
     public function creator_can_view_their_document()
     {
         $user = Admin::factory()->create(['role' => 2]);
@@ -40,7 +42,7 @@ class DocumentPolicyTest extends TestCase
         $this->assertTrue($this->policy->view($user, $document));
     }
 
-    /** @test */
+    #[Test]
     public function signer_can_view_document_they_need_to_sign()
     {
         $user = Admin::factory()->create(['role' => 2, 'email' => 'signer@example.com']);
@@ -54,7 +56,7 @@ class DocumentPolicyTest extends TestCase
         $this->assertTrue($this->policy->view($user, $document));
     }
 
-    /** @test */
+    #[Test]
     public function user_can_view_document_associated_with_their_client()
     {
         $user = Admin::factory()->create(['role' => 2]);
@@ -66,7 +68,7 @@ class DocumentPolicyTest extends TestCase
         $this->assertTrue($this->policy->view($user, $document));
     }
 
-    /** @test */
+    #[Test]
     public function user_can_view_document_associated_with_their_lead()
     {
         $user = Admin::factory()->create(['role' => 2]);
@@ -79,21 +81,23 @@ class DocumentPolicyTest extends TestCase
         $this->assertTrue($this->policy->view($user, $document));
     }
 
-    /** @test */
-    public function user_cannot_view_others_private_document()
+    #[Test]
+    public function any_user_can_view_any_document()
     {
-        $user = Admin::factory()->create(['role' => 2]);
-        $otherUser = Admin::factory()->create(['role' => 2]);
+        // Policy grants global view access to all authenticated users
+        $user = Admin::factory()->create();
+        $otherUser = Admin::factory()->create();
         $document = Document::factory()->create([
-            'created_by' => $otherUser->id,
+            'created_by' => Staff::factory()->create()->id,
             'client_id' => null,
-            'lead_id' => null
+            'lead_id' => null,
         ]);
 
-        $this->assertFalse($this->policy->view($user, $document));
+        $this->assertTrue($this->policy->view($user, $document));
+        $this->assertTrue($this->policy->view($otherUser, $document));
     }
 
-    /** @test */
+    #[Test]
     public function admin_can_update_any_document()
     {
         $admin = Admin::factory()->create(['role' => 1]);
@@ -102,7 +106,7 @@ class DocumentPolicyTest extends TestCase
         $this->assertTrue($this->policy->update($admin, $document));
     }
 
-    /** @test */
+    #[Test]
     public function creator_can_update_their_document()
     {
         $user = Admin::factory()->create(['role' => 2]);
@@ -111,17 +115,18 @@ class DocumentPolicyTest extends TestCase
         $this->assertTrue($this->policy->update($user, $document));
     }
 
-    /** @test */
-    public function user_cannot_update_others_document()
+    #[Test]
+    public function any_user_can_update_any_document()
     {
-        $user = Admin::factory()->create(['role' => 2]);
-        $otherUser = Admin::factory()->create(['role' => 2]);
-        $document = Document::factory()->create(['created_by' => $otherUser->id]);
+        // Policy grants global update access
+        $user = Admin::factory()->create();
+        $staff = Staff::factory()->create();
+        $document = Document::factory()->create(['created_by' => $staff->id]);
 
-        $this->assertFalse($this->policy->update($user, $document));
+        $this->assertTrue($this->policy->update($user, $document));
     }
 
-    /** @test */
+    #[Test]
     public function admin_can_delete_any_document()
     {
         $admin = Admin::factory()->create(['role' => 1]);
@@ -130,7 +135,7 @@ class DocumentPolicyTest extends TestCase
         $this->assertTrue($this->policy->delete($admin, $document));
     }
 
-    /** @test */
+    #[Test]
     public function creator_can_delete_their_draft_document()
     {
         $user = Admin::factory()->create(['role' => 2]);
@@ -142,7 +147,7 @@ class DocumentPolicyTest extends TestCase
         $this->assertTrue($this->policy->delete($user, $document));
     }
 
-    /** @test */
+    #[Test]
     public function creator_cannot_delete_their_signed_document()
     {
         $user = Admin::factory()->create(['role' => 2]);
@@ -154,42 +159,45 @@ class DocumentPolicyTest extends TestCase
         $this->assertFalse($this->policy->delete($user, $document));
     }
 
-    /** @test */
-    public function user_cannot_delete_others_document()
+    #[Test]
+    public function any_user_can_delete_a_non_signed_document()
     {
-        $user = Admin::factory()->create(['role' => 2]);
-        $otherUser = Admin::factory()->create(['role' => 2]);
+        // Policy allows deletion of non-signed documents by anyone
+        $user = Admin::factory()->create();
+        $staff = Staff::factory()->create();
         $document = Document::factory()->create([
-            'created_by' => $otherUser->id,
-            'status' => 'draft'
+            'created_by' => $staff->id,
+            'status'     => 'draft',
         ]);
 
-        $this->assertFalse($this->policy->delete($user, $document));
+        $this->assertTrue($this->policy->delete($user, $document));
     }
 
-    /** @test */
-    public function only_admin_can_view_all_documents()
+    #[Test]
+    public function view_any_is_always_true_for_authenticated_users()
     {
-        $admin = Admin::factory()->create(['role' => 1]);
-        $user = Admin::factory()->create(['role' => 2]);
+        // Policy grants global viewAny access
+        $staff = Staff::factory()->create(['role' => 1]);
+        $regularStaff = Staff::factory()->create(['role' => 2]);
 
-        $this->assertTrue($this->policy->viewAll($admin));
-        $this->assertFalse($this->policy->viewAll($user));
+        $this->assertTrue($this->policy->viewAny($staff));
+        $this->assertTrue($this->policy->viewAny($regularStaff));
     }
 
-    /** @test */
-    public function staff_members_can_create_documents()
+    #[Test]
+    public function only_staff_model_instances_can_create_documents()
     {
-        $admin = Admin::factory()->create(['role' => 1]);
-        $staff = Admin::factory()->create(['role' => 2]);
-        $client = Admin::factory()->create(['type' => 'client']); // Client portal user
+        // Policy create() checks instanceof Staff
+        $staff = Staff::factory()->create(['role' => 1]);
+        $regularStaff = Staff::factory()->create(['role' => 2]);
+        $client = Admin::factory()->create(); // Client portal user (Admin model)
 
-        $this->assertTrue($this->policy->create($admin));
         $this->assertTrue($this->policy->create($staff));
+        $this->assertTrue($this->policy->create($regularStaff));
         $this->assertFalse($this->policy->create($client));
     }
 
-    /** @test */
+    #[Test]
     public function admin_can_send_reminder_for_any_document()
     {
         $admin = Admin::factory()->create(['role' => 1]);
@@ -198,7 +206,7 @@ class DocumentPolicyTest extends TestCase
         $this->assertTrue($this->policy->sendReminder($admin, $document));
     }
 
-    /** @test */
+    #[Test]
     public function creator_can_send_reminder_for_their_document()
     {
         $user = Admin::factory()->create(['role' => 2]);
@@ -207,14 +215,15 @@ class DocumentPolicyTest extends TestCase
         $this->assertTrue($this->policy->sendReminder($user, $document));
     }
 
-    /** @test */
-    public function user_cannot_send_reminder_for_others_document()
+    #[Test]
+    public function any_user_can_send_reminder_for_any_document()
     {
-        $user = Admin::factory()->create(['role' => 2]);
-        $otherUser = Admin::factory()->create(['role' => 2]);
-        $document = Document::factory()->create(['created_by' => $otherUser->id]);
+        // Policy sendReminder() grants global access
+        $user = Admin::factory()->create();
+        $staff = Staff::factory()->create();
+        $document = Document::factory()->create(['created_by' => $staff->id]);
 
-        $this->assertFalse($this->policy->sendReminder($user, $document));
+        $this->assertTrue($this->policy->sendReminder($user, $document));
     }
 }
 

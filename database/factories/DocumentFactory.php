@@ -18,7 +18,7 @@ class DocumentFactory extends Factory
             'myfile' => 'documents/' . $this->faker->uuid() . '.pdf',
             'file_size' => $this->faker->numberBetween(1000, 5000000),
             'status' => $this->faker->randomElement(['draft', 'sent', 'signed']),
-            'created_by' => Staff::query()->value('id'),
+            'created_by' => Staff::factory(),
         ];
     }
 
