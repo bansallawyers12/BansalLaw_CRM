@@ -3740,9 +3740,9 @@ class ClientAccountsController extends Controller
                            <div class="dropdown-menu">
                                <a class="dropdown-item renamedoc" href="javascript:;">Rename</a>
                                <?php
-                               $url = 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
+                               $previewUrl = url('/documents/preview/' . $fetch->id);
                                ?>
-                               <a target="_blank" class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Preview</a>
+                               <a target="_blank" class="dropdown-item" href="<?php echo $previewUrl; ?>">Preview</a>
 
                                <?php
                                $explodeimg = explode('.',$fetch->myfile);
@@ -3751,7 +3751,7 @@ class ClientAccountsController extends Controller
                                    <a target="_blank" class="dropdown-item" href="<?php echo URL::to('/document/download/pdf'); ?>/<?php echo $fetch->id; ?>">PDF</a>
                                <?php } ?>
 
-                               <a download class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Download</a>
+                               <a class="dropdown-item" href="<?php echo $previewUrl; ?>?download=1">Download</a>
 
                                <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item deletenote" data-href="deletedocs" href="javascript:;" >Delete</a>
                            </div>
@@ -3776,10 +3776,10 @@ class ClientAccountsController extends Controller
                                <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                                <div class="dropdown-menu">
                                    <?php
-                                   $url = 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
+                                   $previewUrl = url('/documents/preview/' . $fetch->id);
                                    ?>
-                                   <a class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Preview</a>
-                                   <a download class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Download</a>
+                                   <a class="dropdown-item" href="<?php echo $previewUrl; ?>">Preview</a>
+                                   <a class="dropdown-item" href="<?php echo $previewUrl; ?>?download=1">Download</a>
 
                                    <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item deletenote" data-href="deletedocs" href="javascript:;" >Delete</a>
                                </div>
@@ -3969,9 +3969,9 @@ class ClientAccountsController extends Controller
                            <div class="dropdown-menu">
                                <a class="dropdown-item renamedoc" href="javascript:;">Rename</a>
                                <?php
-                               $url = 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
+                               $previewUrl = url('/documents/preview/' . $fetch->id);
                                ?>
-                               <a target="_blank" class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Preview</a>
+                               <a target="_blank" class="dropdown-item" href="<?php echo $previewUrl; ?>">Preview</a>
 
                                <?php
                                $explodeimg = explode('.',$fetch->myfile);
@@ -3980,7 +3980,7 @@ class ClientAccountsController extends Controller
                                    <a target="_blank" class="dropdown-item" href="<?php echo URL::to('/document/download/pdf'); ?>/<?php echo $fetch->id; ?>">PDF</a>
                                <?php } ?>
 
-                               <a download class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Download</a>
+                               <a class="dropdown-item" href="<?php echo $previewUrl; ?>?download=1">Download</a>
 
                                <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item deletenote" data-href="deletedocs" href="javascript:;" >Delete</a>
                            </div>
@@ -4005,10 +4005,10 @@ class ClientAccountsController extends Controller
                                <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                                <div class="dropdown-menu">
                                    <?php
-                                   $url = 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
+                                   $previewUrl = url('/documents/preview/' . $fetch->id);
                                    ?>
-                                   <a class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Preview</a>
-                                   <a download class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Download</a>
+                                   <a class="dropdown-item" href="<?php echo $previewUrl; ?>">Preview</a>
+                                   <a class="dropdown-item" href="<?php echo $previewUrl; ?>?download=1">Download</a>
 
                                    <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item deletenote" data-href="deletedocs" href="javascript:;" >Delete</a>
                                </div>
@@ -4196,9 +4196,9 @@ class ClientAccountsController extends Controller
                            <div class="dropdown-menu">
                                <a class="dropdown-item renamedoc" href="javascript:;">Rename</a>
                                <?php
-                               $url = 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
+                               $previewUrl = url('/documents/preview/' . $fetch->id);
                                ?>
-                               <a target="_blank" class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Preview</a>
+                               <a target="_blank" class="dropdown-item" href="<?php echo $previewUrl; ?>">Preview</a>
 
                                <?php
                                $explodeimg = explode('.',$fetch->myfile);
@@ -4207,7 +4207,7 @@ class ClientAccountsController extends Controller
                                    <a target="_blank" class="dropdown-item" href="<?php echo URL::to('/document/download/pdf'); ?>/<?php echo $fetch->id; ?>">PDF</a>
                                <?php } ?>
 
-                               <a download class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Download</a>
+                               <a class="dropdown-item" href="<?php echo $previewUrl; ?>?download=1">Download</a>
 
                                <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item deletenote" data-href="deletedocs" href="javascript:;" >Delete</a>
                            </div>
@@ -4232,10 +4232,10 @@ class ClientAccountsController extends Controller
                                <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                                <div class="dropdown-menu">
                                    <?php
-                                   $url = 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
+                                   $previewUrl = url('/documents/preview/' . $fetch->id);
                                    ?>
-                                   <a class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Preview</a>
-                                   <a download class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Download</a>
+                                   <a class="dropdown-item" href="<?php echo $previewUrl; ?>">Preview</a>
+                                   <a class="dropdown-item" href="<?php echo $previewUrl; ?>?download=1">Download</a>
 
                                    <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item deletenote" data-href="deletedocs" href="javascript:;" >Delete</a>
                                </div>

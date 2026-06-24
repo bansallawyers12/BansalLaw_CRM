@@ -219,7 +219,8 @@ class ClientDocumentsController extends Controller
                     foreach($fetchd as $docKey=>$fetch)
                     {
                         $admin = $fetch->staff;
-                        $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $clientid . '/personal/' . $fetch->myfile;
+                        $previewUrl = $this->documentPreviewUrl($fetch);
+                        $downloadFilename = $this->documentDownloadFilename($fetch);
                         ?>
                         <tr class="drow" id="id_<?php echo $fetch->id; ?>">
                             <td style="white-space: initial;">
@@ -240,8 +241,8 @@ class ClientDocumentsController extends Controller
                             <td style="white-space: initial;">
                                 <?php
                                 if( isset($fetch->file_name) && $fetch->file_name !=""){ ?>
-                                    <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu="showFileContextMenu(event, <?php echo $fetch->id; ?>, '<?php echo htmlspecialchars($fetch->filetype); ?>', '<?php echo $fileUrl; ?>', '<?php echo $request->folder_name; ?>', '<?php echo $fetch->status ?? 'draft'; ?>'); return false;">
-                                        <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->filetype;?>','<?php echo $fileUrl; ?>','preview-container-<?php echo $request->folder_name;?>')">
+                                    <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu='showFileContextMenu(event, <?php echo (int) $fetch->id; ?>, <?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode((string) $request->folder_name); ?>, <?php echo json_encode($fetch->status ?? 'draft'); ?>); return false;'>
+                                        <a href="javascript:void(0);" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode('preview-container-' . $request->folder_name); ?>)'>
                                             <i class="fas fa-file-image"></i> <span><?php echo htmlspecialchars($fetch->file_name . '.' . $fetch->filetype); ?></span>
                                         </a>
                                     </div>
@@ -281,7 +282,7 @@ class ClientDocumentsController extends Controller
                                 <?php if ($fetch->myfile): ?>
                                     <a class="renamechecklist" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
                                     <a class="renamedoc" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
-                                    <a class="download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>" href="#" style="display: none;"></a>
+                                    <a class="download-file" data-document-id="<?php echo $fetch->id; ?>" data-id="<?php echo $fetch->id; ?>" data-filename="<?php echo htmlspecialchars($downloadFilename); ?>" href="#" style="display: none;"></a>
                                     <a class="notuseddoc" data-id="<?php echo $fetch->id; ?>" data-doctype="personal" data-doccategory="<?php echo $request->doccategory;?>" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                 <?php endif; ?>
                             </td>
@@ -294,6 +295,8 @@ class ClientDocumentsController extends Controller
                     foreach($fetchd as $fetch)
                     {
                         $admin = $fetch->staff;
+                        $gridPreviewUrl = $this->documentPreviewUrl($fetch);
+                        $gridDownloadFilename = $this->documentDownloadFilename($fetch);
                         ?>
                         <div class="grid_list">
                             <div class="grid_col">
@@ -305,12 +308,9 @@ class ClientDocumentsController extends Controller
                                     <div class="dropdown d-inline dropdown_ellipsis_icon">
                                         <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                                         <div class="dropdown-menu">
-                                            <?php
-                                            $url = 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
-                                            ?>
                                             <?php if( isset($fetch->myfile) && $fetch->myfile != ""){?>
-                                            <a target="_blank" class="dropdown-item" href="<?php echo $fetch->myfile; ?>">Preview</a>
-                                            <a href="#" class="dropdown-item download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>">Download</a>
+                                            <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($gridPreviewUrl); ?>, <?php echo json_encode('preview-container-' . $request->folder_name); ?>)'>Preview</a>
+                                            <a href="#" class="dropdown-item download-file" data-document-id="<?php echo $fetch->id; ?>" data-id="<?php echo $fetch->id; ?>" data-filename="<?php echo htmlspecialchars($gridDownloadFilename); ?>">Download</a>
 
                                             <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item notuseddoc" data-doctype="personal" data-doccategory="<?php echo $request->folder_name;?>" data-href="notuseddoc" href="javascript:;">Not Used</a>
                                             <?php }?>
@@ -674,16 +674,8 @@ class ClientDocumentsController extends Controller
                     {
                         $admin = $fetch->staff;
                         $VisaDocumentType = VisaDocumentType::where('id', $fetch->folder_name)->first();
-                        if ($fetch->myfile_key) {
-                            $fileUrl = $fetch->myfile;
-                        } else {
-                            $cuid = (string) $fetch->client_id;
-                            $mf = (string) $fetch->myfile;
-                            $keyM = $cuid . '/matter/' . $mf;
-                            $keyV = $cuid . '/visa/' . $mf;
-                            $key = $this->s3ObjectExistsLenient($keyM) ? $keyM : ($this->s3ObjectExistsLenient($keyV) ? $keyV : $keyM);
-                            $fileUrl = $this->s3Disk()->url($key);
-                        }
+                        $previewUrl = $this->documentPreviewUrl($fetch);
+                        $downloadFilename = $this->documentDownloadFilename($fetch);
                         
                         // Hide non-matching documents with CSS (original behavior)
                         if (
@@ -714,8 +706,8 @@ class ClientDocumentsController extends Controller
                             <td style="white-space: initial;">
                                 <?php
                                 if( isset($fetch->file_name) && $fetch->file_name !=""){ ?>
-                                    <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu="showVisaFileContextMenu(event, <?php echo $fetch->id; ?>, '<?php echo htmlspecialchars($fetch->filetype); ?>', '<?php echo $fileUrl; ?>', '<?php echo $fetch->folder_name; ?>', '<?php echo $fetch->status ?? 'draft'; ?>'); return false;">
-                                        <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->filetype;?>','<?php echo $fetch->myfile; ?>','preview-container-migdocumnetlist')">
+                                    <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu='showVisaFileContextMenu(event, <?php echo (int) $fetch->id; ?>, <?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode((string) $fetch->folder_name); ?>, <?php echo json_encode($fetch->status ?? 'draft'); ?>); return false;'>
+                                        <a href="javascript:void(0);" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode('preview-container-migdocumnetlist'); ?>)'>
                                             <i class="fas fa-file-image"></i> <span><?php echo htmlspecialchars($fetch->file_name . '.' . $fetch->filetype); ?></span>
                                         </a>
                                     </div>
@@ -761,7 +753,7 @@ class ClientDocumentsController extends Controller
                                 <?php if ($fetch->myfile): ?>
                                     <a class="renamechecklist" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
                                     <a class="renamedoc" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
-                                    <a class="download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>" href="#" style="display: none;"></a>
+                                    <a class="download-file" data-document-id="<?php echo $fetch->id; ?>" data-id="<?php echo $fetch->id; ?>" data-filename="<?php echo htmlspecialchars($downloadFilename); ?>" href="#" style="display: none;"></a>
                                     <a class="notuseddoc" data-id="<?php echo $fetch->id; ?>" data-doctype="matter" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                 <?php endif; ?>
                             </td>
@@ -774,6 +766,8 @@ class ClientDocumentsController extends Controller
                     foreach($fetchd as $fetch)
                     {
                         $admin = $fetch->staff;
+                        $gridPreviewUrl = $this->documentPreviewUrl($fetch);
+                        $gridDownloadFilename = $this->documentDownloadFilename($fetch);
                         ?>
                         <div class="grid_list">
                             <div class="grid_col">
@@ -785,11 +779,8 @@ class ClientDocumentsController extends Controller
                                     <div class="dropdown d-inline dropdown_ellipsis_icon">
                                         <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                                         <div class="dropdown-menu">
-                                            <?php
-                                            $url = 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
-                                            ?>
-                                            <a target="_blank" class="dropdown-item" href="<?php echo $fetch->myfile; ?>">Preview</a>
-                                            <a href="#" class="dropdown-item download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>">Download</a>
+                                            <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($gridPreviewUrl); ?>, <?php echo json_encode('preview-container-migdocumnetlist'); ?>)'>Preview</a>
+                                            <a href="#" class="dropdown-item download-file" data-document-id="<?php echo $fetch->id; ?>" data-id="<?php echo $fetch->id; ?>" data-filename="<?php echo htmlspecialchars($gridDownloadFilename); ?>">Download</a>
 
                                             <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item notuseddoc" data-doctype="matter" data-href="notuseddoc" href="javascript:;">Not Used</a>
                                            
@@ -917,7 +908,8 @@ class ClientDocumentsController extends Controller
                 $admin = $fetch->staff;
                 $nomCat = NominationDocumentType::where('id', $fetch->folder_name)->first();
                 $catTitle = $nomCat->title ?? '';
-                $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://'.env('AWS_BUCKET').'.s3.'.env('AWS_DEFAULT_REGION').'.amazonaws.com/'.$fetch->client_id.'/nomination/'.$fetch->myfile;
+                $previewUrl = $this->documentPreviewUrl($fetch);
+                $downloadFilename = $this->documentDownloadFilename($fetch);
 
                 if (
                     $request->client_matter_id != $fetch->client_matter_id
@@ -946,8 +938,8 @@ class ClientDocumentsController extends Controller
                             </td>
                             <td style="white-space: initial;">
                                 <?php if (isset($fetch->file_name) && $fetch->file_name != '') { ?>
-                                    <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu="showNominationFileContextMenu(event, <?php echo $fetch->id; ?>, '<?php echo htmlspecialchars($fetch->filetype); ?>', '<?php echo $fileUrl; ?>', '<?php echo $fetch->folder_name; ?>', '<?php echo $fetch->status ?? 'draft'; ?>'); return false;">
-                                        <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->filetype; ?>','<?php echo $fetch->myfile; ?>','preview-container-nomdocumnetlist')">
+                                    <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu='showNominationFileContextMenu(event, <?php echo (int) $fetch->id; ?>, <?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode((string) $fetch->folder_name); ?>, <?php echo json_encode($fetch->status ?? 'draft'); ?>); return false;'>
+                                        <a href="javascript:void(0);" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode('preview-container-nomdocumnetlist'); ?>)'>
                                             <i class="fas fa-file-image"></i> <span><?php echo htmlspecialchars($fetch->file_name.'.'.$fetch->filetype); ?></span>
                                         </a>
                                     </div>
@@ -986,7 +978,7 @@ class ClientDocumentsController extends Controller
                                 <?php if ($fetch->myfile) { ?>
                                     <a class="renamechecklist" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
                                     <a class="renamedoc" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
-                                    <a class="download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>" href="#" style="display: none;"></a>
+                                    <a class="download-file" data-document-id="<?php echo $fetch->id; ?>" data-id="<?php echo $fetch->id; ?>" data-filename="<?php echo htmlspecialchars($downloadFilename); ?>" href="#" style="display: none;"></a>
                                     <a class="notuseddoc" data-id="<?php echo $fetch->id; ?>" data-doctype="nomination" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                 <?php } ?>
                             </td>
@@ -997,6 +989,8 @@ class ClientDocumentsController extends Controller
             $data = ob_get_clean();
             ob_start();
             foreach ($fetchd as $fetch) {
+                $gridPreviewUrl = $this->documentPreviewUrl($fetch);
+                $gridDownloadFilename = $this->documentDownloadFilename($fetch);
                 ?>
                         <div class="grid_list">
                             <div class="grid_col">
@@ -1008,8 +1002,8 @@ class ClientDocumentsController extends Controller
                                     <div class="dropdown d-inline dropdown_ellipsis_icon">
                                         <a class="dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                                         <div class="dropdown-menu">
-                                            <a target="_blank" class="dropdown-item" href="<?php echo $fetch->myfile; ?>">Preview</a>
-                                            <a href="#" class="dropdown-item download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>">Download</a>
+                                            <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($gridPreviewUrl); ?>, <?php echo json_encode('preview-container-nomdocumnetlist'); ?>)'>Preview</a>
+                                            <a href="#" class="dropdown-item download-file" data-document-id="<?php echo $fetch->id; ?>" data-id="<?php echo $fetch->id; ?>" data-filename="<?php echo htmlspecialchars($gridDownloadFilename); ?>">Download</a>
                                             <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item notuseddoc" data-doctype="nomination" data-href="notuseddoc" href="javascript:;">Not Used</a>
                                         </div>
                                     </div>
@@ -2613,6 +2607,21 @@ class ClientDocumentsController extends Controller
             . '<p><strong>Unable to preview this Office file inline.</strong></p>'
             . '<p>Install LibreOffice on this server for PDF preview, or use <strong>Download original</strong> to open the file.</p>'
             . '</body></html>';
+    }
+
+    private function documentPreviewUrl(Document $document): string
+    {
+        return url('/documents/preview/' . $document->id);
+    }
+
+    private function documentDownloadFilename(Document $document): string
+    {
+        if (! empty($document->myfile_key)) {
+            return basename((string) $document->myfile_key);
+        }
+        $name = trim((string) ($document->file_name ?? '') . '.' . (string) ($document->filetype ?? ''), '.');
+
+        return $name !== '' ? $name : 'document';
     }
 
     /**

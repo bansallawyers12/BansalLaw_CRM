@@ -5121,22 +5121,7 @@ success: function(response) {
                         // Add document to "Not Used" tab dynamically
                         if(res.docInfo) {
                             var doc = res.docInfo;
-                            
-                            // Construct file URL (same logic as blade template)
-                            var fileUrl = '';
-                            var filePreviewPath = '';
-                            if(doc.myfile_key && doc.myfile_key !== "") {
-                                // New file upload
-                                fileUrl = doc.myfile;
-                                filePreviewPath = doc.myfile;
-                            } else {
-                                // Old file upload
-                                var awsBucket = window.ClientDetailConfig?.aws?.bucket || '';
-                                var awsRegion = window.ClientDetailConfig?.aws?.region || 'ap-southeast-2';
-                                var clientId = window.ClientDetailConfig?.clientId || '';
-                                fileUrl = 'https://' + awsBucket + '.s3.' + awsRegion + '.amazonaws.com/' + clientId + '/' + doc.doc_type + '/' + doc.myfile;
-                                filePreviewPath = fileUrl;
-                            }
+                            var previewUrl = doc.preview_url || (site_url + '/documents/preview/' + doc.id);
                             
                             // Build the row HTML matching the blade template structure
                             var uploadedBy = res.Added_By || 'NA';
@@ -5157,8 +5142,8 @@ success: function(response) {
                             
                             if(fileName && fileName !== "") {
                                 trRow += '<div data-id="' + doc.id + '" data-name="' + fileName + '" class="doc-row" title="' + uploadTitle + '" ' +
-                                    'oncontextmenu="showNotUsedFileContextMenu(event, ' + doc.id + ', \'' + fileExt + '\', \'' + fileUrl + '\', \'' + doc.doc_type + '\', \'' + (doc.status || 'draft') + '\'); return false;">' +
-                                    '<a href="javascript:void(0);" onclick="previewFile(\'' + fileExt + '\',\'' + filePreviewPath + '\',\'preview-container-notuseddocumnetlist\')">' +
+                                    'oncontextmenu="showNotUsedFileContextMenu(event, ' + doc.id + ', \'' + fileExt + '\', \'' + previewUrl + '\', \'' + doc.doc_type + '\', \'' + (doc.status || 'draft') + '\'); return false;">' +
+                                    '<a href="javascript:void(0);" onclick="previewFile(\'' + fileExt + '\',\'' + previewUrl + '\',\'preview-container-notuseddocumnetlist\')">' +
                                         '<i class="fas fa-file-image"></i> <span>' + fileName + '.' + fileExt + '</span>' +
                                     '</a>' +
                                 '</div>';
@@ -5168,6 +5153,7 @@ success: function(response) {
                             
                             trRow += '</td>' +
                                 '<td>' +
+                                    '<a class="download-file" data-document-id="' + doc.id + '" data-id="' + doc.id + '" data-filename="' + fileName + '.' + fileExt + '" href="#" style="display: none;"></a>' +
                                     '<a data-id="' + doc.id + '" class="deletenote" data-doccategory="' + doc.doc_type + '" data-href="deletedocs" href="javascript:;" style="display: none;"></a>' +
                                     '<a data-id="' + doc.id + '" class="backtodoc" data-doctype="' + doc.doc_type + '" data-href="backtodoc" href="javascript:;" style="display: none;"></a>' +
                                 '</td>' +
@@ -6455,6 +6441,9 @@ success: function(response) {
 
                         var docNameWithoutExt = ress.filename.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").toLowerCase();
 
+                        var previewUrl = ress.preview_url || ress.fileurl;
+                        var documentId = ress.document_id || fileidL;
+
 
 
                         // Replace upload TD content (Column 1 = File Name)
@@ -6463,9 +6452,9 @@ success: function(response) {
 
                         uploadTd.html(
 
-                            '<div data-id="' + fileidL + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="showFileContextMenu(event, ' + fileidL + ', \'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'' + doccategoryL + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
+                            '<div data-id="' + fileidL + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="showFileContextMenu(event, ' + fileidL + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + doccategoryL + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
 
-                                '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'preview-container-' + doccategoryL + '\')">' +
+                                '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'preview-container-' + doccategoryL + '\')">' +
 
                                     '<i class="fas fa-file-image"></i> <span>' + ress.filename + '</span>' +
 
@@ -6487,7 +6476,7 @@ success: function(response) {
 
                             '<a class="renamedoc" data-id="' + fileidL + '" href="javascript:;" style="display: none;"></a>' +
 
-                            '<a class="download-file" data-filelink="' + ress.fileurl + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
+                            '<a class="download-file" data-id="' + documentId + '" data-document-id="' + documentId + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
 
                             '<a class="notuseddoc" data-id="' + fileidL + '" data-doctype="' + ress.doctype + '" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
 
@@ -6725,12 +6714,14 @@ success: function(response) {
                         
                         var row = $('#id_' + fileid);
                         var docNameWithoutExt = ress.filename.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").toLowerCase();
+                        var previewUrl = ress.preview_url || ress.fileurl;
+                        var documentId = ress.document_id || fileid;
                         
                         // Replace upload TD content (Column 1 = File Name)
                         var uploadTd = row.find('td').eq(1);
                         uploadTd.html(
-                            '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="showFileContextMenu(event, ' + fileid + ', \'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'' + doccategory + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
-                                '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'preview-container-' + doccategory + '\')">' +
+                            '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="showFileContextMenu(event, ' + fileid + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + doccategory + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
+                                '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'preview-container-' + doccategory + '\')">' +
                                     '<i class="fas fa-file-image"></i> <span>' + ress.filename + '</span>' +
                                 '</a>' +
                             '</div>'
@@ -6741,7 +6732,7 @@ success: function(response) {
                         actionTd.html(
                             '<a class="renamechecklist" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
                             '<a class="renamedoc" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
-                            '<a class="download-file" data-filelink="' + ress.fileurl + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
+                            '<a class="download-file" data-id="' + documentId + '" data-document-id="' + documentId + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
                             '<a class="notuseddoc" data-id="' + fileid + '" data-doctype="' + ress.doctype + '" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
                         );
                         

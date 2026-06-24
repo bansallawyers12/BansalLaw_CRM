@@ -220,24 +220,9 @@
                                 
                                 <?php
                                 if(isset($rec_val->uploaded_doc_id) && $rec_val->uploaded_doc_id != ""){
-                                    $client_doc_list = DB::table('documents')->select('myfile')->where('id',$rec_val->uploaded_doc_id)->first();
+                                    $client_doc_list = DB::table('documents')->select('id')->where('id',$rec_val->uploaded_doc_id)->first();
                                     if($client_doc_list){ 
-                                        // Generate S3 URL from the stored filename
-                                        if (filter_var($client_doc_list->myfile, FILTER_VALIDATE_URL)) {
-                                            $docUrl = $client_doc_list->myfile;
-                                        } else {
-                                            $client_info = \App\Models\Admin::find($fetchedData->id);
-                                            $matter_info = \App\Models\ClientMatter::find($rec_val->client_matter_id);
-                                            $client_id = $client_info ? $client_info->client_id : '';
-                                            $matter_unique_id = $matter_info ? $matter_info->client_unique_matter_no : '';
-                                            
-                                            if($matter_unique_id) {
-                                                $filePath = $client_id.'/'.$matter_unique_id.'/accounts/'.$client_doc_list->myfile;
-                                            } else {
-                                                $filePath = $client_id.'/accounts/'.$client_doc_list->myfile;
-                                            }
-                                            $docUrl = Storage::disk('s3')->url($filePath);
-                                        }
+                                        $docUrl = url('/documents/preview/' . $rec_val->uploaded_doc_id);
                                         ?>
                                         <a target="_blank" title="See Attached Document" class="link-primary" href="<?php echo $docUrl;?>"><i class="fas fa-file-pdf"></i></a>
                                     <?php
@@ -278,24 +263,7 @@
                                         <?php if(!empty($rec_val->uploaded_doc_id)) { 
                                             $uploadedDoc = \App\Models\Document::find($rec_val->uploaded_doc_id);
                                             if($uploadedDoc && !empty($uploadedDoc->myfile)) { 
-                                                // Generate S3 URL from the stored filename
-                                                if (filter_var($uploadedDoc->myfile, FILTER_VALIDATE_URL)) {
-                                                    // Already a full URL
-                                                    $docUrl = $uploadedDoc->myfile;
-                                                } else {
-                                                    // Just a filename - generate S3 URL
-                                                    $client_info = \App\Models\Admin::find($fetchedData->id);
-                                                    $matter_info = \App\Models\ClientMatter::find($rec_val->client_matter_id);
-                                                    $client_id = $client_info ? $client_info->client_id : '';
-                                                    $matter_unique_id = $matter_info ? $matter_info->client_unique_matter_no : '';
-                                                    
-                                                    if($matter_unique_id) {
-                                                        $filePath = $client_id.'/'.$matter_unique_id.'/accounts/'.$uploadedDoc->myfile;
-                                                    } else {
-                                                        $filePath = $client_id.'/accounts/'.$uploadedDoc->myfile;
-                                                    }
-                                                    $docUrl = Storage::disk('s3')->url($filePath);
-                                                }
+                                                $docUrl = url('/documents/preview/' . $uploadedDoc->id);
                                                 ?>
                                         <a class="dropdown-item" href="<?php echo $docUrl; ?>" target="_blank">
                                             <i class="fas fa-file-alt"></i> View Uploaded Receipt
@@ -672,24 +640,9 @@
                                     </span>
                                     <?php
                                     if(isset($off_val->uploaded_doc_id) && $off_val->uploaded_doc_id >0){
-                                        $office_doc_list = DB::table('documents')->select('myfile')->where('id',$off_val->uploaded_doc_id)->first();
+                                        $office_doc_list = DB::table('documents')->select('id')->where('id',$off_val->uploaded_doc_id)->first();
                                         if($office_doc_list){ 
-                                            // Generate S3 URL from the stored filename
-                                            if (filter_var($office_doc_list->myfile, FILTER_VALIDATE_URL)) {
-                                                $docUrl = $office_doc_list->myfile;
-                                            } else {
-                                                $client_info = \App\Models\Admin::find($fetchedData->id);
-                                                $matter_info = \App\Models\ClientMatter::find($off_val->client_matter_id);
-                                                $client_id = $client_info ? $client_info->client_id : '';
-                                                $matter_unique_id = $matter_info ? $matter_info->client_unique_matter_no : '';
-                                                
-                                                if($matter_unique_id) {
-                                                    $filePath = $client_id.'/'.$matter_unique_id.'/accounts/'.$office_doc_list->myfile;
-                                                } else {
-                                                    $filePath = $client_id.'/accounts/'.$office_doc_list->myfile;
-                                                }
-                                                $docUrl = Storage::disk('s3')->url($filePath);
-                                            }
+                                            $docUrl = url('/documents/preview/' . $off_val->uploaded_doc_id);
                                             ?>
                                             <br/>
                                             <a title="See Attached Document" target="_blank" class="link-primary" href="<?php echo $docUrl;?>"><i class="fas fa-file-pdf"></i> Document</a>
@@ -750,22 +703,7 @@
                                             <?php if(!empty($off_val->uploaded_doc_id)) { 
                                                 $uploadedDoc = \App\Models\Document::find($off_val->uploaded_doc_id);
                                                 if($uploadedDoc && !empty($uploadedDoc->myfile)) { 
-                                                    // Generate S3 URL from the stored filename
-                                                    if (filter_var($uploadedDoc->myfile, FILTER_VALIDATE_URL)) {
-                                                        $docUrl = $uploadedDoc->myfile;
-                                                    } else {
-                                                        $client_info = \App\Models\Admin::find($fetchedData->id);
-                                                        $matter_info = \App\Models\ClientMatter::find($off_val->client_matter_id);
-                                                        $client_id = $client_info ? $client_info->client_id : '';
-                                                        $matter_unique_id = $matter_info ? $matter_info->client_unique_matter_no : '';
-                                                        
-                                                        if($matter_unique_id) {
-                                                            $filePath = $client_id.'/'.$matter_unique_id.'/accounts/'.$uploadedDoc->myfile;
-                                                        } else {
-                                                            $filePath = $client_id.'/accounts/'.$uploadedDoc->myfile;
-                                                        }
-                                                        $docUrl = Storage::disk('s3')->url($filePath);
-                                                    }
+                                                    $docUrl = url('/documents/preview/' . $uploadedDoc->id);
                                                     ?>
                                             <a class="dropdown-item" href="<?php echo $docUrl; ?>" target="_blank">
                                                 <i class="fas fa-file-alt"></i> View Uploaded Receipt

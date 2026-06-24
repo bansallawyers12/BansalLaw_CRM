@@ -53,20 +53,13 @@
                                                 <td style="white-space: initial;">
                                                     <?php
                                                     if( isset($fetch->file_name) && $fetch->file_name !=""){ 
-                                                        $fileUrl = isset($fetch->myfile_key) && $fetch->myfile_key != "" ? $fetch->myfile : 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/'.$fetchedData->client_id.'/'.$fetch->doc_type.'/'.$fetch->myfile;
+                                                        $previewUrl = url('/documents/preview/' . $fetch->id);
+                                                        $downloadFilename = $fetch->myfile_key ?: trim(($fetch->file_name ?? '') . '.' . ($fetch->filetype ?? ''), '.');
                                                     ?>
-                                                        <div data-id="{{$fetch->id}}" data-name="<?php echo $fetch->file_name; ?>" class="doc-row" title="Uploaded by: <?php echo ($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu="showNotUsedFileContextMenu(event, <?= $fetch->id ?>, '<?= htmlspecialchars($fetch->filetype) ?>', '<?= $fileUrl ?>', '<?= $fetch->doc_type ?>', '<?= $fetch->status ?? 'draft' ?>'); return false;">
-                                                            <?php if( isset($fetch->myfile_key) && $fetch->myfile_key != ""){ //For new file upload ?>
-                                                                <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->filetype;?>','<?php echo $fetch->myfile; ?>','preview-container-notuseddocumnetlist')">
-                                                                    <i class="fas fa-file-image"></i> <span><?php echo $fetch->file_name . '.' . $fetch->filetype; ?></span>
-                                                                </a>
-                                                            <?php } else {  //For old file upload
-                                                                $url = 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
-                                                                ?>
-                                                                <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->filetype;?>','<?php echo $myawsfile; ?>','preview-container-notuseddocumnetlist')">
-                                                                    <i class="fas fa-file-image"></i> <span><?php echo $fetch->file_name . '.' . $fetch->filetype; ?></span>
-                                                                </a>
-                                                            <?php } ?>
+                                                        <div data-id="{{$fetch->id}}" data-name="<?php echo $fetch->file_name; ?>" class="doc-row" title="Uploaded by: <?php echo ($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu='showNotUsedFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, <?= json_encode($fetch->doc_type) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
+                                                            <a href="javascript:void(0);" onclick='previewFile(<?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, <?= json_encode('preview-container-notuseddocumnetlist') ?>)'>
+                                                                <i class="fas fa-file-image"></i> <span><?php echo $fetch->file_name . '.' . $fetch->filetype; ?></span>
+                                                            </a>
                                                         </div>
                                                     <?php
                                                     }
@@ -77,6 +70,10 @@
                                                 </td>
                                                 <td>
                                                     <!-- Hidden elements for context menu actions -->
+                                                    <?php if ($fetch->myfile): ?>
+                                                    <?php $dlName = $fetch->myfile_key ?: trim(($fetch->file_name ?? '') . '.' . ($fetch->filetype ?? ''), '.'); ?>
+                                                    <a class="download-file" data-document-id="<?= $fetch->id ?>" data-id="<?= $fetch->id ?>" data-filename="<?= e($dlName) ?>" href="#" style="display: none;"></a>
+                                                    <?php endif; ?>
                                                     <a data-id="<?= $fetch->id ?>" class="deletenote" data-doccategory="<?= $fetch->doc_type ?>" data-href="deletedocs" href="javascript:;" style="display: none;"></a>
                                                     <a data-id="{{$fetch->id}}" class="backtodoc" data-doctype="{{$fetch->doc_type}}" data-href="backtodoc" href="javascript:;" style="display: none;"></a>
                                                 </td>
@@ -171,7 +168,13 @@
 
                     switch(action) {
                         case 'preview':
-                            window.open(currentNotUsedContextData.fileUrl, '_blank');
+                            if (typeof previewFile === 'function' && currentNotUsedContextData.fileUrl) {
+                                previewFile(
+                                    currentNotUsedContextData.fileType || 'pdf',
+                                    currentNotUsedContextData.fileUrl,
+                                    'preview-container-notuseddocumnetlist'
+                                );
+                            }
                             break;
                         case 'delete':
                             $('.deletenote[data-id="' + currentNotUsedContextFile + '"]').click();
