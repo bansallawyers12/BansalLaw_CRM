@@ -4074,23 +4074,9 @@ class ClientsController extends Controller
             }
 
             $paginator = $query->paginate(5);
-            $url = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
 
-            $emails = collect($paginator->items())->map(function ($email) use ($url, $client_id) {
-                $DocInfo = \App\Models\Document::select('id','doc_type','myfile','myfile_key','mail_type')
-                    ->where('id', $email->uploaded_doc_id)
-                    ->first();
-
-                $AdminInfo = \App\Models\Admin::select('client_id')->where('id',$email->client_id)->first();
-
-                $previewUrl = '';
-                if ($DocInfo) {
-                    if (!empty($DocInfo->myfile_key)) {
-                        $previewUrl = $DocInfo->myfile;
-                    } else {
-                        $previewUrl = $url . $AdminInfo->client_id . '/' . ($DocInfo->doc_type ?? 'mail') . '/' . ($DocInfo->mail_type ?? 'inbox') . '/' . $DocInfo->myfile;
-                    }
-                }
+            $emails = collect($paginator->items())->map(function ($email) use ($client_id) {
+                $previewUrl = $this->resolveEmailMsgDownloadUrl($email);
 
                 // Ensure attachments and labels relationships are loaded
                 if (!$email->relationLoaded('attachments')) {
@@ -4114,20 +4100,7 @@ class ClientsController extends Controller
                 // Format attachments as array with all required fields
                 if ($attachments && method_exists($attachments, 'count') && $attachments->count() > 0) {
                     $emailArray['attachments'] = $attachments->map(function ($attachment) {
-                        return [
-                            'id' => $attachment->id,
-                            'mail_report_id' => $attachment->email_log_id,
-                            'filename' => $attachment->filename,
-                            'display_name' => $attachment->display_name ?? $attachment->filename,
-                            'content_type' => $attachment->content_type,
-                            'file_path' => $attachment->file_path,
-                            's3_key' => $attachment->s3_key,
-                            'file_size' => (int) $attachment->file_size,
-                            'content_id' => $attachment->content_id,
-                            'is_inline' => (bool) $attachment->is_inline, // Ensure boolean for frontend filtering
-                            'description' => $attachment->description,
-                            'extension' => $attachment->extension,
-                        ];
+                        return $this->formatEmailLogAttachmentForApi($attachment);
                     })->values()->toArray(); // values() re-indexes the array
                 } else {
                     // Ensure attachments key exists even if empty
@@ -4359,26 +4332,9 @@ class ClientsController extends Controller
             // Fetch emails
             $paginator = $query->paginate(5);
 
-            // Base URL for AWS S3
-            $url = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
-
             // Map emails with additional data (matches filterEmails logic)
-            $emails = collect($paginator->items())->map(function ($email) use ($url, $client_id) {
-                $previewUrl = '';
-                if (!empty($email->uploaded_doc_id)) {
-                    $docInfo = \App\Models\Document::select('id', 'doc_type', 'myfile', 'myfile_key', 'mail_type')
-                        ->where('id', $email->uploaded_doc_id)
-                        ->first();
-                    $adminInfo = \App\Models\Admin::select('client_id')->where('id', $email->client_id)->first();
-                    if ($docInfo) {
-                        if (!empty($docInfo->myfile_key)) {
-                            $previewUrl = $docInfo->myfile;
-                        } else {
-                            $clientRef = ($adminInfo && $adminInfo->client_id) ? $adminInfo->client_id : ('client_' . ($email->client_id ?? $client_id ?? 0));
-                            $previewUrl = $url . $clientRef . '/' . ($docInfo->doc_type ?? 'mail') . '/' . ($docInfo->mail_type ?? 'sent') . '/' . ($docInfo->myfile ?? '');
-                        }
-                    }
-                }
+            $emails = collect($paginator->items())->map(function ($email) use ($client_id) {
+                $previewUrl = $this->resolveEmailMsgDownloadUrl($email);
 
 				// Ensure attachments and labels relationships are loaded
 				if (!$email->relationLoaded('attachments')) {
@@ -4402,20 +4358,7 @@ class ClientsController extends Controller
 				// Format attachments as array with all required fields
 				if ($attachments && method_exists($attachments, 'count') && $attachments->count() > 0) {
 					$emailArray['attachments'] = $attachments->map(function ($attachment) {
-						return [
-							'id' => $attachment->id,
-							'mail_report_id' => $attachment->email_log_id,
-							'filename' => $attachment->filename,
-							'display_name' => $attachment->display_name ?? $attachment->filename,
-							'content_type' => $attachment->content_type,
-							'file_path' => $attachment->file_path,
-							's3_key' => $attachment->s3_key,
-							'file_size' => (int) $attachment->file_size,
-							'content_id' => $attachment->content_id,
-							'is_inline' => (bool) $attachment->is_inline, // Ensure boolean for frontend filtering
-							'description' => $attachment->description,
-							'extension' => $attachment->extension,
-						];
+						return $this->formatEmailLogAttachmentForApi($attachment);
 					})->values()->toArray(); // values() re-indexes the array
 				} else {
 					// Ensure attachments key exists even if empty
@@ -4519,23 +4462,9 @@ class ClientsController extends Controller
             }
 
             $paginator = $query->paginate(5);
-            $url = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
 
-            $emails = collect($paginator->items())->map(function ($email) use ($url, $client_id) {
-                $previewUrl = '';
-                if (!empty($email->uploaded_doc_id)) {
-                    $docInfo = \App\Models\Document::select('id', 'doc_type', 'myfile', 'myfile_key', 'mail_type')
-                        ->where('id', $email->uploaded_doc_id)->first();
-                    if ($docInfo) {
-                        if (!empty($docInfo->myfile_key)) {
-                            $previewUrl = $docInfo->myfile;
-                        } else {
-                            $adminInfo = \App\Models\Admin::withoutGlobalScopes()->select('client_id')->where('id', $email->client_id)->first();
-                            $clientRef = $adminInfo && $adminInfo->client_id ? $adminInfo->client_id : ('client_' . $client_id);
-                            $previewUrl = $url . $clientRef . '/' . ($docInfo->doc_type ?? 'mail') . '/' . ($docInfo->mail_type ?? 'sent') . '/' . ($docInfo->myfile ?? '');
-                        }
-                    }
-                }
+            $emails = collect($paginator->items())->map(function ($email) {
+                $previewUrl = $this->resolveEmailMsgDownloadUrl($email);
 
                 if (!$email->relationLoaded('attachments')) {
                     $email->load('attachments');
@@ -4551,20 +4480,7 @@ class ClientsController extends Controller
                 }
                 $emailArray['attachments'] = ($attachments && $attachments->count() > 0)
                     ? $attachments->map(function ($attachment) {
-                        return [
-                            'id' => $attachment->id,
-                            'mail_report_id' => $attachment->email_log_id,
-                            'filename' => $attachment->filename,
-                            'display_name' => $attachment->display_name ?? $attachment->filename,
-                            'content_type' => $attachment->content_type,
-                            'file_path' => $attachment->file_path,
-                            's3_key' => $attachment->s3_key,
-                            'file_size' => (int) $attachment->file_size,
-                            'content_id' => $attachment->content_id,
-                            'is_inline' => (bool) $attachment->is_inline,
-                            'description' => $attachment->description,
-                            'extension' => $attachment->extension,
-                        ];
+                        return $this->formatEmailLogAttachmentForApi($attachment);
                     })->values()->toArray()
                     : [];
                 $emailArray['preview_url'] = $previewUrl;
@@ -7931,17 +7847,62 @@ class ClientsController extends Controller
             return '';
         }
 
-        // Use already-loaded pdfDocument relationship to avoid N+1 queries.
-        // Falls back to a direct query when the relationship was not eager-loaded.
-        $pdfDoc = $email->relationLoaded('pdfDocument')
-            ? $email->pdfDocument
-            : \App\Models\Document::select('id', 'myfile')->where('id', $email->pdf_doc_id)->first();
+        return $this->emailDocumentPreviewUrl((int) $email->pdf_doc_id, embed: true);
+    }
 
-        if (!$pdfDoc || empty($pdfDoc->myfile)) {
+    /**
+     * Build an authenticated preview/download URL for an email-linked Document row.
+     */
+    protected function emailDocumentPreviewUrl(int $documentId, bool $embed = false, bool $download = false): string
+    {
+        if ($documentId <= 0) {
             return '';
         }
 
-        return (string) $pdfDoc->myfile;
+        $params = [];
+        if ($embed) {
+            $params['embed'] = '1';
+        }
+        if ($download) {
+            $params['download'] = '1';
+        }
+
+        $url = url('/documents/preview/' . $documentId);
+
+        return $params === [] ? $url : $url . '?' . http_build_query($params);
+    }
+
+    /**
+     * Normalize email attachment payload for API responses (no direct S3 URLs).
+     */
+    protected function formatEmailLogAttachmentForApi(\App\Models\EmailLogAttachment $attachment): array
+    {
+        return [
+            'id' => $attachment->id,
+            'mail_report_id' => $attachment->email_log_id,
+            'filename' => $attachment->filename,
+            'display_name' => $attachment->display_name ?? $attachment->filename,
+            'content_type' => $attachment->content_type,
+            'file_size' => (int) $attachment->file_size,
+            'content_id' => $attachment->content_id,
+            'is_inline' => (bool) $attachment->is_inline,
+            'description' => $attachment->description,
+            'extension' => $attachment->extension,
+            'preview_url' => url('/mail-attachments/' . $attachment->id . '/preview'),
+            'download_url' => url('/mail-attachments/' . $attachment->id . '/download'),
+        ];
+    }
+
+    /**
+     * Resolve authenticated download URL for the original uploaded .msg document.
+     */
+    protected function resolveEmailMsgDownloadUrl($email): string
+    {
+        if (empty($email->uploaded_doc_id)) {
+            return '';
+        }
+
+        return $this->emailDocumentPreviewUrl((int) $email->uploaded_doc_id, download: true);
     }
 
     /**
@@ -8191,46 +8152,28 @@ class ClientsController extends Controller
         // Paginate
         $emails = $query->paginate($perPage);
 
-        // Prepare preview text and remove massive HTML for the list response
-        // Also map the .msg file URL if applicable
-        $url = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
-        $emails->getCollection()->transform(function ($email) use ($url) {
+        // Prepare preview text and map authenticated document/attachment URLs
+        $emails->getCollection()->transform(function ($email) {
             $preview = strip_tags($email->message);
             $email->text_preview = mb_substr($preview, 0, 100);
 
-            $msgUrl = '';
-            if (!empty($email->uploaded_doc_id)) {
-                $docInfo = \App\Models\Document::select('id', 'doc_type', 'myfile', 'myfile_key', 'mail_type')
-                    ->where('id', $email->uploaded_doc_id)
-                    ->first();
-                if ($docInfo) {
-                    if (!empty($docInfo->myfile_key)) {
-                        $msgUrl = $docInfo->myfile;
-                    } else {
-                        $adminInfo = \App\Models\Admin::select('client_id')->where('id', $email->client_id)->first();
-                        $clientRef = ($adminInfo && $adminInfo->client_id) ? $adminInfo->client_id : ('client_' . ($email->client_id ?? 0));
-                        $msgUrl = $url . $clientRef . '/' . ($docInfo->doc_type ?? 'mail') . '/' . ($docInfo->mail_type ?? 'inbox') . '/' . ($docInfo->myfile ?? '');
-                    }
-                }
-            }
-            $email->msg_file_url = $msgUrl;
+            $email->msg_file_url = $this->resolveEmailMsgDownloadUrl($email);
+            $email->pdf_file_url = $this->resolveEmailPdfPreviewUrl($email);
+            $email->pdf_preview_url = $email->pdf_file_url;
+            $email->pdf_download_url = ! empty($email->pdf_doc_id)
+                ? $this->emailDocumentPreviewUrl((int) $email->pdf_doc_id, download: true)
+                : '';
 
-            $pdfUrl = '';
-            if (!empty($email->pdf_doc_id)) {
-                $docInfo = \App\Models\Document::select('id', 'doc_type', 'myfile', 'myfile_key', 'mail_type')
-                    ->where('id', $email->pdf_doc_id)
-                    ->first();
-                if ($docInfo) {
-                    if (!empty($docInfo->myfile_key)) {
-                        $pdfUrl = $docInfo->myfile;
-                    } else {
-                        $adminInfo = \App\Models\Admin::select('client_id')->where('id', $email->client_id)->first();
-                        $clientRef = ($adminInfo && $adminInfo->client_id) ? $adminInfo->client_id : ('client_' . ($email->client_id ?? 0));
-                        $pdfUrl = $url . $clientRef . '/' . ($docInfo->doc_type ?? 'mail') . '/' . ($docInfo->mail_type ?? 'inbox') . '/' . ($docInfo->myfile ?? '');
+            if ($email->relationLoaded('attachments') && $email->attachments) {
+                $email->setRelation('attachments', $email->attachments->map(function ($attachment) {
+                    $payload = $this->formatEmailLogAttachmentForApi($attachment);
+                    foreach ($payload as $key => $value) {
+                        $attachment->setAttribute($key, $value);
                     }
-                }
+
+                    return $attachment;
+                }));
             }
-            $email->pdf_file_url = $pdfUrl;
 
             return $email;
         });

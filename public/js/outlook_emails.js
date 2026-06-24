@@ -1163,17 +1163,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getAttachmentDownloadUrl(att) {
+        if (att.download_url) {
+            return att.download_url;
+        }
         if (att.id) {
             return baseUrl + '/mail-attachments/' + att.id + '/download';
         }
-        return att.file_path || '#';
+        return '#';
     }
 
     function getAttachmentPreviewUrl(att) {
+        if (att.preview_url) {
+            return att.preview_url;
+        }
         if (att.id) {
             return baseUrl + '/mail-attachments/' + att.id + '/preview';
         }
-        return att.file_path || '#';
+        return '#';
     }
 
     function collectEmailAttachmentItems(email) {
@@ -1193,8 +1199,8 @@ document.addEventListener('DOMContentLoaded', function() {
             items.push({
                 name: 'Parsed email.pdf',
                 size: null,
-                downloadUrl: email.pdf_file_url,
-                previewUrl: email.pdf_file_url,
+                downloadUrl: email.pdf_download_url || email.pdf_file_url,
+                previewUrl: email.pdf_preview_url || email.pdf_file_url,
                 icon: 'fa-file-pdf email-attachment-icon--pdf'
             });
         }
@@ -1353,15 +1359,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let pdfToPreview = null;
         if (!contentStr) {
-            if (email.pdf_file_url) {
-                pdfToPreview = email.pdf_file_url;
+            if (email.pdf_preview_url || email.pdf_file_url) {
+                pdfToPreview = email.pdf_preview_url || email.pdf_file_url;
             } else if (email.attachments && email.attachments.length > 0) {
                 const pdfAtt = email.attachments.find(function(a) {
                     const name = resolveAttachmentDisplayName(a).toLowerCase();
                     return name.endsWith('.pdf');
                 });
                 if (pdfAtt) {
-                    pdfToPreview = pdfAtt.file_path;
+                    pdfToPreview = getAttachmentPreviewUrl(pdfAtt);
                 }
             }
         }
