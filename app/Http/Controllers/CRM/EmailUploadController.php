@@ -465,7 +465,7 @@ class EmailUploadController extends Controller
         $subject = $existing->subject ?: '(No subject)';
         $from = $existing->from_mail ?: 'Unknown sender';
         $sent = $existing->fetch_mail_sent_time
-            ? $existing->fetch_mail_sent_time->format('d/m/Y H:i')
+            ? $existing->fetch_mail_sent_time->format('d/m/Y h:i a')
             : null;
 
         $message = 'This email already exists for this matter.';
@@ -530,7 +530,7 @@ class EmailUploadController extends Controller
                             'subject' => $existing->subject,
                             'from_mail' => $existing->from_mail,
                             'sent_date' => $existing->fetch_mail_sent_time
-                                ? $existing->fetch_mail_sent_time->format('d/m/Y H:i')
+                                ? $existing->fetch_mail_sent_time->format('d/m/Y h:i a')
                                 : null,
                         ],
                     ];

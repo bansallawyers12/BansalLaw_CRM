@@ -597,43 +597,44 @@
     }
 
     /**
-     * Format date to readable string
-     * Handles both ISO date strings and formatted strings like "d/m/Y h:i a"
+     * Format a Date object as dd/mm/yyyy hh:mm am/pm
+     */
+    function formatDateFromObject(date) {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        let hours = date.getHours();
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'pm' : 'am';
+        hours = hours % 12;
+        if (hours === 0) {
+            hours = 12;
+        }
+        return day + '/' + month + '/' + year + ' ' + String(hours).padStart(2, '0') + ':' + minutes + ' ' + ampm;
+    }
+
+    /**
+     * Format date to dd/mm/yyyy (with time) for email UI
+     * Handles ISO date strings and formatted strings like "dd/mm/yyyy hh:mm am/pm"
      */
     function formatDate(dateString) {
         if (!dateString) return 'Unknown';
         try {
-            // Check if it's already in formatted format (d/m/Y h:i a)
-            if (typeof dateString === 'string' && dateString.match(/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2} (am|pm)$/i)) {
-                // Parse formatted date: "dd/mm/yyyy hh:mm am/pm"
-                const parts = dateString.match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}) (am|pm)$/i);
+            if (typeof dateString === 'string' && /^\d{2}\/\d{2}\/\d{4}/.test(dateString)) {
+                const parts = dateString.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})\s*(am|pm))?/i);
                 if (parts) {
                     const [, day, month, year, hour, minute, ampm] = parts;
-                    let hour24 = parseInt(hour);
-                    if (ampm.toLowerCase() === 'pm' && hour24 !== 12) hour24 += 12;
-                    if (ampm.toLowerCase() === 'am' && hour24 === 12) hour24 = 0;
-                    const date = new Date(year, month - 1, day, hour24, minute);
-                    return date.toLocaleString('en-AU', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
+                    if (hour !== undefined) {
+                        return day + '/' + month + '/' + year + ' ' + String(hour).padStart(2, '0') + ':' + minute + ' ' + (ampm || '').toLowerCase();
+                    }
+                    return day + '/' + month + '/' + year;
                 }
             }
-            // Try parsing as ISO date string
             const date = new Date(dateString);
             if (isNaN(date.getTime())) {
-                return dateString; // Return as-is if can't parse
+                return dateString;
             }
-            return date.toLocaleString('en-AU', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+            return formatDateFromObject(date);
         } catch (e) {
             return dateString;
         }

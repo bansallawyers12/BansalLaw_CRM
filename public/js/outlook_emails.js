@@ -1111,6 +1111,48 @@ document.addEventListener('DOMContentLoaded', function() {
         return att.filename || att.file_name || att.display_name || 'Attachment';
     }
 
+    function formatEmailDate(dateString) {
+        if (!dateString) {
+            return '';
+        }
+        try {
+            if (typeof dateString === 'string' && /^\d{2}\/\d{2}\/\d{4}/.test(dateString)) {
+                const parts = dateString.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})\s*(am|pm))?/i);
+                if (parts) {
+                    const [, day, month, year, hour, minute, ampm] = parts;
+                    if (hour !== undefined) {
+                        return day + '/' + month + '/' + year + ' ' + String(hour).padStart(2, '0') + ':' + minute + ' ' + (ampm || '').toLowerCase();
+                    }
+                    return day + '/' + month + '/' + year;
+                }
+            }
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                return String(dateString);
+            }
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            let hours = date.getHours();
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'pm' : 'am';
+            hours = hours % 12;
+            if (hours === 0) {
+                hours = 12;
+            }
+            return day + '/' + month + '/' + year + ' ' + String(hours).padStart(2, '0') + ':' + minutes + ' ' + ampm;
+        } catch (e) {
+            return String(dateString);
+        }
+    }
+
+    function getEmailDate(email) {
+        if (!email) {
+            return null;
+        }
+        return email.fetch_mail_sent_time || email.received_date || email.created_at || null;
+    }
+
     function formatFileSize(bytes) {
         const size = Number(bytes) || 0;
         if (size <= 0) {
@@ -1299,11 +1341,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const attachmentIcon = hasAttachment ? '<i class="fas fa-paperclip email-list-clip" title="Has attachments"></i>' : '';
             const attachmentSummary = renderEmailAttachmentListSummary(email);
 
-            let dateStr = '';
-            if (email.created_at) {
-                const d = new Date(email.created_at);
-                dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            }
+            let dateStr = formatEmailDate(getEmailDate(email));
 
             el.innerHTML = `
                 <div class="email-date">${dateStr}</div>
@@ -1332,12 +1370,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('readSender').textContent = email.from_mail || 'Unknown Sender';
         document.getElementById('readTo').textContent = 'To: ' + (email.to_mail || 'Unknown');
         
-        let dateStr = '';
-        if (email.created_at) {
-            const d = new Date(email.created_at);
-            dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        }
-        document.getElementById('readDate').textContent = dateStr;
+        document.getElementById('readDate').textContent = formatEmailDate(getEmailDate(email));
 
         const initial = (email.from_mail || '?').charAt(0).toUpperCase();
         document.getElementById('readAvatar').textContent = initial;
@@ -1530,15 +1563,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function buildQuoteHtml(email, action, emailHtml) {
+        const emailDate = formatEmailDate(getEmailDate(email));
         if (action === 'forward') {
             return '<br><br><div dir="ltr">---------- Forwarded message ---------<br>From: <strong>' +
-                escapeHtml(email.from_mail) + '</strong><br>Date: ' + escapeHtml(email.created_at) +
+                escapeHtml(email.from_mail) + '</strong><br>Date: ' + escapeHtml(emailDate) +
                 '<br>Subject: ' + escapeHtml(email.subject) +
                 '</div><br><blockquote style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex">' +
                 emailHtml + '</blockquote>';
         }
         return '<br><br><blockquote style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex">' +
-            '<b>From:</b> ' + escapeHtml(email.from_mail) + '<br><b>Sent:</b> ' + escapeHtml(email.created_at) +
+            '<b>From:</b> ' + escapeHtml(email.from_mail) + '<br><b>Sent:</b> ' + escapeHtml(emailDate) +
             '<br><b>Subject:</b> ' + escapeHtml(email.subject) + '<br><br>' + emailHtml + '</blockquote>';
     }
 

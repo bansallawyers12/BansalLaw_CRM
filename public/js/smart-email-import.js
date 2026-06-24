@@ -24,6 +24,30 @@
             .replace(/"/g, '&quot;');
     }
 
+    function formatEmailSectionDate(dateString) {
+        if (!dateString) {
+            return '';
+        }
+        if (/^\d{2}\/\d{2}\/\d{4}/.test(dateString)) {
+            return dateString;
+        }
+        var date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            return String(dateString);
+        }
+        var day = String(date.getDate()).padStart(2, '0');
+        var month = String(date.getMonth() + 1).padStart(2, '0');
+        var year = date.getFullYear();
+        var hours = date.getHours();
+        var minutes = String(date.getMinutes()).padStart(2, '0');
+        var ampm = hours >= 12 ? 'pm' : 'am';
+        hours = hours % 12;
+        if (hours === 0) {
+            hours = 12;
+        }
+        return day + '/' + month + '/' + year + ' ' + String(hours).padStart(2, '0') + ':' + minutes + ' ' + ampm;
+    }
+
     function confidenceClass(confidence) {
         if (confidence >= 80) return 'confidence-high';
         if (confidence >= 50) return 'confidence-medium';
@@ -354,7 +378,7 @@
                         '<div><strong>From:</strong> ' + escapeHtml(item.preview.from) + '</div>' +
                         '<div><strong>To:</strong> ' + escapeHtml(item.preview.to) + '</div>' +
                         (item.preview.cc ? '<div><strong>CC:</strong> ' + escapeHtml(item.preview.cc) + '</div>' : '') +
-                        (item.preview.sent_date ? '<div><strong>Date:</strong> ' + escapeHtml(item.preview.sent_date) + '</div>' : '') +
+                        (item.preview.sent_date ? '<div><strong>Date:</strong> ' + escapeHtml(formatEmailSectionDate(item.preview.sent_date)) + '</div>' : '') +
                         '<div class="mt-1">' + escapeHtml(item.preview.body_snippet) + '</div>' +
                         (item.preview.attachment_count
                             ? '<div class="mt-1"><strong>Attachments:</strong> ' + item.preview.attachment_count +
