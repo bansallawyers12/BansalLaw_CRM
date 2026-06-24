@@ -1655,7 +1655,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 		$doclistdata = '';
 		foreach($doclists as $doclist){
 			$docdata = CpDocChecklist::where('id', $doclist->cp_list_id)->first();
-			$fileUrl = ($doclist->myfile && str_starts_with($doclist->myfile, 'http')) ? $doclist->myfile : URL::to('/public/img/documents').'/'.$doclist->file_name;
+			$fileUrl = !empty($doclist->myfile) ? url('/documents/preview/' . $doclist->id) : URL::to('/public/img/documents').'/'.$doclist->file_name;
 			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
 				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->cp_checklist_name.'</td>';
@@ -1770,7 +1770,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 		$doclistdata = '';
 		foreach($doclists as $doclist){
 			$docdata = CpDocChecklist::where('id', $doclist->cp_list_id)->first();
-			$fileUrl = ($doclist->myfile && str_starts_with($doclist->myfile, 'http')) ? $doclist->myfile : URL::to('/public/img/documents').'/'.$doclist->file_name;
+			$fileUrl = !empty($doclist->myfile) ? url('/documents/preview/' . $doclist->id) : URL::to('/public/img/documents').'/'.$doclist->file_name;
 			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
 				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->cp_checklist_name.'</td>';
@@ -1832,7 +1832,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 		$doclistdata = '';
 		foreach($doclists as $doclist){
 			$docdata = CpDocChecklist::where('id', $doclist->cp_list_id)->first();
-			$fileUrl = ($doclist->myfile && str_starts_with($doclist->myfile, 'http')) ? $doclist->myfile : URL::to('/public/img/documents').'/'.$doclist->file_name;
+			$fileUrl = !empty($doclist->myfile) ? url('/documents/preview/' . $doclist->id) : URL::to('/public/img/documents').'/'.$doclist->file_name;
 			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
 				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->cp_checklist_name.'</td>';

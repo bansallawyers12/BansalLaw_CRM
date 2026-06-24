@@ -222,7 +222,7 @@
                                                             <div class="dropdown d-inline dropdown_ellipsis_icon">
                                                                 <a class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                                                                 <div class="dropdown-menu">
-                                                                    <a target="_blank" class="dropdown-item" href="<?= $previewUrlGrid ?>">Preview</a>
+                                                                    <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrlGrid) ?>, <?= json_encode('preview-container-' . $id) ?>)'>Preview</a>
                                                                     <a href="#" class="dropdown-item download-file" data-document-id="<?= $fetch->id ?>" data-filename="<?= htmlspecialchars($dlFilenameGrid) ?>">Download</a>
                                                                     <a data-id="<?= $fetch->id ?>" class="dropdown-item notuseddoc" data-doctype="personal" data-doccategory="<?= $catVal->title ?>" data-href="notuseddoc" href="javascript:;">Not Used</a>
                                                                 </div>

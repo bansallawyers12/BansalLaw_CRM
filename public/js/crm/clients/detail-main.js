@@ -6441,7 +6441,7 @@ success: function(response) {
 
                         var docNameWithoutExt = ress.filename.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").toLowerCase();
 
-                        var previewUrl = ress.preview_url || ress.fileurl;
+                        var previewUrl = ress.preview_url || (site_url + '/documents/preview/' + (ress.document_id || fileidL));
                         var documentId = ress.document_id || fileidL;
 
 
@@ -6714,7 +6714,7 @@ success: function(response) {
                         
                         var row = $('#id_' + fileid);
                         var docNameWithoutExt = ress.filename.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").toLowerCase();
-                        var previewUrl = ress.preview_url || ress.fileurl;
+                        var previewUrl = ress.preview_url || (site_url + '/documents/preview/' + (ress.document_id || fileid));
                         var documentId = ress.document_id || fileid;
                         
                         // Replace upload TD content (Column 1 = File Name)
@@ -6802,7 +6802,7 @@ success: function(response) {
                         
                         var row = $('#id_' + fileid);
                         var docNameWithoutExt = ress.filename.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").toLowerCase();
-                        var previewUrl = ress.preview_url || ress.fileurl;
+                        var previewUrl = ress.preview_url || (site_url + '/documents/preview/' + (ress.document_id || fileid));
                         var documentId = ress.document_id || fileid;
                         
                         // Replace upload TD content (Column 1 = File Name)
@@ -7093,7 +7093,7 @@ success: function(response) {
                         var row = $('#id_' + fileidL1);
 
                         var docNameWithoutExt = ress.filename.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").toLowerCase();
-                        var previewUrl = ress.preview_url || ress.fileurl;
+                        var previewUrl = ress.preview_url || (site_url + '/documents/preview/' + (ress.document_id || fileidL1));
                         var documentId = ress.document_id || fileidL1;
 
 

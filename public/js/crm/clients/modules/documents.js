@@ -228,7 +228,7 @@
                     var obj = (typeof result === 'object' && result !== null) ? result : (typeof result === 'string' && result.trim() ? (function(){ try { return JSON.parse(result); } catch(e) { return null; } })() : null);
                     if (!obj) return;
                     if (obj.status) {
-                        var previewUrl = obj.preview_url || obj.fileurl;
+                        var previewUrl = obj.preview_url || obj.fileurl || ((obj.document_id || obj.Id) ? '/documents/preview/' + (obj.document_id || obj.Id) : '');
                         var filetype = obj.filetype;
                         var folderName = obj.folder_name;
                         var fileName = obj.filename + '.' + obj.filetype;
@@ -339,7 +339,7 @@
                     var obj = (typeof result === 'object' && result !== null) ? result : (typeof result === 'string' && result.trim() ? (function(){ try { return JSON.parse(result); } catch(e) { return null; } })() : null);
                     if (!obj) return;
                     if (obj.status) {
-                        var previewUrl = obj.preview_url || obj.fileurl;
+                        var previewUrl = obj.preview_url || obj.fileurl || ((obj.document_id || obj.Id) ? '/documents/preview/' + (obj.document_id || obj.Id) : '');
                         var filetype = obj.filetype;
                         var folderName = obj.folder_name;
                         var fileName = obj.filename + '.' + obj.filetype;

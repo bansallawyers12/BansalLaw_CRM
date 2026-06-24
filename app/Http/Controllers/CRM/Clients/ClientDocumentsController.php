@@ -574,7 +574,7 @@ class ClientDocumentsController extends Controller
                             $response['message'] = 'File uploaded successfully';
                             $response['filename'] = $name;
                             $response['filetype'] = $extension;
-                            $response['fileurl'] = $fileUrl;
+                            $response['fileurl'] = url('/documents/preview/' . $obj->id);
                             $response['filekey'] = $name;
                             $response['document_id'] = $obj->id;
                             $response['preview_url'] = url('/documents/preview/' . $obj->id);
@@ -1238,7 +1238,7 @@ class ClientDocumentsController extends Controller
                             : 'You have successfully uploaded your matter document';
                         $response['filename'] = $name;
                         $response['filetype'] = $extension;
-                        $response['fileurl'] = $fileUrl;
+                        $response['fileurl'] = url('/documents/preview/' . $obj->id);
                         $response['document_id'] = $obj->id;
                         $response['preview_url'] = url('/documents/preview/' . $obj->id);
                         $response['uploaded_by'] = Auth::user()->first_name ?? 'Staff';
@@ -1590,13 +1590,8 @@ class ClientDocumentsController extends Controller
                 $response['filename'] = $filename;
                 $response['filetype'] = $doc->filetype ?? '';
 
-                // Include file URL only if file was renamed on S3
-                if ($s3RenameSuccess) {
-                    $response['fileurl'] = $this->s3Disk()->url($newS3Path);
-                } else if (!empty($doc->myfile)) {
-                    // Keep existing URL if available
-                    $response['fileurl'] = $doc->myfile;
-                }
+                // Keep fileurl aligned with preview route (never expose direct S3 URLs to the browser)
+                $response['fileurl'] = url('/documents/preview/' . $id);
 
                 // Add warning if file wasn't renamed on S3
                 if ($updateDbOnly) {

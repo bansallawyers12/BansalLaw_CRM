@@ -311,7 +311,7 @@
                                                         <td>
                                                             <a class="renamechecklist" data-id="<?= $signedDoc->id ?>" href="javascript:;" style="display: none;"></a>
                                                             <a class="renamedoc" data-id="<?= $signedDoc->id ?>" href="javascript:;" style="display: none;"></a>
-                                                            <a class="download-file" data-filelink="<?= e($signedDownloadUrl) ?>" data-filename="<?= e($signedDoc->getSignedDownloadFilename()) ?>" data-id="<?= $signedDoc->id ?>" href="#" style="display: none;"></a>
+                                                            <a class="download-file" data-document-id="<?= $signedDoc->id ?>" data-id="<?= $signedDoc->id ?>" data-filename="<?= e($signedDoc->getSignedDownloadFilename()) ?>" href="#" style="display: none;"></a>
                                                             <a class="notuseddoc" data-id="<?= $signedDoc->id ?>" data-doctype="matter" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                                         </td>
                                                     </tr>
@@ -344,7 +344,7 @@
                                                         <td>
                                                             <a class="renamechecklist" data-id="<?= $signedDoc->id ?>" href="javascript:;" style="display: none;"></a>
                                                             <a class="renamedoc" data-id="<?= $signedDoc->id ?>" href="javascript:;" style="display: none;"></a>
-                                                            <a class="download-file" data-filelink="<?= e($signedDownloadUrl) ?>" data-filename="<?= e($signedDoc->getSignedDownloadFilename()) ?>" data-id="<?= $signedDoc->id ?>" href="#" style="display: none;"></a>
+                                                            <a class="download-file" data-document-id="<?= $signedDoc->id ?>" data-id="<?= $signedDoc->id ?>" data-filename="<?= e($signedDoc->getSignedDownloadFilename()) ?>" href="#" style="display: none;"></a>
                                                             <a class="notuseddoc" data-id="<?= $signedDoc->id ?>" data-doctype="matter" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                                         </td>
                                                     </tr>
