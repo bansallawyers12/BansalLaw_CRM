@@ -74,6 +74,120 @@
         color: #5a6b7d;
         margin-bottom: 12px;
     }
+
+    /* Upload / import blocking loader */
+    body.smart-import-busy {
+        overflow: hidden;
+    }
+
+    body.smart-import-busy .smart-import-dropzone,
+    body.smart-import-busy .smart-import-actions button,
+    body.smart-import-busy #smart-import-table {
+        pointer-events: none;
+    }
+
+    .smart-import-loading-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 10050;
+        background: rgba(30, 61, 96, 0.45);
+        backdrop-filter: blur(3px);
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+    }
+
+    .smart-import-loading-overlay.active {
+        display: flex;
+    }
+
+    .smart-import-loading-card {
+        width: 100%;
+        max-width: 420px;
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
+        padding: 32px 28px 26px;
+        text-align: center;
+        animation: smartImportLoadingIn 0.22s ease-out;
+    }
+
+    @keyframes smartImportLoadingIn {
+        from { opacity: 0; transform: translateY(12px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .smart-import-loading-icon {
+        position: relative;
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--navy, #1e3d60);
+        font-size: 28px;
+    }
+
+    .smart-import-loading-spinner {
+        position: absolute;
+        inset: 0;
+        border: 3px solid #dbe4ef;
+        border-top-color: var(--navy, #1e3d60);
+        border-radius: 50%;
+        animation: smartImportSpin 0.85s linear infinite;
+    }
+
+    @keyframes smartImportSpin {
+        to { transform: rotate(360deg); }
+    }
+
+    .smart-import-loading-title {
+        margin: 0 0 8px;
+        font-size: 18px;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .smart-import-loading-message {
+        margin: 0 0 10px;
+        font-size: 14px;
+        color: #5a6b7d;
+        line-height: 1.45;
+    }
+
+    .smart-import-loading-files {
+        margin: 0 0 14px;
+        font-size: 12px;
+        color: #64748b;
+        line-height: 1.4;
+        max-height: 72px;
+        overflow: hidden;
+        word-break: break-word;
+    }
+
+    .smart-import-loading-progress {
+        height: 6px;
+        background: #e8eef5;
+        border-radius: 999px;
+        overflow: hidden;
+        margin-bottom: 12px;
+    }
+
+    .smart-import-loading-progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--navy, #1e3d60), #3b82f6);
+        border-radius: 999px;
+        transition: width 0.35s ease;
+    }
+
+    .smart-import-loading-hint {
+        margin: 0;
+        font-size: 12px;
+        color: #94a3b8;
+    }
 </style>
 @endsection
 
@@ -152,6 +266,22 @@
             </div>
         </div>
     </section>
+</div>
+
+<div class="smart-import-loading-overlay" id="smartImportLoadingOverlay" aria-hidden="true" aria-live="polite" aria-busy="false">
+    <div class="smart-import-loading-card" role="status">
+        <div class="smart-import-loading-icon" aria-hidden="true">
+            <i class="fas fa-envelope-open-text"></i>
+            <span class="smart-import-loading-spinner"></span>
+        </div>
+        <h3 class="smart-import-loading-title" id="smartImportLoadingTitle">Processing emails</h3>
+        <p class="smart-import-loading-message" id="smartImportLoadingMessage">Please wait while your emails are being processed…</p>
+        <p class="smart-import-loading-files" id="smartImportLoadingFiles"></p>
+        <div class="smart-import-loading-progress" aria-hidden="true">
+            <div class="smart-import-loading-progress-bar" id="smartImportLoadingProgressBar"></div>
+        </div>
+        <p class="smart-import-loading-hint">Do not close or refresh this page</p>
+    </div>
 </div>
 @endsection
 

@@ -1245,6 +1245,8 @@ class ClientDocumentsController extends Controller
                         $response['filename'] = $name;
                         $response['filetype'] = $extension;
                         $response['fileurl'] = $fileUrl;
+                        $response['document_id'] = $obj->id;
+                        $response['preview_url'] = url('/documents/preview/' . $obj->id);
                         $response['uploaded_by'] = Auth::user()->first_name ?? 'Staff';
                         $response['uploaded_at'] = $obj->created_at ? $obj->created_at->format('d/m/Y H:i') : now()->format('d/m/Y H:i');
                         $response['filekey'] = $name;

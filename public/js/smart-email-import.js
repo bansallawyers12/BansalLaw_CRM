@@ -9,6 +9,7 @@
         clientSelects: {},
         matterSelects: {},
         isConfirming: false,
+        isAnalyzing: false,
     };
 
     function $(id) {
@@ -90,8 +91,71 @@
     function updateAnalyzeButton() {
         var btn = $('smart-import-analyze-btn');
         if (btn) {
-            btn.disabled = state.selectedFiles.length === 0;
+            btn.disabled = state.selectedFiles.length === 0 || state.isAnalyzing || state.isConfirming;
         }
+    }
+
+    function updateSmartImportLoading(title, message, filesLabel, progressPercent) {
+        var titleEl = $('smartImportLoadingTitle');
+        var messageEl = $('smartImportLoadingMessage');
+        var filesEl = $('smartImportLoadingFiles');
+        var barEl = $('smartImportLoadingProgressBar');
+
+        if (titleEl && title) {
+            titleEl.textContent = title;
+        }
+        if (messageEl && message) {
+            messageEl.textContent = message;
+        }
+        if (filesEl) {
+            filesEl.textContent = filesLabel || '';
+        }
+        if (barEl) {
+            var pct = Math.max(0, Math.min(100, Number(progressPercent) || 0));
+            barEl.style.width = pct + '%';
+        }
+    }
+
+    function showSmartImportLoading(title, message, filesLabel, progressPercent) {
+        var overlay = $('smartImportLoadingOverlay');
+        if (!overlay) {
+            return;
+        }
+        updateSmartImportLoading(title, message, filesLabel, progressPercent);
+        overlay.classList.add('active');
+        overlay.setAttribute('aria-hidden', 'false');
+        overlay.setAttribute('aria-busy', 'true');
+        document.body.classList.add('smart-import-busy');
+    }
+
+    function hideSmartImportLoading() {
+        var overlay = $('smartImportLoadingOverlay');
+        if (!overlay) {
+            return;
+        }
+        overlay.classList.remove('active');
+        overlay.setAttribute('aria-hidden', 'true');
+        overlay.setAttribute('aria-busy', 'false');
+        document.body.classList.remove('smart-import-busy');
+        var barEl = $('smartImportLoadingProgressBar');
+        if (barEl) {
+            barEl.style.width = '0%';
+        }
+    }
+
+    function formatSelectedFilesLabel(files, maxNames) {
+        maxNames = maxNames || 3;
+        if (!files || !files.length) {
+            return '';
+        }
+        var names = files.slice(0, maxNames).map(function (file) {
+            return file.name;
+        });
+        var label = names.join(', ');
+        if (files.length > maxNames) {
+            label += ' +' + (files.length - maxNames) + ' more';
+        }
+        return label;
     }
 
     function bindUploadPanel() {
@@ -102,6 +166,9 @@
         if (!dropzone || !fileInput) return;
 
         dropzone.addEventListener('click', function () {
+            if (state.isAnalyzing || state.isConfirming) {
+                return;
+            }
             fileInput.click();
         });
 
@@ -117,10 +184,16 @@
         dropzone.addEventListener('drop', function (e) {
             e.preventDefault();
             dropzone.classList.remove('dragover');
+            if (state.isAnalyzing || state.isConfirming) {
+                return;
+            }
             handleFiles(e.dataTransfer.files);
         });
 
         fileInput.addEventListener('change', function () {
+            if (state.isAnalyzing || state.isConfirming) {
+                return;
+            }
             handleFiles(fileInput.files);
         });
 
@@ -160,12 +233,39 @@
     }
 
     async function analyzeFiles() {
-        if (!state.selectedFiles.length) return;
+        if (!state.selectedFiles.length || state.isAnalyzing || state.isConfirming) {
+            return;
+        }
 
         var statusEl = $('smart-import-upload-status');
         var analyzeBtn = $('smart-import-analyze-btn');
-        setStatus(statusEl, 'Analyzing emails and finding matches...', 'info');
-        if (analyzeBtn) analyzeBtn.disabled = true;
+        var fileCount = state.selectedFiles.length;
+        var filesLabel = formatSelectedFilesLabel(state.selectedFiles);
+
+        state.isAnalyzing = true;
+        updateAnalyzeButton();
+        setStatus(statusEl, 'Analyzing ' + fileCount + ' email(s)...', 'info');
+        if (analyzeBtn) {
+            analyzeBtn.disabled = true;
+        }
+
+        showSmartImportLoading(
+            fileCount === 1 ? 'Analyzing email' : 'Analyzing ' + fileCount + ' emails',
+            'Uploading and parsing .msg files, then matching clients and matters…',
+            filesLabel,
+            12
+        );
+
+        var progressTimer = setInterval(function () {
+            var bar = $('smartImportLoadingProgressBar');
+            if (!bar || !state.isAnalyzing) {
+                return;
+            }
+            var current = parseFloat(bar.style.width) || 12;
+            if (current < 88) {
+                updateSmartImportLoading(null, null, null, current + 4);
+            }
+        }, 450);
 
         var formData = new FormData();
         state.selectedFiles.forEach(function (file) {
@@ -187,6 +287,8 @@
                 throw new Error(data.message || 'Analyze failed');
             }
 
+            updateSmartImportLoading(null, 'Analysis complete. Preparing review table…', null, 100);
+
             state.batchToken = data.batch_token;
             state.items = (data.items || []).map(function (item) {
                 item.include = false;
@@ -201,6 +303,9 @@
         } catch (error) {
             setStatus(statusEl, error.message || 'Analyze failed', 'error');
         } finally {
+            clearInterval(progressTimer);
+            state.isAnalyzing = false;
+            hideSmartImportLoading();
             updateAnalyzeButton();
         }
     }
@@ -569,17 +674,29 @@
         selectAll.indeterminate = !allChecked && !noneChecked;
     }
 
-    function setConfirmingUi(isConfirming) {
+    function setConfirmingUi(isConfirming, importCount, filesLabel) {
         state.isConfirming = isConfirming;
         ['smart-import-confirm-high-btn', 'smart-import-confirm-selected-btn', 'smart-import-reset-btn'].forEach(function (id) {
             var btn = $(id);
             if (btn) {
-                btn.disabled = isConfirming;
+                btn.disabled = isConfirming || state.isAnalyzing;
             }
         });
         document.querySelectorAll('.confirm-row-btn').forEach(function (btn) {
-            btn.disabled = isConfirming;
+            btn.disabled = isConfirming || state.isAnalyzing;
         });
+        updateAnalyzeButton();
+
+        if (isConfirming) {
+            showSmartImportLoading(
+                importCount === 1 ? 'Importing email' : 'Importing ' + importCount + ' emails',
+                'Saving selected emails to client records. This may take a moment…',
+                filesLabel || '',
+                18
+            );
+        } else {
+            hideSmartImportLoading();
+        }
     }
 
     async function confirmImports(itemsToImport) {
@@ -604,8 +721,24 @@
         }
 
         var statusEl = $('smart-import-confirm-status');
-        setConfirmingUi(true);
-        setStatus(statusEl, 'Importing ' + itemsToImport.length + ' email(s)...', 'info');
+        var importCount = itemsToImport.length;
+        var filesLabel = itemsToImport.map(function (item) {
+            return item.filename || (item.preview && item.preview.subject) || 'Email';
+        }).slice(0, 3).join(', ') + (importCount > 3 ? ' +' + (importCount - 3) + ' more' : '');
+
+        setConfirmingUi(true, importCount, filesLabel);
+        setStatus(statusEl, 'Importing ' + importCount + ' email(s)...', 'info');
+
+        var progressTimer = setInterval(function () {
+            var bar = $('smartImportLoadingProgressBar');
+            if (!bar || !state.isConfirming) {
+                return;
+            }
+            var current = parseFloat(bar.style.width) || 18;
+            if (current < 92) {
+                updateSmartImportLoading(null, null, null, current + 5);
+            }
+        }, 400);
 
         var assignments = itemsToImport.map(function (item) {
             return {
@@ -635,6 +768,8 @@
             if (!response.ok) {
                 throw new Error(data.message || 'Import failed');
             }
+
+            updateSmartImportLoading(null, 'Import finished. Updating list…', null, 100);
 
             var failed = data.failed || [];
             var failedCount = failed.length;
@@ -666,12 +801,15 @@
         } catch (error) {
             setStatus(statusEl, error.message || 'Import failed', 'error');
         } finally {
+            clearInterval(progressTimer);
             setConfirmingUi(false);
         }
     }
 
     function resetPage() {
         destroyAllClientSelects();
+        hideSmartImportLoading();
+        state.isAnalyzing = false;
         setConfirmingUi(false);
         state.batchToken = null;
         state.items = [];

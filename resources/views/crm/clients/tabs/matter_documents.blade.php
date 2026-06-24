@@ -191,14 +191,8 @@
                                                 <?php foreach ($parentDocs as $visaKey => $fetch): ?>
                                                     <?php
                                                     $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
-
-                                                    if (!empty($fetch->myfile) && strpos($fetch->myfile, 'http') === 0) {
-                                                        $fileUrl = $fetch->myfile;
-                                                        $downloadUrl = $fetch->myfile;
-                                                    } else {
-                                                        $fileUrl = 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetchedData->id . '/visa/' . ($fetch->myfile ?? '');
-                                                        $downloadUrl = $fileUrl;
-                                                    }
+                                                    $previewUrl = url('/documents/preview/' . $fetch->id);
+                                                    $downloadFilename = $fetch->myfile_key ?: trim(($fetch->file_name ?? '') . '.' . ($fetch->filetype ?? ''), '.');
                                                     ?>
                                                     <tr class="drow" data-matterid="<?= $fetch->client_matter_id ?>" data-catid="<?= $fetch->folder_name ?>" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
@@ -220,11 +214,9 @@
                                                             <?php if ($fetch->file_name): ?>
                                                                 <?php
                                                                 $displayFileName = $fetch->file_name . '.' . ($fetch->filetype ?? '');
-                                                                $fileUrlJs = addslashes($fileUrl);
-                                                                $downloadUrlJs = addslashes($downloadUrl ?? $fileUrl);
                                                                 ?>
-                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu="showVisaFileContextMenu(event, <?= $fetch->id ?>, '<?= htmlspecialchars($fetch->filetype ?? 'pdf') ?>', '<?= $fileUrlJs ?>', '<?= $id ?>', '<?= $fetch->status ?? 'draft' ?>'); return false;">
-                                                                    <a href="javascript:void(0);" onclick="previewFile('<?= $fetch->filetype ?? 'pdf' ?>','<?= $fileUrlJs ?>','preview-container-migdocumnetlist')">
+                                                                <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu='showVisaFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
+                                                                    <a href="javascript:void(0);" onclick='previewFile(<?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode('preview-container-migdocumnetlist') ?>)'>
                                                                         <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($displayFileName) ?></span>
                                                                     </a>
                                                                 </div>
@@ -253,7 +245,7 @@
                                                             <?php if ($fetch->myfile): ?>
                                                                 <a class="renamechecklist" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
                                                                 <a class="renamedoc" data-id="<?= $fetch->id ?>" href="javascript:;" style="display: none;"></a>
-                                                                <a class="download-file" data-filelink="<?= e($downloadUrl ?? $fileUrl) ?>" data-filename="<?= e($fetch->myfile_key ?: basename($fetch->myfile ?? '')) ?>" data-id="<?= $fetch->id ?>" href="#" style="display: none;"></a>
+                                                                <a class="download-file" data-id="<?= $fetch->id ?>" data-document-id="<?= $fetch->id ?>" data-filename="<?= e($downloadFilename) ?>" href="#" style="display: none;"></a>
                                                                 <a class="notuseddoc" data-id="<?= $fetch->id ?>" data-doctype="matter" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                                             <?php endif; ?>
                                                         </td>
@@ -377,6 +369,8 @@
                                             foreach ($documents as $fetch):
                                                 if ($fetch->myfile):
                                                     $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
+                                                    $gridPreviewUrl = url('/documents/preview/' . $fetch->id);
+                                                    $gridDownloadFilename = $fetch->myfile_key ?: trim(($fetch->file_name ?? '') . '.' . ($fetch->filetype ?? ''), '.');
                                                     ?>
                                                     <div class="grid_list" id="gid_<?= $fetch->id ?>">
                                                         <div class="grid_col">
@@ -388,8 +382,8 @@
                                                                 <div class="dropdown d-inline dropdown_ellipsis_icon">
                                                                     <a class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                                                                     <div class="dropdown-menu">
-                                                                        <a target="_blank" class="dropdown-item" href="<?= $fetch->myfile ?>">Preview</a>
-                                                                        <a href="#" class="dropdown-item download-file" data-filelink="<?= $fetch->myfile ?>" data-filename="<?= $fetch->myfile_key ?>">Download</a>
+                                                                        <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($gridPreviewUrl) ?>, <?= json_encode('preview-container-migdocumnetlist') ?>)'>Preview</a>
+                                                                        <a href="#" class="dropdown-item download-file" data-id="<?= $fetch->id ?>" data-document-id="<?= $fetch->id ?>" data-filename="<?= e($gridDownloadFilename) ?>">Download</a>
                                                                         <a data-id="<?= $fetch->id ?>" class="dropdown-item notuseddoc" data-doctype="matter" data-href="notuseddoc" href="javascript:;">Not Used</a>
                                                                     </div>
                                                                 </div>
@@ -584,10 +578,13 @@
                             openMoveVisaDocumentModal(currentVisaContextFile, 'matter');
                             break;
                         case 'preview':
-                            // Prefer context menu fileUrl (preview route for signed docs; direct URL for unsigned). Fallback to download link for compatibility.
-                            var $previewLink = $('.download-file[data-id="' + currentVisaContextFile + '"]').first();
-                            var previewUrl = currentVisaContextData.fileUrl || ($previewLink.length ? $previewLink.attr('data-filelink') : null);
-                            if (previewUrl) window.open(previewUrl, '_blank');
+                            if (typeof previewFile === 'function' && currentVisaContextData.fileUrl) {
+                                previewFile(
+                                    currentVisaContextData.fileType || 'pdf',
+                                    currentVisaContextData.fileUrl,
+                                    'preview-container-migdocumnetlist'
+                                );
+                            }
                             break;
                         case 'pdf':
                             const pdfUrl = '{{ URL::to('/document/download/pdf') }}/' + currentVisaContextFile;

@@ -6811,12 +6811,14 @@ success: function(response) {
                         
                         var row = $('#id_' + fileid);
                         var docNameWithoutExt = ress.filename.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").toLowerCase();
+                        var previewUrl = ress.preview_url || ress.fileurl;
+                        var documentId = ress.document_id || fileid;
                         
                         // Replace upload TD content (Column 1 = File Name)
                         var uploadTd = row.find('td').eq(1);
                         uploadTd.html(
-                            '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="' + contextMenuFn + '(event, ' + fileid + ', \'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'' + visa_doc_cat + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
-                                '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'' + previewPane + '\')">' +
+                            '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="' + contextMenuFn + '(event, ' + fileid + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + visa_doc_cat + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
+                                '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + previewPane + '\')">' +
                                     '<i class="fas fa-file-image"></i> <span>' + ress.filename + '</span>' +
                                 '</a>' +
                             '</div>'
@@ -6827,7 +6829,7 @@ success: function(response) {
                         actionTd.html(
                             '<a class="renamechecklist" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
                             '<a class="renamedoc" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
-                            '<a class="download-file" data-filelink="' + ress.fileurl + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
+                            '<a class="download-file" data-id="' + documentId + '" data-document-id="' + documentId + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
                             '<a class="notuseddoc" data-id="' + fileid + '" data-doctype="' + laneDocType + '" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
                         );
                         
@@ -7100,6 +7102,8 @@ success: function(response) {
                         var row = $('#id_' + fileidL1);
 
                         var docNameWithoutExt = ress.filename.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").toLowerCase();
+                        var previewUrl = ress.preview_url || ress.fileurl;
+                        var documentId = ress.document_id || fileidL1;
 
 
 
@@ -7109,9 +7113,9 @@ success: function(response) {
 
                         uploadTd.html(
 
-                            '<div data-id="' + fileidL1 + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="' + contextMenuFn + '(event, ' + fileidL1 + ', \'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'' + visa_doc_cat + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
+                            '<div data-id="' + fileidL1 + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="' + contextMenuFn + '(event, ' + fileidL1 + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + visa_doc_cat + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
 
-                                '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'' + previewPane + '\')">' +
+                                '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + previewPane + '\')">' +
 
                                     '<i class="fas fa-file-image"></i> <span>' + ress.filename + '</span>' +
 
@@ -7133,7 +7137,7 @@ success: function(response) {
 
                             '<a class="renamedoc" data-id="' + fileidL1 + '" href="javascript:;" style="display: none;"></a>' +
 
-                            '<a class="download-file" data-filelink="' + ress.fileurl + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
+                            '<a class="download-file" data-id="' + documentId + '" data-document-id="' + documentId + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
 
                             '<a class="notuseddoc" data-id="' + fileidL1 + '" data-doctype="' + laneDocType + '" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
 
