@@ -64,12 +64,44 @@ class EmailLogAttachment extends Model
     }
 
     /**
+     * Resolve a usable MIME type (Outlook uploads often store application/octet-stream).
+     */
+    public function resolveContentType(): string
+    {
+        $type = strtolower(trim((string) $this->content_type));
+
+        if ($type !== '' && $type !== 'application/octet-stream') {
+            return $this->content_type;
+        }
+
+        $extension = strtolower((string) ($this->extension ?: pathinfo((string) $this->filename, PATHINFO_EXTENSION)));
+
+        $map = [
+            'pdf' => 'application/pdf',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'bmp' => 'image/bmp',
+            'webp' => 'image/webp',
+        ];
+
+        return $map[$extension] ?? ($this->content_type ?: 'application/octet-stream');
+    }
+
+    /**
      * Check if the attachment is an image.
      */
     public function isImage(): bool
     {
-        $imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp', 'image/webp'];
-        return in_array($this->content_type, $imageTypes);
+        $type = strtolower($this->resolveContentType());
+        if (str_starts_with($type, 'image/')) {
+            return true;
+        }
+
+        $extension = strtolower((string) ($this->extension ?: pathinfo((string) $this->filename, PATHINFO_EXTENSION)));
+
+        return in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'], true);
     }
 
     /**
@@ -77,7 +109,10 @@ class EmailLogAttachment extends Model
      */
     public function isPdf(): bool
     {
-        return $this->content_type === 'application/pdf';
+        $type = strtolower($this->resolveContentType());
+
+        return str_contains($type, 'pdf')
+            || strtolower((string) ($this->extension ?: pathinfo((string) $this->filename, PATHINFO_EXTENSION))) === 'pdf';
     }
 
     /**
@@ -108,7 +143,13 @@ class EmailLogAttachment extends Model
      */
     public function canPreview(): bool
     {
-        return $this->isImage() || $this->isPdf();
+        if ($this->isImage() || $this->isPdf()) {
+            return true;
+        }
+
+        $name = strtolower((string) ($this->filename ?? ''));
+
+        return (bool) preg_match('/\.(pdf|png|jpe?g|gif|webp|bmp)$/i', $name);
     }
 
     /**

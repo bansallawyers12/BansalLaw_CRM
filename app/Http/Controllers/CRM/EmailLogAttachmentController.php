@@ -22,6 +22,29 @@ class EmailLogAttachmentController extends Controller
     }
 
     /**
+     * S3 disk for email attachments (bundled CA cert for local PHP without curl.cainfo).
+     */
+    protected function emailAttachmentStorage()
+    {
+        static $disk = null;
+
+        if ($disk !== null) {
+            return $disk;
+        }
+
+        $config = config('filesystems.disks.s3');
+        $caBundle = resource_path('certs/cacert.pem');
+
+        if (is_file($caBundle)) {
+            $config['http'] = ['verify' => $caBundle];
+        }
+
+        $disk = Storage::build($config);
+
+        return $disk;
+    }
+
+    /**
      * Download individual attachment
      */
     public function download($id)
@@ -48,7 +71,7 @@ class EmailLogAttachmentController extends Controller
             }
 
             // Check if file exists in S3
-            if (!Storage::disk('s3')->exists($attachment->s3_key)) {
+            if (!$this->emailAttachmentStorage()->exists($attachment->s3_key)) {
                 Log::error('Attachment download failed: File not found in S3', [
                     'id' => $id,
                     's3_key' => $attachment->s3_key,
@@ -57,7 +80,7 @@ class EmailLogAttachmentController extends Controller
                 abort(404, 'Attachment file not found in storage');
             }
 
-            $content = Storage::disk('s3')->get($attachment->s3_key);
+            $content = $this->emailAttachmentStorage()->get($attachment->s3_key);
 
             if (empty($content)) {
                 Log::error('Attachment download failed: Empty content', [
@@ -69,11 +92,13 @@ class EmailLogAttachmentController extends Controller
             }
 
             return Response::make($content, 200, [
-                'Content-Type' => $attachment->content_type ?: 'application/octet-stream',
+                'Content-Type' => $attachment->resolveContentType() ?: 'application/octet-stream',
                 'Content-Disposition' => 'attachment; filename="' . $attachment->filename . '"',
                 'Content-Length' => strlen($content),
             ]);
-        } catch (\Exception $e) {
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
             Log::error('Attachment download failed', [
                 'id' => $id,
                 'error' => $e->getMessage(),
@@ -116,7 +141,7 @@ class EmailLogAttachmentController extends Controller
             foreach ($attachments as $attachment) {
                 try {
                     if ($attachment->s3_key) {
-                        $content = Storage::disk('s3')->get($attachment->s3_key);
+                        $content = $this->emailAttachmentStorage()->get($attachment->s3_key);
                         $zip->addFromString($attachment->filename, $content);
                     }
                 } catch (\Exception $e) {
@@ -165,13 +190,15 @@ class EmailLogAttachmentController extends Controller
                 abort(404, 'Attachment file not found');
             }
 
-            $content = Storage::disk('s3')->get($attachment->s3_key);
+            $content = $this->emailAttachmentStorage()->get($attachment->s3_key);
 
             return Response::make($content, 200, [
-                'Content-Type' => $attachment->content_type,
+                'Content-Type' => $attachment->resolveContentType(),
                 'Content-Disposition' => 'inline; filename="' . $attachment->filename . '"',
             ]);
-        } catch (\Exception $e) {
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
             Log::error('Attachment preview failed', ['id' => $id, 'error' => $e->getMessage()]);
             abort(404, 'Attachment file not found');
         }
