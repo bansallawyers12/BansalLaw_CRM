@@ -3,6 +3,13 @@
 $awsBucket = env('AWS_BUCKET');
 $s3Configured = is_string($awsBucket) && $awsBucket !== '';
 
+$s3CaBundle = storage_path('certs/cacert.pem');
+$s3HttpOptions = [];
+
+if (is_file($s3CaBundle)) {
+    $s3HttpOptions['verify'] = $s3CaBundle;
+}
+
 $s3AwsDisk = [
     'driver' => 's3',
     'key' => env('AWS_ACCESS_KEY_ID', ''),
@@ -10,6 +17,7 @@ $s3AwsDisk = [
     'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     'bucket' => $awsBucket,
     'url' => env('AWS_URL'),
+    'http' => $s3HttpOptions,
 ];
 
 $s3LocalDisk = [
