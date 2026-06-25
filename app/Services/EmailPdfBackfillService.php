@@ -18,6 +18,13 @@ class EmailPdfBackfillService
         $this->pythonServiceUrl = config('services.python.url', env('PYTHON_SERVICE_URL', 'http://127.0.0.1:5002'));
     }
 
+    private function getUrlWithTimezone(string $path): string
+    {
+        $timezone = config('app.timezone', 'Australia/Sydney');
+        $separator = str_contains($path, '?') ? '&' : '?';
+        return $this->pythonServiceUrl . $path . $separator . 'timezone=' . urlencode($timezone);
+    }
+
     /**
      * @return array{status: string, message: string, pdf_doc_id?: int}
      */
@@ -197,7 +204,9 @@ class EmailPdfBackfillService
     {
         $response = Http::timeout((int) config('services.python.timeout', 120))
             ->attach('file', file_get_contents($filePath), $sanitizedFileName)
-            ->post($this->pythonServiceUrl . '/email/parse-render-pdf');
+            ->post($this->getUrlWithTimezone('/email/parse-render-pdf'), [
+                'timezone' => config('app.timezone', 'Australia/Melbourne'),
+            ]);
 
         if (! $response->successful()) {
             Log::error('Email PDF backfill Python service error', [

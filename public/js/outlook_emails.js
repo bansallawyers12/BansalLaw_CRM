@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Elements
     const outlookContainer = document.getElementById('outlookContainer');
+    const appTimezone = (outlookContainer && outlookContainer.dataset.appTimezone) || 'Australia/Melbourne';
     const folderItems = document.querySelectorAll('.folder-item');
     const emailListContainer = document.getElementById('emailList');
     const readingPane = document.getElementById('readingPane');
@@ -747,7 +748,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         const nameInput = document.getElementById('attachmentName_' + index);
                         const folderSelect = document.getElementById('attachmentFolder_' + index);
                         const storageType = row ? (row.dataset.storageType || 'email') : 'email';
-                        const folderId = folderSelect ? folderSelect.value : '';
+                        
+                        let folderId = folderSelect ? folderSelect.value : '';
+                        if (currentMode === 'bulk' && (storageType === 'personal' || storageType === 'matter')) {
+                            folderId = bulkFolderId;
+                        }
 
                         return {
                             original_filename: att.filename,
@@ -1326,17 +1331,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (isNaN(date.getTime())) {
                 return String(dateString);
             }
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
-            let hours = date.getHours();
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            const ampm = hours >= 12 ? 'pm' : 'am';
-            hours = hours % 12;
-            if (hours === 0) {
-                hours = 12;
-            }
-            return day + '/' + month + '/' + year + ' ' + String(hours).padStart(2, '0') + ':' + minutes + ' ' + ampm;
+            const formatted = new Intl.DateTimeFormat('en-AU', {
+                timeZone: appTimezone,
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            }).format(date);
+            return formatted.replace(',', '').toLowerCase();
         } catch (e) {
             return String(dateString);
         }
@@ -1346,7 +1350,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!email) {
             return null;
         }
-        return email.fetch_mail_sent_time || email.received_date || email.created_at || null;
+        return email.fetch_mail_sent_time_display || email.fetch_mail_sent_time || email.received_date || email.created_at || null;
     }
 
     function formatFileSize(bytes) {
@@ -1623,7 +1627,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const iframe = document.getElementById('readBody');
         let contentStr = (email.message || email.html_content || email.text_content || '').trim();
-        
+
         let pdfToPreview = null;
         if (!contentStr) {
             if (email.pdf_preview_url || email.pdf_file_url) {

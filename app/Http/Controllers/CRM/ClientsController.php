@@ -8058,11 +8058,14 @@ class ClientsController extends Controller
             // Get original filename or use a default
             $filename = basename($emailLog->s3_path) ?: 'email.msg';
 
-            $pythonServiceUrl = env('PYTHON_SERVICE_URL', 'http://127.0.0.1:5001');
+            $pythonServiceUrl = config('services.python.url', env('PYTHON_SERVICE_URL', 'http://127.0.0.1:5002'));
+            $appTimezone = config('app.timezone', 'Australia/Melbourne');
             
             $response = \Illuminate\Support\Facades\Http::timeout(90)
                 ->attach('file', $fileContents, $filename)
-                ->post($pythonServiceUrl . '/email/parse-render-pdf');
+                ->post($pythonServiceUrl . '/email/parse-render-pdf?timezone=' . urlencode($appTimezone), [
+                    'timezone' => $appTimezone,
+                ]);
 
             if ($response->successful()) {
                 $result = $response->json();
@@ -8159,6 +8162,15 @@ class ClientsController extends Controller
 
             $email->to_mail = \App\Models\EmailLog::resolveRecipientDisplay($email->to_mail ?? '', $email->type ?? null);
             $email->cc = $email->cc ?? '';
+
+            $appTimezone = config('app.timezone', 'Australia/Melbourne');
+            if ($email->fetch_mail_sent_time) {
+                $email->fetch_mail_sent_time_display = $email->fetch_mail_sent_time
+                    ->timezone($appTimezone)
+                    ->format('d/m/Y h:i a');
+            } else {
+                $email->fetch_mail_sent_time_display = null;
+            }
 
             $email->msg_file_url = $this->resolveEmailMsgDownloadUrl($email);
             $email->pdf_file_url = $this->resolveEmailPdfPreviewUrl($email);

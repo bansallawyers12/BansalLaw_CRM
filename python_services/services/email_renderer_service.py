@@ -25,6 +25,7 @@ except ImportError:
     BeautifulSoup = None
 
 from utils.logger import setup_logger
+from utils.datetime_format import format_laravel_datetime, DEFAULT_TIMEZONE
 
 logger = setup_logger(__name__, 'email_renderer.log')
 
@@ -51,7 +52,11 @@ class EmailRendererService:
         
         logger.info("Email Renderer Service initialized")
     
-    def render_email(self, email_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _format_sent_date(self, sent_date: Any, display_timezone: Optional[str] = None) -> str:
+        """Format sent/received date for PDF and HTML display (Laravel dd/mm/yyyy h:i a)."""
+        return format_laravel_datetime(sent_date, display_timezone or DEFAULT_TIMEZONE)
+
+    def render_email(self, email_data: Dict[str, Any], display_timezone: Optional[str] = None) -> Dict[str, Any]:
         """
         Render email content with enhanced HTML and styling.
         
@@ -80,7 +85,8 @@ class EmailRendererService:
                 text_content=text_content,
                 sender_name=sender_name,
                 sender_email=sender_email,
-                email_data=email_data
+                email_data=email_data,
+                display_timezone=display_timezone,
             )
             
             # Extract and process images
@@ -178,7 +184,8 @@ class EmailRendererService:
         text_content: str,
         sender_name: str,
         sender_email: str,
-        email_data: Dict[str, Any]
+        email_data: Dict[str, Any],
+        display_timezone: Optional[str] = None,
     ) -> str:
         """Create a responsive email template."""
         
@@ -187,118 +194,88 @@ class EmailRendererService:
         recipients = email_data.get('to_recipients') or email_data.get('recipients', [])
         cc_recipients = email_data.get('cc_recipients', [])
         
-        # Format date
-        formatted_date = ''
-        if sent_date:
-            try:
-                if isinstance(sent_date, str):
-                    from datetime import datetime
-                    dt = datetime.fromisoformat(sent_date.replace('Z', '+00:00'))
-                    formatted_date = dt.strftime('%B %d, %Y at %I:%M %p')
-                else:
-                    formatted_date = str(sent_date)
-            except:
-                formatted_date = str(sent_date)
+        formatted_date = self._format_sent_date(sent_date, display_timezone) if sent_date else ''
         
-        # Create responsive template
+        # Outlook / Gmail reading-pane style layout for PDF and HTML preview
         template = f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{self._escape_html(subject)}</title>
     <style>
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            color: #242424;
+            margin: 0;
+            padding: 0;
+            background: #ffffff;
         }}
         .email-container {{
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: visible;
+            background: #ffffff;
+            max-width: 100%;
         }}
         .email-header {{
-            background: #f8f9fa;
-            padding: 20px;
-            border-bottom: 1px solid #e9ecef;
+            padding: 16px 20px 14px;
+            border-bottom: 1px solid #edebe9;
+            background: #ffffff;
         }}
         .email-subject {{
-            font-size: 24px;
+            font-size: 18px;
             font-weight: 600;
-            margin: 0 0 10px 0;
-            color: #2c3e50;
+            margin: 0 0 12px 0;
+            color: #242424;
+            line-height: 1.35;
         }}
         .email-meta {{
-            font-size: 14px;
-            color: #6c757d;
+            font-size: 13px;
+            color: #616161;
             margin: 0;
+            line-height: 1.6;
         }}
         .email-meta strong {{
-            color: #495057;
+            color: #424242;
+            font-weight: 600;
         }}
         .email-content {{
-            padding: 30px;
+            padding: 20px;
             overflow-wrap: anywhere;
             word-wrap: break-word;
             max-width: 100%;
+            font-size: 14px;
+            color: #242424;
         }}
         .email-content img {{
             max-width: 100%;
             height: auto;
         }}
         .email-content table {{
-            width: 100%;
             max-width: 100%;
             border-collapse: collapse;
-            table-layout: fixed;
         }}
         .email-content th,
         .email-content td {{
-            padding: 8px 12px;
-            text-align: left;
-            border-bottom: 1px solid #dee2e6;
+            padding: 6px 10px;
+            vertical-align: top;
             overflow-wrap: anywhere;
             word-wrap: break-word;
         }}
-        .email-content th {{
-            background-color: #f8f9fa;
-            font-weight: 600;
+        .email-content a {{
+            color: #0f6cbd;
+            text-decoration: none;
         }}
-        .email-footer {{
-            background: #f8f9fa;
-            padding: 20px;
-            border-top: 1px solid #e9ecef;
-            font-size: 12px;
-            color: #6c757d;
-            text-align: center;
+        .email-content blockquote {{
+            margin: 8px 0 8px 12px;
+            padding-left: 12px;
+            border-left: 3px solid #c8c6c4;
+            color: #424242;
         }}
         .text-preview {{
-            background: #f8f9fa;
-            padding: 15px;
-            border-left: 4px solid #007bff;
-            margin: 20px 0;
-            font-family: monospace;
             white-space: pre-wrap;
-        }}
-        @media (max-width: 600px) {{
-            body {{
-                padding: 10px;
-            }}
-            .email-header,
-            .email-content,
-            .email-footer {{
-                padding: 15px;
-            }}
-            .email-subject {{
-                font-size: 20px;
-            }}
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
         }}
     </style>
 </head>
@@ -308,18 +285,13 @@ class EmailRendererService:
             <h1 class="email-subject">{self._escape_html(subject)}</h1>
             <div class="email-meta">
                 <strong>From:</strong> {self._escape_html(sender_name or sender_email)}<br>
-                {f'<strong>To:</strong> {", ".join([self._escape_html(r) for r in recipients[:3]])}' if recipients else ''}
-                {f'<br><strong>Cc:</strong> {", ".join([self._escape_html(r) for r in cc_recipients[:5]])}' if cc_recipients else ''}
+                {f'<strong>To:</strong> {", ".join([self._escape_html(r) for r in recipients[:8]])}' if recipients else ''}
+                {f'<br><strong>Cc:</strong> {", ".join([self._escape_html(r) for r in cc_recipients[:8]])}' if cc_recipients else ''}
                 {f'<br><strong>Date:</strong> {formatted_date}' if formatted_date else ''}
             </div>
         </div>
-        
         <div class="email-content">
             {html_content if html_content else f'<div class="text-preview">{self._escape_html(text_content)}</div>'}
-        </div>
-        
-        <div class="email-footer">
-            <p>This email was processed by Migration Manager Email Viewer</p>
         </div>
     </div>
 </body>
@@ -496,29 +468,33 @@ class EmailRendererService:
             'error': 'Rendering failed'
         }
 
-    def render_to_pdf(self, email_data: Dict[str, Any]) -> Tuple[Optional[bytes], Optional[str], Optional[str]]:
+    def render_to_pdf(
+        self,
+        email_data: Dict[str, Any],
+        display_timezone: Optional[str] = None,
+    ) -> Tuple[Optional[bytes], Optional[str], Optional[str], Optional[str]]:
         """
         Render parsed email data to a PDF byte stream.
 
         Returns:
-            (pdf_bytes, text_preview, error_message)
+            (pdf_bytes, text_preview, error_message, renderer_name)
         """
-        rendering = self.render_email(email_data)
+        rendering = self.render_email(email_data, display_timezone=display_timezone)
         text_preview = rendering.get('text_preview') or email_data.get('text_content', '')
 
         rendered_html = rendering.get('rendered_html', '')
         if not rendered_html:
-            return None, text_preview, 'No rendered HTML available for PDF conversion'
+            return None, text_preview, 'No rendered HTML available for PDF conversion', None
 
         attachments = email_data.get('attachments') or []
         pdf_html = self._replace_cid_with_data_uris(rendered_html, attachments)
-        pdf_html = self._prepare_html_for_pdf(pdf_html)
+        weasy_html = self._prepare_html_for_pdf(pdf_html)
 
         weasy_error = None
         try:
             from weasyprint import HTML
 
-            pdf_bytes = HTML(string=pdf_html).write_pdf(
+            pdf_bytes = HTML(string=weasy_html).write_pdf(
                 stylesheets=[self._get_pdf_layout_stylesheet()]
             )
             if pdf_bytes:
@@ -526,29 +502,160 @@ class EmailRendererService:
                     f"PDF generated via WeasyPrint for email: {email_data.get('subject', 'No subject')} "
                     f"({len(pdf_bytes)} bytes)"
                 )
-                return pdf_bytes, text_preview, None
+                return pdf_bytes, text_preview, None, 'weasyprint'
             weasy_error = 'WeasyPrint returned empty PDF'
         except ImportError:
             weasy_error = 'WeasyPrint is not installed'
         except Exception as e:
             weasy_error = str(e)
-            logger.warning(f"WeasyPrint PDF failed, trying ReportLab fallback: {weasy_error}")
+            logger.warning(f"WeasyPrint PDF failed, trying PyMuPDF HTML fallback: {weasy_error}")
 
-        pdf_bytes = self._render_to_pdf_with_reportlab(email_data, text_preview)
+        pdf_bytes, pymupdf_error = self._render_to_pdf_with_pymupdf(pdf_html)
         if pdf_bytes:
             logger.info(
-                f"PDF generated via ReportLab fallback for email: {email_data.get('subject', 'No subject')} "
+                f"PDF generated via PyMuPDF for email: {email_data.get('subject', 'No subject')} "
                 f"({len(pdf_bytes)} bytes)"
             )
-            return pdf_bytes, text_preview, None
+            return pdf_bytes, text_preview, None, 'pymupdf'
 
+        if pymupdf_error:
+            logger.warning('PyMuPDF HTML PDF unavailable: %s', pymupdf_error)
+
+        logger.warning(
+            f"PyMuPDF HTML PDF unavailable, using xhtml2pdf HTML fallback: {weasy_error}"
+        )
+        pdf_bytes = self._render_to_pdf_with_xhtml2pdf(pdf_html)
+        if pdf_bytes:
+            logger.info(
+                f"PDF generated via xhtml2pdf fallback for email: {email_data.get('subject', 'No subject')} "
+                f"({len(pdf_bytes)} bytes)"
+            )
+            return pdf_bytes, text_preview, None, 'xhtml2pdf'
+
+        # As requested: do NOT convert to plain text if HTML PDF fails.
         logger.error(f"Error generating email PDF: {weasy_error or 'PDF generation failed'}")
-        return None, text_preview, weasy_error or 'PDF generation failed'
+        return None, text_preview, weasy_error or 'PDF generation failed', None
+
+    def _render_to_pdf_with_xhtml2pdf(self, html_content: str) -> Optional[bytes]:
+        """Fallback PDF renderer using xhtml2pdf to preserve HTML formatting."""
+        try:
+            from xhtml2pdf import pisa
+            import io
+            
+            buffer = io.BytesIO()
+            pisa_status = pisa.CreatePDF(html_content, dest=buffer)
+            
+            if pisa_status.err:
+                logger.error(f"xhtml2pdf error: {pisa_status.err}")
+                return None
+                
+            pdf_bytes = buffer.getvalue()
+            return pdf_bytes if pdf_bytes else None
+        except ImportError:
+            logger.warning('xhtml2pdf is not installed')
+            return None
+        except Exception as e:
+            logger.warning(f"xhtml2pdf failed: {str(e)}")
+            return None
+
+    def _render_to_pdf_with_pymupdf(self, html_content: str) -> Tuple[Optional[bytes], Optional[str]]:
+        """Render full HTML email layout to PDF (Outlook/Gmail-style) when WeasyPrint is unavailable."""
+        if not html_content:
+            return None, 'empty html'
+
+        try:
+            import fitz
+            from io import BytesIO
+        except ImportError:
+            logger.warning('PyMuPDF is not installed; cannot render HTML email PDF')
+            return None, 'PyMuPDF is not installed'
+
+        candidates = [
+            html_content,
+            self._simplify_html_for_story(html_content),
+        ]
+        last_error: Optional[str] = None
+
+        for index, candidate in enumerate(candidates):
+            if not candidate:
+                continue
+            try:
+                pdf_bytes = self._pymupdf_story_to_pdf(candidate, fitz, BytesIO)
+                if pdf_bytes:
+                    if index > 0:
+                        logger.info('PyMuPDF succeeded with simplified HTML layout')
+                    return pdf_bytes, None
+            except Exception as e:
+                last_error = str(e)
+                logger.warning('PyMuPDF HTML PDF attempt %s failed: %s', index + 1, e)
+
+        return None, last_error or 'PyMuPDF could not render HTML'
+
+    def _pymupdf_story_to_pdf(self, html_content: str, fitz_module, buffer_class) -> Optional[bytes]:
+        buffer = buffer_class()
+        writer = fitz_module.DocumentWriter(buffer)
+        story = fitz_module.Story(html=html_content)
+        mediabox = fitz_module.paper_rect('a4')
+        content_rect = mediabox + (36, 36, -36, -36)
+        more = True
+        page_count = 0
+        max_pages = 100
+
+        while more:
+            device = writer.begin_page(mediabox)
+            more, _ = story.place(content_rect)
+            story.draw(device)
+            writer.end_page()
+            page_count += 1
+            if page_count >= max_pages:
+                logger.warning('PyMuPDF email PDF truncated at %s pages', max_pages)
+                break
+
+        writer.close()
+        pdf_bytes = buffer.getvalue()
+        return pdf_bytes if pdf_bytes else None
+
+    def _simplify_html_for_story(self, html_content: str) -> str:
+        """Build a minimal HTML document when PyMuPDF cannot parse the full Outlook template."""
+        inner = html_content
+        if BeautifulSoup:
+            soup = BeautifulSoup(html_content, 'html.parser')
+            content_root = soup.select_one('.email-content') or soup.body or soup
+            inner = content_root.decode_contents() if hasattr(content_root, 'decode_contents') else str(content_root)
+
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {{
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #242424;
+            margin: 0;
+            padding: 0;
+        }}
+        img {{ max-width: 100%; height: auto; }}
+        table {{ border-collapse: collapse; max-width: 100%; }}
+        td, th {{ vertical-align: top; padding: 4px 6px; }}
+        a {{ color: #0f6cbd; }}
+        blockquote {{
+            margin: 8px 0 8px 12px;
+            padding-left: 12px;
+            border-left: 3px solid #c8c6c4;
+        }}
+        pre, .text-preview {{ white-space: pre-wrap; }}
+    </style>
+</head>
+<body>{inner}</body>
+</html>"""
 
     def _render_to_pdf_with_reportlab(
         self,
         email_data: Dict[str, Any],
         text_preview: str,
+        display_timezone: Optional[str] = None,
     ) -> Optional[bytes]:
         """Fallback PDF renderer when WeasyPrint/Cairo is unavailable (e.g. local Windows)."""
         try:
@@ -630,7 +737,8 @@ class EmailRendererService:
             cc_line = ', '.join(str(r) for r in cc_recipients[:8])
             story.append(Paragraph(f'<b>Cc:</b> {self._escape_reportlab(cc_line)}', meta_style))
         if sent_date:
-            story.append(Paragraph(f'<b>Date:</b> {self._escape_reportlab(sent_date)}', meta_style))
+            formatted_date = self._format_sent_date(sent_date, display_timezone)
+            story.append(Paragraph(f'<b>Date:</b> {self._escape_reportlab(formatted_date)}', meta_style))
 
         story.append(Spacer(1, 0.25 * cm))
 

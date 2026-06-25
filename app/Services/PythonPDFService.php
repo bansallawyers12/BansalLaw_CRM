@@ -17,6 +17,13 @@ class PythonPDFService
         $this->timeout = config('services.python_pdf.timeout', 30);
     }
 
+    private function getUrlWithTimezone(string $path): string
+    {
+        $timezone = config('app.timezone', 'Australia/Sydney');
+        $separator = str_contains($path, '?') ? '&' : '?';
+        return $this->baseUrl . $path . $separator . 'timezone=' . urlencode($timezone);
+    }
+
     /**
      * Check if the Python PDF service is healthy and available
      *
@@ -70,7 +77,7 @@ class PythonPDFService
             $normalizedPath = str_replace('/', DIRECTORY_SEPARATOR, $filePath);
             
             $response = Http::timeout($this->timeout)
-                ->post($this->baseUrl . '/convert_page', [
+                ->post($this->getUrlWithTimezone('/convert_page'), [
                     'file_path' => $normalizedPath,
                     'page_number' => $pageNumber,
                     'resolution' => $resolution
@@ -116,7 +123,7 @@ class PythonPDFService
             $normalizedPath = str_replace('/', DIRECTORY_SEPARATOR, $filePath);
             
             $response = Http::timeout($this->timeout)
-                ->post($this->baseUrl . '/pdf_info', [
+                ->post($this->getUrlWithTimezone('/pdf_info'), [
                     'file_path' => $normalizedPath
                 ]);
 
@@ -156,7 +163,7 @@ class PythonPDFService
             $normalizedPath = str_replace('/', DIRECTORY_SEPARATOR, $filePath);
             
             $response = Http::timeout($this->timeout)
-                ->post($this->baseUrl . '/validate_pdf', [
+                ->post($this->getUrlWithTimezone('/validate_pdf'), [
                     'file_path' => $normalizedPath
                 ]);
 
@@ -196,7 +203,7 @@ class PythonPDFService
             $normalizedOutputPath = str_replace('/', DIRECTORY_SEPARATOR, $outputPath);
             
             $response = Http::timeout($this->timeout)
-                ->post($this->baseUrl . '/add_signatures', [
+                ->post($this->getUrlWithTimezone('/add_signatures'), [
                     'input_path' => $normalizedInputPath,
                     'output_path' => $normalizedOutputPath,
                     'signatures' => $signatures
@@ -244,7 +251,7 @@ class PythonPDFService
             $normalizedPath = str_replace('/', DIRECTORY_SEPARATOR, $filePath);
             
             $response = Http::timeout($this->timeout * 2) // Double timeout for batch
-                ->post($this->baseUrl . '/batch_convert', [
+                ->post($this->getUrlWithTimezone('/batch_convert'), [
                     'file_path' => $normalizedPath,
                     'pages' => $pages,
                     'resolution' => $resolution
@@ -292,7 +299,7 @@ class PythonPDFService
             $normalizedOutputPath = str_replace('/', DIRECTORY_SEPARATOR, $outputPath);
             
             $response = Http::timeout($this->timeout)
-                ->post($this->baseUrl . '/normalize_pdf', [
+                ->post($this->getUrlWithTimezone('/normalize_pdf'), [
                     'input_path' => $normalizedInputPath,
                     'output_path' => $normalizedOutputPath
                 ]);

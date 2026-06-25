@@ -26,6 +26,13 @@ class PythonService
         $this->maxRetries = config('services.python.max_retries', 3);
     }
 
+    private function getUrlWithTimezone(string $path): string
+    {
+        $timezone = config('app.timezone', 'Australia/Sydney');
+        $separator = str_contains($path, '?') ? '&' : '?';
+        return $this->baseUrl . $path . $separator . 'timezone=' . urlencode($timezone);
+    }
+
     /**
      * Check if Python service is available
      */
@@ -69,7 +76,7 @@ class PythonService
         try {
             $response = Http::timeout($this->timeout)
                 ->attach('file', file_get_contents($file->getPathname()), $file->getClientOriginalName())
-                ->post($this->baseUrl . '/pdf/convert-to-images', [
+                ->post($this->getUrlWithTimezone('/pdf/convert-to-images'), [
                     'dpi' => $dpi
                 ]);
 
@@ -104,7 +111,7 @@ class PythonService
 
             $response = Http::timeout($this->timeout)
                 ->attach($multipart)
-                ->post($this->baseUrl . '/pdf/merge');
+                ->post($this->getUrlWithTimezone('/pdf/merge'));
 
             if (!$response->successful()) {
                 throw new Exception('PDF merge failed: ' . $response->body());
@@ -135,7 +142,7 @@ class PythonService
             $normalizedPath = str_replace('/', DIRECTORY_SEPARATOR, $filePath);
             
             $response = Http::timeout($this->timeout)
-                ->post($this->baseUrl . '/convert_page', [
+                ->post($this->getUrlWithTimezone('/convert_page'), [
                     'file_path' => $normalizedPath,
                     'page_number' => $pageNumber,
                     'resolution' => $resolution
@@ -179,7 +186,7 @@ class PythonService
             $normalizedOutputPath = str_replace('/', DIRECTORY_SEPARATOR, $outputPath);
             
             $response = Http::timeout($this->timeout)
-                ->post($this->baseUrl . '/add_signatures', [
+                ->post($this->getUrlWithTimezone('/add_signatures'), [
                     'input_path' => $normalizedInputPath,
                     'output_path' => $normalizedOutputPath,
                     'signatures' => $signatures
@@ -220,7 +227,7 @@ class PythonService
             $normalizedPath = str_replace('/', DIRECTORY_SEPARATOR, $filePath);
             
             $response = Http::timeout($this->timeout)
-                ->post($this->baseUrl . '/pdf_info', [
+                ->post($this->getUrlWithTimezone('/pdf_info'), [
                     'file_path' => $normalizedPath
                 ]);
 
@@ -256,7 +263,7 @@ class PythonService
             $normalizedPath = str_replace('/', DIRECTORY_SEPARATOR, $filePath);
             
             $response = Http::timeout($this->timeout)
-                ->post($this->baseUrl . '/validate_pdf', [
+                ->post($this->getUrlWithTimezone('/validate_pdf'), [
                     'file_path' => $normalizedPath
                 ]);
 
@@ -290,7 +297,7 @@ class PythonService
             $normalizedPath = str_replace('/', DIRECTORY_SEPARATOR, $filePath);
             
             $response = Http::timeout($this->timeout * 2) // Double timeout for batch
-                ->post($this->baseUrl . '/batch_convert', [
+                ->post($this->getUrlWithTimezone('/batch_convert'), [
                     'file_path' => $normalizedPath,
                     'pages' => $pages,
                     'resolution' => $resolution
@@ -333,7 +340,7 @@ class PythonService
             $normalizedOutputPath = str_replace('/', DIRECTORY_SEPARATOR, $outputPath);
             
             $response = Http::timeout($this->timeout)
-                ->post($this->baseUrl . '/normalize_pdf', [
+                ->post($this->getUrlWithTimezone('/normalize_pdf'), [
                     'input_path' => $normalizedInputPath,
                     'output_path' => $normalizedOutputPath
                 ]);
@@ -372,7 +379,7 @@ class PythonService
         try {
             $response = Http::timeout($this->timeout)
                 ->attach('file', file_get_contents($file->getPathname()), $file->getClientOriginalName())
-                ->post($this->baseUrl . '/email/parse');
+                ->post($this->getUrlWithTimezone('/email/parse'));
 
             if (!$response->successful()) {
                 throw new Exception('Email parsing failed: ' . $response->body());
@@ -395,7 +402,7 @@ class PythonService
     {
         try {
             $response = Http::timeout($this->timeout)
-                ->post($this->baseUrl . '/email/analyze', $emailData);
+                ->post($this->getUrlWithTimezone('/email/analyze'), $emailData);
 
             if (!$response->successful()) {
                 throw new Exception('Email analysis failed: ' . $response->body());
@@ -418,7 +425,7 @@ class PythonService
     {
         try {
             $response = Http::timeout($this->timeout)
-                ->post($this->baseUrl . '/email/render', $emailData);
+                ->post($this->getUrlWithTimezone('/email/render'), $emailData);
 
             if (!$response->successful()) {
                 throw new Exception('Email rendering failed: ' . $response->body());
@@ -442,7 +449,7 @@ class PythonService
         try {
             $response = Http::timeout($this->timeout * 2) // Longer timeout for full pipeline
                 ->attach('file', file_get_contents($file->getPathname()), $file->getClientOriginalName())
-                ->post($this->baseUrl . '/email/parse-analyze-render');
+                ->post($this->getUrlWithTimezone('/email/parse-analyze-render'));
 
             if (!$response->successful()) {
                 throw new Exception('Email processing failed: ' . $response->body());

@@ -58,6 +58,7 @@
 
 <div class="outlook-container" id="outlookContainer"
     data-base-url="{{ url('/') }}"
+    data-app-timezone="{{ config('app.timezone', 'Australia/Melbourne') }}"
     data-client-id="{{ $clientData->id ?? '' }}"
     data-matter-id="{{ $matterId ?? '' }}"
     data-auth-email="{{ auth()->user()->email ?? '' }}"

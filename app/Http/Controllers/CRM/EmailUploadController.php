@@ -65,6 +65,17 @@ class EmailUploadController extends Controller
     }
 
     /**
+     * Append Laravel app timezone so Python formats email dates like the CRM (dd/mm/yyyy h:i a).
+     */
+    protected function pythonServiceUrlWithTimezone(string $path): string
+    {
+        $timezone = config('app.timezone', 'Australia/Melbourne');
+        $separator = str_contains($path, '?') ? '&' : '?';
+
+        return $this->pythonServiceUrl . $path . $separator . 'timezone=' . urlencode($timezone);
+    }
+
+    /**
      * Import a parsed .msg file with explicit client/matter context (smart import flow).
      *
      * @param \Illuminate\Http\UploadedFile $file
@@ -718,7 +729,7 @@ class EmailUploadController extends Controller
                     'email_log_id' => $mailReport->id
                 ]);
                 
-                foreach ($parsedData['attachments'] as $attachmentData) {
+                foreach ($parsedData['attachments'] as $index => $attachmentData) {
                     try {
                         $origName = $attachmentData['filename'] ?? '';
                         $storageConfig = $attachmentStorageMap[$origName] ?? null;
@@ -731,6 +742,10 @@ class EmailUploadController extends Controller
                             (int) $clientId,
                             $document->client_matter_id
                         );
+                        
+                        // Free memory for large attachments, useful if there are >10 attachments
+                        unset($parsedData['attachments'][$index]['content']);
+                        unset($parsedData['attachments'][$index]['data']);
                     } catch (\Exception $e) {
                         Log::error('Error in saveAttachment loop', [
                             'error' => $e->getMessage(),
@@ -968,7 +983,9 @@ class EmailUploadController extends Controller
             // Call Python microservice: parse .msg and generate PDF for viewer (use sanitized filename in attachment)
             $response = Http::timeout(90)
                 ->attach('file', file_get_contents($file->getPathname()), $sanitizedFileName)
-                ->post($this->pythonServiceUrl . '/email/parse-render-pdf');
+                ->post($this->pythonServiceUrlWithTimezone('/email/parse-render-pdf'), [
+                    'timezone' => config('app.timezone', 'Australia/Melbourne'),
+                ]);
 
             if ($response->successful()) {
                 // Safely parse JSON response - handle cases where service returns HTML error pages
@@ -1215,7 +1232,7 @@ class EmailUploadController extends Controller
                 }
 
                 $sanitizedAttachmentFileName = $this->sanitizeFilename($attachmentFileName);
-                $s3Key = $clientUniqueId . '/attachments/' . time() . '_' . $sanitizedAttachmentFileName;
+                $s3Key = $clientUniqueId . '/attachments/' . time() . '_' . uniqid() . '_' . $sanitizedAttachmentFileName;
 
                 try {
                     $uploadSuccess = $this->emailUploadStorage()->put($s3Key, $decodedData);
@@ -1295,7 +1312,7 @@ class EmailUploadController extends Controller
         $displayName = $extension ? ($customStem . '.' . $extension) : $customStem;
 
         $sanitizedClientId = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $clientUniqueId);
-        $uniqueFileName = time() . '_' . $this->sanitizeFilename($displayName);
+        $uniqueFileName = time() . '_' . uniqid() . '_' . $this->sanitizeFilename($displayName);
         $filePath = $sanitizedClientId . '/' . $storageType . '/' . $uniqueFileName;
 
         $uploadSuccess = $this->emailUploadStorage()->put($filePath, $decodedData);
@@ -1475,13 +1492,15 @@ class EmailUploadController extends Controller
     protected function parseEmailDateTimeForStorage(string $dateString): Carbon
     {
         $dateString = trim($dateString);
+        $appTimezone = config('app.timezone', 'Australia/Melbourne');
+
         if ($dateString === '') {
-            return now();
+            return now($appTimezone);
         }
 
         try {
             if (preg_match('/^\d{4}-\d{2}-\d{2}T/', $dateString) || preg_match('/[+-]\d{2}:\d{2}$|Z$/', $dateString)) {
-                return Carbon::parse($dateString)->timezone('Australia/Melbourne');
+                return Carbon::parse($dateString)->timezone($appTimezone);
             }
         } catch (\Throwable $e) {
             // fall through to explicit formats
@@ -1491,16 +1510,16 @@ class EmailUploadController extends Controller
         foreach ($formats as $fmt) {
             $dt = \DateTime::createFromFormat($fmt, $dateString, new \DateTimeZone('UTC'));
             if ($dt !== false) {
-                return Carbon::instance($dt)->timezone('Australia/Melbourne');
+                return Carbon::instance($dt)->timezone($appTimezone);
             }
         }
 
         try {
-            return Carbon::parse($dateString, 'UTC')->timezone('Australia/Melbourne');
+            return Carbon::parse($dateString, 'UTC')->timezone($appTimezone);
         } catch (\Throwable $e) {
             Log::warning('Could not parse email date, using now()', ['raw' => $dateString, 'error' => $e->getMessage()]);
 
-            return now();
+            return now($appTimezone);
         }
     }
 

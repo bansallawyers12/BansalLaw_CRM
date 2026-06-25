@@ -18,6 +18,13 @@ class DocxToPdfService
         $this->timeout = config('services.python_converter.timeout', 300);
     }
 
+    private function getUrlWithTimezone(string $path): string
+    {
+        $timezone = config('app.timezone', 'Australia/Sydney');
+        $separator = str_contains($path, '?') ? '&' : '?';
+        return $this->pythonApiUrl . $path . $separator . 'timezone=' . urlencode($timezone);
+    }
+
     /**
      * Convert DOCX file to PDF
      *
@@ -49,7 +56,7 @@ class DocxToPdfService
             // Make HTTP request to Python service
             $response = Http::timeout($this->timeout)
                 ->attach('file', file_get_contents($docxPath), $filename)
-                ->post($this->pythonApiUrl . '/convert');
+                ->post($this->getUrlWithTimezone('/convert'));
 
             if (!$response->successful()) {
                 throw new Exception("Python service error: " . $response->body());

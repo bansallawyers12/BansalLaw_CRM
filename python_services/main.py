@@ -20,7 +20,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Request
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request, Query, Form
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -35,6 +35,7 @@ from services.email_renderer_service import EmailRendererService
 from services.docx_converter_service import DocxConverterService
 from utils.logger import setup_logger
 from utils.weasyprint_env import configure_weasyprint_dll_paths
+from utils.datetime_format import DEFAULT_TIMEZONE, format_laravel_datetime
 from utils.validators import validate_file_type, validate_file_size
 
 configure_weasyprint_dll_paths()
@@ -481,8 +482,18 @@ async def parse_email(file: UploadFile = File(...)):
         _cleanup_temp_file(temp_path)
 
 
+def _resolve_display_timezone(form_tz: str = '', query_tz: str = '') -> str:
+    """Prefer multipart form timezone (Laravel attach POST); fall back to query string."""
+    tz = (form_tz or query_tz or DEFAULT_TIMEZONE).strip()
+    return tz or DEFAULT_TIMEZONE
+
+
 @app.post("/email/parse-render-pdf")
-async def parse_render_pdf_email(file: UploadFile = File(...)):
+async def parse_render_pdf_email(
+    file: UploadFile = File(...),
+    timezone: str = Form(default=''),
+    timezone_query: str = Query(default='', alias='timezone'),
+):
     """
     Parse .msg file, render metadata + body HTML, and generate a PDF for CRM viewing.
     Returns parsed email data plus optional pdf_base64 (soft-fail if PDF generation fails).
@@ -506,16 +517,28 @@ async def parse_render_pdf_email(file: UploadFile = File(...)):
         if parsed_data.get('success') is False or parsed_data.get('error'):
             return JSONResponse(content=parsed_data, status_code=500)
 
-        pdf_bytes, text_preview, pdf_error = email_renderer.render_to_pdf(parsed_data)
+        display_tz = _resolve_display_timezone(timezone, timezone_query)
+
+        pdf_bytes, text_preview, pdf_error, pdf_renderer = email_renderer.render_to_pdf(
+            parsed_data,
+            display_timezone=display_tz,
+        )
 
         result = dict(parsed_data)
         if text_preview:
             result['text_preview'] = text_preview
 
+        if parsed_data.get('sent_date'):
+            result['sent_date_display'] = format_laravel_datetime(
+                parsed_data['sent_date'],
+                display_tz,
+            )
+
         if pdf_bytes:
             result['pdf_base64'] = base64.b64encode(pdf_bytes).decode('ascii')
             result['pdf_size'] = len(pdf_bytes)
             result['pdf_generated'] = True
+            result['pdf_renderer'] = pdf_renderer or 'unknown'
         else:
             result['pdf_base64'] = None
             result['pdf_size'] = 0
@@ -554,14 +577,14 @@ async def analyze_email(request: Request):
 
 
 @app.post("/email/render")
-async def render_email(request: Request):
+async def render_email(request: Request, timezone: str = Query(default=DEFAULT_TIMEZONE)):
     """Render email with enhanced HTML and styling."""
     try:
         email_data = await request.json()
         logger.info(f"Rendering email: {email_data.get('subject', 'No subject')}")
         
         # Render email
-        result = email_renderer.render_email(email_data)
+        result = email_renderer.render_email(email_data, display_timezone=timezone)
         
         return JSONResponse(content=result)
         
@@ -571,7 +594,10 @@ async def render_email(request: Request):
 
 
 @app.post("/email/parse-analyze-render")
-async def parse_analyze_render_email(file: UploadFile = File(...)):
+async def parse_analyze_render_email(
+    file: UploadFile = File(...),
+    timezone: str = Query(default=DEFAULT_TIMEZONE),
+):
     """
     Complete email processing pipeline:
     1. Parse .msg file
@@ -598,7 +624,7 @@ async def parse_analyze_render_email(file: UploadFile = File(...)):
             return JSONResponse(content=parsed_data, status_code=500)
 
         analysis = email_analyzer.analyze_content(parsed_data)
-        rendering = email_renderer.render_email(parsed_data)
+        rendering = email_renderer.render_email(parsed_data, display_timezone=timezone)
 
         result = {
             **parsed_data,

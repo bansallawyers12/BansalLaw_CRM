@@ -18,6 +18,13 @@ class PythonConverterService
         $this->timeout = (int) config('services.python_converter.timeout', 120);
     }
 
+    private function getUrlWithTimezone(string $path): string
+    {
+        $timezone = config('app.timezone', 'Australia/Sydney');
+        $separator = str_contains($path, '?') ? '&' : '?';
+        return $this->apiUrl . $path . $separator . 'timezone=' . urlencode($timezone);
+    }
+
     /**
      * Check if using Unix socket connection
      */
@@ -72,7 +79,7 @@ class PythonConverterService
 
             $response = $client
                 ->attach('file', $fileContent, $filename)
-                ->post($this->apiUrl . '/convert-json');
+                ->post($this->getUrlWithTimezone('/convert-json'));
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -122,7 +129,7 @@ class PythonConverterService
             // Make request to Python API
             $response = $this->getHttpClient()
                 ->attach('file', file_get_contents($file->getRealPath()), $file->getClientOriginalName())
-                ->post($this->apiUrl . '/convert-json');
+                ->post($this->getUrlWithTimezone('/convert-json'));
 
             if ($response->successful()) {
                 $data = $response->json();

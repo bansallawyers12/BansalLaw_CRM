@@ -128,7 +128,7 @@ def test_pdf_generation():
             'attachments': [],
         }
 
-        pdf_bytes, text_preview, error = renderer.render_to_pdf(email_data)
+        pdf_bytes, text_preview, error, _renderer = renderer.render_to_pdf(email_data)
 
         if pdf_bytes and len(pdf_bytes) > 0:
             print("OK - Email PDF generation working")
@@ -194,7 +194,7 @@ def test_pdf_wide_signature_layout():
         assert 'width:800px' not in content_html.replace(' ', '')
         assert 'white-space:nowrap' not in content_html.lower()
 
-        pdf_bytes, _, error = renderer.render_to_pdf(email_data)
+        pdf_bytes, _, error, _renderer = renderer.render_to_pdf(email_data)
 
         if pdf_bytes and len(pdf_bytes) > 0:
             print("OK - Wide signature PDF generation working")
