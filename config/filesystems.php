@@ -12,6 +12,11 @@ $s3AwsDisk = [
     'url' => env('AWS_URL'),
 ];
 
+$caBundle = __DIR__ . '/../resources/certs/cacert.pem';
+if (is_file($caBundle)) {
+    $s3AwsDisk['http'] = ['verify' => $caBundle];
+}
+
 $s3LocalDisk = [
     'driver' => 'local',
     'root' => storage_path('app'),

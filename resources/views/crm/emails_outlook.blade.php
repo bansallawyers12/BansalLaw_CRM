@@ -303,31 +303,58 @@
                 </div>
                 <div>
                     <h3 id="attachmentStorageModalTitle">Save Attachments to Documents</h3>
-                    <p class="attachment-storage-modal__subtitle">Choose where each file is stored in Documents. You can rename files before saving.</p>
+                    <p class="attachment-storage-modal__subtitle" id="attachmentStorageSubtitle">Choose where files are stored and rename them before saving.</p>
                 </div>
             </div>
             <span class="attachment-storage-modal__count" id="attachmentStorageCount" aria-live="polite"></span>
         </div>
 
-        <div class="attachment-storage-bulk" id="attachmentStorageBulk">
-            <div class="attachment-storage-bulk__intro">
-                <i class="fas fa-layer-group" aria-hidden="true"></i>
-                <span>Apply same location to all attachments</span>
-            </div>
-            <div class="attachment-storage-bulk__controls">
-                <select id="attachmentBulkType" class="attachment-storage-select" aria-label="Apply document type to all">
-                    <option value="email">Email attachments only</option>
-                    <option value="personal">Personal documents</option>
-                    <option value="matter">Matter documents</option>
-                </select>
-                <select id="attachmentBulkFolder" class="attachment-storage-select attachment-storage-select--folder" aria-label="Apply folder to all" style="display: none;">
-                    <option value="">Select folder</option>
-                </select>
-                <button type="button" id="attachmentBulkApply" class="attachment-storage-bulk__apply">Apply to all</button>
+        <div class="attachment-storage-mode" id="attachmentStorageMode" hidden>
+            <span class="attachment-storage-mode__label">How do you want to save these files?</span>
+            <div class="attachment-storage-mode__toggle" role="group" aria-label="Attachment save mode">
+                <button type="button" class="attachment-mode-btn active" data-mode="bulk" id="attachmentModeBulk">
+                    <i class="fas fa-layer-group" aria-hidden="true"></i>
+                    Same folder for all
+                </button>
+                <button type="button" class="attachment-mode-btn" data-mode="individual" id="attachmentModeIndividual">
+                    <i class="fas fa-sliders-h" aria-hidden="true"></i>
+                    Different per file
+                </button>
             </div>
         </div>
 
-        <div class="attachment-storage-modal__body" id="attachmentStorageModalBody"></div>
+        <div class="attachment-storage-destination" id="attachmentStorageDestination">
+            <div class="attachment-storage-destination__head">
+                <span class="attachment-storage-destination__label" id="attachmentDestinationLabel">Save all files to</span>
+                <span class="attachment-storage-destination__summary" id="attachmentDestinationSummary" aria-live="polite"></span>
+            </div>
+            <div class="attachment-storage-destination__controls">
+                <div class="attachment-location-tabs attachment-location-tabs--destination" id="attachmentBulkLocationTabs" role="group" aria-label="Document location for all attachments">
+                    <button type="button" class="attachment-loc-btn active" data-type="email">Email only</button>
+                    <button type="button" class="attachment-loc-btn" data-type="personal">Personal</button>
+                    <button type="button" class="attachment-loc-btn" data-type="matter">Matter</button>
+                </div>
+                <div class="attachment-storage-destination__folder" id="attachmentBulkFolderWrap" hidden>
+                    <label for="attachmentBulkFolder">Folder</label>
+                    <select id="attachmentBulkFolder" class="attachment-storage-select attachment-storage-select--folder" aria-label="Folder for all attachments">
+                        <option value="">Select folder</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="attachment-storage-table-wrap" id="attachmentStorageTableWrap">
+            <table class="attachment-storage-table" id="attachmentStorageTable">
+                <thead id="attachmentStorageTableHead">
+                    <tr>
+                        <th scope="col" class="attachment-storage-table__col-file">File</th>
+                        <th scope="col" class="attachment-storage-table__col-size">Size</th>
+                        <th scope="col" class="attachment-storage-table__col-name">Save as</th>
+                    </tr>
+                </thead>
+                <tbody id="attachmentStorageModalBody"></tbody>
+            </table>
+        </div>
         <div class="attachment-storage-modal__actions">
             <button type="button" class="attachment-storage-modal__btn attachment-storage-modal__btn--cancel" id="attachmentStorageCancel">Cancel upload</button>
             <button type="button" class="attachment-storage-modal__btn attachment-storage-modal__btn--confirm" id="attachmentStorageConfirm">

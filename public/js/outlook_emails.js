@@ -437,105 +437,195 @@ document.addEventListener('DOMContentLoaded', function() {
             return html;
         }
 
-        function syncAttachmentFolderField(card, storageType, selectedFolderId) {
-            const folderField = card.querySelector('.attachment-storage-field--folder');
-            const folderSelect = card.querySelector('.attachment-folder-select');
-            if (!folderField || !folderSelect) {
+        function getFolderTitle(storageType, folderId) {
+            if (!folderId || storageType === 'email') {
+                return '';
+            }
+            const folders = storageType === 'personal' ? personalFolders : matterFolders;
+            const match = folders.find(function(folder) {
+                return String(folder.id) === String(folderId);
+            });
+            return match ? match.title : '';
+        }
+
+        function getStorageTypeLabel(storageType) {
+            if (storageType === 'personal') {
+                return 'Personal documents';
+            }
+            if (storageType === 'matter') {
+                return 'Matter documents';
+            }
+            return 'Email attachments only';
+        }
+
+        function syncAttachmentFolderField(row, storageType, selectedFolderId) {
+            const folderCell = row.querySelector('.attachment-storage-row__folder');
+            const folderSelect = row.querySelector('.attachment-folder-select');
+            if (!folderCell || !folderSelect) {
                 return;
             }
 
             if (storageType === 'personal' || storageType === 'matter') {
-                folderField.style.display = '';
+                folderCell.hidden = false;
                 folderSelect.innerHTML = buildFolderOptionsHtml(storageType, selectedFolderId || '');
                 folderSelect.disabled = false;
             } else {
-                folderField.style.display = 'none';
+                folderCell.hidden = true;
                 folderSelect.innerHTML = '<option value="">Select folder</option>';
                 folderSelect.value = '';
                 folderSelect.disabled = true;
             }
         }
 
-        function setAttachmentCardStorageType(card, storageType, folderId) {
-            card.dataset.storageType = storageType;
-            card.classList.remove('has-error');
-            const errorEl = card.querySelector('.attachment-field-error');
+        function setAttachmentRowStorageType(row, storageType, folderId) {
+            row.dataset.storageType = storageType;
+            row.classList.remove('has-error');
+            const errorEl = row.querySelector('.attachment-field-error');
             if (errorEl) {
-                errorEl.textContent = '';
+                errorEl.textContent = 'Please select a folder.';
             }
 
-            card.querySelectorAll('.attachment-loc-btn').forEach(function(btn) {
+            row.querySelectorAll('.attachment-loc-btn').forEach(function(btn) {
                 btn.classList.toggle('active', btn.dataset.type === storageType);
             });
 
-            syncAttachmentFolderField(card, storageType, folderId || '');
+            syncAttachmentFolderField(row, storageType, folderId || '');
         }
 
-        function populateBulkFolderSelect(bulkTypeSelect, bulkFolderSelect, storageType, selectedFolderId) {
-            if (!bulkFolderSelect) {
+        function populateBulkFolderSelect(bulkFolderWrap, bulkFolderSelect, storageType, selectedFolderId) {
+            if (!bulkFolderSelect || !bulkFolderWrap) {
                 return;
             }
             if (storageType === 'personal' || storageType === 'matter') {
-                bulkFolderSelect.style.display = '';
+                bulkFolderWrap.hidden = false;
                 bulkFolderSelect.innerHTML = buildFolderOptionsHtml(storageType, selectedFolderId || '');
                 bulkFolderSelect.disabled = false;
             } else {
-                bulkFolderSelect.style.display = 'none';
+                bulkFolderWrap.hidden = true;
                 bulkFolderSelect.innerHTML = '<option value="">Select folder</option>';
                 bulkFolderSelect.value = '';
                 bulkFolderSelect.disabled = true;
             }
         }
 
-        function renderAttachmentStorageCard(att, index) {
-            const stem = getAttachmentStem(att.filename);
-            const ext = getAttachmentExtension(att.filename);
-            const icon = getAttachmentFileIcon(att.filename, att.content_type);
-            const sizeLabel = formatAttachmentFileSize(att.file_size);
+        function updateDestinationSummary(summaryEl, storageType, folderId) {
+            if (!summaryEl) {
+                return;
+            }
+            const folderTitle = getFolderTitle(storageType, folderId);
+            if (storageType === 'email') {
+                summaryEl.textContent = 'Stored with the email only';
+                return;
+            }
+            if (folderTitle) {
+                summaryEl.textContent = getStorageTypeLabel(storageType) + ' → ' + folderTitle;
+                return;
+            }
+            summaryEl.textContent = getStorageTypeLabel(storageType) + ' — choose a folder';
+        }
 
+        function renderAttachmentFileCell(att) {
+            const icon = getAttachmentFileIcon(att.filename, att.content_type);
             return `
-                <div class="attachment-storage-card" data-index="${index}" data-storage-type="email">
-                    <div class="attachment-storage-card__header">
-                        <div class="attachment-storage-card__icon"><i class="fas ${icon}"></i></div>
-                        <div class="attachment-storage-card__meta">
-                            <div class="attachment-storage-card__original" title="${escapeHtml(att.filename)}">${escapeHtml(att.filename)}</div>
-                            <div class="attachment-storage-card__size">${escapeHtml(sizeLabel)}</div>
-                        </div>
-                    </div>
-                    <div class="attachment-storage-card__fields">
-                        <div class="attachment-storage-field">
-                            <label for="attachmentName_${index}">Save as</label>
-                            <div class="attachment-rename-input">
-                                <input type="text" id="attachmentName_${index}" value="${escapeHtml(stem)}" data-original="${escapeHtml(att.filename)}" autocomplete="off">
-                                ${ext ? `<span class="attachment-rename-ext">${escapeHtml(ext)}</span>` : ''}
-                            </div>
-                        </div>
-                        <div class="attachment-storage-field">
-                            <label>Document location</label>
-                            <div class="attachment-location-tabs" role="group" aria-label="Document location for ${escapeHtml(att.filename)}">
-                                <button type="button" class="attachment-loc-btn active" data-type="email">Email only</button>
-                                <button type="button" class="attachment-loc-btn" data-type="personal">Personal</button>
-                                <button type="button" class="attachment-loc-btn" data-type="matter">Matter</button>
-                            </div>
-                        </div>
-                        <div class="attachment-storage-field attachment-storage-field--folder" style="display: none;">
-                            <label for="attachmentFolder_${index}">Folder</label>
-                            <select id="attachmentFolder_${index}" class="attachment-folder-select" disabled>
-                                <option value="">Select folder</option>
-                            </select>
-                            <span class="attachment-field-error">Please select a folder.</span>
-                        </div>
-                    </div>
+                <div class="attachment-storage-row__file-inner">
+                    <span class="attachment-storage-row__icon"><i class="fas ${icon}"></i></span>
+                    <span class="attachment-storage-row__filename" title="${escapeHtml(att.filename)}">${escapeHtml(att.filename)}</span>
                 </div>
             `;
         }
 
-        function bindAttachmentStorageCardEvents(card) {
-            card.querySelectorAll('.attachment-loc-btn').forEach(function(btn) {
+        function renderAttachmentRenameCell(att, index) {
+            const stem = getAttachmentStem(att.filename);
+            const ext = getAttachmentExtension(att.filename);
+            return `
+                <div class="attachment-rename-input">
+                    <input type="text" id="attachmentName_${index}" value="${escapeHtml(stem)}" data-original="${escapeHtml(att.filename)}" autocomplete="off" aria-label="Save ${escapeHtml(att.filename)} as">
+                    ${ext ? `<span class="attachment-rename-ext">${escapeHtml(ext)}</span>` : ''}
+                </div>
+                <span class="attachment-field-error">Please enter a file name.</span>
+            `;
+        }
+
+        function renderAttachmentStorageRow(att, index, mode) {
+            const sizeLabel = formatAttachmentFileSize(att.file_size);
+            const locationCell = mode === 'individual' ? `
+                <td class="attachment-storage-row__location">
+                    <div class="attachment-location-tabs attachment-location-tabs--compact" role="group" aria-label="Document location for ${escapeHtml(att.filename)}">
+                        <button type="button" class="attachment-loc-btn active" data-type="email">Email</button>
+                        <button type="button" class="attachment-loc-btn" data-type="personal">Personal</button>
+                        <button type="button" class="attachment-loc-btn" data-type="matter">Matter</button>
+                    </div>
+                </td>
+                <td class="attachment-storage-row__folder" hidden>
+                    <select id="attachmentFolder_${index}" class="attachment-folder-select" disabled aria-label="Folder for ${escapeHtml(att.filename)}">
+                        <option value="">Select folder</option>
+                    </select>
+                    <span class="attachment-field-error">Please select a folder.</span>
+                </td>
+            ` : '';
+
+            return `
+                <tr class="attachment-storage-row" data-index="${index}" data-storage-type="email">
+                    <td class="attachment-storage-row__file">${renderAttachmentFileCell(att)}</td>
+                    <td class="attachment-storage-row__size">${escapeHtml(sizeLabel)}</td>
+                    <td class="attachment-storage-row__name">${renderAttachmentRenameCell(att, index)}</td>
+                    ${locationCell}
+                </tr>
+            `;
+        }
+
+        function bindAttachmentStorageRowEvents(row) {
+            row.querySelectorAll('.attachment-loc-btn').forEach(function(btn) {
                 btn.addEventListener('click', function() {
-                    setAttachmentCardStorageType(card, btn.dataset.type || 'email', '');
+                    setAttachmentRowStorageType(row, btn.dataset.type || 'email', '');
                 });
             });
+        }
+
+        function applyBulkDestinationToRows(body, storageType, folderId) {
+            body.querySelectorAll('.attachment-storage-row').forEach(function(row) {
+                setAttachmentRowStorageType(row, storageType, folderId);
+            });
+        }
+
+        function setAttachmentStorageMode(mode, attachments, body, tableHead, destinationPanel, modePanel) {
+            const isBulk = mode === 'bulk';
+            const isMulti = attachments.length > 1;
+
+            if (tableHead) {
+                tableHead.innerHTML = isBulk || !isMulti
+                    ? `<tr>
+                        <th scope="col" class="attachment-storage-table__col-file">File</th>
+                        <th scope="col" class="attachment-storage-table__col-size">Size</th>
+                        <th scope="col" class="attachment-storage-table__col-name">Save as</th>
+                    </tr>`
+                    : `<tr>
+                        <th scope="col" class="attachment-storage-table__col-file">File</th>
+                        <th scope="col" class="attachment-storage-table__col-size">Size</th>
+                        <th scope="col" class="attachment-storage-table__col-name">Save as</th>
+                        <th scope="col" class="attachment-storage-table__col-location">Location</th>
+                        <th scope="col" class="attachment-storage-table__col-folder">Folder</th>
+                    </tr>`;
+            }
+
+            body.innerHTML = attachments.map(function(att, index) {
+                return renderAttachmentStorageRow(att, index, isBulk ? 'bulk' : 'individual');
+            }).join('');
+            body.querySelectorAll('.attachment-storage-row').forEach(bindAttachmentStorageRowEvents);
+
+            if (destinationPanel) {
+                destinationPanel.hidden = !isBulk && isMulti;
+            }
+            if (modePanel) {
+                modePanel.hidden = !isMulti;
+            }
+
+            const destinationLabel = document.getElementById('attachmentDestinationLabel');
+            if (destinationLabel) {
+                destinationLabel.textContent = isMulti
+                    ? (isBulk ? 'Save all files to' : 'Default location')
+                    : 'Save file to';
+            }
         }
 
         async function previewEmailAttachments(file) {
@@ -565,10 +655,17 @@ document.addEventListener('DOMContentLoaded', function() {
             return new Promise(function(resolve) {
                 const modal = document.getElementById('attachmentStorageModal');
                 const body = document.getElementById('attachmentStorageModalBody');
+                const tableHead = document.getElementById('attachmentStorageTableHead');
                 const countEl = document.getElementById('attachmentStorageCount');
-                const bulkTypeSelect = document.getElementById('attachmentBulkType');
+                const subtitleEl = document.getElementById('attachmentStorageSubtitle');
+                const modePanel = document.getElementById('attachmentStorageMode');
+                const destinationPanel = document.getElementById('attachmentStorageDestination');
+                const bulkLocationTabs = document.getElementById('attachmentBulkLocationTabs');
+                const bulkFolderWrap = document.getElementById('attachmentBulkFolderWrap');
                 const bulkFolderSelect = document.getElementById('attachmentBulkFolder');
-                const bulkApplyBtn = document.getElementById('attachmentBulkApply');
+                const destinationSummary = document.getElementById('attachmentDestinationSummary');
+                const modeBulkBtn = document.getElementById('attachmentModeBulk');
+                const modeIndividualBtn = document.getElementById('attachmentModeIndividual');
                 const confirmBtn = document.getElementById('attachmentStorageConfirm');
                 const cancelBtn = document.getElementById('attachmentStorageCancel');
 
@@ -577,28 +674,68 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
+                const isMulti = attachments.length > 1;
+                let currentMode = isMulti ? 'bulk' : 'bulk';
+                let bulkStorageType = 'email';
+                let bulkFolderId = '';
+
                 if (countEl) {
                     countEl.textContent = attachments.length + (attachments.length === 1 ? ' file' : ' files');
                 }
-
-                body.innerHTML = attachments.map(renderAttachmentStorageCard).join('');
-                body.querySelectorAll('.attachment-storage-card').forEach(bindAttachmentStorageCardEvents);
-
-                if (bulkTypeSelect) {
-                    bulkTypeSelect.value = 'email';
+                if (subtitleEl) {
+                    subtitleEl.textContent = isMulti
+                        ? 'Pick one folder for every file, or switch to per-file locations. You can rename files below.'
+                        : 'Choose where this file is stored in Documents and rename it if needed.';
                 }
-                populateBulkFolderSelect(bulkTypeSelect, bulkFolderSelect, 'email', '');
+
+                function setModeButtons(mode) {
+                    [modeBulkBtn, modeIndividualBtn].forEach(function(btn) {
+                        if (btn) {
+                            btn.classList.toggle('active', btn.dataset.mode === mode);
+                        }
+                    });
+                }
+
+                function setBulkLocationTabs(storageType) {
+                    if (!bulkLocationTabs) {
+                        return;
+                    }
+                    bulkLocationTabs.querySelectorAll('.attachment-loc-btn').forEach(function(btn) {
+                        btn.classList.toggle('active', btn.dataset.type === storageType);
+                    });
+                }
+
+                function syncBulkDestination() {
+                    populateBulkFolderSelect(bulkFolderWrap, bulkFolderSelect, bulkStorageType, bulkFolderId);
+                    updateDestinationSummary(destinationSummary, bulkStorageType, bulkFolderId);
+                    if (currentMode === 'bulk') {
+                        applyBulkDestinationToRows(body, bulkStorageType, bulkFolderId);
+                    }
+                }
+
+                setAttachmentStorageMode(currentMode, attachments, body, tableHead, destinationPanel, modePanel);
+                setModeButtons(currentMode);
+                setBulkLocationTabs(bulkStorageType);
+                populateBulkFolderSelect(bulkFolderWrap, bulkFolderSelect, bulkStorageType, bulkFolderId);
+                updateDestinationSummary(destinationSummary, bulkStorageType, bulkFolderId);
+                applyBulkDestinationToRows(body, bulkStorageType, bulkFolderId);
 
                 function cleanup() {
                     modal.classList.remove('active');
                     modal.setAttribute('aria-hidden', 'true');
                     confirmBtn.removeEventListener('click', onConfirm);
                     cancelBtn.removeEventListener('click', onCancel);
-                    if (bulkApplyBtn) {
-                        bulkApplyBtn.removeEventListener('click', onBulkApply);
+                    if (modeBulkBtn) {
+                        modeBulkBtn.removeEventListener('click', onModeBulk);
                     }
-                    if (bulkTypeSelect) {
-                        bulkTypeSelect.removeEventListener('change', onBulkTypeChange);
+                    if (modeIndividualBtn) {
+                        modeIndividualBtn.removeEventListener('click', onModeIndividual);
+                    }
+                    if (bulkLocationTabs) {
+                        bulkLocationTabs.removeEventListener('click', onBulkLocationClick);
+                    }
+                    if (bulkFolderSelect) {
+                        bulkFolderSelect.removeEventListener('change', onBulkFolderChange);
                     }
                     modal.removeEventListener('click', onOverlayClick);
                     document.removeEventListener('keydown', onKeyDown);
@@ -606,10 +743,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 function collectConfig() {
                     return attachments.map(function(att, index) {
-                        const card = body.querySelector('.attachment-storage-card[data-index="' + index + '"]');
+                        const row = body.querySelector('.attachment-storage-row[data-index="' + index + '"]');
                         const nameInput = document.getElementById('attachmentName_' + index);
                         const folderSelect = document.getElementById('attachmentFolder_' + index);
-                        const storageType = card ? (card.dataset.storageType || 'email') : 'email';
+                        const storageType = row ? (row.dataset.storageType || 'email') : 'email';
                         const folderId = folderSelect ? folderSelect.value : '';
 
                         return {
@@ -622,38 +759,60 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 function validateConfig(config) {
-                    let firstInvalidCard = null;
-                    body.querySelectorAll('.attachment-storage-card').forEach(function(card) {
-                        card.classList.remove('has-error');
-                        const errorEl = card.querySelector('.attachment-field-error');
-                        if (errorEl) {
+                    let firstInvalidRow = null;
+                    body.querySelectorAll('.attachment-storage-row').forEach(function(row) {
+                        row.classList.remove('has-error');
+                        row.querySelectorAll('.attachment-storage-row__name, .attachment-storage-row__folder').forEach(function(cell) {
+                            cell.classList.remove('has-error');
+                        });
+                        row.querySelectorAll('.attachment-field-error').forEach(function(errorEl) {
                             errorEl.textContent = 'Please select a folder.';
-                        }
+                        });
                     });
 
+                    if (currentMode === 'bulk' && (bulkStorageType === 'personal' || bulkStorageType === 'matter') && !bulkFolderId) {
+                        showUploadErrorAlert('Please select a folder for all attachments.');
+                        if (bulkFolderSelect) {
+                            bulkFolderSelect.focus();
+                        }
+                        return false;
+                    }
+
                     config.forEach(function(item, index) {
-                        const card = body.querySelector('.attachment-storage-card[data-index="' + index + '"]');
+                        const row = body.querySelector('.attachment-storage-row[data-index="' + index + '"]');
                         const nameInput = document.getElementById('attachmentName_' + index);
                         const folderSelect = document.getElementById('attachmentFolder_' + index);
 
                         if (nameInput && !nameInput.value.trim()) {
-                            if (card) {
-                                card.classList.add('has-error');
-                                const errorEl = card.querySelector('.attachment-field-error');
+                            if (row) {
+                                row.classList.add('has-error');
+                                const nameCell = row.querySelector('.attachment-storage-row__name');
+                                if (nameCell) {
+                                    nameCell.classList.add('has-error');
+                                }
+                                const errorEl = row.querySelector('.attachment-storage-row__name .attachment-field-error');
                                 if (errorEl) {
                                     errorEl.textContent = 'Please enter a file name.';
                                 }
-                                if (!firstInvalidCard) {
-                                    firstInvalidCard = card;
+                                if (!firstInvalidRow) {
+                                    firstInvalidRow = row;
                                 }
                             }
                         }
 
                         if (item.storage_type !== 'email' && !item.folder_id) {
-                            if (card) {
-                                card.classList.add('has-error');
-                                if (!firstInvalidCard) {
-                                    firstInvalidCard = card;
+                            if (row) {
+                                row.classList.add('has-error');
+                                const folderCell = row.querySelector('.attachment-storage-row__folder');
+                                if (folderCell) {
+                                    folderCell.classList.add('has-error');
+                                }
+                                const errorEl = row.querySelector('.attachment-storage-row__folder .attachment-field-error');
+                                if (errorEl) {
+                                    errorEl.textContent = 'Please select a folder.';
+                                }
+                                if (!firstInvalidRow) {
+                                    firstInvalidRow = row;
                                 }
                             }
                             if (folderSelect) {
@@ -662,32 +821,54 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
 
-                    if (firstInvalidCard) {
-                        firstInvalidCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    if (firstInvalidRow) {
+                        firstInvalidRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                         return false;
                     }
 
                     return true;
                 }
 
-                function onBulkTypeChange() {
-                    populateBulkFolderSelect(bulkTypeSelect, bulkFolderSelect, bulkTypeSelect.value, '');
-                }
-
-                function onBulkApply() {
-                    const storageType = bulkTypeSelect ? bulkTypeSelect.value : 'email';
-                    const folderId = bulkFolderSelect ? bulkFolderSelect.value : '';
-                    if ((storageType === 'personal' || storageType === 'matter') && !folderId) {
-                        showUploadErrorAlert('Please select a folder before applying to all attachments.');
-                        if (bulkFolderSelect) {
-                            bulkFolderSelect.focus();
-                        }
+                function onModeBulk() {
+                    if (currentMode === 'bulk') {
                         return;
                     }
+                    currentMode = 'bulk';
+                    setModeButtons(currentMode);
+                    setAttachmentStorageMode(currentMode, attachments, body, tableHead, destinationPanel, modePanel);
+                    setBulkLocationTabs(bulkStorageType);
+                    syncBulkDestination();
+                }
 
-                    body.querySelectorAll('.attachment-storage-card').forEach(function(card) {
-                        setAttachmentCardStorageType(card, storageType, folderId);
-                    });
+                function onModeIndividual() {
+                    if (currentMode === 'individual') {
+                        return;
+                    }
+                    currentMode = 'individual';
+                    setModeButtons(currentMode);
+                    setAttachmentStorageMode(currentMode, attachments, body, tableHead, destinationPanel, modePanel);
+                    if (destinationPanel) {
+                        destinationPanel.hidden = true;
+                    }
+                }
+
+                function onBulkLocationClick(event) {
+                    const btn = event.target.closest('.attachment-loc-btn');
+                    if (!btn || !bulkLocationTabs || !bulkLocationTabs.contains(btn)) {
+                        return;
+                    }
+                    bulkStorageType = btn.dataset.type || 'email';
+                    bulkFolderId = '';
+                    setBulkLocationTabs(bulkStorageType);
+                    syncBulkDestination();
+                }
+
+                function onBulkFolderChange() {
+                    bulkFolderId = bulkFolderSelect ? bulkFolderSelect.value : '';
+                    updateDestinationSummary(destinationSummary, bulkStorageType, bulkFolderId);
+                    if (currentMode === 'bulk') {
+                        applyBulkDestinationToRows(body, bulkStorageType, bulkFolderId);
+                    }
                 }
 
                 function onConfirm() {
@@ -718,18 +899,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 confirmBtn.addEventListener('click', onConfirm);
                 cancelBtn.addEventListener('click', onCancel);
-                if (bulkApplyBtn) {
-                    bulkApplyBtn.addEventListener('click', onBulkApply);
+                if (modeBulkBtn) {
+                    modeBulkBtn.addEventListener('click', onModeBulk);
                 }
-                if (bulkTypeSelect) {
-                    bulkTypeSelect.addEventListener('change', onBulkTypeChange);
+                if (modeIndividualBtn) {
+                    modeIndividualBtn.addEventListener('click', onModeIndividual);
+                }
+                if (bulkLocationTabs) {
+                    bulkLocationTabs.addEventListener('click', onBulkLocationClick);
+                }
+                if (bulkFolderSelect) {
+                    bulkFolderSelect.addEventListener('change', onBulkFolderChange);
                 }
                 modal.addEventListener('click', onOverlayClick);
                 document.addEventListener('keydown', onKeyDown);
 
                 modal.classList.add('active');
                 modal.setAttribute('aria-hidden', 'false');
-                confirmBtn.focus();
+                if (isMulti && modeBulkBtn) {
+                    modeBulkBtn.focus();
+                } else if (bulkLocationTabs) {
+                    const firstBulkBtn = bulkLocationTabs.querySelector('.attachment-loc-btn');
+                    if (firstBulkBtn) {
+                        firstBulkBtn.focus();
+                    }
+                } else {
+                    confirmBtn.focus();
+                }
             });
         }
 

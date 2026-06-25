@@ -2644,6 +2644,8 @@ class ClientDocumentsController extends Controller
             $docType = (string) ($document->doc_type ?? '');
             if ($docType === 'migration') {
                 $s3Key = $uniqueId . '/' . $document->folder_name . '/' . $fileName;
+            } elseif ($docType === 'conversion_email_fetch' && ! empty($document->mail_type)) {
+                $s3Key = $uniqueId . '/' . $docType . '/' . $document->mail_type . '/' . $fileName;
             } else {
                 $s3Key = $uniqueId . '/' . $docType . '/' . $fileName;
             }

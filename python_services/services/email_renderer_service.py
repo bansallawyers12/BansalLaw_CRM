@@ -503,38 +503,171 @@ class EmailRendererService:
         Returns:
             (pdf_bytes, text_preview, error_message)
         """
+        rendering = self.render_email(email_data)
+        text_preview = rendering.get('text_preview') or email_data.get('text_content', '')
+
+        rendered_html = rendering.get('rendered_html', '')
+        if not rendered_html:
+            return None, text_preview, 'No rendered HTML available for PDF conversion'
+
+        attachments = email_data.get('attachments') or []
+        pdf_html = self._replace_cid_with_data_uris(rendered_html, attachments)
+        pdf_html = self._prepare_html_for_pdf(pdf_html)
+
+        weasy_error = None
         try:
-            rendering = self.render_email(email_data)
-            text_preview = rendering.get('text_preview') or email_data.get('text_content', '')
-
-            rendered_html = rendering.get('rendered_html', '')
-            if not rendered_html:
-                return None, text_preview, 'No rendered HTML available for PDF conversion'
-
-            attachments = email_data.get('attachments') or []
-            pdf_html = self._replace_cid_with_data_uris(rendered_html, attachments)
-            pdf_html = self._prepare_html_for_pdf(pdf_html)
-
-            try:
-                from weasyprint import HTML, CSS
-            except ImportError:
-                return None, text_preview, 'WeasyPrint is not installed'
+            from weasyprint import HTML
 
             pdf_bytes = HTML(string=pdf_html).write_pdf(
                 stylesheets=[self._get_pdf_layout_stylesheet()]
             )
-            if not pdf_bytes:
-                return None, text_preview, 'WeasyPrint returned empty PDF'
+            if pdf_bytes:
+                logger.info(
+                    f"PDF generated via WeasyPrint for email: {email_data.get('subject', 'No subject')} "
+                    f"({len(pdf_bytes)} bytes)"
+                )
+                return pdf_bytes, text_preview, None
+            weasy_error = 'WeasyPrint returned empty PDF'
+        except ImportError:
+            weasy_error = 'WeasyPrint is not installed'
+        except Exception as e:
+            weasy_error = str(e)
+            logger.warning(f"WeasyPrint PDF failed, trying ReportLab fallback: {weasy_error}")
 
+        pdf_bytes = self._render_to_pdf_with_reportlab(email_data, text_preview)
+        if pdf_bytes:
             logger.info(
-                f"PDF generated for email: {email_data.get('subject', 'No subject')} "
+                f"PDF generated via ReportLab fallback for email: {email_data.get('subject', 'No subject')} "
                 f"({len(pdf_bytes)} bytes)"
             )
             return pdf_bytes, text_preview, None
 
-        except Exception as e:
-            logger.error(f"Error generating email PDF: {str(e)}")
-            return None, email_data.get('text_content', ''), str(e)
+        logger.error(f"Error generating email PDF: {weasy_error or 'PDF generation failed'}")
+        return None, text_preview, weasy_error or 'PDF generation failed'
+
+    def _render_to_pdf_with_reportlab(
+        self,
+        email_data: Dict[str, Any],
+        text_preview: str,
+    ) -> Optional[bytes]:
+        """Fallback PDF renderer when WeasyPrint/Cairo is unavailable (e.g. local Windows)."""
+        try:
+            from io import BytesIO
+
+            from reportlab.lib import colors
+            from reportlab.lib.enums import TA_LEFT
+            from reportlab.lib.pagesizes import A4
+            from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+            from reportlab.lib.units import cm
+            from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+        except ImportError:
+            logger.warning('ReportLab is not installed; cannot fall back from WeasyPrint')
+            return None
+
+        subject = str(email_data.get('subject') or '(No subject)').strip()
+        sender = str(email_data.get('sender_name') or email_data.get('sender_email') or '').strip()
+        recipients = email_data.get('to_recipients') or email_data.get('recipients') or []
+        cc_recipients = email_data.get('cc_recipients') or []
+        sent_date = str(email_data.get('sent_date') or '').strip()
+
+        body_text = str(text_preview or email_data.get('text_content') or '').strip()
+        if not body_text:
+            html_content = str(email_data.get('html_content') or '')
+            if html_content and BeautifulSoup:
+                body_text = BeautifulSoup(html_content, 'html.parser').get_text('\n', strip=True)
+            elif html_content:
+                body_text = re.sub(r'<[^>]+>', ' ', html_content)
+            body_text = re.sub(r'\s+', ' ', body_text).strip()
+
+        if not body_text:
+            body_text = '(No message body)'
+
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            leftMargin=2 * cm,
+            rightMargin=2 * cm,
+            topMargin=2 * cm,
+            bottomMargin=2 * cm,
+            title=subject[:120],
+        )
+
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'EmailTitle',
+            parent=styles['Heading2'],
+            fontSize=14,
+            leading=18,
+            textColor=colors.HexColor('#2c3e50'),
+            spaceAfter=10,
+        )
+        meta_style = ParagraphStyle(
+            'EmailMeta',
+            parent=styles['Normal'],
+            fontSize=9,
+            leading=12,
+            textColor=colors.HexColor('#6c757d'),
+            spaceAfter=4,
+        )
+        body_style = ParagraphStyle(
+            'EmailBody',
+            parent=styles['Normal'],
+            fontSize=10,
+            leading=14,
+            alignment=TA_LEFT,
+            spaceBefore=8,
+        )
+
+        story = [Paragraph(self._escape_reportlab(subject), title_style)]
+
+        if sender:
+            story.append(Paragraph(f'<b>From:</b> {self._escape_reportlab(sender)}', meta_style))
+        if recipients:
+            to_line = ', '.join(str(r) for r in recipients[:8])
+            story.append(Paragraph(f'<b>To:</b> {self._escape_reportlab(to_line)}', meta_style))
+        if cc_recipients:
+            cc_line = ', '.join(str(r) for r in cc_recipients[:8])
+            story.append(Paragraph(f'<b>Cc:</b> {self._escape_reportlab(cc_line)}', meta_style))
+        if sent_date:
+            story.append(Paragraph(f'<b>Date:</b> {self._escape_reportlab(sent_date)}', meta_style))
+
+        story.append(Spacer(1, 0.25 * cm))
+
+        for paragraph in self._split_reportlab_paragraphs(body_text):
+            story.append(Paragraph(self._escape_reportlab(paragraph), body_style))
+            story.append(Spacer(1, 0.12 * cm))
+
+        doc.build(story)
+        pdf_bytes = buffer.getvalue()
+        return pdf_bytes if pdf_bytes else None
+
+    def _escape_reportlab(self, text: str) -> str:
+        if not text:
+            return ''
+        return (
+            str(text)
+            .replace('&', '&amp;')
+            .replace('<', '&lt;')
+            .replace('>', '&gt;')
+            .replace('"', '&quot;')
+        )
+
+    def _split_reportlab_paragraphs(self, text: str, max_len: int = 3500) -> List[str]:
+        chunks: List[str] = []
+        for block in re.split(r'\n{2,}', text):
+            block = block.strip()
+            if not block:
+                continue
+            while len(block) > max_len:
+                split_at = block.rfind(' ', 0, max_len)
+                if split_at <= 0:
+                    split_at = max_len
+                chunks.append(block[:split_at].strip())
+                block = block[split_at:].strip()
+            if block:
+                chunks.append(block)
+        return chunks or ['(No message body)']
 
     _PDF_LAYOUT_TAGS = frozenset({
         'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
