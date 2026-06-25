@@ -1282,6 +1282,29 @@ document.addEventListener('DOMContentLoaded', function() {
         return '<div class="email-item-attachments">' + lines + extra + '</div>';
     }
 
+    function cleanRecipients(recipientString) {
+        if (!recipientString) return '';
+
+        const recipients = String(recipientString).split(/[,;]/);
+
+        const validRecipients = recipients
+            .map(function(r) { return r.trim(); })
+            .filter(function(r) {
+                if (!r) return false;
+                if (r.includes('<extract_msg.') || r.includes('object at 0x')) return false;
+                if (r.includes('Recipient') && r.includes('0x')) return false;
+                return !r.startsWith('<') && !r.includes('0x');
+            });
+
+        return validRecipients.length > 0 ? validRecipients.join(', ') : '';
+    }
+
+    function formatRecipientLine(label, value) {
+        const cleaned = cleanRecipients(value);
+        if (!cleaned) return '';
+        return label + ': ' + cleaned;
+    }
+
     function renderReadingPaneAttachments(email) {
         const items = collectEmailAttachmentItems(email);
         if (!items.length) {
@@ -1368,7 +1391,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
         document.getElementById('readSubject').textContent = email.subject || '(No Subject)';
         document.getElementById('readSender').textContent = email.from_mail || 'Unknown Sender';
-        document.getElementById('readTo').textContent = 'To: ' + (email.to_mail || 'Unknown');
+
+        const readToEl = document.getElementById('readTo');
+        const readCcEl = document.getElementById('readCc');
+        const toLine = formatRecipientLine('To', email.to_mail);
+        readToEl.textContent = toLine || 'To: Unknown';
+
+        if (readCcEl) {
+            const ccLine = formatRecipientLine('Cc', email.cc);
+            if (ccLine) {
+                readCcEl.textContent = ccLine;
+                readCcEl.hidden = false;
+            } else {
+                readCcEl.textContent = '';
+                readCcEl.hidden = true;
+            }
+        }
         
         document.getElementById('readDate').textContent = formatEmailDate(getEmailDate(email));
 
@@ -1380,10 +1418,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const attachmentHtml = renderReadingPaneAttachments(email);
 
         if (attachmentHtml) {
-            attachmentsContainer.style.display = 'block';
+            attachmentsContainer.hidden = false;
             attachmentsContainer.innerHTML = attachmentHtml;
         } else {
-            attachmentsContainer.style.display = 'none';
+            attachmentsContainer.hidden = true;
             attachmentsContainer.innerHTML = '';
         }
 
@@ -1409,34 +1447,15 @@ document.addEventListener('DOMContentLoaded', function() {
             iframe.onload = null;
             iframe.removeAttribute('srcdoc');
             iframe.src = pdfToPreview;
-            iframe.style.height = '800px';
+            iframe.style.height = 'min(70vh, 800px)';
         } else {
             iframe.removeAttribute('src');
-            const finalContent = contentStr || '<p>No content available.</p>';
-            iframe.srcdoc = `
-                <html>
-                    <head>
-                        <style>
-                            body { font-family: 'Segoe UI', sans-serif; font-size: 14px; color: #333; line-height: 1.6; padding: 10px; margin: 0; }
-                            a { color: #0078d4; text-decoration: none; }
-                            a:hover { text-decoration: underline; }
-                            img { max-width: 100%; height: auto; }
-                        </style>
-                    </head>
-                    <body>${finalContent}</body>
-                </html>
-            `;
-
-            iframe.onload = function() {
-                try {
-                    const body = iframe.contentWindow.document.body;
-                    const html = iframe.contentWindow.document.documentElement;
-                    const height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
-                    iframe.style.height = (height + 20) + 'px';
-                } catch (e) {
-                    console.error("Could not resize iframe", e);
-                }
-            };
+            iframe.removeAttribute('srcdoc');
+            let bodyHtml = contentStr;
+            if (bodyHtml && !bodyHtml.includes('<')) {
+                bodyHtml = escapeHtml(bodyHtml).replace(/\n/g, '<br>');
+            }
+            renderHtmlIframe(iframe, bodyHtml || '<p>No content available.</p>');
         }
     }
 
@@ -1564,16 +1583,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function buildQuoteHtml(email, action, emailHtml) {
         const emailDate = formatEmailDate(getEmailDate(email));
+        const ccLine = cleanRecipients(email.cc);
         if (action === 'forward') {
-            return '<br><br><div dir="ltr">---------- Forwarded message ---------<br>From: <strong>' +
+            let header = '---------- Forwarded message ---------<br>From: <strong>' +
                 escapeHtml(email.from_mail) + '</strong><br>Date: ' + escapeHtml(emailDate) +
-                '<br>Subject: ' + escapeHtml(email.subject) +
+                '<br>Subject: ' + escapeHtml(email.subject);
+            if (ccLine) {
+                header += '<br>Cc: ' + escapeHtml(ccLine);
+            }
+            return '<br><br><div dir="ltr">' + header +
                 '</div><br><blockquote style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex">' +
                 emailHtml + '</blockquote>';
         }
+        let header = '<b>From:</b> ' + escapeHtml(email.from_mail) + '<br><b>Sent:</b> ' + escapeHtml(emailDate) +
+            '<br><b>Subject:</b> ' + escapeHtml(email.subject);
+        const toLine = cleanRecipients(email.to_mail);
+        if (toLine) {
+            header += '<br><b>To:</b> ' + escapeHtml(toLine);
+        }
+        if (ccLine) {
+            header += '<br><b>Cc:</b> ' + escapeHtml(ccLine);
+        }
         return '<br><br><blockquote style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex">' +
-            '<b>From:</b> ' + escapeHtml(email.from_mail) + '<br><b>Sent:</b> ' + escapeHtml(emailDate) +
-            '<br><b>Subject:</b> ' + escapeHtml(email.subject) + '<br><br>' + emailHtml + '</blockquote>';
+            header + '<br><br>' + emailHtml + '</blockquote>';
     }
 
     function formatReplySubject(subject) {
@@ -1640,8 +1672,9 @@ document.addEventListener('DOMContentLoaded', function() {
             subjectInput.value = formatReplySubject(email.subject);
         } else if (action === 'replyAll') {
             composeTitle.textContent = 'Reply All';
-            const cc = email.cc ? `, ${email.cc}` : '';
-            toInput.value = (email.from_mail || '') + cc;
+            const toParts = [email.from_mail || '', cleanRecipients(email.to_mail), cleanRecipients(email.cc)]
+                .filter(function(part) { return part; });
+            toInput.value = toParts.join(', ');
             subjectInput.value = formatReplySubject(email.subject);
         } else if (action === 'forward') {
             composeTitle.textContent = 'Forward';

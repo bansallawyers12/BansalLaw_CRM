@@ -8157,6 +8157,9 @@ class ClientsController extends Controller
             $preview = strip_tags($email->message);
             $email->text_preview = mb_substr($preview, 0, 100);
 
+            $email->to_mail = \App\Models\EmailLog::resolveRecipientDisplay($email->to_mail ?? '', $email->type ?? null);
+            $email->cc = $email->cc ?? '';
+
             $email->msg_file_url = $this->resolveEmailMsgDownloadUrl($email);
             $email->pdf_file_url = $this->resolveEmailPdfPreviewUrl($email);
             $email->pdf_preview_url = $email->pdf_file_url;

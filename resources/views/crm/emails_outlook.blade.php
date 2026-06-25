@@ -194,12 +194,13 @@
                     <div class="meta-details">
                         <div class="meta-sender" id="readSender">Loading...</div>
                         <div class="meta-recipients" id="readTo">Loading...</div>
+                        <div class="meta-recipients meta-cc" id="readCc" hidden></div>
                     </div>
                     <div class="meta-date" id="readDate"></div>
                 </div>
-
-                <div id="attachmentsContainer" class="email-attachments-container"></div>
             </div>
+
+            <div id="attachmentsContainer" class="email-attachments-container reading-attachments" hidden></div>
             
             <div class="reading-body">
                 <iframe id="readBody"></iframe>

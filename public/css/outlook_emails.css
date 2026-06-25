@@ -186,9 +186,16 @@ body, html {
 }
 
 .reading-header {
-    padding: 20px 30px;
+    padding: 20px 30px 16px;
     border-bottom: 1px solid var(--outlook-border);
     background: var(--outlook-bg);
+    flex-shrink: 0;
+}
+
+#readingPane {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .action-bar {
@@ -259,16 +266,36 @@ body, html {
 .meta-recipients {
     font-size: 12px;
     color: var(--outlook-text-secondary);
+    line-height: 1.45;
+}
+
+.meta-recipients + .meta-recipients {
+    margin-top: 2px;
+}
+
+.meta-cc {
+    color: #605e5c;
 }
 
 .meta-date {
     font-size: 12px;
     color: var(--outlook-text-secondary);
+    flex-shrink: 0;
+}
+
+.reading-attachments {
+    flex-shrink: 0;
+    padding: 0 30px 12px;
+    border-bottom: 1px solid var(--outlook-border);
+    background: var(--outlook-bg);
+    max-height: 220px;
+    overflow-y: auto;
 }
 
 .reading-body {
-    flex-grow: 1;
-    padding: 30px 10px;
+    flex: 1;
+    min-height: 0;
+    padding: 20px 10px 30px;
     overflow-y: auto;
     font-size: 14px;
     line-height: 1.6;
@@ -278,9 +305,10 @@ body, html {
 
 .reading-body iframe {
     width: 100%;
-    flex-grow: 1;
+    flex: 1 1 auto;
     border: none;
-    min-height: 700px;
+    min-height: 320px;
+    height: auto;
 }
 
 /* Empty State */
@@ -1310,7 +1338,11 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
 
 /* Email attachments — reading pane & list */
 .email-attachments-container {
-    margin-top: 14px;
+    margin-top: 0;
+}
+
+.reading-attachments.email-attachments-container {
+    margin-top: 0;
 }
 
 .email-attachments-panel {
@@ -1335,6 +1367,8 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
 .email-attachments-panel__list {
     display: flex;
     flex-direction: column;
+    max-height: 180px;
+    overflow-y: auto;
 }
 
 .email-attachment-row {
