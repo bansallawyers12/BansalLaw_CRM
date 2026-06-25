@@ -42,6 +42,29 @@ class EmailUploadController extends Controller
     }
 
     /**
+     * S3 disk for .msg email uploads (bundled CA cert for local PHP without curl.cainfo).
+     */
+    protected function emailUploadStorage()
+    {
+        static $disk = null;
+
+        if ($disk !== null) {
+            return $disk;
+        }
+
+        $config = config('filesystems.disks.s3');
+        $caBundle = resource_path('certs/cacert.pem');
+
+        if (is_file($caBundle)) {
+            $config['http'] = ['verify' => $caBundle];
+        }
+
+        $disk = Storage::build($config);
+
+        return $disk;
+    }
+
+    /**
      * Import a parsed .msg file with explicit client/matter context (smart import flow).
      *
      * @param \Illuminate\Http\UploadedFile $file
@@ -549,7 +572,7 @@ class EmailUploadController extends Controller
                     throw new \Exception('Failed to read email file contents');
                 }
                 
-                $uploadResult = Storage::disk('s3')->put($filePath, $fileContents);
+                $uploadResult = $this->emailUploadStorage()->put($filePath, $fileContents);
                 if (!$uploadResult) {
                     throw new \Exception('Failed to upload file to storage. Please check storage configuration.');
                 }
@@ -564,7 +587,7 @@ class EmailUploadController extends Controller
             
             // Generate S3 URL - use Storage method which handles encoding properly
             try {
-                $fileUrl = Storage::disk('s3')->url($filePath);
+                $fileUrl = $this->emailUploadStorage()->url($filePath);
                 if (empty($fileUrl)) {
                     throw new \Exception('Failed to generate file URL');
                 }
@@ -894,7 +917,7 @@ class EmailUploadController extends Controller
 
             $pdfFilePath = $sanitizedClientId . '/' . $docType . '/' . $mailType . '/' . $pdfUniqueFileName;
 
-            $uploadResult = Storage::disk('s3')->put($pdfFilePath, $pdfBytes);
+            $uploadResult = $this->emailUploadStorage()->put($pdfFilePath, $pdfBytes);
             if (!$uploadResult) {
                 Log::warning('Failed to upload email PDF to S3', [
                     'file' => $fileName,
@@ -903,7 +926,7 @@ class EmailUploadController extends Controller
                 return null;
             }
 
-            $pdfFileUrl = Storage::disk('s3')->url($pdfFilePath);
+            $pdfFileUrl = $this->emailUploadStorage()->url($pdfFilePath);
 
             $pdfDocument = new Document();
             $pdfDocument->file_name = pathinfo($fileName, PATHINFO_FILENAME);
@@ -1195,14 +1218,14 @@ class EmailUploadController extends Controller
                 $s3Key = $clientUniqueId . '/attachments/' . time() . '_' . $sanitizedAttachmentFileName;
 
                 try {
-                    $uploadSuccess = Storage::disk('s3')->put($s3Key, $decodedData);
+                    $uploadSuccess = $this->emailUploadStorage()->put($s3Key, $decodedData);
                     if (!$uploadSuccess) {
                         throw new \Exception('S3 upload returned false');
                     }
-                    if (!Storage::disk('s3')->exists($s3Key)) {
+                    if (!$this->emailUploadStorage()->exists($s3Key)) {
                         throw new \Exception('File not found in S3 after upload');
                     }
-                    $s3Path = Storage::disk('s3')->url($s3Key);
+                    $s3Path = $this->emailUploadStorage()->url($s3Key);
                     $fileSize = strlen($decodedData);
                 } catch (\Exception $s3Exception) {
                     Log::error('S3 upload failed for attachment', [
@@ -1275,12 +1298,12 @@ class EmailUploadController extends Controller
         $uniqueFileName = time() . '_' . $this->sanitizeFilename($displayName);
         $filePath = $sanitizedClientId . '/' . $storageType . '/' . $uniqueFileName;
 
-        $uploadSuccess = Storage::disk('s3')->put($filePath, $decodedData);
+        $uploadSuccess = $this->emailUploadStorage()->put($filePath, $decodedData);
         if (!$uploadSuccess) {
             throw new \Exception('Failed to upload attachment to document storage.');
         }
 
-        $fileUrl = Storage::disk('s3')->url($filePath);
+        $fileUrl = $this->emailUploadStorage()->url($filePath);
         $fileSize = strlen($decodedData);
 
         $document = new Document();
