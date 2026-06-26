@@ -2298,6 +2298,14 @@ class ClientDocumentsController extends Controller
             try {
                 $displayFilename = $this->resolveDocumentPreviewFilename($document, $filename);
 
+                if (strtolower(pathinfo($displayFilename, PATHINFO_EXTENSION)) === 'eml') {
+                    $fileContent = $this->s3Disk()->get($s3Key);
+                    $htmlContent = $this->extractHtmlFromEml($fileContent);
+                    return response($htmlContent, 200, [
+                        'Content-Type' => 'text/html; charset=UTF-8',
+                    ]);
+                }
+
                 if ($this->isOfficeDocumentPreviewType($displayFilename, (string) ($document->filetype ?? ''))) {
                     $fileContent = $this->s3Disk()->get($s3Key);
                     $pdfBytes = $this->convertOfficeDocumentToPdfBytes($fileContent, $displayFilename);
@@ -2374,6 +2382,55 @@ class ClientDocumentsController extends Controller
         }
 
         return basename($fallbackFilename);
+    }
+
+    private function extractHtmlFromEml(string $emlContent): string
+    {
+        if (preg_match('/boundary="?([^"\r\n]+)"?/i', $emlContent, $m)) {
+            $boundary = trim($m[1]);
+            $parts = explode('--' . $boundary, $emlContent);
+            foreach ($parts as $part) {
+                if (stripos($part, 'text/html') !== false) {
+                    return $this->decodeEmlPart($part);
+                }
+            }
+            foreach ($parts as $part) {
+                if (stripos($part, 'text/plain') !== false) {
+                    return nl2br(htmlentities($this->decodeEmlPart($part), ENT_QUOTES, 'UTF-8'));
+                }
+            }
+        } else {
+            if (stripos($emlContent, 'text/html') !== false) {
+                return $this->decodeEmlPart($emlContent);
+            }
+            $pos = strpos($emlContent, "\r\n\r\n");
+            if ($pos === false) $pos = strpos($emlContent, "\n\n");
+            if ($pos !== false) {
+                $body = trim(substr($emlContent, $pos));
+                return nl2br(htmlentities($body, ENT_QUOTES, 'UTF-8'));
+            }
+        }
+        
+        return "Could not extract content from EML.";
+    }
+
+    private function decodeEmlPart(string $part): string
+    {
+        $pos = strpos($part, "\r\n\r\n");
+        if ($pos === false) $pos = strpos($part, "\n\n");
+        if ($pos === false) return trim($part);
+
+        $headers = substr($part, 0, $pos);
+        $body = trim(substr($part, $pos));
+
+        if (stripos($headers, 'Content-Transfer-Encoding: base64') !== false) {
+            $decoded = base64_decode(preg_replace('/\s+/', '', $body), true);
+            if ($decoded !== false) return $decoded;
+        } elseif (stripos($headers, 'Content-Transfer-Encoding: quoted-printable') !== false) {
+            return quoted_printable_decode($body);
+        }
+
+        return $body;
     }
 
     private function isOfficeDocumentPreviewType(string $filename, string $fileType = ''): bool

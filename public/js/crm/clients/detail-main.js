@@ -896,6 +896,13 @@ $(document).ready(function() {
                 frameHeight: 'calc(100vh - ' + (isOfficePreview ? '140' : '100') + 'px)',
                 onError: showPreviewError
             });
+        } else if (normalizedType === 'eml') {
+            mountIframePreview(container, {
+                embeddedPreviewUrl: embeddedPreviewUrl,
+                loadingMessage: 'Loading email preview…',
+                frameHeight: 'calc(100vh - 100px)',
+                onError: showPreviewError
+            });
         } else if (normalizedType === 'txt') {
             fetch(embeddedPreviewUrl, { credentials: 'same-origin', headers: { 'Accept': 'text/plain, */*' } })
                 .then(function(response) {
