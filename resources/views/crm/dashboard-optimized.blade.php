@@ -1652,7 +1652,6 @@ let searchTimeout;
 document.querySelector('input[name="client_name"]')?.addEventListener('input', function() {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
-        console.log('Search query:', this.value);
     }, 500);
 });
 

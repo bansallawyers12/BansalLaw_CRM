@@ -6,25 +6,19 @@
 (function() {
     'use strict';
     
-    console.log('🔍 Address autocomplete script loading...');
-    console.log('📌 saveAddressInfo function available?', typeof window.saveAddressInfo);
     
     // Note: Regional code functions (getRegionalCodeInfo and isValidAustralianPostcode) 
     // are now defined in address-regional-codes.js to avoid duplication
     
     // Initialize when DOM is ready
     $(document).ready(function() {
-        console.log('🔍 External address-autocomplete.js loading...');
         initAddressAutocomplete();
-        console.log('✅ External address-autocomplete.js initialized');
     });
     
     /**
      * Initialize address autocomplete functionality
      */
     function initAddressAutocomplete() {
-        console.log('✅ jQuery ready - Address autocomplete initialized');
-        console.log('📍 Address search inputs found:', $('.address-search-input').length);
         
         // Get configuration from data attributes
         const config = getAutocompleteConfig();
@@ -44,7 +38,6 @@
      * This function is exposed globally for use when dynamically adding addresses
      */
     window.initAddressAutocompleteForNewField = function($newFieldWrapper) {
-        console.log('🔧 Initializing autocomplete for new address field');
         
         // Get configuration from data attributes (should be same as initial config)
         const config = getAutocompleteConfig();
@@ -67,7 +60,6 @@
                         }
                     });
                 });
-                console.log('✅ Flatpickr initialized for new field');
             } else {
                 console.warn('⚠️ Flatpickr not available for new field');
             }
@@ -78,7 +70,6 @@
         // Note: Event listeners don't need re-binding because they use delegation
         // bindAddressSearch, bindAddressSelection, bindRegionalCodeCalculation use
         // $(document).on() which automatically handles dynamically added elements
-        console.log('✅ Autocomplete ready for new field (event delegation handles it)');
     };
     
     // Expose the main initialization function globally for backward compatibility
@@ -151,7 +142,6 @@
                         }
                     });
                 });
-                console.log('✅ Flatpickr initialized for .date-picker fields');
             } else {
                 console.warn('⚠️ Flatpickr not available, skipping...');
             }
@@ -172,14 +162,12 @@
             if (postcode && window.isValidAustralianPostcode(postcode)) {
                 const regionalInfo = window.getRegionalCodeInfo(postcode);
                 $regionalCode.val(regionalInfo);
-                console.log('🔢 Regional code calculated:', regionalInfo, 'from postcode:', postcode);
             } else {
                 // Clear regional code if postcode is invalid or empty
                 $regionalCode.val('');
                 if (postcode) {
                     console.warn('⚠️ Invalid postcode format:', postcode, '- regional code cleared');
                 } else {
-                    console.log('ℹ️ Postcode cleared - regional code also cleared');
                 }
             }
         });
@@ -190,12 +178,10 @@
      */
     function bindAddressSearch(config) {
         $(document).on('input', '.address-search-input', function() {
-            console.log('🔍 Input detected in address search field:', $(this).val());
             const query = $(this).val();
             const $wrapper = $(this).closest('.address-entry-wrapper');
             
             if (query.length < 3) {
-                console.log('⏸️ Query too short (less than 3 chars)');
                 $wrapper.find('.autocomplete-suggestions').remove();
                 return;
             }
@@ -217,7 +203,6 @@
                 return;
             }
             
-            console.log('🚀 Sending AJAX request to backend...');
             $.ajax({
                 url: config.searchRoute,
                 method: 'POST',
@@ -227,7 +212,6 @@
                     _token: config.csrfToken
                 },
                 success: function(response) {
-                    console.log('✅ Address search response:', response);
                     
                     // CRITICAL: Check for error status from backend (Google API failed + fallback failed)
                     if (response.status === 'ERROR' && response.error_message) {
@@ -251,11 +235,9 @@
                         // Optional: Show info if using fallback service (detected by fallback_ prefix in place_id)
                         if (response.predictions.some(p => p.place_id && p.place_id.startsWith('fallback_'))) {
                             // Silently using fallback - no need to bother user unless there are issues
-                            console.log('ℹ️ Using fallback address service (OpenStreetMap)');
                         }
                     } else {
                         // No predictions returned - show helpful message
-                        console.log('No predictions found for query:', query);
                         
                         // Show informational message that search completed but no results
                         const infoMsg = $('<div class="autocomplete-info" style="color: #856404; font-size: 12px; margin-top: 5px; padding: 8px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">' +
@@ -363,11 +345,9 @@
                 _token: config.csrfToken
             },
             success: function(response) {
-                console.log('Place details response:', response);
                 if (response.result && response.result.address_components) {
                     populateAddressFields($wrapper, response.result);
                 } else {
-                    console.log('No address components in response - manual entry required');
                     // Show a message that manual entry is needed
                     showManualEntryMessage($wrapper);
                 }
@@ -423,7 +403,6 @@
      * Populate address fields from Google Places response
      */
     function populateAddressFields($wrapper, result) {
-        console.log('🏠 Populating address fields with result:', result);
         
         const components = result.address_components;
         
@@ -436,7 +415,6 @@
         let country = 'Australia';
         
         // Log all components for debugging
-        console.log('📍 Address components:', components);
         
         // First pass: collect all components
         let unitNumber = '';
@@ -444,7 +422,6 @@
         let streetName = '';
         
         components.forEach(function(component) {
-            console.log('🔍 Processing component:', component.long_name, 'Types:', component.types);
             
             // Unit/Apartment number (subpremise) - will be combined with address
             if (component.types.includes('subpremise')) {
@@ -484,12 +461,10 @@
             // Postcode - check both postal_code and postal_code_prefix
             if (component.types.includes('postal_code')) {
                 postcode = component.long_name;
-                console.log('📮 Postcode found in address_components:', postcode);
             }
             // Some addresses might have postal_code_prefix instead
             if (!postcode && component.types.includes('postal_code_prefix')) {
                 postcode = component.long_name;
-                console.log('📮 Postcode prefix found:', postcode);
             }
             
             // Country
@@ -502,7 +477,6 @@
         // If we have a unit number, format as "Unit/StreetNumber StreetName"
         if (unitNumber && streetNumber && streetName) {
             addressLine1 = unitNumber + '/' + streetNumber + ' ' + streetName;
-            console.log('🏠 Address with unit: ' + addressLine1);
         } else if (streetNumber && streetName) {
             // No unit, just street number and name
             addressLine1 = streetNumber + ' ' + streetName;
@@ -538,7 +512,6 @@
         
         // Enhanced fallback postcode extraction from formatted_address
         if (!postcode && result.formatted_address) {
-            console.log('🔍 Attempting to extract postcode from formatted_address:', result.formatted_address);
             
             // Try multiple patterns for Australian postcodes
             // Pattern 1: 4-digit number (standard Australian postcode)
@@ -549,11 +522,9 @@
                 postcodeMatch = result.formatted_address.match(/\b(NSW|VIC|QLD|SA|WA|TAS|NT|ACT)\s+(\d{4})\b/i);
                 if (postcodeMatch && postcodeMatch[2]) {
                     postcode = postcodeMatch[2];
-                    console.log('📮 Postcode extracted after state:', postcode);
                 }
             } else {
                 postcode = postcodeMatch[1];
-                console.log('📮 Postcode extracted from formatted address:', postcode);
             }
             
             // Pattern 3: Look for postcode at the end before country
@@ -564,7 +535,6 @@
                     const match = part.match(/\b(\d{4})\b/);
                     if (match && !part.match(/^(Australia|AU)$/i)) {
                         postcode = match[1];
-                        console.log('📮 Postcode extracted from end part:', postcode);
                         break;
                     }
                 }
@@ -576,7 +546,6 @@
             const postcodeMatch = result.name.match(/\b(\d{4})\b/);
             if (postcodeMatch) {
                 postcode = postcodeMatch[1];
-                console.log('📮 Postcode extracted from place name:', postcode);
             }
         }
         
@@ -587,15 +556,6 @@
             console.warn('Formatted address:', result.formatted_address);
         }
         
-        console.log('🏠 Final address mapping:', {
-            addressLine1: addressLine1.trim(),
-            addressLine2: addressLine2,
-            suburb: suburb,
-            state: state,
-            postcode: postcode,
-            country: country,
-            hasUnit: !!unitNumber
-        });
         
         // Populate form fields
         $wrapper.find('input[name="address_line_1[]"]').val(addressLine1.trim());
@@ -607,13 +567,11 @@
         const $postcodeField = $wrapper.find('input[name="zip[]"]');
         if ($postcodeField.length > 0) {
             $postcodeField.val(postcode);
-            console.log('📮 Postcode set to field:', postcode, 'Field found:', $postcodeField.length);
         } else {
             // Try alternative field names
             const $altPostcode = $wrapper.find('input[name="postcode[]"]');
             if ($altPostcode.length > 0) {
                 $altPostcode.val(postcode);
-                console.log('📮 Postcode set to alternative field:', postcode);
             } else {
                 console.warn('⚠️ Postcode field not found! Available inputs:', $wrapper.find('input').map(function() { return $(this).attr('name'); }).get());
             }
@@ -625,11 +583,9 @@
         if (postcode && window.isValidAustralianPostcode(postcode)) {
             const regionalInfo = window.getRegionalCodeInfo(postcode);
             $wrapper.find('input[name="regional_code[]"]').val(regionalInfo);
-            console.log('🔢 Regional code auto-filled:', regionalInfo, 'from postcode:', postcode);
         } else {
             // Clear regional code if no valid postcode
             $wrapper.find('input[name="regional_code[]"]').val('');
-            console.log('⚠️ No valid postcode - regional code cleared');
         }
         
         // Show appropriate message based on completeness

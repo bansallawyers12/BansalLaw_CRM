@@ -65,7 +65,11 @@ class Controller extends BaseController
 		{
 			// First decode base64, then decode uuencode
 			$base64Decoded = base64_decode($string);
-			$uuDecoded = convert_uudecode($base64Decoded);
+			try {
+				$uuDecoded = @convert_uudecode($base64Decoded);
+			} catch (\ValueError $e) {
+				$uuDecoded = false;
+			}
 			return $uuDecoded;
 		}
 		else

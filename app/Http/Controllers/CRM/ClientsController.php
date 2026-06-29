@@ -6035,7 +6035,11 @@ class ClientsController extends Controller
         }
         
         if (base64_encode(base64_decode($string, true)) === $string) {
-            return convert_uudecode(base64_decode($string));
+            try {
+                return @convert_uudecode(base64_decode($string));
+            } catch (\ValueError $e) {
+                return false;
+            }
         }
         
         return false;

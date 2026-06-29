@@ -823,37 +823,24 @@
             clearStuckGlobalLoaderForLeadCreate();
             setTimeout(clearStuckGlobalLoaderForLeadCreate, 300);
 
-            console.log('DOM Content Loaded');
             
             const floatingSaveBtn = document.getElementById('floatingSaveBtn');
             const hiddenSubmitBtn = document.getElementById('hiddenSubmitBtn');
             const form = document.getElementById('createLeadForm');
             const floatingContainer = document.querySelector('.floating-save-container');
             
-            console.log('Elements found:', {
-                floatingSaveBtn: !!floatingSaveBtn,
-                hiddenSubmitBtn: !!hiddenSubmitBtn,
-                form: !!form,
-                floatingContainer: !!floatingContainer
-            });
             
             // Add form submit event listener for debugging
             form.addEventListener('submit', function(e) {
-                console.log('Form submit event triggered');
-                console.log('Form action:', form.action);
-                console.log('Form method:', form.method);
                 
                 // Check CSRF token
                 const csrfToken = document.querySelector('input[name="_token"]');
-                console.log('CSRF token found:', !!csrfToken);
                 if (csrfToken) {
-                    console.log('CSRF token value:', csrfToken.value);
                 }
             });
             
             // Add invalid event listener to show validation errors clearly
             form.addEventListener('invalid', function(e) {
-                console.log('Form validation failed on field:', e.target.name);
                 
                 // Scroll to the first invalid field
                 e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -865,20 +852,13 @@
             // Handle floating save button click
             floatingSaveBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                console.log('Floating save button clicked');
-                console.log('Form element:', form);
-                console.log('Form action:', form.action);
-                console.log('Form method:', form.method);
                 
                 // Check form data
                 const formData = new FormData(form);
-                console.log('Form data entries:');
                 for (let [key, value] of formData.entries()) {
-                    console.log(key + ': ' + value);
                 }
                 
                 // Use requestSubmit() to trigger HTML5 validation and show error messages
-                console.log('Submitting form with validation...');
                 try {
                     // Try modern requestSubmit (triggers validation)
                     if (form.requestSubmit) {
@@ -932,7 +912,6 @@
             document.addEventListener('keydown', function(e) {
                 if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                     e.preventDefault();
-                    console.log('Keyboard shortcut (Ctrl/Cmd+S) triggered');
                     // Trigger the floating save button click (which now properly validates)
                     floatingSaveBtn.click();
                 }
@@ -1400,7 +1379,6 @@
                         }
                     });
                     
-                    console.log('✅ DOB Flatpickr initialized successfully');
                 }
             } else {
                 console.warn('⚠️ Flatpickr not available');

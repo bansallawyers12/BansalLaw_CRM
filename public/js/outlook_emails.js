@@ -38,16 +38,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let composeQuoteHtml = '';
     let composeSignatureHtml = '';
 
-    // Sidebar Toggle
-    const toggleSidebarBtn = document.getElementById('toggleSidebar');
-    const sidebar = document.querySelector('.outlook-sidebar');
-
-    if (toggleSidebarBtn) {
-        toggleSidebarBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-        });
-    }
-
     // Initialize Data
     const baseUrl = outlookContainer ? outlookContainer.getAttribute('data-base-url') : '';
     const clientId = outlookContainer ? outlookContainer.getAttribute('data-client-id') : '';
@@ -66,9 +56,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event Listeners
     folderItems.forEach(item => {
         item.addEventListener('click', (e) => {
-            folderItems.forEach(f => f.classList.remove('active'));
+            folderItems.forEach(f => {
+                f.classList.remove('active');
+                f.setAttribute('aria-selected', 'false');
+            });
             const target = e.currentTarget;
             target.classList.add('active');
+            target.setAttribute('aria-selected', 'true');
             currentFolder = target.dataset.folder;
             currentPage = 1;
             loadEmails();
@@ -1086,7 +1080,7 @@ document.addEventListener('DOMContentLoaded', function() {
             );
 
             if (uploadStatus) {
-                uploadStatus.style.display = 'block';
+                uploadStatus.hidden = false;
                 uploadStatus.style.color = 'var(--outlook-blue)';
                 uploadStatus.textContent = `Uploading ${msgFiles.length} file(s)...`;
             }
@@ -1198,7 +1192,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (uploadStatus) {
-                setTimeout(function() { uploadStatus.style.display = 'none'; }, 5000);
+                setTimeout(function() { uploadStatus.hidden = true; }, 5000);
             }
         };
 
@@ -1558,7 +1552,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const sender = email.from_mail || 'Unknown';
             const subject = email.subject || '(No Subject)';
-            const preview = (email.text_preview || '').substring(0, 50);
+            const preview = normalizePreviewText(email.text_preview || '', 80);
             
             const hasAttachment = (email.attachments && email.attachments.length > 0) || email.msg_file_url || email.pdf_file_url;
             const attachmentIcon = hasAttachment ? '<i class="fas fa-paperclip email-list-clip" title="Has attachments"></i>' : '';
@@ -1567,8 +1561,10 @@ document.addEventListener('DOMContentLoaded', function() {
             let dateStr = formatEmailDate(getEmailDate(email));
 
             el.innerHTML = `
-                <div class="email-date">${dateStr}</div>
-                <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}</div>
+                <div class="email-item-header">
+                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}</div>
+                    <div class="email-date">${dateStr}</div>
+                </div>
                 <div class="email-subject">${escapeHtml(subject)}</div>
                 <div class="email-preview">${escapeHtml(preview)}</div>
                 ${attachmentSummary}
@@ -1587,7 +1583,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function showEmail(email) {
         emptyState.style.display = 'none';
-        readingPane.style.display = 'flex';
+        readingPane.classList.add('is-visible');
 
         document.getElementById('readSubject').textContent = email.subject || '(No Subject)';
         document.getElementById('readSender').textContent = email.from_mail || 'Unknown Sender';
@@ -1646,8 +1642,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (pdfToPreview) {
             iframe.onload = null;
             iframe.removeAttribute('srcdoc');
+            iframe.style.height = '100%';
+            iframe.style.minHeight = '100%';
             iframe.src = pdfToPreview;
-            iframe.style.height = 'min(70vh, 800px)';
         } else {
             iframe.removeAttribute('src');
             iframe.removeAttribute('srcdoc');
@@ -1661,35 +1658,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderHtmlIframe(iframe, html) {
         if (!iframe) return;
+        iframe.style.height = '100%';
+        iframe.style.minHeight = '100%';
         const doc = iframe.contentDocument || iframe.contentWindow.document;
         const bodyHtml = html || '';
         doc.open();
         doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><base target="_blank"><style>' +
-            'html,body{margin:0;padding:0;}' +
-            'body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;line-height:1.5;color:#242424;word-wrap:break-word;overflow-wrap:break-word;padding:8px 12px;}' +
+            'html,body{height:100%;margin:0;padding:0;box-sizing:border-box;}' +
+            'body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;line-height:1.6;color:#242424;word-wrap:break-word;overflow-wrap:break-word;padding:16px 20px;overflow-y:auto;}' +
             'img{max-width:100%;height:auto;}' +
             'table{max-width:100%;}' +
             'a{color:#0078d4;}' +
-            'blockquote{margin:0;}' +
+            'blockquote{margin:0;padding-left:12px;border-left:3px solid #edebe9;color:#605e5c;}' +
+            'p{margin:0 0 0.75em;}' +
             '</style></head><body>' + bodyHtml + '</body></html>');
         doc.close();
-        const resize = () => {
-            try {
-                const height = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight);
-                iframe.style.height = Math.max(height + 8, 48) + 'px';
-            } catch (e) {
-                iframe.style.height = '120px';
-            }
-        };
-        doc.querySelectorAll('img').forEach(function(img) {
-            if (!img.complete) {
-                img.addEventListener('load', resize);
-                img.addEventListener('error', resize);
-            }
-        });
-        iframe.onload = resize;
-        setTimeout(resize, 50);
-        setTimeout(resize, 250);
     }
 
     function resetComposeEditor() {
@@ -1892,6 +1875,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         focusComposeReply();
+    }
+
+    function normalizePreviewText(text, maxLen) {
+        if (!text) return '';
+        const textarea = document.createElement('textarea');
+        textarea.innerHTML = String(text).replace(/<[^>]+>/g, ' ');
+        const decoded = textarea.value.replace(/\s+/g, ' ').trim();
+        return decoded.substring(0, maxLen || 80);
     }
 
     function escapeHtml(unsafe) {

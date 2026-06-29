@@ -292,7 +292,6 @@
         if (!$activeTab.length) {
             // No active tab, make All tab active
             $('.subtab8-button.pill-tab[data-subtab8="All"]').addClass('active');
-            console.log('[SidebarTabs] Activated All tab (no active tab found)');
         } else {
             // Check if All tab is already active
             const activeTabType = $activeTab.data('subtab8');
@@ -300,7 +299,6 @@
                 // Remove active from current tab and make All tab active
                 $('.subtab8-button.pill-tab').removeClass('active');
                 $('.subtab8-button.pill-tab[data-subtab8="All"]').addClass('active');
-                console.log('[SidebarTabs] Switched to All tab from:', activeTabType);
             }
         }
     }

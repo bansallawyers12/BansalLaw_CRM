@@ -179,17 +179,6 @@ window.__CRM_EMAIL_MAX_FILE_BYTES__ = @json((int) config('crm.email_upload_max_k
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Emails interface loaded'); 
-    
-    // Debug: Check if elements exist
-    const fileInput = document.getElementById('emailFileInput');
-    const uploadArea = document.getElementById('upload-area');
-    const fileStatus = document.getElementById('fileStatus');
-    
-    console.log('File input found:', !!fileInput);
-    console.log('Upload area found:', !!uploadArea);
-    console.log('File status found:', !!fileStatus);
-    
     // If email was just sent, switch to "Sent" tab (flag set before page reload)
     const switchToSent = localStorage.getItem('emailTabSwitchToSent');
     if (switchToSent === '1') {
@@ -200,36 +189,21 @@ document.addEventListener('DOMContentLoaded', function() {
             mailTypeFilter.value = 'sent';
         }
     }
-    
-    // Debug: Check if modules are available
-    console.log('initializeUpload available:', typeof window.initializeUpload);
-    console.log('initializeSearch available:', typeof window.initializeSearch);
-    console.log('loadEmails available:', typeof window.loadEmails);
-    
+
     // Initialize modules
     if (typeof window.initializeUpload === 'function') {
-        console.log('Initializing upload module...');
         window.initializeUpload();
-    } else {
-        console.error('Upload module not available!');
     }
-    
+
     if (typeof window.initializeSearch === 'function') {
-        console.log('Initializing search module...');
         window.initializeSearch();
-    } else {
-        console.error('Search module not available!');
     }
-    
+
     // Load emails on page load (will use the correct tab based on filter)
     if (typeof window.loadEmails === 'function') {
-        console.log('Loading initial emails...');
-        // Small delay to ensure filter is set correctly
         setTimeout(function() {
             window.loadEmails();
         }, switchToSent === '1' ? 100 : 0);
-    } else {
-        console.error('Load emails function not available!');
     }
 });
 </script> 

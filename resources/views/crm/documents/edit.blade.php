@@ -347,10 +347,7 @@
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM Content Loaded');
             const img = document.getElementById('preview-image');
-            console.log('Preview image element:', img);
-            console.log('Image src:', img ? img.src : 'Image not found');
             
             loadSignatureFields();
             updatePreview();
@@ -368,7 +365,6 @@
             // Add image onload for dynamic preview
             if (img) {
                 img.onload = function() {
-                    console.log('Image loaded successfully');
                     updatePreview();
                 };
                 img.onerror = function() {
@@ -377,7 +373,6 @@
                 
                 // If image is already loaded (cached), trigger update
                 if (img.complete) {
-                    console.log('Image already loaded (cached)');
                     updatePreview();
                 }
             } else {

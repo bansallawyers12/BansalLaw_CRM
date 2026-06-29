@@ -524,14 +524,12 @@
 
     <!-- Professional SignaturePad Implementation -->
     <script>
-        console.log('=== SIGNATURE SCRIPT LOADING ===');
         
         // Track which images have been processed to avoid duplicates
         const processedImages = new Set();
         let loadedPagesCount = 0;
         const totalPages = {{ $pdfPages ?? 1 }};
         
-        console.log('Total pages:', totalPages);
         
         function updateLoadingProgress() {
             const loadingProgress = document.getElementById('loading-progress');
@@ -576,11 +574,6 @@
             }
 
             // Consistency check log
-            console.log(`Page ${page} Field Positions:`, {
-                natural: {w: naturalWidth, h: naturalHeight},
-                display: {w: displayWidth, h: displayHeight},
-                aspect_ratio_match: (displayWidth / displayHeight).toFixed(4) === (naturalWidth / naturalHeight).toFixed(4)
-            });
 
             document.querySelectorAll('.signature-field[data-page="' + page + '"]').forEach(field => {
                 const xPercent = parseFloat(field.getAttribute('data-x-percent')) || 0;
@@ -598,12 +591,9 @@
         
         // Image loading handlers - Make them global for inline handlers
         // Define these functions immediately to avoid timing issues with inline onload handlers
-        console.log('Defining handleImageLoadSuccess...');
         window.handleImageLoadSuccess = function(pageNum) {
-            console.log('handleImageLoadSuccess called for page:', pageNum);
             // Prevent duplicate processing
             if (processedImages.has(pageNum)) {
-                console.log('Page ' + pageNum + ' already processed, skipping...');
                 return;
             }
             processedImages.add(pageNum);
@@ -620,14 +610,12 @@
             if (errorPlaceholder) errorPlaceholder.classList.add('hidden');
             if (img) {
                 img.style.display = 'block';
-                console.log('Successfully loaded PDF page image:', pageNum, 'Dimensions:', img.naturalWidth + 'x' + img.naturalHeight);
                 
                 // Position signature fields after image loads
                 setTimeout(() => positionSignatureFields(pageNum), 100);
             }
         };
 
-        console.log('Defining handleImageLoadError...');
         window.handleImageLoadError = function(imgElement, pageNum) {
             console.error('handleImageLoadError called for page:', pageNum);
             const loadingPlaceholder = document.getElementById('loading-placeholder-' + pageNum);
@@ -640,8 +628,6 @@
             console.error('Image element:', imgElement);
         };
         
-        console.log('Functions defined. handleImageLoadSuccess:', typeof window.handleImageLoadSuccess);
-        console.log('Functions defined. handleImageLoadError:', typeof window.handleImageLoadError);
 
         window.retryLoadImage = function(pageNum) {
             const img = document.getElementById('pdf-image-' + pageNum);
@@ -771,29 +757,23 @@
         // remove legacy initializer
         
         document.addEventListener('DOMContentLoaded', function () {
-            console.log('Document signing page loaded');
             
             // Attach event listeners to PDF page images
             const pdfImages = document.querySelectorAll('.pdf-page-image');
-            console.log('Found', pdfImages.length, 'PDF images to attach listeners to');
             
             pdfImages.forEach(function(img) {
                 const pageNum = parseInt(img.getAttribute('data-page'));
-                console.log('Attaching listeners to page', pageNum);
                 
                 img.addEventListener('load', function() {
-                    console.log('Image load event fired for page', pageNum);
                     window.handleImageLoadSuccess(pageNum);
                 });
                 
                 img.addEventListener('error', function() {
-                    console.log('Image error event fired for page', pageNum);
                     window.handleImageLoadError(img, pageNum);
                 });
                 
                 // Check if image is already loaded (cached)
                 if (img.complete && img.naturalWidth > 0) {
-                    console.log('Page', pageNum, 'already loaded from cache');
                     loadedPagesCount++;
                     updateLoadingProgress();
                     window.handleImageLoadSuccess(pageNum);
@@ -807,7 +787,6 @@
             for (let i = 1; i <= totalPages; i++) {
                 const img = document.getElementById('pdf-image-' + i);
                 if (img) {
-                    console.log('Page ' + i + ' URL:', img.src);
                 }
             }
             
@@ -1095,14 +1074,6 @@
             }
             
             // Log all relevant info for debugging
-            console.log('[Signature Debug] Canvas size:', {width: signaturePad ? signaturePad.canvas.width : 'N/A', height: signaturePad ? signaturePad.canvas.height : 'N/A'});
-            console.log('[Signature Debug] Field position (px):', {left: fieldRect.left, top: fieldRect.top, width: fieldElement.offsetWidth, height: fieldElement.offsetHeight});
-            console.log('[Signature Debug] PDF image natural size:', {width: naturalWidth, height: naturalHeight});
-            console.log('[Signature Debug] PDF image display size:', {width: displayWidth, height: displayHeight});
-            console.log('[Signature Debug] Scale factors:', {scaleX, scaleY});
-            console.log('[Signature Debug] Relative position (natural px):', {x: relativeX, y: relativeY, width: fieldWidthNatural, height: fieldHeightNatural});
-            console.log('[Signature Debug] Percentages:', {xPercent, yPercent, wPercent, hPercent});
-            console.log('[Signature Debug] Page:', currentActivePage, 'Field ID:', currentActiveField);
             // Store signature data and position as percentages
             savedSignatures[currentActiveField] = {
                 data: signatureData,
@@ -1263,7 +1234,6 @@
                     }
                 }
                 
-                console.log('✅ Populated fields for ' + populatedCount + ' pages');
                 
                 // Verify we populated at least one page
                 if (populatedCount === 0) {
@@ -1408,11 +1378,9 @@
         }
 
         function finishSigning() {
-            console.log('=== FINISH SIGNING CALLED ===');
             
             // ✅ FIX #1: PREVENT DUPLICATE CLICKS
             if (window.signingInProgress) {
-                console.log('Already processing - ignoring duplicate call');
                 return;
             }
             
@@ -1420,13 +1388,11 @@
             window.signingInProgress = true;
             
             if (!validateAllSignatures()) {
-                console.log('Validation failed in finishSigning');
                 // Reset flag if validation fails
                 window.signingInProgress = false;
                 return;
             }
             
-            console.log('Validation passed - proceeding with submission');
             
             // Show loading state for BOTH submit buttons (synchronized)
             const headerSubmitBtn = document.getElementById('submit-signatures-btn');
@@ -1441,7 +1407,6 @@
                 formSubmitBtn.disabled = true;
             }
             
-            console.log('Loading state applied to both buttons');
             
             // Add loading overlay
             const loadingOverlay = document.createElement('div');
@@ -1489,11 +1454,8 @@
                 return;
             }
             
-            console.log('Hidden fields populated successfully');
             
             const form = document.getElementById('signature-form');
-            console.log('Form found:', !!form);
-            console.log('Form action:', form ? form.action : 'N/A');
             
             if (form) {
                 // ✅ FIX #2: ADD TIMEOUT MECHANISM FOR SLOW SUBMISSIONS
@@ -1539,7 +1501,6 @@
                 // Store BOTH timeout IDs for cleanup on successful redirect
                 window.submissionTimeouts.push(warningTimeout, hardTimeout);
                 
-                console.log('Submitting form programmatically...');
                 form.submit();
             } else {
                 // Handle missing form
@@ -1561,8 +1522,6 @@
         // Form submit event - only for safety/edge cases
         // Both buttons call finishSigning() which handles validation and submission
         document.querySelector('form').addEventListener('submit', function (e) {
-            console.log('=== FORM SUBMIT EVENT (Safety Check) ===');
-            console.log('Form action:', this.action);
             
             // This should only fire if form is submitted programmatically by finishSigning()
             // If signingInProgress is not set, something went wrong
@@ -1572,7 +1531,6 @@
                 return false;
             }
             
-            console.log('Form submission allowed - signingInProgress is true');
         });
 
         // ✅ FIX #2: CLEANUP TIMEOUTS ON PAGE UNLOAD (successful redirect)

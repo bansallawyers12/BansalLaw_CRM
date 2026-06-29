@@ -820,11 +820,9 @@ const clients = @json($clients ?? []);
 const leads = @json($leads ?? []);
 let currentDocId = null;
 
-console.log('✅ Dashboard script loaded. Clients:', clients.length, 'Leads:', leads.length);
 
 // Define openAttachModal globally - available immediately
 function openAttachModal(docId, docTitle) {
-    console.log('📝 openAttachModal called:', docId, docTitle);
     
     try {
         currentDocId = docId;
@@ -853,11 +851,9 @@ function openAttachModal(docId, docTitle) {
         // Show modal
         if (typeof $ !== 'undefined' && $.fn.modal) {
             $('#attachModal').modal('show');
-            console.log('✅ Modal opened (jQuery)');
         } else if (typeof bootstrap !== 'undefined') {
             const modal = new bootstrap.Modal(document.getElementById('attachModal'));
             modal.show();
-            console.log('✅ Modal opened (Bootstrap 5)');
         } else {
             console.error('❌ No modal library found');
             alert('Error: Modal library not found. Please refresh the page.');
@@ -870,7 +866,6 @@ function openAttachModal(docId, docTitle) {
 
 // Wait for DOM to be fully loaded for event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ DOM ready, setting up event listeners');
     
     // Set up entity type change listener
     const attachEntityTypeEl = document.getElementById('attachEntityType');
@@ -904,7 +899,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     option.textContent = `${item.first_name} ${item.last_name} (${item.email})`;
                     select.appendChild(option);
                 });
-                console.log(`✅ Loaded ${data.length} ${type}s into dropdown`);
             } else {
                 const option = document.createElement('option');
                 option.value = '';
@@ -913,7 +907,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.warn(`⚠️ No ${type}s available`);
             }
         });
-        console.log('✅ Entity type change listener attached');
     } else {
         console.error('❌ attachEntityType element not found');
     }
@@ -980,7 +973,6 @@ function clearSelection() {
 }
 
 // Verify function is defined
-console.log('✅ openAttachModal defined:', typeof openAttachModal === 'function');
 </script>
 @endsection
 

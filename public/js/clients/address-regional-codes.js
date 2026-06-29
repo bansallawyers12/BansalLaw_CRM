@@ -222,7 +222,6 @@ window.isValidAustralianPostcode = function(postcode) {
     }
     
     function init() {
-        console.log('🚀 Initializing address regional code functionality');
         
         // Auto-calculate regional code based on postcode input
         document.addEventListener('input', function(e) {
@@ -231,24 +230,17 @@ window.isValidAustralianPostcode = function(postcode) {
             }
         });
         
-        console.log('✅ Regional code functionality initialized');
-        console.log('🔧 getRegionalCodeInfo available:', typeof window.getRegionalCodeInfo);
-        console.log('🔧 isValidAustralianPostcode available:', typeof window.isValidAustralianPostcode);
         
         // Test function for debugging - call testRegionalCode() in console
         window.testRegionalCode = function(postcode) {
-            console.log('🧪 Testing regional code for:', postcode);
             if (window.isValidAustralianPostcode(postcode)) {
                 const result = window.getRegionalCodeInfo(postcode);
-                console.log('✅ Result:', result);
                 return result;
             } else {
-                console.log('❌ Invalid postcode format');
                 return null;
             }
         };
         
-        console.log('🧪 Test function available: testRegionalCode(postcode)');
     }
     
     /**
@@ -267,7 +259,6 @@ window.isValidAustralianPostcode = function(postcode) {
         if (postcode && window.isValidAustralianPostcode(postcode)) {
             const regionalInfo = window.getRegionalCodeInfo(postcode);
             regionalCodeInput.value = regionalInfo;
-            console.log('🔢 Regional code calculated:', regionalInfo, 'from postcode:', postcode);
         } else {
             regionalCodeInput.value = '';
         }

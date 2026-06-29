@@ -358,8 +358,6 @@
     }
 
     function renderUploadBatchResult(data, uploadProgress, fileStatus, fileCountBadge) {
-        console.log('Upload response:', data);
-
         if (data.status || data.success) {
             const failedCount = data.failed || 0;
             const uploadedCount = data.uploaded || 0;
@@ -787,8 +785,6 @@
      * Initialize upload functionality with drag & drop
      */
     window.initializeUpload = function() {
-        console.log('Initializing upload module...');
-        
         const fileInput = document.getElementById('emailFileInput');
         const uploadArea = document.getElementById('upload-area');
         const fileStatus = document.getElementById('fileStatus');
@@ -859,11 +855,8 @@
 
         function handleFiles(files) {
             if (isUploading) {
-                console.log('Upload already in progress');
                 return;
             }
-
-            console.log('Files selected:', files.length);
 
             // Filter to only .msg files
             const msgFiles = Array.from(files).filter(file => 
@@ -936,7 +929,6 @@
             }
         }
 
-        console.log('Upload module initialized with drag & drop');
     };
 
     /**
@@ -974,7 +966,6 @@
             }
 
             const uploadPath = currentMailType === 'sent' ? '/upload-sent-fetch-mail' : '/upload-fetch-mail';
-            console.log('Uploading to:', crmUrl(uploadPath), '(' + files.length + ' file(s), sequential)');
 
             let totalUploaded = 0;
             let totalFailed = 0;
@@ -1079,8 +1070,6 @@
      * Initialize search functionality
      */
     window.initializeSearch = function() {
-        console.log('Initializing search module...');
-
         const searchInput = document.getElementById('emailSearchInput');
         const labelFilter = document.getElementById('labelFilter');
 
@@ -1122,8 +1111,6 @@
 
         // Fetch unique senders when module initializes
         fetchSenders();
-
-        console.log('Search module initialized');
     };
 
     // =========================================================================
@@ -1145,7 +1132,6 @@
         if (!isLead && !container.dataset.matterId) {
             return;
         }
-        console.log('Loading emails...' + (isLead ? ' (lead context)' : ''));
         loadEmailsFromServer();
     };
 
@@ -1170,7 +1156,6 @@
         }
 
         if (isLoading) {
-            console.log('Already loading emails');
             return;
         }
 
@@ -1188,8 +1173,6 @@
                 ? { client_id: clientId, search: currentSearch, status: '', label_id: currentLabelId, sender_filter: currentSenderFilter, page: currentPage }
                 : { client_id: clientId, client_matter_id: matterId, search: currentSearch, status: '', label_id: currentLabelId, sender_filter: currentSenderFilter, page: currentPage };
 
-            console.log('Fetching emails from:', endpoint, requestBody);
-
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
@@ -1205,7 +1188,6 @@
             }
 
             const raw = await response.json();
-            console.log('Emails received:', raw);
 
             if (raw && raw.current_page !== undefined) {
                 currentPage = raw.current_page;
@@ -1230,13 +1212,6 @@
             }
 
             const emails = normalizeEmailListResponse(raw);
-
-            // Debug: Check attachments in received emails
-            for (const [index, email] of emails.entries()) {
-                if (email.attachments && email.attachments.length > 0) {
-                    console.log(`Email ${index} (ID: ${email.id}) has ${email.attachments.length} attachments`);
-                }
-            }
 
             // Apply sorting
             const sortedEmails = sortEmails(emails);
@@ -2971,8 +2946,6 @@
         }
     `;
     document.head.appendChild(style);
-
-    console.log('Emails module loaded');
 
 })();
 

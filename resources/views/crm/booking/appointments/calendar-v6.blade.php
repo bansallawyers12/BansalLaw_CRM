@@ -322,7 +322,6 @@ function waitForFullCalendar(callback, maxAttempts = 100) {
             typeof FullCalendarPlugins !== 'undefined';
     }
     if (fullCalendarReady()) {
-        console.log('✅ FullCalendar v6 detected, initializing calendar...');
         callback();
         return;
     }
@@ -331,7 +330,6 @@ function waitForFullCalendar(callback, maxAttempts = 100) {
         attempts++;
         if (fullCalendarReady()) {
             clearInterval(checkInterval);
-            console.log('✅ FullCalendar v6 detected, initializing calendar...');
             callback();
         } else if (attempts >= maxAttempts) {
             clearInterval(checkInterval);
@@ -525,7 +523,6 @@ const COURT_HEARING_API_BASE = @json(url('/clients/court-hearings'));
 const CLIENT_MATTERS_API_BASE = @json(url('/get-client-matters'));
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Waiting for FullCalendar v6 to load...');
     void refreshBookingCalendarStats();
 
     const calendarEl = document.getElementById('calendar');
@@ -589,14 +586,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Event source - fetch from API
         events: async function(fetchInfo, successCallback, failureCallback) {
-            console.log('Loading events for v6...', {
-                start: fetchInfo.startStr,
-                end: fetchInfo.endStr
-            });
             
             try {
                 const rows = await fetchBookingCalendarEvents(fetchInfo);
-                console.log('Calendar rows:', rows.length);
 
                 // Transform appointments to FullCalendar v6 event format
                 const events = rows.map(apt => {
@@ -662,7 +654,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     };
                 });
                 
-                console.log('Processed events:', events.length);
                 successCallback(events);
                 void refreshBookingCalendarStats();
                 
@@ -684,7 +675,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Event click handler
         eventClick: function(info) {
-            console.log('Event clicked:', info.event);
             
             const event = info.event;
             const props = event.extendedProps;
@@ -919,17 +909,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Loading indicator — one automatic refetch if the first completed load has no events (flaky API / cold auth)
         loading: function(isLoading) {
             if (isLoading) {
-                console.log('Loading calendar events...');
                 return;
             }
-            console.log('Calendar events loaded');
             if (!bookingCalFirstLoadDone && !bookingCalDidEmptyRefetch) {
                 bookingCalFirstLoadDone = true;
                 setTimeout(function() {
                     try {
                         if (calendar.getEvents().length === 0) {
                             bookingCalDidEmptyRefetch = true;
-                            console.log('Booking calendar: refetching events (first load returned none)');
                             calendar.refetchEvents();
                         }
                     } catch (e) {
@@ -970,7 +957,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
         // Render the calendar
         calendar.render();
-        console.log('FullCalendar v6 initialized successfully');
         
         // Helper functions
     /* docs/theme.md — hex fallbacks if :root vars unavailable to FullCalendar internals */

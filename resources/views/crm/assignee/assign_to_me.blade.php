@@ -611,7 +611,6 @@
 
 					data: {note_type:'follow_up',description:$('#assignnote').val(),client_id:$('#assign_client_id').val(),followup_datetime:$('#popoverdatetime').val(),assignee_name:$('#rem_cat :selected').text(),rem_cat:$('#rem_cat option:selected').val(),task_group:$('#task_group option:selected').val()},
 					success: function(response){
-						console.log(response);
 						$('.popuploader').hide();
 						var obj = $.parseJSON(response);
 						if(obj.success){
@@ -689,7 +688,6 @@
 				$('.popuploader').hide();
 				var obj = JSON.parse(responses);
 				if(obj.status){
-				    console.log(obj.status);
 				    $('.updatestatusview'+appliid).html(obj.viewstatus);
 				}
 				// REMOVED: Deprecated endpoint /get-assigne-detail
@@ -717,7 +715,6 @@
 					data:{id:appliid},
 					success: function(responses){
 						$('.popuploader').hide();
-						console.log(responses);
 						$('.taskview').html(responses);
 
 					}

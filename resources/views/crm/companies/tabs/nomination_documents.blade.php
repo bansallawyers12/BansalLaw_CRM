@@ -840,12 +840,8 @@
                 // ============================================================================
                 // VISA DOCUMENTS - DRAG AND DROP INITIALIZATION
                 // ============================================================================
-                console.log('🚀 Nomination Documents Tab Script Loading...');
                 
                 function initNominationDocDragDrop() {
-                    console.log('🔄 Initializing Nomination Doc Drag & Drop...');
-                    console.log('📊 Drop zones found:', $('.nomination-doc-drag-zone').length);
-                    console.log('📊 Visible drop zones:', $('.nomination-doc-drag-zone:visible').length);
                     
                     // Check each drop zone
                     $('.nomination-doc-drag-zone').each(function(index) {
@@ -853,12 +849,6 @@
                         var fileid = $zone.data('fileid');
                         var formid = $zone.data('formid');
                         var isVisible = $zone.is(':visible');
-                        console.log('🔍 Drop zone #' + index + ':', {
-                            fileid: fileid,
-                            formid: formid,
-                            visible: isVisible,
-                            hasFileInput: $('#' + formid).find('.migdocupload').length > 0
-                        });
                     });
                     
                     // IMPORTANT: Remove ALL handlers (including those from detail-main.js)
@@ -881,20 +871,16 @@
                         
                         // Click handler
                         $zone.on('click', function(e) {
-                            console.log('🎯 DIRECT CLICK HANDLER - nomination-doc-drag-zone clicked');
                             e.preventDefault();
                             e.stopPropagation();
                             e.stopImmediatePropagation();
                             
                             var fileid = $(this).data('fileid');
                             var formid = $(this).data('formid');
-                            console.log('📂 File ID:', fileid, 'Form ID:', formid);
                             
                             var fileInput = $('#' + formid).find('.migdocupload');
-                            console.log('📁 File input found:', fileInput.length > 0);
                             
                             if (fileInput.length > 0) {
-                                console.log('✅ Triggering file input click...');
                                 fileInput[0].click();
                             } else {
                                 console.error('❌ File input not found for fileid:', fileid);
@@ -905,7 +891,6 @@
                         
                         // Dragenter handler
                         $zone.on('dragenter', function(e) {
-                            console.log('🔥 DIRECT DRAGENTER HANDLER (VISA)');
                             e.preventDefault();
                             e.stopPropagation();
                             e.stopImmediatePropagation();
@@ -915,7 +900,6 @@
                         
                         // Dragover handler
                         $zone.on('dragover', function(e) {
-                            console.log('🔥 DIRECT DRAGOVER HANDLER (VISA)');
                             var event = e.originalEvent || e;
                             event.preventDefault();
                             event.stopPropagation();
@@ -930,7 +914,6 @@
                         
                         // Dragleave handler
                         $zone.on('dragleave', function(e) {
-                            console.log('⚠️ DIRECT DRAGLEAVE HANDLER (VISA)');
                             e.preventDefault();
                             e.stopPropagation();
                             
@@ -946,7 +929,6 @@
                         
                         // Drop handler
                         $zone.on('drop', function(e) {
-                            console.log('🎯 DIRECT DROP HANDLER (VISA)');
                             var event = e.originalEvent || e;
                             event.preventDefault();
                             event.stopPropagation();
@@ -956,7 +938,6 @@
                             
                             var files = event.dataTransfer ? event.dataTransfer.files : null;
                             if (files && files.length > 0) {
-                                console.log('📄 File dropped:', files[0].name);
                                 
                                 var fileid = $(this).data('fileid');
                                 var formid = $(this).data('formid');
@@ -967,7 +948,6 @@
                                         var dataTransfer = new DataTransfer();
                                         dataTransfer.items.add(files[0]);
                                         fileInput.files = dataTransfer.files;
-                                        console.log('✅ File assigned using DataTransfer');
                                     } catch(err) {
                                         console.warn('⚠️ Fallback to direct assignment');
                                         try {
@@ -978,7 +958,6 @@
                                     }
                                     
                                     $(fileInput).trigger('change');
-                                    console.log('✅ Change event triggered');
                                 } else {
                                     console.error('❌ File input not found');
                                 }
@@ -1002,18 +981,15 @@
                         e.preventDefault();
                     });
                     
-                    console.log('✅ Visa doc drag-drop handlers attached');
                 }
                 
                 // Initialize on DOM ready
                 $(document).ready(function() {
-                    console.log('✅ Nomination Documents DOM ready');
                     initNominationDocDragDrop();
                 });
                 
                 // Re-initialize when Nomination Documents tab is shown
                 $(document).on('click', '.client-nav-button[data-tab="nominationdocuments"]', function() {
-                    console.log('📂 Nomination Documents tab clicked, reinitializing...');
                     setTimeout(function() {
                         initNominationDocDragDrop();
                     }, 200);
@@ -1021,7 +997,6 @@
                 
                 // Also check if tab is already active (e.g., direct URL navigation)
                 if ($('#nominationdocuments-tab').hasClass('active')) {
-                    console.log('📂 Nomination Documents tab already active on load');
                     setTimeout(function() {
                         initNominationDocDragDrop();
                     }, 500);
@@ -1111,8 +1086,6 @@
                 
                 // Attach DIRECT handlers to visa bulk upload dropzones for highest priority
                 function initVisaBulkUploadDragDrop() {
-                    console.log('🔄 Initializing Visa Bulk Upload Drag & Drop...');
-                    console.log('📊 Visa bulk upload zones found:', $('.bulk-upload-dropzone-nomination').length);
                     
                     $('.bulk-upload-dropzone-nomination').each(function() {
                         var $zone = $(this);
@@ -1134,7 +1107,6 @@
                         
                         // Dragover handler (REQUIRED for drop to work)
                         elem._visaBulkDragOver = function(e) {
-                            console.log('🔥 NATIVE VISA BULK DRAGOVER');
                             e.preventDefault();
                             e.stopPropagation();
                             e.dataTransfer.dropEffect = 'copy';
@@ -1144,7 +1116,6 @@
                         
                         // Dragenter handler
                         elem._visaBulkDragEnter = function(e) {
-                            console.log('🔥 NATIVE VISA BULK DRAGENTER');
                             e.preventDefault();
                             e.stopPropagation();
                             $zone.addClass('drag_over');
@@ -1153,7 +1124,6 @@
                         
                         // Dragleave handler
                         elem._visaBulkDragLeave = function(e) {
-                            console.log('⚠️ NATIVE VISA BULK DRAGLEAVE');
                             e.preventDefault();
                             e.stopPropagation();
                             
@@ -1167,18 +1137,15 @@
                         
                         // Drop handler
                         elem._visaBulkDrop = function(e) {
-                            console.log('🎯 NATIVE VISA BULK DROP');
                             e.preventDefault();
                             e.stopPropagation();
                             $zone.removeClass('drag_over');
                             
                             var files = e.dataTransfer ? e.dataTransfer.files : null;
-                            console.log('📄 Visa files dropped:', files ? files.length : 0);
                             
                             if (files && files.length > 0) {
                                 var categoryId = $zone.data('categoryid');
                                 var matterId = $zone.data('matterid');
-                                console.log('📂 Category ID:', categoryId, 'Matter ID:', matterId);
                                 handleBulkVisaFilesSelected(categoryId, matterId, files);
                             } else {
                                 console.error('❌ No files in visa drop event');
@@ -1186,7 +1153,6 @@
                         };
                         elem.addEventListener('drop', elem._visaBulkDrop);
                         
-                        console.log('✅ Attached native handlers to visa bulk dropzone:', $zone.data('categoryid'));
                     });
                 }
                 
@@ -1204,7 +1170,6 @@
                 
                 // Keep delegated handlers as fallback
                 $(document).on('dragover', '.bulk-upload-dropzone-nomination', function(e) {
-                    console.log('🔥 DELEGATED VISA BULK DRAGOVER');
                     e.preventDefault();
                     e.stopPropagation();
                     $(this).addClass('drag_over');
@@ -1234,7 +1199,6 @@
                 });
                 
                 $(document).on('drop', '.bulk-upload-dropzone-nomination', function(e) {
-                    console.log('🎯 DELEGATED VISA BULK DROP');
                     e.preventDefault();
                     e.stopPropagation();
                     $(this).removeClass('drag_over');
@@ -1243,7 +1207,6 @@
                     const matterId = $(this).data('matterid');
                     const files = e.originalEvent && e.originalEvent.dataTransfer ? e.originalEvent.dataTransfer.files : null;
                     
-                    console.log('📄 Visa files dropped:', files ? files.length : 0);
                     
                     if (files && files.length > 0) {
                         handleBulkVisaFilesSelected(categoryId, matterId, files);

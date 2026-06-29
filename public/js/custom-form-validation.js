@@ -27,10 +27,8 @@ $(document).ready(function() {
 function customValidate(formName, savetype = '')
 	{ //alert(formName);
 		if (formName === 'convert_lead_to_client') {
-			console.log('[ConvertLeadToClient] customValidate called (Save clicked)');
 		}
 		if (formName === 'change_matter_assignee') {
-			console.log('[ChangeMatterAssignee] customValidate called, formName=', formName);
 		}
 		$(".popuploader").show(); //all form submit
 
@@ -52,7 +50,6 @@ function customValidate(formName, savetype = '')
 			$inputsToValidate = $("form[name="+formName+"] :input[data-valid]");
 		}
 		if (formName === 'change_matter_assignee') {
-			console.log('[ChangeMatterAssignee] inputs to validate count=', $inputsToValidate.length, 'selector= #changeMatterAssigneeModal form[name=change_matter_assignee] :input[data-valid]');
 		}
 		$inputsToValidate.each(function(){
 			var dataValidation = $(this).attr('data-valid');
@@ -94,7 +91,6 @@ function customValidate(formName, savetype = '')
 							var rawVal = $(this).val();
 							var trimVal = $.trim(typeof rawVal === 'string' ? rawVal : (Array.isArray(rawVal) ? (rawVal[0] || '') : (rawVal || '')));
 							if (formName === 'change_matter_assignee' && (i + j) < 3) {
-								console.log('[ChangeMatterAssignee] required check: name=', $(this).attr('name'), 'id=', $(this).attr('id'), 'rawVal=', rawVal, 'trimVal=', trimVal, 'empty=', !trimVal);
 							}
 							if( !trimVal )
 								{
@@ -524,7 +520,6 @@ function customValidate(formName, savetype = '')
 										// Use setTimeout to ensure DOM is fully updated before initialization
 										setTimeout(function() {
 											if (typeof initPersonalDocDragDrop === 'function') {
-												console.log('🔄 Re-initializing drag and drop after adding checklist...');
 												initPersonalDocDragDrop();
 											}
 										}, 100);
@@ -635,7 +630,6 @@ function customValidate(formName, savetype = '')
 					}
 
                     else if(formName == 'change_matter_assignee'){
-                        console.log('[ChangeMatterAssignee] Validation passed, entering submit block');
                         var myform = document.getElementById('change_matter_assignee');
                         if (!myform) {
                             console.error('[ChangeMatterAssignee] Form element #change_matter_assignee not found');
@@ -649,13 +643,10 @@ function customValidate(formName, savetype = '')
                             if (selEl) {
                                 var chosen = $('#' + selectIds[s]).val();
                                 selEl.value = (chosen === null || chosen === undefined) ? '' : (Array.isArray(chosen) ? (chosen[0] || '') : chosen);
-                                console.log('[ChangeMatterAssignee] select sync:', selectIds[s], 'value=', selEl.value);
                             }
                         }
                         var fd = new FormData(myform);
                         var postUrl = $("form[name=\"change_matter_assignee\"]").attr('action');
-                        console.log('[ChangeMatterAssignee] Submitting to URL=', postUrl, 'FormData keys: _token, client_id, user_id, selectedMatterLM, legal_practitioner, person_responsible, person_assisting, office_id');
-                        console.log('[ChangeMatterAssignee] selectedMatterLM=', document.getElementById('selectedMatterLM') ? document.getElementById('selectedMatterLM').value : 'N/A');
                         $.ajax({
                             type:'post',
                             url: postUrl,
@@ -664,7 +655,6 @@ function customValidate(formName, savetype = '')
                             data: fd,
                             dataType: 'json',
                             success: function(response){
-                                console.log('[ChangeMatterAssignee] AJAX success, response=', response);
                                 var obj = (typeof response === 'string' ? (function(){ try { return JSON.parse(response); } catch(e){ return {}; } })() : response) || {};
                                 $('.popuploader').hide();
                                 $('#changeMatterAssigneeModal').modal('hide');
@@ -924,8 +914,6 @@ function customValidate(formName, savetype = '')
                                         $(".productitemList_invoice tr").each(function () {
                                             let $row = $(this);
                                             let rowInvoiceNo = $.trim($row.find("td:first").clone().children().remove().end().text());
-                                            console.log('rowInvoiceNo='+rowInvoiceNo);
-                                            console.log('invoiceNo='+invoiceNo);
                                             if (rowInvoiceNo === invoiceNo) {
                                                 // Update Amount
                                                 $row.find("td.currency").html(`$ ${invoiceBalance}`);
@@ -2328,13 +2316,10 @@ function customValidate(formName, savetype = '')
 							contentType: false,
 							data: fd,
 						success: function(response){
-							console.log('Note form success callback reached');
 							$('.popuploader').hide();
 							// Handle both string and already-parsed JSON responses
 							var obj = typeof response === 'string' ? $.parseJSON(response) : response;
-							console.log('Parsed response:', obj);
 							if(obj.status){
-								console.log('Note added successfully, client_id:', client_id);
 								$('#create_note').modal('hide');
 								$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 									$.ajax({
@@ -2358,7 +2343,6 @@ function customValidate(formName, savetype = '')
 					else if(formName == 'notetermform_n')
 					{
                         var client_id = $('input[name="client_id"]').val() || window.ClientDetailConfig?.clientId;
-						console.log('notetermform_n handler - client_id:', client_id);
 						var myform = document.getElementById('notetermform_n');
 						var fd = new FormData(myform);
 						$.ajax({
@@ -2368,14 +2352,11 @@ function customValidate(formName, savetype = '')
 							contentType: false,
 							data: fd,
 							success: function(response){
-								console.log('notetermform_n success callback');
 								$('.popuploader').hide();
 								// Handle both string and already-parsed JSON responses
 								var obj = typeof response === 'string' ? $.parseJSON(response) : response;
-								console.log('notetermform_n parsed response:', obj);
 
 								if(obj.status){
-									console.log('notetermform_n note added successfully');
 								    $('#create_note_d input[name="title"]').val('');
 								    $('#create_note_d input[name="title"]').val('');
 								$("#create_note_d .tinymce-editor").val('');
@@ -2761,7 +2742,6 @@ function customValidate(formName, savetype = '')
 					}
 					else if(formName == 'convert_lead_to_client')
 					{
-						console.log('[ConvertLeadToClient] Save clicked, validation passed');
 						$(".popuploader").hide();
 						var formEl = document.querySelector("#convertLeadToClientModal form[name='convert_lead_to_client']") || document.querySelector("form[name='convert_lead_to_client']");
 						if (!formEl) {
@@ -2769,12 +2749,10 @@ function customValidate(formName, savetype = '')
 							$("form[name="+formName+"]").submit();
 							return true;
 						}
-						console.log('[ConvertLeadToClient] Form found', { action: formEl.action, method: formEl.method });
 						var generalCheckbox = document.getElementById('general_matter_checkbox_new');
 						var matterSelect = document.getElementById('sel_matter_id');
 						var matterHidden = document.getElementById('convert_matter_id_final');
 						var matterVal = (generalCheckbox && generalCheckbox.checked) ? '1' : (matterSelect ? (matterSelect.value || '').trim() : '');
-						console.log('[ConvertLeadToClient] Matter resolution', { generalCheckboxChecked: !!(generalCheckbox && generalCheckbox.checked), matterSelectValue: matterSelect ? matterSelect.value : null, matterVal: matterVal });
 						if (!matterVal) {
 							console.warn('[ConvertLeadToClient] Matter required but empty, showing error');
 							$(".custom-error").remove();
@@ -2787,11 +2765,9 @@ function customValidate(formName, savetype = '')
 						}
 						if (matterHidden) {
 							matterHidden.value = matterVal;
-							console.log('[ConvertLeadToClient] Set hidden matter_id to', matterVal);
 						} else {
 							console.warn('[ConvertLeadToClient] Hidden #convert_matter_id_final not found');
 						}
-						console.log('[ConvertLeadToClient] Submitting form now');
 						formEl.submit();
 						return true;
 					}

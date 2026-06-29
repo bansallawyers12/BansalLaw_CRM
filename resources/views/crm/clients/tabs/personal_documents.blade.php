@@ -333,12 +333,8 @@
                 // Both use stopImmediatePropagation() to prevent detail-main.js handlers
                 // from interfering, while keeping them as a safety fallback.
                 // ============================================================================
-                console.log('🚀 Personal Documents Tab Script Loading...');
                 
                 function initPersonalDocDragDrop() {
-                    console.log('🔄 Initializing Personal Doc Drag & Drop...');
-                    console.log('📊 Drop zones found:', $('.personal-doc-drag-zone').length);
-                    console.log('📊 Visible drop zones:', $('.personal-doc-drag-zone:visible').length);
                     
                     // Check each drop zone
                     $('.personal-doc-drag-zone').each(function(index) {
@@ -346,12 +342,6 @@
                         var fileid = $zone.data('fileid');
                         var formid = $zone.data('formid');
                         var isVisible = $zone.is(':visible');
-                        console.log('🔍 Drop zone #' + index + ':', {
-                            fileid: fileid,
-                            formid: formid,
-                            visible: isVisible,
-                            hasFileInput: $('#' + formid).find('.docupload').length > 0
-                        });
                     });
                     
                     // Remove only our own handlers to prevent duplicates
@@ -375,7 +365,6 @@
                         
                         // Attach direct handlers with stopImmediatePropagation
                         $zone.on('click.personaldocdirect', function(e) {
-                            console.log('🎯 DIRECT CLICK (Highest Priority)');
                             e.preventDefault();
                             e.stopPropagation();
                             e.stopImmediatePropagation();
@@ -391,7 +380,6 @@
                         });
                         
                         $zone.on('dragenter.personaldocdirect', function(e) {
-                            console.log('🔥 DIRECT DRAGENTER (Highest Priority)');
                             e.preventDefault();
                             e.stopPropagation();
                             e.stopImmediatePropagation();
@@ -400,7 +388,6 @@
                         });
                         
                         $zone.on('dragover.personaldocdirect', function(e) {
-                            console.log('🔥 DIRECT DRAGOVER (Highest Priority)');
                             e.preventDefault();
                             e.stopPropagation();
                             e.stopImmediatePropagation();
@@ -414,7 +401,6 @@
                         });
                         
                         $zone.on('dragleave.personaldocdirect', function(e) {
-                            console.log('⚠️ DIRECT DRAGLEAVE (Highest Priority)');
                             e.preventDefault();
                             e.stopPropagation();
                             e.stopImmediatePropagation();
@@ -430,7 +416,6 @@
                         });
                         
                         $zone.on('drop.personaldocdirect', function(e) {
-                            console.log('🎯 DIRECT DROP (Highest Priority)');
                             e.preventDefault();
                             e.stopPropagation();
                             e.stopImmediatePropagation();
@@ -530,14 +515,12 @@
                     
                     // Click handler - for browse functionality
                     $(document).on('click.personaldoclocal', '.personal-doc-drag-zone', function(e) {
-                        console.log('🎯 BLADE CLICK HANDLER - Personal Doc (Priority)');
                         e.preventDefault();
                         e.stopPropagation();
                         e.stopImmediatePropagation(); // Stop detail-main.js handler
 
                         var fileid = $(this).data('fileid');
                         var formid = $(this).data('formid');
-                        console.log('📂 File ID:', fileid, 'Form ID:', formid);
 
                         var $form = $('#' + formid);
                         if (!$form.length) {
@@ -547,10 +530,8 @@
                         }
 
                         var fileInput = $form.find('.docupload');
-                        console.log('📁 File input found:', fileInput.length > 0);
 
                         if (fileInput.length > 0) {
-                            console.log('✅ Triggering file input click...');
                             // Use native click to ensure it works
                             var nativeInput = fileInput[0];
                             if (nativeInput && typeof nativeInput.click === 'function') {
@@ -569,7 +550,6 @@
                     
                     // Dragenter - initial entry into zone
                     $(document).on('dragenter.personaldoclocal', '.personal-doc-drag-zone', function(e) {
-                        console.log('🔥 BLADE DRAGENTER HANDLER - Personal Doc (Priority)');
                         e.preventDefault();
                         e.stopPropagation();
                         e.stopImmediatePropagation(); // Stop detail-main.js handler
@@ -579,7 +559,6 @@
                     
                     // Dragover - continuous while dragging over zone (REQUIRED for drop to work!)
                     $(document).on('dragover.personaldoclocal', '.personal-doc-drag-zone', function(e) {
-                        console.log('🔥 BLADE DRAGOVER HANDLER - Personal Doc (Priority)');
                         e.preventDefault();
                         e.stopPropagation();
                         e.stopImmediatePropagation(); // Stop detail-main.js handler
@@ -595,7 +574,6 @@
                     
                     // Dragleave - when dragging out of zone
                     $(document).on('dragleave.personaldoclocal', '.personal-doc-drag-zone', function(e) {
-                        console.log('⚠️ BLADE DRAGLEAVE HANDLER - Personal Doc (Priority)');
                         e.preventDefault();
                         e.stopPropagation();
                         e.stopImmediatePropagation(); // Stop detail-main.js handler
@@ -613,7 +591,6 @@
                     
                     // Drop - when file is dropped
                     $(document).on('drop.personaldoclocal', '.personal-doc-drag-zone', function(e) {
-                        console.log('🎯 BLADE DROP HANDLER - Personal Doc (Priority)');
                         e.preventDefault();
                         e.stopPropagation();
                         e.stopImmediatePropagation(); // Stop detail-main.js handler from firing
@@ -622,7 +599,6 @@
                         
                         var files = e.originalEvent && e.originalEvent.dataTransfer ? e.originalEvent.dataTransfer.files : null;
                         if (files && files.length > 0) {
-                            console.log('📄 File dropped:', files[0].name);
                             
                             var $zone = $(this);
                             var file = files[0];
@@ -631,7 +607,6 @@
                             var formId = $zone.data('formid');
                             var form = $('#' + formId);
                             
-                            console.log('📂 File ID:', fileid, 'Category:', doccategory, 'Form ID:', formId);
                             
                             if (!form.length) {
                                 console.error('❌ Form not found:', formId);
@@ -721,24 +696,20 @@
                         return false;
                     });
                     
-                    console.log('✅ Local drag-drop handlers attached');
                 }
                 
                 // CRITICAL: Initialize IMMEDIATELY (before detail-main.js loads)
                 // This ensures our handlers are attached first and can use stopImmediatePropagation()
-                console.log('🚀 Attaching Personal Documents handlers IMMEDIATELY');
                 initPersonalDocDragDrop();
                 
                 // Also initialize on DOM ready (in case elements weren't ready above)
                 $(document).ready(function() {
-                    console.log('✅ Personal Documents DOM Ready - Reinitializing');
                     initPersonalDocDragDrop();
                 });
                 
                 // Re-initialize when Personal Documents tab is shown
                 // Listen for tab clicks using the sidebar-tabs.js system
                 $(document).on('click', '.client-nav-button[data-tab="personaldocuments"]', function() {
-                    console.log('📂 Personal Documents tab clicked, reinitializing...');
                     setTimeout(function() {
                         initPersonalDocDragDrop();
                     }, 200); // Delay to ensure tab is visible
@@ -746,7 +717,6 @@
                 
                 // Also check if tab is already active (e.g., direct URL navigation)
                 if ($('#personaldocuments-tab').hasClass('active')) {
-                    console.log('📂 Personal Documents tab already active on load');
                     setTimeout(function() {
                         initPersonalDocDragDrop();
                     }, 500);
@@ -1461,8 +1431,6 @@
                 
                 // Attach DIRECT handlers to bulk upload dropzones for highest priority
                 function initBulkUploadDragDrop() {
-                    console.log('🔄 Initializing Bulk Upload Drag & Drop...');
-                    console.log('📊 Bulk upload zones found:', $('.bulk-upload-dropzone').length);
                     
                     $('.bulk-upload-dropzone').each(function() {
                         var $zone = $(this);
@@ -1489,7 +1457,6 @@
                         
                         // Dragover handler (REQUIRED for drop to work)
                         elem._bulkDragOver = function(e) {
-                            console.log('🔥 NATIVE BULK DRAGOVER');
                             e.preventDefault();
                             e.stopPropagation();
                             e.dataTransfer.dropEffect = 'copy';
@@ -1499,7 +1466,6 @@
                         
                         // Dragenter handler
                         elem._bulkDragEnter = function(e) {
-                            console.log('🔥 NATIVE BULK DRAGENTER');
                             e.preventDefault();
                             e.stopPropagation();
                             $zone.addClass('drag_over');
@@ -1508,7 +1474,6 @@
                         
                         // Dragleave handler
                         elem._bulkDragLeave = function(e) {
-                            console.log('⚠️ NATIVE BULK DRAGLEAVE');
                             e.preventDefault();
                             e.stopPropagation();
                             
@@ -1522,17 +1487,14 @@
                         
                         // Drop handler
                         elem._bulkDrop = function(e) {
-                            console.log('🎯 NATIVE BULK DROP');
                             e.preventDefault();
                             e.stopPropagation();
                             $zone.removeClass('drag_over');
                             
                             var files = e.dataTransfer ? e.dataTransfer.files : null;
-                            console.log('📄 Files dropped:', files ? files.length : 0);
                             
                             if (files && files.length > 0) {
                                 var categoryId = $zone.data('categoryid');
-                                console.log('📂 Category ID:', categoryId);
                                 handleBulkFilesSelected(categoryId, files);
                             } else {
                                 console.error('❌ No files in drop event');
@@ -1540,7 +1502,6 @@
                         };
                         elem.addEventListener('drop', elem._bulkDrop);
                         
-                        console.log('✅ Attached native handlers to bulk dropzone:', $zone.data('categoryid'));
                     });
                 }
                 
@@ -1558,7 +1519,6 @@
                 
                 // Keep delegated handlers as fallback
                 $(document).on('dragover', '.bulk-upload-dropzone', function(e) {
-                    console.log('🔥 DELEGATED BULK DRAGOVER');
                     e.preventDefault();
                     e.stopPropagation();
                     $(this).addClass('drag_over');
@@ -1588,7 +1548,6 @@
                 });
                 
                 $(document).on('drop', '.bulk-upload-dropzone', function(e) {
-                    console.log('🎯 DELEGATED BULK DROP');
                     e.preventDefault();
                     e.stopPropagation();
                     $(this).removeClass('drag_over');
@@ -1596,7 +1555,6 @@
                     const categoryId = $(this).data('categoryid');
                     const files = e.originalEvent && e.originalEvent.dataTransfer ? e.originalEvent.dataTransfer.files : null;
                     
-                    console.log('📄 Files dropped:', files ? files.length : 0);
                     
                     if (files && files.length > 0) {
                         handleBulkFilesSelected(categoryId, files);

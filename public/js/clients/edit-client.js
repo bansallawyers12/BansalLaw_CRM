@@ -217,7 +217,6 @@ window.openTab = function(evt, tabName) {
             }
         }
         
-        console.log('Tab switched to:', tabName);
         
     } catch (error) {
         console.error('Error in openTab function:', error);
@@ -271,7 +270,6 @@ function initializeTabs() {
             firstTabContent.style.display = 'block';
         }
         
-        console.log('Tab functionality initialized successfully');
         
     } catch (error) {
         console.error('Error initializing tabs:', error);
@@ -293,7 +291,6 @@ window.validateForm = function() {
         if (fieldName && (fieldName.includes('gender') || fieldName.includes('siblings_gender'))) {
             const tabContent = field.closest('.tab-content');
             const tabId = tabContent ? tabContent.id : 'unknown';
-            console.log('Checking gender field:', fieldName, 'Value:', field.value, 'SelectedIndex:', field.selectedIndex, 'Tab:', tabId);
         }
         
         // Handle different field types
@@ -1579,17 +1576,14 @@ window.toggleEditMode = function(sectionType) {
             // Re-initialize datepickers when entering edit mode for address section
             setTimeout(function() {
                 initializeDatepickers();
-                console.log('✅ Date pickers initialized for address edit mode');
             }, 100);
         } else if (sectionType === 'emailAddresses') {
             // Start email verification polling when opening email section
-            console.log('📧 Opening email section - starting verification polling');
             setTimeout(function() {
                 initializeEmailSectionPolling();
             }, 100);
         } else if (sectionType === 'relatedFilesInfo') {
             // Reinitialize Tom Select when opening related files edit mode
-            console.log('🔗 Opening related files section - reinitializing Tom Select');
             setTimeout(function() {
                 window.reinitializeRelatedFilesTomSelect();
             }, 100);
@@ -1616,7 +1610,6 @@ window.cancelEdit = function(sectionType) {
         // Section-specific cleanup
         if (sectionType === 'emailAddresses') {
             // Stop email verification polling when leaving email section
-            console.log('📧 Closing email section - stopping verification polling');
             stopAllEmailPolling();
             
             // Do a final refresh of email statuses
@@ -1976,7 +1969,6 @@ window.saveEmailAddresses = function() {
                 
                 // Validate email ID before starting polling
                 if (isValidEmailId(emailId)) {
-                    console.log(`Starting polling for newly saved email ID: ${emailId}`);
                     startEmailVerificationPolling(parseInt(emailId));
                 }
             });
@@ -2262,8 +2254,6 @@ window.saveVisaInfo = function() {
  * Save address information and update summary
  */
 window.saveAddressInfo = function() {
-    console.log('🚀 ====== saveAddressInfo START ======');
-    console.log('🚀 Function called at:', new Date().toISOString());
     
     const $addressesContainer = $('#addresses-container');
     if (!$addressesContainer.length) {
@@ -2322,7 +2312,6 @@ window.saveAddressInfo = function() {
         return;
     }
     
-    console.log('✅ Validation passed - preparing data...');
     
     const formData = new FormData();
     const addressId = $entry.find('input[name="address_id[]"]').val();
@@ -2347,15 +2336,11 @@ window.saveAddressInfo = function() {
         return;
     }
     
-    console.log('📡 Calling saveSectionData...');
     
     saveSectionData('addressInfo', formData, function() {
-        console.log('✅ Server responded successfully');
-        console.log('🔄 Reloading page...');
         window.location.reload();
     });
     
-    console.log('🚀 ====== saveAddressInfo END ======');
 };
 
 /**
@@ -2855,21 +2840,18 @@ window.saveReferByInfo = function () {
  * Save character information and update summary
  */
 window.saveCharacterInfo = function() {
-    console.log('🚀 ====== saveCharacterInfo START ======');
     
     // Get all character entries
     const container = document.getElementById('characterContainer');
     const sections = container.querySelectorAll('.repeatable-section');
     const characters = [];
     
-    console.log('📊 Found sections:', sections.length);
     
     sections.forEach((section, index) => {
         const charId = section.querySelector('input[name*="character_id"]')?.value;
         const detail = section.querySelector('textarea[name*="character_detail"]').value;
         const type = section.querySelector('select[name*="type_of_character"]').value;
         
-        console.log(`📝 Section ${index}:`, { charId, detail, type });
         
         if (detail && type) {
             characters.push({
@@ -2880,13 +2862,11 @@ window.saveCharacterInfo = function() {
         }
     });
     
-    console.log('💾 Characters to save:', characters);
     
     const formData = new FormData();
     formData.append('characters', JSON.stringify(characters));
     
     saveSectionData('characterInfo', formData, function() {
-        console.log('✅ Character info saved successfully');
         
         // Update summary view on success
         const summaryView = document.getElementById('characterInfoSummary');
@@ -2926,7 +2906,6 @@ window.saveCharacterInfo = function() {
         
         // Return to summary view
         cancelEdit('characterInfo');
-        console.log('🏁 ====== saveCharacterInfo END ======');
     });
 };
 
@@ -2938,8 +2917,6 @@ window.saveRelatedFilesInfo = function() {
     const selectedOptions = Array.from(relatedFilesSelect.selectedOptions);
     const relatedFileIds = selectedOptions.map(option => option.value).filter(id => id && id.trim() !== '');
     
-    console.log('Saving related files:', relatedFileIds);
-    console.log('Selected options:', selectedOptions.map(option => ({ value: option.value, text: option.text })));
     
     const formData = new FormData();
     relatedFileIds.forEach((id, index) => {
@@ -2947,13 +2924,10 @@ window.saveRelatedFilesInfo = function() {
     });
     
     // Log what we're sending
-    console.log('Form data prepared for related files save');
     for (let [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`);
     }
     
     saveSectionData('relatedFilesInfo', formData, function() {
-        console.log('Related files saved successfully');
         
         // Update summary view on success
         const summaryView = document.getElementById('relatedFilesInfoSummary');
@@ -2995,9 +2969,6 @@ window.savePartnerInfo = function() {
     let validationErrors = [];
     
     sections.forEach((section, index) => {
-        console.log(`Processing partner section ${index + 1}:`);
-        console.log('Section element:', section);
-        console.log('Section HTML:', section.outerHTML.substring(0, 500) + '...');
         
         const partnerId = section.querySelector('input[name*="partner_id"]')?.value;
         const details = section.querySelector('.partner-details').value;
@@ -3018,17 +2989,6 @@ window.savePartnerInfo = function() {
         const firstName = firstNameField?.value || '';
         const phone = phoneField?.value || '';
         
-        console.log(`Section ${index + 1} field detection:`, {
-            hasDetailsField: !!section.querySelector('.partner-details'),
-            hasRelationshipField: !!section.querySelector('select[name*="partner_relationship_type"]'),
-            hasGenderField: !!section.querySelector('select[name*="partner_gender"]'),
-            hasCompanyTypeField: !!section.querySelector('select[name*="partner_company_type"]'),
-            hasLastNameField: !!lastNameField,
-            hasDobField: !!dobField,
-            hasEmailField: !!emailField,
-            hasFirstNameField: !!firstNameField,
-            hasPhoneField: !!phoneField
-        });
         
         // Simple approach: Only validate Last Name and DOB if they have values or if they're actually visible
         // Check if the extra fields section exists and is not hidden
@@ -3036,18 +2996,6 @@ window.savePartnerInfo = function() {
         const isExtraFieldsVisible = extraFieldsSection && !extraFieldsSection.classList.contains('hidden-fields');
         
         // Check if this section has any data
-        console.log(`Section ${index + 1} data check:`, {
-            details: details,
-            relationshipType: relationshipType,
-            gender: gender,
-            companyType: companyType,
-            lastName: lastName,
-            dob: dob,
-            email: email,
-            firstName: firstName,
-            phone: phone,
-            hasData: !!(details || relationshipType || gender || companyType || lastName || dob || email || firstName || phone)
-        });
         
         // Check if this section has any form fields (regardless of whether they have data)
         const hasFormFields = section.querySelector('.partner-details') || 
@@ -3057,7 +3005,6 @@ window.savePartnerInfo = function() {
                              lastNameField || dobField || emailField || firstNameField || phoneField;
         
         if (hasFormFields) {
-            console.log(`Section ${index + 1} - Validation triggered because form fields exist`);
             // Validate required fields
             const errors = [];
             if (!relationshipType) errors.push('Relationship Type');
@@ -3065,40 +3012,25 @@ window.savePartnerInfo = function() {
             if (!companyType) errors.push('Company Type');
             
             // Debug logging
-            console.log('Validation debug:', {
-                details: details,
-                detailsEmpty: !details || details.trim() === '',
-                lastName: lastName,
-                dob: dob,
-                hasLastNameField: !!lastNameField,
-                hasDobField: !!dobField
-            });
             
             // Conditional validation based on Details field:
             // If Details is empty (no existing client found), validate Last Name and DOB
             // If Details is not empty (existing client found), skip Last Name and DOB validation
             if (!details || details.trim() === '') {
                 // Details field is empty - validate Last Name and DOB
-                console.log('Details is empty - validating Last Name and DOB');
-                console.log('Last Name value:', lastName, 'DOB value:', dob);
                 
                 if (!lastName || lastName.trim() === '') {
-                    console.log('Adding Last Name error');
                     errors.push('Last Name');
                 }
                 if (!dob || dob.trim() === '') {
-                    console.log('Adding DOB error');
                     errors.push('DOB');
                 }
             } else {
-                console.log('Details is not empty - skipping Last Name and DOB validation');
             }
             
             if (errors.length > 0) {
-                console.log(`Section ${index + 1} validation errors:`, errors);
                 validationErrors = validationErrors.concat(errors);
             } else {
-                console.log(`Section ${index + 1} - no validation errors`);
                 partners.push({
                     partner_id: (partnerId && partnerId !== '0') ? partnerId : null,
                     details: details,
@@ -3113,20 +3045,12 @@ window.savePartnerInfo = function() {
                 });
             }
         } else {
-            console.log(`Section ${index + 1} - Validation NOT triggered because no form fields exist`);
         }
     });
     
     // Check if there are any validation errors
-    console.log('Final validation check:', {
-        totalSections: sections.length,
-        validationErrors: validationErrors,
-        hasErrors: validationErrors.length > 0
-    });
     
     if (validationErrors.length > 0) {
-        console.log('Total validation errors found:', validationErrors);
-        console.log('All partner sections processed:', sections.length);
         showNotification(`Please fill in the following required fields: ${validationErrors.join(', ')}`, 'error');
         return; // Exit the function early
     }
@@ -3186,9 +3110,6 @@ window.saveChildrenInfo = function() {
     let validationErrors = [];
     
     sections.forEach((section, index) => {
-        console.log(`Processing children section ${index + 1}:`);
-        console.log('Section element:', section);
-        console.log('Section HTML:', section.outerHTML.substring(0, 500) + '...');
         
         const childId = section.querySelector('input[name*="children_id"]')?.value;
         const details = section.querySelector('.partner-details').value;
@@ -3209,17 +3130,6 @@ window.saveChildrenInfo = function() {
         const firstName = firstNameField?.value || '';
         const phone = phoneField?.value || '';
         
-        console.log(`Section ${index + 1} field detection:`, {
-            hasDetailsField: !!section.querySelector('.partner-details'),
-            hasRelationshipField: !!section.querySelector('select[name*="children_relationship_type"]'),
-            hasGenderField: !!section.querySelector('select[name*="children_gender"]'),
-            hasCompanyTypeField: !!section.querySelector('select[name*="children_company_type"]'),
-            hasLastNameField: !!lastNameField,
-            hasDobField: !!dobField,
-            hasEmailField: !!emailField,
-            hasFirstNameField: !!firstNameField,
-            hasPhoneField: !!phoneField
-        });
         
         // Simple approach: Only validate Last Name and DOB if they have values or if they're actually visible
         // Check if the extra fields section exists and is not hidden
@@ -3227,18 +3137,6 @@ window.saveChildrenInfo = function() {
         const isExtraFieldsVisible = extraFieldsSection && !extraFieldsSection.classList.contains('hidden-fields');
         
         // Check if this section has any data
-        console.log(`Section ${index + 1} data check:`, {
-            details: details,
-            relationshipType: relationshipType,
-            gender: gender,
-            companyType: companyType,
-            lastName: lastName,
-            dob: dob,
-            email: email,
-            firstName: firstName,
-            phone: phone,
-            hasData: !!(details || relationshipType || gender || companyType || lastName || dob || email || firstName || phone)
-        });
         
         // Check if this section has any form fields (regardless of whether they have data)
         const hasFormFields = section.querySelector('.partner-details') || 
@@ -3248,7 +3146,6 @@ window.saveChildrenInfo = function() {
                              lastNameField || dobField || emailField || firstNameField || phoneField;
         
         if (hasFormFields) {
-            console.log(`Section ${index + 1} - Validation triggered because form fields exist`);
             // Validate required fields
             const errors = [];
             if (!relationshipType) errors.push('Relationship Type');
@@ -3256,41 +3153,25 @@ window.saveChildrenInfo = function() {
             if (!companyType) errors.push('Company Type');
             
             // Debug logging
-            console.log('Validation debug:', {
-                details: details,
-                relationshipType: relationshipType,
-                gender: gender,
-                companyType: companyType,
-                lastName: lastName,
-                dob: dob,
-                isExtraFieldsVisible: isExtraFieldsVisible
-            });
 
             // Conditional validation based on Details field:
             // If Details is empty (no existing client found), validate Last Name and DOB
             // If Details is not empty (existing client found), skip Last Name and DOB validation
             if (!details || details.trim() === '') {
                 // Details field is empty - validate Last Name and DOB
-                console.log('Details is empty - validating Last Name and DOB');
-                console.log('Last Name value:', lastName, 'DOB value:', dob);
                 
                 if (!lastName || lastName.trim() === '') {
-                    console.log('Adding Last Name error');
                     errors.push('Last Name');
                 }
                 if (!dob || dob.trim() === '') {
-                    console.log('Adding DOB error');
                     errors.push('DOB');
                 }
             } else {
-                console.log('Details is not empty - skipping Last Name and DOB validation');
             }
             
             if (errors.length > 0) {
-                console.log(`Section ${index + 1} validation errors:`, errors);
                 validationErrors = validationErrors.concat(errors);
             } else {
-                console.log(`Section ${index + 1} - no validation errors`);
                 children.push({
                     child_id: (childId && childId !== '0') ? childId : '',
                     details: details,
@@ -3305,7 +3186,6 @@ window.saveChildrenInfo = function() {
                 });
             }
         } else {
-            console.log(`Section ${index + 1} - No form fields found, skipping`);
         }
     });
     
@@ -3314,7 +3194,6 @@ window.saveChildrenInfo = function() {
         const uniqueErrors = [...new Set(validationErrors)]; // Remove duplicates
         const errorMessage = `Please fill in the following required fields:\n• ${uniqueErrors.join('\n• ')}`;
         showNotification(errorMessage, 'error');
-        console.log('Validation errors:', uniqueErrors);
         return; // Stop execution if there are validation errors
     }
     
@@ -3831,9 +3710,7 @@ $(document).ready(function() {
      * Verify OTP
      */
     window.verifyOTP = function() {
-        console.log('[OTP Verify] Function called');
         const otpCode = getOTPCode();
-        console.log('[OTP Verify] Code:', otpCode, 'Length:', otpCode.length);
         
         if (otpCode.length !== 6) {
             showOTPErrorMessage('Please enter all 6 digits');
@@ -3975,10 +3852,8 @@ $(document).ready(function() {
     function checkOTPComplete() {
         const otpCode = getOTPCode();
         const verifyBtn = document.getElementById('verifyOTPBtn');
-        console.log('[OTP Check] Code:', otpCode, 'Length:', otpCode.length, 'Button found:', !!verifyBtn);
         if (verifyBtn) {
             verifyBtn.disabled = otpCode.length !== 6;
-            console.log('[OTP Check] Button disabled:', verifyBtn.disabled);
         }
     }
 
@@ -4107,14 +3982,12 @@ $(document).ready(function() {
     // OTP Input Event Listeners
     // Run immediately if DOM already loaded, otherwise wait for DOMContentLoaded
     function initializeOTPListeners() {
-        console.log('[OTP] Event listeners initialized');
         
         // Handle OTP input auto-focus and validation
         document.addEventListener('input', function(e) {
             if (e.target.classList.contains('otp-digit')) {
                 const index = parseInt(e.target.dataset.index);
                 let value = e.target.value;
-                console.log('[OTP Input] Index:', index, 'Value:', value);
                 
                 // Allow only digits
                 value = value.replace(/[^0-9]/g, '');
@@ -4332,7 +4205,6 @@ $(document).ready(function() {
     setTimeout(function() {
         const emailVerifyButtons = document.querySelectorAll('.btn-verify-email');
         if (emailVerifyButtons.length > 0) {
-            console.log('🔄 Page load: Checking email verification status (one-time check, no continuous polling)');
             emailVerifyButtons.forEach(button => {
                 const emailId = button.getAttribute('data-email-id');
                 if (isValidEmailId(emailId)) {
@@ -4628,7 +4500,6 @@ function stopEmailVerificationPolling(emailId) {
     if (activeEmailPollingIntervals.has(emailId)) {
         clearInterval(activeEmailPollingIntervals.get(emailId));
         activeEmailPollingIntervals.delete(emailId);
-        console.log(`  ↳ Stopped polling for email ID ${emailId}`);
     }
 }
 
@@ -4646,7 +4517,6 @@ function startEmailVerificationPolling(emailId) {
         activeEmailPollingIntervals.delete(emailId);
     }
     
-    console.log(`  ↳ Starting continuous polling for email ID: ${emailId}`);
     
     // Check immediately
     checkEmailVerificationStatus(emailId);
@@ -4664,7 +4534,6 @@ function startEmailVerificationPolling(emailId) {
             // Button was replaced with verified badge, stop polling
             clearInterval(pollInterval);
             activeEmailPollingIntervals.delete(emailId);
-            console.log(`  ↳ Stopped polling for email ID ${emailId} (verified)`);
             return;
         }
         
@@ -4674,7 +4543,6 @@ function startEmailVerificationPolling(emailId) {
         if (pollCount >= maxPolls) {
             clearInterval(pollInterval);
             activeEmailPollingIntervals.delete(emailId);
-            console.log(`  ↳ Stopped polling for email ID ${emailId} (max attempts reached)`);
             // Remove spinner from button
             if (verifyBtn && verifyBtn.innerHTML.includes('fa-spinner')) {
                 verifyBtn.innerHTML = verifyBtn.innerHTML.replace('<i class="fas fa-spinner fa-spin" style="margin-left: 5px; font-size: 10px;"></i>', '');
@@ -4690,10 +4558,8 @@ function startEmailVerificationPolling(emailId) {
  * Stop all email verification polling
  */
 function stopAllEmailPolling() {
-    console.log('🛑 Stopping all email verification polling');
     activeEmailPollingIntervals.forEach((interval, emailId) => {
         clearInterval(interval);
-        console.log(`  ↳ Stopped polling for email ID: ${emailId}`);
     });
     activeEmailPollingIntervals.clear();
 }
@@ -4702,7 +4568,6 @@ function stopAllEmailPolling() {
  * Initialize email section polling (one-time status check + start polling for unverified)
  */
 function initializeEmailSectionPolling() {
-    console.log('🔄 Initializing email section polling');
     
     const emailSection = document.getElementById('emailAddressesSummary');
     if (!emailSection) {
@@ -4713,18 +4578,15 @@ function initializeEmailSectionPolling() {
     const emailVerifyButtons = emailSection.querySelectorAll('.btn-verify-email');
     
     if (emailVerifyButtons.length === 0) {
-        console.log('✅ No unverified emails, skipping polling');
         return;
     }
     
-    console.log(`📧 Found ${emailVerifyButtons.length} unverified email(s)`);
     
     // First, do a one-time refresh of all email statuses
     emailVerifyButtons.forEach(button => {
         const emailId = button.getAttribute('data-email-id');
         
         if (isValidEmailId(emailId)) {
-            console.log(`  ↳ Checking status for email ID: ${emailId}`);
             // Single check, not continuous polling yet
             checkEmailVerificationStatus(parseInt(emailId));
         } else {
@@ -4826,7 +4688,6 @@ function addOccupationRow() {
     if (assessmentDateInput) {
         // Add event listener for native date input
         assessmentDateInput.addEventListener('change', function() {
-            console.log('New row date change event triggered:', this.value);
             handleExpiryDateCalculation(this);
         });
     }
@@ -4856,8 +4717,6 @@ async function saveOccupationInfo() {
     const assessmentDateInputs = form.querySelectorAll('input[name^="dates["]');
     const expiryDateInputs = form.querySelectorAll('input[name^="expiry_dates["]');
     
-    console.log('Found assessment date inputs:', assessmentDateInputs.length);
-    console.log('Found expiry date inputs:', expiryDateInputs.length);
     
     // Clear existing date fields from FormData
     for (let [key, value] of formData.entries()) {
@@ -4871,7 +4730,6 @@ async function saveOccupationInfo() {
         const originalValue = input.value;
         const convertedDate = convertDateForBackend(originalValue);
         formData.append(`dates[${index}]`, convertedDate);
-        console.log(`Converted assessment date ${index}: ${originalValue} -> ${convertedDate}`);
     });
     
     // Add converted expiry dates
@@ -4879,13 +4737,10 @@ async function saveOccupationInfo() {
         const originalValue = input.value;
         const convertedDate = convertDateForBackend(originalValue);
         formData.append(`expiry_dates[${index}]`, convertedDate);
-        console.log(`Converted expiry date ${index}: ${originalValue} -> ${convertedDate}`);
     });
     
     // Debug: Log all form data being sent
-    console.log('Form data being sent:');
     for (let [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`);
     }
     
     try {
@@ -5204,10 +5059,8 @@ function calculateExpiryDate(assessmentDateValue, validityYears) {
 
 // Convert date from YYYY-MM-DD (native date input) to DD/MM/YYYY (backend format)
 function convertDateForBackend(dateValue) {
-    console.log('convertDateForBackend called with:', dateValue);
     
     if (!dateValue) {
-        console.log('No date value provided, returning empty string');
         return '';
     }
     
@@ -5215,7 +5068,6 @@ function convertDateForBackend(dateValue) {
         // Parse YYYY-MM-DD format
         const date = new Date(dateValue);
         if (isNaN(date.getTime())) {
-            console.log('Invalid date, returning original value:', dateValue);
             return dateValue; // Return original if invalid
         }
         
@@ -5225,7 +5077,6 @@ function convertDateForBackend(dateValue) {
         const year = date.getFullYear();
         const converted = `${day}/${month}/${year}`;
         
-        console.log('Date conversion successful:', dateValue, '->', converted);
         return converted;
     } catch (error) {
         console.error('Error converting date for backend:', error);
@@ -5269,26 +5120,15 @@ const ASSESSMENT_AUTHORITY_VALIDITY = {
 
 // Function to handle expiry date calculation
 function handleExpiryDateCalculation(assessmentDateInput) {
-    console.log('handleExpiryDateCalculation called', {
-        value: assessmentDateInput.value,
-        element: assessmentDateInput
-    });
     
     const row = assessmentDateInput.closest('.repeatable-section') || assessmentDateInput.closest('.content-grid');
     if (!row) {
-        console.log('No row found for assessment date input');
         return;
     }
     
     const listInput = row.querySelector('.list');
     const expiryDateInput = row.querySelector('.expiry_dates');
     
-    console.log('Found elements:', {
-        listInput: listInput,
-        expiryDateInput: expiryDateInput,
-        listInputHasDatabaseClass: listInput ? listInput.classList.contains('from-database') : false,
-        listInputValue: listInput ? listInput.value : null
-    });
     
     // Always calculate expiry date when assessment date is entered
     if (assessmentDateInput.value && expiryDateInput) {
@@ -5297,18 +5137,14 @@ function handleExpiryDateCalculation(assessmentDateInput) {
         // If field was filled from database, use the specific validity period
         if (listInput && listInput.classList.contains('from-database')) {
             validityYears = parseInt(listInput.dataset.validityYears) || 3;
-            console.log('Using database validity years:', validityYears);
         } else if (listInput && listInput.value) {
             // Use validity period based on assessment authority
             const authority = listInput.value.trim().toUpperCase();
             validityYears = ASSESSMENT_AUTHORITY_VALIDITY[authority] || ASSESSMENT_AUTHORITY_VALIDITY['Default'];
-            console.log('Using assessment authority validity years:', validityYears, 'for authority:', authority);
         } else {
-            console.log('Using default validity years:', validityYears);
         }
         
         const expiryDate = calculateExpiryDate(assessmentDateInput.value, validityYears);
-        console.log('Calculated expiry date:', expiryDate);
         
         if (expiryDate) {
             // Convert dd/mm/yyyy to YYYY-MM-DD for HTML date input
@@ -5317,7 +5153,6 @@ function handleExpiryDateCalculation(assessmentDateInput) {
             
             expiryDateInput.value = htmlDateFormat;
             expiryDateInput.classList.add('from-database');
-            console.log('Expiry date set successfully:', htmlDateFormat);
         }
     }
 }
@@ -5327,7 +5162,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle change events for native date inputs
     document.addEventListener('change', function(e) {
         if (e.target.classList.contains('dates')) {
-            console.log('Date change event triggered:', e.target.value);
             handleExpiryDateCalculation(e.target);
         }
     });
@@ -5420,7 +5254,6 @@ function initializeRelatedFilesTomSelect() {
                 exclude_client: window.currentClientId || null
             },
             success: function (data) {
-                console.log('Test search success:', data);
             },
             error: function (xhr, status, error) {
                 console.error('Test search error:', error, xhr.responseText);
@@ -5457,7 +5290,6 @@ async function saveParentsInfo() {
     }
 
     const parentRows = container.querySelectorAll('.repeatable-section');
-    console.log('Processing', parentRows.length, 'parent rows');
 
     for (let i = 0; i < parentRows.length; i++) {
         const row = parentRows[i];
@@ -5548,7 +5380,6 @@ async function saveSiblingsInfo() {
     }
 
     const siblingRows = container.querySelectorAll('.repeatable-section');
-    console.log('Processing', siblingRows.length, 'sibling rows');
 
     for (let i = 0; i < siblingRows.length; i++) {
         const row = siblingRows[i];
@@ -5639,7 +5470,6 @@ async function saveOthersInfo() {
     }
 
     const otherRows = container.querySelectorAll('.repeatable-section');
-    console.log('Processing', otherRows.length, 'other rows');
 
     for (let i = 0; i < otherRows.length; i++) {
         const row = otherRows[i];

@@ -966,14 +966,6 @@
             const wPercent = fieldWidthNatural / naturalWidth;
             const hPercent = fieldHeightNatural / naturalHeight;
             // Log all relevant info for debugging
-            console.log('[Signature Debug] Canvas size:', {width: signaturePad ? signaturePad.canvas.width : 'N/A', height: signaturePad ? signaturePad.canvas.height : 'N/A'});
-            console.log('[Signature Debug] Field position (px):', {left: fieldRect.left, top: fieldRect.top, width: fieldElement.offsetWidth, height: fieldElement.offsetHeight});
-            console.log('[Signature Debug] PDF image natural size:', {width: naturalWidth, height: naturalHeight});
-            console.log('[Signature Debug] PDF image display size:', {width: displayWidth, height: displayHeight});
-            console.log('[Signature Debug] Scale factors:', {scaleX, scaleY});
-            console.log('[Signature Debug] Relative position (natural px):', {x: relativeX, y: relativeY, width: fieldWidthNatural, height: fieldHeightNatural});
-            console.log('[Signature Debug] Percentages:', {xPercent, yPercent, wPercent, hPercent});
-            console.log('[Signature Debug] Page:', currentActivePage, 'Field ID:', currentActiveField);
             // Store signature data and position as percentages
             savedSignatures[currentActiveField] = {
                 data: signatureData,
@@ -1119,11 +1111,6 @@
             const displayHeight = img.clientHeight;
 
             // Consistency check log
-            console.log(`Page ${page} Field Positions:`, {
-                natural: {w: naturalWidth, h: naturalHeight},
-                display: {w: displayWidth, h: displayHeight},
-                aspect_ratio_match: (displayWidth / displayHeight).toFixed(4) === (naturalWidth / naturalHeight).toFixed(4)
-            });
 
             document.querySelectorAll('.signature-field[data-page="' + page + '"]').forEach(field => {
                 const xPercent = parseFloat(field.getAttribute('data-x-percent')) || 0;

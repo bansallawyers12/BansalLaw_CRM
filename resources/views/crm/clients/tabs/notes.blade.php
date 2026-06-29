@@ -380,7 +380,6 @@
                         // Apply initial filter
                         window.filterNotes();
                         
-                        console.log('Page load - All tab activated and notes filtered');
                     }
                 }, 200);
                 

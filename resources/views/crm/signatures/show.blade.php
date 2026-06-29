@@ -1365,10 +1365,8 @@ const leads = @json($leads ?? []);
 let currentMatch = null;
 
 // Debug: Log the data
-console.log('Clients loaded:', clients.length);
-console.log('Leads loaded:', leads.length);
-if (clients.length > 0) console.log('Sample client:', clients[0]);
-if (leads.length > 0) console.log('Sample lead:', leads[0]);
+if (clients.length > 0) {}
+if (leads.length > 0) {}
 
 // Open attach modal
 function openAttachModal() {

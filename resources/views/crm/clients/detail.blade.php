@@ -1785,7 +1785,6 @@ $('.send-sms-btn').on('click', function() {
             client_id: smsClientId
         },
         success: function(response) {
-            console.log('Phone numbers response:', response);
             phoneSelect.empty();
             phoneSelect.append('<option value="">Select phone number...</option>');
             
@@ -1799,7 +1798,6 @@ $('.send-sms-btn').on('click', function() {
             
             if (data && data.clientContacts && data.clientContacts.length > 0) {
                 data.clientContacts.forEach(function(contact) {
-                    console.log('Processing contact:', contact);
                     // Handle missing fields gracefully
                     const countryCode = contact.country_code || '';
                     const phone = contact.phone || '';

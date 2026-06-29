@@ -292,7 +292,6 @@ function saveColumnPreferences() {
         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
         data: { visible_columns: visibleColumns },
         success: function() {
-            console.log('Column preferences saved');
         },
         error: function() {
             console.error('Failed to save column preferences');
@@ -339,7 +338,6 @@ window.clearFiltersAndReset = function() {
 }
 
 window.closeNotesDeadlineAction = function(noteid, noteuniqueid) {
-    console.log('closeNotesDeadlineAction called with:', { noteid, noteuniqueid });
     
     if (!window.dashboardRoutes || !window.dashboardRoutes.updateTaskCompleted) {
         console.error('Update task completed route not defined');
@@ -353,8 +351,6 @@ window.closeNotesDeadlineAction = function(noteid, noteuniqueid) {
             return false;
         }
         
-        console.log('Sending AJAX request to:', window.dashboardRoutes.updateTaskCompleted);
-        console.log('Data:', { id: noteid, unique_group_id: noteuniqueid });
         
         $('.popuploader').show();
         $.ajax({
@@ -363,7 +359,6 @@ window.closeNotesDeadlineAction = function(noteid, noteuniqueid) {
             url: window.dashboardRoutes.updateTaskCompleted,
             data: {'id': noteid, 'unique_group_id': noteuniqueid},
             success: function(response) {
-                console.log('Success response:', response);
                 $('.popuploader').hide();
                 showNotification('Task completed successfully!', 'success');
                 setTimeout(() => location.reload(), 1000);

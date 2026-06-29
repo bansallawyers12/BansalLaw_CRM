@@ -691,7 +691,6 @@ $(function () {
                              $('.client-navigation-sidebar').length > 0;
     
     if (isClientDetailPage) {
-      console.log('✅ Client detail page detected - Flatpickr will handle dates');
       // Skip Flatpickr initialization on client detail pages (handled by detail-main.js)
     } else {
       // Initialize Flatpickr for all other pages

@@ -2341,13 +2341,9 @@
             try {
                 var audioPlayer = document.getElementById('player');
                 if (audioPlayer) {
-                    audioPlayer.play().catch(function(error) {
-                        console.log('Could not play notification sound:', error);
-                    });
+                    audioPlayer.play().catch(function() {});
                 }
-            } catch (error) {
-                console.log('Error playing notification sound:', error);
-            }
+            } catch (error) {}
             
             // Show the notification with animation
             setTimeout(function() {

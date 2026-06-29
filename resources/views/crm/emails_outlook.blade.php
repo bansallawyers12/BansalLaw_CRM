@@ -75,51 +75,41 @@
         </div>
     </div>
     
-    <!-- Sidebar Pane -->
-    <div class="outlook-sidebar">
-        <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>Mail</span>
-            <button class="action-btn" id="btnUploadEmail" title="Upload .msg file" style="padding: 4px 8px;">
-                <i class="fas fa-upload"></i>
-            </button>
-            <input type="file" id="outlookEmailFileInput" accept=".msg" multiple style="display: none;">
-        </div>
-        <ul class="folder-list">
-            <li class="folder-item active" data-folder="inbox">
-                <i class="fas fa-inbox"></i> Inbox
-            </li>
-            <li class="folder-item" data-folder="sent">
-                <i class="fas fa-paper-plane"></i> Sent Items
-            </li>
-            <li class="folder-item" data-folder="drafts">
-                <i class="fas fa-file-alt"></i> Drafts
-            </li>
-            <!--
-            <li class="folder-item" data-folder="deleted">
-                <i class="fas fa-trash"></i> Deleted Items
-            </li>
-            -->
-        </ul>
-        <div id="uploadStatus" style="padding: 10px; font-size: 12px; color: var(--outlook-blue); display: none;"></div>
-    </div>
-
     <!-- Email List Pane -->
     <div class="outlook-list-pane">
+        <div class="list-toolbar">
+            <div class="folder-tabs" role="tablist" aria-label="Mail folders">
+                <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
+                    <i class="fas fa-inbox"></i> Inbox
+                </button>
+                <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
+                    <i class="fas fa-paper-plane"></i> Sent Items
+                </button>
+                <button type="button" class="folder-item" data-folder="drafts" role="tab" aria-selected="false">
+                    <i class="fas fa-file-alt"></i> Drafts
+                </button>
+            </div>
+            <button type="button" class="action-btn action-btn--upload" id="btnUploadEmail" title="Upload .msg file" hidden>
+                <i class="fas fa-upload"></i> Upload
+            </button>
+            <input type="file" id="outlookEmailFileInput" accept=".msg" multiple hidden>
+        </div>
+        <div id="uploadStatus" class="upload-status" hidden></div>
+
         <div id="inlineDropZone" class="inline-drop-zone">
             <i class="fas fa-cloud-upload-alt"></i>
             <span>Drag & drop .msg files here or <b>browse</b> to upload</span>
         </div>
+
         <div class="list-header">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                <button id="toggleSidebar" class="action-btn" style="padding: 4px 8px; margin: 0;" title="Toggle Sidebar">
-                    <i class="fas fa-bars" style="margin: 0;"></i>
-                </button>
-                <div class="search-box" style="flex-grow: 1;">
+            <div class="list-header-row">
+                <div class="search-box">
+                    <i class="fas fa-search search-box-icon" aria-hidden="true"></i>
                     <input type="text" id="searchInput" placeholder="Search emails...">
                 </div>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <select id="labelFilter" style="flex-grow: 1; padding: 4px; border: 1px solid var(--outlook-border); border-radius: 4px; font-size: 12px;">
+            <div class="list-header-filters">
+                <select id="labelFilter" class="list-filter-select" aria-label="Filter by label">
                     <option value="">All Labels</option>
                     @if(isset($clientData) && isset($matterId))
                         @php
@@ -137,7 +127,7 @@
                         @endforeach
                     @endif
                 </select>
-                <select id="senderFilter" style="flex-grow: 1; padding: 4px; border: 1px solid var(--outlook-border); border-radius: 4px; font-size: 12px;">
+                <select id="senderFilter" class="list-filter-select" aria-label="Filter by sender">
                     <option value="">All Senders</option>
                     @if(isset($clientData) && isset($matterId))
                         @php
@@ -180,7 +170,7 @@
         </div>
 
         <!-- Email Content (Hidden by default) -->
-        <div style="display: none; flex-direction: column; height: 100%;" id="readingPane">
+        <div class="reading-pane-content" id="readingPane">
             <div class="reading-header">
                 <div class="action-bar">
                     <button class="action-btn" id="btnReply"><i class="fas fa-reply"></i> Reply</button>

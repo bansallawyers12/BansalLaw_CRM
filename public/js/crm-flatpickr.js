@@ -71,7 +71,6 @@ window.CRM_Flatpickr = {
             $this.data('flatpickr', fp);
         });
         
-        console.log('✅ CRM_Flatpickr.initStandard:', selector);
     },
 
     /**
@@ -134,7 +133,6 @@ window.CRM_Flatpickr = {
             $this.data('flatpickr', fp);
         });
 
-        console.log('✅ CRM_Flatpickr.initPastDates:', selector);
     },
 
     initDOB: function(dobSelector, ageSelector, options) {
@@ -187,7 +185,6 @@ window.CRM_Flatpickr = {
             $this.data('flatpickr', fp);
         });
         
-        console.log('✅ CRM_Flatpickr.initDOB:', dobSelector, '→', ageSelector);
     },
 
     /**
@@ -241,7 +238,6 @@ window.CRM_Flatpickr = {
             $this.data('flatpickr', fp);
         });
         
-        console.log('✅ CRM_Flatpickr.initDateTime:', selector);
     },
 
     /**
@@ -311,7 +307,6 @@ window.CRM_Flatpickr = {
             $this.data('flatpickr', fp);
         });
         
-        console.log('✅ CRM_Flatpickr.initRange:', selector);
     },
 
     /**
@@ -460,16 +455,13 @@ $(document).ready(function() {
         CRM_Flatpickr.initRange(this);
     });
     
-    console.log('✅ CRM_Flatpickr auto-initialization complete');
 });
 
 // Export for debugging
 if (typeof window !== 'undefined') {
-    console.log('✅ CRM_Flatpickr loaded successfully - Use CRM_Flatpickr.initStandard() for new code');
 }
 
 // Backward compatibility: Alias CRM_DatePicker to CRM_Flatpickr for gradual migration
 if (typeof window.CRM_DatePicker === 'undefined') {
     window.CRM_DatePicker = window.CRM_Flatpickr;
-    console.log('✅ CRM_DatePicker aliased to CRM_Flatpickr for backward compatibility');
 }

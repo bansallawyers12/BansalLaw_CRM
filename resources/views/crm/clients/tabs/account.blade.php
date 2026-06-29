@@ -811,7 +811,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const receiptType = $(this).data('receipt-type');
         const $modal = $('#createreceiptmodal');
         
-        console.log('🎯 Account tab receipt button clicked - type:', receiptType);
         
         // Hide the radio button selection section (not needed since button already indicates type)
         $modal.find('.form-group:has(input[name="receipt_type"])').hide();
@@ -827,7 +826,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // First, explicitly hide ALL forms to prevent double display
         $('#client_receipt_form, #invoice_receipt_form, #office_receipt_form').hide();
-        console.log('🧹 All forms hidden');
         
         // Get the selected matter ID
         let selectedMatter;
@@ -836,26 +834,21 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             selectedMatter = $('#sel_matter_id_client_detail').val();
         }
-        console.log('📁 Selected Matter ID:', selectedMatter);
         
         // Select the appropriate radio button and trigger change event
         // The change handler in detail-main.js will hide all forms and show the correct one
         if (receiptType == '1') {
             // Trust Account Entry
-            console.log('📝 Selecting Trust Account Entry Form');
             
             // Set the matter ID for client ledger
             $('#client_matter_id_ledger').val(selectedMatter);
-            console.log('📁 Set client_matter_id_ledger to:', selectedMatter);
             
             $('input[name="receipt_type"][value="client_receipt"]').prop('checked', true).trigger('change');
         } else if (receiptType == '2') {
             // Direct Office Receipt
-            console.log('📝 Selecting Direct Office Receipt Form');
             
             // Set the matter ID for office receipt
             $('#client_matter_id_office').val(selectedMatter);
-            console.log('📁 Set client_matter_id_office to:', selectedMatter);
             
             $('input[name="receipt_type"][value="office_receipt"]').prop('checked', true).trigger('change');
             
@@ -863,15 +856,12 @@ document.addEventListener('DOMContentLoaded', function() {
             loadInvoicesForOfficeReceipt(selectedMatter);
         } else if (receiptType == '3') {
             // Invoice
-            console.log('📝 Selecting Invoice Form');
             
             // CRITICAL: Set function_type to "add" for new invoices
             $('#function_type').val('add');
-            console.log('✏️ Set function_type to: add');
             
             // Set the matter ID
             $('#client_matter_id_invoice').val(selectedMatter);
-            console.log('📁 Set client_matter_id_invoice to:', selectedMatter);
             
             $('input[name="receipt_type"][value="invoice_receipt"]').prop('checked', true).trigger('change');
         }
@@ -886,20 +876,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const formId = formIdMap[receiptType];
             if (formId) {
                 $('#' + formId).show();
-                console.log('✅ Showing only:', formId);
             }
             
             // Re-ensure critical fields are set (in case change event cleared them)
             if (receiptType == '3') {
                 $('#function_type').val('add');
                 $('#client_matter_id_invoice').val(selectedMatter);
-                console.log('🔄 Re-verified invoice form settings');
             } else if (receiptType == '1') {
                 $('#client_matter_id_ledger').val(selectedMatter);
-                console.log('🔄 Re-verified ledger form settings');
             } else if (receiptType == '2') {
                 $('#client_matter_id_office').val(selectedMatter);
-                console.log('🔄 Re-verified office receipt form settings');
             }
         }, 100);
         
@@ -920,7 +906,6 @@ document.addEventListener('DOMContentLoaded', function() {
         $modal.modal('show');
         
         // Log for debugging
-        console.log('✅ Modal opened successfully');
     });
     
     // Reset modal when closed (cleanup for next use)
@@ -931,7 +916,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Reset modal title to default
         $(this).find('.modal-title').html('Create Receipt');
         
-        console.log('✅ Modal reset for next use');
     });
     
     // Copy Reference Functionality
@@ -956,7 +940,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     $item.css({'background-color': '', 'color': ''});
                 }, 1500);
                 
-                console.log('✅ Copied to clipboard:', reference);
             }).catch(err => {
                 console.error('Failed to copy:', err);
                 $item.html('<i class="fas fa-times"></i> Failed');
@@ -985,7 +968,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     $item.css({'background-color': '', 'color': ''});
                 }, 1500);
                 
-                console.log('✅ Copied to clipboard (fallback):', reference);
             } catch(err) {
                 $temp.remove();
                 $item.html('<i class="fas fa-times"></i> Failed');
@@ -1000,7 +982,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to load invoices for the CREATE office receipt form
     function loadInvoicesForOfficeReceipt(matterId) {
-        console.log('📋 Loading invoices for office receipt form, matter:', matterId);
         
         $.ajax({
             url: '{{ route("clients.getInvoicesByMatter") }}',
@@ -1011,7 +992,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 client_id: '{{ $fetchedData->id }}'
             },
             success: function(response) {
-                console.log('✅ Invoices loaded:', response);
                 
                 var $select = $('#office_receipt_form').find('select[name="invoice_no[]"]');
                 $select.empty();
@@ -1023,9 +1003,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             invoice.trans_no + ' - $' + parseFloat(invoice.balance_amount).toFixed(2) + 
                             ' (' + invoice.status + ')</option>');
                     });
-                    console.log('✅ Populated ' + response.invoices.length + ' invoices in dropdown');
                 } else {
-                    console.log('ℹ️ No unpaid invoices found for this matter');
                 }
             },
             error: function(xhr) {
@@ -1053,7 +1031,6 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('save_type', saveType);
         formData.append('_token', '{{ csrf_token() }}');
         
-        console.log('💾 Updating office receipt as:', saveType);
         
         $.ajax({
             type: 'POST',
@@ -1126,7 +1103,6 @@ document.addEventListener('DOMContentLoaded', function() {
             matterId: $(this).data('matter-id')
         };
         
-        console.log('💵 Quick Receipt clicked for:', invoiceData);
         
         // Open the create receipt modal
         const $modal = $('#createreceiptmodal');
@@ -1214,7 +1190,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         detectedClipboardAmount = amount;
                         $('.clipboard-preview').text('($' + amount.toFixed(2) + ' detected)');
                         $('.paste-clipboard-btn').addClass('btn-outline-success').removeClass('btn-outline-primary');
-                        console.log('📋 Clipboard amount detected:', amount);
                     } else {
                         detectedClipboardAmount = null;
                         $('.clipboard-preview').text('');
@@ -1222,7 +1197,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(err => {
                     // Clipboard access denied or not available
-                    console.log('Clipboard access not available');
                     detectedClipboardAmount = null;
                 });
         }
@@ -1246,7 +1220,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     $amountInput.css('background-color', '');
                 }, 1000);
                 
-                console.log('✅ Amount pasted:', detectedClipboardAmount);
             }
         } else {
             // Try to read clipboard again
@@ -1260,7 +1233,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 const $amountInput = $activeForm.find('input[name="deposit_amount[]"]').first();
                                 $amountInput.val(amount.toFixed(2));
                                 $amountInput.focus();
-                                console.log('✅ Amount pasted:', amount);
                             }
                         } else {
                             alert('No valid amount found in clipboard. Please copy a number first.');
@@ -1294,14 +1266,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Store in localStorage for persistence
         localStorage.setItem('lastOfficeReceiptEntry', JSON.stringify(lastOfficeReceiptEntry));
-        console.log('💾 Last entry stored:', lastOfficeReceiptEntry);
     });
     
     // Load last entry from localStorage on page load
     if (localStorage.getItem('lastOfficeReceiptEntry')) {
         try {
             lastOfficeReceiptEntry = JSON.parse(localStorage.getItem('lastOfficeReceiptEntry'));
-            console.log('📥 Last entry loaded from storage');
         } catch(e) {
             lastOfficeReceiptEntry = null;
         }
@@ -1356,7 +1326,6 @@ document.addEventListener('DOMContentLoaded', function() {
             $firstRow.find('input, select').css('background-color', '');
         }, 1000);
         
-        console.log('✅ Last entry repeated');
         
         // Focus on amount field for easy adjustment
         $firstRow.find('input[name="deposit_amount[]"]').focus().select();
@@ -1372,7 +1341,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const matterId = $btn.data('matter-id');
         const clientId = $btn.data('client-id');
 
-        console.log('🔗 Quick Allocate clicked:', {receiptId, receiptAmount, matterId, clientId});
 
         const originalHtml = $btn.html();
         $btn.html('<i class="fas fa-spinner fa-spin"></i> Finding matches...');
@@ -1386,7 +1354,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 client_id: clientId
             },
             success: function(response) {
-                console.log('✅ Response received:', response);
                 $btn.html(originalHtml);
 
                 if (!response.status) {
@@ -1399,7 +1366,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                console.log('📋 Invoices found:', response.invoices.length);
 
                 let exactMatch = null;
                 let closeMatches = [];
@@ -1410,7 +1376,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     const difference = Math.abs(invBalance - receiptAmount);
                     const percentDiff = (difference / (receiptAmount || 1)) * 100;
 
-                    console.log('Invoice:', invoice.trans_no, 'Balance:', invBalance, 'Diff:', difference, 'Percent:', percentDiff);
 
                     if (difference < 0.01) {
                         exactMatch = invoice;
@@ -1471,7 +1436,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const matterId = $btn.data('matter-id');
         const clientId = $btn.data('client-id');
 
-        console.log('🔗 Quick Allocate Ledger clicked:', {receiptId, receiptAmount, matterId, clientId});
 
         const originalHtml = $btn.html();
         $btn.html('<i class="fas fa-spinner fa-spin"></i> Finding matches...');
@@ -1485,7 +1449,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 client_id: clientId
             },
             success: function(response) {
-                console.log('✅ Response received:', response);
                 $btn.html(originalHtml);
 
                 if (!response.status) {
@@ -1498,7 +1461,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                console.log('📋 Invoices found:', response.invoices.length);
 
                 let exactMatch = null;
                 let closeMatches = [];
@@ -1509,7 +1471,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     const difference = Math.abs(invBalance - receiptAmount);
                     const percentDiff = (difference / (receiptAmount || 1)) * 100;
 
-                    console.log('Invoice:', invoice.trans_no, 'Balance:', invBalance, 'Diff:', difference, 'Percent:', percentDiff);
 
                     if (difference < 0.01) {
                         exactMatch = invoice;
@@ -1720,7 +1681,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalHtml = $btn.html();
         $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Allocating...');
         
-        console.log('🔗 Allocating ledger entry:', receiptId, 'to invoice:', invoiceNo);
         
         // Update the ledger entry with the invoice number
         $.ajax({
@@ -1738,7 +1698,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 trust_rule42_override_reason: $('#ledger-allocate-override-reason').val() || ''
             },
             success: function(response) {
-                console.log('✅ Allocation response:', response);
                 if (response.status) {
                     $('#quickAllocateLedgerModal').modal('hide');
                     
@@ -1948,7 +1907,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalHtml = $btn.html();
         $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Allocating...');
         
-        console.log('🔗 Allocating receipt:', receiptId, 'to invoice:', invoiceNo);
         
         // Update the receipt with the invoice number
         $.ajax({
@@ -1962,7 +1920,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 save_type: 'final'
             },
             success: function(response) {
-                console.log('✅ Allocation response:', response);
                 if (response.status) {
                     $('#quickAllocateModal').modal('hide');
                     
@@ -2021,7 +1978,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add visual feedback to drop zones
         $('.invoice-drop-zone').addClass('drag-active');
         
-        console.log('🎯 Dragging receipt:', draggedReceipt);
     });
     
     // Handle drag end
@@ -2059,7 +2015,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const invoiceBalance = parseFloat($(this).data('invoice-balance'));
         const receiptAmount = parseFloat(draggedReceipt.amount);
         
-        console.log('💧 Dropped on invoice:', invoiceNo);
         
         // Check if receipt amount exceeds invoice balance
         const excessAmount = receiptAmount - invoiceBalance;
@@ -2094,7 +2049,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     function allocateReceiptToInvoice(receiptId, invoiceNo) {
-        console.log('🔗 Allocating receipt', receiptId, 'to', invoiceNo);
         
         // Show loading indicator
         const $loadingDiv = $('<div class="allocation-loading">' +
@@ -2633,19 +2587,16 @@ $(document).ready(function() {
     // Bootstrap modals must be direct children of body to work properly
     if ($('#uploadReceiptDocModal').parent().attr('id') !== 'body' && !$('#uploadReceiptDocModal').parent().is('body')) {
         $('#uploadReceiptDocModal').appendTo('body');
-        console.log('✅ Upload Receipt Modal moved to body level');
     }
     
     // Also move editOfficeReceiptModal if it's not already at body level
     if ($('#editOfficeReceiptModal').length > 0 && !$('#editOfficeReceiptModal').parent().is('body')) {
         $('#editOfficeReceiptModal').appendTo('body');
-        console.log('✅ Edit Office Receipt Modal moved to body level');
     }
     
     // Also move editLedgerModal if it's not already at body level
     if ($('#editLedgerModal').length > 0 && !$('#editLedgerModal').parent().is('body')) {
         $('#editLedgerModal').appendTo('body');
-        console.log('✅ Edit Ledger Modal moved to body level');
     }
     
     // Function to load invoices for the edit modal
@@ -2672,7 +2623,6 @@ $(document).ready(function() {
                     });
                 }
                 
-                console.log('✅ Loaded invoices for matter:', matterId);
             },
             error: function(xhr) {
                 console.error('Failed to load invoices:', xhr);
@@ -2701,7 +2651,6 @@ $(document).ready(function() {
             var matterId = $(this).data('matter-id');
             var uploadedDocId = $(this).data('uploaded-doc-id');
             
-            console.log('✏️ Editing Office Receipt:', {id, receiptId, transDate, paymentMethod, deposit, invoiceNo});
             
             var totalDep = parseFloat(deposit) || 0;
             var sur = (eftposSurcharge !== undefined && eftposSurcharge !== null && eftposSurcharge !== '') ? parseFloat(eftposSurcharge) : 0;
@@ -2795,10 +2744,8 @@ $(document).ready(function() {
     // DRAG AND DROP FUNCTIONALITY FOR RECEIPT DOCUMENT UPLOAD MODAL
     // ============================================================================
     
-    console.log('📄 Receipt Drag & Drop Initialization...');
     
     function initReceiptDragDrop() {
-        console.log('🔄 Initializing Receipt Drag & Drop...');
         
         var $zone = $('#receiptDragDropZone');
         if ($zone.length === 0) {
@@ -2806,7 +2753,6 @@ $(document).ready(function() {
             return;
         }
         
-        console.log('✅ Receipt drag zone found');
         
         // Remove all existing handlers
         $zone.off('click dragenter dragover dragleave drop');
@@ -2820,7 +2766,6 @@ $(document).ready(function() {
         
         // DIRECT BINDING to receipt drag zone for priority
         $zone.on('dragenter', function(e) {
-            console.log('🔥 RECEIPT DRAGENTER');
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
@@ -2829,7 +2774,6 @@ $(document).ready(function() {
         });
         
         $zone.on('dragover', function(e) {
-            console.log('🔥 RECEIPT DRAGOVER');
             var event = e.originalEvent || e;
             event.preventDefault();
             event.stopPropagation();
@@ -2843,7 +2787,6 @@ $(document).ready(function() {
         });
 
         $zone.on('dragleave', function(e) {
-            console.log('⚠️ RECEIPT DRAGLEAVE');
             e.preventDefault();
             e.stopPropagation();
             
@@ -2859,7 +2802,6 @@ $(document).ready(function() {
         });
 
         $zone.on('drop', function(e) {
-            console.log('🎯 RECEIPT DROP');
             var event = e.originalEvent || e;
             event.preventDefault();
             event.stopPropagation();
@@ -2869,7 +2811,6 @@ $(document).ready(function() {
             
             var files = event.dataTransfer ? event.dataTransfer.files : null;
             if (files && files.length > 0) {
-                console.log('📄 File dropped:', files[0].name);
                 handleReceiptFileDrop(files[0]);
             } else {
                 console.error('❌ No files in drop event');
@@ -2879,7 +2820,6 @@ $(document).ready(function() {
 
         // Click to browse
         $zone.on('click', function(e) {
-            console.log('🎯 RECEIPT ZONE CLICKED');
             e.preventDefault();
             // Don't trigger if user is clicking the remove button
             if (!$(e.target).closest('.remove-file').length) {
@@ -2887,12 +2827,10 @@ $(document).ready(function() {
             }
         });
         
-        console.log('✅ Receipt drag-drop handlers attached');
     }
     
     // Initialize when modal is shown
     $('#uploadReceiptDocModal').on('shown.bs.modal', function() {
-        console.log('📄 Receipt modal shown, initializing drag-drop...');
         setTimeout(initReceiptDragDrop, 100);
     });
     

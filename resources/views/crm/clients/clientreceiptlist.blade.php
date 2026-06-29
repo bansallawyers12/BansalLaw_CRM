@@ -758,8 +758,6 @@
 @push('scripts')
 {{-- Bootstrap datepicker removed - using Flatpickr via enhanced-date-filter-scripts --}}
 <script>
-console.log('=== CLIENT RECEIPT LIST JS LOADED - Version 2.0 ===');
-console.log('Timestamp:', new Date().toISOString());
 jQuery(document).ready(function($){
     // Check if any filter has a value and keep panel open
     function checkFilterValues() {
@@ -777,10 +775,8 @@ jQuery(document).ready(function($){
         if (hasFilterValue) {
             $('.listing-container .filter_panel').show();
             $('.listing-container').addClass('filters-active');
-            console.log('Filters active class added to listing-container');
         } else {
             $('.listing-container').removeClass('filters-active');
-            console.log('Filters active class removed from listing-container');
         }
     }
     
@@ -884,16 +880,11 @@ jQuery(document).ready(function($){
 
     //validate receipt
     $(document).delegate('.listing-container .Validate_Receipt', 'click', function(){
-        console.log('Validate Receipt clicked');
-        console.log('clickedReceiptIds:', clickedReceiptIds);
         
         if ( clickedReceiptIds.length > 0)
         {
             var mergeStr = "Are you sure want to validate these receipt?";
             if (confirm(mergeStr)) {
-                console.log('Starting AJAX request...');
-                console.log('URL:', "{{URL::to('/')}}/validate_receipt");
-                console.log('Data:', {clickedReceiptIds:clickedReceiptIds, receipt_type:1});
                 
                 $.ajax({
                     type:'post',
@@ -902,15 +893,11 @@ jQuery(document).ready(function($){
                     data: {clickedReceiptIds:clickedReceiptIds,receipt_type:1},
                     dataType: 'json',
                     beforeSend: function() {
-                        console.log('AJAX request being sent...');
                     },
                     success: function(response){
-                        console.log('AJAX Success! Response:', response);
-                        console.log('Response type:', typeof response);
                         
                         // Parse response if it's a string (fallback for older jQuery versions)
                         var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
-                        console.log('Parsed object:', obj);
                         
                         if(!obj.status) {
                             alert('Error: ' + obj.message);
@@ -919,10 +906,8 @@ jQuery(document).ready(function($){
                         
                         //location.reload(true);
                         var record_data = obj.record_data;
-                        console.log('Record data:', record_data);
                         
                         $.each(record_data, function(index, subArray) {
-                            console.log('Processing record:', subArray);
                             //console.log('index=='+index);
                             //console.log('subArray=='+subArray.id);
                             $('.listing-container #validate_' + subArray.id +' span')
@@ -958,7 +943,6 @@ jQuery(document).ready(function($){
                         var errorMessage = 'Unknown error occurred';
                         if(xhr.responseJSON && xhr.responseJSON.message) {
                             errorMessage = xhr.responseJSON.message;
-                            console.log('Using JSON error message:', errorMessage);
                         } else if(xhr.responseText) {
                             // Check if it's HTML
                             if(xhr.responseText.trim().startsWith('<')) {
