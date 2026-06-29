@@ -286,6 +286,83 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        function showUploadFileSuccess(fileName) {
+            if (typeof crmNotify !== 'undefined') {
+                crmNotify.success({
+                    title: 'Uploaded successfully',
+                    message: fileName,
+                    position: 'topRight',
+                    timeout: 5000,
+                    transitionIn: 'fadeInDown',
+                    transitionOut: 'fadeOutUp'
+                });
+            }
+        }
+
+        function showUploadFileError(fileName, errorMessage) {
+            const text = errorMessage || 'Upload failed. Please try again.';
+            if (typeof crmNotify !== 'undefined') {
+                crmNotify.error({
+                    title: fileName,
+                    message: text.replace(/\n/g, '<br>'),
+                    position: 'topRight',
+                    timeout: 8000,
+                    transitionIn: 'fadeInDown',
+                    transitionOut: 'fadeOutUp'
+                });
+            } else {
+                window.alert(fileName + ': ' + text);
+            }
+        }
+
+        function updateUploadStatusForFile(fileName, type, detail) {
+            if (!uploadStatus) return;
+            uploadStatus.hidden = false;
+            if (type === 'success') {
+                uploadStatus.style.color = '#107c10';
+                uploadStatus.textContent = 'Uploaded: ' + fileName;
+            } else if (type === 'error') {
+                uploadStatus.style.color = '#d13438';
+                uploadStatus.textContent = 'Failed: ' + fileName + (detail ? ' — ' + detail : '');
+            } else if (type === 'skipped') {
+                uploadStatus.style.color = '#ca5010';
+                uploadStatus.textContent = 'Skipped: ' + fileName + (detail ? ' — ' + detail : '');
+            } else {
+                uploadStatus.style.color = 'var(--outlook-blue)';
+                uploadStatus.textContent = detail || fileName;
+            }
+        }
+
+        function notifySingleFileUploadResult(file, fileResult) {
+            if (fileResult.cancelled) {
+                showUploadFileError(file.name, 'Upload cancelled.');
+                updateUploadStatusForFile(file.name, 'skipped', 'Upload cancelled');
+                return;
+            }
+
+            if (fileResult.uploaded > 0 && fileResult.failed === 0 && !(fileResult.rejected > 0)) {
+                showUploadFileSuccess(file.name);
+                updateUploadStatusForFile(file.name, 'success');
+                return;
+            }
+
+            if (fileResult.rejected > 0) {
+                const rejectedError = (fileResult.errors && fileResult.errors[0] && fileResult.errors[0].error)
+                    ? fileResult.errors[0].error
+                    : DUPLICATE_EXISTS_MESSAGE;
+                showUploadFileError(file.name, rejectedError);
+                updateUploadStatusForFile(file.name, 'skipped', rejectedError);
+                return;
+            }
+
+            let errorMessage = fileResult.message || 'Upload failed';
+            if (fileResult.errors && fileResult.errors.length) {
+                errorMessage = fileResult.errors[0].error || errorMessage;
+            }
+            showUploadFileError(file.name, errorMessage);
+            updateUploadStatusForFile(file.name, 'error', errorMessage);
+        }
+
         function showUploadErrorAlert(message) {
             const text = message || 'Upload failed. Please try again.';
             if (typeof crmNotify !== 'undefined') {
@@ -1037,8 +1114,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     );
                     result = await postOutlookEmailUpload(file, uploadUrl, true, attachmentStorage);
                 } else {
-                    showUploadErrorAlert(DUPLICATE_EXISTS_MESSAGE);
-                    return { uploaded: 0, failed: 0, rejected: 1, errors: [duplicateError] };
+                    return {
+                        uploaded: 0,
+                        failed: 0,
+                        rejected: 1,
+                        errors: [{ filename: file.name, error: DUPLICATE_EXISTS_MESSAGE, duplicate: true }]
+                    };
                 }
             }
 
@@ -1108,6 +1189,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     try {
                         const fileResult = await uploadSingleOutlookFile(file, uploadUrl, i, msgFiles.length);
+                        notifySingleFileUploadResult(file, fileResult);
                         if (fileResult.cancelled) {
                             totalRejected += 1;
                             continue;
@@ -1120,10 +1202,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     } catch (fileError) {
                         totalFailed += 1;
+                        const errorText = fileError.message || 'Upload failed';
                         allErrors.push({
                             filename: file.name,
-                            error: fileError.message || 'Upload failed'
+                            error: errorText
                         });
+                        showUploadFileError(file.name, errorText);
+                        updateUploadStatusForFile(file.name, 'error', errorText);
                     }
 
                     updateEmailUploadLoading(
