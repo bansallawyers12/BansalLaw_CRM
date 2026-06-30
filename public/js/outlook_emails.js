@@ -1086,8 +1086,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (typeof initVisaDocDragDrop === 'function') {
                     initVisaDocDragDrop();
                 }
+                var activeMatterId = jQuery('#sel_matter_id_client_detail').val();
+                if (window.SidebarTabs) {
+                    window.SidebarTabs.selectedMatter = activeMatterId;
+                }
                 if (window.SidebarTabs && typeof window.SidebarTabs.filtermatterdocumentsByMatter === 'function') {
-                    window.SidebarTabs.filtermatterdocumentsByMatter(window.SidebarTabs.selectedMatter);
+                    window.SidebarTabs.filtermatterdocumentsByMatter(activeMatterId);
                 }
             }
         }

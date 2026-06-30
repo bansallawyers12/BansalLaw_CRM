@@ -4087,14 +4087,18 @@ class ClientDocumentsController extends Controller
                 $fetchd = Document::with('staff')
                     ->where('client_id', $clientid)
                     ->whereNull('not_used_doc')
-                    ->where('doc_type', $doctype)
+                    ->whereIn('doc_type', ['matter', 'visa'])
                     ->where('type', $type)
                     ->where('folder_name', $folderName)
-                    ->orderBy('updated_at', 'DESC')
+                    ->orderBy('created_at', 'DESC')
                     ->get();
 
+                $parentDocs = $fetchd->filter(
+                    fn ($d) => ! str_ends_with($d->checklist ?? '', '_signed')
+                );
+
                 $response['data'] = view('crm.clients.partials.matter_document_folder_list', [
-                    'fetchd' => $fetchd,
+                    'fetchd' => $parentDocs,
                     'folderName' => $folderName,
                     'clientMatterId' => $clientMatterId,
                 ])->render();

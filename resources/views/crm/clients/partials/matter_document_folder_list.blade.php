@@ -4,9 +4,8 @@
         $visaDocumentType = \App\Models\VisaDocumentType::where('id', $fetch->folder_name)->first();
         $previewUrl = url('/documents/preview/' . $fetch->id);
         $downloadFilename = $fetch->myfile_key ?: trim(($fetch->file_name ?? '') . '.' . ($fetch->filetype ?? ''), '.');
-        $showCls = ($clientMatterId != $fetch->client_matter_id || $folderName != $fetch->folder_name) ? "style='display: none;'" : '';
     @endphp
-    <tr class="drow" data-matterid="{{ $fetch->client_matter_id }}" data-catid="{{ $fetch->folder_name }}" id="id_{{ $fetch->id }}" {!! $showCls !!}>
+    <tr class="drow" data-matterid="{{ $fetch->client_matter_id }}" data-catid="{{ $fetch->folder_name }}" id="id_{{ $fetch->id }}">
         <td style="white-space: initial;">
             <div data-id="{{ $fetch->id }}" data-visachecklistname="{{ htmlspecialchars($fetch->checklist) }}" class="visachecklist-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}" style="display: flex; align-items: center; gap: 8px;">
                 <span style="flex: 1;">{{ htmlspecialchars($fetch->checklist) }}</span>
