@@ -198,6 +198,7 @@ Route::post('/documents/bulk-upload-personal', [ClientDocumentsController::class
 Route::post('/documents/bulk-upload-matter', [ClientDocumentsController::class, 'bulkUploadMatterDocuments'])->name('clients.documents.bulkUploadMatterDocuments');
 Route::post('/documents/bulk-upload-visa', [ClientDocumentsController::class, 'bulkUploadMatterDocuments']);
 Route::post('/documents/bulk-upload-nomination', [ClientDocumentsController::class, 'bulkUploadNominationDocuments'])->name('clients.documents.bulkUploadNominationDocuments');
+Route::post('/documents/reload-folder-list', [ClientDocumentsController::class, 'reloadDocumentFolderList'])->name('clients.documents.reloadFolderList');
 
 /*---------- Client Invoices & Receipts ----------*/
 Route::get('/clients/saveaccountreport/{id}', [ClientAccountsController::class, 'saveaccountreport'])->name('clients.saveaccountreport');

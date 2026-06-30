@@ -1013,6 +1013,104 @@ document.addEventListener('DOMContentLoaded', function() {
                 .replace(/"/g, '&quot;');
         }
 
+        function getAffectedDocumentFolders(attachmentStorageList) {
+            if (!attachmentStorageList || !attachmentStorageList.length) {
+                return [];
+            }
+
+            const seen = new Set();
+            const folders = [];
+
+            attachmentStorageList.forEach(function(item) {
+                if (!item || (item.storage_type !== 'personal' && item.storage_type !== 'matter') || !item.folder_id) {
+                    return;
+                }
+
+                const key = item.storage_type + ':' + item.folder_id;
+                if (seen.has(key)) {
+                    return;
+                }
+
+                seen.add(key);
+                folders.push({
+                    storage_type: item.storage_type,
+                    folder_id: String(item.folder_id)
+                });
+            });
+
+            return folders;
+        }
+
+        async function reloadDocumentFolder(folder) {
+            if (!folder || !folder.folder_id || typeof jQuery === 'undefined') {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+            formData.append('clientid', clientId);
+            formData.append('folder_name', folder.folder_id);
+            formData.append('type', 'client');
+            formData.append('doctype', folder.storage_type === 'matter' ? 'matter' : 'personal');
+            if (folder.storage_type === 'matter' && matterId) {
+                formData.append('client_matter_id', matterId);
+            }
+
+            const response = await fetch(baseUrl + '/documents/reload-folder-list', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+            if (!response.ok || !result.status) {
+                throw new Error(result.message || 'Failed to refresh document folder');
+            }
+
+            if (folder.storage_type === 'personal') {
+                jQuery('.documnetlist_' + folder.folder_id).html(result.data || '');
+                if (result.griddata) {
+                    jQuery('.griddata_' + folder.folder_id).html(result.griddata);
+                }
+                if (typeof initPersonalDocDragDrop === 'function') {
+                    initPersonalDocDragDrop();
+                }
+            } else {
+                jQuery('.migdocumnetlist_' + folder.folder_id).html(result.data || '');
+                if (result.griddata) {
+                    jQuery('#' + folder.folder_id + '-subtab6 .miggriddata').html(result.griddata);
+                }
+                if (typeof initVisaDocDragDrop === 'function') {
+                    initVisaDocDragDrop();
+                }
+                if (window.SidebarTabs && typeof window.SidebarTabs.filtermatterdocumentsByMatter === 'function') {
+                    window.SidebarTabs.filtermatterdocumentsByMatter(window.SidebarTabs.selectedMatter);
+                }
+            }
+        }
+
+        async function refreshDocumentFoldersFromStorage(attachmentStorageList) {
+            const folders = getAffectedDocumentFolders(attachmentStorageList);
+            if (!folders.length) {
+                return;
+            }
+
+            for (let i = 0; i < folders.length; i++) {
+                try {
+                    await reloadDocumentFolder(folders[i]);
+                } catch (refreshError) {
+                    console.warn('Failed to refresh document folder after email upload:', folders[i], refreshError);
+                }
+            }
+
+            if (typeof getallactivities === 'function') {
+                getallactivities();
+            }
+        }
+
         function buildOutlookUploadFormData(file, forceUpload, attachmentStorage) {
             const formData = new FormData();
             formData.append('email_files[]', file);
@@ -1128,7 +1226,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 failed: result.failed || 0,
                 rejected: 0,
                 errors: result.errors || [],
-                message: result.message || ''
+                message: result.message || '',
+                attachmentStorage: attachmentStorage
             };
         }
 
@@ -1170,6 +1269,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let totalFailed = 0;
             let totalRejected = 0;
             const allErrors = [];
+            const uploadedAttachmentStorage = [];
 
             try {
                 for (let i = 0; i < msgFiles.length; i++) {
@@ -1197,6 +1297,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         totalUploaded += fileResult.uploaded;
                         totalFailed += fileResult.failed;
                         totalRejected += fileResult.rejected || 0;
+                        if (fileResult.attachmentStorage && fileResult.uploaded > 0) {
+                            uploadedAttachmentStorage.push.apply(uploadedAttachmentStorage, fileResult.attachmentStorage);
+                        }
                         if (fileResult.errors && fileResult.errors.length) {
                             allErrors.push.apply(allErrors, fileResult.errors);
                         }
@@ -1220,6 +1323,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 const errorDetails = formatUploadErrorDetails(allErrors.filter(function(err) { return !err.rejected; }));
+                const refreshUploadedDocumentFolders = function() {
+                    if (uploadedAttachmentStorage.length) {
+                        return refreshDocumentFoldersFromStorage(uploadedAttachmentStorage);
+                    }
+                    return Promise.resolve();
+                };
 
                 if (totalUploaded > 0 && totalFailed === 0 && totalRejected === 0) {
                     updateEmailUploadLoading('Upload complete', 'Your email was uploaded successfully.', '', 100);
@@ -1229,6 +1338,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     showUploadSuccessToast('Successfully uploaded ' + totalUploaded + ' email' + (totalUploaded > 1 ? 's' : '') + '.');
                     loadEmails();
+                    refreshUploadedDocumentFolders();
                 } else if (totalUploaded > 0) {
                     updateEmailUploadLoading('Upload finished', 'Some emails were uploaded with issues.', '', 100);
                     if (uploadStatus) {
@@ -1244,6 +1354,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         showUploadErrorAlert(errorMsg);
                     }
                     loadEmails();
+                    refreshUploadedDocumentFolders();
                 } else if (totalRejected > 0 && totalFailed === 0) {
                     if (uploadStatus) {
                         uploadStatus.style.color = 'orange';
@@ -1648,11 +1759,13 @@ document.addEventListener('DOMContentLoaded', function() {
             el.innerHTML = `
                 <div class="email-item-header">
                     <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}</div>
-                    <div class="email-date">${dateStr}</div>
                 </div>
                 <div class="email-subject">${escapeHtml(subject)}</div>
                 <div class="email-preview">${escapeHtml(preview)}</div>
-                ${attachmentSummary}
+                <div class="email-item-footer">
+                    ${attachmentSummary}
+                    <div class="email-date">${dateStr}</div>
+                </div>
             `;
 
             el.addEventListener('click', () => {

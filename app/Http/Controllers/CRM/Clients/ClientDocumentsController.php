@@ -4055,4 +4055,88 @@ class ClientDocumentsController extends Controller
         
         return '';
     }
+
+    /**
+     * Reload document folder list HTML after external uploads (e.g. email attachments).
+     */
+    public function reloadDocumentFolderList(Request $request): JsonResponse
+    {
+        $response = ['status' => false, 'message' => 'Please try again', 'data' => '', 'griddata' => ''];
+
+        try {
+            $clientid = (int) $request->input('clientid');
+            if ($deny = $this->denyJsonUnlessStaffClientAccess($clientid)) {
+                return $deny;
+            }
+
+            $folderName = (string) $request->input('folder_name', '');
+            if ($folderName === '') {
+                $response['message'] = 'Document folder is required';
+
+                return response()->json($response);
+            }
+
+            $doctype = (string) ($request->input('doctype') ?? 'personal');
+            if ($doctype === 'visa' || $doctype === '') {
+                $doctype = 'matter';
+            }
+            $type = (string) ($request->input('type') ?? 'client');
+
+            if (in_array($doctype, ['matter', 'visa'], true)) {
+                $clientMatterId = $request->input('client_matter_id');
+                $fetchd = Document::with('staff')
+                    ->where('client_id', $clientid)
+                    ->whereNull('not_used_doc')
+                    ->where('doc_type', $doctype)
+                    ->where('type', $type)
+                    ->orderBy('updated_at', 'DESC')
+                    ->get();
+
+                $response['data'] = view('crm.clients.partials.matter_document_folder_list', [
+                    'fetchd' => $fetchd,
+                    'folderName' => $folderName,
+                    'clientMatterId' => $clientMatterId,
+                ])->render();
+                $response['griddata'] = view('crm.clients.partials.matter_document_folder_grid', [
+                    'fetchd' => $fetchd,
+                ])->render();
+            } else {
+                $doccategoryTitle = PersonalDocumentType::where('id', $folderName)->value('title') ?? '';
+                $fetchd = Document::with('staff')
+                    ->where('client_id', $clientid)
+                    ->whereNull('not_used_doc')
+                    ->where('doc_type', $doctype)
+                    ->where('type', $type)
+                    ->where('folder_name', $folderName)
+                    ->orderBy('updated_at', 'DESC')
+                    ->get();
+
+                $response['data'] = view('crm.clients.partials.personal_document_folder_list', [
+                    'fetchd' => $fetchd,
+                    'clientid' => $clientid,
+                    'folderName' => $folderName,
+                    'doccategoryTitle' => $doccategoryTitle,
+                ])->render();
+                $response['griddata'] = view('crm.clients.partials.personal_document_folder_grid', [
+                    'fetchd' => $fetchd,
+                    'folderName' => $folderName,
+                    'doccategoryTitle' => $doccategoryTitle,
+                ])->render();
+            }
+
+            $response['status'] = true;
+            $response['message'] = 'Folder list refreshed';
+
+            return response()->json($response);
+        } catch (\Exception $e) {
+            Log::error('Error reloading document folder list', [
+                'client_id' => $request->input('clientid'),
+                'folder_name' => $request->input('folder_name'),
+                'doctype' => $request->input('doctype'),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json($response);
+        }
+    }
 }
