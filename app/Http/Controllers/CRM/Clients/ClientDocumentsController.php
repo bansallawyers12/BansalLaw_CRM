@@ -4089,6 +4089,7 @@ class ClientDocumentsController extends Controller
                     ->whereNull('not_used_doc')
                     ->where('doc_type', $doctype)
                     ->where('type', $type)
+                    ->where('folder_name', $folderName)
                     ->orderBy('updated_at', 'DESC')
                     ->get();
 

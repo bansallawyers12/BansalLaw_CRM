@@ -1,4 +1,5 @@
 @foreach($fetchd as $fetch)
+    @if ($fetch->myfile)
     @php
         $gridPreviewUrl = url('/documents/preview/' . $fetch->id);
         $gridDownloadFilename = $fetch->myfile_key ?: trim(($fetch->file_name ?? '') . '.' . ($fetch->filetype ?? ''), '.');
@@ -21,4 +22,5 @@
             </div>
         </div>
     </div>
+    @endif
 @endforeach
