@@ -1,5 +1,5 @@
            <!-- Matter Documents tab (matter-specific; internal id matterdocuments-tab) -->
-           <div class="tab-pane" id="matterdocuments-tab">
+           <div class="tab-pane client-documents-tab" id="matterdocuments-tab">
                 <div class="card full-width documentalls-container">
                     <?php
                     $client_selected_matter_id1 = null;
@@ -134,7 +134,7 @@
                                 $folderName = $id;
                                 ?>
                                 <div class="subtab6-pane <?= $isActive ?>" id="<?= $id ?>-subtab6">
-                                    <div class="checklist-table-container" style="vertical-align: top; margin-top: 10px; width: 760px; overflow: visible;">
+                                    <div class="checklist-table-container">
                                         <div class="subtab6-header" style="margin-left: 10px;">
                                             <h3><i class="fas fa-file-alt"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
                                             <div style="display: flex; gap: 10px;">
@@ -162,6 +162,7 @@
                                                 <div class="bulk-upload-files-container-visa"></div>
                                             </div>
                                         </div>
+                                        <div class="checklist-table-scroll">
                                         <table class="checklist-table">
                                             <thead>
                                                 <tr>
@@ -351,6 +352,7 @@
                                                 <?php endforeach; endforeach; ?>
                                             </tbody>
                                         </table>
+                                        </div>
                                     </div>
 
                                     <div class="grid_data miggriddata" style="display:none;">
@@ -396,7 +398,7 @@
                                         <?php endforeach; ?>
                                     </div>
 
-                                    <div class="preview-pane file-preview-container preview-container-migdocumnetlist matter-preview-pane" style="display: inline; margin-top: 15px !important; width: 499px;">
+                                    <div class="preview-pane file-preview-container preview-container-migdocumnetlist matter-preview-pane client-doc-preview-pane">
                                         <p class="preview-placeholder-text">Click on a file to preview it here.</p>
                                     </div>
                                 </div>
@@ -958,6 +960,12 @@
                 $(document).on('click', '.client-nav-button[data-tab="matterdocuments"]', function() {
                     setTimeout(function() {
                         initVisaDocDragDrop();
+                        if (typeof adjustPreviewContainers === 'function') {
+                            adjustPreviewContainers();
+                        }
+                        if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                            adjustClientDocumentsPanelHeight();
+                        }
                     }, 200);
                 });
                 
@@ -965,6 +973,12 @@
                 if ($('#matterdocuments-tab').hasClass('active')) {
                     setTimeout(function() {
                         initVisaDocDragDrop();
+                        if (typeof adjustPreviewContainers === 'function') {
+                            adjustPreviewContainers();
+                        }
+                        if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                            adjustClientDocumentsPanelHeight();
+                        }
                     }, 500);
                 }
                 
@@ -1025,7 +1039,11 @@
                     $('.bulk-upload-toggle-btn-visa').not(this).html('<i class="fas fa-upload"></i> Bulk Upload');
                     
                     if (dropzoneContainer.is(':visible')) {
-                        dropzoneContainer.slideUp();
+                        dropzoneContainer.slideUp(200, function() {
+                            if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                                adjustClientDocumentsPanelHeight();
+                            }
+                        });
                         $(this).html('<i class="fas fa-upload"></i> Bulk Upload');
                         resetVisaBulkUploadSelection(categoryId);
                         if (typeof window.hideBulkUploadModal === 'function') {
@@ -1035,7 +1053,11 @@
                         if (typeof window.hideBulkUploadModal === 'function') {
                             window.hideBulkUploadModal();
                         }
-                        dropzoneContainer.slideDown();
+                        dropzoneContainer.slideDown(200, function() {
+                            if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                                adjustClientDocumentsPanelHeight();
+                            }
+                        });
                         $(this).html('<i class="fas fa-times"></i> Close');
                         currentVisaCategoryId = categoryId;
                         currentVisaMatterId = matterId || null;

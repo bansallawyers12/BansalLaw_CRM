@@ -28,9 +28,13 @@
     $(document).ready(function() {
         // Run on load
         adjustActivityFeedHeight();
+        adjustClientDocumentsPanelHeight();
+        adjustPreviewContainers();
         // Run on resize (for responsiveness)
         $(window).on('resize', function () {
             adjustActivityFeedHeight();
+            adjustClientDocumentsPanelHeight();
+            adjustPreviewContainers();
         });
 
        // On page load, sync matter dropdown from URL (supports .../FAM_1/noteterm — tab is not the matter ref)
@@ -848,7 +852,7 @@ $(document).ready(function() {
             </div>
         `);
 
-        if (container[0] && typeof container[0].scrollIntoView === 'function') {
+        if (container[0] && typeof container[0].scrollIntoView === 'function' && !container.hasClass('client-doc-preview-pane')) {
             container[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
@@ -956,7 +960,7 @@ $(document).ready(function() {
 
         // Style all preview containers
 
-        $('.preview-pane.file-preview-container').css({
+        $('.preview-pane.file-preview-container').not('.client-doc-preview-pane').css({
 
             'display': 'flex',
 

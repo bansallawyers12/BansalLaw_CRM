@@ -92,11 +92,80 @@
         $('.activity-feed').css('overflow-y', 'auto');
     }
 
+    var clientDocumentsTabConfigs = [
+        { selector: '#matterdocuments-tab', paneSelector: '.subtab6-pane.active' },
+        { selector: '#personaldocuments-tab', paneSelector: '.subtab2-pane.active' }
+    ];
+
+    /**
+     * Size Personal/Matter document tabs to fill the viewport below the tab strip.
+     */
+    function adjustClientDocumentsPanelHeight() {
+        var bottomGutter = 8;
+        var heightBonus = 50;
+        var minHeight = 570;
+        var isMobile = $(window).width() <= 768;
+        var isTablet = $(window).width() <= 992;
+
+        clientDocumentsTabConfigs.forEach(function(cfg) {
+            var $tab = $(cfg.selector);
+            if (!$tab.length) {
+                return;
+            }
+
+            if (!$tab.hasClass('active')) {
+                $tab.css({ height: '', maxHeight: '' });
+                $tab.find('.client-doc-preview-pane').css('height', '');
+                return;
+            }
+
+            var tabTop = $tab.offset().top;
+            var mobileMin = isTablet ? 480 : minHeight;
+            var targetHeight = Math.max(mobileMin, $(window).height() - tabTop - bottomGutter + heightBonus);
+
+            $tab.css({
+                height: targetHeight + 'px',
+                maxHeight: targetHeight + 'px'
+            });
+
+            var $pane = $tab.find(cfg.paneSelector);
+            var $listPanel = $pane.find('.checklist-table-container');
+            var $preview = $pane.find('.client-doc-preview-pane').first();
+
+            if (!$listPanel.length || !$preview.length) {
+                return;
+            }
+
+            if (isMobile) {
+                var paneHeight = $pane.innerHeight();
+                var listHeight = $listPanel.outerHeight(true);
+                var previewHeight = Math.max(240, paneHeight - listHeight - 12);
+                $preview.css('height', previewHeight + 'px');
+                return;
+            }
+
+            var listOuterHeight = $listPanel.outerHeight();
+            if (listOuterHeight > 0) {
+                $preview.css('height', listOuterHeight + 'px');
+            }
+        });
+    }
+
+    /** @deprecated Use adjustClientDocumentsPanelHeight */
+    function adjustMatterDocumentsPanelHeight() {
+        adjustClientDocumentsPanelHeight();
+    }
+
     /**
      * Adjust file preview container heights based on viewport.
      */
     function adjustPreviewContainers() {
-        $('.preview-pane.file-preview-container').each(function() {
+        if ($('#matterdocuments-tab').hasClass('active') || $('#personaldocuments-tab').hasClass('active')) {
+            adjustClientDocumentsPanelHeight();
+            return;
+        }
+
+        $('.preview-pane.file-preview-container').not('.client-doc-preview-pane').each(function() {
             var windowHeight = $(window).height();
             var containerTop = $(this).offset().top;
             var desiredHeight = windowHeight - containerTop - 50;
@@ -124,6 +193,8 @@
     }
 
     window.adjustActivityFeedHeight = adjustActivityFeedHeight;
+    window.adjustClientDocumentsPanelHeight = adjustClientDocumentsPanelHeight;
+    window.adjustMatterDocumentsPanelHeight = adjustMatterDocumentsPanelHeight;
     window.adjustPreviewContainers = adjustPreviewContainers;
     window.downloadFile = downloadFile;
 

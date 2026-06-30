@@ -231,6 +231,17 @@
             syncFeedGridLayout(false);
             $('#activity-feed').hide();
             setMainColumnForTab(tabId);
+
+            if (tabId === 'matterdocuments' || tabId === 'personaldocuments') {
+                setTimeout(function() {
+                    if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                        adjustClientDocumentsPanelHeight();
+                    }
+                    if (typeof adjustPreviewContainers === 'function') {
+                        adjustPreviewContainers();
+                    }
+                }, 100);
+            }
         }
 
         syncAriaForTabs(tabId);

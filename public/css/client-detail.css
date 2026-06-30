@@ -221,6 +221,209 @@
 #matterdocuments-tab .preview-pane .preview-placeholder-text { color: var(--text-muted, #5e7a90); margin: 0; }
 #bulk-upload-mapping-modal .matter-bulk-file-icon { color: var(--sidebar-active, #3a6fa8); }
 
+/* Client documents tabs (Personal + Matter): viewport-height panel, scrollable list, stable preview */
+#matterdocuments-tab.client-documents-tab.tab-pane.active,
+#personaldocuments-tab.client-documents-tab.tab-pane.active {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 570px;
+}
+
+#matterdocuments-tab.client-documents-tab .documentalls-container,
+#personaldocuments-tab.client-documents-tab .documentalls-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  margin-top: 0;
+  border: none;
+  box-shadow: none;
+}
+
+#matterdocuments-tab .visa-documents-content,
+#personaldocuments-tab .personal-documents-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#matterdocuments-tab.client-documents-tab .subtab-header-container,
+#personaldocuments-tab.client-documents-tab .subtab-header-container {
+  flex-shrink: 0;
+}
+
+#matterdocuments-tab .subtab6-content,
+#personaldocuments-tab .subtab2-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 15px 0;
+}
+
+#matterdocuments-tab .subtab6-pane.active,
+#personaldocuments-tab .subtab2-pane.active {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  align-items: stretch;
+}
+
+#matterdocuments-tab.client-documents-tab .checklist-table-container,
+#personaldocuments-tab.client-documents-tab .checklist-table-container {
+  flex: 1 1 760px;
+  min-width: 0;
+  width: 760px;
+  max-width: 52%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  margin-top: 0;
+}
+
+#matterdocuments-tab .checklist-table-container .subtab6-header,
+#personaldocuments-tab .checklist-table-container .subtab2-header,
+#matterdocuments-tab .checklist-table-container .matter-bulk-dropzone,
+#matterdocuments-tab .checklist-table-container .bulk-upload-file-list-visa,
+#personaldocuments-tab .checklist-table-container .bulk-upload-dropzone-container,
+#personaldocuments-tab .checklist-table-container .bulk-upload-file-list {
+  flex-shrink: 0;
+}
+
+#matterdocuments-tab .checklist-table-container .subtab6-header,
+#personaldocuments-tab .checklist-table-container .subtab2-header {
+  margin-bottom: 12px;
+}
+
+#matterdocuments-tab .checklist-table-container .subtab6-header h3,
+#personaldocuments-tab .checklist-table-container .subtab2-header h3 {
+  font-size: 1.25rem;
+}
+
+#matterdocuments-tab .checklist-table-scroll,
+#personaldocuments-tab .checklist-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid var(--border, #c8dcef);
+  border-radius: 0 0 8px 8px;
+  background: var(--card-bg, #fff);
+}
+
+#matterdocuments-tab .checklist-table-scroll .checklist-table,
+#personaldocuments-tab .checklist-table-scroll .checklist-table {
+  margin: 0;
+  table-layout: fixed;
+}
+
+#matterdocuments-tab .checklist-table-scroll .checklist-table td,
+#personaldocuments-tab .checklist-table-scroll .checklist-table td {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+#matterdocuments-tab .checklist-table-scroll .checklist-table td:last-child,
+#personaldocuments-tab .checklist-table-scroll .checklist-table td:last-child {
+  width: 36px;
+}
+
+#matterdocuments-tab .checklist-table-scroll .checklist-table thead th,
+#personaldocuments-tab .checklist-table-scroll .checklist-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--page-bg, #f0f6ff);
+  box-shadow: 0 1px 0 var(--border, #c8dcef);
+}
+
+#matterdocuments-tab .client-doc-preview-pane.preview-pane,
+#personaldocuments-tab .client-doc-preview-pane.preview-pane {
+  flex: 1 1 420px;
+  width: auto;
+  max-width: none;
+  min-width: 380px;
+  align-self: stretch;
+  display: flex !important;
+  flex-direction: column;
+  margin-top: 0;
+  overflow: hidden;
+  min-height: 0;
+  position: relative;
+  top: auto;
+  padding: 15px;
+}
+
+#matterdocuments-tab .client-doc-preview-pane .preview-content,
+#personaldocuments-tab .client-doc-preview-pane .preview-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  width: 100%;
+}
+
+#matterdocuments-tab .client-doc-preview-pane .preview-placeholder-text,
+#personaldocuments-tab .client-doc-preview-pane .preview-placeholder-text {
+  align-self: center;
+  margin: auto;
+}
+
+@media (max-width: 992px) {
+  #matterdocuments-tab.client-documents-tab .checklist-table-container,
+  #personaldocuments-tab.client-documents-tab .checklist-table-container {
+    width: 100%;
+    max-width: 58%;
+    flex: 1 1 340px;
+  }
+
+  #matterdocuments-tab .client-doc-preview-pane.preview-pane,
+  #personaldocuments-tab .client-doc-preview-pane.preview-pane {
+    min-width: 280px;
+    flex: 1 1 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  #matterdocuments-tab.client-documents-tab.tab-pane.active,
+  #personaldocuments-tab.client-documents-tab.tab-pane.active {
+    min-height: 480px;
+  }
+
+  #matterdocuments-tab .subtab6-pane.active,
+  #personaldocuments-tab .subtab2-pane.active {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  #matterdocuments-tab.client-documents-tab .checklist-table-container,
+  #personaldocuments-tab.client-documents-tab .checklist-table-container {
+    width: 100%;
+    max-width: 100%;
+    flex: 0 1 auto;
+    max-height: 45%;
+  }
+
+  #matterdocuments-tab .checklist-table-scroll,
+  #personaldocuments-tab .checklist-table-scroll {
+    max-height: none;
+  }
+
+  #matterdocuments-tab .client-doc-preview-pane.preview-pane,
+  #personaldocuments-tab .client-doc-preview-pane.preview-pane {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex: 1 1 auto;
+    min-height: 240px;
+  }
+}
+
 .checklist-table-container { flex: 1.5; overflow-x: auto; }
 .checklist-table { width: 100%; border-collapse: collapse; background: var(--card-bg, #fff); color: var(--text-dark, #1a2c40); }
 .checklist-table thead { background: var(--page-bg, #f0f6ff); }

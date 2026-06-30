@@ -235,6 +235,10 @@
 
         $(`#${subtabId2}-subtab2`).addClass('active');
 
+        if (typeof adjustClientDocumentsPanelHeight === 'function') {
+            adjustClientDocumentsPanelHeight();
+        }
+
     });
 
 
@@ -266,6 +270,13 @@
         const subtabId6 = $(this).data('subtab6'); //alert(subtabId6);
 
         $(`#${subtabId6}-subtab6`).addClass('active');
+
+        if (typeof adjustPreviewContainers === 'function') {
+            adjustPreviewContainers();
+        }
+        if (typeof adjustClientDocumentsPanelHeight === 'function') {
+            adjustClientDocumentsPanelHeight();
+        }
 
     });
 

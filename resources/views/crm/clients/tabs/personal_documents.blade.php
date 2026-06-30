@@ -1,5 +1,5 @@
            <!-- Personal Documents Tab (Client-Level) -->
-           <div class="tab-pane" id="personaldocuments-tab">
+           <div class="tab-pane client-documents-tab" id="personaldocuments-tab">
                 <div class="card full-width documentalls-container">
                     <?php
                     $clientId = $fetchedData->id ?? null;
@@ -79,7 +79,7 @@
                                 ?>
 
                                 <div class="subtab2-pane <?= $isActive ?>" id="<?= $id ?>-subtab2">
-                                    <div class="checklist-table-container" style="vertical-align: top; margin-top: 10px; width: 760px;">
+                                    <div class="checklist-table-container">
                                         <div class="subtab2-header" style="margin-left: 10px;">
                                             <h3><i class="fas fa-file-alt"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
                                             <div style="display: flex; gap: 10px;">
@@ -107,6 +107,7 @@
                                                 <div class="bulk-upload-files-container"></div>
                                             </div>
                                         </div>
+                                        <div class="checklist-table-scroll">
                                         <table class="checklist-table">
                                             <thead>
                                                 <tr>
@@ -203,6 +204,7 @@
                                                 <?php endforeach; ?>
                                             </tbody>
                                         </table>
+                                        </div>
                                     </div>
 
                                     <div class="grid_data griddata_<?= $id ?>">
@@ -235,7 +237,7 @@
                                         <div class="clearfix"></div>
                                     </div>
 
-                                    <div class="preview-pane file-preview-container preview-container-<?= $id ?>" style="display: inline; margin-top: 15px !important; width: 499px;">
+                                    <div class="preview-pane file-preview-container preview-container-<?= $id ?> client-doc-preview-pane personal-preview-pane">
                                         <p class="preview-placeholder-text">Click on a file to preview it here.</p>
                                     </div>
                                 </div>
@@ -712,13 +714,18 @@
                 $(document).on('click', '.client-nav-button[data-tab="personaldocuments"]', function() {
                     setTimeout(function() {
                         initPersonalDocDragDrop();
-                    }, 200); // Delay to ensure tab is visible
+                        if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                            adjustClientDocumentsPanelHeight();
+                        }
+                    }, 200);
                 });
                 
-                // Also check if tab is already active (e.g., direct URL navigation)
                 if ($('#personaldocuments-tab').hasClass('active')) {
                     setTimeout(function() {
                         initPersonalDocDragDrop();
+                        if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                            adjustClientDocumentsPanelHeight();
+                        }
                     }, 500);
                 }
                 
@@ -1391,13 +1398,21 @@
                     $('.bulk-upload-toggle-btn').not(this).html('<i class="fas fa-upload"></i> Bulk Upload');
                     
                     if (dropzoneContainer.is(':visible')) {
-                        dropzoneContainer.slideUp();
+                        dropzoneContainer.slideUp(200, function() {
+                            if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                                adjustClientDocumentsPanelHeight();
+                            }
+                        });
                         $(this).html('<i class="fas fa-upload"></i> Bulk Upload');
                         resetBulkUploadSelection(categoryId);
                         hideBulkUploadModal();
                     } else {
                         hideBulkUploadModal();
-                        dropzoneContainer.slideDown();
+                        dropzoneContainer.slideDown(200, function() {
+                            if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                                adjustClientDocumentsPanelHeight();
+                            }
+                        });
                         $(this).html('<i class="fas fa-times"></i> Close');
                         currentCategoryId = categoryId;
                     }
