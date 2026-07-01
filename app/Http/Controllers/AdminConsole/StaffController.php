@@ -160,6 +160,17 @@ class StaffController extends Controller
 
                 $obj->status = isset($requestData['status']) ? (int) $requestData['status'] : 1;
 
+                $storeActor = Auth::user();
+                $canGrantEmailDelete = Staff::canGrantEmailDeleteWithAttachmentsPermission(
+                    $storeActor instanceof Staff ? $storeActor : null
+                );
+                if (! $canGrantEmailDelete && $request->has('can_delete_email_with_attachments')) {
+                    return redirect()->back()->withInput()->with('error', 'Only Super Admin or Admin can grant email delete permission.');
+                }
+                if ($canGrantEmailDelete && Schema::hasColumn('staff', 'can_delete_email_with_attachments')) {
+                    $obj->can_delete_email_with_attachments = $request->boolean('can_delete_email_with_attachments');
+                }
+
                 $saved = $obj->save();
 
                 if (!$saved) {
@@ -251,6 +262,13 @@ class StaffController extends Controller
             $crmAccess = app(CrmAccessService::class);
             $actor = Auth::user();
             $isSuperAdminActor = $actor instanceof Staff && (int) ($actor->role ?? 0) === 1;
+            $canGrantEmailDelete = Staff::canGrantEmailDeleteWithAttachmentsPermission(
+                $actor instanceof Staff ? $actor : null
+            );
+
+            if (! $canGrantEmailDelete && $request->has('can_delete_email_with_attachments')) {
+                return redirect()->back()->withInput()->with('error', 'Only Super Admin or Admin can grant email delete permission.');
+            }
 
             if (! $isSuperAdminActor && $request->has('grant_super_admin_access')) {
                 return redirect()->back()->withInput()->with('error', 'Only Superadmin role user can provide this access.');
@@ -320,6 +338,10 @@ class StaffController extends Controller
 
             if ($isSuperAdminActor && Schema::hasColumn('staff', 'trust_rule42_supervisor')) {
                 $obj->trust_rule42_supervisor = $request->boolean('trust_rule42_supervisor');
+            }
+
+            if ($canGrantEmailDelete && Schema::hasColumn('staff', 'can_delete_email_with_attachments')) {
+                $obj->can_delete_email_with_attachments = $request->boolean('can_delete_email_with_attachments');
             }
 
             $saved = $obj->save();

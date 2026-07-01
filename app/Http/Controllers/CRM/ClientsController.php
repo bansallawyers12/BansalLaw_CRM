@@ -4134,22 +4134,17 @@ class ClientsController extends Controller
     }
 
     /**
-     * Delete an email log (email).
-     * Allowed roles: configurable (config/crm.php / CRM_EMAIL_LOG_DELETE_ROLE_IDS); default 1, 12, 16.
+     * Delete an email log (email) and its attachments.
+     * Allowed when staff has {@see Staff::canDeleteEmailWithAttachments()} (granted by Admin/Super Admin).
      * Accepts DELETE or POST /email-logs/{id}/delete (POST recommended where DELETE is blocked).
      */
     public function deleteEmailLog(Request $request, $id)
     {
-        $allowedRoles = config('crm.email_log_delete_role_ids', [1, 12, 16]);
-        if (!is_array($allowedRoles) || count($allowedRoles) === 0) {
-            $allowedRoles = [1, 12, 16];
-        }
-        $allowedRoles = array_map('intval', $allowedRoles);
-
-        if (!in_array((int) Auth::user()->role, $allowedRoles, true)) {
+        $user = Auth::guard('admin')->user();
+        if (! $user instanceof \App\Models\Staff || ! $user->canDeleteEmailWithAttachments()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized: Your role cannot delete emails.',
+                'message' => 'Unauthorized: You do not have permission to delete emails.',
             ], 403);
         }
 

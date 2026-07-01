@@ -2244,7 +2244,16 @@
             return;
         }
 
-        if (!confirm('Are you sure you want to delete this email? This action cannot be undone.')) {
+        const attachmentCount = Array.isArray(email.attachments) ? email.attachments.length : 0;
+        const confirmDelete = typeof window.showEmailDeleteConfirm === 'function'
+            ? await window.showEmailDeleteConfirm({
+                subject: email.subject || '(No subject)',
+                fromMail: email.from_mail || 'Unknown sender',
+                attachmentCount: attachmentCount
+            })
+            : (window.confirm('Delete this email and its attachments?') && window.confirm('Final confirmation: permanently delete this email?'));
+
+        if (!confirmDelete) {
             return;
         }
 

@@ -19,11 +19,9 @@
     }
 @endphp
 @php
-    $canDeleteEmail = Auth::user() && in_array(
-        (int) Auth::user()->role,
-        config('crm.email_log_delete_role_ids', [1, 12, 16]) ?: [1, 12, 16],
-        true
-    );
+    $authStaff = auth()->guard('admin')->user();
+    $canDeleteEmail = $authStaff instanceof \App\Models\Staff
+        && $authStaff->canDeleteEmailWithAttachments();
 @endphp
 <div class="email-interface-container" data-client-id="{{ $clientData->id ?? '' }}" data-matter-id="{{ $matterId ?? '' }}" data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}">
     <!-- Top Control Bar (Search & Filters) -->
@@ -169,13 +167,23 @@
 <!-- Context Menu Overlay (for closing menu on outside click) -->
 <div id="contextMenuOverlay" class="context-menu-overlay" style="display: none;"></div>
 
+@if($canDeleteEmail)
+@include('crm.partials.email_delete_confirm_modal')
+@endif
+
 <!-- Include necessary CSS and JavaScript -->
 <link rel="stylesheet" href="{{ asset('css/emails.css') }}?v={{ file_exists(public_path('css/emails.css')) ? filemtime(public_path('css/emails.css')) : 1 }}">
+@if($canDeleteEmail)
+<link rel="stylesheet" href="{{ asset('css/email-delete-confirm.css') }}?v={{ file_exists(public_path('css/email-delete-confirm.css')) ? filemtime(public_path('css/email-delete-confirm.css')) : 1 }}">
+@endif
 <script>
 window.__CRM_BASE__ = @json(rtrim((string) url('/'), '/'));
 window.__CRM_EMAIL_MAX_FILE_BYTES__ = @json((int) config('crm.email_upload_max_kb', 30720) * 1024);
 </script>
 <script src="{{ asset('js/email-upload-filename.js') }}?v={{ file_exists(public_path('js/email-upload-filename.js')) ? filemtime(public_path('js/email-upload-filename.js')) : 1 }}"></script>
+@if($canDeleteEmail)
+<script src="{{ asset('js/email-delete-confirm.js') }}?v={{ file_exists(public_path('js/email-delete-confirm.js')) ? filemtime(public_path('js/email-delete-confirm.js')) : 1 }}"></script>
+@endif
 <script src="{{ asset('js/emails.js') }}?v={{ file_exists(public_path('js/emails.js')) ? filemtime(public_path('js/emails.js')) : 1 }}"></script>
 
 <script>

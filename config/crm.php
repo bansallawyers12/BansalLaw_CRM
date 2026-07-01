@@ -4,12 +4,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Roles allowed to delete CRM email logs (inbox/sent thread rows)
+    | Staff roles that may delete/grant CRM email delete (Super Admin + Admin)
     |--------------------------------------------------------------------------
     |
-    | Comma-separated user_roles.id values. Default matches legacy behaviour
-    | (Super Admin, Admin, Legal Practitioner). Set CRM_EMAIL_LOG_DELETE_ROLE_IDS
-    | in .env to add roles without code changes, e.g. "1,12,16,20".
+    | Canonical ids: 1 = Super Admin, 17 = Admin (see config/crm_roles.php).
+    | Person Responsible (12) and others need the per-staff checkbox instead.
+    |
+    */
+    'email_delete_grant_role_ids' => array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_EMAIL_DELETE_GRANT_ROLE_IDS', '1,17'))
+    ), static fn (int $id) => $id > 0)),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Roles allowed to delete CRM email logs (legacy — superseded by staff flag)
+    |--------------------------------------------------------------------------
+    |
+    | Prefer granting {@see Staff::can_delete_email_with_attachments} per user
+    | from Admin Console (Admin / Super Admin only). Super Admin and Admin roles
+    | may always delete without the flag.
     |
     */
     'email_log_delete_role_ids' => array_values(array_filter(array_map(

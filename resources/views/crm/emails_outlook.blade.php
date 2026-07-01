@@ -52,6 +52,11 @@
             ->all();
     }
 @endphp
+@php
+    $authStaff = auth()->guard('admin')->user();
+    $canDeleteEmail = $authStaff instanceof \App\Models\Staff
+        && $authStaff->canDeleteEmailWithAttachments();
+@endphp
 
 <!-- Outlook CSS -->
 <link rel="stylesheet" href="{{ asset('css/outlook_emails.css') }}?v={{ time() }}">
@@ -64,6 +69,7 @@
     data-auth-email="{{ auth()->user()->email ?? '' }}"
     data-staff-signature-url="{{ route('crm.staff.email-signature') }}"
     data-staff-id="{{ auth()->id() }}"
+    data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}"
     data-personal-folders='@json($emailUploadPersonalFolders)'
     data-matter-folders='@json($emailUploadMatterFolders)'>
     
@@ -176,6 +182,11 @@
                     <button class="action-btn" id="btnReply"><i class="fas fa-reply"></i> Reply</button>
                     <button class="action-btn" id="btnReplyAll"><i class="fas fa-reply-all"></i> Reply All</button>
                     <button class="action-btn" id="btnForward"><i class="fas fa-share"></i> Forward</button>
+                    @if($canDeleteEmail)
+                    <button type="button" class="action-btn action-btn--danger" id="btnDeleteEmail" title="Delete email and attachments">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                    @endif
                 </div>
                 
                 <h2 class="email-full-subject" id="readSubject">Loading...</h2>
@@ -284,6 +295,10 @@
     </div>
 </div>
 
+@if($canDeleteEmail)
+@include('crm.partials.email_delete_confirm_modal')
+@endif
+
 <!-- Attachment storage modal -->
 <div class="attachment-storage-modal-overlay" id="attachmentStorageModal" aria-hidden="true">
     <div class="attachment-storage-modal" role="dialog" aria-labelledby="attachmentStorageModalTitle" aria-modal="true">
@@ -357,4 +372,8 @@
 
 @include('partials.staff-signature-script')
 <script src="{{ asset('js/email-upload-filename.js') }}?v={{ file_exists(public_path('js/email-upload-filename.js')) ? filemtime(public_path('js/email-upload-filename.js')) : 1 }}"></script>
+@if($canDeleteEmail)
+<link rel="stylesheet" href="{{ asset('css/email-delete-confirm.css') }}?v={{ file_exists(public_path('css/email-delete-confirm.css')) ? filemtime(public_path('css/email-delete-confirm.css')) : 1 }}">
+<script src="{{ asset('js/email-delete-confirm.js') }}?v={{ file_exists(public_path('js/email-delete-confirm.js')) ? filemtime(public_path('js/email-delete-confirm.js')) : 1 }}"></script>
+@endif
 <script src="{{ asset('js/outlook_emails.js') }}?v={{ time() }}"></script>

@@ -244,6 +244,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnForward = document.getElementById('btnForward');
     if (btnForward) btnForward.addEventListener('click', () => openCompose('forward'));
 
+    const canDeleteEmail = outlookContainer && outlookContainer.dataset.canDeleteEmail === '1';
+    const btnDeleteEmail = document.getElementById('btnDeleteEmail');
+    if (btnDeleteEmail && canDeleteEmail) {
+        btnDeleteEmail.addEventListener('click', handleDeleteEmail);
+    }
+
     // File Upload Handler
     const btnUploadEmail = document.getElementById('btnUploadEmail');
     const fileInput = document.getElementById('outlookEmailFileInput');
@@ -2131,6 +2137,67 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         focusComposeReply();
+    }
+
+    async function handleDeleteEmail() {
+        if (!selectedEmailId) {
+            alert('No email selected for delete.');
+            return;
+        }
+
+        const email = emails.find(function(e) { return e.id === selectedEmailId; });
+        if (!email) {
+            alert('No email selected for delete.');
+            return;
+        }
+
+        const attachmentCount = Array.isArray(email.attachments) ? email.attachments.length : 0;
+        const confirmDelete = typeof window.showEmailDeleteConfirm === 'function'
+            ? await window.showEmailDeleteConfirm({
+                subject: email.subject || '(No subject)',
+                fromMail: email.from_mail || 'Unknown sender',
+                attachmentCount: attachmentCount
+            })
+            : (window.confirm('Delete this email and its attachments?') && window.confirm('Final confirmation: permanently delete this email?'));
+
+        if (!confirmDelete) {
+            return;
+        }
+
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const payload = {};
+        if (clientId) {
+            payload.client_id = clientId;
+        }
+        if (matterId) {
+            payload.client_matter_id = matterId;
+        }
+
+        try {
+            const response = await fetch(baseUrl + '/email-logs/' + email.id + '/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfMeta ? csrfMeta.content : ''
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json().catch(function() { return {}; });
+
+            if (response.ok && data.success) {
+                selectedEmailId = null;
+                readingPane.classList.remove('is-visible');
+                emptyState.style.display = 'flex';
+                loadEmails();
+                return;
+            }
+
+            alert(data.message || ('Failed to delete email (' + response.status + ')'));
+        } catch (error) {
+            alert('Failed to delete email: ' + (error && error.message ? error.message : 'Unknown error'));
+        }
     }
 
     function normalizePreviewText(text, maxLen) {

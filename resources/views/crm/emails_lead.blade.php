@@ -1,11 +1,9 @@
 <!-- Emails Interface for Leads (no matter context) -->
 @php
     $leadData = $fetchedData ?? null;
-    $canDeleteEmail = Auth::user() && in_array(
-        (int) Auth::user()->role,
-        config('crm.email_log_delete_role_ids', [1, 12, 16]) ?: [1, 12, 16],
-        true
-    );
+    $authStaff = auth()->guard('admin')->user();
+    $canDeleteEmail = $authStaff instanceof \App\Models\Staff
+        && $authStaff->canDeleteEmailWithAttachments();
 @endphp
 <div class="email-interface-container" data-context="lead" data-client-id="{{ $leadData->id ?? '' }}" data-matter-id="" data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}">
     <!-- Top Control Bar (Search & Filters) -->
@@ -132,12 +130,22 @@
 <!-- Context Menu Overlay -->
 <div id="contextMenuOverlay" class="context-menu-overlay" style="display: none;"></div>
 
+@if($canDeleteEmail)
+@include('crm.partials.email_delete_confirm_modal')
+@endif
+
 <link rel="stylesheet" href="{{ asset('css/emails.css') }}?v={{ file_exists(public_path('css/emails.css')) ? filemtime(public_path('css/emails.css')) : 1 }}">
+@if($canDeleteEmail)
+<link rel="stylesheet" href="{{ asset('css/email-delete-confirm.css') }}?v={{ file_exists(public_path('css/email-delete-confirm.css')) ? filemtime(public_path('css/email-delete-confirm.css')) : 1 }}">
+@endif
 <style>
 .lead-email-notice { background: #f0f9ff; padding: 10px 15px; border-radius: 4px; font-size: 13px; color: #0369a1; }
 </style>
 <script>window.__CRM_BASE__ = @json(rtrim((string) url('/'), '/'));</script>
 <script src="{{ asset('js/email-upload-filename.js') }}?v={{ file_exists(public_path('js/email-upload-filename.js')) ? filemtime(public_path('js/email-upload-filename.js')) : 1 }}"></script>
+@if($canDeleteEmail)
+<script src="{{ asset('js/email-delete-confirm.js') }}?v={{ file_exists(public_path('js/email-delete-confirm.js')) ? filemtime(public_path('js/email-delete-confirm.js')) : 1 }}"></script>
+@endif
 <script src="{{ asset('js/emails.js') }}?v={{ file_exists(public_path('js/emails.js')) ? filemtime(public_path('js/emails.js')) : 1 }}"></script>
 
 <script>

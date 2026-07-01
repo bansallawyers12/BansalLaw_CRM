@@ -166,6 +166,24 @@
                                 </div>
                                 @endif
 
+                                @php
+                                    $_emailDeleteGrantActor = auth()->guard('admin')->user();
+                                    $_canGrantEmailDelete = \App\Models\Staff::canGrantEmailDeleteWithAttachmentsPermission(
+                                        $_emailDeleteGrantActor instanceof \App\Models\Staff ? $_emailDeleteGrantActor : null
+                                    );
+                                @endphp
+                                @if($_canGrantEmailDelete && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_delete_email_with_attachments'))
+                                <div class="form-group">
+                                    <input type="hidden" name="can_delete_email_with_attachments" value="0">
+                                    <label class="d-flex align-items-center mb-0">
+                                        <input type="checkbox" name="can_delete_email_with_attachments" value="1" class="me-2"
+                                            @if(old('can_delete_email_with_attachments')) checked @endif>
+                                        <span>Can delete emails with attachments</span>
+                                    </label>
+                                    <small class="text-muted d-block mt-1">When enabled, this user sees a Delete option on client/lead emails and may permanently remove the message and its attachments from the CRM.</small>
+                                </div>
+                                @endif
+
                                 <div class="form-group">
                                     <label for="role">Permission</label>
 							    	<br><b>Notes</b>  &nbsp;&nbsp;&nbsp;&nbsp;

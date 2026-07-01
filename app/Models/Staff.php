@@ -58,6 +58,7 @@ class Staff extends Authenticatable
         'tax_number',
         'quick_access_enabled',
         'grant_super_admin_access',
+        'can_delete_email_with_attachments',
         'trust_rule42_supervisor',
     ];
 
@@ -78,6 +79,7 @@ class Staff extends Authenticatable
         'is_solicitor' => 'integer',
         'quick_access_enabled' => 'boolean',
         'grant_super_admin_access' => 'boolean',
+        'can_delete_email_with_attachments' => 'boolean',
         'trust_rule42_supervisor' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -322,6 +324,45 @@ class Staff extends Authenticatable
     public function canToggleSuperAdminElevation(): bool
     {
         return app(CrmAccessService::class)->canToggleSuperAdminElevation($this);
+    }
+
+    /**
+     * Role IDs that may delete emails and grant {@see canDeleteEmailWithAttachments()} to others.
+     * Default: Super Admin (1) and Admin (17) — not Person Responsible (12).
+     */
+    public static function emailDeleteGrantRoleIds(): array
+    {
+        $ids = config('crm.email_delete_grant_role_ids', [1, 17]);
+
+        return is_array($ids) ? array_values(array_map('intval', $ids)) : [1, 17];
+    }
+
+    /**
+     * Whether the actor may toggle email delete permission on staff records.
+     */
+    public static function canGrantEmailDeleteWithAttachmentsPermission(?self $actor): bool
+    {
+        if (! $actor instanceof self) {
+            return false;
+        }
+
+        return in_array((int) ($actor->role ?? 0), self::emailDeleteGrantRoleIds(), true);
+    }
+
+    /**
+     * Whether this staff member may delete CRM email logs (and their attachments).
+     */
+    public function canDeleteEmailWithAttachments(): bool
+    {
+        if (in_array((int) ($this->role ?? 0), self::emailDeleteGrantRoleIds(), true)) {
+            return true;
+        }
+
+        if ($this->hasEffectiveSuperAdminPrivileges()) {
+            return true;
+        }
+
+        return (bool) ($this->can_delete_email_with_attachments ?? false);
     }
 
 }
