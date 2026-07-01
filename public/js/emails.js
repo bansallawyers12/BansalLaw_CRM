@@ -179,6 +179,16 @@
             return 'File too large. Maximum file size is ' + formatFileSize(MAX_EMAIL_FILE_BYTES) + ' per file.';
         }
         if (status === 403) {
+            if (typeof window.crmEmailUpload403Message === 'function') {
+                const wafMsg = window.crmEmailUpload403Message(text, status);
+                if (wafMsg) {
+                    return wafMsg;
+                }
+            }
+            const isHtml = /<html[\s>]/i.test(text) || /<!DOCTYPE/i.test(text);
+            if (isHtml || (text.includes('Forbidden') && !parsed)) {
+                return 'The server blocked this upload (security filter). Rename files to remove special characters such as apostrophes and try again.';
+            }
             if (text.includes('CSRF')) {
                 return 'Session expired or security token invalid. Please refresh the page and try again.';
             }
@@ -199,10 +209,47 @@
         return 'Server returned an invalid response. Please refresh the page and try again.';
     }
 
+    /**
+     * Sanitize filename for multipart upload (WAF-safe).
+     * Mirrors EmailUploadController::sanitizeFilename — apostrophes in Content-Disposition can trigger mod_security 403.
+     */
+    function sanitizeUploadFilename(filename) {
+        if (typeof window.crmSanitizeEmailUploadFilename === 'function') {
+            return window.crmSanitizeEmailUploadFilename(filename);
+        }
+        if (!filename || typeof filename !== 'string') {
+            return 'email_' + Date.now() + '.msg';
+        }
+        const lastDot = filename.lastIndexOf('.');
+        const extension = lastDot >= 0 ? filename.slice(lastDot + 1) : '';
+        const nameWithoutExt = lastDot >= 0 ? filename.slice(0, lastDot) : filename;
+        let sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9\-_.]/g, '_');
+        sanitizedName = sanitizedName.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+        if (!sanitizedName) {
+            sanitizedName = 'email_' + Date.now();
+        }
+        let sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
+        if (sanitizedFilename.length > 255) {
+            const maxNameLength = 255 - extension.length - (extension ? 1 : 0);
+            if (maxNameLength > 0) {
+                sanitizedName = sanitizedName.slice(0, maxNameLength);
+                sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
+            } else {
+                sanitizedFilename = 'email_' + Date.now() + (extension ? '.' + extension : '');
+            }
+        }
+        return sanitizedFilename;
+    }
+
     function buildEmailUploadFormData(file, clientId, matterId, csrfToken, forceUpload) {
         const formData = new FormData();
         const isLead = isLeadContext();
-        formData.append('email_files[]', file);
+        const safeName = sanitizeUploadFilename(file.name);
+        if (safeName !== file.name) {
+            formData.append('email_files[]', file, safeName);
+        } else {
+            formData.append('email_files[]', file);
+        }
         formData.append('client_id', clientId);
         formData.append('type', isLead ? 'lead' : 'client');
         formData.append(

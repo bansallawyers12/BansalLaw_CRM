@@ -356,4 +356,5 @@
 </div>
 
 @include('partials.staff-signature-script')
+<script src="{{ asset('js/email-upload-filename.js') }}?v={{ file_exists(public_path('js/email-upload-filename.js')) ? filemtime(public_path('js/email-upload-filename.js')) : 1 }}"></script>
 <script src="{{ asset('js/outlook_emails.js') }}?v={{ time() }}"></script>

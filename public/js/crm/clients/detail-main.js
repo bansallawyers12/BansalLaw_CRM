@@ -3496,10 +3496,32 @@ success: function(response) {
         });
 
         // Handle uploadAndFetchMail form submission via AJAX
+        function resolveEmailUploadAjaxError(xhr) {
+            var errorMessage = 'An unexpected error occurred. Please try again.';
+            if (xhr.status === 403 && typeof window.crmEmailUpload403Message === 'function') {
+                return window.crmEmailUpload403Message(xhr);
+            }
+            if (xhr.responseJSON && xhr.responseJSON.errors) {
+                var errors = xhr.responseJSON.errors;
+                var errorHtml = '<span class="alert alert-danger">';
+                for (var field in errors) {
+                    errorHtml += errors[field][0] + '<br>';
+                }
+                errorHtml += '</span>';
+                return errorHtml;
+            }
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                return xhr.responseJSON.message;
+            }
+            return errorMessage;
+        }
+
         $(document).on('submit', '#uploadAndFetchMail', function(e) {
             e.preventDefault();
             
-            var formData = new FormData(this);
+            var formData = (typeof window.crmBuildEmailUploadFormData === 'function')
+                ? window.crmBuildEmailUploadFormData(this)
+                : new FormData(this);
             $('.popuploader').show();
             $('.custom-error-msg').html('');
             
@@ -3524,20 +3546,11 @@ success: function(response) {
                 },
                 error: function(xhr) {
                     $('.popuploader').hide();
-                    var errorMessage = 'An unexpected error occurred. Please try again.';
-                    
-                    if (xhr.responseJSON && xhr.responseJSON.errors) {
-                        var errors = xhr.responseJSON.errors;
-                        var errorHtml = '<span class="alert alert-danger">';
-                        for (var field in errors) {
-                            errorHtml += errors[field][0] + '<br>';
-                        }
-                        errorHtml += '</span>';
-                        $('.custom-error-msg').html(errorHtml);
-                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                        $('.custom-error-msg').html('<span class="alert alert-danger">' + xhr.responseJSON.message + '</span>');
+                    var resolved = resolveEmailUploadAjaxError(xhr);
+                    if (typeof resolved === 'string' && resolved.indexOf('<span') === 0) {
+                        $('.custom-error-msg').html(resolved);
                     } else {
-                        $('.custom-error-msg').html('<span class="alert alert-danger">' + errorMessage + '</span>');
+                        $('.custom-error-msg').html('<span class="alert alert-danger">' + resolved + '</span>');
                     }
                 }
             });
@@ -3547,7 +3560,9 @@ success: function(response) {
         $(document).on('submit', '#uploadSentAndFetchMail', function(e) {
             e.preventDefault();
             
-            var formData = new FormData(this);
+            var formData = (typeof window.crmBuildEmailUploadFormData === 'function')
+                ? window.crmBuildEmailUploadFormData(this)
+                : new FormData(this);
             $('.popuploader').show();
             $('.custom-error-msg').html('');
             
@@ -3572,20 +3587,11 @@ success: function(response) {
                 },
                 error: function(xhr) {
                     $('.popuploader').hide();
-                    var errorMessage = 'An unexpected error occurred. Please try again.';
-                    
-                    if (xhr.responseJSON && xhr.responseJSON.errors) {
-                        var errors = xhr.responseJSON.errors;
-                        var errorHtml = '<span class="alert alert-danger">';
-                        for (var field in errors) {
-                            errorHtml += errors[field][0] + '<br>';
-                        }
-                        errorHtml += '</span>';
-                        $('.custom-error-msg').html(errorHtml);
-                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                        $('.custom-error-msg').html('<span class="alert alert-danger">' + xhr.responseJSON.message + '</span>');
+                    var resolved = resolveEmailUploadAjaxError(xhr);
+                    if (typeof resolved === 'string' && resolved.indexOf('<span') === 0) {
+                        $('.custom-error-msg').html(resolved);
                     } else {
-                        $('.custom-error-msg').html('<span class="alert alert-danger">' + errorMessage + '</span>');
+                        $('.custom-error-msg').html('<span class="alert alert-danger">' + resolved + '</span>');
                     }
                 }
             });

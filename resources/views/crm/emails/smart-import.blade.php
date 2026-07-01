@@ -300,5 +300,6 @@
         maxFiles: 10,
     };
 </script>
+<script src="{{ asset('js/email-upload-filename.js') }}?v={{ filemtime(public_path('js/email-upload-filename.js')) }}"></script>
 <script src="{{ asset('js/smart-email-import.js') }}?v={{ filemtime(public_path('js/smart-email-import.js')) }}"></script>
 @endpush

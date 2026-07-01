@@ -556,7 +556,9 @@ function customValidate(formName, savetype = '')
 					else if(formName == 'uploadAndFetchMail'){
 						var client_id = $('#uploadAndFetchMail input[name="client_id"]').val();
 						var myform = document.getElementById('uploadAndFetchMail');
-                        var fd = new FormData(myform);
+                        var fd = (typeof window.crmBuildEmailUploadFormData === 'function')
+                            ? window.crmBuildEmailUploadFormData(myform)
+                            : new FormData(myform);
 						$.ajax({
 							type:'post',
 							url:$("form[name="+formName+"]").attr('action'),
@@ -583,6 +585,10 @@ function customValidate(formName, savetype = '')
                                 if (xhr.status === 422) {
                                     let errors = xhr.responseJSON.errors;
                                     displayValidationErrors(errors);
+                                } else if (xhr.status === 403 && typeof window.crmEmailUpload403Message === 'function') {
+                                    var wafMsg = window.crmEmailUpload403Message(xhr);
+                                    if(typeof crmNotify !== 'undefined') { crmNotify.error(wafMsg); }
+                                    $('.custom-error-msg').html('<span class="alert alert-danger">' + wafMsg + '</span>');
                                 } else {
                                     if(typeof crmNotify !== 'undefined') { crmNotify.error('An unexpected error occurred. Please try again.'); }
                                     $('.custom-error-msg').html('<span class="alert alert-danger">An unexpected error occurred. Please try again.</span>');
@@ -595,7 +601,9 @@ function customValidate(formName, savetype = '')
                     else if(formName == 'uploadSentAndFetchMail'){
 						var client_id = $('#uploadSentAndFetchMail input[name="client_id"]').val();
 						var myform = document.getElementById('uploadSentAndFetchMail');
-                        var fd = new FormData(myform);
+                        var fd = (typeof window.crmBuildEmailUploadFormData === 'function')
+                            ? window.crmBuildEmailUploadFormData(myform)
+                            : new FormData(myform);
 						$.ajax({
 							type:'post',
 							url:$("form[name="+formName+"]").attr('action'),
@@ -621,6 +629,10 @@ function customValidate(formName, savetype = '')
                                 if (xhr.status === 422) {
                                     let errors = xhr.responseJSON.errors;
                                     displayValidationErrors2(errors);
+                                } else if (xhr.status === 403 && typeof window.crmEmailUpload403Message === 'function') {
+                                    var wafMsg = window.crmEmailUpload403Message(xhr);
+                                    if(typeof crmNotify !== 'undefined') { crmNotify.error(wafMsg); }
+                                    $('.custom-error-msg').html('<span class="alert alert-danger">' + wafMsg + '</span>');
                                 } else {
                                     if(typeof crmNotify !== 'undefined') { crmNotify.error('An unexpected error occurred. Please try again.'); }
                                     $('.custom-error-msg').html('<span class="alert alert-danger">An unexpected error occurred. Please try again.</span>');

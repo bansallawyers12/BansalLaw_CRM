@@ -1,5 +1,48 @@
 // Outlook-style Email Interface Logic
 
+function crmOutlookSanitizeUploadFilename(filename) {
+    if (typeof window.crmSanitizeEmailUploadFilename === 'function') {
+        return window.crmSanitizeEmailUploadFilename(filename);
+    }
+    if (!filename || typeof filename !== 'string') {
+        return 'email_' + Date.now() + '.msg';
+    }
+    var lastDot = filename.lastIndexOf('.');
+    var extension = lastDot >= 0 ? filename.slice(lastDot + 1) : '';
+    var nameWithoutExt = lastDot >= 0 ? filename.slice(0, lastDot) : filename;
+    var sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9\-_.]/g, '_');
+    sanitizedName = sanitizedName.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+    if (!sanitizedName) {
+        sanitizedName = 'email_' + Date.now();
+    }
+    var sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
+    if (sanitizedFilename.length > 255) {
+        var maxNameLength = 255 - extension.length - (extension ? 1 : 0);
+        if (maxNameLength > 0) {
+            sanitizedName = sanitizedName.slice(0, maxNameLength);
+            sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
+        } else {
+            sanitizedFilename = 'email_' + Date.now() + (extension ? '.' + extension : '');
+        }
+    }
+    return sanitizedFilename;
+}
+
+function crmOutlookEmailUpload403Message(responseText, status) {
+    if (typeof window.crmEmailUpload403Message === 'function') {
+        return window.crmEmailUpload403Message(responseText, status);
+    }
+    if (status !== 403) {
+        return null;
+    }
+    var text = responseText || '';
+    var isHtml = /<html[\s>]/i.test(text) || /<!DOCTYPE/i.test(text);
+    if (isHtml || text.indexOf('Forbidden') !== -1) {
+        return 'The server blocked this upload (security filter). Rename files to remove special characters such as apostrophes and try again.';
+    }
+    return 'Access denied. You may not have permission to upload emails for this client.';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     let currentPage = 1;
     let currentFolder = 'inbox'; // inbox, sent, drafts
@@ -702,7 +745,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         async function previewEmailAttachments(file) {
             const formData = new FormData();
-            formData.append('email_files[]', file);
+            const safeName = crmOutlookSanitizeUploadFilename(file.name);
+            formData.append('email_files[]', file, safeName);
             formData.append('client_id', clientId);
             formData.append('type', 'client');
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
@@ -1117,7 +1161,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function buildOutlookUploadFormData(file, forceUpload, attachmentStorage) {
             const formData = new FormData();
-            formData.append('email_files[]', file);
+            const safeName = crmOutlookSanitizeUploadFilename(file.name);
+            formData.append('email_files[]', file, safeName);
             formData.append('client_id', clientId);
             formData.append('type', 'client');
             if (currentFolder === 'sent') {
@@ -1146,13 +1191,22 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             let result;
+            const responseText = await response.text();
             try {
-                result = await response.json();
+                result = responseText ? JSON.parse(responseText) : {};
             } catch (parseError) {
+                if (response.status === 403) {
+                    const wafMsg = crmOutlookEmailUpload403Message(responseText, response.status);
+                    throw new Error(wafMsg || 'The server blocked this upload (security filter).');
+                }
                 throw new Error('The server returned an invalid response. Please refresh the page and try again.');
             }
 
             if (!response.ok) {
+                if (response.status === 403) {
+                    const wafMsg = crmOutlookEmailUpload403Message(responseText, response.status);
+                    throw new Error(wafMsg || (result.message || 'Upload failed (HTTP 403).'));
+                }
                 let errorMsg = result.message || ('Upload failed (HTTP ' + response.status + ').');
                 const details = formatUploadErrorDetails(result.errors);
                 if (details) {

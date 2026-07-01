@@ -48,6 +48,34 @@
         return day + '/' + month + '/' + year + ' ' + String(hours).padStart(2, '0') + ':' + minutes + ' ' + ampm;
     }
 
+    function sanitizeSmartImportUploadFilename(filename) {
+        if (typeof window.crmSanitizeEmailUploadFilename === 'function') {
+            return window.crmSanitizeEmailUploadFilename(filename);
+        }
+        if (!filename || typeof filename !== 'string') {
+            return 'email_' + Date.now() + '.msg';
+        }
+        var lastDot = filename.lastIndexOf('.');
+        var extension = lastDot >= 0 ? filename.slice(lastDot + 1) : '';
+        var nameWithoutExt = lastDot >= 0 ? filename.slice(0, lastDot) : filename;
+        var sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9\-_.]/g, '_');
+        sanitizedName = sanitizedName.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+        if (!sanitizedName) {
+            sanitizedName = 'email_' + Date.now();
+        }
+        var sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
+        if (sanitizedFilename.length > 255) {
+            var maxNameLength = 255 - extension.length - (extension ? 1 : 0);
+            if (maxNameLength > 0) {
+                sanitizedName = sanitizedName.slice(0, maxNameLength);
+                sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
+            } else {
+                sanitizedFilename = 'email_' + Date.now() + (extension ? '.' + extension : '');
+            }
+        }
+        return sanitizedFilename;
+    }
+
     function confidenceClass(confidence) {
         if (confidence >= 80) return 'confidence-high';
         if (confidence >= 50) return 'confidence-medium';
@@ -293,7 +321,7 @@
 
         var formData = new FormData();
         state.selectedFiles.forEach(function (file) {
-            formData.append('email_files[]', file);
+            formData.append('email_files[]', file, sanitizeSmartImportUploadFilename(file.name));
         });
 
         try {
