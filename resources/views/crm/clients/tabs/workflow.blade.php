@@ -458,12 +458,13 @@
         if (discontinueBtn) {
             discontinueBtn.addEventListener('click', function() {
                 var matterId = this.getAttribute('data-matter-id');
-                if (!matterId) { alert('Error: Matter ID not found'); return; }
-                document.getElementById('discontinue-matter-id').value = matterId;
-                document.getElementById('discontinue-reason').value = '';
-                document.getElementById('discontinue-notes').value = '';
-                document.querySelector('.discontinue-reason-error strong').textContent = '';
-                $('#discontinue-matter-modal').modal('show');
+                if (typeof window.openDiscontinueMatterModal === 'function') {
+                    window.openDiscontinueMatterModal(matterId);
+                } else if (matterId) {
+                    $('#discontinue-matter-modal').modal('show');
+                } else {
+                    alert('Error: Matter ID not found');
+                }
             });
         }
 
@@ -471,11 +472,19 @@
         var discontinueSubmitBtn = document.getElementById('discontinue-matter-submit');
         if (discontinueSubmitBtn) {
             discontinueSubmitBtn.addEventListener('click', function() {
+                var matterSelect = document.getElementById('discontinue-matter-select');
                 var reasonSelect = document.getElementById('discontinue-reason');
                 var reason = reasonSelect.value;
-                var matterId = document.getElementById('discontinue-matter-id').value;
+                var matterId = matterSelect ? matterSelect.value : '';
                 var notes = document.getElementById('discontinue-notes').value;
+                var matterErrEl = document.querySelector('.discontinue-matter-error strong');
                 var errEl = document.querySelector('.discontinue-reason-error strong');
+
+                if (matterErrEl) matterErrEl.textContent = '';
+                if (!matterId || matterId.trim() === '') {
+                    if (matterErrEl) matterErrEl.textContent = 'Please select a matter to discontinue.';
+                    return;
+                }
 
                 if (!reason || reason.trim() === '') {
                     errEl.textContent = 'Please select a reason for discontinuing.';

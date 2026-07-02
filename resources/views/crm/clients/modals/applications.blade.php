@@ -149,6 +149,19 @@
 </div>
 
 {{-- 2b. Discontinue Matter Modal (for Workflow tab - client_matters) --}}
+@php
+    $discontinueMatterList = collect();
+    if (isset($fetchedData) && $fetchedData && ! empty($fetchedData->id)) {
+        $discontinueMatterList = \Illuminate\Support\Facades\DB::table('client_matters')
+            ->leftJoin('matters', 'client_matters.sel_matter_id', '=', 'matters.id')
+            ->select('client_matters.id', 'client_matters.client_unique_matter_no', 'matters.title')
+            ->where('client_matters.client_id', $fetchedData->id)
+            ->where('client_matters.matter_status', 1)
+            ->whereNotNull('client_matters.sel_matter_id')
+            ->orderByDesc('client_matters.created_at')
+            ->get();
+    }
+@endphp
 <div class="modal fade custom_modal" id="discontinue-matter-modal" tabindex="-1" role="dialog" aria-labelledby="discontinueMatterModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -161,8 +174,22 @@
 			<div class="modal-body">
 				<form id="discontinue-matter-form" name="discontinue-matter-form" autocomplete="off">
 					@csrf
-					<input type="hidden" name="matter_id" id="discontinue-matter-id" value="">
 					<div class="row">
+						<div class="col-12 col-md-12 col-lg-12">
+							<div class="form-group">
+								<label for="discontinue-matter-select">Matter <span class="span_req">*</span></label>
+								<select class="form-control" id="discontinue-matter-select" name="matter_id" data-valid="required" required>
+									<option value="">Please Select</option>
+									@foreach($discontinueMatterList as $matterOption)
+										@php
+											$matterLabel = \App\Models\Matter::displayTitleFromJoinedRow($matterOption->title ?? null);
+										@endphp
+										<option value="{{ $matterOption->id }}">{{ $matterLabel }} ({{ $matterOption->client_unique_matter_no }})</option>
+									@endforeach
+								</select>
+								<span class="custom-error discontinue-matter-error" role="alert"><strong></strong></span>
+							</div>
+						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
 								<label for="discontinue-reason">Reason for Discontinue <span class="span_req">*</span></label>

@@ -2168,19 +2168,35 @@ $(function () {
 </script>
 
 <script>
-function openCloseMatterModal(btn) {
-    var matterId = btn.getAttribute('data-matter-id');
-    if (!matterId) return;
-    document.getElementById('discontinue-matter-id').value = matterId;
+function openDiscontinueMatterModal(preselectedMatterId) {
+    var selectEl = document.getElementById('discontinue-matter-select');
+    if (selectEl) {
+        selectEl.value = preselectedMatterId ? String(preselectedMatterId) : '';
+        if (!selectEl.value) {
+            var sidebarMatter = document.getElementById('sel_matter_id_client_detail');
+            if (sidebarMatter && sidebarMatter.value) {
+                selectEl.value = sidebarMatter.value;
+            }
+        }
+    }
     var reasonEl = document.getElementById('discontinue-reason');
     if (reasonEl) reasonEl.value = '';
     var notesEl = document.getElementById('discontinue-notes');
     if (notesEl) notesEl.value = '';
+    var matterErrEl = document.querySelector('.discontinue-matter-error strong');
+    if (matterErrEl) matterErrEl.textContent = '';
     var errEl = document.querySelector('.discontinue-reason-error strong');
     if (errEl) errEl.textContent = '';
     if (typeof window.jQuery !== 'undefined') {
         $('#discontinue-matter-modal').modal('show');
     }
 }
+
+function openCloseMatterModal(btn) {
+    var matterId = btn ? btn.getAttribute('data-matter-id') : null;
+    openDiscontinueMatterModal(matterId);
+}
+window.openDiscontinueMatterModal = openDiscontinueMatterModal;
+window.openCloseMatterModal = openCloseMatterModal;
 </script>
 @endpush
