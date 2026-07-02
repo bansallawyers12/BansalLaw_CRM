@@ -171,6 +171,16 @@ class StaffController extends Controller
                     $obj->can_delete_email_with_attachments = $request->boolean('can_delete_email_with_attachments');
                 }
 
+                $canGrantCloseDiscontinue = Staff::canGrantCloseDiscontinueMatterPermission(
+                    $storeActor instanceof Staff ? $storeActor : null
+                );
+                if (! $canGrantCloseDiscontinue && $request->has('can_close_discontinue_matter')) {
+                    return redirect()->back()->withInput()->with('error', 'Only Super Admin or Admin can grant close/discontinue matter permission.');
+                }
+                if ($canGrantCloseDiscontinue && Schema::hasColumn('staff', 'can_close_discontinue_matter')) {
+                    $obj->can_close_discontinue_matter = $request->boolean('can_close_discontinue_matter');
+                }
+
                 $saved = $obj->save();
 
                 if (!$saved) {
@@ -270,6 +280,13 @@ class StaffController extends Controller
                 return redirect()->back()->withInput()->with('error', 'Only Super Admin or Admin can grant email delete permission.');
             }
 
+            $canGrantCloseDiscontinue = Staff::canGrantCloseDiscontinueMatterPermission(
+                $actor instanceof Staff ? $actor : null
+            );
+            if (! $canGrantCloseDiscontinue && $request->has('can_close_discontinue_matter')) {
+                return redirect()->back()->withInput()->with('error', 'Only Super Admin or Admin can grant close/discontinue matter permission.');
+            }
+
             if (! $isSuperAdminActor && $request->has('grant_super_admin_access')) {
                 return redirect()->back()->withInput()->with('error', 'Only Superadmin role user can provide this access.');
             }
@@ -342,6 +359,10 @@ class StaffController extends Controller
 
             if ($canGrantEmailDelete && Schema::hasColumn('staff', 'can_delete_email_with_attachments')) {
                 $obj->can_delete_email_with_attachments = $request->boolean('can_delete_email_with_attachments');
+            }
+
+            if ($canGrantCloseDiscontinue && Schema::hasColumn('staff', 'can_close_discontinue_matter')) {
+                $obj->can_close_discontinue_matter = $request->boolean('can_close_discontinue_matter');
             }
 
             $saved = $obj->save();

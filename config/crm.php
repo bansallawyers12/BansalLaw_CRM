@@ -18,6 +18,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Staff roles that may close/discontinue matters and grant per-user flag
+    |--------------------------------------------------------------------------
+    |
+    | Canonical ids: 1 = Super Admin, 17 = Admin (see config/crm_roles.php).
+    | Other staff need {@see Staff::can_close_discontinue_matter} on their profile.
+    |
+    */
+    'close_discontinue_grant_role_ids' => array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_CLOSE_DISCONTINUE_GRANT_ROLE_IDS', '1,17'))
+    ), static fn (int $id) => $id > 0)),
+
+    /*
+    |--------------------------------------------------------------------------
     | Roles allowed to delete CRM email logs (legacy — superseded by staff flag)
     |--------------------------------------------------------------------------
     |

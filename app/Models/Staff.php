@@ -59,6 +59,7 @@ class Staff extends Authenticatable
         'quick_access_enabled',
         'grant_super_admin_access',
         'can_delete_email_with_attachments',
+        'can_close_discontinue_matter',
         'trust_rule42_supervisor',
     ];
 
@@ -80,6 +81,7 @@ class Staff extends Authenticatable
         'quick_access_enabled' => 'boolean',
         'grant_super_admin_access' => 'boolean',
         'can_delete_email_with_attachments' => 'boolean',
+        'can_close_discontinue_matter' => 'boolean',
         'trust_rule42_supervisor' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -363,6 +365,45 @@ class Staff extends Authenticatable
         }
 
         return (bool) ($this->can_delete_email_with_attachments ?? false);
+    }
+
+    /**
+     * Role IDs that may close/discontinue matters and grant {@see canCloseDiscontinueMatter()} to others.
+     * Default: Super Admin (1) and Admin (17).
+     */
+    public static function closeDiscontinueGrantRoleIds(): array
+    {
+        $ids = config('crm.close_discontinue_grant_role_ids', [1, 17]);
+
+        return is_array($ids) ? array_values(array_map('intval', $ids)) : [1, 17];
+    }
+
+    /**
+     * Whether the actor may toggle close/discontinue matter permission on staff records.
+     */
+    public static function canGrantCloseDiscontinueMatterPermission(?self $actor): bool
+    {
+        if (! $actor instanceof self) {
+            return false;
+        }
+
+        return in_array((int) ($actor->role ?? 0), self::closeDiscontinueGrantRoleIds(), true);
+    }
+
+    /**
+     * Whether this staff member may close/discontinue client matters.
+     */
+    public function canCloseDiscontinueMatter(): bool
+    {
+        if (in_array((int) ($this->role ?? 0), self::closeDiscontinueGrantRoleIds(), true)) {
+            return true;
+        }
+
+        if ($this->hasEffectiveSuperAdminPrivileges()) {
+            return true;
+        }
+
+        return (bool) ($this->can_close_discontinue_matter ?? false);
     }
 
 }

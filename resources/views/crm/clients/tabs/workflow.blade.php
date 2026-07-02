@@ -122,7 +122,7 @@
                                     $workflowViewer = Auth::guard('admin')->user();
                                     $workflowIsDiscontinued = ($workflowSelectedMatter->matter_status ?? 1) == 0;
                                     $workflowCanReopen = ($workflowViewer instanceof \App\Models\Staff && ($workflowViewer->hasEffectiveSuperAdminPrivileges() || $workflowViewer->hasCrmModule('45')));
-                                    $workflowCanDiscontinue = ($workflowViewer instanceof \App\Models\Staff && ($workflowViewer->hasEffectiveSuperAdminPrivileges() || $workflowViewer->hasCrmModule('44')));
+                                    $workflowCanDiscontinue = ($workflowViewer instanceof \App\Models\Staff && $workflowViewer->canCloseDiscontinueMatter());
                                 @endphp
                                 @if($workflowIsDiscontinued)
                                     {{-- Discontinued matter: show Reopen (Admin only), Change Workflow --}}

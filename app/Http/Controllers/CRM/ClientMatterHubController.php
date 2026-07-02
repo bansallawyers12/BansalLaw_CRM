@@ -688,7 +688,7 @@ class ClientMatterHubController extends Controller
 	{
 		try {
 			$user = Auth::guard('admin')->user();
-			$canDiscontinue = $user instanceof \App\Models\Staff && ($user->hasEffectiveSuperAdminPrivileges() || $user->hasCrmModule('44'));
+			$canDiscontinue = $user instanceof \App\Models\Staff && $user->canCloseDiscontinueMatter();
 			if (!$canDiscontinue) {
 				return response()->json(['status' => false, 'message' => 'You do not have permission to close this matter.'], 403);
 			}

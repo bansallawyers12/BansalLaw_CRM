@@ -225,6 +225,21 @@
                                 </div>
                                 @endif
 
+                                @php
+                                    $_canGrantCloseDiscontinue = \App\Models\Staff::canGrantCloseDiscontinueMatterPermission($_quickActor instanceof \App\Models\Staff ? $_quickActor : null);
+                                @endphp
+                                @if($_canGrantCloseDiscontinue && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_close_discontinue_matter'))
+                                <div class="form-group">
+                                    <input type="hidden" name="can_close_discontinue_matter" value="0">
+                                    <label class="d-flex align-items-center mb-0">
+                                        <input type="checkbox" name="can_close_discontinue_matter" value="1" class="me-2"
+                                            @if(old('can_close_discontinue_matter', $fetchedData->can_close_discontinue_matter ?? false)) checked @endif>
+                                        <span>Can close/discontinue matters</span>
+                                    </label>
+                                    <small class="text-muted d-block mt-1">When enabled, this user sees Close Matter on client profiles and may discontinue client matters from the workflow tab.</small>
+                                </div>
+                                @endif
+
                                 <div class="form-group">
                                     <label for="role">Permission</label>
 							    	<?php

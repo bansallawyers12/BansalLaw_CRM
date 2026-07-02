@@ -168,7 +168,7 @@
 												{{-- Payment schedule permissions (36-39) removed - feature unused --}}
 												<li><label><input type="checkbox" name="module_access[40]" <?php if(array_key_exists('40',  $module_access)) { echo "checked"; } ?> class="applications"> Can view/edit assigned and added matter by the users of primary office.</label></li>
 												<li><label><input type="checkbox" name="module_access[41]" <?php if(array_key_exists('41',  $module_access)) { echo "checked"; } ?> class="applications"> Can view/edit assigned and added matter by the users of secondary office.</label></li>
-												<li><label><input type="checkbox" name="module_access[44]" <?php if(array_key_exists('44',  $module_access)) { echo "checked"; } ?> class="applications"> Can close/discontinue matters.</label></li>
+												{{-- Close/discontinue matters (module 44) is granted per staff user by Admin/Super Admin --}}
 												<li><label><input type="checkbox" name="module_access[45]" <?php if(array_key_exists('45',  $module_access)) { echo "checked"; } ?> class="applications"> Can reopen discontinued matters.</label></li>
 									{{-- Removed legacy sales forecast permissions (applications) --}}
 									{{-- Removed application fee permissions (module_access[42], [43]) - fee options feature removed --}}

@@ -144,7 +144,7 @@ use App\Http\Controllers\Controller;
             }
 
             $cdnHeroViewer = Auth::guard('admin')->user();
-            $cdnHeroCanDiscontinue = ($cdnHeroViewer instanceof \App\Models\Staff && ($cdnHeroViewer->hasEffectiveSuperAdminPrivileges() || $cdnHeroViewer->hasCrmModule('44')));
+            $cdnHeroCanDiscontinue = ($cdnHeroViewer instanceof \App\Models\Staff && $cdnHeroViewer->canCloseDiscontinueMatter());
         @endphp
 
         <section class="cdn-client-hero" aria-label="Client summary">
