@@ -831,6 +831,58 @@ $(document).ready(function() {
         });
     }
 
+    function extractDocumentIdFromPreviewUrl(fileUrl) {
+        if (!fileUrl) {
+            return null;
+        }
+
+        const urlPath = String(fileUrl).split('?')[0];
+        let match = urlPath.match(/\/documents\/preview\/(\d+)/);
+        if (match) {
+            return match[1];
+        }
+
+        match = urlPath.match(/\/documents\/(\d+)\/preview-signed/);
+        if (match) {
+            return match[1];
+        }
+
+        return null;
+    }
+
+    function setMatterDocumentPreviewActive(fileUrl, containerId) {
+        const containerEl = document.querySelector('.' + containerId);
+        if (!containerEl) {
+            return;
+        }
+
+        const matterTab = containerEl.closest('#matterdocuments-tab');
+        if (!matterTab) {
+            return;
+        }
+
+        matterTab.querySelectorAll('tr.drow.is-preview-active').forEach(function(row) {
+            row.classList.remove('is-preview-active');
+        });
+        matterTab.querySelectorAll('.doc-row.is-preview-active').forEach(function(docRow) {
+            docRow.classList.remove('is-preview-active');
+        });
+
+        const docId = extractDocumentIdFromPreviewUrl(fileUrl);
+        if (!docId) {
+            return;
+        }
+
+        const row = matterTab.querySelector('#id_' + docId);
+        if (row) {
+            row.classList.add('is-preview-active');
+            const docRow = row.querySelector('.doc-row');
+            if (docRow) {
+                docRow.classList.add('is-preview-active');
+            }
+        }
+    }
+
     function previewFile(fileType, fileUrl, containerId) {
 
         const container = $(`.${containerId}`);
@@ -838,6 +890,8 @@ $(document).ready(function() {
             console.error('Preview container not found:', containerId);
             return;
         }
+
+        setMatterDocumentPreviewActive(fileUrl, containerId);
 
         const embeddedPreviewUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'embed=1';
         const normalizedType = (fileType || '').toLowerCase();

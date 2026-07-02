@@ -2299,7 +2299,13 @@ class ClientDocumentsController extends Controller
                 $displayFilename = $this->resolveDocumentPreviewFilename($document, $filename);
 
                 if (strtolower(pathinfo($displayFilename, PATHINFO_EXTENSION)) === 'eml') {
-                    $fileContent = $this->s3Disk()->get($s3Key);
+                    $fileContent = $this->readDocumentFileContent($document, $s3Key);
+                    if (! is_string($fileContent) || $fileContent === '') {
+                        Log::error('EML preview could not read file bytes', ['document_id' => $id, 's3_key' => $s3Key]);
+
+                        return response($this->officePreviewErrorHtml('The email file could not be loaded from storage.'), 404)
+                            ->header('Content-Type', 'text/html; charset=UTF-8');
+                    }
                     $htmlContent = $this->extractHtmlFromEml($fileContent);
                     return response($htmlContent, 200, [
                         'Content-Type' => 'text/html; charset=UTF-8',
@@ -2307,7 +2313,13 @@ class ClientDocumentsController extends Controller
                 }
 
                 if ($this->isOfficeDocumentPreviewType($displayFilename, (string) ($document->filetype ?? ''))) {
-                    $fileContent = $this->s3Disk()->get($s3Key);
+                    $fileContent = $this->readDocumentFileContent($document, $s3Key);
+                    if (! is_string($fileContent) || $fileContent === '') {
+                        Log::error('Office preview could not read file bytes', ['document_id' => $id, 's3_key' => $s3Key]);
+
+                        return response($this->officePreviewErrorHtml('The document file could not be loaded from storage. Use <strong>Download original</strong> or re-upload the file.'), 404)
+                            ->header('Content-Type', 'text/html; charset=UTF-8');
+                    }
                     $pdfBytes = $this->convertOfficeDocumentToPdfBytes($fileContent, $displayFilename);
                     if ($pdfBytes !== null) {
                         $pdfName = pathinfo($displayFilename, PATHINFO_FILENAME) . '.pdf';
@@ -2653,11 +2665,13 @@ class ClientDocumentsController extends Controller
         return null;
     }
 
-    private function officePreviewErrorHtml(): string
+    private function officePreviewErrorHtml(?string $detailMessage = null): string
     {
+        $detail = $detailMessage ?? 'Install LibreOffice on this server for PDF preview, or use <strong>Download original</strong> to open the file.';
+
         return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Preview unavailable</title></head><body style="font-family:Segoe UI,sans-serif;padding:24px;color:#444;">'
             . '<p><strong>Unable to preview this Office file inline.</strong></p>'
-            . '<p>Install LibreOffice on this server for PDF preview, or use <strong>Download original</strong> to open the file.</p>'
+            . '<p>' . $detail . '</p>'
             . '</body></html>';
     }
 
@@ -2683,32 +2697,12 @@ class ClientDocumentsController extends Controller
     {
         $myfile = (string) ($document->myfile ?? '');
         if ($myfile !== '' && str_starts_with($myfile, 'http')) {
-            $parsed = parse_url($myfile);
-            if (! isset($parsed['path'])) {
-                return null;
-            }
-            $s3Key = ltrim(urldecode((string) $parsed['path']), '/');
+            $s3Key = $this->normalizeS3KeyFromMyfileUrl($myfile);
         } else {
-            $admin = Admin::query()->select('client_id')->where('id', $document->client_id)->first();
-            if (! $admin || $admin->client_id === null || $admin->client_id === '') {
-                return null;
-            }
-            $uniqueId = (string) $admin->client_id;
-            $fileName = $document->myfile_key ?? $document->myfile;
-            if ($fileName === null || $fileName === '') {
-                return null;
-            }
-            $docType = (string) ($document->doc_type ?? '');
-            if ($docType === 'migration') {
-                $s3Key = $uniqueId . '/' . $document->folder_name . '/' . $fileName;
-            } elseif ($docType === 'conversion_email_fetch' && ! empty($document->mail_type)) {
-                $s3Key = $uniqueId . '/' . $docType . '/' . $document->mail_type . '/' . $fileName;
-            } else {
-                $s3Key = $uniqueId . '/' . $docType . '/' . $fileName;
-            }
+            $s3Key = $this->buildLegacyS3KeyForDocument($document);
         }
 
-        if ($s3Key === '') {
+        if ($s3Key === null || $s3Key === '') {
             return null;
         }
 
@@ -2719,6 +2713,108 @@ class ClientDocumentsController extends Controller
             $altKey = str_replace('/matter/', '/visa/', $s3Key);
             if ($this->s3ObjectExistsLenient($altKey)) {
                 return $altKey;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Build the legacy storage key from document metadata (client unique id + doc type + filename).
+     */
+    private function buildLegacyS3KeyForDocument(Document $document): ?string
+    {
+        $admin = Admin::query()->select('client_id')->where('id', $document->client_id)->first();
+        if (! $admin || $admin->client_id === null || $admin->client_id === '') {
+            return null;
+        }
+
+        $uniqueId = (string) $admin->client_id;
+        $fileName = $document->myfile_key ?? $document->myfile;
+        if ($fileName === null || $fileName === '') {
+            return null;
+        }
+
+        $docType = (string) ($document->doc_type ?? '');
+        if ($docType === 'migration') {
+            return $uniqueId . '/' . $document->folder_name . '/' . $fileName;
+        }
+        if ($docType === 'conversion_email_fetch' && ! empty($document->mail_type)) {
+            return $uniqueId . '/' . $docType . '/' . $document->mail_type . '/' . $fileName;
+        }
+
+        return $uniqueId . '/' . $docType . '/' . $fileName;
+    }
+
+    /**
+     * Normalize an object key from a stored myfile URL (handles path-style S3 and local disk URLs).
+     */
+    private function normalizeS3KeyFromMyfileUrl(string $myfile): ?string
+    {
+        $parsed = parse_url($myfile);
+        if (! isset($parsed['path'])) {
+            return null;
+        }
+
+        $path = ltrim(urldecode((string) $parsed['path']), '/');
+        if ($path === '') {
+            return null;
+        }
+
+        $bucket = (string) config('filesystems.disks.s3.bucket', '');
+        if ($bucket !== '' && str_starts_with($path, $bucket . '/')) {
+            $path = substr($path, strlen($bucket) + 1);
+        }
+
+        foreach (['storage/app/', 'storage/', 'app/'] as $prefix) {
+            if (str_starts_with($path, $prefix)) {
+                $path = substr($path, strlen($prefix));
+                break;
+            }
+        }
+
+        return $path !== '' ? $path : null;
+    }
+
+    /**
+     * Read document bytes from storage, trying resolved and legacy keys when needed.
+     */
+    private function readDocumentFileContent(Document $document, string $primaryKey): ?string
+    {
+        $candidateKeys = [$primaryKey];
+
+        $legacyKey = $this->buildLegacyS3KeyForDocument($document);
+        if ($legacyKey !== null) {
+            $candidateKeys[] = $legacyKey;
+        }
+
+        $urlKey = $this->normalizeS3KeyFromMyfileUrl((string) ($document->myfile ?? ''));
+        if ($urlKey !== null) {
+            $candidateKeys[] = $urlKey;
+        }
+
+        $expandedKeys = [];
+        foreach (array_unique(array_filter($candidateKeys)) as $key) {
+            $expandedKeys[] = $key;
+            if (str_contains($key, '/matter/')) {
+                $expandedKeys[] = str_replace('/matter/', '/visa/', $key);
+            } elseif (str_contains($key, '/visa/')) {
+                $expandedKeys[] = str_replace('/visa/', '/matter/', $key);
+            }
+        }
+
+        foreach (array_unique($expandedKeys) as $key) {
+            try {
+                $content = $this->s3Disk()->get($key);
+                if (is_string($content) && $content !== '') {
+                    return $content;
+                }
+            } catch (\Throwable $e) {
+                Log::debug('Document preview read attempt failed', [
+                    'document_id' => $document->id,
+                    'key' => $key,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 
