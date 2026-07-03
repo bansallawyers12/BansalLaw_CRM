@@ -356,6 +356,44 @@
                 </div>
             </div>
 
+            <!-- Video Upload Progress Overlay -->
+            <div id="personalVideoUploadOverlay" class="personal-video-upload-overlay" aria-hidden="true">
+                <div class="personal-video-upload-panel" role="dialog" aria-labelledby="pvuTitle" aria-live="polite">
+                    <div class="pvu-icon-wrap">
+                        <i class="fas fa-file-video pvu-main-icon"></i>
+                        <span class="pvu-spinner-ring"></span>
+                    </div>
+                    <h4 id="pvuTitle" class="pvu-title">Uploading Video</h4>
+                    <p class="pvu-filename" id="pvuFilename">video.mp4</p>
+                    <p class="pvu-meta" id="pvuMeta"></p>
+                    <p class="pvu-status" id="pvuStatusMessage">Preparing upload…</p>
+                    <div class="pvu-progress-wrap">
+                        <div class="pvu-progress-track">
+                            <div class="pvu-progress-bar" id="pvuProgressBar"></div>
+                        </div>
+                        <span class="pvu-percent" id="pvuPercent">0%</span>
+                    </div>
+                    <ol class="pvu-timeline">
+                        <li class="pvu-step" data-step="upload">
+                            <span class="pvu-step-marker"><i class="fas fa-cloud-upload-alt"></i></span>
+                            <span class="pvu-step-label">Upload</span>
+                        </li>
+                        <li class="pvu-step" data-step="queued">
+                            <span class="pvu-step-marker"><i class="fas fa-layer-group"></i></span>
+                            <span class="pvu-step-label">Queued</span>
+                        </li>
+                        <li class="pvu-step" data-step="processing">
+                            <span class="pvu-step-marker"><i class="fas fa-cog"></i></span>
+                            <span class="pvu-step-label">Processing</span>
+                        </li>
+                        <li class="pvu-step" data-step="complete">
+                            <span class="pvu-step-marker"><i class="fas fa-check"></i></span>
+                            <span class="pvu-step-label">Done</span>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+
             <script>
                 // ============================================================================
                 // PERSONAL DOCUMENTS - DRAG AND DROP INITIALIZATION (HYBRID APPROACH)
@@ -1212,6 +1250,222 @@
                     color: #fff;
                     font-size: 12px;
                 }
+
+                /* Video upload progress overlay */
+                .personal-video-upload-overlay {
+                    display: none;
+                    position: fixed;
+                    inset: 0;
+                    z-index: 10050;
+                    background: rgba(15, 32, 52, 0.55);
+                    backdrop-filter: blur(4px);
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                }
+
+                .personal-video-upload-overlay.is-visible {
+                    display: flex;
+                }
+
+                .personal-video-upload-panel {
+                    width: 100%;
+                    max-width: 440px;
+                    background: #fff;
+                    border-radius: 14px;
+                    box-shadow: 0 20px 50px rgba(15, 32, 52, 0.25);
+                    padding: 28px 26px 24px;
+                    text-align: center;
+                    animation: pvuPanelIn 0.35s ease;
+                }
+
+                @keyframes pvuPanelIn {
+                    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+
+                .pvu-icon-wrap {
+                    position: relative;
+                    width: 64px;
+                    height: 64px;
+                    margin: 0 auto 14px;
+                }
+
+                .pvu-main-icon {
+                    font-size: 28px;
+                    color: var(--sidebar-active, #3a6fa8);
+                    line-height: 64px;
+                }
+
+                .pvu-spinner-ring {
+                    position: absolute;
+                    inset: 0;
+                    border: 3px solid rgba(58, 111, 168, 0.15);
+                    border-top-color: var(--sidebar-active, #3a6fa8);
+                    border-radius: 50%;
+                    animation: pvuSpin 1s linear infinite;
+                }
+
+                @keyframes pvuSpin {
+                    to { transform: rotate(360deg); }
+                }
+
+                .pvu-title {
+                    margin: 0 0 6px;
+                    font-size: 1.15rem;
+                    font-weight: 600;
+                    color: var(--navy, #1e3d60);
+                }
+
+                .pvu-filename {
+                    margin: 0 0 4px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: var(--text-dark, #1a2c40);
+                    word-break: break-word;
+                }
+
+                .pvu-meta {
+                    margin: 0 0 12px;
+                    font-size: 12px;
+                    color: var(--text-muted, #5e7a90);
+                }
+
+                .pvu-status {
+                    margin: 0 0 16px;
+                    font-size: 13px;
+                    color: var(--text-muted, #5e7a90);
+                    min-height: 20px;
+                }
+
+                .pvu-progress-wrap {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    margin-bottom: 22px;
+                }
+
+                .pvu-progress-track {
+                    flex: 1;
+                    height: 10px;
+                    background: var(--page-bg, #eef4fb);
+                    border-radius: 999px;
+                    overflow: hidden;
+                    border: 1px solid var(--border, #c8dcef);
+                }
+
+                .pvu-progress-bar {
+                    height: 100%;
+                    width: 0%;
+                    border-radius: 999px;
+                    background: linear-gradient(90deg, #3a6fa8 0%, #5a9fd4 100%);
+                    transition: width 0.35s ease;
+                }
+
+                .pvu-percent {
+                    font-size: 13px;
+                    font-weight: 700;
+                    color: var(--sidebar-active, #3a6fa8);
+                    min-width: 38px;
+                    text-align: right;
+                }
+
+                .pvu-timeline {
+                    list-style: none;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    justify-content: space-between;
+                    position: relative;
+                }
+
+                .pvu-timeline::before {
+                    content: '';
+                    position: absolute;
+                    top: 18px;
+                    left: 12%;
+                    right: 12%;
+                    height: 3px;
+                    background: var(--border, #c8dcef);
+                    z-index: 0;
+                }
+
+                .pvu-step {
+                    position: relative;
+                    z-index: 1;
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .pvu-step-marker {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    background: #fff;
+                    border: 2px solid var(--border, #c8dcef);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--text-muted, #5e7a90);
+                    font-size: 14px;
+                    transition: all 0.3s ease;
+                }
+
+                .pvu-step-label {
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: var(--text-muted, #5e7a90);
+                    text-transform: uppercase;
+                    letter-spacing: 0.03em;
+                }
+
+                .pvu-step.active .pvu-step-marker {
+                    border-color: var(--sidebar-active, #3a6fa8);
+                    background: rgba(58, 111, 168, 0.1);
+                    color: var(--sidebar-active, #3a6fa8);
+                    box-shadow: 0 0 0 4px rgba(58, 111, 168, 0.12);
+                }
+
+                .pvu-step.active .pvu-step-label {
+                    color: var(--sidebar-active, #3a6fa8);
+                }
+
+                .pvu-step.done .pvu-step-marker {
+                    border-color: var(--success, #1e7a52);
+                    background: var(--success, #1e7a52);
+                    color: #fff;
+                }
+
+                .pvu-step.done .pvu-step-label {
+                    color: var(--success, #1e7a52);
+                }
+
+                .pvu-step.error .pvu-step-marker {
+                    border-color: #dc3545;
+                    background: #dc3545;
+                    color: #fff;
+                }
+
+                .pvu-step.error .pvu-step-label {
+                    color: #dc3545;
+                }
+
+                .pvu-step.active[data-step="processing"] .pvu-step-marker i {
+                    animation: pvuSpin 1.2s linear infinite;
+                }
+
+                .personal-video-upload-panel.is-success .pvu-spinner-ring {
+                    border-top-color: var(--success, #1e7a52);
+                    animation: none;
+                    border-color: rgba(30, 122, 82, 0.25);
+                }
+
+                .personal-video-upload-panel.is-error .pvu-spinner-ring {
+                    display: none;
+                }
             </style>
 
             <!-- Bulk Upload Mapping Modal -->
@@ -1906,18 +2160,34 @@
                     formData.append('categoryid', categoryId);
                     formData.append('doctype', 'personal');
                     formData.append('type', 'client');
+
+                    const fileList = Array.from(files);
+                    const videoFiles = fileList.filter(function(file) {
+                        return typeof isPersonalDocVideoFile === 'function' && isPersonalDocVideoFile(file);
+                    });
+                    const hasVideos = videoFiles.length > 0;
                     
                     // Add files
-                    Array.from(files).forEach((file, index) => {
+                    fileList.forEach((file, index) => {
                         formData.append('files[]', file);
                         const mapping = mappings[index] || { type: 'new', name: extractChecklistNameFromFile(file.name) };
                         formData.append('mappings[]', JSON.stringify(mapping));
                     });
                     
-                    // Show progress
-                    $('#bulk-upload-progress').show();
-                    $('#bulk-upload-progress-bar').css('width', '0%').text('0%');
                     $('#confirm-bulk-upload').prop('disabled', true);
+
+                    if (hasVideos && typeof showPersonalVideoUploadLoader === 'function') {
+                        $('#bulk-upload-mapping-modal').hide();
+                        showPersonalVideoUploadLoader({
+                            title: videoFiles.length === fileList.length ? 'Uploading Videos' : 'Uploading Files',
+                            filename: videoFiles.length === 1 ? videoFiles[0].name : (videoFiles.length + ' video(s) in batch'),
+                            fileSize: videoFiles.reduce(function(sum, f) { return sum + (f.size || 0); }, 0),
+                            message: 'Uploading files to server…'
+                        });
+                    } else {
+                        $('#bulk-upload-progress').show();
+                        $('#bulk-upload-progress-bar').css('width', '0%').text('0%');
+                    }
                     
                     $.ajax({
                         url: '{{ route("clients.documents.bulkUploadPersonalDocuments") }}',
@@ -1930,7 +2200,16 @@
                             xhr.upload.addEventListener('progress', function(e) {
                                 if (e.lengthComputable) {
                                     const percentComplete = (e.loaded / e.total) * 100;
-                                    $('#bulk-upload-progress-bar').css('width', percentComplete + '%').text(Math.round(percentComplete) + '%');
+                                    if (hasVideos && typeof updatePersonalVideoUploadLoader === 'function') {
+                                        const overallPct = Math.round((e.loaded / e.total) * 42);
+                                        updatePersonalVideoUploadLoader(
+                                            'upload',
+                                            overallPct,
+                                            'Uploading to server… ' + Math.round(percentComplete) + '%'
+                                        );
+                                    } else {
+                                        $('#bulk-upload-progress-bar').css('width', percentComplete + '%').text(Math.round(percentComplete) + '%');
+                                    }
                                 }
                             }, false);
                             return xhr;
@@ -1943,6 +2222,9 @@
                                 }).filter(Boolean);
 
                                 var finishBulkUpload = function(reloadPage) {
+                                    if (typeof hidePersonalVideoUploadLoader === 'function') {
+                                        hidePersonalVideoUploadLoader(reloadPage ? 700 : 0);
+                                    }
                                     hideBulkUploadModal();
                                     resetBulkUploadSelection(categoryId);
                                     $('#bulk-upload-progress').hide();
@@ -1953,6 +2235,9 @@
                                 };
 
                                 if (tokens.length > 0 && typeof waitForPersonalVideoUploads === 'function') {
+                                    if (hasVideos && typeof updatePersonalVideoUploadLoader === 'function') {
+                                        updatePersonalVideoUploadLoader('queued', 44, 'Upload complete. Processing video(s) in queue…');
+                                    }
                                     waitForPersonalVideoUploads(tokens, function(success, message) {
                                         if (typeof showPersonalDocVideoToast === 'function') {
                                             showPersonalDocVideoToast(success, message);
@@ -1960,7 +2245,7 @@
                                             alert(message);
                                         }
                                         finishBulkUpload(success);
-                                    });
+                                    }, { skipLoader: hasVideos });
                                     return;
                                 }
 
@@ -1975,6 +2260,10 @@
                                 if (response.errors && response.errors.length > 0) {
                                     errorMsg += '\n\nDetails:\n' + response.errors.join('\n');
                                 }
+                                if (hasVideos && typeof hidePersonalVideoUploadLoader === 'function') {
+                                    updatePersonalVideoUploadLoader('error', 0, errorMsg);
+                                    hidePersonalVideoUploadLoader(900);
+                                }
                                 alert(errorMsg);
                                 $('#bulk-upload-progress').hide();
                                 $('#confirm-bulk-upload').prop('disabled', false);
@@ -1985,6 +2274,10 @@
                             let errorMsg = 'Upload failed';
                             if (xhr.responseJSON && xhr.responseJSON.message) {
                                 errorMsg = xhr.responseJSON.message;
+                            }
+                            if (hasVideos && typeof hidePersonalVideoUploadLoader === 'function') {
+                                updatePersonalVideoUploadLoader('error', 0, errorMsg);
+                                hidePersonalVideoUploadLoader(900);
                             }
                             alert('Error: ' + errorMsg);
                             $('#bulk-upload-progress').hide();

@@ -6976,10 +6976,136 @@ success: function(response) {
             }
         }
 
-        function pollPersonalVideoUploadStatus(uploadToken, callback) {
+        var _pvuProcessingTimer = null;
+        var _pvuCurrentPercent = 0;
+
+        function formatPersonalVideoFileSize(bytes) {
+            if (!bytes || bytes <= 0) {
+                return '';
+            }
+            var units = ['Bytes', 'KB', 'MB', 'GB'];
+            var i = Math.floor(Math.log(bytes) / Math.log(1024));
+            var value = bytes / Math.pow(1024, i);
+            return Math.round(value * 100) / 100 + ' ' + units[i];
+        }
+
+        function clearPersonalVideoProcessingPulse() {
+            if (_pvuProcessingTimer) {
+                clearInterval(_pvuProcessingTimer);
+                _pvuProcessingTimer = null;
+            }
+        }
+
+        function updatePersonalVideoUploadLoader(step, percent, message) {
+            var $overlay = $('#personalVideoUploadOverlay');
+            if (!$overlay.length) {
+                return;
+            }
+
+            _pvuCurrentPercent = Math.max(_pvuCurrentPercent, Math.max(0, Math.min(100, percent || 0)));
+            $('#pvuProgressBar').css('width', _pvuCurrentPercent + '%');
+            $('#pvuPercent').text(Math.round(_pvuCurrentPercent) + '%');
+            if (message) {
+                $('#pvuStatusMessage').text(message);
+            }
+
+            var stepOrder = ['upload', 'queued', 'processing', 'complete'];
+            var activeIndex = stepOrder.indexOf(step);
+
+            $('.pvu-step').each(function() {
+                var liStep = $(this).data('step');
+                var idx = stepOrder.indexOf(liStep);
+                $(this).removeClass('active done error');
+                if (step === 'error' && idx === activeIndex) {
+                    $(this).addClass('error');
+                } else if (idx < activeIndex) {
+                    $(this).addClass('done');
+                } else if (idx === activeIndex) {
+                    $(this).addClass('active');
+                }
+            });
+
+            var $panel = $('.personal-video-upload-panel');
+            $panel.removeClass('is-success is-error');
+            if (step === 'complete') {
+                $panel.addClass('is-success');
+            } else if (step === 'error') {
+                $panel.addClass('is-error');
+            }
+        }
+
+        function startPersonalVideoProcessingPulse(step, fromPercent, toPercent, message) {
+            clearPersonalVideoProcessingPulse();
+            var current = Math.max(_pvuCurrentPercent, fromPercent);
+            updatePersonalVideoUploadLoader(step, current, message);
+            _pvuProcessingTimer = setInterval(function() {
+                if (current < toPercent) {
+                    current += 0.6;
+                    updatePersonalVideoUploadLoader(step, current, message);
+                }
+            }, 350);
+        }
+
+        function showPersonalVideoUploadLoader(options) {
+            options = options || {};
+            clearPersonalVideoProcessingPulse();
+            _pvuCurrentPercent = 0;
+
+            var $overlay = $('#personalVideoUploadOverlay');
+            if (!$overlay.length) {
+                return;
+            }
+
+            $('#pvuTitle').text(options.title || 'Uploading Video');
+            $('#pvuFilename').text(options.filename || 'Video file');
+            $('#pvuMeta').text(options.meta || (options.fileSize ? formatPersonalVideoFileSize(options.fileSize) : ''));
+            $('.personal-video-upload-panel').removeClass('is-success is-error');
+            $overlay.addClass('is-visible').attr('aria-hidden', 'false');
+            updatePersonalVideoUploadLoader('upload', 0, options.message || 'Preparing upload…');
+        }
+
+        function hidePersonalVideoUploadLoader(delayMs) {
+            clearPersonalVideoProcessingPulse();
+            var $overlay = $('#personalVideoUploadOverlay');
+            if (!$overlay.length) {
+                return;
+            }
+
+            var hide = function() {
+                $overlay.removeClass('is-visible').attr('aria-hidden', 'true');
+                _pvuCurrentPercent = 0;
+                $('.personal-video-upload-panel').removeClass('is-success is-error');
+            };
+
+            if (delayMs && delayMs > 0) {
+                setTimeout(hide, delayMs);
+            } else {
+                hide();
+            }
+        }
+
+        function pollPersonalVideoUploadStatus(uploadToken, callback, onStatus) {
             var attempts = 0;
             var maxAttempts = 150;
             var pollIntervalMs = 2000;
+            var lastStatus = '';
+
+            function handleStatus(status, res) {
+                if (status === lastStatus) {
+                    return;
+                }
+                lastStatus = status;
+
+                if (typeof onStatus === 'function') {
+                    onStatus(status, res);
+                }
+
+                if (status === 'queued') {
+                    startPersonalVideoProcessingPulse('queued', 46, 58, 'Video queued — waiting to process…');
+                } else if (status === 'processing') {
+                    startPersonalVideoProcessingPulse('processing', 58, 90, 'Processing video and saving to documents…');
+                }
+            }
 
             function poll() {
                 $.ajax({
@@ -6988,16 +7114,25 @@ success: function(response) {
                     dataType: 'json',
                     success: function(res) {
                         var status = (res.status || '').toLowerCase();
+                        handleStatus(status, res);
+
                         if (status === 'completed') {
+                            clearPersonalVideoProcessingPulse();
+                            updatePersonalVideoUploadLoader('complete', 100, 'Video uploaded successfully!');
                             callback(true, res.message || 'Video uploaded successfully.');
                             return;
                         }
                         if (status === 'failed') {
+                            clearPersonalVideoProcessingPulse();
+                            updatePersonalVideoUploadLoader('error', _pvuCurrentPercent, res.message || 'Video upload failed.');
                             callback(false, res.message || 'Video upload failed.');
                             return;
                         }
+
                         attempts++;
                         if (attempts >= maxAttempts) {
+                            clearPersonalVideoProcessingPulse();
+                            updatePersonalVideoUploadLoader('error', _pvuCurrentPercent, 'Upload timed out.');
                             callback(false, 'Video upload timed out. Please refresh and check the document list.');
                             return;
                         }
@@ -7005,11 +7140,18 @@ success: function(response) {
                     },
                     error: function(xhr) {
                         if (xhr.status === 403 || xhr.status === 404) {
-                            callback(false, (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Unable to check upload status.');
+                            clearPersonalVideoProcessingPulse();
+                            var deniedMessage = (xhr.responseJSON && xhr.responseJSON.message)
+                                ? xhr.responseJSON.message
+                                : 'Unable to check upload status.';
+                            updatePersonalVideoUploadLoader('error', _pvuCurrentPercent, deniedMessage);
+                            callback(false, deniedMessage);
                             return;
                         }
                         attempts++;
                         if (attempts >= maxAttempts) {
+                            clearPersonalVideoProcessingPulse();
+                            updatePersonalVideoUploadLoader('error', _pvuCurrentPercent, 'Unable to check upload status.');
                             callback(false, 'Unable to check upload status.');
                             return;
                         }
@@ -7021,15 +7163,34 @@ success: function(response) {
             poll();
         }
 
-        function waitForPersonalVideoUploads(uploadTokens, callback) {
+        function waitForPersonalVideoUploads(uploadTokens, callback, options) {
+            options = options || {};
             if (!uploadTokens || uploadTokens.length === 0) {
                 callback(true, 'Upload complete.');
                 return;
             }
 
+            if (uploadTokens.length === 1 && !options.skipLoader) {
+                showPersonalVideoUploadLoader({
+                    title: 'Processing Video',
+                    filename: options.filename || 'Video file',
+                    fileSize: options.fileSize || 0,
+                    message: 'Finishing background processing…'
+                });
+                updatePersonalVideoUploadLoader('queued', 46, 'Video queued — waiting to process…');
+            } else if (!options.skipLoader) {
+                showPersonalVideoUploadLoader({
+                    title: 'Processing Videos',
+                    filename: uploadTokens.length + ' video file(s)',
+                    message: 'Processing uploaded videos…'
+                });
+                updatePersonalVideoUploadLoader('queued', 46, 'Videos queued — waiting to process…');
+            }
+
             var remaining = uploadTokens.length;
             var failed = false;
             var resultMessage = null;
+            var completedCount = 0;
 
             uploadTokens.forEach(function(token) {
                 pollPersonalVideoUploadStatus(token, function(success, message) {
@@ -7039,9 +7200,27 @@ success: function(response) {
                     if (!resultMessage) {
                         resultMessage = message;
                     }
+                    completedCount++;
                     remaining--;
+
+                    if (uploadTokens.length > 1 && !options.skipLoader) {
+                        var batchPercent = 46 + Math.round((completedCount / uploadTokens.length) * 54);
+                        updatePersonalVideoUploadLoader(
+                            remaining === 0 && !failed ? 'complete' : 'processing',
+                            batchPercent,
+                            'Processed ' + completedCount + ' of ' + uploadTokens.length + ' video(s)…'
+                        );
+                    }
+
                     if (remaining === 0) {
+                        if (!failed && uploadTokens.length > 1) {
+                            updatePersonalVideoUploadLoader('complete', 100, 'All videos uploaded successfully!');
+                        }
                         callback(!failed, failed ? (resultMessage || 'One or more video uploads failed.') : (resultMessage || 'Video uploaded successfully.'));
+                    }
+                }, function(status) {
+                    if (uploadTokens.length > 1 && (status === 'queued' || status === 'processing')) {
+                        updatePersonalVideoUploadLoader('processing', 58 + completedCount * 5, 'Processing videos in queue…');
                     }
                 });
             });
@@ -7049,6 +7228,9 @@ success: function(response) {
 
         window.showPersonalDocVideoToast = showPersonalDocVideoToast;
         window.waitForPersonalVideoUploads = waitForPersonalVideoUploads;
+        window.showPersonalVideoUploadLoader = showPersonalVideoUploadLoader;
+        window.hidePersonalVideoUploadLoader = hidePersonalVideoUploadLoader;
+        window.updatePersonalVideoUploadLoader = updatePersonalVideoUploadLoader;
 
         function performPersonalDocUpload(file, targetFileId, targetCategoryId, dragZone, options) {
             options = options || {};
@@ -7069,7 +7251,13 @@ success: function(response) {
             if (dragZone && dragZone.length) {
                 dragZone.addClass('uploading');
             }
-            if (!isVideoUpload) {
+            if (isVideoUpload) {
+                showPersonalVideoUploadLoader({
+                    filename: file.name,
+                    fileSize: file.size,
+                    message: 'Uploading video to server…'
+                });
+            } else {
                 $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa fa-clock-o"></i> Uploading document...</span>');
             }
 
@@ -7080,12 +7268,31 @@ success: function(response) {
                 data: formData,
                 contentType: false,
                 processData: false,
+                xhr: function() {
+                    var xhr = new window.XMLHttpRequest();
+                    if (isVideoUpload) {
+                        xhr.upload.addEventListener('progress', function(e) {
+                            if (e.lengthComputable) {
+                                var uploadPct = Math.round((e.loaded / e.total) * 100);
+                                var overallPct = Math.round((e.loaded / e.total) * 42);
+                                updatePersonalVideoUploadLoader(
+                                    'upload',
+                                    overallPct,
+                                    'Uploading video to server… ' + uploadPct + '%'
+                                );
+                            }
+                        }, false);
+                    }
+                    return xhr;
+                },
                 success: function(ress) {
                     if (ress.queued && ress.upload_token && isVideoUpload) {
+                        updatePersonalVideoUploadLoader('queued', 44, 'Upload complete. Starting background processing…');
                         pollPersonalVideoUploadStatus(ress.upload_token, function(success, message) {
                             if (dragZone && dragZone.length) {
                                 dragZone.removeClass('uploading');
                             }
+                            hidePersonalVideoUploadLoader(success ? 700 : 900);
                             showPersonalDocVideoToast(success, message);
                             if (success) {
                                 setTimeout(function() {
@@ -7096,12 +7303,18 @@ success: function(response) {
                         return;
                     }
 
+                    if (isVideoUpload) {
+                        hidePersonalVideoUploadLoader();
+                    }
+
                     if (dragZone && dragZone.length) {
                         dragZone.removeClass('uploading');
                     }
 
                     if (!ress.status) {
                         if (isVideoUpload) {
+                            updatePersonalVideoUploadLoader('error', _pvuCurrentPercent, ress.message || 'Video upload failed.');
+                            hidePersonalVideoUploadLoader(900);
                             showPersonalDocVideoToast(false, ress.message || 'Video upload failed.');
                         } else {
                             $('.custom-error-msg').html('<span class="alert alert-danger">' + ress.message + '</span>');
@@ -7156,6 +7369,8 @@ success: function(response) {
                         ? xhr.responseJSON.message
                         : 'Upload failed. Please try again.';
                     if (isVideoUpload) {
+                        updatePersonalVideoUploadLoader('error', _pvuCurrentPercent, errorMessage);
+                        hidePersonalVideoUploadLoader(900);
                         showPersonalDocVideoToast(false, errorMessage);
                     } else {
                         $('.custom-error-msg').html('<span class="alert alert-danger">' + errorMessage + '</span>');
