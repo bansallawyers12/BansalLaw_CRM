@@ -1299,15 +1299,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (isEmailUploading) return;
             if (files.length === 0) return;
 
-            const msgFiles = [];
-            for (let i = 0; i < files.length; i++) {
-                if (files[i].name.toLowerCase().endsWith('.msg')) {
-                    msgFiles.push(files[i]);
-                }
-            }
+            const msgFiles = (typeof window.crmFilterAllowedEmailUploadFiles === 'function')
+                ? window.crmFilterAllowedEmailUploadFiles(files)
+                : Array.from(files).filter(function (file) {
+                    return file.name.toLowerCase().endsWith('.msg') || file.name.toLowerCase().endsWith('.eml');
+                });
 
             if (msgFiles.length === 0) {
-                showUploadErrorAlert('Please upload .msg files only.');
+                const allowedLabel = (typeof window.crmEmailUploadExtensionsLabel === 'function')
+                    ? window.crmEmailUploadExtensionsLabel()
+                    : '.msg, .eml';
+                showUploadErrorAlert('Please upload Outlook email files only (' + allowedLabel + ').');
                 return;
             }
 

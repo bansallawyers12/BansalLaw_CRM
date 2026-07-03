@@ -53,6 +53,10 @@
     }
 @endphp
 @php
+    $crmEmailUploadAccept = implode(',', array_map(static fn ($ext) => '.' . ltrim((string) $ext, '.'), config('crm.email_upload_allowed_extensions', ['msg', 'eml'])));
+    $crmEmailUploadLabel = implode(', ', array_map(static fn ($ext) => '.' . ltrim((string) $ext, '.'), config('crm.email_upload_allowed_extensions', ['msg', 'eml'])));
+@endphp
+@php
     $authStaff = auth()->guard('admin')->user();
     $canDeleteEmail = $authStaff instanceof \App\Models\Staff
         && $authStaff->canDeleteEmailWithAttachments();
@@ -77,7 +81,7 @@
     <div id="dragDropOverlay" class="drag-drop-overlay" style="display: none;">
         <div class="drag-drop-content">
             <i class="fas fa-cloud-upload-alt" style="font-size: 48px; margin-bottom: 15px;"></i>
-            <h3>Drop .msg files here to upload</h3>
+            <h3>Drop Outlook email files here ({{ $crmEmailUploadLabel }})</h3>
         </div>
     </div>
     
@@ -95,16 +99,16 @@
                     <i class="fas fa-file-alt"></i> Drafts
                 </button>
             </div>
-            <button type="button" class="action-btn action-btn--upload" id="btnUploadEmail" title="Upload .msg file" hidden>
+            <button type="button" class="action-btn action-btn--upload" id="btnUploadEmail" title="Upload Outlook email ({{ $crmEmailUploadLabel }})" hidden>
                 <i class="fas fa-upload"></i> Upload
             </button>
-            <input type="file" id="outlookEmailFileInput" accept=".msg" multiple hidden>
+            <input type="file" id="outlookEmailFileInput" accept="{{ $crmEmailUploadAccept }}" multiple hidden>
         </div>
         <div id="uploadStatus" class="upload-status" hidden></div>
 
         <div id="inlineDropZone" class="inline-drop-zone">
             <i class="fas fa-cloud-upload-alt"></i>
-            <span>Drag & drop .msg files here or <b>browse</b> to upload</span>
+            <span>Drag & drop Outlook email files ({{ $crmEmailUploadLabel }}) here or <b>browse</b> to upload</span>
         </div>
 
         <div class="list-header">
@@ -371,6 +375,9 @@
 </div>
 
 @include('partials.staff-signature-script')
+<script>
+window.__CRM_EMAIL_ALLOWED_EXTENSIONS__ = @json(config('crm.email_upload_allowed_extensions', ['msg', 'eml']));
+</script>
 <script src="{{ asset('js/email-upload-filename.js') }}?v={{ file_exists(public_path('js/email-upload-filename.js')) ? filemtime(public_path('js/email-upload-filename.js')) : 1 }}"></script>
 @if($canDeleteEmail)
 <link rel="stylesheet" href="{{ asset('css/email-delete-confirm.css') }}?v={{ file_exists(public_path('css/email-delete-confirm.css')) ? filemtime(public_path('css/email-delete-confirm.css')) : 1 }}">

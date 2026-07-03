@@ -201,7 +201,11 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <div>
                         <h4 class="mb-1">Smart Email Import</h4>
-                        <small class="text-muted">Upload .msg files, review suggestions, then manually pick client/matter or confirm matches before import.</small>
+@php
+    $crmEmailUploadAccept = implode(',', array_map(static fn ($ext) => '.' . ltrim((string) $ext, '.'), config('crm.email_upload_allowed_extensions', ['msg', 'eml'])));
+    $crmEmailUploadLabel = implode(', ', array_map(static fn ($ext) => '.' . ltrim((string) $ext, '.'), config('crm.email_upload_allowed_extensions', ['msg', 'eml'])));
+@endphp
+                        <small class="text-muted">Upload Outlook email files ({{ $crmEmailUploadLabel }}), review suggestions, then manually pick client/matter or confirm matches before import.</small>
                     </div>
                     <span id="python-service-status" class="badge badge-secondary">Checking service...</span>
                 </div>
@@ -209,9 +213,9 @@
                 <div class="card-body">
                     <div id="smart-import-upload-panel">
                         <div class="smart-import-dropzone" id="smart-import-dropzone">
-                            <input type="file" id="smart-import-files" accept=".msg" multiple>
+                            <input type="file" id="smart-import-files" accept="{{ $crmEmailUploadAccept }}" multiple>
                             <i class="fas fa-cloud-upload-alt fa-2x mb-2" style="color: var(--navy, #1e3d60);"></i>
-                            <p class="mb-1"><strong>Drop .msg files here</strong> or click to browse</p>
+                            <p class="mb-1"><strong>Drop Outlook email files ({{ $crmEmailUploadLabel }}) here</strong> or click to browse</p>
                             <small class="text-muted">Up to 10 files, max {{ (int) config('crm.email_upload_max_kb', 30720) / 1024 }}MB each</small>
                         </div>
                         <div class="smart-import-status mt-2" id="smart-import-upload-status"></div>
@@ -299,6 +303,7 @@
         csrfToken: @json(csrf_token()),
         maxFiles: 10,
     };
+    window.__CRM_EMAIL_ALLOWED_EXTENSIONS__ = @json(config('crm.email_upload_allowed_extensions', ['msg', 'eml']));
 </script>
 <script src="{{ asset('js/email-upload-filename.js') }}?v={{ filemtime(public_path('js/email-upload-filename.js')) }}"></script>
 <script src="{{ asset('js/smart-email-import.js') }}?v={{ filemtime(public_path('js/smart-email-import.js')) }}"></script>

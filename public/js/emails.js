@@ -146,7 +146,10 @@
                 return 'Your session has expired. Please refresh the page and log in again.';
             }
             if (status === 422) {
-                let detail = 'Only Outlook .msg files are allowed (max ' + MAX_EMAIL_FILES + ' files, ' + formatFileSize(MAX_EMAIL_FILE_BYTES) + ' each). Check your selection and try again.';
+                const allowedLabel = (typeof window.crmEmailUploadExtensionsLabel === 'function')
+                    ? window.crmEmailUploadExtensionsLabel()
+                    : '.msg, .eml';
+                let detail = 'Only Outlook email files are allowed (' + allowedLabel + ', max ' + MAX_EMAIL_FILES + ' files, ' + formatFileSize(MAX_EMAIL_FILE_BYTES) + ' each). Check your selection and try again.';
                 if (parsed.errors && typeof parsed.errors === 'object') {
                     const flat = Object.values(parsed.errors)
                         .flat()
@@ -905,16 +908,21 @@
                 return;
             }
 
-            // Filter to only .msg files
-            const msgFiles = Array.from(files).filter(file => 
-                file.name.toLowerCase().endsWith('.msg')
-            );
+            // Filter to allowed Outlook email files
+            const msgFiles = (typeof window.crmFilterAllowedEmailUploadFiles === 'function')
+                ? window.crmFilterAllowedEmailUploadFiles(files)
+                : Array.from(files).filter(function (file) {
+                    return file.name.toLowerCase().endsWith('.msg') || file.name.toLowerCase().endsWith('.eml');
+                });
 
             if (msgFiles.length === 0) {
-                showNotification('Please select .msg files only', 'error');
-                fileStatus.textContent = 'Only .msg files allowed';
+                const allowedLabel = (typeof window.crmEmailUploadExtensionsLabel === 'function')
+                    ? window.crmEmailUploadExtensionsLabel()
+                    : '.msg, .eml';
+                showNotification('Please select Outlook email files only (' + allowedLabel + ')', 'error');
+                fileStatus.textContent = 'Invalid file type';
                 fileStatus.parentElement.className = 'upload-progress error';
-                setTimeout(() => {
+                setTimeout(function () {
                     fileStatus.textContent = 'Ready to upload';
                     fileStatus.parentElement.className = 'upload-progress';
                 }, 3000);
@@ -922,7 +930,7 @@
             }
 
             if (msgFiles.length !== files.length) {
-                showNotification(`Only ${msgFiles.length} of ${files.length} files are .msg files`, 'info');
+                showNotification('Only ' + msgFiles.length + ' of ' + files.length + ' files are valid Outlook email files', 'info');
             }
 
             if (msgFiles.length > MAX_EMAIL_FILES) {

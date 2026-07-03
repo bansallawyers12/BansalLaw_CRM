@@ -52,10 +52,11 @@ class SmartEmailImportController extends EmailUploadController
         foreach ($request->file('email_files', []) as $file) {
             $itemId = (string) Str::uuid();
             $originalName = $file->getClientOriginalName();
+            $storedExtension = strtolower((string) $file->getClientOriginalExtension());
 
             try {
-                $storedPath = $batchDir . DIRECTORY_SEPARATOR . $itemId . '.msg';
-                $file->move($batchDir, $itemId . '.msg');
+                $storedPath = $batchDir . DIRECTORY_SEPARATOR . $itemId . '.' . $storedExtension;
+                $file->move($batchDir, $itemId . '.' . $storedExtension);
 
                 $uploadedFile = new UploadedFile(
                     $storedPath,
@@ -76,6 +77,7 @@ class SmartEmailImportController extends EmailUploadController
                 $items[] = [
                     'id' => $itemId,
                     'filename' => $originalName,
+                    'stored_extension' => $storedExtension,
                     'mail_type' => $matchResult['mail_type'],
                     'confidence' => $matchResult['confidence'],
                     'is_high_confidence' => $matchResult['is_high_confidence'],
@@ -87,7 +89,7 @@ class SmartEmailImportController extends EmailUploadController
                     'preview' => $preview,
                 ];
             } catch (\Throwable $e) {
-                @unlink($batchDir . DIRECTORY_SEPARATOR . $itemId . '.msg');
+                @unlink($batchDir . DIRECTORY_SEPARATOR . $itemId . '.' . $storedExtension);
                 $failed[] = [
                     'filename' => $originalName,
                     'error' => $e->getMessage(),
@@ -178,7 +180,8 @@ class SmartEmailImportController extends EmailUploadController
         foreach ($request->input('assignments', []) as $assignment) {
             $itemId = (string) $assignment['item_id'];
             $itemMeta = $itemsById->get($itemId);
-            $storedPath = $batchDir . DIRECTORY_SEPARATOR . $itemId . '.msg';
+            $storedExtension = strtolower((string) ($itemMeta['stored_extension'] ?? 'msg'));
+            $storedPath = $batchDir . DIRECTORY_SEPARATOR . $itemId . '.' . $storedExtension;
 
             if (! $itemMeta || ! is_file($storedPath)) {
                 $failed[] = [
@@ -258,7 +261,10 @@ class SmartEmailImportController extends EmailUploadController
             file_put_contents($metaPath, json_encode($meta, JSON_THROW_ON_ERROR));
         }
 
-        $remaining = glob($batchDir . DIRECTORY_SEPARATOR . '*.msg') ?: [];
+        $remaining = array_values(array_filter(
+            glob($batchDir . DIRECTORY_SEPARATOR . '*') ?: [],
+            static fn (string $path): bool => basename($path) !== 'meta.json'
+        ));
         if ($remaining === []) {
             File::deleteDirectory($batchDir);
         }
@@ -285,11 +291,13 @@ class SmartEmailImportController extends EmailUploadController
      */
     private function validateSmartImportFiles(Request $request)
     {
+        $allowedLabel = $this->emailUploadExtensionsLabel();
+
         $validator = Validator::make($request->all(), [
             'email_files' => 'required|array|min:1|max:' . self::MAX_FILES,
             'email_files.*' => 'file|max:' . (int) config('crm.email_upload_max_kb', 30720),
         ], [
-            'email_files.required' => 'Please choose at least one Outlook .msg file.',
+            'email_files.required' => 'Please choose at least one Outlook email file (' . $allowedLabel . ').',
             'email_files.max' => 'Maximum ' . self::MAX_FILES . ' email files allowed per upload.',
         ]);
 
@@ -303,7 +311,7 @@ class SmartEmailImportController extends EmailUploadController
 
         $invalidFiles = [];
         foreach ($request->file('email_files', []) as $file) {
-            if (strtolower((string) $file->getClientOriginalExtension()) !== 'msg') {
+            if (! $this->isAllowedEmailUploadExtension((string) $file->getClientOriginalExtension())) {
                 $invalidFiles[] = $file->getClientOriginalName();
             }
         }
@@ -311,7 +319,7 @@ class SmartEmailImportController extends EmailUploadController
         if ($invalidFiles !== []) {
             return response()->json([
                 'status' => false,
-                'message' => 'Only .msg files are allowed.',
+                'message' => 'Only Outlook email files are allowed (' . $allowedLabel . ').',
                 'invalid_files' => $invalidFiles,
             ], 422);
         }

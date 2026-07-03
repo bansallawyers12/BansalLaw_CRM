@@ -260,8 +260,11 @@
         var rejected = [];
 
         files.forEach(function (file) {
-            if (!/\.msg$/i.test(file.name)) {
-                rejected.push(file.name + ' (not .msg)');
+            var allowed = (typeof window.crmIsAllowedEmailUploadFilename === 'function')
+                ? window.crmIsAllowedEmailUploadFilename(file.name)
+                : /\.(msg|eml)$/i.test(file.name);
+            if (!allowed) {
+                rejected.push(file.name + ' (not an Outlook email file)');
                 return;
             }
             valid.push(file);
@@ -275,9 +278,12 @@
         state.selectedFiles = valid;
         updateAnalyzeButton();
 
+        var allowedLabel = (typeof window.crmEmailUploadExtensionsLabel === 'function')
+            ? window.crmEmailUploadExtensionsLabel()
+            : '.msg, .eml';
         var message = valid.length
             ? valid.length + ' file(s) selected: ' + valid.map(function (f) { return f.name; }).join(', ')
-            : 'No valid .msg files selected.';
+            : 'No valid Outlook email files selected (' + allowedLabel + ').';
         if (rejected.length) {
             message += ' Skipped: ' + rejected.join(', ');
         }

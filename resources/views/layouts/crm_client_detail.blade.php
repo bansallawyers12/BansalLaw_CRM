@@ -1702,6 +1702,9 @@
     <script src="{{asset('js/tom-select.complete.min.js')}}"></script>
     <script src="{{asset('js/ts-init.js')}}"></script>
     <script src="{{asset('js/intlTelInput.js')}}"></script>
+    <script>
+        window.__CRM_EMAIL_ALLOWED_EXTENSIONS__ = @json(config('crm.email_upload_allowed_extensions', ['msg', 'eml']));
+    </script>
     <script src="{{ asset('js/email-upload-filename.js') }}?v={{ file_exists(public_path('js/email-upload-filename.js')) ? filemtime(public_path('js/email-upload-filename.js')) : 1 }}"></script>
     <script src="{{asset('js/custom-form-validation.js')}}"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>

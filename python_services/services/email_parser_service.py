@@ -1,7 +1,7 @@
 """
 Email Parser Service
 
-Handles parsing of .msg files using the extract_msg library.
+Handles parsing of Outlook email files (.msg via extract_msg, .eml via stdlib email).
 Provides comprehensive email data extraction including metadata, content, and attachments.
 """
 
@@ -10,6 +10,10 @@ import sys
 import os
 import re
 import base64
+from email import policy
+from email.message import Message
+from email.utils import getaddresses, parsedate_to_datetime
+import email
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
@@ -27,10 +31,17 @@ logger = setup_logger(__name__, 'email_parser.log')
 
 
 class EmailParserService:
-    """Service for parsing .msg email files."""
+    """Service for parsing Outlook email files (.msg, .eml)."""
     
     def __init__(self):
         logger.info("Email Parser Service initialized")
+
+    def parse_email_file(self, file_path: str) -> Dict[str, Any]:
+        """Parse an Outlook email file based on its extension."""
+        extension = Path(file_path).suffix.lower()
+        if extension == '.eml':
+            return self.parse_eml_file(file_path)
+        return self.parse_msg_file(file_path)
     
     def parse_msg_file(self, file_path: str) -> Dict[str, Any]:
         """
@@ -113,6 +124,158 @@ class EmailParserService:
                 'error': str(e),
                 'file_path': file_path
             }
+
+    def parse_eml_file(self, file_path: str) -> Dict[str, Any]:
+        """Parse a .eml (RFC 822) email file saved from Outlook or other clients."""
+        try:
+            logger.info(f"Parsing .eml file: {file_path}")
+
+            if not os.path.exists(file_path):
+                return {
+                    'success': False,
+                    'error': f'File not found: {file_path}'
+                }
+
+            with open(file_path, 'rb') as handle:
+                msg = email.message_from_binary_file(handle, policy=policy.default)
+
+            sender_name, sender_email = self._extract_email_from_string(msg.get('From', '') or '')
+            sent_date = self._parse_eml_date(msg.get('Date'))
+            received_date = self._parse_eml_date(msg.get('Delivery-Date')) or sent_date
+
+            html_content, text_content, attachments = self._extract_eml_body_and_attachments(msg)
+            recipient_groups = self._extract_eml_recipient_groups(msg)
+
+            email_data = {
+                'success': True,
+                'subject': self._safe_get(msg.get('Subject', ''), ''),
+                'sender_name': sender_name or '',
+                'sender_email': sender_email or '',
+                'sent_date': sent_date,
+                'received_date': received_date or sent_date,
+                'html_content': html_content,
+                'text_content': text_content,
+                'recipients': recipient_groups['to'],
+                'to_recipients': recipient_groups['to'],
+                'cc_recipients': recipient_groups['cc'],
+                'bcc_recipients': recipient_groups['bcc'],
+                'attachments': attachments,
+                'headers': self._extract_eml_headers(msg),
+                'message_id': self._safe_get(msg.get('Message-ID', ''), ''),
+                'file_path': file_path,
+                'file_size': os.path.getsize(file_path),
+            }
+
+            logger.info(f"Successfully parsed EML email: {email_data['subject']}")
+            return email_data
+
+        except Exception as e:
+            logger.error(f"Error parsing .eml file {file_path}: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e),
+                'file_path': file_path
+            }
+
+    def _parse_eml_date(self, value: Any) -> Any:
+        if not value:
+            return None
+        try:
+            parsed = parsedate_to_datetime(str(value))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed.isoformat()
+        except Exception:
+            return self._safe_get(value, None)
+
+    def _extract_eml_recipient_groups(self, msg: Message) -> Dict[str, List[str]]:
+        groups = {
+            'to': self._addresses_from_header(msg.get('To', '')),
+            'cc': self._addresses_from_header(msg.get('Cc', '')),
+            'bcc': self._addresses_from_header(msg.get('Bcc', '')),
+        }
+        for key in groups:
+            groups[key] = self._dedupe_preserve_order(groups[key])
+        return groups
+
+    def _addresses_from_header(self, header_value: str) -> List[str]:
+        if not header_value:
+            return []
+        results: List[str] = []
+        for _name, addr in getaddresses([header_value]):
+            addr = (addr or '').strip()
+            if addr:
+                results.append(addr)
+                continue
+            name = (_name or '').strip()
+            if name:
+                results.append(name)
+        return results
+
+    def _extract_eml_headers(self, msg: Message) -> dict:
+        headers = {}
+        for key in ('From', 'To', 'Cc', 'Bcc', 'Subject', 'Date', 'Message-ID', 'Reply-To'):
+            value = msg.get(key)
+            if value:
+                headers[key] = self._safe_get(value, '')
+        return headers
+
+    def _extract_eml_body_and_attachments(self, msg: Message) -> Tuple[str, str, list]:
+        html_content = ''
+        text_content = ''
+        attachments = []
+
+        if msg.is_multipart():
+            for part in msg.walk():
+                if part.get_content_maintype() == 'multipart':
+                    continue
+                disposition = str(part.get('Content-Disposition', '') or '').lower()
+                filename = part.get_filename()
+                content_type = part.get_content_type()
+
+                if filename or 'attachment' in disposition:
+                    attachment_data = self._build_eml_attachment(part, filename)
+                    if attachment_data:
+                        attachments.append(attachment_data)
+                    continue
+
+                if content_type == 'text/html' and not html_content:
+                    html_content = self._safe_get(part.get_content(), '')
+                elif content_type == 'text/plain' and not text_content:
+                    text_content = self._safe_get(part.get_content(), '')
+        else:
+            content_type = msg.get_content_type()
+            if content_type == 'text/html':
+                html_content = self._safe_get(msg.get_content(), '')
+            else:
+                text_content = self._safe_get(msg.get_content(), '')
+
+        return html_content, text_content, attachments
+
+    def _build_eml_attachment(self, part: Message, filename: Optional[str]) -> Optional[dict]:
+        try:
+            payload = part.get_payload(decode=True) or b''
+            filename = filename or part.get_filename() or 'attachment'
+            content_id = self._safe_get(part.get('Content-ID', ''), '')
+            disposition = str(part.get('Content-Disposition', '') or '').lower()
+            is_inline = 'inline' in disposition or bool(content_id)
+
+            attachment_data = {
+                'filename': self._safe_get(filename, 'attachment'),
+                'content_type': self._safe_get(part.get_content_type(), 'application/octet-stream'),
+                'content_id': content_id,
+                'is_inline': is_inline,
+                'size': len(payload),
+                'data': None,
+            }
+
+            if payload and len(payload) < 31457280:
+                attachment_data['data'] = base64.b64encode(payload).decode('ascii')
+
+            return attachment_data
+        except Exception as e:
+            logger.warning(f"Error processing EML attachment: {str(e)}")
+            return None
     
     def _safe_get(self, value: Any, default: Any = None) -> Any:
         """Safely get value and convert to JSON-serializable format."""

@@ -146,6 +146,10 @@
 </div>
 
 <!-- Upload Inbox Mail And Fetch Content Modal -->
+@php
+    $crmEmailUploadAccept = implode(',', array_map(static fn ($ext) => '.' . ltrim((string) $ext, '.'), config('crm.email_upload_allowed_extensions', ['msg', 'eml'])));
+    $crmEmailUploadLabel = implode(', ', array_map(static fn ($ext) => '.' . ltrim((string) $ext, '.'), config('crm.email_upload_allowed_extensions', ['msg', 'eml'])));
+@endphp
 <div class="modal fade custom_modal" id="uploadAndFetchMailModel" tabindex="-1" role="dialog" aria-labelledby="" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
@@ -166,8 +170,8 @@
 					<div class="row">
 						<div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
-                               <label>Upload Outlook Email (.msg)<span class="span_req">*</span></label>
-                               <input type="file" name="email_files[]" id="email_files" class="form-control" accept=".msg" multiple >
+                               <label>Upload Outlook Email ({{ $crmEmailUploadLabel }})<span class="span_req">*</span></label>
+                               <input type="file" name="email_files[]" id="email_files" class="form-control" accept="{{ $crmEmailUploadAccept }}" multiple >
                             </div>
                        </div>
 
@@ -204,8 +208,8 @@
 					<div class="row">
 						<div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
-                               <label>Upload Outlook Email (.msg)<span class="span_req">*</span></label>
-                               <input type="file" name="email_files[]" id="email_files1" class="form-control" accept=".msg" multiple >
+                               <label>Upload Outlook Email ({{ $crmEmailUploadLabel }})<span class="span_req">*</span></label>
+                               <input type="file" name="email_files[]" id="email_files1" class="form-control" accept="{{ $crmEmailUploadAccept }}" multiple >
                             </div>
                        </div>
 

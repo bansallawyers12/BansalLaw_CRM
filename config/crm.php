@@ -229,7 +229,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Email .msg upload limits (matches EmailUploadController validation)
+    | Email upload — allowed Outlook email file extensions (lowercase, no dot)
+    |--------------------------------------------------------------------------
+    */
+    'email_upload_allowed_extensions' => array_values(array_unique(array_filter(array_map(
+        static function (string $ext): string {
+            return strtolower(ltrim(trim($ext), '.'));
+        },
+        explode(',', (string) env('EMAIL_UPLOAD_ALLOWED_EXTENSIONS', 'msg,eml'))
+    )))),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Email upload limits (matches EmailUploadController validation)
     |--------------------------------------------------------------------------
     */
     'email_upload_max_kb' => max(1, (int) env('EMAIL_UPLOAD_MAX_KB', 30720)),

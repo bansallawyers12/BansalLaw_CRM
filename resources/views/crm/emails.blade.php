@@ -22,6 +22,8 @@
     $authStaff = auth()->guard('admin')->user();
     $canDeleteEmail = $authStaff instanceof \App\Models\Staff
         && $authStaff->canDeleteEmailWithAttachments();
+    $crmEmailUploadAccept = implode(',', array_map(static fn ($ext) => '.' . ltrim((string) $ext, '.'), config('crm.email_upload_allowed_extensions', ['msg', 'eml'])));
+    $crmEmailUploadLabel = implode(', ', array_map(static fn ($ext) => '.' . ltrim((string) $ext, '.'), config('crm.email_upload_allowed_extensions', ['msg', 'eml'])));
 @endphp
 <div class="email-interface-container" data-client-id="{{ $clientData->id ?? '' }}" data-matter-id="{{ $matterId ?? '' }}" data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}">
     <!-- Top Control Bar (Search & Filters) -->
@@ -64,11 +66,11 @@
                 <div id="upload-area" class="drag-drop-zone">
                     <div class="drag-drop-content">
                         <i class="fas fa-cloud-upload-alt drag-drop-icon"></i>
-                        <div class="drag-drop-text">Drag & drop .msg files here</div>
+                        <div class="drag-drop-text">Drag & drop Outlook email files ({{ $crmEmailUploadLabel }}) here</div>
                         <div class="drag-drop-subtext">or click to browse</div>
                         <div id="file-count" class="file-count-badge">0</div>
                     </div>
-                    <input type="file" id="emailFileInput" class="file-input" accept=".msg" multiple style="display: none;">
+                    <input type="file" id="emailFileInput" class="file-input" accept="{{ $crmEmailUploadAccept }}" multiple style="display: none;">
                 </div>
                 <div id="upload-progress" class="upload-progress">
                     <span id="fileStatus">Ready to upload</span>
@@ -93,7 +95,7 @@
                     </div>
                     <div class="empty-state-text">
                         <h3>No emails found</h3>
-                        <p>Upload .msg files above to get started.</p>
+                        <p>Upload Outlook email files ({{ $crmEmailUploadLabel }}) above to get started.</p>
                     </div>
                 </div>
             </div>
@@ -179,6 +181,7 @@
 <script>
 window.__CRM_BASE__ = @json(rtrim((string) url('/'), '/'));
 window.__CRM_EMAIL_MAX_FILE_BYTES__ = @json((int) config('crm.email_upload_max_kb', 30720) * 1024);
+window.__CRM_EMAIL_ALLOWED_EXTENSIONS__ = @json(config('crm.email_upload_allowed_extensions', ['msg', 'eml']));
 </script>
 <script src="{{ asset('js/email-upload-filename.js') }}?v={{ file_exists(public_path('js/email-upload-filename.js')) ? filemtime(public_path('js/email-upload-filename.js')) : 1 }}"></script>
 @if($canDeleteEmail)

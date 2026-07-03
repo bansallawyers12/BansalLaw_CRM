@@ -51,8 +51,8 @@ class EmailPdfBackfillService
         if ($extension === '') {
             $extension = strtolower((string) ($sourceDocument->filetype ?? ''));
         }
-        if ($extension !== 'msg') {
-            return ['status' => 'skipped', 'message' => 'Source file is not a .msg upload'];
+        if (! in_array($extension, config('crm.email_upload_allowed_extensions', ['msg', 'eml']), true)) {
+            return ['status' => 'skipped', 'message' => 'Source file is not an uploaded Outlook email'];
         }
 
         $s3Key = $this->resolveDocumentS3Key($sourceDocument, $email);

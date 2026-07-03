@@ -1,10 +1,54 @@
 /**
- * WAF-safe .msg upload filename helpers (mirrors EmailUploadController::sanitizeFilename).
+ * WAF-safe Outlook email upload helpers (mirrors EmailUploadController::sanitizeFilename).
  * Sanitize multipart Content-Disposition names before POST so production WAF/mod_security
  * does not block apostrophes and other special characters.
  */
 (function (global) {
     'use strict';
+
+    var DEFAULT_EMAIL_EXTENSIONS = ['msg', 'eml'];
+
+    function getAllowedEmailUploadExtensions() {
+        var fromWindow = global.__CRM_EMAIL_ALLOWED_EXTENSIONS__;
+        if (Array.isArray(fromWindow) && fromWindow.length) {
+            return fromWindow.map(function (ext) {
+                return String(ext).toLowerCase().replace(/^\./, '');
+            });
+        }
+        return DEFAULT_EMAIL_EXTENSIONS.slice();
+    }
+
+    function emailUploadAcceptAttribute() {
+        return getAllowedEmailUploadExtensions().map(function (ext) {
+            return '.' + ext;
+        }).join(',');
+    }
+
+    function emailUploadExtensionsLabel() {
+        return getAllowedEmailUploadExtensions().map(function (ext) {
+            return '.' + ext;
+        }).join(', ');
+    }
+
+    function isAllowedEmailUploadFilename(filename) {
+        if (!filename || typeof filename !== 'string') {
+            return false;
+        }
+        var lower = filename.toLowerCase();
+        var allowed = getAllowedEmailUploadExtensions();
+        for (var i = 0; i < allowed.length; i++) {
+            if (lower.endsWith('.' + allowed[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function filterAllowedEmailUploadFiles(files) {
+        return Array.from(files || []).filter(function (file) {
+            return isAllowedEmailUploadFilename(file.name);
+        });
+    }
 
     function sanitizeEmailUploadFilename(filename) {
         if (!filename || typeof filename !== 'string') {
@@ -95,6 +139,11 @@
         return 'Access denied. You may not have permission to upload emails for this client.';
     }
 
+    global.crmGetAllowedEmailUploadExtensions = getAllowedEmailUploadExtensions;
+    global.crmEmailUploadAcceptAttribute = emailUploadAcceptAttribute;
+    global.crmEmailUploadExtensionsLabel = emailUploadExtensionsLabel;
+    global.crmIsAllowedEmailUploadFilename = isAllowedEmailUploadFilename;
+    global.crmFilterAllowedEmailUploadFiles = filterAllowedEmailUploadFiles;
     global.crmSanitizeEmailUploadFilename = sanitizeEmailUploadFilename;
     global.crmBuildEmailUploadFormData = buildEmailUploadFormData;
     global.crmEmailUpload403Message = emailUpload403Message;

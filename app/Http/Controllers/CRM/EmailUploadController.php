@@ -230,9 +230,10 @@ class EmailUploadController extends Controller
             
             // Make error messages more user-friendly
             if (strpos($errorMessage, 'Validation failed') !== false) {
-                $errorMessage = "File validation failed. Please ensure you're uploading .msg files only (max 30MB each).";
+                $errorMessage = 'File validation failed. Please ensure you\'re uploading Outlook email files only ('
+                    . $this->emailUploadExtensionsLabel() . ', max 30MB each).';
             } elseif (strpos($errorMessage, 'No files uploaded') !== false) {
-                $errorMessage = "No files were selected for upload. Please select at least one .msg file.";
+                $errorMessage = 'No files were selected for upload. Please select at least one Outlook email file.';
             }
             
             Log::error('Email upload error', [
@@ -925,7 +926,7 @@ class EmailUploadController extends Controller
                 return null;
             }
 
-            $pdfUniqueFileName = preg_replace('/\.msg$/i', '.pdf', $uniqueFileName);
+            $pdfUniqueFileName = preg_replace('/\.(msg|eml)$/i', '.pdf', $uniqueFileName);
             if ($pdfUniqueFileName === $uniqueFileName) {
                 $pdfUniqueFileName = pathinfo($uniqueFileName, PATHINFO_FILENAME) . '.pdf';
             }
@@ -1524,24 +1525,54 @@ class EmailUploadController extends Controller
     }
 
     /**
-     * Validate email upload payload and enforce .msg extension checks.
+     * Validate email upload payload and enforce allowed Outlook email extensions.
      *
      * Relying on MIME-only validation can reject valid Outlook files because
      * some systems report .msg as generic application/octet-stream.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse|null
+     * @return list<string>
      */
+    protected function allowedEmailUploadExtensions(): array
+    {
+        $extensions = config('crm.email_upload_allowed_extensions', ['msg', 'eml']);
+
+        return is_array($extensions) && $extensions !== []
+            ? array_values(array_unique(array_map(
+                static fn ($ext) => strtolower(ltrim((string) $ext, '.')),
+                $extensions
+            )))
+            : ['msg', 'eml'];
+    }
+
+    protected function emailUploadExtensionsLabel(): string
+    {
+        return implode(', ', array_map(
+            static fn (string $ext) => '.' . $ext,
+            $this->allowedEmailUploadExtensions()
+        ));
+    }
+
+    protected function isAllowedEmailUploadExtension(string $extension): bool
+    {
+        return in_array(
+            strtolower(ltrim($extension, '.')),
+            $this->allowedEmailUploadExtensions(),
+            true
+        );
+    }
+
     protected function validateEmailUploadRequest(Request $request)
     {
+        $allowedLabel = $this->emailUploadExtensionsLabel();
+
         $validator = Validator::make($request->all(), [
             'email_files' => 'required|array|min:1',
             'email_files.*' => 'file|max:' . (int) config('crm.email_upload_max_kb', 30720),
             'client_id' => 'required',
             'type' => 'required|in:client,lead',
         ], [
-            'email_files.required' => 'Please choose at least one Outlook .msg file.',
-            'email_files.min' => 'Please choose at least one Outlook .msg file.',
+            'email_files.required' => 'Please choose at least one Outlook email file (' . $allowedLabel . ').',
+            'email_files.min' => 'Please choose at least one Outlook email file (' . $allowedLabel . ').',
         ]);
 
         if ($validator->fails()) {
@@ -1557,7 +1588,7 @@ class EmailUploadController extends Controller
             $originalName = (string) $file->getClientOriginalName();
             $extension = strtolower((string) $file->getClientOriginalExtension());
 
-            if ($extension !== 'msg') {
+            if (! $this->isAllowedEmailUploadExtension($extension)) {
                 $invalidFiles[] = $originalName ?: 'Unknown file';
             }
         }
@@ -1568,7 +1599,7 @@ class EmailUploadController extends Controller
                 'message' => 'Validation failed',
                 'errors' => [
                     'email_files' => [
-                        'Only .msg files are allowed.'
+                        'Only Outlook email files are allowed (' . $allowedLabel . ').',
                     ],
                 ],
                 'invalid_files' => $invalidFiles,

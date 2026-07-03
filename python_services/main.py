@@ -43,6 +43,8 @@ configure_weasyprint_dll_paths()
 # Setup logging
 logger = setup_logger(__name__)
 
+ALLOWED_EMAIL_EXTENSIONS = ['.msg', '.eml']
+
 # Global service instances (initialized by create_app)
 pdf_service = None
 email_parser = None
@@ -460,8 +462,11 @@ async def parse_email(file: UploadFile = File(...)):
     try:
         logger.info(f"Parsing email file: {file.filename}")
 
-        if not validate_file_type(file.filename, ['.msg']):
-            raise HTTPException(status_code=400, detail="Invalid file type. Only .msg files are allowed.")
+        if not validate_file_type(file.filename, ALLOWED_EMAIL_EXTENSIONS):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid file type. Only Outlook email files (.msg, .eml) are allowed.",
+            )
 
         temp_filename = f"{int(time.time() * 1000)}_{file.filename}"
         temp_path = Path(f"temp/{temp_filename}")
@@ -470,7 +475,7 @@ async def parse_email(file: UploadFile = File(...)):
         content = await file.read()
         temp_path.write_bytes(content)
 
-        result = email_parser.parse_msg_file(str(temp_path))
+        result = email_parser.parse_email_file(str(temp_path))
         return JSONResponse(content=result)
 
     except HTTPException:
@@ -502,8 +507,11 @@ async def parse_render_pdf_email(
     try:
         logger.info(f"Parsing and rendering PDF for email file: {file.filename}")
 
-        if not validate_file_type(file.filename, ['.msg']):
-            raise HTTPException(status_code=400, detail="Invalid file type. Only .msg files are allowed.")
+        if not validate_file_type(file.filename, ALLOWED_EMAIL_EXTENSIONS):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid file type. Only Outlook email files (.msg, .eml) are allowed.",
+            )
 
         temp_filename = f"{int(time.time() * 1000)}_{file.filename}"
         temp_path = Path(f"temp/{temp_filename}")
@@ -512,7 +520,7 @@ async def parse_render_pdf_email(
         content = await file.read()
         temp_path.write_bytes(content)
 
-        parsed_data = email_parser.parse_msg_file(str(temp_path))
+        parsed_data = email_parser.parse_email_file(str(temp_path))
 
         if parsed_data.get('success') is False or parsed_data.get('error'):
             return JSONResponse(content=parsed_data, status_code=500)
@@ -608,8 +616,11 @@ async def parse_analyze_render_email(
     try:
         logger.info(f"Processing email file: {file.filename}")
 
-        if not validate_file_type(file.filename, ['.msg']):
-            raise HTTPException(status_code=400, detail="Invalid file type. Only .msg files are allowed.")
+        if not validate_file_type(file.filename, ALLOWED_EMAIL_EXTENSIONS):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid file type. Only Outlook email files (.msg, .eml) are allowed.",
+            )
 
         temp_filename = f"{int(time.time() * 1000)}_{file.filename}"
         temp_path = Path(f"temp/{temp_filename}")
@@ -618,7 +629,7 @@ async def parse_analyze_render_email(
         content = await file.read()
         temp_path.write_bytes(content)
 
-        parsed_data = email_parser.parse_msg_file(str(temp_path))
+        parsed_data = email_parser.parse_email_file(str(temp_path))
 
         if 'error' in parsed_data:
             return JSONResponse(content=parsed_data, status_code=500)
