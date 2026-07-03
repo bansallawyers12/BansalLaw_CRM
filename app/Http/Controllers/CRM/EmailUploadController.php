@@ -34,11 +34,13 @@ class EmailUploadController extends Controller
      * Python service configuration
      */
     protected $pythonServiceUrl;
+    protected int $pythonServiceTimeout;
 
     public function __construct()
     {
         $this->middleware('auth:admin');
-        $this->pythonServiceUrl = env('PYTHON_SERVICE_URL', 'http://127.0.0.1:5002');
+        $this->pythonServiceUrl = (string) config('services.python.url', env('PYTHON_SERVICE_URL', 'http://127.0.0.1:5002'));
+        $this->pythonServiceTimeout = max(30, (int) config('services.python.timeout', env('PYTHON_SERVICE_TIMEOUT', 180)));
     }
 
     /**
@@ -164,15 +166,17 @@ class EmailUploadController extends Controller
                     } else {
                         $failedCount++;
                         $errors[] = [
-                            'filename' => $file->getClientOriginalName(),
+                            'filename' => $this->sanitizedUploadFilename($file),
+                            'original_filename' => $file->getClientOriginalName(),
                             'error' => $result['error'],
+                            'technical_error' => $result['technical_error'] ?? null,
                             'duplicate' => !empty($result['duplicate']),
                             'existing' => $result['existing'] ?? null,
                         ];
                     }
                 } catch (\Exception $e) {
                     $failedCount++;
-                    $fileName = $file->getClientOriginalName();
+                    $fileName = $this->sanitizedUploadFilename($file);
                     $errorMsg = $e->getMessage();
                     
                     // Extract user-friendly error if available
@@ -183,12 +187,14 @@ class EmailUploadController extends Controller
                     
                     $errors[] = [
                         'filename' => $fileName,
+                        'original_filename' => $file->getClientOriginalName(),
                         'error' => $userError,
                         'file_size' => $file->getSize(),
                         'file_type' => $file->getMimeType()
                     ];
                     Log::error('Email upload error', [
                         'file' => $fileName,
+                        'original_file' => $file->getClientOriginalName(),
                         'file_size' => $file->getSize(),
                         'error' => $e->getMessage(),
                         'trace' => $e->getTraceAsString()
@@ -304,7 +310,8 @@ class EmailUploadController extends Controller
                     } else {
                         $failedCount++;
                         $errors[] = [
-                            'filename' => $file->getClientOriginalName(),
+                            'filename' => $this->sanitizedUploadFilename($file),
+                            'original_filename' => $file->getClientOriginalName(),
                             'error' => $result['error'] ?? 'Unknown error occurred while processing email',
                             'duplicate' => !empty($result['duplicate']),
                             'existing' => $result['existing'] ?? null,
@@ -312,7 +319,7 @@ class EmailUploadController extends Controller
                     }
                 } catch (\Exception $e) {
                     $failedCount++;
-                    $fileName = $file->getClientOriginalName();
+                    $fileName = $this->sanitizedUploadFilename($file);
                     $errorMsg = $e->getMessage();
                     
                     // Extract user-friendly error if available
@@ -396,11 +403,12 @@ class EmailUploadController extends Controller
                 ], 400);
             }
 
-            $parsedData = $this->parseEmailWithPython($file);
+            $parsedData = $this->parseEmailMetadataWithPython($file);
             if (!$parsedData || isset($parsedData['error']) || (isset($parsedData['success']) && !$parsedData['success'])) {
                 return response()->json([
                     'status' => false,
                     'message' => $parsedData['error'] ?? 'Failed to parse email',
+                    'technical_error' => $parsedData['technical_error'] ?? null,
                 ], 400);
             }
 
@@ -525,12 +533,16 @@ class EmailUploadController extends Controller
     protected function processEmailFile($file, $clientId, $clientUniqueId, $mailType, $request)
     {
         try {
-            $fileName = $file->getClientOriginalName();
+            $fileName = $this->sanitizedUploadFilename($file);
             $fileSize = $file->getSize();
+
+            if ($fileSize <= 0) {
+                throw new \Exception('Uploaded file is empty. Save the email from Outlook again and retry.');
+            }
             
-            // Sanitize filename for S3 path to prevent 403 errors with special characters
-            $sanitizedFileName = $this->sanitizeFilename($fileName);
-            $uniqueFileName = time() . '-' . $sanitizedFileName;
+            // Sanitized name is used for S3 keys, document records, and Python parsing.
+            $sanitizedFileName = $fileName;
+            $uniqueFileName = time() . '_' . $sanitizedFileName;
             $docType = 'conversion_email_fetch';
 
             // 1. Parse email using Python microservice (before storage to allow duplicate check without S3 upload)
@@ -866,11 +878,18 @@ class EmailUploadController extends Controller
             $errorMessage = $e->getMessage();
             $fileName = $file->getClientOriginalName();
             
-            // Make error messages more user-friendly
+            // Make error messages more user-friendly while preserving specific Python/service errors.
             if (strpos($errorMessage, 'Failed to connect') !== false || strpos($errorMessage, 'Connection refused') !== false) {
                 $errorMessage = "Cannot connect to email processing service. Please ensure the Python service is running at {$this->pythonServiceUrl}";
-            } elseif (strpos($errorMessage, 'Failed to parse email') !== false || strpos($errorMessage, 'Python service returned') !== false) {
-                $errorMessage = "Failed to parse email file. The file may be corrupted or in an unsupported format.";
+            } elseif (
+                $errorMessage === 'Failed to parse email'
+                || $errorMessage === 'Email parsing failed'
+            ) {
+                $errorMessage = 'Failed to parse email file. The file may be corrupted or in an unsupported format.';
+            } elseif (preg_match('/^Python service returned status:\s*\d+$/', $errorMessage)) {
+                $errorMessage = 'Email processing service returned an error. Check that the Python service is running and up to date.';
+            } elseif (stripos($errorMessage, 'timed out') !== false || stripos($errorMessage, 'timeout') !== false) {
+                $errorMessage = 'Email processing timed out. The file may be very large — try again or upload a smaller .msg file.';
             } elseif (strpos($errorMessage, 'S3') !== false || strpos($errorMessage, 'AWS') !== false || strpos($errorMessage, 'storage') !== false) {
                 $errorMessage = "File storage error. Please check S3 configuration or try again.";
             } elseif (strpos($errorMessage, 'database') !== false || strpos($errorMessage, 'SQL') !== false) {
@@ -888,7 +907,7 @@ class EmailUploadController extends Controller
             return [
                 'success' => false,
                 'error' => $errorMessage,
-                'technical_error' => $e->getMessage() // Include original for debugging
+                'technical_error' => $e->getMessage(),
             ];
         }
     }
@@ -969,6 +988,17 @@ class EmailUploadController extends Controller
     }
 
     /**
+     * Parse email metadata only (no PDF render) — used for attachment preview before upload.
+     *
+     * @param \Illuminate\Http\UploadedFile $file
+     * @return array|null
+     */
+    protected function parseEmailMetadataWithPython($file)
+    {
+        return $this->callPythonEmailEndpoint($file, '/email/parse', $this->pythonServiceTimeout);
+    }
+
+    /**
      * Parse email file using Python microservice
      * 
      * @param \Illuminate\Http\UploadedFile $file
@@ -976,67 +1006,128 @@ class EmailUploadController extends Controller
      */
     protected function parseEmailWithPython($file)
     {
+        return $this->callPythonEmailEndpoint(
+            $file,
+            '/email/parse-render-pdf',
+            max($this->pythonServiceTimeout, 180)
+        );
+    }
+
+    /**
+     * @return array{success: false, error: string, technical_error?: string}|array<string, mixed>
+     */
+    protected function callPythonEmailEndpoint($file, string $path, int $timeout)
+    {
         try {
-            // Sanitize filename for Python service to prevent issues with special characters
-            $originalFileName = $file->getClientOriginalName();
-            $sanitizedFileName = $this->sanitizeFilename($originalFileName);
-            
-            // Call Python microservice: parse .msg and generate PDF for viewer (use sanitized filename in attachment)
-            $response = Http::timeout(90)
-                ->attach('file', file_get_contents($file->getPathname()), $sanitizedFileName)
-                ->post($this->pythonServiceUrlWithTimezone('/email/parse-render-pdf'), [
+            $originalFileName = $this->sanitizedUploadFilename($file);
+            $sanitizedFileName = $originalFileName;
+            $fileContents = file_get_contents($file->getPathname());
+
+            if ($fileContents === false || $fileContents === '') {
+                return [
+                    'success' => false,
+                    'error' => 'Uploaded file is empty or could not be read.',
+                ];
+            }
+
+            $response = Http::timeout($timeout)
+                ->attach('file', $fileContents, $sanitizedFileName)
+                ->post($this->pythonServiceUrlWithTimezone($path), [
                     'timezone' => config('app.timezone', 'Australia/Melbourne'),
                 ]);
 
             if ($response->successful()) {
-                // Safely parse JSON response - handle cases where service returns HTML error pages
                 try {
                     $result = $response->json();
                 } catch (\Exception $jsonException) {
                     Log::error('Failed to parse Python service response as JSON', [
+                        'path' => $path,
                         'status' => $response->status(),
                         'content_type' => $response->header('Content-Type'),
                         'body_preview' => substr($response->body(), 0, 500),
-                        'error' => $jsonException->getMessage()
+                        'error' => $jsonException->getMessage(),
                     ]);
-                    return [
-                        'success' => false,
-                        'error' => 'Invalid response from email processing service. The service may be experiencing issues.'
-                    ];
-                }
-                
-                // Python service returns data directly on success, or {'success': False, 'error': ...} on error
-                // Check if response contains error (even with 200 status)
-                if (isset($result['error']) || (isset($result['success']) && !$result['success'])) {
-                    return [
-                        'success' => false,
-                        'error' => $result['error'] ?? 'Email parsing failed'
-                    ];
-                }
-                return $result;
-            } else {
-                Log::error('Python service error', [
-                    'status' => $response->status(),
-                    'body' => $response->body()
-                ]);
 
-                return [
-                    'success' => false,
-                    'error' => 'Python service returned status: ' . $response->status()
-                ];
+                    return [
+                        'success' => false,
+                        'error' => 'Invalid response from email processing service. The service may be experiencing issues.',
+                    ];
+                }
+
+                if (isset($result['error']) || (isset($result['success']) && ! $result['success'])) {
+                    $technicalError = (string) ($result['error'] ?? $result['detail'] ?? 'Email parsing failed');
+
+                    return [
+                        'success' => false,
+                        'error' => $technicalError,
+                        'technical_error' => $technicalError,
+                    ];
+                }
+
+                return $result;
             }
 
-        } catch (\Exception $e) {
-            Log::error('Python service connection error', [
-                'error' => $e->getMessage(),
-                'url' => $this->pythonServiceUrl
+            $technicalError = $this->extractPythonServiceError($response);
+
+            Log::error('Python service error', [
+                'path' => $path,
+                'status' => $response->status(),
+                'body' => substr($response->body(), 0, 1000),
+                'technical_error' => $technicalError,
             ]);
 
             return [
                 'success' => false,
-                'error' => 'Failed to connect to Python service: ' . $e->getMessage()
+                'error' => $technicalError,
+                'technical_error' => $technicalError,
+            ];
+        } catch (\Exception $e) {
+            Log::error('Python service connection error', [
+                'path' => $path,
+                'error' => $e->getMessage(),
+                'url' => $this->pythonServiceUrl,
+            ]);
+
+            return [
+                'success' => false,
+                'error' => 'Failed to connect to Python service: ' . $e->getMessage(),
+                'technical_error' => $e->getMessage(),
             ];
         }
+    }
+
+    protected function extractPythonServiceError(\Illuminate\Http\Client\Response $response): string
+    {
+        $body = trim((string) $response->body());
+
+        if ($body !== '') {
+            try {
+                $decoded = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+                if (is_array($decoded)) {
+                    foreach (['error', 'detail', 'message'] as $key) {
+                        if (! empty($decoded[$key]) && is_string($decoded[$key])) {
+                            return $decoded[$key];
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Fall through to status-based message.
+            }
+        }
+
+        if ($response->status() === 400) {
+            return 'Invalid email file type or payload rejected by the email processing service.';
+        }
+
+        if ($response->status() === 413) {
+            return 'Email file is too large for the processing service.';
+        }
+
+        if ($response->status() >= 500) {
+            return 'Email processing service error (HTTP ' . $response->status() . '). Ensure the Python service is running and up to date.';
+        }
+
+        return 'Python service returned status: ' . $response->status();
     }
 
     /**
@@ -1417,40 +1508,41 @@ class EmailUploadController extends Controller
      */
     protected function sanitizeFilename(string $filename): string
     {
-        // Get file extension first (before sanitization)
-        $extension = pathinfo($filename, PATHINFO_EXTENSION);
-        $nameWithoutExt = pathinfo($filename, PATHINFO_FILENAME);
-        
-        // Replace special characters with underscores, but keep alphanumeric, hyphens, underscores, and dots
-        $sanitizedName = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $nameWithoutExt);
-        
-        // Remove multiple consecutive underscores
+        $extension = strtolower((string) pathinfo($filename, PATHINFO_EXTENSION));
+        $extension = preg_replace('/[^a-z0-9]/', '', $extension);
+        $nameWithoutExt = (string) pathinfo($filename, PATHINFO_FILENAME);
+
+        // Keep only filesystem-safe characters; spaces and symbols become underscores.
+        $sanitizedName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $nameWithoutExt);
         $sanitizedName = preg_replace('/_+/', '_', $sanitizedName);
-        
-        // Trim underscores from start and end
         $sanitizedName = trim($sanitizedName, '_');
-        
-        // Ensure filename is not empty
-        if (empty($sanitizedName)) {
+
+        if ($sanitizedName === '') {
             $sanitizedName = 'email_' . time();
         }
-        
-        // Reconstruct filename with extension
-        $sanitizedFilename = !empty($extension) ? $sanitizedName . '.' . $extension : $sanitizedName;
-        
-        // Limit total filename length (including extension) to 255 characters
+
+        $sanitizedFilename = $extension !== '' ? $sanitizedName . '.' . $extension : $sanitizedName;
+
         if (strlen($sanitizedFilename) > 255) {
-            $maxNameLength = 255 - strlen($extension) - 1; // -1 for the dot
+            $maxNameLength = 255 - strlen($extension) - ($extension !== '' ? 1 : 0);
             if ($maxNameLength > 0) {
                 $sanitizedName = substr($sanitizedName, 0, $maxNameLength);
-                $sanitizedFilename = !empty($extension) ? $sanitizedName . '.' . $extension : $sanitizedName;
+                $sanitizedFilename = $extension !== '' ? $sanitizedName . '.' . $extension : $sanitizedName;
             } else {
-                // If extension itself is too long, just use timestamp
-                $sanitizedFilename = 'email_' . time() . (!empty($extension) ? '.' . $extension : '');
+                $sanitizedFilename = 'email_' . time() . ($extension !== '' ? '.' . $extension : '');
             }
         }
-        
+
         return $sanitizedFilename;
+    }
+
+    protected function sanitizedUploadFilename($file): string
+    {
+        $originalName = $file instanceof \Illuminate\Http\UploadedFile
+            ? (string) $file->getClientOriginalName()
+            : (string) $file;
+
+        return $this->sanitizeFilename($originalName !== '' ? $originalName : 'email.msg');
     }
 
     /**

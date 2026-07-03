@@ -61,6 +61,13 @@ class EmailParserService:
                     'success': False,
                     'error': f'File not found: {file_path}'
                 }
+
+            file_size = os.path.getsize(file_path)
+            if file_size <= 0:
+                return {
+                    'success': False,
+                    'error': 'Uploaded email file is empty.'
+                }
             
             # Parse the .msg file
             msg = extract_msg.Message(file_path)
@@ -134,6 +141,12 @@ class EmailParserService:
                 return {
                     'success': False,
                     'error': f'File not found: {file_path}'
+                }
+
+            if os.path.getsize(file_path) <= 0:
+                return {
+                    'success': False,
+                    'error': 'Uploaded email file is empty.'
                 }
 
             with open(file_path, 'rb') as handle:

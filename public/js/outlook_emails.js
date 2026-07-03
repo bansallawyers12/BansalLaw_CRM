@@ -8,9 +8,9 @@ function crmOutlookSanitizeUploadFilename(filename) {
         return 'email_' + Date.now() + '.msg';
     }
     var lastDot = filename.lastIndexOf('.');
-    var extension = lastDot >= 0 ? filename.slice(lastDot + 1) : '';
+    var extension = lastDot >= 0 ? filename.slice(lastDot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : '';
     var nameWithoutExt = lastDot >= 0 ? filename.slice(0, lastDot) : filename;
-    var sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9\-_.]/g, '_');
+    var sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9_-]/g, '_');
     sanitizedName = sanitizedName.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
     if (!sanitizedName) {
         sanitizedName = 'email_' + Date.now();
@@ -318,7 +318,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             return errors.map(function(err, index) {
                 const filename = err.filename || 'Unknown file';
-                const error = err.error || 'Unknown error';
+                let error = err.error || 'Unknown error';
+                if (err.technical_error && err.technical_error !== error) {
+                    error += '\n   Details: ' + err.technical_error;
+                }
                 return (index + 1) + '. ' + filename + '\n   ' + error;
             }).join('\n\n');
         }

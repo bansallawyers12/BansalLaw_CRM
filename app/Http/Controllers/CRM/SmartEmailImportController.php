@@ -52,7 +52,8 @@ class SmartEmailImportController extends EmailUploadController
         foreach ($request->file('email_files', []) as $file) {
             $itemId = (string) Str::uuid();
             $originalName = $file->getClientOriginalName();
-            $storedExtension = strtolower((string) $file->getClientOriginalExtension());
+            $sanitizedName = $this->sanitizedUploadFilename($file);
+            $storedExtension = strtolower((string) pathinfo($sanitizedName, PATHINFO_EXTENSION));
 
             try {
                 $storedPath = $batchDir . DIRECTORY_SEPARATOR . $itemId . '.' . $storedExtension;
@@ -60,7 +61,7 @@ class SmartEmailImportController extends EmailUploadController
 
                 $uploadedFile = new UploadedFile(
                     $storedPath,
-                    $originalName,
+                    $sanitizedName,
                     'application/octet-stream',
                     null,
                     true
@@ -76,7 +77,8 @@ class SmartEmailImportController extends EmailUploadController
 
                 $items[] = [
                     'id' => $itemId,
-                    'filename' => $originalName,
+                    'filename' => $sanitizedName,
+                    'original_filename' => $originalName,
                     'stored_extension' => $storedExtension,
                     'mail_type' => $matchResult['mail_type'],
                     'confidence' => $matchResult['confidence'],

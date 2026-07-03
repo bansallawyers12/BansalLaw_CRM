@@ -56,10 +56,10 @@
         }
 
         var lastDot = filename.lastIndexOf('.');
-        var extension = lastDot >= 0 ? filename.slice(lastDot + 1) : '';
+        var extension = lastDot >= 0 ? filename.slice(lastDot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : '';
         var nameWithoutExt = lastDot >= 0 ? filename.slice(0, lastDot) : filename;
 
-        var sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9\-_.]/g, '_');
+        var sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9_-]/g, '_');
         sanitizedName = sanitizedName.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
 
         if (!sanitizedName) {

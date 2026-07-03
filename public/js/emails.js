@@ -224,13 +224,14 @@
             return 'email_' + Date.now() + '.msg';
         }
         const lastDot = filename.lastIndexOf('.');
-        const extension = lastDot >= 0 ? filename.slice(lastDot + 1) : '';
+        let extension = lastDot >= 0 ? filename.slice(lastDot + 1) : '';
         const nameWithoutExt = lastDot >= 0 ? filename.slice(0, lastDot) : filename;
-        let sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9\-_.]/g, '_');
+        let sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9_-]/g, '_');
         sanitizedName = sanitizedName.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
         if (!sanitizedName) {
             sanitizedName = 'email_' + Date.now();
         }
+        extension = extension.toLowerCase().replace(/[^a-z0-9]/g, '');
         let sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
         if (sanitizedFilename.length > 255) {
             const maxNameLength = 255 - extension.length - (extension ? 1 : 0);
@@ -248,11 +249,7 @@
         const formData = new FormData();
         const isLead = isLeadContext();
         const safeName = sanitizeUploadFilename(file.name);
-        if (safeName !== file.name) {
-            formData.append('email_files[]', file, safeName);
-        } else {
-            formData.append('email_files[]', file);
-        }
+        formData.append('email_files[]', file, safeName);
         formData.append('client_id', clientId);
         formData.append('type', isLead ? 'lead' : 'client');
         formData.append(
