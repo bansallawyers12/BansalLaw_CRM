@@ -99,8 +99,8 @@
                                                 <p class="bulk-upload-lead">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
-                                                <p class="bulk-upload-hint">You can select multiple files at once</p>
-                                                <input type="file" class="bulk-upload-file-input" data-categoryid="<?= $id ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                                                <p class="bulk-upload-hint">PDF, images, Word docs, and videos (MP4, WebM, MOV, etc.) — up to 50MB (200MB for videos)</p>
+                                                <input type="file" class="bulk-upload-file-input" data-categoryid="<?= $id ?>" multiple style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.mp4,.webm,.mov,.m4v,.avi,.mkv">
                                             </div>
                                             <div class="bulk-upload-file-list" style="display: none; margin-top: 20px;">
                                                 <h5 style="margin-bottom: 15px;">Files Selected: <span class="file-count">0</span></h5>
@@ -135,6 +135,7 @@
                                                     
                                                     // Private S3: use app preview route (presigned redirect), not a direct bucket URL
                                                     $previewUrl = url('/documents/preview/' . $fetch->id);
+                                                    $fileIcon = in_array(strtolower($fetch->filetype ?? ''), ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'], true) ? 'fa-file-video' : 'fa-file-image';
                                                     ?>
                                                     <tr class="drow" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
@@ -156,7 +157,7 @@
                                                             <?php if ($fetch->file_name): ?>
                                                                 <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu='showFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
                                                                     <a href="javascript:void(0);" onclick='previewFile(<?= json_encode($fetch->filetype) ?>, <?= json_encode($previewUrl) ?>, <?= json_encode('preview-container-' . $id) ?>)'>
-                                                                        <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) ?></span>
+                                                                        <i class="fas <?= $fileIcon ?>"></i> <span><?= htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) ?></span>
                                                                     </a>
                                                                 </div>
                                                             <?php else: ?>
@@ -185,7 +186,8 @@
                                                                                data-fileid="<?= $fetch->id ?>" 
                                                                                data-doccategory="<?= $id ?>" 
                                                                                type="file" 
-                                                                               name="document_upload" 
+                                                                               name="document_upload"
+                                                                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.mp4,.webm,.mov,.m4v,.avi,.mkv"
                                                                                style="display: none;"/>
                                                                     </form>
                                                                 </div>
@@ -213,11 +215,12 @@
                                                 <?php
                                                 $previewUrlGrid = url('/documents/preview/' . $fetch->id);
                                                 $dlFilenameGrid = $fetch->myfile_key ?: basename(parse_url((string) $fetch->myfile, PHP_URL_PATH) ?: (string) $fetch->myfile);
+                                                $gridFileIcon = in_array(strtolower($fetch->filetype ?? ''), ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'], true) ? 'fa-file-video' : 'fa-file-image';
                                                 ?>
                                                 <div class="grid_list" id="gid_<?= $fetch->id ?>">
                                                     <div class="grid_col">
                                                         <div class="grid_icon">
-                                                            <i class="fas fa-file-image"></i>
+                                                            <i class="fas <?= $gridFileIcon ?>"></i>
                                                         </div>
                                                         <div class="grid_content">
                                                             <span id="grid_<?= $fetch->id ?>" class="gridfilename"><?= htmlspecialchars($fetch->file_name) ?></span>
@@ -320,6 +323,34 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                             <button type="button" class="btn btn-primary" id="confirmMoveDocument">Move Document</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Upload Folder Selection Modal -->
+            <div class="modal fade" id="videoUploadFolderModal" tabindex="-1" role="dialog" aria-labelledby="videoUploadFolderModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="videoUploadFolderModalLabel">Select Folder for Video</h5>
+                            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted" style="margin-bottom: 12px;">Choose which personal document folder this video should be saved in.</p>
+                            <div class="form-group">
+                                <label for="videoUploadFolderSelect">Personal Document Folder</label>
+                                <select id="videoUploadFolderSelect" class="form-control">
+                                    <option value="">-- Select Folder --</option>
+                                </select>
+                            </div>
+                            <div id="videoUploadFolderError" class="alert alert-danger" style="display: none; margin-top: 10px;"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelVideoUploadFolder">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="confirmVideoUploadFolder">Continue Upload</button>
                         </div>
                     </div>
                 </div>
@@ -445,68 +476,10 @@
                                     alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
                                     return false;
                                 }
-                                
-                                // Create FormData and upload
-                                var formData = new FormData(form[0]);
-                                formData.set('document_upload', file);
-                                
-                                $zone.addClass('uploading');
-                                $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa fa-clock-o"></i> Uploading document...</span>');
-                                
-                                $.ajax({
-                                    url: '{{ url("/documents/upload-edu-document") }}',
-                                    type: 'POST',
-                                    dataType: 'json',
-                                    data: formData,
-                                    contentType: false,
-                                    processData: false,
-                                    success: function(ress) {
-                                        $zone.removeClass('uploading');
-                                        
-                                        if (ress.status) {
-                                            $('.custom-error-msg').html('<span class="alert alert-success">' + ress.message + '</span>');
-                                            
-                                            var row = $('#id_' + fileid);
-                                            var docNameWithoutExt = ress.filename.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").toLowerCase();
-                                            var previewUrl = ress.preview_url || ress.fileurl;
-                                            var docId = ress.document_id || fileid;
-                                            
-                                            var uploadTd = row.find('td').eq(1);
-                                            uploadTd.html(
-                                                '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: Admin" oncontextmenu=\'showFileContextMenu(event, ' + fileid + ', ' + JSON.stringify(ress.filetype) + ', ' + JSON.stringify(previewUrl) + ', ' + JSON.stringify(String(doccategory)) + ', ' + JSON.stringify(ress.status_value || 'draft') + '); return false;\'>' +
-                                                    '<a href="javascript:void(0);" onclick=\'previewFile(' + JSON.stringify(ress.filetype) + ', ' + JSON.stringify(previewUrl) + ', ' + JSON.stringify('preview-container-' + doccategory) + ')\'>' +
-                                                        '<i class="fas fa-file-image"></i> <span>' + ress.filename + '</span>' +
-                                                    '</a>' +
-                                                '</div>'
-                                            );
-                                            
-                                            var actionTd = row.find('td').eq(2);
-                                            actionTd.html(
-                                                '<a class="renamechecklist" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
-                                                '<a class="renamedoc" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
-                                                '<a class="download-file" data-document-id="' + docId + '" data-id="' + docId + '" data-filename="' + String(ress.filekey || '').replace(/"/g, '&quot;') + '" href="#" style="display: none;"></a>' +
-                                                '<a class="notuseddoc" data-id="' + fileid + '" data-doctype="' + ress.doctype + '" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
-                                            );
-                                            
-                                            row.addClass('drow');
-                                            
-                                            if (typeof getallactivities === 'function') {
-                                                getallactivities();
-                                            }
-                                            
-                                            setTimeout(function() {
-                                                location.reload();
-                                            }, 1000);
-                                        } else {
-                                            $('.custom-error-msg').html('<span class="alert alert-danger">' + ress.message + '</span>');
-                                        }
-                                    },
-                                    error: function(xhr, status, error) {
-                                        $zone.removeClass('uploading');
-                                        $('.custom-error-msg').html('<span class="alert alert-danger">Upload failed. Please try again.</span>');
-                                        console.error('Personal doc upload error:', error);
-                                    }
-                                });
+
+                                if (typeof uploadPersonalDocFromZone === 'function') {
+                                    uploadPersonalDocFromZone($zone, file);
+                                }
                             }
                             return false;
                         });
@@ -622,76 +595,10 @@
                                 alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
                                 return false;
                             }
-                            
-                            // Create FormData with all form fields
-                            var formData = new FormData(form[0]);
-                            
-                            // Override the file input with dragged file
-                            formData.set('document_upload', file);
-                            
-                            // Visual feedback
-                            $zone.addClass('uploading');
-                            $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa fa-clock-o"></i> Uploading document...</span>');
-                            
-                            // Upload via AJAX
-                            $.ajax({
-                                url: '{{ url("/documents/upload-edu-document") }}',
-                                type: 'POST',
-                                dataType: 'json',
-                                data: formData,
-                                contentType: false,
-                                processData: false,
-                                success: function(ress) {
-                                    $zone.removeClass('uploading');
-                                    
-                                    if (ress.status) {
-                                        $('.custom-error-msg').html('<span class="alert alert-success">' + ress.message + '</span>');
-                                        
-                                        var row = $('#id_' + fileid);
-                                        var docNameWithoutExt = ress.filename.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").toLowerCase();
-                                        var previewUrl = ress.preview_url || ress.fileurl;
-                                        var docId = ress.document_id || fileid;
-                                        
-                                        // Replace upload TD content (Column 1 = File Name)
-                                        var uploadTd = row.find('td').eq(1);
-                                        uploadTd.html(
-                                            '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: Admin" oncontextmenu=\'showFileContextMenu(event, ' + fileid + ', ' + JSON.stringify(ress.filetype) + ', ' + JSON.stringify(previewUrl) + ', ' + JSON.stringify(String(doccategory)) + ', ' + JSON.stringify(ress.status_value || 'draft') + '); return false;\'>' +
-                                                '<a href="javascript:void(0);" onclick=\'previewFile(' + JSON.stringify(ress.filetype) + ', ' + JSON.stringify(previewUrl) + ', ' + JSON.stringify('preview-container-' + doccategory) + ')\'>' +
-                                                    '<i class="fas fa-file-image"></i> <span>' + ress.filename + '</span>' +
-                                                '</a>' +
-                                            '</div>'
-                                        );
-                                        
-                                        // Add hidden elements for context menu actions (Column 2 = Actions)
-                                        var actionTd = row.find('td').eq(2);
-                                        actionTd.html(
-                                            '<a class="renamechecklist" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
-                                            '<a class="renamedoc" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
-                                            '<a class="download-file" data-document-id="' + docId + '" data-id="' + docId + '" data-filename="' + String(ress.filekey || '').replace(/"/g, '&quot;') + '" href="#" style="display: none;"></a>' +
-                                            '<a class="notuseddoc" data-id="' + fileid + '" data-doctype="' + ress.doctype + '" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
-                                        );
-                                        
-                                        row.addClass('drow');
-                                        
-                                        // Reload activities
-                                        if (typeof getallactivities === 'function') {
-                                            getallactivities();
-                                        }
-                                        
-                                        // Reload the page to refresh the document list
-                                        setTimeout(function() {
-                                            location.reload();
-                                        }, 1000);
-                                    } else {
-                                        $('.custom-error-msg').html('<span class="alert alert-danger">' + ress.message + '</span>');
-                                    }
-                                },
-                                error: function(xhr, status, error) {
-                                    $zone.removeClass('uploading');
-                                    $('.custom-error-msg').html('<span class="alert alert-danger">Upload failed. Please try again.</span>');
-                                    console.error('Personal doc upload error:', error);
-                                }
-                            });
+
+                            if (typeof uploadPersonalDocFromZone === 'function') {
+                                uploadPersonalDocFromZone($zone, file);
+                            }
                         } else {
                             console.error('❌ No files in drop event');
                         }
@@ -1579,8 +1486,41 @@
                     return false;
                 });
                 
+                function ensureBulkUploadOpenForCategory(categoryId) {
+                    const $container = $('#bulk-upload-' + categoryId);
+                    if (!$container.is(':visible')) {
+                        $('#personaldocuments-tab .bulk-upload-toggle-btn[data-categoryid="' + categoryId + '"]').trigger('click');
+                    }
+                    currentCategoryId = categoryId;
+                }
+
                 // Handle files selected
                 function handleBulkFilesSelected(categoryId, files) {
+                    const fileArray = Array.from(files);
+                    const hasVideo = fileArray.some(function(file) {
+                        return typeof isPersonalDocVideoFile === 'function' && isPersonalDocVideoFile(file);
+                    });
+
+                    if (hasVideo && typeof promptPersonalVideoUploadFolder === 'function') {
+                        promptPersonalVideoUploadFolder(categoryId, function(selectedCategoryId) {
+                            if (String(selectedCategoryId) !== String(categoryId)) {
+                                resetBulkUploadSelection(categoryId);
+                                ensureBulkUploadOpenForCategory(selectedCategoryId);
+                                if (typeof activatePersonalDocumentFolder === 'function') {
+                                    activatePersonalDocumentFolder(selectedCategoryId);
+                                }
+                            }
+                            processBulkFilesSelected(selectedCategoryId, fileArray);
+                        }, function() {
+                            resetBulkUploadFileInput(categoryId);
+                        });
+                        return;
+                    }
+
+                    processBulkFilesSelected(categoryId, fileArray);
+                }
+
+                function processBulkFilesSelected(categoryId, files) {
                     if (!bulkUploadFiles[categoryId]) {
                         bulkUploadFiles[categoryId] = [];
                     }
@@ -1588,18 +1528,23 @@
                     // Validate and add files to array
                     const invalidFiles = [];
                     const maxSize = 50 * 1024 * 1024; // 50MB
-                    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
+                    const maxVideoSize = 200 * 1024 * 1024; // 200MB
+                    const videoExtensions = ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'];
+                    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'].concat(videoExtensions);
                     const validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
                     
                     Array.from(files).forEach(file => {
+                        const ext = file.name.split('.').pop().toLowerCase();
+                        const sizeLimit = videoExtensions.includes(ext) ? maxVideoSize : maxSize;
+                        const sizeLabel = videoExtensions.includes(ext) ? '200MB' : '50MB';
+
                         // Check file size
-                        if (file.size > maxSize) {
-                            invalidFiles.push(file.name + ' (exceeds 50MB)');
+                        if (file.size > sizeLimit) {
+                            invalidFiles.push(file.name + ' (exceeds ' + sizeLabel + ')');
                             return;
                         }
                         
                         // Check file extension
-                        const ext = file.name.split('.').pop().toLowerCase();
                         if (!allowedExtensions.includes(ext)) {
                             invalidFiles.push(file.name + ' (invalid file type)');
                             return;
@@ -1623,7 +1568,7 @@
                     }
                     
                     if (bulkUploadFiles[categoryId].length === 0) {
-                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, or DOCX files under 50MB.');
+                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, DOCX, or video files (MP4, WebM, MOV, etc.) under the size limit.');
                         return;
                     }
                     
@@ -1992,13 +1937,39 @@
                         },
                         success: function(response) {
                             if (response.status) {
-                                let message = response.message || 'Files uploaded successfully!';
-                                if (response.errors && response.errors.length > 0) {
-                                    message += '\n\nWarnings:\n' + response.errors.join('\n');
+                                var queuedVideos = response.queued_videos || [];
+                                var tokens = queuedVideos.map(function(item) {
+                                    return item.token;
+                                }).filter(Boolean);
+
+                                var finishBulkUpload = function(reloadPage) {
+                                    hideBulkUploadModal();
+                                    resetBulkUploadSelection(categoryId);
+                                    $('#bulk-upload-progress').hide();
+                                    $('#confirm-bulk-upload').prop('disabled', false);
+                                    if (reloadPage) {
+                                        location.reload();
+                                    }
+                                };
+
+                                if (tokens.length > 0 && typeof waitForPersonalVideoUploads === 'function') {
+                                    waitForPersonalVideoUploads(tokens, function(success, message) {
+                                        if (typeof showPersonalDocVideoToast === 'function') {
+                                            showPersonalDocVideoToast(success, message);
+                                        } else {
+                                            alert(message);
+                                        }
+                                        finishBulkUpload(success);
+                                    });
+                                    return;
                                 }
-                                alert(message);
-                                // Reload the page or refresh the document list
-                                location.reload();
+
+                                if (typeof showPersonalDocVideoToast === 'function') {
+                                    showPersonalDocVideoToast(true, response.message || 'Files uploaded successfully!');
+                                } else {
+                                    alert(response.message || 'Files uploaded successfully!');
+                                }
+                                finishBulkUpload(true);
                             } else {
                                 let errorMsg = 'Error: ' + (response.message || 'Upload failed');
                                 if (response.errors && response.errors.length > 0) {

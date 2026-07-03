@@ -883,6 +883,37 @@ $(document).ready(function() {
         }
     }
 
+    function documentFileIconClass(fileType) {
+        const normalizedType = (fileType || '').toLowerCase().replace(/^\./, '');
+        if (/^(mp4|webm|mov|m4v|avi|mkv|ogv)$/.test(normalizedType)) {
+            return 'fa-file-video';
+        }
+        if (/^(jpg|jpeg|png|gif|webp|bmp|tif|tiff)$/.test(normalizedType)) {
+            return 'fa-file-image';
+        }
+        if (normalizedType === 'pdf') {
+            return 'fa-file-pdf';
+        }
+        if (/^docx?$/.test(normalizedType)) {
+            return 'fa-file-word';
+        }
+        return 'fa-file-image';
+    }
+
+    function previewVideoMimeType(fileType) {
+        const normalizedType = (fileType || '').toLowerCase().replace(/^\./, '');
+        const mimeMap = {
+            mp4: 'video/mp4',
+            webm: 'video/webm',
+            mov: 'video/quicktime',
+            m4v: 'video/x-m4v',
+            avi: 'video/x-msvideo',
+            mkv: 'video/x-matroska',
+            ogv: 'video/ogg'
+        };
+        return mimeMap[normalizedType] || 'video/mp4';
+    }
+
     function previewFile(fileType, fileUrl, containerId) {
 
         const container = $(`.${containerId}`);
@@ -995,6 +1026,20 @@ $(document).ready(function() {
                     `);
                 })
                 .catch(showPreviewError);
+        } else if (normalizedType.match(/^(mp4|webm|mov|m4v|avi|mkv|ogv)$/)) {
+            const videoMimeType = previewVideoMimeType(normalizedType);
+            container.html(`
+                <div class="preview-content" style="flex: 1; display: flex; align-items: center; justify-content: center; background: #000; min-height: 280px;">
+                    <video controls playsinline preload="metadata" style="max-width: 100%; max-height: calc(100vh - 300px); width: 100%;">
+                        <source src="${embeddedPreviewUrl}" type="${videoMimeType}">
+                        Your browser does not support video playback.
+                    </video>
+                </div>
+            `);
+            const videoEl = container.find('video')[0];
+            if (videoEl) {
+                videoEl.addEventListener('error', showPreviewError);
+            }
         } else {
             container.html(`
                 <div class="preview-content" style="flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;">
@@ -1007,6 +1052,7 @@ $(document).ready(function() {
     }
 
     window.previewFile = previewFile;
+    window.documentFileIconClass = documentFileIconClass;
 
 
 
@@ -6478,6 +6524,18 @@ success: function(response) {
 
             }
 
+            var doctype = $form.find('[name="doctype"]').val();
+            if (doctype === 'personal' && typeof isPersonalDocVideoFile === 'function' && isPersonalDocVideoFile(file)) {
+                var $zone = $form.find('.personal-doc-drag-zone');
+                $(fileInput).val('');
+                if (!$zone.length) {
+                    alert('Upload zone not found. Please refresh the page.');
+                    return false;
+                }
+                uploadPersonalDocFromZone($zone, file);
+                return false;
+            }
+
 
 
             // Show immediate feedback that upload is starting
@@ -6527,7 +6585,7 @@ success: function(response) {
 
                                 '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'preview-container-' + doccategoryL + '\')">' +
 
-                                    '<i class="fas fa-file-image"></i> <span>' + ress.filename + '</span>' +
+                                    '<i class="fas ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
 
                                 '</a>' +
 
@@ -6744,32 +6802,277 @@ success: function(response) {
             fileInput.click();
         });
         
-        // Personal Documents - Upload Handler
-        
-        function handlePersonalDocDragDrop(dragZone, file) {
-            var fileid = dragZone.data('fileid');
-            var doccategory = dragZone.data('doccategory');
-            var formId = dragZone.data('formid');
-            var form = $('#' + formId);
-            
-            // Validate filename
-            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
-            if (!validNameRegex.test(file.name)) {
-                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
+        // Personal Documents - video folder selection + upload helpers
+
+        var _videoFolderPromptCallback = null;
+        var _videoFolderPromptCancel = null;
+
+        function isPersonalDocVideoFile(file) {
+            if (!file || !file.name) {
                 return false;
             }
-            
-            // Create FormData with all form fields
+            var ext = (file.name.split('.').pop() || '').toLowerCase();
+            return /^(mp4|webm|mov|m4v|avi|mkv)$/.test(ext);
+        }
+
+        function getPersonalDocumentFolders() {
+            var folders = [];
+            $('#personaldocuments-tab .subtab2-button').each(function() {
+                var id = $(this).data('subtab2');
+                var title = $(this).text().trim();
+                if (id != null && title) {
+                    folders.push({ id: String(id), title: title });
+                }
+            });
+            return folders;
+        }
+
+        function activatePersonalDocumentFolder(categoryId) {
+            var $btn = $('#personaldocuments-tab .subtab2-button[data-subtab2="' + categoryId + '"]');
+            if ($btn.length) {
+                $btn.trigger('click');
+            }
+        }
+
+        function findEmptyPersonalDocChecklistId(categoryId) {
+            var found = null;
+            $('.documnetlist_' + categoryId + ' tr.drow').each(function() {
+                var $row = $(this);
+                if ($row.find('.personal-doc-drag-zone').length && !$row.find('.doc-row').length) {
+                    found = ($row.attr('id') || '').replace('id_', '');
+                    return false;
+                }
+            });
+            return found;
+        }
+
+        function createPersonalDocChecklist(categoryId, checklistName, clientId, callback) {
+            $.ajax({
+                type: 'POST',
+                url: site_url + '/documents/add-edu-checklist',
+                traditional: true,
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content'),
+                    clientid: clientId,
+                    folder_name: categoryId,
+                    doccategory: categoryId,
+                    doctype: 'personal',
+                    type: 'client',
+                    checklist: [checklistName]
+                },
+                success: function(response) {
+                    var obj = typeof response === 'string' ? JSON.parse(response) : response;
+                    if (!obj.status) {
+                        callback(obj.message || 'Failed to create checklist');
+                        return;
+                    }
+
+                    $('.documnetlist_' + categoryId).html(obj.data);
+                    $('.griddata_' + categoryId).html(obj.griddata);
+                    if (typeof initPersonalDocDragDrop === 'function') {
+                        setTimeout(initPersonalDocDragDrop, 100);
+                    }
+
+                    var fileId = null;
+                    $('.documnetlist_' + categoryId + ' .personalchecklist-row').each(function() {
+                        if ($(this).data('personalchecklistname') === checklistName) {
+                            var $row = $(this).closest('tr');
+                            if ($row.find('.personal-doc-drag-zone').length) {
+                                fileId = ($row.attr('id') || '').replace('id_', '');
+                                return false;
+                            }
+                        }
+                    });
+                    if (!fileId) {
+                        fileId = findEmptyPersonalDocChecklistId(categoryId);
+                    }
+                    callback(null, fileId);
+                },
+                error: function() {
+                    callback('Failed to create checklist. Please try again.');
+                }
+            });
+        }
+
+        function resolvePersonalVideoUploadTarget(selectedCategoryId, file, context, callback) {
+            activatePersonalDocumentFolder(selectedCategoryId);
+
+            var currentCategoryId = context.doccategory != null ? String(context.doccategory) : '';
+            var currentFileId = context.fileid != null ? String(context.fileid) : '';
+
+            if (selectedCategoryId === currentCategoryId && currentFileId) {
+                var $currentRow = $('#id_' + currentFileId);
+                if ($currentRow.find('.personal-doc-drag-zone').length && !$currentRow.find('.doc-row').length) {
+                    callback(null, currentFileId, selectedCategoryId);
+                    return;
+                }
+            }
+
+            var emptyId = findEmptyPersonalDocChecklistId(selectedCategoryId);
+            if (emptyId) {
+                callback(null, emptyId, selectedCategoryId);
+                return;
+            }
+
+            var checklistName = (file.name.replace(/\.[^/.]+$/, '').trim() || 'Video');
+            createPersonalDocChecklist(selectedCategoryId, checklistName, context.clientId, function(err, fileId) {
+                if (err) {
+                    callback(err);
+                    return;
+                }
+                if (!fileId) {
+                    callback('No checklist available in the selected folder.');
+                    return;
+                }
+                callback(null, fileId, selectedCategoryId);
+            });
+        }
+
+        function promptPersonalVideoUploadFolder(defaultCategoryId, onSelected, onCancel) {
+            var folders = getPersonalDocumentFolders();
+            if (!folders.length) {
+                alert('No personal document folders found.');
+                if (typeof onCancel === 'function') {
+                    onCancel();
+                }
+                return;
+            }
+
+            var $select = $('#videoUploadFolderSelect').empty();
+            folders.forEach(function(folder) {
+                var selected = String(folder.id) === String(defaultCategoryId) ? ' selected' : '';
+                $select.append('<option value="' + folder.id + '"' + selected + '>' + $('<div/>').text(folder.title).html() + '</option>');
+            });
+
+            $('#videoUploadFolderError').hide();
+            _videoFolderPromptCallback = onSelected;
+            _videoFolderPromptCancel = onCancel;
+            $('#videoUploadFolderModal').modal('show');
+        }
+
+        function showPersonalDocVideoToast(success, message) {
+            if (typeof crmNotify !== 'undefined') {
+                if (success && typeof crmNotify.success === 'function') {
+                    crmNotify.success({
+                        title: 'Success',
+                        message: message,
+                        position: 'topRight',
+                        timeout: 6000,
+                        transitionIn: 'fadeInDown',
+                        transitionOut: 'fadeOutUp'
+                    });
+                } else if (typeof crmNotify.error === 'function') {
+                    crmNotify.error({
+                        title: 'Error',
+                        message: message,
+                        position: 'topRight',
+                        timeout: 8000,
+                        transitionIn: 'fadeInDown',
+                        transitionOut: 'fadeOutUp'
+                    });
+                }
+            } else {
+                alert(message);
+            }
+        }
+
+        function pollPersonalVideoUploadStatus(uploadToken, callback) {
+            var attempts = 0;
+            var maxAttempts = 150;
+            var pollIntervalMs = 2000;
+
+            function poll() {
+                $.ajax({
+                    url: site_url + '/documents/personal-video-upload-status/' + encodeURIComponent(uploadToken),
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function(res) {
+                        var status = (res.status || '').toLowerCase();
+                        if (status === 'completed') {
+                            callback(true, res.message || 'Video uploaded successfully.');
+                            return;
+                        }
+                        if (status === 'failed') {
+                            callback(false, res.message || 'Video upload failed.');
+                            return;
+                        }
+                        attempts++;
+                        if (attempts >= maxAttempts) {
+                            callback(false, 'Video upload timed out. Please refresh and check the document list.');
+                            return;
+                        }
+                        setTimeout(poll, pollIntervalMs);
+                    },
+                    error: function(xhr) {
+                        if (xhr.status === 403 || xhr.status === 404) {
+                            callback(false, (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Unable to check upload status.');
+                            return;
+                        }
+                        attempts++;
+                        if (attempts >= maxAttempts) {
+                            callback(false, 'Unable to check upload status.');
+                            return;
+                        }
+                        setTimeout(poll, pollIntervalMs);
+                    }
+                });
+            }
+
+            poll();
+        }
+
+        function waitForPersonalVideoUploads(uploadTokens, callback) {
+            if (!uploadTokens || uploadTokens.length === 0) {
+                callback(true, 'Upload complete.');
+                return;
+            }
+
+            var remaining = uploadTokens.length;
+            var failed = false;
+            var resultMessage = null;
+
+            uploadTokens.forEach(function(token) {
+                pollPersonalVideoUploadStatus(token, function(success, message) {
+                    if (!success) {
+                        failed = true;
+                    }
+                    if (!resultMessage) {
+                        resultMessage = message;
+                    }
+                    remaining--;
+                    if (remaining === 0) {
+                        callback(!failed, failed ? (resultMessage || 'One or more video uploads failed.') : (resultMessage || 'Video uploaded successfully.'));
+                    }
+                });
+            });
+        }
+
+        window.showPersonalDocVideoToast = showPersonalDocVideoToast;
+        window.waitForPersonalVideoUploads = waitForPersonalVideoUploads;
+
+        function performPersonalDocUpload(file, targetFileId, targetCategoryId, dragZone, options) {
+            options = options || {};
+            var isVideoUpload = isPersonalDocVideoFile(file);
+            var form = $('#upload_form_' + targetFileId);
+            if (!form.length) {
+                alert('Upload form not found for the selected folder. Please refresh the page and try again.');
+                if (dragZone && dragZone.length) {
+                    dragZone.removeClass('uploading');
+                }
+                return;
+            }
+
             var formData = new FormData(form[0]);
-            
-            // Override the file input with dragged file
+            formData.set('fileid', targetFileId);
             formData.set('document_upload', file);
-            
-            // Visual feedback
-            dragZone.addClass('uploading');
-            $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa fa-clock-o"></i> Uploading document...</span>');
-            
-            // Upload via AJAX
+
+            if (dragZone && dragZone.length) {
+                dragZone.addClass('uploading');
+            }
+            if (!isVideoUpload) {
+                $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa fa-clock-o"></i> Uploading document...</span>');
+            }
+
             $.ajax({
                 url: site_url + '/documents/upload-edu-document',
                 type: 'POST',
@@ -6778,48 +7081,174 @@ success: function(response) {
                 contentType: false,
                 processData: false,
                 success: function(ress) {
-                    dragZone.removeClass('uploading');
-                    
-                    if (ress.status) {
-                        $('.custom-error-msg').html('<span class="alert alert-success">' + ress.message + '</span>');
-                        
-                        var row = $('#id_' + fileid);
-                        var docNameWithoutExt = ress.filename.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").toLowerCase();
-                        var previewUrl = ress.preview_url || (site_url + '/documents/preview/' + (ress.document_id || fileid));
-                        var documentId = ress.document_id || fileid;
-                        
-                        // Replace upload TD content (Column 1 = File Name)
-                        var uploadTd = row.find('td').eq(1);
-                        uploadTd.html(
-                            '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="showFileContextMenu(event, ' + fileid + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + doccategory + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
-                                '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'preview-container-' + doccategory + '\')">' +
-                                    '<i class="fas fa-file-image"></i> <span>' + ress.filename + '</span>' +
-                                '</a>' +
-                            '</div>'
-                        );
-                        
-                        // Add hidden elements for context menu actions (Column 2 = Actions)
-                        var actionTd = row.find('td').eq(2);
-                        actionTd.html(
-                            '<a class="renamechecklist" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
-                            '<a class="renamedoc" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
-                            '<a class="download-file" data-id="' + documentId + '" data-document-id="' + documentId + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
-                            '<a class="notuseddoc" data-id="' + fileid + '" data-doctype="' + ress.doctype + '" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
-                        );
-                        
-                        row.addClass('drow');
-                    } else {
-                        $('.custom-error-msg').html('<span class="alert alert-danger">' + ress.message + '</span>');
+                    if (ress.queued && ress.upload_token && isVideoUpload) {
+                        pollPersonalVideoUploadStatus(ress.upload_token, function(success, message) {
+                            if (dragZone && dragZone.length) {
+                                dragZone.removeClass('uploading');
+                            }
+                            showPersonalDocVideoToast(success, message);
+                            if (success) {
+                                setTimeout(function() {
+                                    location.reload();
+                                }, 800);
+                            }
+                        });
+                        return;
                     }
-                    
-                    getallactivities();
+
+                    if (dragZone && dragZone.length) {
+                        dragZone.removeClass('uploading');
+                    }
+
+                    if (!ress.status) {
+                        if (isVideoUpload) {
+                            showPersonalDocVideoToast(false, ress.message || 'Video upload failed.');
+                        } else {
+                            $('.custom-error-msg').html('<span class="alert alert-danger">' + ress.message + '</span>');
+                        }
+                        return;
+                    }
+
+                    if (isVideoUpload) {
+                        showPersonalDocVideoToast(true, ress.message || 'Video uploaded successfully.');
+                    } else {
+                        $('.custom-error-msg').html('<span class="alert alert-success">' + ress.message + '</span>');
+                    }
+
+                    if (options.reloadOnSuccess || String(targetCategoryId) !== String(options.originalCategoryId)) {
+                        setTimeout(function() {
+                            location.reload();
+                        }, 800);
+                        return;
+                    }
+
+                    var row = $('#id_' + targetFileId);
+                    var docNameWithoutExt = ress.filename.replace(/\.[^/.]+$/, '').replace(/\s+/g, '_').toLowerCase();
+                    var previewUrl = ress.preview_url || (site_url + '/documents/preview/' + (ress.document_id || targetFileId));
+                    var documentId = ress.document_id || targetFileId;
+                    var uploadTd = row.find('td').eq(1);
+
+                    uploadTd.html(
+                        '<div data-id="' + targetFileId + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="showFileContextMenu(event, ' + targetFileId + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + targetCategoryId + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
+                            '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'preview-container-' + targetCategoryId + '\')">' +
+                                '<i class="fas ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
+                            '</a>' +
+                        '</div>'
+                    );
+
+                    var actionTd = row.find('td').eq(2);
+                    actionTd.html(
+                        '<a class="renamechecklist" data-id="' + targetFileId + '" href="javascript:;" style="display: none;"></a>' +
+                        '<a class="renamedoc" data-id="' + targetFileId + '" href="javascript:;" style="display: none;"></a>' +
+                        '<a class="download-file" data-id="' + documentId + '" data-document-id="' + documentId + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
+                        '<a class="notuseddoc" data-id="' + targetFileId + '" data-doctype="' + ress.doctype + '" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
+                    );
+                    row.addClass('drow');
+                    if (typeof getallactivities === 'function') {
+                        getallactivities();
+                    }
                 },
                 error: function(xhr, status, error) {
-                    dragZone.removeClass('uploading');
-                    $('.custom-error-msg').html('<span class="alert alert-danger">Upload failed. Please try again.</span>');
+                    if (dragZone && dragZone.length) {
+                        dragZone.removeClass('uploading');
+                    }
+                    var errorMessage = (xhr.responseJSON && xhr.responseJSON.message)
+                        ? xhr.responseJSON.message
+                        : 'Upload failed. Please try again.';
+                    if (isVideoUpload) {
+                        showPersonalDocVideoToast(false, errorMessage);
+                    } else {
+                        $('.custom-error-msg').html('<span class="alert alert-danger">' + errorMessage + '</span>');
+                    }
                     console.error('Personal doc upload error:', error);
                 }
             });
+        }
+
+        function uploadPersonalDocFromZone(dragZone, file) {
+            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
+            if (!validNameRegex.test(file.name)) {
+                alert('File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.');
+                return false;
+            }
+
+            var fileid = dragZone.data('fileid');
+            var doccategory = dragZone.data('doccategory');
+            var formId = dragZone.data('formid');
+            var form = $('#' + formId);
+            if (!form.length) {
+                alert('Error: Upload form not found. Please refresh the page.');
+                return false;
+            }
+
+            var context = {
+                fileid: fileid,
+                doccategory: doccategory,
+                clientId: form.find('[name="clientid"]').val()
+            };
+
+            var startUpload = function(targetFileId, targetCategoryId) {
+                var targetZone = $('#upload_form_' + targetFileId).find('.personal-doc-drag-zone');
+                if (!targetZone.length) {
+                    targetZone = dragZone;
+                }
+                performPersonalDocUpload(file, targetFileId, targetCategoryId, targetZone, {
+                    originalCategoryId: doccategory,
+                    reloadOnSuccess: String(targetCategoryId) !== String(doccategory) || String(targetFileId) !== String(fileid)
+                });
+            };
+
+            if (isPersonalDocVideoFile(file)) {
+                promptPersonalVideoUploadFolder(doccategory, function(selectedCategoryId) {
+                    resolvePersonalVideoUploadTarget(selectedCategoryId, file, context, function(err, targetFileId, targetCategoryId) {
+                        if (err) {
+                            alert(err);
+                            return;
+                        }
+                        startUpload(targetFileId, targetCategoryId);
+                    });
+                });
+                return true;
+            }
+
+            startUpload(fileid, doccategory);
+            return true;
+        }
+
+        window.isPersonalDocVideoFile = isPersonalDocVideoFile;
+        window.promptPersonalVideoUploadFolder = promptPersonalVideoUploadFolder;
+        window.uploadPersonalDocFromZone = uploadPersonalDocFromZone;
+        window.activatePersonalDocumentFolder = activatePersonalDocumentFolder;
+
+        $(document).on('click', '#confirmVideoUploadFolder', function() {
+            var selectedCategoryId = $('#videoUploadFolderSelect').val();
+            if (!selectedCategoryId) {
+                $('#videoUploadFolderError').text('Please select a folder.').show();
+                return;
+            }
+            $('#videoUploadFolderError').hide();
+            $('#videoUploadFolderModal').modal('hide');
+            if (typeof _videoFolderPromptCallback === 'function') {
+                var callback = _videoFolderPromptCallback;
+                _videoFolderPromptCallback = null;
+                _videoFolderPromptCancel = null;
+                callback(selectedCategoryId);
+            }
+        });
+
+        $('#videoUploadFolderModal').on('hidden.bs.modal', function() {
+            if (typeof _videoFolderPromptCancel === 'function') {
+                var cancelFn = _videoFolderPromptCancel;
+                _videoFolderPromptCallback = null;
+                _videoFolderPromptCancel = null;
+                cancelFn();
+            }
+        });
+
+        // Personal Documents - Upload Handler
+        
+        function handlePersonalDocDragDrop(dragZone, file) {
+            uploadPersonalDocFromZone(dragZone, file);
         }
         
         // Matter documents - upload handler
@@ -6881,7 +7310,7 @@ success: function(response) {
                         uploadTd.html(
                             '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="' + contextMenuFn + '(event, ' + fileid + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + visa_doc_cat + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
                                 '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + previewPane + '\')">' +
-                                    '<i class="fas fa-file-image"></i> <span>' + ress.filename + '</span>' +
+                                    '<i class="fas ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
                                 '</a>' +
                             '</div>'
                         );
@@ -7179,7 +7608,7 @@ success: function(response) {
 
                                 '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + previewPane + '\')">' +
 
-                                    '<i class="fas fa-file-image"></i> <span>' + ress.filename + '</span>' +
+                                    '<i class="fas ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
 
                                 '</a>' +
 

@@ -2,6 +2,8 @@
 
 namespace App\Traits;
 
+use App\Models\ClientMatter;
+
 trait ClientHelpers
 {
     /**
@@ -52,6 +54,30 @@ trait ClientHelpers
     protected function buildFullName($firstName, $lastName)
     {
         return trim($firstName . ' ' . $lastName);
+    }
+
+    /**
+     * Get matter reference for activity logging.
+     */
+    protected function getMatterReference($clientId, $matterId = null): string
+    {
+        if ($matterId) {
+            $matter = ClientMatter::find($matterId);
+            if ($matter && $matter->client_unique_matter_no) {
+                return $matter->client_unique_matter_no;
+            }
+        }
+
+        $latestMatter = ClientMatter::where('client_id', $clientId)
+            ->where('matter_status', 1)
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($latestMatter && $latestMatter->client_unique_matter_no) {
+            return $latestMatter->client_unique_matter_no;
+        }
+
+        return '';
     }
 }
 

@@ -3,6 +3,7 @@
         $admin = $fetch->staff;
         $previewUrl = url('/documents/preview/' . $fetch->id);
         $downloadFilename = $fetch->myfile_key ?: basename(parse_url((string) $fetch->myfile, PHP_URL_PATH) ?: (string) $fetch->myfile);
+        $fileIcon = in_array(strtolower($fetch->filetype ?? ''), ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'], true) ? 'fa-file-video' : 'fa-file-image';
     @endphp
     <tr class="drow" id="id_{{ $fetch->id }}">
         <td style="white-space: initial;">
@@ -24,7 +25,7 @@
             @if ($fetch->file_name)
                 <div data-id="{{ $fetch->id }}" data-name="{{ htmlspecialchars($fetch->file_name) }}" class="doc-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}" oncontextmenu="showFileContextMenu(event, {{ (int) $fetch->id }}, {{ json_encode($fetch->filetype) }}, {{ json_encode($previewUrl) }}, {{ json_encode((string) $folderName) }}, {{ json_encode($fetch->status ?? 'draft') }}); return false;">
                     <a href="javascript:void(0);" onclick="previewFile({{ json_encode($fetch->filetype) }}, {{ json_encode($previewUrl) }}, {{ json_encode('preview-container-' . $folderName) }})">
-                        <i class="fas fa-file-image"></i> <span>{{ htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) }}</span>
+                        <i class="fas {{ $fileIcon }}"></i> <span>{{ htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) }}</span>
                     </a>
                 </div>
             @else
@@ -45,7 +46,7 @@
                                 <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                             </div>
                         </div>
-                        <input class="docupload d-none" data-fileid="{{ $fetch->id }}" data-doccategory="{{ $folderName }}" type="file" name="document_upload" style="display: none;">
+                        <input class="docupload d-none" data-fileid="{{ $fetch->id }}" data-doccategory="{{ $folderName }}" type="file" name="document_upload" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.mp4,.webm,.mov,.m4v,.avi,.mkv" style="display: none;">
                     </form>
                 </div>
             @endif

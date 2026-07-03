@@ -25,6 +25,7 @@ use App\Traits\ClientHelpers;
 use App\Traits\LogsClientActivity;
 use App\Support\StaffClientVisibility;
 use App\Services\PythonConverterService;
+use App\Services\PersonalDocumentVideoUploadService;
 use Illuminate\Http\JsonResponse;
 use PhpOffice\PhpWord\IOFactory;
 use League\Flysystem\UnableToCheckFileExistence;
@@ -496,7 +497,29 @@ class ClientDocumentsController extends Controller
                     // Build file name with current checklist name
                     $timestamp = time();
                     $name = $client_first_name . "_" . $checklistName . "_" . $timestamp . "." . $extension;
-    
+
+                    if ($doctype === 'personal' && PersonalDocumentVideoUploadService::isVideoExtension($extension)) {
+                        $videoService = app(PersonalDocumentVideoUploadService::class);
+                        $queued = $videoService->queueUpload(
+                            $file,
+                            $obj,
+                            (int) $clientid,
+                            (int) Auth::user()->id,
+                            $doctype,
+                            (string) ($request->type ?? 'client'),
+                            (string) ($request->doccategory ?? '')
+                        );
+
+                        $response['status'] = true;
+                        $response['queued'] = true;
+                        $response['upload_token'] = $queued['token'];
+                        $response['message'] = 'Video upload queued for processing.';
+                        ob_end_clean();
+                        header('Content-Type: application/json');
+                        echo json_encode($response);
+                        exit;
+                    }
+
                     $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
                     $this->s3Disk()->put($filePath, file_get_contents($file));
     
@@ -2840,6 +2863,13 @@ class ClientDocumentsController extends Controller
             'ppt' => 'application/vnd.ms-powerpoint',
             'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
             'txt' => 'text/plain',
+            'mp4' => 'video/mp4',
+            'webm' => 'video/webm',
+            'mov' => 'video/quicktime',
+            'm4v' => 'video/x-m4v',
+            'avi' => 'video/x-msvideo',
+            'mkv' => 'video/x-matroska',
+            'ogv' => 'video/ogg',
             default => 'application/octet-stream',
         };
     }
@@ -3740,6 +3770,7 @@ class ClientDocumentsController extends Controller
             
             $uploadedCount = 0;
             $errors = [];
+            $queuedVideos = [];
             
             foreach ($files as $index => $file) {
                 try {
@@ -3813,6 +3844,31 @@ class ClientDocumentsController extends Controller
                         continue;
                     }
                     
+                    $extension = strtolower($file->getClientOriginalExtension());
+
+                    if ($doctype === 'personal' && PersonalDocumentVideoUploadService::isVideoExtension($extension)) {
+                        $videoService = app(PersonalDocumentVideoUploadService::class);
+                        $stagingToken = \Illuminate\Support\Str::uuid()->toString() . '_' . $index;
+                        $tempPath = $videoService->storeTempFile($file, $stagingToken);
+                        $queued = $videoService->queueFromStoredTemp(
+                            $tempPath,
+                            $document,
+                            (int) $clientid,
+                            (int) Auth::user()->id,
+                            $doctype,
+                            $type,
+                            (string) $categoryid,
+                            $fileName,
+                            (int) $size,
+                            $extension
+                        );
+                        $queuedVideos[] = [
+                            'token' => $queued['token'],
+                            'filename' => $fileName,
+                        ];
+                        continue;
+                    }
+
                     // Upload file
                     $extension = $file->getClientOriginalExtension();
                     $timestamp = time();
@@ -3843,22 +3899,32 @@ class ClientDocumentsController extends Controller
                 }
             }
             
-            if ($uploadedCount > 0) {
-                // Log activity
-                $matterRef = $this->getMatterReference($clientid);
-                $subject = $this->bulkUploadActivitySubject($uploadedCount, '', $matterRef ?: null);
-                $description = $this->bulkUploadActivityDescription($uploadedCount, 'personal');
-                
-                $this->logClientActivity(
-                    $clientid,
-                    $subject,
-                    $description,
-                    'document'
-                );
+            if ($uploadedCount > 0 || count($queuedVideos) > 0) {
+                if ($uploadedCount > 0) {
+                    // Log activity
+                    $matterRef = $this->getMatterReference($clientid);
+                    $subject = $this->bulkUploadActivitySubject($uploadedCount, '', $matterRef ?: null);
+                    $description = $this->bulkUploadActivityDescription($uploadedCount, 'personal');
+                    
+                    $this->logClientActivity(
+                        $clientid,
+                        $subject,
+                        $description,
+                        'document'
+                    );
+                }
                 
                 $response['status'] = true;
-                $response['message'] = "Successfully uploaded {$uploadedCount} file(s)";
+                $parts = [];
+                if ($uploadedCount > 0) {
+                    $parts[] = "Successfully uploaded {$uploadedCount} file(s)";
+                }
+                if (count($queuedVideos) > 0) {
+                    $parts[] = count($queuedVideos) . ' video(s) queued for processing';
+                }
+                $response['message'] = implode('. ', $parts) . '.';
                 $response['uploaded'] = $uploadedCount;
+                $response['queued_videos'] = $queuedVideos;
                 $response['errors'] = $errors;
             } else {
                 $response['message'] = 'No files were uploaded. ' . implode('; ', $errors);
@@ -3874,6 +3940,37 @@ class ClientDocumentsController extends Controller
         }
         
         return response()->json($response);
+    }
+
+    /**
+     * Poll queued personal document video upload status.
+     */
+    public function personalVideoUploadStatus(string $token): JsonResponse
+    {
+        $service = app(PersonalDocumentVideoUploadService::class);
+        $data = $service->getStatus($token);
+
+        if (! $data) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Upload session not found or expired.',
+            ], 404);
+        }
+
+        $userId = Auth::user()->id ?? null;
+        if ($userId === null || (int) ($data['user_id'] ?? 0) !== (int) $userId) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'You are not authorized to view this upload status.',
+            ], 403);
+        }
+
+        return response()->json([
+            'status' => $data['status'] ?? 'failed',
+            'message' => $data['message'] ?? '',
+            'document_id' => $data['document_id'] ?? null,
+            'filename' => $data['filename'] ?? null,
+        ]);
     }
     
     /**

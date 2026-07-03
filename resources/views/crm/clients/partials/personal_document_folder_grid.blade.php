@@ -3,11 +3,12 @@
         @php
             $gridPreviewUrl = url('/documents/preview/' . $fetch->id);
             $gridDownloadFilename = $fetch->myfile_key ?: basename(parse_url((string) $fetch->myfile, PHP_URL_PATH) ?: (string) $fetch->myfile);
+            $gridFileIcon = in_array(strtolower($fetch->filetype ?? ''), ['mp4', 'webm', 'mov', 'm4v', 'avi', 'mkv'], true) ? 'fa-file-video' : 'fa-file-image';
         @endphp
         <div class="grid_list" id="gid_{{ $fetch->id }}">
             <div class="grid_col">
                 <div class="grid_icon">
-                    <i class="fas fa-file-image"></i>
+                    <i class="fas {{ $gridFileIcon }}"></i>
                 </div>
                 <div class="grid_content">
                     <span id="grid_{{ $fetch->id }}" class="gridfilename">{{ $fetch->file_name }}</span>

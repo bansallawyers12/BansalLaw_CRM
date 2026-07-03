@@ -166,6 +166,7 @@ Route::get('/pinactivitylog', [ClientsController::class, 'pinactivitylog']);
 /*---------- Client Documents Management ----------*/
 Route::post('/documents/add-edu-checklist', [ClientDocumentsController::class, 'addedudocchecklist'])->name('clients.documents.addedudocchecklist');
 Route::post('/documents/upload-edu-document', [ClientDocumentsController::class, 'uploadedudocument'])->name('clients.documents.uploadedudocument');
+Route::get('/documents/personal-video-upload-status/{token}', [ClientDocumentsController::class, 'personalVideoUploadStatus'])->name('clients.documents.personalVideoUploadStatus');
 Route::post('/documents/add-matter-checklist', [ClientDocumentsController::class, 'addvisadocchecklist'])->name('clients.documents.addMatterDocChecklist');
 Route::post('/documents/add-visa-checklist', [ClientDocumentsController::class, 'addvisadocchecklist']);
 Route::post('/documents/add-nomination-checklist', [ClientDocumentsController::class, 'addNominationDocChecklist'])->name('clients.documents.addNominationDocChecklist');
