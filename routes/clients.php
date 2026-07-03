@@ -165,7 +165,9 @@ Route::get('/pinactivitylog', [ClientsController::class, 'pinactivitylog']);
 
 /*---------- Client Documents Management ----------*/
 Route::post('/documents/add-edu-checklist', [ClientDocumentsController::class, 'addedudocchecklist'])->name('clients.documents.addedudocchecklist');
-Route::post('/documents/upload-edu-document', [ClientDocumentsController::class, 'uploadedudocument'])->name('clients.documents.uploadedudocument');
+Route::post('/documents/upload-edu-document', [ClientDocumentsController::class, 'uploadedudocument'])
+    ->middleware('extend.video.upload')
+    ->name('clients.documents.uploadedudocument');
 Route::get('/documents/personal-video-upload-status/{token}', [ClientDocumentsController::class, 'personalVideoUploadStatus'])->name('clients.documents.personalVideoUploadStatus');
 Route::post('/documents/add-matter-checklist', [ClientDocumentsController::class, 'addvisadocchecklist'])->name('clients.documents.addMatterDocChecklist');
 Route::post('/documents/add-visa-checklist', [ClientDocumentsController::class, 'addvisadocchecklist']);
@@ -195,7 +197,9 @@ Route::post('/documents/add-nomination-category', [ClientDocumentsController::cl
 Route::post('/documents/update-visa-category', [ClientDocumentsController::class, 'updateVisaDocCategory'])->name('clients.documents.updateVisaDocCategory');
 Route::post('/documents/update-nomination-category', [ClientDocumentsController::class, 'updateNominationDocCategory'])->name('clients.documents.updateNominationDocCategory');
 Route::post('/documents/get-auto-checklist-matches', [ClientDocumentsController::class, 'getAutoChecklistMatches'])->name('clients.documents.getAutoChecklistMatches');
-Route::post('/documents/bulk-upload-personal', [ClientDocumentsController::class, 'bulkUploadPersonalDocuments'])->name('clients.documents.bulkUploadPersonalDocuments');
+Route::post('/documents/bulk-upload-personal', [ClientDocumentsController::class, 'bulkUploadPersonalDocuments'])
+    ->middleware('extend.video.upload')
+    ->name('clients.documents.bulkUploadPersonalDocuments');
 Route::post('/documents/bulk-upload-matter', [ClientDocumentsController::class, 'bulkUploadMatterDocuments'])->name('clients.documents.bulkUploadMatterDocuments');
 Route::post('/documents/bulk-upload-visa', [ClientDocumentsController::class, 'bulkUploadMatterDocuments']);
 Route::post('/documents/bulk-upload-nomination', [ClientDocumentsController::class, 'bulkUploadNominationDocuments'])->name('clients.documents.bulkUploadNominationDocuments');

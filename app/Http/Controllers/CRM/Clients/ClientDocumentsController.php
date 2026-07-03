@@ -499,7 +499,52 @@ class ClientDocumentsController extends Controller
                     $name = $client_first_name . "_" . $checklistName . "_" . $timestamp . "." . $extension;
 
                     if ($doctype === 'personal' && PersonalDocumentVideoUploadService::isVideoExtension($extension)) {
+                        $maxVideoBytes = PersonalDocumentVideoUploadService::maxVideoBytes();
+                        if ($size > $maxVideoBytes) {
+                            $maxMb = (int) config('crm.personal_video_upload.max_size_mb', 200);
+                            $response['message'] = "Video file exceeds the maximum allowed size of {$maxMb}MB.";
+                            ob_end_clean();
+                            header('Content-Type: application/json');
+                            echo json_encode($response);
+                            exit;
+                        }
+
                         $videoService = app(PersonalDocumentVideoUploadService::class);
+
+                        if ($videoService->usesDirectUpload()) {
+                            $result = $videoService->uploadVideoDirect(
+                                $file,
+                                $obj,
+                                (int) $clientid,
+                                (int) Auth::user()->id,
+                                $doctype,
+                                (string) ($request->type ?? 'client'),
+                                (string) ($request->doccategory ?? '')
+                            );
+
+                            if ($result['success']) {
+                                $response['status'] = true;
+                                $response['completed'] = true;
+                                $response['message'] = $result['message'];
+                                $response['filename'] = $result['filename'];
+                                $response['filetype'] = $result['filetype'];
+                                $response['fileurl'] = $result['preview_url'];
+                                $response['filekey'] = $result['filename'];
+                                $response['document_id'] = $result['document_id'];
+                                $response['preview_url'] = $result['preview_url'];
+                                $response['doccategory'] = $obj->checklist;
+                                $response['uploaded_by'] = Auth::user()->first_name ?? 'Staff';
+                                $response['uploaded_at'] = $obj->created_at ? $obj->created_at->format('d/m/Y H:i') : now()->format('d/m/Y H:i');
+                            } else {
+                                $response['message'] = $result['message'];
+                            }
+
+                            ob_end_clean();
+                            header('Content-Type: application/json');
+                            echo json_encode($response);
+                            exit;
+                        }
+
                         $queued = $videoService->queueUpload(
                             $file,
                             $obj,
@@ -3847,7 +3892,34 @@ class ClientDocumentsController extends Controller
                     $extension = strtolower($file->getClientOriginalExtension());
 
                     if ($doctype === 'personal' && PersonalDocumentVideoUploadService::isVideoExtension($extension)) {
+                        $maxVideoBytes = PersonalDocumentVideoUploadService::maxVideoBytes();
+                        if ($size > $maxVideoBytes) {
+                            $maxMb = (int) config('crm.personal_video_upload.max_size_mb', 200);
+                            $errors[] = "File '{$fileName}': Video exceeds the maximum allowed size of {$maxMb}MB.";
+                            continue;
+                        }
+
                         $videoService = app(PersonalDocumentVideoUploadService::class);
+
+                        if ($videoService->usesDirectUpload()) {
+                            $result = $videoService->uploadVideoDirect(
+                                $file,
+                                $document,
+                                (int) $clientid,
+                                (int) Auth::user()->id,
+                                $doctype,
+                                $type,
+                                (string) $categoryid
+                            );
+
+                            if ($result['success']) {
+                                $uploadedCount++;
+                            } else {
+                                $errors[] = "Error uploading video '{$fileName}': " . $result['message'];
+                            }
+                            continue;
+                        }
+
                         $stagingToken = \Illuminate\Support\Str::uuid()->toString() . '_' . $index;
                         $tempPath = $videoService->storeTempFile($file, $stagingToken);
                         $queued = $videoService->queueFromStoredTemp(

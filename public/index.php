@@ -7,6 +7,33 @@ define('LARAVEL_START', microtime(true));
 
 /*
 |--------------------------------------------------------------------------
+| Extend limits for large personal document video uploads (before bootstrap)
+|--------------------------------------------------------------------------
+|
+| max_input_time must be raised before PHP parses the request body. Config
+| values are mirrored in public/.user.ini for hosts that ignore index.php ini_set.
+|
+*/
+$requestUri = $_SERVER['REQUEST_URI'] ?? '';
+if (
+    str_contains($requestUri, '/documents/upload-edu-document')
+    || str_contains($requestUri, '/documents/bulk-upload-personal')
+) {
+    $uploadTimeLimit = max(300, (int) ($_ENV['PERSONAL_VIDEO_UPLOAD_EXECUTION_TIME'] ?? $_SERVER['PERSONAL_VIDEO_UPLOAD_EXECUTION_TIME'] ?? 1800));
+    $inputTimeLimit = max(300, (int) ($_ENV['PERSONAL_VIDEO_UPLOAD_MAX_INPUT_TIME'] ?? $_SERVER['PERSONAL_VIDEO_UPLOAD_MAX_INPUT_TIME'] ?? 1800));
+
+    if (function_exists('set_time_limit')) {
+        @set_time_limit($uploadTimeLimit);
+    }
+
+    @ini_set('max_execution_time', (string) $uploadTimeLimit);
+    @ini_set('max_input_time', (string) $inputTimeLimit);
+    @ini_set('default_socket_timeout', '600');
+    @ignore_user_abort(true);
+}
+
+/*
+|--------------------------------------------------------------------------
 | Check If The Application Is Under Maintenance
 |--------------------------------------------------------------------------
 |

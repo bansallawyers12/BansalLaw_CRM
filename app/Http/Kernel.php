@@ -66,6 +66,7 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'adminconsole' => \App\Http\Middleware\EnsureAdminConsoleAccess::class,
+        'extend.video.upload' => \App\Http\Middleware\ExtendVideoUploadLimits::class,
     ];
 
     /**

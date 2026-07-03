@@ -2195,18 +2195,27 @@
                         data: formData,
                         processData: false,
                         contentType: false,
+                        timeout: hasVideos ? 0 : undefined,
                         xhr: function() {
                             const xhr = new window.XMLHttpRequest();
                             xhr.upload.addEventListener('progress', function(e) {
                                 if (e.lengthComputable) {
                                     const percentComplete = (e.loaded / e.total) * 100;
                                     if (hasVideos && typeof updatePersonalVideoUploadLoader === 'function') {
-                                        const overallPct = Math.round((e.loaded / e.total) * 42);
+                                        const overallPct = Math.round((e.loaded / e.total) * 45);
                                         updatePersonalVideoUploadLoader(
                                             'upload',
                                             overallPct,
-                                            'Uploading to server… ' + Math.round(percentComplete) + '%'
+                                            'Uploading… ' + Math.round(percentComplete) + '%'
                                         );
+                                        if (percentComplete >= 100 && typeof startPersonalVideoProcessingPulse === 'function') {
+                                            startPersonalVideoProcessingPulse(
+                                                'processing',
+                                                48,
+                                                88,
+                                                'Saving video(s) to cloud storage…'
+                                            );
+                                        }
                                     } else {
                                         $('#bulk-upload-progress-bar').css('width', percentComplete + '%').text(Math.round(percentComplete) + '%');
                                     }
@@ -2249,6 +2258,13 @@
                                     return;
                                 }
 
+                                if (hasVideos && typeof updatePersonalVideoUploadLoader === 'function') {
+                                    if (typeof clearPersonalVideoProcessingPulse === 'function') {
+                                        clearPersonalVideoProcessingPulse();
+                                    }
+                                    updatePersonalVideoUploadLoader('complete', 100, 'Upload complete!');
+                                }
+
                                 if (typeof showPersonalDocVideoToast === 'function') {
                                     showPersonalDocVideoToast(true, response.message || 'Files uploaded successfully!');
                                 } else {
@@ -2272,7 +2288,9 @@
                         },
                         error: function(xhr) {
                             let errorMsg = 'Upload failed';
-                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                            if (xhr.statusText === 'timeout') {
+                                errorMsg = 'Upload timed out. Large videos can take several minutes — please keep this tab open and try again on a stable connection.';
+                            } else if (xhr.responseJSON && xhr.responseJSON.message) {
                                 errorMsg = xhr.responseJSON.message;
                             }
                             if (hasVideos && typeof hidePersonalVideoUploadLoader === 'function') {

@@ -246,4 +246,26 @@ return [
     */
     'email_upload_max_kb' => max(1, (int) env('EMAIL_UPLOAD_MAX_KB', 30720)),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Personal document video upload queue
+    |--------------------------------------------------------------------------
+    | Default sync + afterResponse processes videos in the same web request after
+    | the JSON response is sent — no separate queue worker required.
+    | Use PERSONAL_VIDEO_UPLOAD_QUEUE_CONNECTION=redis with a running queue worker
+    | only on servers where storage/app/video-uploads is shared with workers.
+    */
+    'personal_video_upload' => [
+        // Stream video directly to S3 during the upload request (fastest; no queue worker needed).
+        'direct_upload' => filter_var(env('PERSONAL_VIDEO_UPLOAD_DIRECT', true), FILTER_VALIDATE_BOOLEAN),
+        'queue_connection' => env('PERSONAL_VIDEO_UPLOAD_QUEUE_CONNECTION', 'sync'),
+        'after_response' => filter_var(env('PERSONAL_VIDEO_UPLOAD_AFTER_RESPONSE', true), FILTER_VALIDATE_BOOLEAN),
+        'cache_store' => env('PERSONAL_VIDEO_UPLOAD_CACHE_STORE'),
+        // PHP / S3 processing limits (also set in public/.user.ini for upload receive phase).
+        'execution_time_seconds' => max(300, (int) env('PERSONAL_VIDEO_UPLOAD_EXECUTION_TIME', 1800)),
+        'max_input_time_seconds' => max(300, (int) env('PERSONAL_VIDEO_UPLOAD_MAX_INPUT_TIME', 1800)),
+        'socket_timeout_seconds' => max(120, (int) env('PERSONAL_VIDEO_UPLOAD_SOCKET_TIMEOUT', 600)),
+        'max_size_mb' => max(1, (int) env('PERSONAL_VIDEO_UPLOAD_MAX_MB', 200)),
+    ],
+
 ];

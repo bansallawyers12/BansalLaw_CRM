@@ -7,8 +7,8 @@ use App\Models\Admin;
 use App\Models\Document;
 use App\Traits\ClientHelpers;
 use App\Traits\LogsClientActivity;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -29,9 +29,45 @@ class PersonalDocumentVideoUploadService
         return in_array(strtolower((string) $extension), self::VIDEO_EXTENSIONS, true);
     }
 
+    public function usesDirectUpload(): bool
+    {
+        return (bool) config('crm.personal_video_upload.direct_upload', true);
+    }
+
+    public static function extendPhpLimits(): void
+    {
+        $seconds = max(300, (int) config('crm.personal_video_upload.execution_time_seconds', 1800));
+        $inputSeconds = max(300, (int) config('crm.personal_video_upload.max_input_time_seconds', 1800));
+        $socketTimeout = max(120, (int) config('crm.personal_video_upload.socket_timeout_seconds', 600));
+
+        if (function_exists('set_time_limit')) {
+            @set_time_limit($seconds);
+        }
+
+        @ini_set('max_execution_time', (string) $seconds);
+        @ini_set('max_input_time', (string) $inputSeconds);
+        @ini_set('default_socket_timeout', (string) $socketTimeout);
+        @ignore_user_abort(true);
+    }
+
+    public static function maxVideoBytes(): int
+    {
+        return max(1, (int) config('crm.personal_video_upload.max_size_mb', 200)) * 1024 * 1024;
+    }
+
     public function cacheKey(string $token): string
     {
         return self::CACHE_PREFIX . $token;
+    }
+
+    /**
+     * @return \Illuminate\Contracts\Cache\Repository
+     */
+    private function cacheStore()
+    {
+        $store = config('crm.personal_video_upload.cache_store');
+
+        return $store ? Cache::store($store) : Cache::store();
     }
 
     /**
@@ -39,7 +75,7 @@ class PersonalDocumentVideoUploadService
      */
     public function initStatus(string $token, int $userId, int $clientId, array $extra = []): void
     {
-        Cache::put($this->cacheKey($token), array_merge([
+        $this->cacheStore()->put($this->cacheKey($token), array_merge([
             'status' => 'queued',
             'message' => 'Video upload queued for processing.',
             'document_id' => null,
@@ -53,7 +89,7 @@ class PersonalDocumentVideoUploadService
      */
     public function getStatus(string $token): ?array
     {
-        $data = Cache::get($this->cacheKey($token));
+        $data = $this->cacheStore()->get($this->cacheKey($token));
 
         return is_array($data) ? $data : null;
     }
@@ -61,7 +97,7 @@ class PersonalDocumentVideoUploadService
     public function updateStatus(string $token, string $status, string $message, ?int $documentId = null): void
     {
         $existing = $this->getStatus($token) ?? [];
-        Cache::put($this->cacheKey($token), array_merge($existing, [
+        $this->cacheStore()->put($this->cacheKey($token), array_merge($existing, [
             'status' => $status,
             'message' => $message,
             'document_id' => $documentId ?? ($existing['document_id'] ?? null),
@@ -71,16 +107,14 @@ class PersonalDocumentVideoUploadService
     public function storeTempFile(UploadedFile $file, string $token): string
     {
         $extension = strtolower($file->getClientOriginalExtension());
-        $relativePath = 'video-uploads/' . $token . '.' . $extension;
-        Storage::disk('local')->put($relativePath, file_get_contents($file->getRealPath()));
 
-        return $relativePath;
+        return $file->storeAs('video-uploads', $token . '.' . $extension, 'local');
     }
 
     public function storeTempFileFromPath(string $absolutePath, string $token, string $extension): string
     {
         $relativePath = 'video-uploads/' . $token . '.' . strtolower($extension);
-        Storage::disk('local')->put($relativePath, file_get_contents($absolutePath));
+        $this->streamPathToDisk(Storage::disk('local'), $absolutePath, $relativePath);
 
         return $relativePath;
     }
@@ -90,6 +124,46 @@ class PersonalDocumentVideoUploadService
         if ($relativePath && Storage::disk('local')->exists($relativePath)) {
             Storage::disk('local')->delete($relativePath);
         }
+    }
+
+    /**
+     * Stream an uploaded video directly to S3 and finalize the document record.
+     *
+     * @return array{success: bool, message: string, document_id: int|null, filename: string|null, filetype: string|null, preview_url: string|null}
+     */
+    public function uploadVideoDirect(
+        UploadedFile $file,
+        Document $document,
+        int $clientId,
+        int $userId,
+        string $doctype,
+        string $type,
+        string $doccategory
+    ): array {
+        $realPath = $file->getRealPath();
+        if ($realPath === false || ! is_readable($realPath)) {
+            return [
+                'success' => false,
+                'message' => 'Unable to read uploaded video file.',
+                'document_id' => null,
+                'filename' => null,
+                'filetype' => null,
+                'preview_url' => null,
+            ];
+        }
+
+        return $this->processVideoFromLocalPath(
+            $realPath,
+            (int) $document->id,
+            $clientId,
+            $userId,
+            $doctype,
+            $type,
+            $doccategory,
+            $file->getClientOriginalName(),
+            (int) $file->getSize(),
+            strtolower($file->getClientOriginalExtension())
+        );
     }
 
     /**
@@ -111,7 +185,7 @@ class PersonalDocumentVideoUploadService
             'filename' => $file->getClientOriginalName(),
         ]);
 
-        ProcessPersonalDocumentVideoUploadJob::dispatch(
+        $this->dispatchProcessJob(
             $token,
             $tempPath,
             (int) $document->id,
@@ -146,40 +220,6 @@ class PersonalDocumentVideoUploadService
         int $fileSize,
         string $extension
     ): array {
-        $obj = Document::find($documentId);
-        if (! $obj) {
-            return [
-                'success' => false,
-                'message' => 'Document record not found.',
-                'document_id' => null,
-                'filename' => null,
-                'filetype' => null,
-                'preview_url' => null,
-            ];
-        }
-
-        if ((int) $obj->client_id !== $clientId) {
-            return [
-                'success' => false,
-                'message' => 'Document does not belong to this client.',
-                'document_id' => null,
-                'filename' => null,
-                'filetype' => null,
-                'preview_url' => null,
-            ];
-        }
-
-        if (empty($obj->checklist)) {
-            return [
-                'success' => false,
-                'message' => 'Document checklist not found.',
-                'document_id' => null,
-                'filename' => null,
-                'filetype' => null,
-                'preview_url' => null,
-            ];
-        }
-
         if (! Storage::disk('local')->exists($tempPath)) {
             return [
                 'success' => false,
@@ -189,6 +229,50 @@ class PersonalDocumentVideoUploadService
                 'filetype' => null,
                 'preview_url' => null,
             ];
+        }
+
+        return $this->processVideoFromLocalPath(
+            Storage::disk('local')->path($tempPath),
+            $documentId,
+            $clientId,
+            $userId,
+            $doctype,
+            $type,
+            $doccategory,
+            $originalFileName,
+            $fileSize,
+            strtolower($extension)
+        );
+    }
+
+    /**
+     * @return array{success: bool, message: string, document_id: int|null, filename: string|null, filetype: string|null, preview_url: string|null}
+     */
+    private function processVideoFromLocalPath(
+        string $localPath,
+        int $documentId,
+        int $clientId,
+        int $userId,
+        string $doctype,
+        string $type,
+        string $doccategory,
+        string $originalFileName,
+        int $fileSize,
+        string $extension
+    ): array {
+        self::extendPhpLimits();
+
+        $obj = Document::find($documentId);
+        if (! $obj) {
+            return $this->videoFailure('Document record not found.');
+        }
+
+        if ((int) $obj->client_id !== $clientId) {
+            return $this->videoFailure('Document does not belong to this client.');
+        }
+
+        if (empty($obj->checklist)) {
+            return $this->videoFailure('Document checklist not found.');
         }
 
         $adminInfo = Admin::select('client_id', 'first_name')->where('id', $clientId)->first();
@@ -204,7 +288,7 @@ class PersonalDocumentVideoUploadService
         $filePath = $clientUniqueId . '/' . $doctype . '/' . $name;
 
         $disk = Storage::disk('s3');
-        $disk->put($filePath, Storage::disk('local')->get($tempPath));
+        $this->streamPathToDisk($disk, $localPath, $filePath);
 
         $obj->refresh();
         $finalChecklistName = $obj->checklist;
@@ -218,7 +302,7 @@ class PersonalDocumentVideoUploadService
                     $disk->delete($filePath);
                     $filePath = $newFilePath;
                 } catch (\Throwable $e) {
-                    Log::error('Failed to move queued video after checklist change', [
+                    Log::error('Failed to move video after checklist change', [
                         'document_id' => $documentId,
                         'error' => $e->getMessage(),
                     ]);
@@ -237,14 +321,7 @@ class PersonalDocumentVideoUploadService
         $saved = $obj->save();
 
         if (! $saved) {
-            return [
-                'success' => false,
-                'message' => 'Failed to save video document record.',
-                'document_id' => null,
-                'filename' => null,
-                'filetype' => null,
-                'preview_url' => null,
-            ];
+            return $this->videoFailure('Failed to save video document record.');
         }
 
         if ($type === 'client') {
@@ -262,11 +339,12 @@ class PersonalDocumentVideoUploadService
             );
         }
 
-        Log::info('Queued personal document video uploaded successfully', [
+        Log::info('Personal document video uploaded successfully', [
             'document_id' => $obj->id,
             'original_filename' => $originalFileName,
             'client_id' => $clientId,
             'user_id' => $userId,
+            'direct_upload' => $this->usesDirectUpload(),
         ]);
 
         return [
@@ -277,6 +355,37 @@ class PersonalDocumentVideoUploadService
             'filetype' => $extension,
             'preview_url' => url('/documents/preview/' . $obj->id),
         ];
+    }
+
+    /**
+     * @return array{success: bool, message: string, document_id: null, filename: null, filetype: null, preview_url: null}
+     */
+    private function videoFailure(string $message): array
+    {
+        return [
+            'success' => false,
+            'message' => $message,
+            'document_id' => null,
+            'filename' => null,
+            'filetype' => null,
+            'preview_url' => null,
+        ];
+    }
+
+    private function streamPathToDisk(Filesystem $disk, string $sourcePath, string $destPath): void
+    {
+        $stream = fopen($sourcePath, 'rb');
+        if ($stream === false) {
+            throw new \RuntimeException('Unable to read video file.');
+        }
+
+        try {
+            $disk->writeStream($destPath, $stream);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
     }
 
     /**
@@ -300,7 +409,7 @@ class PersonalDocumentVideoUploadService
             'filename' => $originalFileName,
         ]);
 
-        ProcessPersonalDocumentVideoUploadJob::dispatch(
+        $this->dispatchProcessJob(
             $token,
             $tempPath,
             (int) $document->id,
@@ -318,5 +427,42 @@ class PersonalDocumentVideoUploadService
             'token' => $token,
             'temp_path' => $tempPath,
         ];
+    }
+
+    private function dispatchProcessJob(
+        string $token,
+        string $tempPath,
+        int $documentId,
+        int $clientId,
+        int $userId,
+        string $doctype,
+        string $type,
+        string $doccategory,
+        string $originalFileName,
+        int $fileSize,
+        string $extension
+    ): void {
+        $connection = (string) config('crm.personal_video_upload.queue_connection', 'sync');
+        $afterResponse = (bool) config('crm.personal_video_upload.after_response', true);
+
+        $pending = ProcessPersonalDocumentVideoUploadJob::dispatch(
+            $token,
+            $tempPath,
+            $documentId,
+            $clientId,
+            $userId,
+            $doctype,
+            $type,
+            $doccategory,
+            $originalFileName,
+            $fileSize,
+            $extension
+        );
+
+        $pending->onConnection($connection);
+
+        if ($afterResponse && $connection === 'sync') {
+            $pending->afterResponse();
+        }
     }
 }

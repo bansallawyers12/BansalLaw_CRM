@@ -7086,8 +7086,8 @@ success: function(response) {
 
         function pollPersonalVideoUploadStatus(uploadToken, callback, onStatus) {
             var attempts = 0;
-            var maxAttempts = 150;
-            var pollIntervalMs = 2000;
+            var maxAttempts = 900;
+            var pollIntervalMs = 800;
             var lastStatus = '';
 
             function handleStatus(status, res) {
@@ -7268,18 +7268,27 @@ success: function(response) {
                 data: formData,
                 contentType: false,
                 processData: false,
+                timeout: isVideoUpload ? 0 : undefined,
                 xhr: function() {
                     var xhr = new window.XMLHttpRequest();
                     if (isVideoUpload) {
                         xhr.upload.addEventListener('progress', function(e) {
                             if (e.lengthComputable) {
                                 var uploadPct = Math.round((e.loaded / e.total) * 100);
-                                var overallPct = Math.round((e.loaded / e.total) * 42);
+                                var overallPct = Math.round((e.loaded / e.total) * 45);
                                 updatePersonalVideoUploadLoader(
                                     'upload',
                                     overallPct,
-                                    'Uploading video to server… ' + uploadPct + '%'
+                                    'Uploading video… ' + uploadPct + '%'
                                 );
+                                if (uploadPct >= 100) {
+                                    startPersonalVideoProcessingPulse(
+                                        'processing',
+                                        48,
+                                        88,
+                                        'Saving video to cloud storage…'
+                                    );
+                                }
                             }
                         }, false);
                     }
@@ -7288,23 +7297,21 @@ success: function(response) {
                 success: function(ress) {
                     if (ress.queued && ress.upload_token && isVideoUpload) {
                         updatePersonalVideoUploadLoader('queued', 44, 'Upload complete. Starting background processing…');
-                        pollPersonalVideoUploadStatus(ress.upload_token, function(success, message) {
-                            if (dragZone && dragZone.length) {
-                                dragZone.removeClass('uploading');
-                            }
-                            hidePersonalVideoUploadLoader(success ? 700 : 900);
-                            showPersonalDocVideoToast(success, message);
-                            if (success) {
-                                setTimeout(function() {
-                                    location.reload();
-                                }, 800);
-                            }
-                        });
+                        setTimeout(function() {
+                            pollPersonalVideoUploadStatus(ress.upload_token, function(success, message) {
+                                if (dragZone && dragZone.length) {
+                                    dragZone.removeClass('uploading');
+                                }
+                                hidePersonalVideoUploadLoader(success ? 700 : 900);
+                                showPersonalDocVideoToast(success, message);
+                                if (success) {
+                                    setTimeout(function() {
+                                        location.reload();
+                                    }, 800);
+                                }
+                            });
+                        }, 300);
                         return;
-                    }
-
-                    if (isVideoUpload) {
-                        hidePersonalVideoUploadLoader();
                     }
 
                     if (dragZone && dragZone.length) {
@@ -7313,6 +7320,7 @@ success: function(response) {
 
                     if (!ress.status) {
                         if (isVideoUpload) {
+                            clearPersonalVideoProcessingPulse();
                             updatePersonalVideoUploadLoader('error', _pvuCurrentPercent, ress.message || 'Video upload failed.');
                             hidePersonalVideoUploadLoader(900);
                             showPersonalDocVideoToast(false, ress.message || 'Video upload failed.');
@@ -7323,6 +7331,9 @@ success: function(response) {
                     }
 
                     if (isVideoUpload) {
+                        clearPersonalVideoProcessingPulse();
+                        updatePersonalVideoUploadLoader('complete', 100, 'Video uploaded successfully!');
+                        hidePersonalVideoUploadLoader(700);
                         showPersonalDocVideoToast(true, ress.message || 'Video uploaded successfully.');
                     } else {
                         $('.custom-error-msg').html('<span class="alert alert-success">' + ress.message + '</span>');
@@ -7368,7 +7379,11 @@ success: function(response) {
                     var errorMessage = (xhr.responseJSON && xhr.responseJSON.message)
                         ? xhr.responseJSON.message
                         : 'Upload failed. Please try again.';
+                    if (status === 'timeout') {
+                        errorMessage = 'Upload timed out. Large videos can take several minutes — please keep this tab open and try again on a stable connection.';
+                    }
                     if (isVideoUpload) {
+                        clearPersonalVideoProcessingPulse();
                         updatePersonalVideoUploadLoader('error', _pvuCurrentPercent, errorMessage);
                         hidePersonalVideoUploadLoader(900);
                         showPersonalDocVideoToast(false, errorMessage);

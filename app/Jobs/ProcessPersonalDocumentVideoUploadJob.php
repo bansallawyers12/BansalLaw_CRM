@@ -14,7 +14,7 @@ class ProcessPersonalDocumentVideoUploadJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $timeout = 600;
+    public int $timeout = 1800;
 
     public int $tries = 2;
 
@@ -30,10 +30,14 @@ class ProcessPersonalDocumentVideoUploadJob implements ShouldQueue
         public string $originalFileName,
         public int $fileSize,
         public string $extension,
-    ) {}
+    ) {
+        $this->timeout = max(600, (int) config('crm.personal_video_upload.execution_time_seconds', 1800));
+    }
 
     public function handle(PersonalDocumentVideoUploadService $service): void
     {
+        PersonalDocumentVideoUploadService::extendPhpLimits();
+
         $service->updateStatus($this->token, 'processing', 'Processing video upload…');
 
         try {
