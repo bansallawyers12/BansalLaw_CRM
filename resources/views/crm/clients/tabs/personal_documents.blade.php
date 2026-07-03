@@ -33,37 +33,36 @@
                     <!-- Personal Documents Content -->
                     <div class="personal-documents-content" id="personal-documents-content">
                         <!-- Document Type Subtabs Container -->
-                        <div class="subtab-header-container">
-                            <nav class="subtabs2" style="display: flex; gap: 5px; flex-wrap: wrap; flex: 1;">
+                        <div class="subtab-header-container pd-folder-bar">
+                            <nav class="subtabs2 pd-folder-tabs">
                                 <?php foreach ($persDocCatList as $catVal): ?>
                                     <?php
                                     $id = $catVal->id;
                                     $isActive = $id == 1 ? 'active' : '';
                                     $isClientGenerated = $catVal->client_id !== null;
                                     ?>
-                                    <div style="display: inline-block; position: relative;" class="button-container">
-                                        <button class="subtab2-button <?= $isActive ?>" data-subtab2="<?= $id ?>">
+                                    <div class="button-container pd-folder-tab-wrap">
+                                        <button type="button" class="subtab2-button <?= $isActive ?>" data-subtab2="<?= $id ?>">
                                             <?= htmlspecialchars($catVal->title) ?>
                                         </button>
                                         <?php if ($isClientGenerated || $isSuperAdmin): ?>
-                                            <div class="action-buttons" style="display: none; position: absolute; top: 0; right: -8px;">
+                                            <div class="action-buttons pd-folder-tab-actions">
                                                 <?php if ($isClientGenerated): ?>
-                                                    <button class="btn btn-sm btn-warning update-personal-cat-title" data-id="<?= $id ?>" style="padding: 2px 0px 2px 6px;"><i class="fa fa-edit" aria-hidden="true"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-warning update-personal-cat-title" data-id="<?= $id ?>" title="Rename folder"><i class="fa fa-edit" aria-hidden="true"></i></button>
                                                 <?php endif; ?>
                                                 <?php if ($isSuperAdmin): ?>
-                                                    <button class="btn btn-sm btn-danger delete-personal-cat-title" data-id="<?= $id ?>" data-title="<?= htmlspecialchars($catVal->title) ?>" style="padding: 2px 0px 2px 6px;"><i class="fa fa-trash" aria-hidden="true"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-danger delete-personal-cat-title" data-id="<?= $id ?>" data-title="<?= htmlspecialchars($catVal->title) ?>" title="Delete folder"><i class="fa fa-trash" aria-hidden="true"></i></button>
                                                 <?php endif; ?>
                                             </div>
                                         <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
                             </nav>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <button type="button" class="btn add_personal_doc_cat-btn add_personal_doc_cat" data-type="personal" data-categoryid="">
+                            <div class="pd-header-actions">
+                                <button type="button" class="btn pd-btn pd-btn-light add_personal_doc_cat-btn add_personal_doc_cat" data-type="personal" data-categoryid="">
                                     <i class="fas fa-plus"></i> Add Folder
                                 </button>
-                                <!-- Add link to Not Used Documents -->
-                                <button class="btn btn-secondary client-nav-button" data-tab="notuseddocuments">
+                                <button type="button" class="btn pd-btn pd-btn-ghost pd-not-used-btn client-nav-button" data-tab="notuseddocuments">
                                     <i class="fas fa-folder-minus"></i> Not Used Documents
                                 </button>
                             </div>
@@ -80,13 +79,13 @@
 
                                 <div class="subtab2-pane <?= $isActive ?>" id="<?= $id ?>-subtab2">
                                     <div class="checklist-table-container">
-                                        <div class="subtab2-header" style="margin-left: 10px;">
+                                        <div class="subtab2-header pd-section-header">
                                             <h3><i class="fas fa-file-alt"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
-                                            <div style="display: flex; gap: 10px;">
-                                                <button type="button" class="btn add-checklist-btn add_education_doc" data-type="personal" data-categoryid="<?= $id ?>">
+                                            <div class="pd-section-actions">
+                                                <button type="button" class="btn pd-btn pd-btn-primary add-checklist-btn add_education_doc" data-type="personal" data-categoryid="<?= $id ?>">
                                                     <i class="fas fa-plus"></i> Add Checklist
                                                 </button>
-                                                <button type="button" class="btn btn-info bulk-upload-toggle-btn" data-categoryid="<?= $id ?>" data-categoryname="<?= htmlspecialchars($catVal->title) ?>">
+                                                <button type="button" class="btn pd-btn pd-btn-outline bulk-upload-toggle-btn" data-categoryid="<?= $id ?>" data-categoryname="<?= htmlspecialchars($catVal->title) ?>">
                                                     <i class="fas fa-upload"></i> Bulk Upload
                                                 </button>
                                             </div>

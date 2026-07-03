@@ -678,8 +678,8 @@ use App\Http\Controllers\Controller;
 		<div class="modal-content popUp">
 			<div class="modal-body text-center">
 				<button type="button" data-bs-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title text-center message col-v-5">Do you want to send this in related document Tab again?</h4>
-				<button type="submit" style="margin-top: 40px;" class="button btn btn-danger accept">Send</button>
+				<h4 class="modal-title text-center message col-v-5">Revert this document to its original folder?</h4>
+				<button type="submit" style="margin-top: 40px;" class="button btn btn-danger accept">Revert</button>
 				<button type="button" style="margin-top: 40px;" data-bs-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
 			</div>
 		</div>

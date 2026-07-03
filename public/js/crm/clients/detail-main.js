@@ -5238,48 +5238,10 @@ success: function(response) {
                         // Add document to "Not Used" tab dynamically
                         if(res.docInfo) {
                             var doc = res.docInfo;
-                            var previewUrl = doc.preview_url || (site_url + '/documents/preview/' + doc.id);
-                            
-                            // Build the row HTML matching the blade template structure
-                            var uploadedBy = res.Added_By || 'NA';
-                            var uploadedDate = doc.created_at ? formatClientDocDateTime(doc.created_at) : '';
-                            var uploadTitle = 'Uploaded by: ' + uploadedBy + (uploadedDate ? ' on ' + uploadedDate : '');
-                            var badgeClass = doc.doc_type === 'personal' ? 'primary' : 'success';
-                            var fileName = doc.file_name || 'document';
-                            var fileExt = doc.filetype || '';
-                            
-                            var trRow = '<tr class="drow" id="id_' + doc.id + '">' +
-                                '<td style="white-space: initial;">' +
-                                    '<span title="' + uploadTitle + '">' + (doc.checklist || 'N/A') + '</span>' +
-                                '</td>' +
-                                '<td style="white-space: initial;">' +
-                                    '<span class="badge badge-' + badgeClass + '">' + (doc.doc_type ? doc.doc_type.charAt(0).toUpperCase() + doc.doc_type.slice(1) : 'N/A') + '</span>' +
-                                '</td>' +
-                                '<td style="white-space: initial;">';
-                            
-                            if(fileName && fileName !== "") {
-                                trRow += '<div data-id="' + doc.id + '" data-name="' + fileName + '" class="doc-row" title="' + uploadTitle + '" ' +
-                                    'oncontextmenu="showNotUsedFileContextMenu(event, ' + doc.id + ', \'' + fileExt + '\', \'' + previewUrl + '\', \'' + doc.doc_type + '\', \'' + (doc.status || 'draft') + '\'); return false;">' +
-                                    '<a href="javascript:void(0);" onclick="previewFile(\'' + fileExt + '\',\'' + previewUrl + '\',\'preview-container-notuseddocumnetlist\')">' +
-                                        '<i class="fas fa-file-image"></i> <span>' + fileName + '.' + fileExt + '</span>' +
-                                    '</a>' +
-                                '</div>';
-                            } else {
-                                trRow += 'N/A';
-                            }
-                            
-                            trRow += '</td>' +
-                                '<td>' +
-                                    '<a class="download-file" data-document-id="' + doc.id + '" data-id="' + doc.id + '" data-filename="' + fileName + '.' + fileExt + '" href="#" style="display: none;"></a>' +
-                                    '<a data-id="' + doc.id + '" class="deletenote" data-doccategory="' + doc.doc_type + '" data-href="deletedocs" href="javascript:;" style="display: none;"></a>' +
-                                    '<a data-id="' + doc.id + '" class="backtodoc" data-doctype="' + doc.doc_type + '" data-href="backtodoc" href="javascript:;" style="display: none;"></a>' +
-                                '</td>' +
-                            '</tr>';
-
-                            // Append to Not Used documents list
-                            $('.notuseddocumnetlist').append(trRow);
-                            
-
+                            $('#notUsedEmptyState').hide();
+                            $('#notUsedTableWrap').show();
+                            $('.notuseddocumnetlist').append(buildNotUsedDocumentRowHtml(doc, res));
+                            incrementNotUsedStatChips(doc.doc_type);
                         }
 
                         // Update activity log without page reload
@@ -5327,7 +5289,192 @@ success: function(response) {
 
         var backto_doc_type = '';
 
-        $('.backtodoc').off('click').on('click', function(e) { 
+        function restorePersonalDocumentFromNotUsed(doc, res) {
+            if (!doc || !doc.id) {
+                return;
+            }
+
+            var categoryId = String(res.doc_category || doc.folder_name || '');
+            if (!categoryId) {
+                return;
+            }
+
+            var $listBody = $('.documnetlist_' + categoryId);
+            if (!$listBody.length || $listBody.find('#id_' + doc.id).length) {
+                return;
+            }
+
+            var uploadedBy = res.Added_By || 'NA';
+            var uploadedDate = doc.created_at ? formatClientDocDateTime(doc.created_at) : '';
+            var uploadTitle = 'Uploaded by: ' + uploadedBy + (uploadedDate ? ' on ' + uploadedDate : '');
+            var previewUrl = doc.preview_url || (site_url + '/documents/preview/' + doc.id);
+            var fileName = doc.file_name || 'document';
+            var fileExt = doc.filetype || '';
+            var displayName = fileName + (fileExt ? '.' + fileExt : '');
+            var dlFilename = doc.myfile_key || displayName;
+            var checklist = doc.checklist || 'N/A';
+            var docNameWithoutExt = fileName.replace(/\s+/g, '_').toLowerCase();
+
+            var trRow = '<tr class="drow" id="id_' + doc.id + '">' +
+                '<td style="white-space: initial;">' +
+                    '<div data-id="' + doc.id + '" data-personalchecklistname="' + checklist + '" class="personalchecklist-row" title="' + uploadTitle + '" style="display: flex; align-items: center; gap: 8px;">' +
+                        '<span style="flex: 1;">' + checklist + '</span>' +
+                    '</div>' +
+                '</td>' +
+                '<td style="white-space: initial;">' +
+                    '<div data-id="' + doc.id + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="' + uploadTitle + '" oncontextmenu="showFileContextMenu(event, ' + doc.id + ', \'' + fileExt + '\', \'' + previewUrl + '\', \'' + categoryId + '\', \'' + (doc.status || 'draft') + '\'); return false;">' +
+                        '<a href="javascript:void(0);" onclick="previewFile(\'' + fileExt + '\', \'' + previewUrl + '\', \'preview-container-' + categoryId + '\')">' +
+                            '<i class="fas ' + documentFileIconClass(fileExt) + '"></i> <span>' + displayName + '</span>' +
+                        '</a>' +
+                    '</div>' +
+                '</td>' +
+                '<td>' +
+                    '<a class="renamechecklist" data-id="' + doc.id + '" href="javascript:;" style="display: none;"></a>' +
+                    '<a class="renamedoc" data-id="' + doc.id + '" href="javascript:;" style="display: none;"></a>' +
+                    '<a class="download-file" data-document-id="' + doc.id + '" data-id="' + doc.id + '" data-filename="' + dlFilename + '" href="#" style="display: none;"></a>' +
+                    '<a class="notuseddoc" data-id="' + doc.id + '" data-doctype="personal" data-doccategory="' + categoryId + '" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>' +
+                '</td>' +
+            '</tr>';
+
+            $listBody.append(trRow);
+
+            var $grid = $('.griddata_' + categoryId);
+            if ($grid.length && !$grid.find('#gid_' + doc.id).length) {
+                var gridHtml = '<div class="grid_list" id="gid_' + doc.id + '">' +
+                    '<div class="grid_col">' +
+                        '<div class="grid_icon"><i class="fas ' + documentFileIconClass(fileExt) + '"></i></div>' +
+                        '<div class="grid_content">' +
+                            '<span id="grid_' + doc.id + '" class="gridfilename">' + fileName + '</span>' +
+                            '<div class="dropdown d-inline dropdown_ellipsis_icon">' +
+                                '<a class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>' +
+                                '<div class="dropdown-menu">' +
+                                    '<a href="javascript:void(0);" class="dropdown-item" onclick="previewFile(\'' + fileExt + '\', \'' + previewUrl + '\', \'preview-container-' + categoryId + '\')">Preview</a>' +
+                                    '<a href="#" class="dropdown-item download-file" data-document-id="' + doc.id + '" data-filename="' + dlFilename + '">Download</a>' +
+                                    '<a data-id="' + doc.id + '" class="dropdown-item notuseddoc" data-doctype="personal" data-doccategory="' + categoryId + '" data-href="notuseddoc" href="javascript:;">Not Used</a>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+                $grid.find('.clearfix').first().before(gridHtml);
+            }
+
+            if (typeof activatePersonalDocumentFolder === 'function') {
+                activatePersonalDocumentFolder(categoryId);
+            }
+        }
+
+        function notUsedTypeLabel(docType) {
+            if (docType === 'personal') return 'Personal';
+            if (docType === 'nomination') return 'Nomination';
+            return 'Matter';
+        }
+
+        function notUsedTypeClass(docType) {
+            if (docType === 'personal') return 'personal';
+            if (docType === 'nomination') return 'nomination';
+            return 'matter';
+        }
+
+        function notUsedFolderLabel(doc, res) {
+            if (doc.doc_type !== 'personal') {
+                return '—';
+            }
+            var categoryId = String(res.doc_category || doc.folder_name || '');
+            var $btn = $('#personaldocuments-tab .subtab2-button[data-subtab2="' + categoryId + '"]');
+            return $btn.length ? $btn.text().trim() : 'Personal folder';
+        }
+
+        function incrementNotUsedStatChips(docType) {
+            var $total = $('#notuseddocuments-tab .not-used-stat-total');
+            if ($total.length) {
+                var match = ($total.text().match(/(\d+)/) || [0, 0]);
+                $total.html('<i class="fas fa-layer-group"></i> ' + (parseInt(match[1], 10) + 1) + ' total');
+            }
+            if (docType === 'personal') {
+                var $personal = $('#notuseddocuments-tab .not-used-stat-personal');
+                if ($personal.length) {
+                    var pMatch = ($personal.text().match(/(\d+)/) || [0, 0]);
+                    $personal.html('<i class="fas fa-user"></i> ' + (parseInt(pMatch[1], 10) + 1) + ' personal');
+                }
+            } else {
+                var $matter = $('#notuseddocuments-tab .not-used-stat-matter');
+                if ($matter.length) {
+                    var mMatch = ($matter.text().match(/(\d+)/) || [0, 0]);
+                    $matter.html('<i class="fas fa-briefcase"></i> ' + (parseInt(mMatch[1], 10) + 1) + ' matter');
+                }
+            }
+        }
+
+        function buildNotUsedDocumentActionsHtml(doc) {
+            var folderId = doc.folder_name || '';
+            var fileExt = doc.filetype || '';
+            var fileName = doc.file_name || '';
+            var previewUrl = doc.preview_url || (site_url + '/documents/preview/' + doc.id);
+            var dlName = doc.myfile_key || (fileName + (fileExt ? '.' + fileExt : ''));
+            var previewBtn = fileName
+                ? '<button type="button" class="btn-not-used-action btn-not-used-preview" title="Preview" onclick="previewFile(\'' + fileExt + '\', \'' + previewUrl + '\', \'preview-container-notuseddocumnetlist\')"><i class="fas fa-eye"></i></button>'
+                : '';
+            var downloadBtn = doc.myfile
+                ? '<button type="button" class="btn-not-used-action btn-not-used-download download-file" data-document-id="' + doc.id + '" data-id="' + doc.id + '" data-filename="' + dlName + '" title="Download"><i class="fas fa-download"></i></button>'
+                : '';
+
+            return '<a class="download-file" data-document-id="' + doc.id + '" data-id="' + doc.id + '" data-filename="' + dlName + '" href="#" style="display: none;"></a>' +
+                '<a data-id="' + doc.id + '" class="deletenote" data-doccategory="' + doc.doc_type + '" data-href="deletedocs" href="javascript:;" style="display: none;"></a>' +
+                '<a data-id="' + doc.id + '" class="backtodoc" data-doctype="' + doc.doc_type + '" data-doccategory="' + folderId + '" data-href="backtodoc" href="javascript:;" style="display: none;"></a>' +
+                '<div class="not-used-actions">' +
+                    previewBtn +
+                    downloadBtn +
+                    '<button type="button" class="btn-not-used-action btn-not-used-revert backtodoc" data-id="' + doc.id + '" data-doctype="' + doc.doc_type + '" data-doccategory="' + folderId + '" title="Revert to original folder">' +
+                        '<i class="fas fa-undo"></i> Revert' +
+                    '</button>' +
+                    '<button type="button" class="btn-not-used-action btn-not-used-delete" title="Delete permanently" onclick="$(\'.deletenote[data-id=\\\'' + doc.id + '\\\']\').trigger(\'click\');">' +
+                        '<i class="fas fa-trash-alt"></i>' +
+                    '</button>' +
+                '</div>';
+        }
+
+        function buildNotUsedDocumentRowHtml(doc, res) {
+            var previewUrl = doc.preview_url || (site_url + '/documents/preview/' + doc.id);
+            var uploadedBy = res.Added_By || 'NA';
+            var uploadedDate = doc.created_at ? formatClientDocDateTime(doc.created_at) : '';
+            var uploadTitle = 'Uploaded by: ' + uploadedBy + (uploadedDate ? ' on ' + uploadedDate : '');
+            var fileName = doc.file_name || '';
+            var fileExt = doc.filetype || '';
+            var displayName = fileName + (fileExt ? '.' + fileExt : '');
+            var typeLabel = notUsedTypeLabel(doc.doc_type);
+            var typeClass = notUsedTypeClass(doc.doc_type);
+            var folderLabel = notUsedFolderLabel(doc, res);
+            var searchBlob = [
+                doc.checklist || '',
+                fileName,
+                fileExt,
+                typeLabel,
+                folderLabel
+            ].join(' ').toLowerCase();
+
+            var fileCell = '<span class="text-muted">N/A</span>';
+            if (fileName) {
+                fileCell = '<div data-id="' + doc.id + '" data-name="' + fileName + '" class="doc-row not-used-file-link" title="' + uploadTitle + '" ' +
+                    'oncontextmenu="showNotUsedFileContextMenu(event, ' + doc.id + ', \'' + fileExt + '\', \'' + previewUrl + '\', \'' + doc.doc_type + '\', \'' + (doc.status || 'draft') + '\'); return false;">' +
+                    '<a href="javascript:void(0);" onclick="previewFile(\'' + fileExt + '\', \'' + previewUrl + '\', \'preview-container-notuseddocumnetlist\')">' +
+                        '<i class="fas ' + documentFileIconClass(fileExt) + '"></i> <span>' + displayName + '</span>' +
+                    '</a></div>';
+            }
+
+            return '<tr class="drow not-used-row" id="id_' + doc.id + '" data-search="' + searchBlob.replace(/"/g, '&quot;') + '">' +
+                '<td><div class="not-used-checklist" title="' + uploadTitle + '">' +
+                    '<span class="not-used-checklist-name">' + (doc.checklist || 'N/A') + '</span>' +
+                    '<span class="not-used-meta">' + uploadTitle + '</span>' +
+                '</div></td>' +
+                '<td><span class="not-used-type-badge not-used-type-' + typeClass + '">' + typeLabel + '</span></td>' +
+                '<td><span class="not-used-folder-label">' + folderLabel + '</span></td>' +
+                '<td>' + fileCell + '</td>' +
+                '<td class="not-used-actions-col">' + buildNotUsedDocumentActionsHtml(doc) + '</td>' +
+            '</tr>';
+        }
+
+        $(document).on('click', '.backtodoc', function(e) {
 
             e.preventDefault();
 
@@ -5372,15 +5519,28 @@ success: function(response) {
                         // Remove document from "Not Used" tab
                         $('.notuseddocumnetlist #id_'+res.doc_id).remove();
 
+                        if ($('.notuseddocumnetlist .not-used-row').length === 0) {
+                            $('#notUsedTableWrap').hide();
+                            $('#notUsedEmptyState').show();
+                            $('#notUsedDocsSearch').val('');
+                        }
+
+                        if (res.doc_type === 'personal' && res.docInfo) {
+                            restorePersonalDocumentFromNotUsed(res.docInfo, res);
+                        }
+
                         // Update activity log without page reload
                         getallactivities();
                         
                         // Show success message with info
-                        var docTypeLabel = res.doc_type === 'personal' ? 'Personal Documents' : 'Matter Documents';
+                        var folderLabel = res.doc_category_title ? (' (' + res.doc_category_title + ')') : '';
+                        var docTypeLabel = res.doc_type === 'personal'
+                            ? 'Personal Documents' + folderLabel
+                            : (res.doc_type === 'nomination' ? 'Nomination Documents' : 'Matter Documents');
                         if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
-                            iziToast.success({ message: 'Document moved back to ' + docTypeLabel + ' tab', position: 'topRight' });
+                            iziToast.success({ message: 'Document reverted to ' + docTypeLabel, position: 'topRight' });
                         } else {
-                            alert('Document moved back to ' + docTypeLabel + ' tab');
+                            alert('Document reverted to ' + docTypeLabel);
                         }
                         
 

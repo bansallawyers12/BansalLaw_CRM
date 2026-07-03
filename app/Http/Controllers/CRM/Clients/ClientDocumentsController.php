@@ -2199,6 +2199,7 @@ class ClientDocumentsController extends Controller
             }
             $upd = DB::table('documents')->where('id', $doc_id)->update(array('not_used_doc' => null));
             if($upd){
+                $docInfo = \App\Models\Document::with(['staff'])->where('id', $doc_id)->first();
                 $matterRef = $this->getMatterReference($docInfo->client_id);
                 $subject = !empty($matterRef) 
                     ? "restored {$doc_type} Document - {$matterRef}"
@@ -2228,6 +2229,14 @@ class ClientDocumentsController extends Controller
                 $response['docInfo'] = $docInfo;
                 $response['doc_type'] = $doc_type;
                 $response['doc_id'] = $doc_id;
+                if (isset($docInfo->doc_type) && $docInfo->doc_type === 'personal') {
+                    $response['doc_category'] = $docInfo->folder_name;
+                    $folder = \App\Models\PersonalDocumentType::find($docInfo->folder_name);
+                    $response['doc_category_title'] = $folder->title ?? '';
+                } else {
+                    $response['doc_category'] = '';
+                    $response['doc_category_title'] = '';
+                }
                 $response['status'] = 	true;
                 $response['data']	=	$doc_type.' document moved to '.$doc_type.' document tab';
             } else {
