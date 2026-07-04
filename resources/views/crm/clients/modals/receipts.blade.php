@@ -157,7 +157,7 @@
 
 {{-- 1. Create Receipt Modal (Multi-Type: Client Funds Ledger, Invoice, Office Receipt) --}}
 <div class="modal fade custom_modal" id="createreceiptmodal" tabindex="-1" role="dialog" aria-labelledby="receiptModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-xl" role="document">
+	<div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
 		<div class="modal-content">
 		  	<div class="modal-header">
 				<h5 class="modal-title">Create Receipt</h5>
@@ -166,75 +166,82 @@
 				</button>
 		    </div>
 
-		  	<div class="modal-body">
+		  	<div class="modal-body receipt-modal-body">
 				<!-- Radio Button Selection -->
-				<div class="form-group">
-			  		<label><strong>Select Entry Type:</strong></label><br>
-			  		<label class="me-3">
+				<div class="form-group receipt-type-selector">
+			  		<label class="receipt-type-selector__label">Select entry type</label>
+			  		<div class="receipt-type-selector__options">
+			  		<label class="receipt-type-option">
 						<input type="radio" name="receipt_type" value="client_receipt" checked>
-						<i class="fas fa-university text-success"></i> Trust Account Entry
+						<span class="receipt-type-option__pill"><i class="fas fa-university"></i> Trust Account Entry</span>
 			  		</label>
 
-			  		<label class="me-3">
+			  		<label class="receipt-type-option">
 						<input type="radio" name="receipt_type" value="invoice_receipt">
-						<i class="fas fa-file-invoice-dollar text-info"></i> Tax Invoice
+						<span class="receipt-type-option__pill"><i class="fas fa-file-invoice-dollar"></i> Tax Invoice</span>
 			  		</label>
 
-			  		<label class="me-3">
+			  		<label class="receipt-type-option">
 						<input type="radio" name="receipt_type" value="office_receipt">
-						<i class="fas fa-hand-holding-usd text-primary"></i> Office Receipt
+						<span class="receipt-type-option__pill"><i class="fas fa-hand-holding-usd"></i> Office Receipt</span>
 			  		</label>
+			  		</div>
 				</div>
 
 				<!-- Trust Account Entry Form (LSBC Uniform Law Compliant) -->
-				<form class="form-type" method="post" action="{{URL::to('/clients/saveaccountreport')}}" name="client_receipt_form" autocomplete="off" id="client_receipt_form" enctype="multipart/form-data">
+				<form class="form-type trust-entry-form" method="post" action="{{URL::to('/clients/saveaccountreport')}}" name="client_receipt_form" autocomplete="off" id="client_receipt_form" enctype="multipart/form-data">
 					@csrf
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 					<input type="hidden" name="loggedin_staffid" value="{{@Auth::user()->id}}">
 					<input type="hidden" name="receipt_type" value="1">
                     <input type="hidden" name="client_ledger_balance_amount" id="client_ledger_balance_amount" value="">
                     <input type="hidden" name="client_matter_id" id="client_matter_id_ledger" value="">
-					<div class="row">
-						<div class="col-3 col-md-3 col-lg-3">
-							<div class="form-group">
-								<label for="client">Client <span class="span_req">*</span></label>
-								<input type="text" name="client" class="form-control" data-valid="required" autocomplete="off" placeholder="" value="{{ $fetchedData->first_name.' '.$fetchedData->last_name }}">
+					<div class="row g-3">
+						<div class="col-12 col-md-6 col-lg-4">
+							<div class="form-group trust-entry-client-field">
+								<label for="trust-entry-client-name">Client <span class="span_req">*</span></label>
+								<input type="text" id="trust-entry-client-name" name="client" class="form-control trust-entry-control" data-valid="required" autocomplete="off" placeholder="" value="{{ $fetchedData->first_name.' '.$fetchedData->last_name }}">
 								<span class="custom-error title_error" role="alert">
 									<strong></strong>
 								</span>
 							</div>
 						</div>
 
-                       	<div class="col-12 col-md-12 col-lg-12">
-							<div class="form-group">
-                                <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
+                       	<div class="col-12">
+							<div class="form-group trust-entry-lines-panel">
+                                <div class="trust-entry-lines-panel__header">
+                                    <h6 class="trust-entry-lines-panel__title"><i class="fas fa-list-ul"></i> Transaction lines</h6>
+                                    <p class="trust-entry-lines-panel__hint">Add one or more trust receipts, payments, transfers, or refunds. Scroll horizontally on smaller screens to see all columns.</p>
+                                </div>
+                                <div class="trust-entry-table-scroll">
+                                <table class="table trust-entry-lines-table text_wrap vertical_align">
                                     <thead>
                                         <tr>
-                                            <th style="width:10%;color: #34395e;" title="Date trust money was received or paid">Trans. Date</th>
-                                            <th style="width:10%;color: #34395e;" title="Date entry was recorded in the ledger">Entry Date</th>
-                                            <th style="width:12%;color: #34395e;" title="LSBC Uniform Law trust transaction type">Transaction Type</th>
-                                            <th style="width:11%;color: #34395e;" title="Required when type is Transfer to Office Account">Invoice Ref.</th>
-                                            <th style="width:10%;color: #34395e;" title="How trust money was received or paid">Payment Method</th>
-                                            <th style="width:10%;color: #34395e;" title="Payer (deposit) or payee (payment)">Payer / Payee</th>
-                                            <th style="width:9%;color: #34395e;" title="Bank deposit ref or cheque number">Bank / Cheque ref</th>
-                                            <th style="width:9%;color: #34395e;" title="Banking date (deposit) or EFT BSB">Date / BSB</th>
-                                            <th style="width:9%;color: #34395e;" title="EFT account name and number">EFT details</th>
-                                            <th style="width:16%;color: #34395e;" title="Particulars of the trust transaction">Particulars / Description</th>
-                                            <th style="width:10%;color: #34395e;" title="Trust money received into trust account">Trust Receipts (+)</th>
-											<th style="width:10%;color: #34395e;" title="Trust money paid from trust account">Trust Payments (−)</th>
-                                            <th style="width:1%;color: #34395e;"></th>
+                                            <th class="trust-entry-col-date" title="Date trust money was received or paid">Trans. Date</th>
+                                            <th class="trust-entry-col-date" title="Date entry was recorded in the ledger">Entry Date</th>
+                                            <th class="trust-entry-col-type" title="LSBC Uniform Law trust transaction type">Transaction Type</th>
+                                            <th class="trust-entry-col-invoice" title="Required when type is Transfer to Office Account">Invoice Ref.</th>
+                                            <th class="trust-entry-col-method" title="How trust money was received or paid">Payment Method</th>
+                                            <th class="trust-entry-col-party" title="Payer (deposit) or payee (payment)">Payer / Payee</th>
+                                            <th class="trust-entry-col-bank" title="Bank deposit ref or cheque number">Bank / Cheque ref</th>
+                                            <th class="trust-entry-col-bsb" title="Banking date (deposit) or EFT BSB">Date / BSB</th>
+                                            <th class="trust-entry-col-eft" title="EFT account name and number">EFT details</th>
+                                            <th class="trust-entry-col-desc" title="Particulars of the trust transaction">Particulars / Description</th>
+                                            <th class="trust-entry-amount-col" title="Trust money received into trust account">Trust Receipts (+)</th>
+											<th class="trust-entry-amount-col" title="Trust money paid from trust account">Trust Payments (−)</th>
+                                            <th class="trust-entry-action-col"></th>
                                         </tr>
                                     </thead>
                                     <tbody class="productitem">
                                         <tr class="clonedrow">
-                                            <td>
-                                                <input data-valid="required"  class="form-control report_date_fields" name="trans_date[]" type="text" value="" />
+                                            <td data-label="Trans. Date">
+                                                <input data-valid="required" class="form-control trust-entry-control report_date_fields" name="trans_date[]" type="text" value="" />
                                             </td>
-                                            <td>
-                                                <input data-valid="required" class="form-control report_entry_date_fields" name="entry_date[]" type="text" value="" />
+                                            <td data-label="Entry Date">
+                                                <input data-valid="required" class="form-control trust-entry-control report_entry_date_fields" name="entry_date[]" type="text" value="" />
                                             </td>
-                                            <td>
-                                                <select class="form-control client_fund_ledger_type" name="client_fund_ledger_type[]" data-valid="required">
+                                            <td data-label="Transaction Type">
+                                                <select class="form-control trust-entry-control client_fund_ledger_type" name="client_fund_ledger_type[]" data-valid="required">
                                                     <option value="">Select</option>
                                                     <option value="Deposit" title="Money received into trust account on behalf of client">Trust Receipt</option>
                                                     <option value="Fee Transfer" title="Transfer from trust to office account for professional fees (requires invoice)">Transfer to Office Account</option>
@@ -242,13 +249,14 @@
                                                     <option value="Refund" title="Money returned to client from trust account">Refund to Client</option>
                                                 </select>
                                             </td>
-                                            <td class="align-middle text-center">
-                                                <span class="ledger-invoice-placeholder text-muted">—</span>
-                                                <select class="form-control invoice_no_cls" name="invoice_no[]" style="display:none;">
+                                            <td class="trust-entry-invoice-cell" data-label="Invoice Ref.">
+                                                <span class="ledger-invoice-placeholder trust-entry-placeholder">—</span>
+                                                <select class="form-control trust-entry-control invoice_no_cls" name="invoice_no[]" style="display:none;">
                                                 </select>
                                             </td>
-                                            <td>
-                                                <select class="form-control ledger-payment-method" name="payment_method[]">
+                                            <td data-label="Payment Method">
+                                                <div class="trust-entry-cell-stack">
+                                                <select class="form-control trust-entry-control ledger-payment-method" name="payment_method[]">
                                                     <option value="">—</option>
                                                     <option value="Cash">Cash</option>
                                                     <option value="Bank transfer">Bank Transfer / EFT</option>
@@ -256,73 +264,90 @@
                                                     <option value="Cheque">Cheque</option>
                                                     <option value="Refund">Refund</option>
                                                 </select>
-                                                <div class="ledger-eftpos-surcharge-block" style="display:none;margin-top:6px;">
-                                                    <label class="text-muted" style="font-size:11px;margin:0;display:block;">Card surcharge ($)</label>
-                                                    <input type="text" class="form-control ledger-eftpos-surcharge-input" name="eftpos_surcharge_amount[]" inputmode="decimal" autocomplete="off" placeholder="0.00" style="font-size:12px;padding:4px 8px;" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="">
+                                                <div class="ledger-eftpos-surcharge-block" style="display:none;">
+                                                    <label class="text-muted trust-entry-sub-label">Card surcharge ($)</label>
+                                                    <input type="text" class="form-control trust-entry-control ledger-eftpos-surcharge-input" name="eftpos_surcharge_amount[]" inputmode="decimal" autocomplete="off" placeholder="0.00" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="">
+                                                </div>
                                                 </div>
                                             </td>
-                                            <td class="ledger-payer-cell">
-                                                <input class="form-control ledger-payer-name" name="payer_name[]" type="text" placeholder="Payer name" style="font-size:12px;" />
-                                                <input class="form-control ledger-payee-name mt-1" name="payee_name[]" type="text" placeholder="Payee name" style="font-size:12px;display:none;" />
+                                            <td class="ledger-payer-cell" data-label="Payer / Payee">
+                                                <div class="trust-entry-cell-stack">
+                                                <input class="form-control trust-entry-control ledger-payer-name" name="payer_name[]" type="text" placeholder="Payer name" />
+                                                <input class="form-control trust-entry-control ledger-payee-name" name="payee_name[]" type="text" placeholder="Payee name" style="display:none;" />
+                                                </div>
                                             </td>
-                                            <td class="ledger-bankref-cell">
-                                                <input class="form-control ledger-bank-ref" name="bank_deposit_reference[]" type="text" placeholder="Bank ref / cheque #" style="font-size:12px;" />
-                                                <input class="form-control ledger-cheque-no mt-1" name="cheque_number[]" type="text" placeholder="Cheque no." style="font-size:12px;display:none;" />
+                                            <td class="ledger-bankref-cell" data-label="Bank / Cheque ref">
+                                                <div class="trust-entry-cell-stack">
+                                                <input class="form-control trust-entry-control ledger-bank-ref" name="bank_deposit_reference[]" type="text" placeholder="Bank ref / cheque #" />
+                                                <input class="form-control trust-entry-control ledger-cheque-no" name="cheque_number[]" type="text" placeholder="Cheque no." style="display:none;" />
+                                                </div>
                                             </td>
-                                            <td class="ledger-banking-cell">
-                                                <input class="form-control ledger-banking-date report_date_fields" name="banking_date[]" type="text" placeholder="Banking date" style="font-size:12px;" />
-                                                <input class="form-control ledger-eft-bsb mt-1" name="eft_bsb[]" type="text" placeholder="BSB" style="font-size:12px;display:none;" maxlength="16" />
+                                            <td class="ledger-banking-cell" data-label="Date / BSB">
+                                                <div class="trust-entry-cell-stack">
+                                                <input class="form-control trust-entry-control ledger-banking-date report_date_fields" name="banking_date[]" type="text" placeholder="Banking date" />
+                                                <input class="form-control trust-entry-control ledger-eft-bsb" name="eft_bsb[]" type="text" placeholder="BSB" style="display:none;" maxlength="16" />
+                                                </div>
                                             </td>
-                                            <td class="ledger-eft-cell">
-                                                <input class="form-control ledger-eft-acct-name" name="eft_account_name[]" type="text" placeholder="EFT account name" style="font-size:12px;display:none;" />
-                                                <input class="form-control ledger-eft-acct-no mt-1" name="eft_account_number[]" type="text" placeholder="Account no." style="font-size:12px;display:none;" />
+                                            <td class="ledger-eft-cell" data-label="EFT details">
+                                                <div class="trust-entry-cell-stack">
+                                                <input class="form-control trust-entry-control ledger-eft-acct-name" name="eft_account_name[]" type="text" placeholder="EFT account name" style="display:none;" />
+                                                <input class="form-control trust-entry-control ledger-eft-acct-no" name="eft_account_number[]" type="text" placeholder="Account no." style="display:none;" />
+                                                </div>
                                             </td>
-                                            <td>
-                                                <input data-valid="required" class="form-control" name="description[]" type="text" value="" />
-                                            </td>
-
-                                            <td>
-                                                <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
-                                                <input data-valid="required" style="display: inline-block;" class="form-control deposit_amount_per_row" name="deposit_amount[]" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="" readonly/>
-                                            </td>
-
-											<td>
-                                                <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
-                                                <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_per_row" name="withdraw_amount[]" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="" readonly/>
+                                            <td data-label="Particulars">
+                                                <input data-valid="required" class="form-control trust-entry-control" name="description[]" type="text" value="" />
                                             </td>
 
-                                            <td>
-                                                <a class="removeitems" href="javascript:;"><i class="fa fa-times"></i></a>
+                                            <td class="trust-entry-amount-col" data-label="Trust Receipts (+)">
+                                                <div class="trust-currency-field">
+                                                <span class="currencyinput">$</span>
+                                                <input data-valid="required" class="form-control trust-entry-control deposit_amount_per_row" name="deposit_amount[]" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="" readonly/>
+                                                </div>
+                                            </td>
+
+											<td class="trust-entry-amount-col" data-label="Trust Payments (−)">
+                                                <div class="trust-currency-field">
+                                                <span class="currencyinput">$</span>
+                                                <input data-valid="required" class="form-control trust-entry-control withdraw_amount_per_row" name="withdraw_amount[]" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="" readonly/>
+                                                </div>
+                                            </td>
+
+                                            <td class="trust-entry-action-col">
+                                                <button type="button" class="btn btn-outline-danger trust-entry-remove-btn removeitems" title="Remove line"><i class="fa fa-times"></i></button>
                                             </td>
                                         </tr>
                                     </tbody>
-                                </table>
-
-                                <table border="1" class="table text_wrap table-striped table-hover table-md vertical_align">
-                                    <tbody>
+                                    <tfoot class="trust-entry-tfoot">
                                         <tr>
-                                            <td colspan="10" style="text-align:right;color: #34395e;">Totals</td>
-                                            <td>
-                                                <span class="total_deposit_amount_all_rows" style="color: #34395e;"></span>
+                                            <td colspan="10" class="trust-entry-totals-label">Totals</td>
+                                            <td class="trust-entry-amount-col trust-entry-totals-deposit">
+                                                <span class="total_deposit_amount_all_rows">$0.00</span>
                                             </td>
-											<td colspan="2">
-                                                <span class="total_withdraw_amount_all_rows" style="color: #34395e;"></span>
+                                            <td class="trust-entry-amount-col trust-entry-totals-withdraw">
+                                                <span class="total_withdraw_amount_all_rows">$0.00</span>
                                             </td>
+                                            <td class="trust-entry-action-col"></td>
                                         </tr>
-                                    </tbody>
+                                    </tfoot>
                                 </table>
+                                </div>
+                                <div class="trust-entry-totals-mobile" aria-hidden="true">
+                                    <span class="trust-entry-totals-label">Totals</span>
+                                    <span class="trust-entry-totals-deposit"><span class="total_deposit_amount_all_rows">$0.00</span></span>
+                                    <span class="trust-entry-totals-withdraw"><span class="total_withdraw_amount_all_rows">$0.00</span></span>
+                                </div>
 
                                 @if($__trustWithdrawalAuthorityTypes->isNotEmpty())
-                                <div class="mt-2 w-100" id="ledger-rule42-block" style="display: none;">
-                                    <div class="card border-warning mb-2">
-                                        <div class="card-header py-2 bg-warning bg-opacity-10">
-                                            <strong>Rule 42 — withdrawal authority</strong>
+                                <div class="mt-3 w-100 trust-rule42-panel" id="ledger-rule42-block" style="display: none;">
+                                    <div class="card border-warning mb-0">
+                                        <div class="card-header py-2 trust-rule42-panel__header">
+                                            <strong><i class="fas fa-gavel"></i> Rule 42 — withdrawal authority</strong>
                                             <span class="text-muted small ms-1">(required for Fee Transfer lines)</span>
                                         </div>
-                                        <div class="card-body py-2">
+                                        <div class="card-body py-3">
                                             <div class="row g-2">
                                                 <div class="col-md-4">
-                                                    <label class="small mb-0">Authority type <span class="text-danger">*</span></label>
+                                                    <label class="small mb-1">Authority type <span class="text-danger">*</span></label>
                                                     <select name="trust_withdrawal_authority_type_id" class="form-select form-select-sm">
                                                         <option value="">— Select —</option>
                                                         @foreach($__trustWithdrawalAuthorityTypes as $t)
@@ -331,11 +356,11 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-md-3">
-                                                    <label class="small mb-0">Date notice given</label>
+                                                    <label class="small mb-1">Date notice given</label>
                                                     <input type="date" name="trust_notice_given_date" class="form-control form-control-sm" />
                                                 </div>
                                                 <div class="col-md-5">
-                                                    <label class="small mb-0">Notes / clause / reference</label>
+                                                    <label class="small mb-1">Notes / clause / reference</label>
                                                     <input type="text" name="trust_authority_notes" class="form-control form-control-sm" maxlength="5000" placeholder="Extra detail if transferring without invoice" />
                                                 </div>
                                                 <div class="col-12">
@@ -343,7 +368,7 @@
                                                         <input type="checkbox" class="form-check-input" name="trust_rule42_supervisor_override" id="trust_rule42_supervisor_override" value="1">
                                                         <label class="form-check-label small" for="trust_rule42_supervisor_override">Supervisor override (draft invoice, date, or voided invoice)</label>
                                                     </div>
-                                                    <label class="small mb-0">Override reason (min 10 characters if override checked)</label>
+                                                    <label class="small mb-1">Override reason (min 10 characters if override checked)</label>
                                                     <textarea name="trust_rule42_override_reason" class="form-control form-control-sm" rows="2" maxlength="5000"></textarea>
                                                 </div>
                                             </div>
@@ -354,31 +379,26 @@
                             </div>
 						</div>
 
-                        <div class="col-3 col-md-3 col-lg-3">
-                            <a href="javascript:;" class="openproductrinfo"><i class="fa fa-plus"></i> Add New Line</a>
-                        </div>
+                        <div class="col-12 trust-entry-form-footer">
+                            <a href="javascript:;" class="btn btn-sm btn-outline-primary trust-entry-add-line openproductrinfo"><i class="fa fa-plus"></i> Add New Line</a>
 
-						<div class="col-9 col-md-9 col-lg-9 text-right" style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
-
-                            <div class="upload_client_receipt_document" style="display:inline-block;">
+                            <div class="trust-entry-form-footer__actions">
+                            <div class="upload_client_receipt_document trust-entry-upload">
                                 <input type="hidden" name="type" value="client">
                                 <input type="hidden" name="doctype" value="client_receipt">
                                 
-                                <!-- NEW: Drag and Drop Zone -->
                                 <div class="ledger-drag-drop-zone" id="ledgerDragDropZone">
                                     <div class="drag-zone-inner">
                                         <i class="fas fa-cloud-upload-alt"></i>
                                         <div class="drag-zone-content">
                                             <p class="drag-zone-text">Drag files here or <strong>click to browse</strong></p>
-                                            <small class="drag-zone-formats">Accepted: PDF, JPG, PNG, DOC, DOCX (Multiple files allowed)</small>
+                                            <small class="drag-zone-formats">PDF, JPG, PNG, DOC, DOCX (multiple files)</small>
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <!-- Keep existing file input (hidden, used as fallback) -->
                                 <input class="docclientreceiptupload d-none" type="file" name="document_upload[]" multiple style="display: none;">
                                 
-                                <!-- File selection display (shown after files are selected) -->
                                 <div id="ledger-selected-files-display" class="ledger-selected-files-display" style="display: none;">
                                     <div id="ledger-files-list" class="files-list"></div>
                                     <button type="button" class="btn btn-sm btn-link text-danger remove-all-files" title="Remove all files">
@@ -386,12 +406,12 @@
                                     </button>
                                 </div>
                                 
-                                <!-- Keep existing file-selection-hint for compatibility -->
-                                <span class="file-selection-hint" style="margin-left: 10px; color: #34395e;"></span>
+                                <span class="file-selection-hint"></span>
                             </div>
-							<button onclick="customValidate('client_receipt_form')" type="button" class="btn btn-primary" style="margin:0px !important;">Save Entry</button>
+							<button onclick="customValidate('client_receipt_form')" type="button" class="btn btn-primary trust-entry-save-btn">Save Entry</button>
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-						</div>
+                            </div>
+                        </div>
                     </div>
 				</form>
 

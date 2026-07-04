@@ -94,8 +94,8 @@
                     <!-- Matter Documents content -->
                     <div class="visa-documents-content" id="visa-documents-content">
                         <!-- Matter document type subtabs container -->
-                        <div class="subtab-header-container">
-                            <nav class="subtabs6" style="display: flex; gap: 5px; flex-wrap: wrap; flex: 1;">
+                        <div class="subtab-header-container md-folder-bar">
+                            <nav class="subtabs6 md-folder-tabs">
                                 <?php foreach ($visaDocCatList as $catIdx => $catVal): ?>
                                     <?php
                                     $id = $catVal->id;
@@ -103,24 +103,23 @@
                                     $folderName = $id;
                                     $isClientGenerated = $catVal->client_matter_id !== null;
                                     ?>
-                                    <div style="display: inline-block; position: relative;" class="button-container">
-                                        <button class="subtab6-button <?= $isActive ?>" data-subtab6="<?= $id ?>">
+                                    <div class="button-container md-folder-tab-wrap">
+                                        <button type="button" class="subtab6-button <?= $isActive ?>" data-subtab6="<?= $id ?>">
                                             <?= htmlspecialchars($catVal->title) ?>
                                         </button>
                                         <?php if ($isClientGenerated): ?>
-                                            <div class="action-buttons" style="display: none; position: absolute; top: 0; right: -8px;">
-                                                <button class="btn btn-sm btn-warning update-visa-cat-title" data-id="<?= $id ?>" style="padding: 2px 0px 2px 6px;"><i class="fa fa-edit" aria-hidden="true"></i></button>
+                                            <div class="action-buttons md-folder-tab-actions">
+                                                <button type="button" class="btn btn-sm btn-warning update-visa-cat-title" data-id="<?= $id ?>" title="Rename folder"><i class="fa fa-edit" aria-hidden="true"></i></button>
                                             </div>
                                         <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
                             </nav>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <button type="button" class="btn add-visa-doc-category-btn add-visa-doc-category" data-type="visa" data-categoryid="">
+                            <div class="md-header-actions">
+                                <button type="button" class="btn md-btn md-btn-light add-visa-doc-category-btn add-visa-doc-category" data-type="visa" data-categoryid="">
                                     <i class="fas fa-plus"></i> Add Folder
                                 </button>
-                                <!-- Add link to Not Used Documents -->
-                                <button class="btn btn-secondary client-nav-button" data-tab="notuseddocuments">
+                                <button type="button" class="btn md-btn md-btn-ghost md-not-used-btn client-nav-button" data-tab="notuseddocuments">
                                     <i class="fas fa-folder-minus"></i> Not Used Documents
                                 </button>
                             </div>
@@ -135,13 +134,13 @@
                                 ?>
                                 <div class="subtab6-pane <?= $isActive ?>" id="<?= $id ?>-subtab6">
                                     <div class="checklist-table-container">
-                                        <div class="subtab6-header" style="margin-left: 10px;">
+                                        <div class="subtab6-header md-section-header">
                                             <h3><i class="fas fa-file-alt"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
-                                            <div style="display: flex; gap: 10px;">
-                                                <button type="button" class="btn add-checklist-btn add_migration_doc" data-type="visa" data-categoryid="<?= $id ?>">
+                                            <div class="md-section-actions">
+                                                <button type="button" class="btn md-btn md-btn-primary add-checklist-btn add_migration_doc" data-type="visa" data-categoryid="<?= $id ?>">
                                                     <i class="fas fa-plus"></i> Add Checklist
                                                 </button>
-                                                <button type="button" class="btn btn-info bulk-upload-toggle-btn-visa" data-categoryid="<?= $id ?>" data-categoryname="<?= htmlspecialchars($catVal->title) ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>">
+                                                <button type="button" class="btn md-btn md-btn-outline bulk-upload-toggle-btn-visa" data-categoryid="<?= $id ?>" data-categoryname="<?= htmlspecialchars($catVal->title) ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>">
                                                     <i class="fas fa-upload"></i> Bulk Upload
                                                 </button>
                                             </div>
@@ -197,14 +196,14 @@
                                                     ?>
                                                     <tr class="drow" data-matterid="<?= $fetch->client_matter_id ?>" data-catid="<?= $fetch->folder_name ?>" id="id_<?= $fetch->id ?>">
                                                         <td style="white-space: initial;">
-                                                            <div data-id="<?= $fetch->id ?>" data-visachecklistname="<?= htmlspecialchars($fetch->checklist) ?>" class="visachecklist-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" style="display: flex; align-items: center; gap: 8px;">
-                                                                <span style="flex: 1;"><?= htmlspecialchars($fetch->checklist) ?></span>
-                                                                <div class="checklist-actions" style="display: flex; gap: 5px;">
+                                                            <div data-id="<?= $fetch->id ?>" data-visachecklistname="<?= htmlspecialchars($fetch->checklist) ?>" class="visachecklist-row md-checklist-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>">
+                                                                <span class="md-checklist-label"><?= htmlspecialchars($fetch->checklist) ?></span>
+                                                                <div class="checklist-actions">
                                                                     <?php if (!$fetch->file_name): ?>
-                                                                    <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
+                                                                    <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Edit Checklist Name">
                                                                         <i class="fas fa-edit"></i>
                                                                     </a>
-                                                                    <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
+                                                                    <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Delete Checklist">
                                                                         <i class="fas fa-trash"></i>
                                                                     </a>
                                                                     <?php endif; ?>
@@ -218,7 +217,7 @@
                                                                 ?>
                                                                 <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu='showVisaFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
                                                                     <a href="javascript:void(0);" onclick='previewFile(<?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode('preview-container-migdocumnetlist') ?>)'>
-                                                                        <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($displayFileName) ?></span>
+                                                                        <i class="fas fa-file-image matter-doc-file-icon"></i> <span><?= htmlspecialchars($displayFileName) ?></span>
                                                                     </a>
                                                                 </div>
                                                             <?php else: ?>
@@ -399,7 +398,10 @@
                                     </div>
 
                                     <div class="preview-pane file-preview-container preview-container-migdocumnetlist matter-preview-pane client-doc-preview-pane">
-                                        <p class="preview-placeholder-text">Click on a file to preview it here.</p>
+                                        <div class="client-doc-preview-empty">
+                                            <i class="fas fa-file-alt client-doc-preview-empty-icon" aria-hidden="true"></i>
+                                            <p class="preview-placeholder-text">Select a file from the list to preview it here</p>
+                                        </div>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -409,30 +411,30 @@
             </div>
 
             <!-- Custom context menu for matter documents -->
-            <div id="visaFileContextMenu" class="context-menu" style="display: none; position: fixed; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10000; min-width: 180px;">
-                <div id="visa-context-send-signature" class="context-menu-item" onclick="handleVisaContextAction('send-for-signature')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; display: none;">
-                    <i class="fa fa-pen-fancy" style="margin-right: 8px;"></i> Send for Signature
+            <div id="visaFileContextMenu" class="context-menu matter-docs-context-menu" style="display: none; position: fixed; z-index: 10000; min-width: 180px;">
+                <div id="visa-context-send-signature" class="context-menu-item" onclick="handleVisaContextAction('send-for-signature')" style="display: none;">
+                    <i class="fa fa-pen-fancy"></i> Send for Signature
                 </div>
-                <div class="context-menu-item" onclick="handleVisaContextAction('rename-checklist')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
-                    <i class="fa fa-edit" style="margin-right: 8px;"></i> Rename Checklist
+                <div class="context-menu-item" onclick="handleVisaContextAction('rename-checklist')">
+                    <i class="fa fa-edit"></i> Rename Checklist
                 </div>
-                <div class="context-menu-item" onclick="handleVisaContextAction('rename-doc')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
-                    <i class="fa fa-file-text" style="margin-right: 8px;"></i> Rename File Name
+                <div class="context-menu-item" onclick="handleVisaContextAction('rename-doc')">
+                    <i class="fa fa-file-text"></i> Rename File Name
                 </div>
-                <div class="context-menu-item" onclick="handleVisaContextAction('move')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
-                    <i class="fa fa-arrows-alt" style="margin-right: 8px;"></i> Move Document
+                <div class="context-menu-item" onclick="handleVisaContextAction('move')">
+                    <i class="fa fa-arrows-alt"></i> Move Document
                 </div>
-                <div class="context-menu-item" onclick="handleVisaContextAction('preview')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
-                    <i class="fa fa-eye" style="margin-right: 8px;"></i> Preview
+                <div class="context-menu-item" onclick="handleVisaContextAction('preview')">
+                    <i class="fa fa-eye"></i> Preview
                 </div>
-                <div id="visa-context-pdf-option" class="context-menu-item" onclick="handleVisaContextAction('pdf')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; display: none;">
-                    <i class="fa fa-file-pdf" style="margin-right: 8px;"></i> PDF
+                <div id="visa-context-pdf-option" class="context-menu-item" onclick="handleVisaContextAction('pdf')" style="display: none;">
+                    <i class="fa fa-file-pdf"></i> PDF
                 </div>
-                <div class="context-menu-item" onclick="handleVisaContextAction('download')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
-                    <i class="fa fa-download" style="margin-right: 8px;"></i> Download
+                <div class="context-menu-item" onclick="handleVisaContextAction('download')">
+                    <i class="fa fa-download"></i> Download
                 </div>
-                <div class="context-menu-item" onclick="handleVisaContextAction('not-used')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
-                    <i class="fa fa-trash" style="margin-right: 8px;"></i> Not Used
+                <div class="context-menu-item" onclick="handleVisaContextAction('not-used')">
+                    <i class="fa fa-trash"></i> Not Used
                 </div>
             </div>
 

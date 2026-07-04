@@ -7,14 +7,14 @@
     @endphp
     <tr class="drow" data-matterid="{{ $fetch->client_matter_id }}" data-catid="{{ $fetch->folder_name }}" id="id_{{ $fetch->id }}">
         <td style="white-space: initial;">
-            <div data-id="{{ $fetch->id }}" data-visachecklistname="{{ htmlspecialchars($fetch->checklist) }}" class="visachecklist-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}" style="display: flex; align-items: center; gap: 8px;">
-                <span style="flex: 1;">{{ htmlspecialchars($fetch->checklist) }}</span>
-                <div class="checklist-actions" style="display: flex; gap: 5px;">
+            <div data-id="{{ $fetch->id }}" data-visachecklistname="{{ htmlspecialchars($fetch->checklist) }}" class="visachecklist-row md-checklist-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}">
+                <span class="md-checklist-label">{{ htmlspecialchars($fetch->checklist) }}</span>
+                <div class="checklist-actions">
                     @if (!$fetch->file_name)
-                        <a href="javascript:;" class="edit-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ htmlspecialchars($fetch->checklist) }}" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
+                        <a href="javascript:;" class="edit-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ htmlspecialchars($fetch->checklist) }}" title="Edit Checklist Name">
                             <i class="fas fa-edit"></i>
                         </a>
-                        <a href="javascript:;" class="delete-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ htmlspecialchars($fetch->checklist) }}" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
+                        <a href="javascript:;" class="delete-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ htmlspecialchars($fetch->checklist) }}" title="Delete Checklist">
                             <i class="fas fa-trash"></i>
                         </a>
                     @endif
@@ -25,7 +25,7 @@
             @if ($fetch->file_name)
                 <div data-id="{{ $fetch->id }}" data-name="{{ htmlspecialchars($fetch->file_name) }}" class="doc-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}" oncontextmenu="showVisaFileContextMenu(event, {{ (int) $fetch->id }}, {{ json_encode($fetch->filetype) }}, {{ json_encode($previewUrl) }}, {{ json_encode((string) $fetch->folder_name) }}, {{ json_encode($fetch->status ?? 'draft') }}); return false;">
                     <a href="javascript:void(0);" onclick="previewFile({{ json_encode($fetch->filetype) }}, {{ json_encode($previewUrl) }}, {{ json_encode('preview-container-migdocumnetlist') }})">
-                        <i class="fas fa-file-image"></i> <span>{{ htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) }}</span>
+                        <i class="fas fa-file-image matter-doc-file-icon"></i> <span>{{ htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) }}</span>
                     </a>
                 </div>
             @else

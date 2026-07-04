@@ -14,30 +14,29 @@
     }
 @endphp
 
-<div class="card full-width">
-    <div style="margin-bottom: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <a class="btn btn-success btn-sm createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="1" title="Record trust money received, paid or transferred">
+<div class="card full-width account-tab-card">
+    <div class="account-actions-bar">
+        <a class="btn account-action-btn account-action-btn--trust createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="1" title="Record trust money received, paid or transferred">
             <i class="fas fa-university"></i> Trust Account Entry
         </a>
-        <span style="color: #dee2e6; font-size: 18px;">|</span>
-        <a class="btn btn-primary btn-sm createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="2" title="Record money received directly into the office account">
+        <a class="btn account-action-btn account-action-btn--office createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="2" title="Record money received directly into the office account">
             <i class="fas fa-hand-holding-usd"></i> Office Receipt
         </a>
-        <a class="btn btn-info btn-sm createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="3" title="Issue a tax invoice to the client">
+        <a class="btn account-action-btn account-action-btn--invoice createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="3" title="Issue a tax invoice to the client">
             <i class="fas fa-file-invoice-dollar"></i> Invoice
         </a>
         @if(!empty($__account_matter_id))
-        <a class="btn btn-outline-secondary btn-sm" href="{{ url('/clients/genTrustStatement') }}?client_id={{ $fetchedData->id }}&matter_id={{ $__account_matter_id }}" target="_blank" title="Rule 52 trust account statement for this matter">
+        <a class="btn account-action-btn account-action-btn--statement" href="{{ url('/clients/genTrustStatement') }}?client_id={{ $fetchedData->id }}&matter_id={{ $__account_matter_id }}" target="_blank" title="Rule 52 trust account statement for this matter">
             <i class="fas fa-file-alt"></i> Trust Statement
         </a>
         @endif
     </div>
 
-    <div class="account-layout" style="overflow-x: hidden; max-width: 100%;">
+    <div class="account-layout">
         <!-- Trust Account Ledger Section (LSBC Uniform Law Compliant) -->
         <section class="account-section client-account">
             <div class="account-section-header">
-                <h2><i class="fas fa-university" style="color: #28a745;"></i> Trust Account Ledger</h2>
+                <h2><i class="fas fa-university account-section-icon account-section-icon--trust"></i> Trust Account Ledger</h2>
                 <div class="balance-display">
                     <div class="balance-label">Trust Balance</div>
                     <div class="balance-amount funds-held">
@@ -813,7 +812,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         
         // Hide the radio button selection section (not needed since button already indicates type)
-        $modal.find('.form-group:has(input[name="receipt_type"])').hide();
+        $modal.find('.receipt-type-selector').hide();
         
         // Update modal title based on receipt type
         const modalTitles = {
@@ -911,7 +910,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reset modal when closed (cleanup for next use)
     $('#createreceiptmodal').on('hidden.bs.modal', function() {
         // Show radio buttons again (in case user opens from a different page)
-        $(this).find('.form-group:has(input[name="receipt_type"])').show();
+        $(this).find('.receipt-type-selector').show();
         
         // Reset modal title to default
         $(this).find('.modal-title').html('Create Receipt');
