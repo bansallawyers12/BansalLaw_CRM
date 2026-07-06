@@ -771,20 +771,80 @@ $(document).ready(function() {
         `;
     }
 
+    function resolvePreviewContainer(containerId) {
+        var $all = $('.' + containerId);
+        if (!$all.length || $all.length === 1) {
+            return $all;
+        }
+
+        var $visible = $all.filter(':visible');
+        if ($visible.length) {
+            return $visible.first();
+        }
+
+        var $activePane = $all.filter(function() {
+            return $(this).closest('.subtab6-pane.active, .subtab2-pane.active').length > 0;
+        });
+        if ($activePane.length) {
+            return $activePane.first();
+        }
+
+        return $all.first();
+    }
+
+    function isClientDocPreviewPane($container) {
+        return $container && $container.length && $container.hasClass('client-doc-preview-pane');
+    }
+
+    function getPreviewFrameHeight($container, isOfficePreview) {
+        if (isClientDocPreviewPane($container)) {
+            return '100%';
+        }
+
+        return 'calc(100vh - ' + (isOfficePreview ? '140' : '100') + 'px)';
+    }
+
+    function buildPreviewHeaderHtml(fileType, fileUrl, fileLabel) {
+        var normalizedType = (fileType || '').toLowerCase().replace(/^\./, '');
+        var iconClass = documentFileIconClass(normalizedType);
+        var label = fileLabel || normalizedType.toUpperCase() || 'Document';
+        var safeLabel = $('<div/>').text(label).html();
+        var downloadUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'download=1';
+
+        return `
+            <div class="client-doc-preview-header">
+                <div class="client-doc-preview-header-title">
+                    <i class="fas ${iconClass}" aria-hidden="true"></i>
+                    <span class="client-doc-preview-filename" title="${safeLabel}">${safeLabel}</span>
+                </div>
+                <div class="client-doc-preview-header-actions">
+                    <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary client-doc-preview-open-btn">
+                        <i class="fas fa-external-link-alt"></i> Open
+                    </a>
+                    <a href="${downloadUrl}" class="btn btn-sm btn-outline-secondary client-doc-preview-download-btn">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
     function mountIframePreview(container, options) {
         const embeddedPreviewUrl = options.embeddedPreviewUrl;
         const toolbarHtml = options.toolbarHtml || '';
+        const headerHtml = options.headerHtml || '';
         const loadingMessage = options.loadingMessage || 'Loading preview…';
         const slowMessage = options.slowMessage || 'Still loading preview… this may take up to a minute.';
-        const frameHeight = options.frameHeight || 'calc(100vh - 100px)';
+        const frameHeight = options.frameHeight || getPreviewFrameHeight(container, false);
         const onError = typeof options.onError === 'function' ? options.onError : function() {};
 
         container.html(`
-            <div class="preview-content preview-content-with-loader" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%; position: relative; min-height: 400px;">
+            <div class="preview-content preview-content-with-loader" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%; position: relative; min-height: 0;">
+                ${headerHtml}
                 ${toolbarHtml}
-                <div class="preview-iframe-wrap" style="flex: 1; position: relative; width: 100%; min-height: 360px;">
+                <div class="preview-iframe-wrap">
                     ${renderPreviewLoadingOverlay(loadingMessage)}
-                    <iframe class="preview-iframe" src="${embeddedPreviewUrl}" title="Document preview" style="width: 100%; height: ${frameHeight}; min-height: 360px; border: none; background: #fff;"></iframe>
+                    <iframe class="preview-iframe" src="${embeddedPreviewUrl}" title="Document preview" style="width: 100%; height: ${frameHeight}; border: none; background: #fff;"></iframe>
                 </div>
             </div>
         `);
@@ -850,8 +910,11 @@ $(document).ready(function() {
         return null;
     }
 
-    function setMatterDocumentPreviewActive(fileUrl, containerId) {
-        const containerEl = document.querySelector('.' + containerId);
+    function setMatterDocumentPreviewActive(fileUrl, containerId, containerEl) {
+        if (!containerEl) {
+            const $resolved = resolvePreviewContainer(containerId);
+            containerEl = $resolved.length ? $resolved[0] : document.querySelector('.' + containerId);
+        }
         if (!containerEl) {
             return;
         }
@@ -914,39 +977,62 @@ $(document).ready(function() {
         return mimeMap[normalizedType] || 'video/mp4';
     }
 
-    function previewFile(fileType, fileUrl, containerId) {
+    function previewFile(fileType, fileUrl, containerId, fileLabel) {
 
-        const container = $(`.${containerId}`);
+        const container = resolvePreviewContainer(containerId);
         if (!container.length) {
             console.error('Preview container not found:', containerId);
             return;
         }
 
-        setMatterDocumentPreviewActive(fileUrl, containerId);
+        setMatterDocumentPreviewActive(fileUrl, containerId, container[0]);
+
+        if (!fileLabel) {
+            const docId = extractDocumentIdFromPreviewUrl(fileUrl);
+            if (docId) {
+                const nameEl = document.querySelector('#id_' + docId + ' .doc-row span');
+                if (nameEl) {
+                    fileLabel = nameEl.textContent.trim();
+                }
+            }
+        }
 
         const embeddedPreviewUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'embed=1';
         const normalizedType = (fileType || '').toLowerCase();
         const isOfficePreview = normalizedType.match(/^(docx?|xlsx?|pptx?|rtf|odt|ods|odp)$/);
+        const previewHeaderHtml = buildPreviewHeaderHtml(fileType, fileUrl, fileLabel);
+        const inDocPane = isClientDocPreviewPane(container);
+        const mediaMaxHeight = inDocPane ? '100%' : 'calc(100vh - 300px)';
 
         container.html(`
-            <div class="preview-content" style="flex: 1; display: flex; align-items: center; justify-content: center;">
-                <div style="text-align: center;">
-                    <i class="fas fa-spinner fa-spin fa-2x" style="color: #4a90e2;"></i>
-                    <p style="margin-top: 10px; color: #666;">${isOfficePreview ? 'Converting document for preview…' : 'Loading preview…'}</p>
+            <div class="preview-content preview-content-loading" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+                ${previewHeaderHtml}
+                <div class="preview-loading-body" style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 200px;">
+                    <div style="text-align: center;">
+                        <i class="fas fa-spinner fa-spin fa-2x" style="color: #4a90e2;"></i>
+                        <p style="margin-top: 10px; color: #666;">${isOfficePreview ? 'Converting document for preview…' : 'Loading preview…'}</p>
+                    </div>
                 </div>
             </div>
         `);
 
-        if (container[0] && typeof container[0].scrollIntoView === 'function' && !container.hasClass('client-doc-preview-pane')) {
+        if (typeof window.adjustClientDocumentsPanelHeight === 'function') {
+            window.adjustClientDocumentsPanelHeight();
+        }
+
+        if (container[0] && typeof container[0].scrollIntoView === 'function' && !inDocPane) {
             container[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         const showPreviewError = function() {
             container.html(`
-                <div class="preview-content" style="flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-                    <i class="fas fa-exclamation-circle fa-3x" style="color: #dc3545; margin-bottom: 15px;"></i>
-                    <p style="margin-bottom: 15px;">Unable to load preview.</p>
-                    <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-primary">Open File</a>
+                <div class="preview-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+                    ${previewHeaderHtml}
+                    <div class="preview-error-body" style="flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                        <i class="fas fa-exclamation-circle fa-3x" style="color: #dc3545; margin-bottom: 15px;"></i>
+                        <p style="margin-bottom: 15px;">Unable to load preview.</p>
+                        <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-primary">Open File</a>
+                    </div>
                 </div>
             `);
         };
@@ -955,8 +1041,11 @@ $(document).ready(function() {
             const img = new Image();
             img.onload = function() {
                 container.html(`
-                    <div class="preview-content" style="flex: 1; overflow: auto; text-align: center;">
-                        <img src="${embeddedPreviewUrl}" alt="Document Preview" style="max-width: 100%; max-height: calc(100vh - 300px); margin: auto; display: block;" />
+                    <div class="preview-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+                        ${previewHeaderHtml}
+                        <div class="preview-media-body" style="flex: 1; overflow: auto; text-align: center; min-height: 0; padding: 8px;">
+                            <img src="${embeddedPreviewUrl}" alt="Document Preview" style="max-width: 100%; max-height: ${mediaMaxHeight}; margin: auto; display: block;" />
+                        </div>
                     </div>
                 `);
             };
@@ -970,26 +1059,28 @@ $(document).ready(function() {
             const typeLabel = isOfficePreview ? normalizedType.toUpperCase() + ' preview' : 'PDF';
             const downloadUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'download=1';
             const toolbar = isOfficePreview ? `
-                    <div style="padding: 8px 12px; background: #f3f2f1; border-bottom: 1px solid #edebe9; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-shrink: 0;">
-                        <span style="font-size: 13px; color: #605e5c;"><i class="fas ${iconClass}" style="margin-right: 6px;"></i> ${typeLabel}</span>
+                    <div class="client-doc-preview-office-bar">
+                        <span><i class="fas ${iconClass}" style="margin-right: 6px;"></i> ${typeLabel}</span>
                         <a href="${downloadUrl}" class="btn btn-sm btn-outline-secondary">Download original</a>
                     </div>` : '';
 
             mountIframePreview(container, {
                 embeddedPreviewUrl: embeddedPreviewUrl,
+                headerHtml: previewHeaderHtml,
                 toolbarHtml: toolbar,
                 loadingMessage: isOfficePreview ? 'Preparing document preview…' : 'Loading PDF preview…',
                 slowMessage: isOfficePreview
                     ? 'Converting document for preview… please wait.'
                     : 'Still loading PDF… please wait.',
-                frameHeight: 'calc(100vh - ' + (isOfficePreview ? '140' : '100') + 'px)',
+                frameHeight: getPreviewFrameHeight(container, isOfficePreview),
                 onError: showPreviewError
             });
         } else if (normalizedType === 'eml') {
             mountIframePreview(container, {
                 embeddedPreviewUrl: embeddedPreviewUrl,
+                headerHtml: previewHeaderHtml,
                 loadingMessage: 'Loading email preview…',
-                frameHeight: 'calc(100vh - 100px)',
+                frameHeight: getPreviewFrameHeight(container, false),
                 onError: showPreviewError
             });
         } else if (normalizedType === 'txt') {
@@ -1003,8 +1094,11 @@ $(document).ready(function() {
                 .then(function(text) {
                     const escaped = $('<div/>').text(text).html();
                     container.html(`
-                        <div class="preview-content" style="flex: 1; overflow: auto; width: 100%; padding: 12px; background: #fff;">
-                            <pre style="white-space: pre-wrap; word-wrap: break-word; font-size: 13px; margin: 0;">${escaped}</pre>
+                        <div class="preview-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+                            ${previewHeaderHtml}
+                            <div class="preview-text-body" style="flex: 1; overflow: auto; width: 100%; padding: 12px; background: #fff; min-height: 0;">
+                                <pre style="white-space: pre-wrap; word-wrap: break-word; font-size: 13px; margin: 0;">${escaped}</pre>
+                            </div>
                         </div>
                     `);
                 })
@@ -1020,8 +1114,11 @@ $(document).ready(function() {
                 .then(function(text) {
                     const escaped = $('<div/>').text(text).html();
                     container.html(`
-                        <div class="preview-content" style="flex: 1; overflow: auto; width: 100%; padding: 12px; background: #fff;">
-                            <pre style="white-space: pre-wrap; word-wrap: break-word; font-size: 13px; margin: 0;">${escaped}</pre>
+                        <div class="preview-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+                            ${previewHeaderHtml}
+                            <div class="preview-text-body" style="flex: 1; overflow: auto; width: 100%; padding: 12px; background: #fff; min-height: 0;">
+                                <pre style="white-space: pre-wrap; word-wrap: break-word; font-size: 13px; margin: 0;">${escaped}</pre>
+                            </div>
                         </div>
                     `);
                 })
@@ -1029,11 +1126,14 @@ $(document).ready(function() {
         } else if (normalizedType.match(/^(mp4|webm|mov|m4v|avi|mkv|ogv)$/)) {
             const videoMimeType = previewVideoMimeType(normalizedType);
             container.html(`
-                <div class="preview-content" style="flex: 1; display: flex; align-items: center; justify-content: center; background: #000; min-height: 280px;">
-                    <video controls playsinline preload="metadata" style="max-width: 100%; max-height: calc(100vh - 300px); width: 100%;">
-                        <source src="${embeddedPreviewUrl}" type="${videoMimeType}">
-                        Your browser does not support video playback.
-                    </video>
+                <div class="preview-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+                    ${previewHeaderHtml}
+                    <div class="preview-media-body" style="flex: 1; display: flex; align-items: center; justify-content: center; background: #000; min-height: 0;">
+                        <video controls playsinline preload="metadata" style="max-width: 100%; max-height: ${mediaMaxHeight}; width: 100%;">
+                            <source src="${embeddedPreviewUrl}" type="${videoMimeType}">
+                            Your browser does not support video playback.
+                        </video>
+                    </div>
                 </div>
             `);
             const videoEl = container.find('video')[0];
@@ -1042,16 +1142,20 @@ $(document).ready(function() {
             }
         } else {
             container.html(`
-                <div class="preview-content" style="flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-                    <i class="fas fa-file fa-3x" style="color: #6c757d; margin-bottom: 15px;"></i>
-                    <p style="margin-bottom: 15px;">Preview not available for this file type.</p>
-                    <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-primary">Open File</a>
+                <div class="preview-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+                    ${previewHeaderHtml}
+                    <div class="preview-error-body" style="flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                        <i class="fas fa-file fa-3x" style="color: #6c757d; margin-bottom: 15px;"></i>
+                        <p style="margin-bottom: 15px;">Preview not available for this file type.</p>
+                        <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-primary">Open File</a>
+                    </div>
                 </div>
             `);
         }
     }
 
     window.previewFile = previewFile;
+    window.resolvePreviewContainer = resolvePreviewContainer;
     window.documentFileIconClass = documentFileIconClass;
 
 
@@ -7653,7 +7757,9 @@ success: function(response) {
             var uploadUrl = laneDocType === 'nomination'
                 ? site_url + '/documents/upload-nomination-document'
                 : site_url + '/documents/upload-matter-document';
-            var previewPane = laneDocType === 'nomination' ? 'preview-container-nomdocumnetlist' : 'preview-container-migdocumnetlist';
+            var previewPane = laneDocType === 'nomination'
+                ? 'preview-container-nomdocumnetlist'
+                : 'preview-container-matter-' + visa_doc_cat;
             var contextMenuFn = laneDocType === 'nomination' ? 'showNominationFileContextMenu' : 'showVisaFileContextMenu';
             
             // Validate filename
@@ -7942,7 +8048,9 @@ success: function(response) {
             var uploadUrl = laneDocType === 'nomination'
                 ? site_url+'/documents/upload-nomination-document'
                 : site_url+'/documents/upload-matter-document';
-            var previewPane = laneDocType === 'nomination' ? 'preview-container-nomdocumnetlist' : 'preview-container-migdocumnetlist';
+            var previewPane = laneDocType === 'nomination'
+                ? 'preview-container-nomdocumnetlist'
+                : 'preview-container-matter-' + visa_doc_cat;
             var contextMenuFn = laneDocType === 'nomination' ? 'showNominationFileContextMenu' : 'showVisaFileContextMenu';
             var formData = new FormData($form[0]);
 

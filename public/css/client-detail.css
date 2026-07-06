@@ -565,9 +565,12 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 32px 20px;
+  flex: 1 1 auto;
+  min-height: 280px;
+  padding: 32px 24px;
   margin: auto;
-  max-width: 280px;
+  max-width: 320px;
+  background: linear-gradient(180deg, rgba(240, 246, 255, 0.65) 0%, rgba(255, 255, 255, 0.95) 100%);
 }
 
 #matterdocuments-tab .client-doc-preview-empty-icon {
@@ -663,10 +666,10 @@
 
 #matterdocuments-tab.client-documents-tab .checklist-table-container,
 #personaldocuments-tab.client-documents-tab .checklist-table-container {
-  flex: 1 1 760px;
+  flex: 0 1 380px;
   min-width: 0;
-  width: 760px;
-  max-width: 52%;
+  width: 380px;
+  max-width: 38%;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -732,10 +735,10 @@
 
 #matterdocuments-tab .client-doc-preview-pane.preview-pane,
 #personaldocuments-tab .client-doc-preview-pane.preview-pane {
-  flex: 1 1 420px;
+  flex: 1 1 560px;
   width: auto;
   max-width: none;
-  min-width: 380px;
+  min-width: 420px;
   align-self: stretch;
   display: flex !important;
   flex-direction: column;
@@ -744,15 +747,100 @@
   min-height: 0;
   position: relative;
   top: auto;
-  padding: 15px;
+  padding: 0;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, #c8dcef);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(30, 61, 96, 0.08);
 }
 
 #matterdocuments-tab .client-doc-preview-pane .preview-content,
 #personaldocuments-tab .client-doc-preview-pane .preview-content {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+#matterdocuments-tab .client-doc-preview-pane .preview-iframe-wrap,
+#personaldocuments-tab .client-doc-preview-pane .preview-iframe-wrap {
+  flex: 1 1 auto;
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+#matterdocuments-tab .client-doc-preview-pane .preview-iframe,
+#personaldocuments-tab .client-doc-preview-pane .preview-iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: none;
+  background: #fff;
+}
+
+#matterdocuments-tab .client-doc-preview-header,
+#personaldocuments-tab .client-doc-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--page-bg, #f0f6ff);
+  border-bottom: 1px solid var(--border, #c8dcef);
+  flex-shrink: 0;
+}
+
+#matterdocuments-tab .client-doc-preview-header-title,
+#personaldocuments-tab .client-doc-preview-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  color: var(--navy, #1e3d60);
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+#matterdocuments-tab .client-doc-preview-header-title i,
+#personaldocuments-tab .client-doc-preview-header-title i {
+  color: var(--sidebar-active, #3a6fa8);
+  flex-shrink: 0;
+}
+
+#matterdocuments-tab .client-doc-preview-filename,
+#personaldocuments-tab .client-doc-preview-filename {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#matterdocuments-tab .client-doc-preview-header-actions,
+#personaldocuments-tab .client-doc-preview-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+#matterdocuments-tab .client-doc-preview-office-bar,
+#personaldocuments-tab .client-doc-preview-office-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  background: #f3f2f1;
+  border-bottom: 1px solid #edebe9;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: #605e5c;
 }
 
 #matterdocuments-tab .client-doc-preview-pane .preview-placeholder-text,
@@ -765,14 +853,14 @@
   #matterdocuments-tab.client-documents-tab .checklist-table-container,
   #personaldocuments-tab.client-documents-tab .checklist-table-container {
     width: 100%;
-    max-width: 58%;
-    flex: 1 1 340px;
+    max-width: 42%;
+    flex: 0 1 300px;
   }
 
   #matterdocuments-tab .client-doc-preview-pane.preview-pane,
   #personaldocuments-tab .client-doc-preview-pane.preview-pane {
-    min-width: 280px;
-    flex: 1 1 300px;
+    min-width: 300px;
+    flex: 1 1 360px;
   }
 }
 

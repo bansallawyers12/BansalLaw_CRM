@@ -131,6 +131,7 @@
                                 $id = $catVal->id;
                                 $isActive = ($catIdx === 0) ? 'active' : '';
                                 $folderName = $id;
+                                $matterPreviewContainerId = 'preview-container-matter-' . $id;
                                 ?>
                                 <div class="subtab6-pane <?= $isActive ?>" id="<?= $id ?>-subtab6">
                                     <div class="checklist-table-container">
@@ -216,7 +217,7 @@
                                                                 $displayFileName = $fetch->file_name . '.' . ($fetch->filetype ?? '');
                                                                 ?>
                                                                 <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu='showVisaFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
-                                                                    <a href="javascript:void(0);" onclick='previewFile(<?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode('preview-container-migdocumnetlist') ?>)'>
+                                                                    <a href="javascript:void(0);" onclick='previewFile(<?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode($matterPreviewContainerId) ?>)'>
                                                                         <i class="fas fa-file-image matter-doc-file-icon"></i> <span><?= htmlspecialchars($displayFileName) ?></span>
                                                                     </a>
                                                                 </div>
@@ -303,7 +304,7 @@
                                                             $signedFileUrlJs = addslashes($signedFileUrl);
                                                             ?>
                                                             <div data-id="<?= $signedDoc->id ?>" data-name="<?= htmlspecialchars($signedDoc->file_name ?? '') ?>" class="doc-row" title="Signed document" oncontextmenu="showVisaFileContextMenu(event, <?= $signedDoc->id ?>, '<?= htmlspecialchars($signedDoc->filetype ?? 'pdf') ?>', '<?= $signedFileUrlJs ?>', '<?= $id ?>', '<?= $signedDoc->status ?? 'signed' ?>'); return false;">
-                                                                <a href="javascript:void(0);" onclick="previewFile('<?= $signedDoc->filetype ?? 'pdf' ?>','<?= $signedFileUrlJs ?>','preview-container-migdocumnetlist')">
+                                                                <a href="javascript:void(0);" onclick="previewFile('<?= $signedDoc->filetype ?? 'pdf' ?>','<?= $signedFileUrlJs ?>','<?= $matterPreviewContainerId ?>')">
                                                                     <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($signedDisplayName) ?></span>
                                                                 </a>
                                                             </div>
@@ -336,7 +337,7 @@
                                                         </td>
                                                         <td style="white-space: initial;">
                                                             <div data-id="<?= $signedDoc->id ?>" data-name="<?= htmlspecialchars($signedDoc->file_name ?? '') ?>" class="doc-row" title="Signed document" oncontextmenu="showVisaFileContextMenu(event, <?= $signedDoc->id ?>, '<?= htmlspecialchars($signedDoc->filetype ?? 'pdf') ?>', '<?= $signedFileUrlJs ?>', '<?= $id ?>', '<?= $signedDoc->status ?? 'signed' ?>'); return false;">
-                                                                <a href="javascript:void(0);" onclick="previewFile('<?= $signedDoc->filetype ?? 'pdf' ?>','<?= $signedFileUrlJs ?>','preview-container-migdocumnetlist')">
+                                                                <a href="javascript:void(0);" onclick="previewFile('<?= $signedDoc->filetype ?? 'pdf' ?>','<?= $signedFileUrlJs ?>','<?= $matterPreviewContainerId ?>')">
                                                                     <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($signedDisplayName) ?></span>
                                                                 </a>
                                                             </div>
@@ -383,7 +384,7 @@
                                                                 <div class="dropdown d-inline dropdown_ellipsis_icon">
                                                                     <a class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                                                                     <div class="dropdown-menu">
-                                                                        <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($gridPreviewUrl) ?>, <?= json_encode('preview-container-migdocumnetlist') ?>)'>Preview</a>
+                                                                        <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($gridPreviewUrl) ?>, <?= json_encode('preview-container-matter-' . $fetch->folder_name) ?>)'>Preview</a>
                                                                         <a href="#" class="dropdown-item download-file" data-id="<?= $fetch->id ?>" data-document-id="<?= $fetch->id ?>" data-filename="<?= e($gridDownloadFilename) ?>">Download</a>
                                                                         <a data-id="<?= $fetch->id ?>" class="dropdown-item notuseddoc" data-doctype="matter" data-href="notuseddoc" href="javascript:;">Not Used</a>
                                                                     </div>
@@ -397,9 +398,10 @@
                                         <?php endforeach; ?>
                                     </div>
 
-                                    <div class="preview-pane file-preview-container preview-container-migdocumnetlist matter-preview-pane client-doc-preview-pane">
+                                    <div class="preview-pane file-preview-container <?= $matterPreviewContainerId ?> matter-preview-pane client-doc-preview-pane">
                                         <div class="client-doc-preview-empty">
                                             <i class="fas fa-file-alt client-doc-preview-empty-icon" aria-hidden="true"></i>
+                                            <p class="preview-placeholder-text"><strong>Document Preview</strong></p>
                                             <p class="preview-placeholder-text">Select a file from the list to preview it here</p>
                                         </div>
                                     </div>
@@ -582,12 +584,8 @@
                             openMoveVisaDocumentModal(currentVisaContextFile, 'matter');
                             break;
                         case 'preview':
-                            if (typeof previewFile === 'function' && currentVisaContextData.fileUrl) {
-                                previewFile(
-                                    currentVisaContextData.fileType || 'pdf',
-                                    currentVisaContextData.fileUrl,
-                                    'preview-container-migdocumnetlist'
-                                );
+                            if (currentVisaContextData.fileUrl) {
+                                window.open(currentVisaContextData.fileUrl, '_blank', 'noopener');
                             }
                             break;
                         case 'pdf':

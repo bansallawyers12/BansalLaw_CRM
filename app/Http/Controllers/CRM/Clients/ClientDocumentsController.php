@@ -775,7 +775,7 @@ class ClientDocumentsController extends Controller
                                 <?php
                                 if( isset($fetch->file_name) && $fetch->file_name !=""){ ?>
                                     <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu='showVisaFileContextMenu(event, <?php echo (int) $fetch->id; ?>, <?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode((string) $fetch->folder_name); ?>, <?php echo json_encode($fetch->status ?? 'draft'); ?>); return false;'>
-                                        <a href="javascript:void(0);" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode('preview-container-migdocumnetlist'); ?>)'>
+                                        <a href="javascript:void(0);" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode('preview-container-matter-' . $fetch->folder_name); ?>)'>
                                             <i class="fas fa-file-image"></i> <span><?php echo htmlspecialchars($fetch->file_name . '.' . $fetch->filetype); ?></span>
                                         </a>
                                     </div>
@@ -847,7 +847,7 @@ class ClientDocumentsController extends Controller
                                     <div class="dropdown d-inline dropdown_ellipsis_icon">
                                         <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
                                         <div class="dropdown-menu">
-                                            <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($gridPreviewUrl); ?>, <?php echo json_encode('preview-container-migdocumnetlist'); ?>)'>Preview</a>
+                                            <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($gridPreviewUrl); ?>, <?php echo json_encode('preview-container-matter-' . $fetch->folder_name); ?>)'>Preview</a>
                                             <a href="#" class="dropdown-item download-file" data-document-id="<?php echo $fetch->id; ?>" data-id="<?php echo $fetch->id; ?>" data-filename="<?php echo htmlspecialchars($gridDownloadFilename); ?>">Download</a>
 
                                             <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item notuseddoc" data-doctype="matter" data-href="notuseddoc" href="javascript:;">Not Used</a>
@@ -1672,7 +1672,7 @@ class ClientDocumentsController extends Controller
                 if ($doc->doc_type == 'personal') {
                     $response['folder_name'] = 'preview-container-' . ($doc->folder_name ?? '');
                 } else if (in_array($doc->doc_type, ['matter', 'visa'], true)) {
-                    $response['folder_name'] = 'preview-container-migdocumnetlist';
+                    $response['folder_name'] = 'preview-container-matter-' . ($doc->folder_name ?? '');
                 } else if ($doc->doc_type == 'nomination') {
                     $response['folder_name'] = 'preview-container-nomdocumnetlist';
                 }

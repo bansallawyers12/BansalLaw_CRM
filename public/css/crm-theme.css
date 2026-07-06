@@ -1242,6 +1242,215 @@ body.sidebar-mini .adminconsole-email-labels-form .email-label-delete-modal .ema
   margin-bottom: 0.35rem;
 }
 
+/* Admin Console — CRM Email Templates list (features/crm-email-template) */
+body.sidebar-mini .adminconsole-crm-email-template .table-responsive {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  border-radius: 10px !important;
+}
+
+body.sidebar-mini .adminconsole-crm-email-template .table {
+  border-color: var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .adminconsole-crm-email-template .table thead th {
+  background: var(--page-bg) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--border) !important;
+  vertical-align: middle !important;
+}
+
+body.sidebar-mini .adminconsole-crm-email-template .table tbody td {
+  color: var(--text-dark) !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--border) !important;
+  vertical-align: middle !important;
+}
+
+body.sidebar-mini .adminconsole-crm-email-template .table tbody tr:nth-child(odd) {
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-crm-email-template .table tbody tr:nth-child(even) {
+  background: var(--page-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-crm-email-template .table tbody tr:hover {
+  background: var(--sidebar-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-crm-email-template .crm-email-template-action-menu {
+  z-index: 1056 !important;
+}
+
+body.sidebar-mini .adminconsole-crm-email-template .card-footer {
+  background: var(--page-bg) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-crm-email-template .card .card-body table.table tbody tr td:last-child .dropdown-item:hover,
+body.sidebar-mini .adminconsole-crm-email-template .card .card-body table.table tbody tr td:last-child .dropdown-item:focus {
+  background-color: var(--sidebar-bg) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-crm-email-template .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle {
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-crm-email-template-form .crm-email-template-delete-modal .crm-email-template-delete-icon {
+  width: 56px;
+  height: 56px;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 50%;
+  background: rgba(220, 53, 69, 0.12);
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+body.sidebar-mini .adminconsole-crm-email-template-form .crm-email-template-delete-modal .crm-email-template-delete-confirm p {
+  margin-bottom: 0.35rem;
+}
+
+/* Admin Console — Offices / Branches list (system/offices) */
+body.sidebar-mini .adminconsole-offices .table-responsive {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  border-radius: 10px !important;
+}
+
+body.sidebar-mini .adminconsole-offices .offices-table {
+  border-color: var(--border) !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .adminconsole-offices .offices-table thead th {
+  background: var(--page-bg) !important;
+  background-image: none !important;
+  color: var(--navy) !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--border) !important;
+  vertical-align: middle !important;
+  white-space: nowrap;
+}
+
+body.sidebar-mini .adminconsole-offices .offices-table tbody td {
+  color: var(--text-dark) !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--border) !important;
+  vertical-align: middle !important;
+}
+
+body.sidebar-mini .adminconsole-offices .offices-table tbody tr:nth-child(odd) {
+  background: var(--card-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-offices .offices-table tbody tr:nth-child(even) {
+  background: var(--page-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-offices .offices-table tbody tr:hover {
+  background: var(--sidebar-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-offices .office-view-link {
+  color: var(--navy) !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+}
+
+body.sidebar-mini .adminconsole-offices .office-view-link:hover,
+body.sidebar-mini .adminconsole-offices .office-view-link:focus {
+  color: var(--primary) !important;
+  text-decoration: underline !important;
+}
+
+body.sidebar-mini .adminconsole-offices .offices-action-menu {
+  z-index: 1056 !important;
+}
+
+body.sidebar-mini .adminconsole-offices .card-footer {
+  background: var(--page-bg) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .dropdown-item:hover,
+body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .dropdown-item:focus {
+  background-color: var(--sidebar-bg) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-offices .card .card-body table.table tbody tr td:last-child .btn.btn-primary.dropdown-toggle {
+  background-color: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-offices-form .office-modal-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+body.sidebar-mini .adminconsole-offices-form .office-modal-accordion > .accordion {
+  margin-bottom: 0 !important;
+}
+
+body.sidebar-mini .adminconsole-offices-form .office-form-modal .modal-body {
+  background: var(--page-bg) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-form .office-form-modal .modal-content {
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+body.sidebar-mini .adminconsole-offices-form .office-form-modal .modal-header {
+  background: var(--card-bg) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-form .office-form-modal .modal-footer {
+  background: var(--card-bg) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-form .office-delete-modal .office-delete-icon {
+  width: 56px;
+  height: 56px;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 50%;
+  background: rgba(220, 53, 69, 0.12);
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+body.sidebar-mini .adminconsole-offices-form .office-delete-modal .office-delete-confirm p {
+  margin-bottom: 0.35rem;
+}
+
 /* Workflow / emails / CRM email template / offices — shared accordion form shell; docs/theme.md */
 body.sidebar-mini .adminconsole-workflow-form .card .form-group label,
 body.sidebar-mini .adminconsole-emails-form .card .form-group label,
@@ -1756,6 +1965,19 @@ body.sidebar-mini .adminconsole-offices-form .ts-wrapper.single.focus .ts-contro
   box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
 }
 
+body.sidebar-mini .adminconsole-offices-form .office-form-modal .ts-dropdown {
+  z-index: 1060 !important;
+}
+
+body.sidebar-mini .adminconsole-offices-form .office-form-modal .ts-dropdown .option.active {
+  background: var(--sidebar-bg) !important;
+  color: var(--navy) !important;
+}
+
+body.sidebar-mini .adminconsole-offices-form select.is-invalid + .ts-wrapper .ts-control {
+  border-color: var(--danger) !important;
+}
+
 /* System — activity search (filters + Tom Select); docs/theme.md */
 body.sidebar-mini .adminconsole-activity-search .card .form-label {
   color: var(--text-muted) !important;
@@ -2254,6 +2476,24 @@ body.sidebar-mini .adminconsole-workflow-index .table tbody td.text-center a:foc
   background-color: transparent !important;
   color: var(--navy) !important;
   text-decoration: underline !important;
+}
+
+body.sidebar-mini .adminconsole-workflow-form .workflow-delete-modal .workflow-delete-icon {
+  width: 56px;
+  height: 56px;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 50%;
+  background: rgba(220, 53, 69, 0.12);
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+body.sidebar-mini .adminconsole-workflow-form .workflow-delete-modal .workflow-delete-confirm p {
+  margin-bottom: 0.35rem;
 }
 
 /* Admin Console — emails list (features/emails); docs/theme.md */
