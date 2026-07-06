@@ -30,7 +30,7 @@
         }).join(', ');
     }
 
-    function isAllowedEmailUploadFilename(filename) {
+    function hasAllowedEmailUploadExtension(filename) {
         if (!filename || typeof filename !== 'string') {
             return false;
         }
@@ -44,19 +44,260 @@
         return false;
     }
 
-    function filterAllowedEmailUploadFiles(files) {
-        return Array.from(files || []).filter(function (file) {
-            return isAllowedEmailUploadFilename(file.name);
+    function hasAllowedEmailUploadMime(file) {
+        if (!file) {
+            return false;
+        }
+        var type = String(file.type || '').toLowerCase();
+        return type === 'message/rfc822'
+            || type === 'application/vnd.ms-outlook'
+            || type === 'application/octet-stream';
+    }
+
+    function isAllowedEmailUploadFilename(filename) {
+        return hasAllowedEmailUploadExtension(filename);
+    }
+
+    function isPotentialEmailUploadFile(file) {
+        if (!file) {
+            return false;
+        }
+        return hasAllowedEmailUploadExtension(file.name) || hasAllowedEmailUploadMime(file);
+    }
+
+    function detectEmailUploadExtensionFromBytes(buffer) {
+        if (!buffer || !buffer.byteLength) {
+            return '';
+        }
+
+        var bytes = new Uint8Array(buffer);
+        if (bytes.length >= 4
+            && bytes[0] === 0xD0 && bytes[1] === 0xCF && bytes[2] === 0x11 && bytes[3] === 0xE0) {
+            return 'msg';
+        }
+
+        var headLength = Math.min(bytes.length, 4096);
+        var head = '';
+        for (var i = 0; i < headLength; i++) {
+            head += String.fromCharCode(bytes[i]);
+        }
+
+        if (/^(From:|Return-Path:|Received:|MIME-Version:|Date:|X-)/im.test(head)) {
+            return 'eml';
+        }
+
+        return '';
+    }
+
+    function getEmailUploadExtension(filename) {
+        if (!filename || typeof filename !== 'string') {
+            return '';
+        }
+        var lower = filename.toLowerCase();
+        var allowed = getAllowedEmailUploadExtensions();
+        for (var i = 0; i < allowed.length; i++) {
+            if (lower.endsWith('.' + allowed[i])) {
+                return allowed[i];
+            }
+        }
+        return '';
+    }
+
+    function buildEmailUploadFilename(baseName, extension) {
+        var stem = String(baseName || '').trim();
+        if (!stem) {
+            stem = 'email_' + Date.now();
+        }
+        if (extension) {
+            return stem + '.' + extension;
+        }
+        return stem;
+    }
+
+    function ensureEmailUploadFileExtension(file) {
+        return new Promise(function (resolve) {
+            if (!file) {
+                resolve(null);
+                return;
+            }
+
+            var currentExtension = getEmailUploadExtension(file.name);
+            if (currentExtension) {
+                resolve(file);
+                return;
+            }
+
+            if (!(file.slice && typeof file.arrayBuffer === 'function')) {
+                resolve(file);
+                return;
+            }
+
+            file.slice(0, 4096).arrayBuffer().then(function (buffer) {
+                var detected = detectEmailUploadExtensionFromBytes(buffer);
+                if (!detected) {
+                    resolve(file);
+                    return;
+                }
+
+                var lastDot = file.name.lastIndexOf('.');
+                var stem = lastDot > 0 ? file.name.slice(0, lastDot) : (file.name || ('email_' + Date.now()));
+                stem = stem.replace(/[\\/:*?"<>|]+/g, '_').trim() || ('email_' + Date.now());
+                var finalName = buildEmailUploadFilename(stem, detected);
+
+                resolve(new File([file], finalName, {
+                    type: file.type || (detected === 'eml' ? 'message/rfc822' : 'application/vnd.ms-outlook'),
+                    lastModified: file.lastModified || Date.now()
+                }));
+            }).catch(function () {
+                resolve(file);
+            });
         });
     }
 
-    function sanitizeEmailUploadFilename(filename) {
+    function filterAllowedEmailUploadFiles(files) {
+        return Array.from(files || []).filter(function (file) {
+            return isPotentialEmailUploadFile(file);
+        });
+    }
+
+    /**
+     * Resolve dropped files via DataTransferItem / FileSystem API when available.
+     * Outlook and some browsers expose 0-byte File objects on dataTransfer.files alone.
+     */
+    function getFilesFromDataTransfer(dataTransfer) {
+        return new Promise(function (resolve) {
+            if (!dataTransfer) {
+                resolve([]);
+                return;
+            }
+
+            var collected = [];
+            var pending = [];
+            var items = dataTransfer.items;
+
+            if (items && items.length) {
+                for (var i = 0; i < items.length; i++) {
+                    (function (item) {
+                        if (item.kind !== 'file') {
+                            return;
+                        }
+
+                        var entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+                        if (entry && entry.isFile) {
+                            pending.push(new Promise(function (res) {
+                                entry.file(function (file) {
+                                    res(file || null);
+                                }, function () {
+                                    res(item.getAsFile());
+                                });
+                            }));
+                            return;
+                        }
+
+                        var directFile = item.getAsFile();
+                        if (directFile) {
+                            collected.push(directFile);
+                        }
+                    })(items[i]);
+                }
+            }
+
+            if (!pending.length && !collected.length && dataTransfer.files && dataTransfer.files.length) {
+                resolve(Array.from(dataTransfer.files));
+                return;
+            }
+
+            if (!pending.length) {
+                resolve(collected);
+                return;
+            }
+
+            Promise.all(pending).then(function (entryFiles) {
+                entryFiles.forEach(function (file) {
+                    if (file) {
+                        collected.push(file);
+                    }
+                });
+
+                if (!collected.length && dataTransfer.files && dataTransfer.files.length) {
+                    collected = Array.from(dataTransfer.files);
+                }
+
+                resolve(collected);
+            }).catch(function () {
+                if (dataTransfer.files && dataTransfer.files.length) {
+                    resolve(Array.from(dataTransfer.files));
+                } else {
+                    resolve(collected);
+                }
+            });
+        });
+    }
+
+    function ensureEmailUploadFileContent(file) {
+        return new Promise(function (resolve) {
+            if (!file) {
+                resolve(null);
+                return;
+            }
+
+            if (file.size > 0) {
+                resolve(file);
+                return;
+            }
+
+            if (typeof file.arrayBuffer !== 'function') {
+                resolve(file);
+                return;
+            }
+
+            file.arrayBuffer().then(function (buffer) {
+                if (!buffer || !buffer.byteLength) {
+                    resolve(file);
+                    return;
+                }
+
+                resolve(new File([buffer], file.name, {
+                    type: file.type || 'application/octet-stream',
+                    lastModified: file.lastModified || Date.now()
+                }));
+            }).catch(function () {
+                resolve(file);
+            });
+        });
+    }
+
+    function normalizeEmailUploadFiles(files) {
+        return Promise.all(Array.from(files || []).map(function (file) {
+            return ensureEmailUploadFileContent(file).then(function (resolved) {
+                return ensureEmailUploadFileExtension(resolved);
+            });
+        })).then(function (normalized) {
+            return normalized.filter(function (file) {
+                return file && hasAllowedEmailUploadExtension(file.name);
+            });
+        });
+    }
+
+    function resolveEmailUploadDropFiles(dataTransfer) {
+        return getFilesFromDataTransfer(dataTransfer).then(normalizeEmailUploadFiles);
+    }
+
+    function emailUploadEmptyFileMessage() {
+        return 'The dropped file appears empty. Save the email from Outlook to your computer first, then browse to upload it.';
+    }
+
+    function sanitizeEmailUploadFilename(filename, preferredExtension) {
         if (!filename || typeof filename !== 'string') {
-            return 'email_' + Date.now() + '.msg';
+            var fallbackExt = preferredExtension || 'eml';
+            return 'email_' + Date.now() + '.' + fallbackExt;
         }
 
         var lastDot = filename.lastIndexOf('.');
         var extension = lastDot >= 0 ? filename.slice(lastDot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+        if (!extension && preferredExtension) {
+            extension = String(preferredExtension).toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
         var nameWithoutExt = lastDot >= 0 ? filename.slice(0, lastDot) : filename;
 
         var sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -143,7 +384,15 @@
     global.crmEmailUploadAcceptAttribute = emailUploadAcceptAttribute;
     global.crmEmailUploadExtensionsLabel = emailUploadExtensionsLabel;
     global.crmIsAllowedEmailUploadFilename = isAllowedEmailUploadFilename;
+    global.crmIsPotentialEmailUploadFile = isPotentialEmailUploadFile;
+    global.crmDetectEmailUploadExtensionFromBytes = detectEmailUploadExtensionFromBytes;
+    global.crmEnsureEmailUploadFileExtension = ensureEmailUploadFileExtension;
     global.crmFilterAllowedEmailUploadFiles = filterAllowedEmailUploadFiles;
+    global.crmGetFilesFromDataTransfer = getFilesFromDataTransfer;
+    global.crmEnsureEmailUploadFileContent = ensureEmailUploadFileContent;
+    global.crmNormalizeEmailUploadFiles = normalizeEmailUploadFiles;
+    global.crmResolveEmailUploadDropFiles = resolveEmailUploadDropFiles;
+    global.crmEmailUploadEmptyFileMessage = emailUploadEmptyFileMessage;
     global.crmSanitizeEmailUploadFilename = sanitizeEmailUploadFilename;
     global.crmBuildEmailUploadFormData = buildEmailUploadFormData;
     global.crmEmailUpload403Message = emailUpload403Message;

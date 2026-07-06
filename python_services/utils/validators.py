@@ -3,8 +3,54 @@ Validation utilities for file uploads and data processing.
 """
 
 import mimetypes
+import re
 from pathlib import Path
-from typing import List
+from typing import List, Optional
+
+
+def detect_email_upload_extension(content: bytes) -> Optional[str]:
+    if not content:
+        return None
+
+    if len(content) >= 4 and content[:4] == b'\xD0\xCF\x11\xE0':
+        return 'msg'
+
+    try:
+        header = content[:4096].decode('utf-8', errors='ignore')
+    except Exception:
+        header = ''
+
+    if re.match(r'^(From:|Return-Path:|Received:|MIME-Version:|Date:|X-)', header, re.IGNORECASE):
+        return 'eml'
+
+    return None
+
+
+def validate_email_upload(filename: str, content: bytes, allowed_extensions: List[str]) -> bool:
+    if validate_file_type(filename, allowed_extensions):
+        return True
+
+    detected = detect_email_upload_extension(content)
+    if not detected:
+        return False
+
+    normalized_allowed = [
+        ext.lower().lstrip('.')
+        for ext in allowed_extensions
+    ]
+    return detected in normalized_allowed
+
+
+def resolve_email_upload_filename(filename: str, content: bytes) -> str:
+    if validate_file_type(filename, allowed_extensions=['.msg', '.eml']):
+        return filename
+
+    detected = detect_email_upload_extension(content)
+    if not detected:
+        return filename
+
+    stem = Path(filename).stem if filename else f'email_{int(__import__("time").time() * 1000)}'
+    return f'{stem}.{detected}'
 
 
 def validate_file_type(filename: str, allowed_extensions: List[str]) -> bool:
@@ -22,7 +68,8 @@ def validate_file_type(filename: str, allowed_extensions: List[str]) -> bool:
         return False
     
     ext = Path(filename).suffix.lower()
-    return ext in [e.lower() for e in allowed_extensions]
+    normalized_allowed = [e.lower() if e.startswith('.') else f'.{e.lower()}' for e in allowed_extensions]
+    return ext in normalized_allowed
 
 
 def validate_file_size(file_size: int, max_size_mb: int = 20) -> bool:

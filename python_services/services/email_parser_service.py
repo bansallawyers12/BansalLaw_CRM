@@ -10,9 +10,11 @@ import sys
 import os
 import re
 import base64
+import tempfile
 from email import policy
 from email.message import Message
 from email.utils import getaddresses, parsedate_to_datetime
+from email.header import decode_header
 import email
 from datetime import datetime, timezone
 from pathlib import Path
@@ -32,16 +34,242 @@ logger = setup_logger(__name__, 'email_parser.log')
 
 class EmailParserService:
     """Service for parsing Outlook email files (.msg, .eml)."""
+
+    ATTACHMENT_MAX_BYTES = 31457280  # 30MB
+
+    MIME_EXTENSION_MAP = {
+        'image/jpeg': 'jpg',
+        'image/jpg': 'jpg',
+        'image/pjpeg': 'jpg',
+        'image/png': 'png',
+        'image/gif': 'gif',
+        'image/bmp': 'bmp',
+        'image/webp': 'webp',
+        'image/tiff': 'tiff',
+        'image/x-png': 'png',
+        'application/pdf': 'pdf',
+        'application/msword': 'doc',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+        'application/vnd.ms-excel': 'xls',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+    }
     
     def __init__(self):
         logger.info("Email Parser Service initialized")
 
+    def _sanitize_text_content(self, value: Any) -> Any:
+        """Remove null bytes and normalize text fields for JSON/DB safety."""
+        if not isinstance(value, str):
+            return value
+        return value.replace('\0', '')
+
+    def _infer_attachment_extension(self, filename: str, content_type: str) -> str:
+        name = str(filename or '').strip()
+        ext = os.path.splitext(name)[1].lstrip('.').lower()
+        if ext:
+            return ext
+
+        mime = str(content_type or '').split(';', 1)[0].strip().lower()
+        return self.MIME_EXTENSION_MAP.get(mime, '')
+
+    def _normalize_attachment_filename(self, filename: str, content_type: str) -> str:
+        name = str(filename or 'attachment').strip() or 'attachment'
+        ext = self._infer_attachment_extension(name, content_type)
+        if ext and not os.path.splitext(name)[1]:
+            return f'{name}.{ext}'
+        return name
+
+    def _read_msg_attachment_bytes(self, attachment) -> bytes:
+        data = getattr(attachment, 'data', None)
+        if data:
+            if isinstance(data, bytes):
+                return data
+            try:
+                return data.encode('latin-1')
+            except Exception:
+                pass
+
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                attachment.save(customPath=tmpdir)
+                for entry in os.listdir(tmpdir):
+                    path = os.path.join(tmpdir, entry)
+                    if os.path.isfile(path):
+                        with open(path, 'rb') as handle:
+                            return handle.read()
+        except Exception as e:
+            logger.warning(f"Could not read attachment bytes via save(): {getattr(attachment, 'longFilename', 'unknown')} - {e}")
+
+        return b''
+
+    def _build_attachment_record(
+        self,
+        filename: str,
+        content_type: str,
+        content_id: str,
+        is_inline: bool,
+        payload: bytes,
+    ) -> dict:
+        normalized_name = self._normalize_attachment_filename(filename, content_type)
+        attachment_data = {
+            'filename': self._safe_get(normalized_name, 'attachment'),
+            'display_name': self._safe_get(normalized_name, 'attachment'),
+            'content_type': self._safe_get(content_type or 'application/octet-stream', 'application/octet-stream'),
+            'content_id': content_id or '',
+            'is_inline': bool(is_inline),
+            'size': len(payload or b''),
+            'file_size': len(payload or b''),
+            'data': None,
+        }
+
+        if payload and len(payload) <= self.ATTACHMENT_MAX_BYTES:
+            try:
+                attachment_data['data'] = base64.b64encode(payload).decode('ascii')
+            except Exception as e:
+                logger.error(f"Failed to encode attachment {attachment_data['filename']}: {str(e)}")
+                attachment_data['data'] = None
+
+        return attachment_data
+
+    def _is_inline_attachment(self, content_id: str, combined_body: str, disposition: str = '') -> bool:
+        disposition = str(disposition or '').lower()
+        if 'attachment' in disposition:
+            return False
+        if 'inline' in disposition:
+            return True
+
+        content_id = str(content_id or '').strip().strip('<>')
+        if not content_id or not combined_body:
+            return False
+
+        cid_ref = f"cid:{content_id}".lower()
+        return cid_ref in str(combined_body).lower()
+
+    def _decode_eml_header_value(self, value: Optional[str]) -> str:
+        if not value:
+            return ''
+        try:
+            parts = decode_header(str(value))
+            chunks: List[str] = []
+            for part, charset in parts:
+                if isinstance(part, bytes):
+                    chunks.append(part.decode(charset or 'utf-8', errors='ignore'))
+                else:
+                    chunks.append(str(part))
+            return ''.join(chunks).strip()
+        except Exception:
+            return str(value).strip()
+
+    def _get_eml_part_filename(self, part: Message) -> Optional[str]:
+        filename = part.get_filename()
+        if filename:
+            return self._decode_eml_header_value(filename)
+
+        for header_name in ('Content-Disposition', 'Content-Type'):
+            header_value = str(part.get(header_name, '') or '')
+            if not header_value:
+                continue
+            match = re.search(
+                r'''filename\*=(?:UTF-8''([^;]+)|"([^"]+)"|([^;\s]+))''',
+                header_value,
+                re.IGNORECASE,
+            )
+            if match:
+                return self._decode_eml_header_value(
+                    match.group(1) or match.group(2) or match.group(3)
+                )
+            match = re.search(
+                r'''name\*=(?:UTF-8''([^;]+)|"([^"]+)"|([^;\s]+))''',
+                header_value,
+                re.IGNORECASE,
+            )
+            if match:
+                return self._decode_eml_header_value(
+                    match.group(1) or match.group(2) or match.group(3)
+                )
+
+        return None
+
+    def _read_eml_part_bytes(self, part: Message) -> bytes:
+        try:
+            content = part.get_content()
+            if isinstance(content, bytes):
+                return content
+            if isinstance(content, str):
+                return content.encode('utf-8', errors='ignore')
+        except Exception:
+            pass
+
+        try:
+            payload = part.get_payload(decode=True)
+            if isinstance(payload, bytes):
+                return payload or b''
+            if isinstance(payload, str):
+                return payload.encode('utf-8', errors='ignore')
+        except Exception:
+            pass
+
+        return b''
+
+    def _is_eml_attachment_candidate(self, part: Message) -> bool:
+        if part.get_content_maintype() == 'multipart':
+            return False
+
+        content_type = (part.get_content_type() or '').lower()
+        if content_type in ('text/plain', 'text/html'):
+            return False
+
+        disposition = str(part.get('Content-Disposition', '') or '').lower()
+        if 'attachment' in disposition:
+            return True
+
+        if self._get_eml_part_filename(part):
+            return True
+
+        maintype = part.get_content_maintype()
+        if maintype in ('application', 'image', 'audio', 'video'):
+            return True
+
+        if maintype == 'message' and content_type == 'message/rfc822':
+            return True
+
+        return False
+
     def parse_email_file(self, file_path: str) -> Dict[str, Any]:
-        """Parse an Outlook email file based on its extension."""
+        """Parse an Outlook email file based on its extension or file contents."""
         extension = Path(file_path).suffix.lower()
         if extension == '.eml':
             return self.parse_eml_file(file_path)
+        if extension == '.msg':
+            return self.parse_msg_file(file_path)
+
+        detected = self._detect_email_file_format(file_path)
+        if detected == 'eml':
+            return self.parse_eml_file(file_path)
+        if detected == 'msg':
+            return self.parse_msg_file(file_path)
+
         return self.parse_msg_file(file_path)
+
+    def _detect_email_file_format(self, file_path: str) -> Optional[str]:
+        try:
+            with open(file_path, 'rb') as handle:
+                header = handle.read(4096) or b''
+        except Exception:
+            return None
+
+        if len(header) >= 4 and header[:4] == b'\xD0\xCF\x11\xE0':
+            return 'msg'
+
+        try:
+            text = header.decode('utf-8', errors='ignore')
+        except Exception:
+            text = ''
+
+        if re.match(r'^(From:|Return-Path:|Received:|MIME-Version:|Date:|X-)', text, re.IGNORECASE):
+            return 'eml'
+
+        return None
     
     def parse_msg_file(self, file_path: str) -> Dict[str, Any]:
         """
@@ -113,6 +341,9 @@ class EmailParserService:
                 
                 # Extract headers
                 email_data['headers'] = self._extract_headers(msg)
+
+                email_data['html_content'] = self._sanitize_text_content(email_data.get('html_content', ''))
+                email_data['text_content'] = self._sanitize_text_content(email_data.get('text_content', ''))
                 
                 logger.info(f"Successfully parsed email: {email_data['subject']}")
                 
@@ -166,8 +397,8 @@ class EmailParserService:
                 'sender_email': sender_email or '',
                 'sent_date': sent_date,
                 'received_date': received_date or sent_date,
-                'html_content': html_content,
-                'text_content': text_content,
+                'html_content': self._sanitize_text_content(html_content),
+                'text_content': self._sanitize_text_content(text_content),
                 'recipients': recipient_groups['to'],
                 'to_recipients': recipient_groups['to'],
                 'cc_recipients': recipient_groups['cc'],
@@ -236,22 +467,18 @@ class EmailParserService:
     def _extract_eml_body_and_attachments(self, msg: Message) -> Tuple[str, str, list]:
         html_content = ''
         text_content = ''
-        attachments = []
+        attachment_parts: List[Message] = []
 
         if msg.is_multipart():
             for part in msg.walk():
                 if part.get_content_maintype() == 'multipart':
                     continue
-                disposition = str(part.get('Content-Disposition', '') or '').lower()
-                filename = part.get_filename()
-                content_type = part.get_content_type()
 
-                if filename or 'attachment' in disposition:
-                    attachment_data = self._build_eml_attachment(part, filename)
-                    if attachment_data:
-                        attachments.append(attachment_data)
+                if self._is_eml_attachment_candidate(part):
+                    attachment_parts.append(part)
                     continue
 
+                content_type = part.get_content_type()
                 if content_type == 'text/html' and not html_content:
                     html_content = self._safe_get(part.get_content(), '')
                 elif content_type == 'text/plain' and not text_content:
@@ -260,32 +487,36 @@ class EmailParserService:
             content_type = msg.get_content_type()
             if content_type == 'text/html':
                 html_content = self._safe_get(msg.get_content(), '')
+            elif self._is_eml_attachment_candidate(msg):
+                attachment_parts.append(msg)
             else:
                 text_content = self._safe_get(msg.get_content(), '')
 
+        combined_body = f"{text_content}{html_content}"
+        attachments = []
+        for part in attachment_parts:
+            attachment_data = self._build_eml_attachment(part, combined_body)
+            if attachment_data:
+                attachments.append(attachment_data)
+
         return html_content, text_content, attachments
 
-    def _build_eml_attachment(self, part: Message, filename: Optional[str]) -> Optional[dict]:
+    def _build_eml_attachment(self, part: Message, combined_body: str = '') -> Optional[dict]:
         try:
-            payload = part.get_payload(decode=True) or b''
-            filename = filename or part.get_filename() or 'attachment'
+            payload = self._read_eml_part_bytes(part)
+            filename = self._get_eml_part_filename(part) or 'attachment'
             content_id = self._safe_get(part.get('Content-ID', ''), '')
             disposition = str(part.get('Content-Disposition', '') or '').lower()
-            is_inline = 'inline' in disposition or bool(content_id)
+            content_type = self._safe_get(part.get_content_type(), 'application/octet-stream')
+            is_inline = self._is_inline_attachment(content_id, combined_body, disposition)
 
-            attachment_data = {
-                'filename': self._safe_get(filename, 'attachment'),
-                'content_type': self._safe_get(part.get_content_type(), 'application/octet-stream'),
-                'content_id': content_id,
-                'is_inline': is_inline,
-                'size': len(payload),
-                'data': None,
-            }
-
-            if payload and len(payload) < 31457280:
-                attachment_data['data'] = base64.b64encode(payload).decode('ascii')
-
-            return attachment_data
+            return self._build_attachment_record(
+                filename,
+                content_type,
+                content_id,
+                is_inline,
+                payload,
+            )
         except Exception as e:
             logger.warning(f"Error processing EML attachment: {str(e)}")
             return None
@@ -499,59 +730,42 @@ class EmailParserService:
         # Get email body to check for inline references
         body = self._safe_get(msg.body, '')
         html_body = self._safe_get(msg.htmlBody, '')
-        combined_body = f"{body}{html_body}".lower()
+        combined_body = f"{body}{html_body}"
         
         try:
             for attachment in msg.attachments:
                 try:
                     content_id = self._safe_get(getattr(attachment, 'contentId', ''), '')
-                    
-                    # Only mark as inline if:
-                    # 1. It has a content_id AND
-                    # 2. The body references it with cid:
-                    # 3. OR it's an image with content_id (common for inline images)
-                    is_inline = False
-                    if content_id:
-                        # Check if body references this content_id
-                        cid_ref = f"cid:{content_id.strip('<>')}"
-                        if cid_ref.lower() in combined_body:
-                            is_inline = True
-                    
-                    attachment_data = {
-                        'filename': self._safe_get(attachment.longFilename or attachment.shortFilename, 'Unknown'),
-                        'content_type': self._safe_get(getattr(attachment, 'contentType', 'application/octet-stream'), 'application/octet-stream'),
-                        'content_id': content_id,
-                        'is_inline': is_inline,
-                        'size': len(attachment.data) if attachment.data else 0,
-                        'data': None
-                    }
-                    
-                    # Only include data if it's not too large (30MB limit - matches upload limit)
-                    if attachment.data and len(attachment.data) < 31457280:  # 30MB limit (30 * 1024 * 1024)
-                        try:
-                            # Base64 encode binary data for safe JSON transmission
-                            # This preserves binary data integrity (PDFs, images, etc.)
-                            if isinstance(attachment.data, bytes):
-                                attachment_data['data'] = base64.b64encode(attachment.data).decode('ascii')
-                            else:
-                                # If it's already a string, try to encode it
-                                attachment_data['data'] = base64.b64encode(attachment.data.encode('latin-1')).decode('ascii')
-                            logger.debug(f"Encoded attachment {attachment_data['filename']}: {len(attachment_data['data'])} chars (original: {len(attachment.data)} bytes)")
-                        except Exception as e:
-                            logger.error(f"Failed to encode attachment {attachment_data['filename']}: {str(e)}")
-                            attachment_data['data'] = None
-                    
-                    attachments.append(attachment_data)
+                    disposition = self._safe_get(getattr(attachment, 'contentDisposition', ''), '')
+                    is_inline = self._is_inline_attachment(content_id, combined_body, disposition)
+                    payload = self._read_msg_attachment_bytes(attachment)
+                    content_type = self._safe_get(
+                        getattr(attachment, 'contentType', 'application/octet-stream'),
+                        'application/octet-stream',
+                    )
+                    filename = self._safe_get(
+                        attachment.longFilename or attachment.shortFilename,
+                        'Unknown',
+                    )
+
+                    attachments.append(self._build_attachment_record(
+                        filename,
+                        content_type,
+                        content_id,
+                        is_inline,
+                        payload,
+                    ))
                     
                 except Exception as e:
                     logger.warning(f"Error processing attachment: {str(e)}")
-                    # Add basic attachment info if detailed processing fails
                     attachments.append({
                         'filename': 'Unknown',
+                        'display_name': 'Unknown',
                         'content_type': 'application/octet-stream',
                         'content_id': '',
                         'is_inline': False,
                         'size': 0,
+                        'file_size': 0,
                         'data': None
                     })
         except Exception as e:

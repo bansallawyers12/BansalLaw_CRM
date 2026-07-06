@@ -6914,7 +6914,7 @@ success: function(response) {
         // This must be on document level, but we let drop zones handle their own events
         $(document).on('dragover', function(e) {
             // Allow drop zones to handle their own dragover events
-            if ($(e.target).closest('.personal-doc-drag-zone, .visa-doc-drag-zone, .nomination-doc-drag-zone, .bulk-upload-dropzone, .bulk-upload-dropzone-visa, .bulk-upload-dropzone-nomination').length) {
+            if ($(e.target).closest('.personal-doc-drag-zone, .visa-doc-drag-zone, .nomination-doc-drag-zone, .bulk-upload-dropzone, .bulk-upload-dropzone-visa, .bulk-upload-dropzone-nomination, .outlook-container, .inline-drop-zone, #dragDropOverlay').length) {
                 return; // Let the drop zone handler take over
             }
             // For other areas, prevent default to allow file drops
@@ -6923,7 +6923,7 @@ success: function(response) {
 
         $(document).on('drop', function(e) {
             // Allow drop zones to handle their own drop events
-            if ($(e.target).closest('.personal-doc-drag-zone, .visa-doc-drag-zone, .nomination-doc-drag-zone, .bulk-upload-dropzone, .bulk-upload-dropzone-visa, .bulk-upload-dropzone-nomination').length) {
+            if ($(e.target).closest('.personal-doc-drag-zone, .visa-doc-drag-zone, .nomination-doc-drag-zone, .bulk-upload-dropzone, .bulk-upload-dropzone-visa, .bulk-upload-dropzone-nomination, .outlook-container, .inline-drop-zone, #dragDropOverlay').length) {
                 return; // Let the drop zone handler take over
             }
             // For other areas, prevent default to prevent browser from opening file

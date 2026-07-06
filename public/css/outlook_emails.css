@@ -971,7 +971,8 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
     transition: all 0.2s ease;
     flex-shrink: 0;
 }
-.inline-drop-zone:hover {
+.inline-drop-zone:hover,
+.inline-drop-zone.is-drag-over {
     background-color: #f0f6fc;
     border-color: var(--outlook-blue);
     color: var(--outlook-blue);

@@ -1,14 +1,17 @@
 // Outlook-style Email Interface Logic
 
-function crmOutlookSanitizeUploadFilename(filename) {
+function crmOutlookSanitizeUploadFilename(filename, preferredExtension) {
     if (typeof window.crmSanitizeEmailUploadFilename === 'function') {
-        return window.crmSanitizeEmailUploadFilename(filename);
+        return window.crmSanitizeEmailUploadFilename(filename, preferredExtension);
     }
     if (!filename || typeof filename !== 'string') {
-        return 'email_' + Date.now() + '.msg';
+        return 'email_' + Date.now() + '.' + (preferredExtension || 'eml');
     }
     var lastDot = filename.lastIndexOf('.');
     var extension = lastDot >= 0 ? filename.slice(lastDot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+    if (!extension && preferredExtension) {
+        extension = String(preferredExtension).toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
     var nameWithoutExt = lastDot >= 0 ? filename.slice(0, lastDot) : filename;
     var sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9_-]/g, '_');
     sanitizedName = sanitizedName.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
@@ -312,6 +315,54 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
+        async function processDroppedEmailFiles(dataTransfer) {
+            const files = (typeof window.crmResolveEmailUploadDropFiles === 'function')
+                ? await window.crmResolveEmailUploadDropFiles(dataTransfer)
+                : Array.from(dataTransfer && dataTransfer.files ? dataTransfer.files : []);
+
+            if (files.length > 0) {
+                handleUploadFiles(files);
+            }
+        }
+
+        function bindEmailDropZone(dropZone) {
+            if (!dropZone) {
+                return;
+            }
+
+            dropZone.addEventListener('dragenter', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.add('is-drag-over');
+            });
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.dataTransfer) {
+                    e.dataTransfer.dropEffect = 'copy';
+                }
+                dropZone.classList.add('is-drag-over');
+            });
+
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.remove('is-drag-over');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.remove('is-drag-over');
+
+                if (isEmailUploading) return;
+                processDroppedEmailFiles(e.dataTransfer);
+            });
+        }
+
+        bindEmailDropZone(inlineDropZone);
+
         function formatUploadErrorDetails(errors) {
             if (!errors || !Array.isArray(errors) || errors.length === 0) {
                 return '';
@@ -514,6 +565,31 @@ document.addEventListener('DOMContentLoaded', function() {
             return filename.substring(lastDot);
         }
 
+        function inferAttachmentExtension(filename, contentType) {
+            const ext = getAttachmentExtension(filename).replace('.', '').toLowerCase();
+            if (ext) {
+                return ext;
+            }
+            const mime = String(contentType || '').toLowerCase().split(';')[0].trim();
+            const map = {
+                'image/jpeg': 'jpg',
+                'image/jpg': 'jpg',
+                'image/png': 'png',
+                'image/gif': 'gif',
+                'image/bmp': 'bmp',
+                'image/webp': 'webp',
+                'application/pdf': 'pdf',
+                'application/msword': 'doc',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx'
+            };
+            return map[mime] || '';
+        }
+
+        function getAttachmentSaveStem(att, nameInput) {
+            const stem = nameInput ? nameInput.value.trim() : getAttachmentStem(att.filename);
+            return stem || getAttachmentStem(att.filename) || 'attachment';
+        }
+
         function formatAttachmentFileSize(bytes) {
             const size = Number(bytes) || 0;
             if (size <= 0) {
@@ -660,7 +736,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function renderAttachmentRenameCell(att, index) {
             const stem = getAttachmentStem(att.filename);
-            const ext = getAttachmentExtension(att.filename);
+            const ext = getAttachmentExtension(att.filename) || (
+                inferAttachmentExtension(att.filename, att.content_type)
+                    ? '.' + inferAttachmentExtension(att.filename, att.content_type)
+                    : ''
+            );
             return `
                 <div class="attachment-rename-input">
                     <input type="text" id="attachmentName_${index}" value="${escapeHtml(stem)}" data-original="${escapeHtml(att.filename)}" autocomplete="off" aria-label="Save ${escapeHtml(att.filename)} as">
@@ -754,7 +834,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         async function previewEmailAttachments(file) {
             const formData = new FormData();
-            const safeName = crmOutlookSanitizeUploadFilename(file.name);
+            const extMatch = (file.name || '').toLowerCase().match(/\.(msg|eml)$/);
+            const safeName = crmOutlookSanitizeUploadFilename(file.name, extMatch ? extMatch[1] : 'eml');
             formData.append('email_files[]', file, safeName);
             formData.append('client_id', clientId);
             formData.append('type', 'client');
@@ -880,7 +961,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         return {
                             original_filename: att.filename,
-                            file_name: nameInput ? nameInput.value.trim() : getAttachmentStem(att.filename),
+                            file_name: getAttachmentSaveStem(att, nameInput),
                             storage_type: storageType,
                             folder_id: folderId
                         };
@@ -1170,7 +1251,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function buildOutlookUploadFormData(file, forceUpload, attachmentStorage) {
             const formData = new FormData();
-            const safeName = crmOutlookSanitizeUploadFilename(file.name);
+            const extMatch = (file.name || '').toLowerCase().match(/\.(msg|eml)$/);
+            const safeName = crmOutlookSanitizeUploadFilename(file.name, extMatch ? extMatch[1] : 'eml');
             formData.append('email_files[]', file, safeName);
             formData.append('client_id', clientId);
             formData.append('type', 'client');
@@ -1300,11 +1382,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const handleUploadFiles = async (files) => {
             if (isEmailUploading) return;
-            if (files.length === 0) return;
+            if (!files || files.length === 0) return;
+
+            let resolvedFiles = Array.from(files);
+            if (typeof window.crmNormalizeEmailUploadFiles === 'function') {
+                resolvedFiles = await window.crmNormalizeEmailUploadFiles(resolvedFiles);
+            }
 
             const msgFiles = (typeof window.crmFilterAllowedEmailUploadFiles === 'function')
-                ? window.crmFilterAllowedEmailUploadFiles(files)
-                : Array.from(files).filter(function (file) {
+                ? window.crmFilterAllowedEmailUploadFiles(resolvedFiles)
+                : resolvedFiles.filter(function (file) {
                     return file.name.toLowerCase().endsWith('.msg') || file.name.toLowerCase().endsWith('.eml');
                 });
 
@@ -1313,6 +1400,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     ? window.crmEmailUploadExtensionsLabel()
                     : '.msg, .eml';
                 showUploadErrorAlert('Please upload Outlook email files only (' + allowedLabel + ').');
+                return;
+            }
+
+            const emptyFiles = msgFiles.filter(function (file) { return !file.size; });
+            if (emptyFiles.length > 0) {
+                const emptyMessage = (typeof window.crmEmailUploadEmptyFileMessage === 'function')
+                    ? window.crmEmailUploadEmptyFileMessage()
+                    : 'The dropped file appears empty. Save the email from Outlook to your computer first, then browse to upload it.';
+                showUploadErrorAlert(emptyMessage);
                 return;
             }
 
@@ -1492,14 +1588,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
             outlookContainer.addEventListener('drop', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 dragCounter = 0;
                 dragDropOverlay.style.display = 'none';
 
                 if (isEmailUploading) return;
-                
-                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                    handleUploadFiles(e.dataTransfer.files);
-                }
+
+                processDroppedEmailFiles(e.dataTransfer);
             });
         }
     }
@@ -1681,6 +1776,79 @@ document.addEventListener('DOMContentLoaded', function() {
             return baseUrl + '/mail-attachments/' + att.id + '/preview';
         }
         return '#';
+    }
+
+    function registerCidLookupKey(cidMap, key, previewUrl) {
+        if (!key || !previewUrl || previewUrl === '#') {
+            return;
+        }
+        const normalized = String(key).replace(/^<|>$/g, '').trim().toLowerCase();
+        if (normalized) {
+            cidMap[normalized] = previewUrl;
+        }
+    }
+
+    function resolveCidPreviewUrl(cidMap, cidValue) {
+        const raw = String(cidValue || '').trim();
+        const normalized = raw.replace(/^<|>$/g, '').trim().toLowerCase();
+        if (!normalized) {
+            return null;
+        }
+        if (cidMap[normalized]) {
+            return cidMap[normalized];
+        }
+        const basename = normalized.split(/[/\\]/).pop();
+        if (basename && cidMap[basename]) {
+            return cidMap[basename];
+        }
+        const withoutExt = normalized.replace(/\.[^.]+$/, '');
+        if (withoutExt !== normalized && cidMap[withoutExt]) {
+            return cidMap[withoutExt];
+        }
+        return null;
+    }
+
+    function replaceCidReferencesInHtml(htmlContent, attachments) {
+        if (!htmlContent || !attachments || attachments.length === 0) {
+            return htmlContent;
+        }
+
+        const cidMap = {};
+        attachments.forEach(function(att) {
+            if (!att || !att.id) {
+                return;
+            }
+            const previewUrl = getAttachmentPreviewUrl(att);
+            if (!previewUrl || previewUrl === '#') {
+                return;
+            }
+
+            registerCidLookupKey(cidMap, att.content_id, previewUrl);
+
+            const filename = resolveAttachmentDisplayName(att);
+            registerCidLookupKey(cidMap, filename, previewUrl);
+            if (filename.includes('/')) {
+                registerCidLookupKey(cidMap, filename.split('/').pop(), previewUrl);
+            }
+            if (filename.includes('\\')) {
+                registerCidLookupKey(cidMap, filename.split('\\').pop(), previewUrl);
+            }
+            if (att.display_name && att.display_name !== filename) {
+                registerCidLookupKey(cidMap, att.display_name, previewUrl);
+            }
+        });
+
+        htmlContent = htmlContent.replace(/src=["']cid:([^"'>]+)["']/gi, function(match, cidValue) {
+            const previewUrl = resolveCidPreviewUrl(cidMap, cidValue);
+            return previewUrl ? 'src="' + previewUrl + '"' : match;
+        });
+
+        htmlContent = htmlContent.replace(/background-image:\s*url\(["']?cid:([^"')]+)["']?\)/gi, function(match, cidValue) {
+            const previewUrl = resolveCidPreviewUrl(cidMap, cidValue);
+            return previewUrl ? 'background-image: url("' + previewUrl + '")' : match;
+        });
+
+        return htmlContent;
     }
 
     function collectEmailAttachmentItems(email) {
@@ -1916,7 +2084,9 @@ document.addEventListener('DOMContentLoaded', function() {
             iframe.removeAttribute('src');
             iframe.removeAttribute('srcdoc');
             let bodyHtml = contentStr;
-            if (bodyHtml && !bodyHtml.includes('<')) {
+            if (bodyHtml && bodyHtml.includes('<')) {
+                bodyHtml = replaceCidReferencesInHtml(bodyHtml, email.attachments || []);
+            } else if (bodyHtml) {
                 bodyHtml = escapeHtml(bodyHtml).replace(/\n/g, '<br>');
             }
             renderHtmlIframe(iframe, bodyHtml || '<p>No content available.</p>');

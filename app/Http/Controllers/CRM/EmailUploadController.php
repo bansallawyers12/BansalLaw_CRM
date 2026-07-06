@@ -417,11 +417,11 @@ class EmailUploadController extends Controller
                 if (!empty($attachmentData['is_inline'])) {
                     continue;
                 }
-                $filename = $attachmentData['filename'] ?? ('attachment_' . ($index + 1));
+                $filename = $attachmentData['display_name'] ?? $attachmentData['filename'] ?? ('attachment_' . ($index + 1));
                 $attachments[] = [
                     'index' => $index,
                     'filename' => $filename,
-                    'display_name' => $attachmentData['display_name'] ?? $filename,
+                    'display_name' => $filename,
                     'file_size' => $attachmentData['file_size'] ?? $attachmentData['size'] ?? 0,
                     'content_type' => $attachmentData['content_type'] ?? 'application/octet-stream',
                 ];
@@ -671,7 +671,7 @@ class EmailUploadController extends Controller
             $mailReport->to_mail = $this->formatParsedRecipientList($parsedData, 'to_recipients', 'recipients');
             $mailReport->cc = $this->formatParsedRecipientList($parsedData, 'cc_recipients');
             $mailReport->subject = $parsedData['subject'] ?? '';
-            $mailReport->message = $parsedData['html_content'] ?? $parsedData['text_content'] ?? null; // Full body stored in database as requested
+            $mailReport->message = $this->sanitizeEmailBodyForStorage($parsedData['html_content'] ?? $parsedData['text_content'] ?? null); // Full body stored in database as requested
             $mailReport->mail_type = 1;
             $mailReport->type = $request->type; // Set type to 'client' or 'lead' as required by filter
             $mailReport->client_id = $clientId;
@@ -744,8 +744,10 @@ class EmailUploadController extends Controller
                 
                 foreach ($parsedData['attachments'] as $index => $attachmentData) {
                     try {
-                        $origName = $attachmentData['filename'] ?? '';
-                        $storageConfig = $attachmentStorageMap[$origName] ?? null;
+            $origName = $attachmentData['filename'] ?? '';
+            $storageConfig = $attachmentStorageMap[$origName]
+                ?? $attachmentStorageMap[$attachmentData['display_name'] ?? '']
+                ?? null;
                         $this->saveAttachment(
                             $mailReport->id,
                             $attachmentData,
@@ -1238,7 +1240,12 @@ class EmailUploadController extends Controller
         $s3Path = null;
         $s3Key = null;
         $fileSize = $attachmentData['file_size'] ?? $attachmentData['size'] ?? 0;
-        $displayName = $attachmentData['display_name'] ?? ($attachmentData['filename'] ?? 'unknown');
+        $originalFilename = $attachmentData['filename'] ?? 'unknown';
+        $contentType = $attachmentData['content_type'] ?? 'application/octet-stream';
+        $customStem = is_array($storageConfig) && !empty($storageConfig['file_name'])
+            ? (string) $storageConfig['file_name']
+            : null;
+        $displayName = $this->buildAttachmentDisplayName($originalFilename, $contentType, $customStem);
         
         try {
             // Check for both 'content' and 'data' keys (Python service uses 'data')
@@ -1315,14 +1322,7 @@ class EmailUploadController extends Controller
                 }
             } elseif ($decodedData !== null) {
                 // Default: store under client attachments path (email-only)
-                $attachmentFileName = $attachmentData['filename'] ?? 'attachment';
-                if (is_array($storageConfig) && !empty($storageConfig['file_name'])) {
-                    $extension = pathinfo($attachmentFileName, PATHINFO_EXTENSION);
-                    $customStem = $this->sanitizeAttachmentDisplayName((string) $storageConfig['file_name']);
-                    $displayName = $extension ? ($customStem . '.' . $extension) : $customStem;
-                    $attachmentFileName = $displayName;
-                }
-
+                $attachmentFileName = $displayName;
                 $sanitizedAttachmentFileName = $this->sanitizeFilename($attachmentFileName);
                 $s3Key = $clientUniqueId . '/attachments/' . time() . '_' . uniqid() . '_' . $sanitizedAttachmentFileName;
 
@@ -1348,17 +1348,22 @@ class EmailUploadController extends Controller
             }
 
             // Always create attachment record (even if file upload failed)
+            $resolvedExtension = pathinfo($displayName, PATHINFO_EXTENSION);
+            if ($resolvedExtension === '') {
+                $resolvedExtension = $this->resolveAttachmentExtension($displayName, $contentType);
+            }
+
             \App\Models\EmailLogAttachment::create([
                 'email_log_id' => $mailReportId,
                 'filename' => $displayName,
                 'display_name' => $displayName,
-                'content_type' => $attachmentData['content_type'] ?? 'application/octet-stream',
+                'content_type' => $contentType,
                 'file_path' => $s3Path,
                 's3_key' => $s3Key,
-                'file_size' => $fileSize,
+                'file_size' => $decodedData !== null ? strlen($decodedData) : $fileSize,
                 'content_id' => $attachmentData['content_id'] ?? null,
                 'is_inline' => $attachmentData['is_inline'] ?? false,
-                'extension' => pathinfo($displayName, PATHINFO_EXTENSION),
+                'extension' => $resolvedExtension,
             ]);
             
         } catch (\Exception $e) {
@@ -1397,11 +1402,14 @@ class EmailUploadController extends Controller
         }
 
         $originalFilename = $attachmentData['filename'] ?? 'attachment';
-        $extension = pathinfo($originalFilename, PATHINFO_EXTENSION);
-        $customStem = $this->sanitizeAttachmentDisplayName(
+        $contentType = $attachmentData['content_type'] ?? 'application/octet-stream';
+        $displayName = $this->buildAttachmentDisplayName(
+            $originalFilename,
+            $contentType,
             (string) ($storageConfig['file_name'] ?? pathinfo($originalFilename, PATHINFO_FILENAME))
         );
-        $displayName = $extension ? ($customStem . '.' . $extension) : $customStem;
+        $extension = $this->resolveAttachmentExtension($displayName, $contentType);
+        $customStem = pathinfo($displayName, PATHINFO_FILENAME);
 
         $sanitizedClientId = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $clientUniqueId);
         $uniqueFileName = time() . '_' . uniqid() . '_' . $this->sanitizeFilename($displayName);
@@ -1448,6 +1456,71 @@ class EmailUploadController extends Controller
         $name = preg_replace('/_+/', '_', trim((string) $name, '_'));
 
         return $name !== '' ? $name : 'attachment';
+    }
+
+    /**
+     * Infer a file extension from MIME type when Outlook omits it from the filename.
+     */
+    protected function resolveAttachmentExtension(string $filename, ?string $contentType = null): string
+    {
+        $extension = strtolower((string) pathinfo($filename, PATHINFO_EXTENSION));
+        if ($extension !== '') {
+            return preg_replace('/[^a-z0-9]/', '', $extension);
+        }
+
+        $mime = strtolower(trim((string) $contentType));
+        if ($mime !== '' && str_contains($mime, ';')) {
+            $mime = trim(strtok($mime, ';'));
+        }
+
+        $map = [
+            'image/jpeg' => 'jpg',
+            'image/jpg' => 'jpg',
+            'image/pjpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/bmp' => 'bmp',
+            'image/webp' => 'webp',
+            'image/tiff' => 'tif',
+            'application/pdf' => 'pdf',
+            'application/msword' => 'doc',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+        ];
+
+        return $map[$mime] ?? '';
+    }
+
+    /**
+     * Build a display/storage filename with a usable extension for image and document attachments.
+     */
+    protected function buildAttachmentDisplayName(string $filename, ?string $contentType, ?string $customStem = null): string
+    {
+        $originalFilename = $filename !== '' ? $filename : 'attachment';
+        $extension = $this->resolveAttachmentExtension($originalFilename, $contentType);
+
+        if ($extension === '') {
+            $extension = $this->resolveAttachmentExtension('file.' . pathinfo($originalFilename, PATHINFO_EXTENSION), $contentType);
+        }
+
+        $stemSource = $customStem ?? pathinfo($originalFilename, PATHINFO_FILENAME);
+        $stem = $this->sanitizeAttachmentDisplayName((string) $stemSource);
+        if ($stem === '') {
+            $stem = 'attachment';
+        }
+
+        return $extension !== '' ? ($stem . '.' . $extension) : $stem;
+    }
+
+    /**
+     * Strip null bytes from email body content before PostgreSQL storage.
+     */
+    protected function sanitizeEmailBodyForStorage(?string $content): ?string
+    {
+        if ($content === null || $content === '') {
+            return $content;
+        }
+
+        return str_replace("\0", '', $content);
     }
 
     /**
@@ -1538,11 +1611,9 @@ class EmailUploadController extends Controller
 
     protected function sanitizedUploadFilename($file): string
     {
-        $originalName = $file instanceof \Illuminate\Http\UploadedFile
-            ? (string) $file->getClientOriginalName()
-            : (string) $file;
+        $resolvedName = $this->resolveEmailUploadFilename($file);
 
-        return $this->sanitizeFilename($originalName !== '' ? $originalName : 'email.msg');
+        return $this->sanitizeFilename($resolvedName !== '' ? $resolvedName : 'email.eml');
     }
 
     /**
@@ -1653,6 +1724,62 @@ class EmailUploadController extends Controller
         );
     }
 
+    /**
+     * Detect .msg vs .eml from file contents when drag-and-drop omits the extension.
+     */
+    protected function detectEmailUploadExtension($file): ?string
+    {
+        $originalExtension = strtolower(ltrim((string) $file->getClientOriginalExtension(), '.'));
+        if ($this->isAllowedEmailUploadExtension($originalExtension)) {
+            return $originalExtension;
+        }
+
+        $path = $file->getRealPath();
+        if (!$path || !is_readable($path)) {
+            return null;
+        }
+
+        $handle = fopen($path, 'rb');
+        if ($handle === false) {
+            return null;
+        }
+
+        $header = fread($handle, 4096) ?: '';
+        fclose($handle);
+
+        if (strlen($header) >= 4 && $header[0] === "\xD0" && $header[1] === "\xCF" && $header[2] === "\x11" && $header[3] === "\xE0") {
+            return 'msg';
+        }
+
+        if (preg_match('/^(From:|Return-Path:|Received:|MIME-Version:|Date:|X-)/im', $header)) {
+            return 'eml';
+        }
+
+        return null;
+    }
+
+    protected function resolveEmailUploadFilename($file): string
+    {
+        $originalName = $file instanceof \Illuminate\Http\UploadedFile
+            ? (string) $file->getClientOriginalName()
+            : (string) $file;
+
+        $originalName = $originalName !== '' ? $originalName : 'email.eml';
+        $extension = strtolower(ltrim((string) pathinfo($originalName, PATHINFO_EXTENSION), '.'));
+
+        if (!$this->isAllowedEmailUploadExtension($extension) && $file instanceof \Illuminate\Http\UploadedFile) {
+            $detected = $this->detectEmailUploadExtension($file);
+            if ($detected) {
+                $stem = pathinfo($originalName, PATHINFO_FILENAME);
+                $stem = $stem !== '' ? $stem : 'email_' . time();
+
+                return $stem . '.' . $detected;
+            }
+        }
+
+        return $originalName;
+    }
+
     protected function validateEmailUploadRequest(Request $request)
     {
         $allowedLabel = $this->emailUploadExtensionsLabel();
@@ -1680,8 +1807,11 @@ class EmailUploadController extends Controller
             $originalName = (string) $file->getClientOriginalName();
             $extension = strtolower((string) $file->getClientOriginalExtension());
 
-            if (! $this->isAllowedEmailUploadExtension($extension)) {
-                $invalidFiles[] = $originalName ?: 'Unknown file';
+            if (!$this->isAllowedEmailUploadExtension($extension)) {
+                $detected = $this->detectEmailUploadExtension($file);
+                if (!$detected) {
+                    $invalidFiles[] = $originalName ?: 'Unknown file';
+                }
             }
         }
 

@@ -36,7 +36,7 @@ from services.docx_converter_service import DocxConverterService
 from utils.logger import setup_logger
 from utils.weasyprint_env import configure_weasyprint_dll_paths
 from utils.datetime_format import DEFAULT_TIMEZONE, format_laravel_datetime
-from utils.validators import validate_file_type, validate_file_size
+from utils.validators import validate_file_type, validate_file_size, validate_email_upload, resolve_email_upload_filename
 
 configure_weasyprint_dll_paths()
 
@@ -462,17 +462,17 @@ async def parse_email(file: UploadFile = File(...)):
     try:
         logger.info(f"Parsing email file: {file.filename}")
 
-        if not validate_file_type(file.filename, ALLOWED_EMAIL_EXTENSIONS):
+        content = await file.read()
+        if not validate_email_upload(file.filename, content, ALLOWED_EMAIL_EXTENSIONS):
             raise HTTPException(
                 status_code=400,
                 detail="Invalid file type. Only Outlook email files (.msg, .eml) are allowed.",
             )
 
-        temp_filename = f"{int(time.time() * 1000)}_{file.filename}"
+        resolved_filename = resolve_email_upload_filename(file.filename or 'email.eml', content)
+        temp_filename = f"{int(time.time() * 1000)}_{resolved_filename}"
         temp_path = Path(f"temp/{temp_filename}")
         temp_path.parent.mkdir(exist_ok=True)
-
-        content = await file.read()
         temp_path.write_bytes(content)
 
         result = email_parser.parse_email_file(str(temp_path))
@@ -507,17 +507,17 @@ async def parse_render_pdf_email(
     try:
         logger.info(f"Parsing and rendering PDF for email file: {file.filename}")
 
-        if not validate_file_type(file.filename, ALLOWED_EMAIL_EXTENSIONS):
+        content = await file.read()
+        if not validate_email_upload(file.filename, content, ALLOWED_EMAIL_EXTENSIONS):
             raise HTTPException(
                 status_code=400,
                 detail="Invalid file type. Only Outlook email files (.msg, .eml) are allowed.",
             )
 
-        temp_filename = f"{int(time.time() * 1000)}_{file.filename}"
+        resolved_filename = resolve_email_upload_filename(file.filename or 'email.eml', content)
+        temp_filename = f"{int(time.time() * 1000)}_{resolved_filename}"
         temp_path = Path(f"temp/{temp_filename}")
         temp_path.parent.mkdir(exist_ok=True)
-
-        content = await file.read()
         temp_path.write_bytes(content)
 
         parsed_data = email_parser.parse_email_file(str(temp_path))
@@ -556,7 +556,17 @@ async def parse_render_pdf_email(
                 f"PDF generation skipped for {file.filename}: {result['pdf_error']}"
             )
 
-        return JSONResponse(content=result)
+        try:
+            return JSONResponse(content=result)
+        except Exception as json_error:
+            logger.warning(
+                f"parse-render-pdf response too large for {file.filename}, omitting PDF payload: {json_error}"
+            )
+            result.pop('pdf_base64', None)
+            result['pdf_generated'] = False
+            result['pdf_size'] = 0
+            result['pdf_error'] = result.get('pdf_error') or 'PDF omitted from service response due to size limits'
+            return JSONResponse(content=result)
 
     except HTTPException:
         raise
@@ -616,17 +626,17 @@ async def parse_analyze_render_email(
     try:
         logger.info(f"Processing email file: {file.filename}")
 
-        if not validate_file_type(file.filename, ALLOWED_EMAIL_EXTENSIONS):
+        content = await file.read()
+        if not validate_email_upload(file.filename, content, ALLOWED_EMAIL_EXTENSIONS):
             raise HTTPException(
                 status_code=400,
                 detail="Invalid file type. Only Outlook email files (.msg, .eml) are allowed.",
             )
 
-        temp_filename = f"{int(time.time() * 1000)}_{file.filename}"
+        resolved_filename = resolve_email_upload_filename(file.filename or 'email.eml', content)
+        temp_filename = f"{int(time.time() * 1000)}_{resolved_filename}"
         temp_path = Path(f"temp/{temp_filename}")
         temp_path.parent.mkdir(exist_ok=True)
-
-        content = await file.read()
         temp_path.write_bytes(content)
 
         parsed_data = email_parser.parse_email_file(str(temp_path))

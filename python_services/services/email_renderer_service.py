@@ -32,6 +32,8 @@ logger = setup_logger(__name__, 'email_renderer.log')
 
 class EmailRendererService:
     """Service for rendering email content with enhanced HTML and styling."""
+
+    MAX_INLINE_IMAGE_BYTES_FOR_PDF = 5 * 1024 * 1024
     
     def __init__(self):
         self.safe_tags = {
@@ -1012,6 +1014,18 @@ class EmailRendererService:
 
             content_type = attachment.get('content_type') or 'application/octet-stream'
             if not str(content_type).lower().startswith('image/'):
+                continue
+
+            try:
+                raw_size = len(base64.b64decode(data_b64, validate=False))
+            except Exception:
+                raw_size = 0
+            if raw_size > self.MAX_INLINE_IMAGE_BYTES_FOR_PDF:
+                logger.info(
+                    'Skipping inline image for PDF (%s bytes): %s',
+                    raw_size,
+                    attachment.get('filename') or content_id,
+                )
                 continue
 
             cid_map[content_id.lower()] = f"data:{content_type};base64,{data_b64}"

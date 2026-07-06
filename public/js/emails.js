@@ -873,14 +873,17 @@
         });
 
         // Handle dropped files
-        uploadArea.addEventListener('drop', function(e) {
+        uploadArea.addEventListener('drop', async function(e) {
             dragCounter = 0;
             uploadArea.classList.remove('drag-over');
-            
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            
-            if (files && files.length > 0) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const files = (typeof window.crmResolveEmailUploadDropFiles === 'function')
+                ? await window.crmResolveEmailUploadDropFiles(e.dataTransfer)
+                : Array.from(e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : []);
+
+            if (files.length > 0) {
                 handleFiles(files);
             }
         });
@@ -905,69 +908,92 @@
                 return;
             }
 
-            // Filter to allowed Outlook email files
-            const msgFiles = (typeof window.crmFilterAllowedEmailUploadFiles === 'function')
-                ? window.crmFilterAllowedEmailUploadFiles(files)
-                : Array.from(files).filter(function (file) {
-                    return file.name.toLowerCase().endsWith('.msg') || file.name.toLowerCase().endsWith('.eml');
+            const processFiles = function(resolvedFiles) {
+                // Filter to allowed Outlook email files
+                const msgFiles = (typeof window.crmFilterAllowedEmailUploadFiles === 'function')
+                    ? window.crmFilterAllowedEmailUploadFiles(resolvedFiles)
+                    : Array.from(resolvedFiles).filter(function (file) {
+                        return file.name.toLowerCase().endsWith('.msg') || file.name.toLowerCase().endsWith('.eml');
+                    });
+
+                if (msgFiles.length === 0) {
+                    const allowedLabel = (typeof window.crmEmailUploadExtensionsLabel === 'function')
+                        ? window.crmEmailUploadExtensionsLabel()
+                        : '.msg, .eml';
+                    showNotification('Please select Outlook email files only (' + allowedLabel + ')', 'error');
+                    fileStatus.textContent = 'Invalid file type';
+                    fileStatus.parentElement.className = 'upload-progress error';
+                    setTimeout(function () {
+                        fileStatus.textContent = 'Ready to upload';
+                        fileStatus.parentElement.className = 'upload-progress';
+                    }, 3000);
+                    return;
+                }
+
+                const emptyFiles = msgFiles.filter(function (file) { return !file.size; });
+                if (emptyFiles.length > 0) {
+                    const emptyMessage = (typeof window.crmEmailUploadEmptyFileMessage === 'function')
+                        ? window.crmEmailUploadEmptyFileMessage()
+                        : 'The dropped file appears empty. Save the email from Outlook to your computer first, then browse to upload it.';
+                    showNotification(emptyMessage, 'error');
+                    fileStatus.textContent = 'File is empty';
+                    fileStatus.parentElement.className = 'upload-progress error';
+                    setTimeout(function () {
+                        fileStatus.textContent = 'Ready to upload';
+                        fileStatus.parentElement.className = 'upload-progress';
+                    }, 4000);
+                    return;
+                }
+
+                if (msgFiles.length !== resolvedFiles.length) {
+                    showNotification('Only ' + msgFiles.length + ' of ' + resolvedFiles.length + ' files are valid Outlook email files', 'info');
+                }
+
+                if (msgFiles.length > MAX_EMAIL_FILES) {
+                    showNotification('Maximum ' + MAX_EMAIL_FILES + ' email files allowed per upload.', 'error');
+                    fileStatus.textContent = 'Too many files selected';
+                    fileStatus.parentElement.className = 'upload-progress error';
+                    setTimeout(function() {
+                        fileStatus.textContent = 'Ready to upload';
+                        fileStatus.parentElement.className = 'upload-progress';
+                    }, 3000);
+                    return;
+                }
+
+                const oversizedFiles = msgFiles.filter(function(file) {
+                    return file.size > MAX_EMAIL_FILE_BYTES;
                 });
+                if (oversizedFiles.length > 0) {
+                    const names = oversizedFiles.map(function(f) { return f.name; }).join(', ');
+                    showNotification(
+                        oversizedFiles.length + ' file(s) exceed the ' + formatFileSize(MAX_EMAIL_FILE_BYTES) + ' limit: ' + names,
+                        'error'
+                    );
+                    fileStatus.textContent = 'File too large';
+                    fileStatus.parentElement.className = 'upload-progress error';
+                    setTimeout(function() {
+                        fileStatus.textContent = 'Ready to upload';
+                        fileStatus.parentElement.className = 'upload-progress';
+                    }, 4000);
+                    return;
+                }
 
-            if (msgFiles.length === 0) {
-                const allowedLabel = (typeof window.crmEmailUploadExtensionsLabel === 'function')
-                    ? window.crmEmailUploadExtensionsLabel()
-                    : '.msg, .eml';
-                showNotification('Please select Outlook email files only (' + allowedLabel + ')', 'error');
-                fileStatus.textContent = 'Invalid file type';
-                fileStatus.parentElement.className = 'upload-progress error';
-                setTimeout(function () {
-                    fileStatus.textContent = 'Ready to upload';
-                    fileStatus.parentElement.className = 'upload-progress';
-                }, 3000);
-                return;
-            }
+                // Update file count badge
+                updateFileCount(msgFiles.length);
 
-            if (msgFiles.length !== files.length) {
-                showNotification('Only ' + msgFiles.length + ' of ' + files.length + ' files are valid Outlook email files', 'info');
-            }
+                // Update status
+                fileStatus.textContent = `${msgFiles.length} file(s) ready to upload`;
+                fileStatus.parentElement.className = 'upload-progress';
 
-            if (msgFiles.length > MAX_EMAIL_FILES) {
-                showNotification('Maximum ' + MAX_EMAIL_FILES + ' email files allowed per upload.', 'error');
-                fileStatus.textContent = 'Too many files selected';
-                fileStatus.parentElement.className = 'upload-progress error';
-                setTimeout(function() {
-                    fileStatus.textContent = 'Ready to upload';
-                    fileStatus.parentElement.className = 'upload-progress';
-                }, 3000);
-                return;
-            }
+                // Auto-upload immediately
+                uploadFiles(msgFiles);
+            };
 
-            const oversizedFiles = msgFiles.filter(function(file) {
-                return file.size > MAX_EMAIL_FILE_BYTES;
-            });
-            if (oversizedFiles.length > 0) {
-                const names = oversizedFiles.map(function(f) { return f.name; }).join(', ');
-                showNotification(
-                    oversizedFiles.length + ' file(s) exceed the ' + formatFileSize(MAX_EMAIL_FILE_BYTES) + ' limit: ' + names,
-                    'error'
-                );
-                fileStatus.textContent = 'File too large';
-                fileStatus.parentElement.className = 'upload-progress error';
-                setTimeout(function() {
-                    fileStatus.textContent = 'Ready to upload';
-                    fileStatus.parentElement.className = 'upload-progress';
-                }, 4000);
-                return;
-            }
+            const normalizePromise = (typeof window.crmNormalizeEmailUploadFiles === 'function')
+                ? window.crmNormalizeEmailUploadFiles(files)
+                : Promise.resolve(Array.from(files || []));
 
-            // Update file count badge
-            updateFileCount(msgFiles.length);
-
-            // Update status
-            fileStatus.textContent = `${msgFiles.length} file(s) ready to upload`;
-            fileStatus.parentElement.className = 'upload-progress';
-
-            // Auto-upload immediately
-            uploadFiles(msgFiles);
+            normalizePromise.then(processFiles);
         }
 
         function updateFileCount(count) {
