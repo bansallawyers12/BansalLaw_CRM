@@ -2073,23 +2073,32 @@ class ClientsController extends Controller
                 ->whereIn('type', ['client', 'lead'])
                 ->first(['id', 'type', 'first_name', 'last_name', 'client_id']);
 
+            if (! $targetRecord) {
+                return redirect()->route('clients.index')->with('error', 'Clients Not Exist');
+            }
+
             if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
                 $displayName = trim((string) (($targetRecord->first_name ?? '') . ' ' . ($targetRecord->last_name ?? '')));
                 if ($displayName === '') {
                     $displayName = (string) ($targetRecord->client_id ?? ('#' . (int) $id));
                 }
 
-                $accessModalPayload = [
-                    'id' => $encodeId . '/Client',
-                    'cid' => (int) $id,
-                    'name' => $displayName,
-                    'record_type' => (string) ($targetRecord->type ?? 'client'),
-                    // Return user to the exact URL they opened (including query string).
-                    'redirect_to' => $request->fullUrl(),
-                ];
+                $recordType = (string) ($targetRecord->type ?? 'client');
+                $accessUi = StaffClientVisibility::crossAccessUiFlags(Auth::user());
+                $canRequestAccess = ($accessUi['show_quick'] ?? false) || ($accessUi['show_supervisor'] ?? false);
 
                 return view('crm.access.detail-gate', [
-                    'crossAccessAutoOpen' => $accessModalPayload,
+                    'displayName' => $displayName,
+                    'recordType' => $recordType,
+                    'canRequestAccess' => $canRequestAccess,
+                    'accessModalPayload' => [
+                        'id' => $encodeId . '/Client',
+                        'cid' => (int) $id,
+                        'name' => $displayName,
+                        'record_type' => $recordType,
+                        // Return user to the exact URL they opened (including query string).
+                        'redirect_to' => $request->fullUrl(),
+                    ],
                 ]);
             }
 
