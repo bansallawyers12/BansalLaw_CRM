@@ -456,8 +456,11 @@ def _cleanup_temp_file(temp_path: Optional[Path]) -> None:
 
 
 @app.post("/email/parse")
-async def parse_email(file: UploadFile = File(...)):
-    """Parse .msg file and extract email data."""
+async def parse_email(
+    file: UploadFile = File(...),
+    metadata_only: str = Form(default=''),
+):
+    """Parse .msg/.eml file and extract email data."""
     temp_path = None
     try:
         logger.info(f"Parsing email file: {file.filename}")
@@ -476,6 +479,8 @@ async def parse_email(file: UploadFile = File(...)):
         temp_path.write_bytes(content)
 
         result = email_parser.parse_email_file(str(temp_path))
+        if str(metadata_only).lower() in ('1', 'true', 'yes'):
+            result = email_parser.strip_attachment_payloads(result)
         return JSONResponse(content=result)
 
     except HTTPException:

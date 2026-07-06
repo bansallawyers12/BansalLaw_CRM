@@ -839,6 +839,13 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('email_files[]', file, safeName);
             formData.append('client_id', clientId);
             formData.append('type', 'client');
+            if (matterId) {
+                if (currentFolder === 'sent') {
+                    formData.append('upload_sent_mail_client_matter_id', matterId);
+                } else {
+                    formData.append('upload_inbox_mail_client_matter_id', matterId);
+                }
+            }
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
 
             const response = await fetch(baseUrl + '/preview-email-attachments', {
@@ -850,7 +857,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: formData
             });
 
-            const result = await response.json();
+            const responseText = await response.text();
+            let result = {};
+            try {
+                result = responseText ? JSON.parse(responseText) : {};
+            } catch (parseError) {
+                throw new Error('Could not read attachment preview from the server. Please try again.');
+            }
+
             if (!response.ok || !result.status) {
                 throw new Error(result.message || 'Failed to preview attachments');
             }
@@ -1337,6 +1351,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (previewError) {
                 console.warn('Attachment preview failed, continuing upload:', previewError);
+                showUploadErrorAlert(
+                    (previewError && previewError.message)
+                        ? previewError.message
+                        : 'Could not preview attachments for this email. Upload will continue with default attachment storage.'
+                );
             }
 
             updateEmailUploadLoading(

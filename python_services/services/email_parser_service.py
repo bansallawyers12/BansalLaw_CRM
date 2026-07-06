@@ -109,6 +109,7 @@ class EmailParserService:
         content_id: str,
         is_inline: bool,
         payload: bytes,
+        content_disposition: str = '',
     ) -> dict:
         normalized_name = self._normalize_attachment_filename(filename, content_type)
         attachment_data = {
@@ -116,6 +117,7 @@ class EmailParserService:
             'display_name': self._safe_get(normalized_name, 'attachment'),
             'content_type': self._safe_get(content_type or 'application/octet-stream', 'application/octet-stream'),
             'content_id': content_id or '',
+            'content_disposition': self._safe_get(content_disposition, ''),
             'is_inline': bool(is_inline),
             'size': len(payload or b''),
             'file_size': len(payload or b''),
@@ -215,13 +217,13 @@ class EmailParserService:
         if part.get_content_maintype() == 'multipart':
             return False
 
-        content_type = (part.get_content_type() or '').lower()
-        if content_type in ('text/plain', 'text/html'):
-            return False
-
         disposition = str(part.get('Content-Disposition', '') or '').lower()
         if 'attachment' in disposition:
             return True
+
+        content_type = (part.get_content_type() or '').lower()
+        if content_type in ('text/plain', 'text/html'):
+            return False
 
         if self._get_eml_part_filename(part):
             return True
@@ -516,10 +518,24 @@ class EmailParserService:
                 content_id,
                 is_inline,
                 payload,
+                disposition,
             )
         except Exception as e:
             logger.warning(f"Error processing EML attachment: {str(e)}")
             return None
+
+    def strip_attachment_payloads(self, parsed_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Remove base64 attachment payloads for lightweight metadata-only responses."""
+        attachments = parsed_data.get('attachments')
+        if not isinstance(attachments, list):
+            return parsed_data
+
+        for attachment in attachments:
+            if isinstance(attachment, dict):
+                attachment.pop('data', None)
+                attachment.pop('content', None)
+
+        return parsed_data
     
     def _safe_get(self, value: Any, default: Any = None) -> Any:
         """Safely get value and convert to JSON-serializable format."""
@@ -754,6 +770,7 @@ class EmailParserService:
                         content_id,
                         is_inline,
                         payload,
+                        disposition,
                     ))
                     
                 except Exception as e:

@@ -383,7 +383,7 @@ class EmailUploadController extends Controller
     }
 
     /**
-     * Parse a .msg file and return non-inline attachment metadata for storage prompts.
+     * Parse a .msg/.eml file and return non-inline attachment metadata for storage prompts.
      */
     public function previewEmailAttachments(Request $request)
     {
@@ -414,7 +414,7 @@ class EmailUploadController extends Controller
 
             $attachments = [];
             foreach ($parsedData['attachments'] ?? [] as $index => $attachmentData) {
-                if (!empty($attachmentData['is_inline'])) {
+                if (!$this->shouldPromptAttachmentStorage($attachmentData)) {
                     continue;
                 }
                 $filename = $attachmentData['display_name'] ?? $attachmentData['filename'] ?? ('attachment_' . ($index + 1));
@@ -997,7 +997,7 @@ class EmailUploadController extends Controller
      */
     protected function parseEmailMetadataWithPython($file)
     {
-        return $this->callPythonEmailEndpoint($file, '/email/parse', $this->pythonServiceTimeout);
+        return $this->callPythonEmailEndpoint($file, '/email/parse', $this->pythonServiceTimeout, true);
     }
 
     /**
@@ -1018,7 +1018,7 @@ class EmailUploadController extends Controller
     /**
      * @return array{success: false, error: string, technical_error?: string}|array<string, mixed>
      */
-    protected function callPythonEmailEndpoint($file, string $path, int $timeout)
+    protected function callPythonEmailEndpoint($file, string $path, int $timeout, bool $metadataOnly = false)
     {
         try {
             $originalFileName = $this->sanitizedUploadFilename($file);
@@ -1032,11 +1032,16 @@ class EmailUploadController extends Controller
                 ];
             }
 
+            $payload = [
+                'timezone' => config('app.timezone', 'Australia/Melbourne'),
+            ];
+            if ($metadataOnly) {
+                $payload['metadata_only'] = '1';
+            }
+
             $response = Http::timeout($timeout)
                 ->attach('file', $fileContents, $sanitizedFileName)
-                ->post($this->pythonServiceUrlWithTimezone($path), [
-                    'timezone' => config('app.timezone', 'Australia/Melbourne'),
-                ]);
+                ->post($this->pythonServiceUrlWithTimezone($path), $payload);
 
             if ($response->successful()) {
                 try {
@@ -1778,6 +1783,20 @@ class EmailUploadController extends Controller
         }
 
         return $originalName;
+    }
+
+    /**
+     * Decide whether an attachment should appear in the pre-upload storage prompt.
+     */
+    protected function shouldPromptAttachmentStorage(array $attachmentData): bool
+    {
+        if (empty($attachmentData['is_inline'])) {
+            return true;
+        }
+
+        $disposition = strtolower((string) ($attachmentData['content_disposition'] ?? ''));
+
+        return str_contains($disposition, 'attachment');
     }
 
     protected function validateEmailUploadRequest(Request $request)
