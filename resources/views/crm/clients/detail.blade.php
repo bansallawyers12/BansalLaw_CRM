@@ -6,7 +6,7 @@
 @section('content')
 @php \App\Support\EnsureDummyMatterStaff::ensure(); @endphp
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<link rel="stylesheet" href="{{ URL::asset('css/client-detail.css') }}">
+<link rel="stylesheet" href="{{ URL::asset('css/client-detail.css') }}?v={{ @filemtime(public_path('css/client-detail.css')) ?: time() }}">
 @if(is_array($matterFormForLead ?? null))
 <link rel="stylesheet" href="{{ URL::asset('css/clients/edit-client-components.css') }}"> 
 @endif

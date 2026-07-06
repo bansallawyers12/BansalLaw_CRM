@@ -715,13 +715,64 @@
 
 #matterdocuments-tab .checklist-table-scroll .checklist-table td,
 #personaldocuments-tab .checklist-table-scroll .checklist-table td {
-  word-break: break-word;
-  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+#matterdocuments-tab .checklist-table-scroll .checklist-table th:nth-child(1),
+#matterdocuments-tab .checklist-table-scroll .checklist-table td:nth-child(1),
+#personaldocuments-tab .checklist-table-scroll .checklist-table th:nth-child(1),
+#personaldocuments-tab .checklist-table-scroll .checklist-table td:nth-child(1) {
+  width: 40%;
+}
+
+#matterdocuments-tab .checklist-table-scroll .checklist-table th:nth-child(2),
+#matterdocuments-tab .checklist-table-scroll .checklist-table td:nth-child(2),
+#personaldocuments-tab .checklist-table-scroll .checklist-table th:nth-child(2),
+#personaldocuments-tab .checklist-table-scroll .checklist-table td:nth-child(2) {
+  width: auto;
 }
 
 #matterdocuments-tab .checklist-table-scroll .checklist-table td:last-child,
 #personaldocuments-tab .checklist-table-scroll .checklist-table td:last-child {
   width: 36px;
+}
+
+#matterdocuments-tab .doc-row a,
+#personaldocuments-tab .doc-row a {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  max-width: 100%;
+  text-decoration: none;
+  color: var(--sidebar-active, #3a6fa8);
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+#matterdocuments-tab .doc-row a:hover,
+#personaldocuments-tab .doc-row a:hover {
+  color: var(--navy, #1e3d60);
+}
+
+#matterdocuments-tab .doc-row a i,
+#personaldocuments-tab .doc-row a i {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+#matterdocuments-tab .doc-row a span,
+#personaldocuments-tab .doc-row a span {
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+#matterdocuments-tab .md-checklist-label,
+#matterdocuments-tab .visachecklist-row > span:first-child,
+#personaldocuments-tab .personalchecklist-row > span:first-child {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.35;
 }
 
 #matterdocuments-tab .checklist-table-scroll .checklist-table thead th,
