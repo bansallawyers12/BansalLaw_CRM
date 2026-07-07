@@ -2,259 +2,162 @@
 @section('title', 'Matter')
 
 @section('content')
-<style>
-    /* Scoped to this page only — avoids breaking sidebar/header dropdowns and global .table styles */
-    .matter-index-page .filter_panel {
-        margin-bottom: 30px;
-        padding: 20px;
-        background: var(--card-bg, #fff);
-        border: 1px solid var(--border, #c8dcef);
-        border-radius: 10px;
-        box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
-        display: none;
-    }
-
-    .matter-index-page .filter_panel h4 {
-        color: var(--navy, #1e3d60) !important;
-        font-size: 1.1rem;
-        margin-bottom: 20px;
-        font-weight: 600;
-    }
-
-    /* Table colours: public/css/crm-theme.css (.adminconsole-features .table-responsive > table) */
-
-    .matter-index-page .form-group label {
-        color: var(--text-muted, #5e7a90) !important;
-        font-weight: 600 !important;
-        margin-bottom: 8px !important;
-    }
-
-    .matter-index-page .card-header h4 {
-        color: var(--navy, #1e3d60) !important;
-        font-weight: 700 !important;
-        margin: 0 !important;
-    }
-
-    .matter-index-page .dropdown {
-        position: relative;
-    }
-
-    .matter-index-page .dropdown-menu {
-        min-width: 200px !important;
-        max-width: 280px !important;
-        width: auto !important;
-        z-index: 1060 !important;
-        background-color: var(--card-bg) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 8px !important;
-        box-shadow: 0 4px 16px rgba(30, 61, 96, 0.12) !important;
-        max-height: min(85vh, 520px) !important;
-        overflow-y: auto !important;
-    }
-
-    .matter-index-page .dropdown-item {
-        padding: 8px 12px !important;
-        font-size: 0.9rem !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        max-width: 100% !important;
-    }
-
-    .matter-index-page .dropdown-item i {
-        margin-right: 6px !important;
-        width: 14px !important;
-        text-align: center !important;
-    }
-
-    .matter-index-page .dropdown-item.has-icon {
-        display: flex !important;
-        align-items: center !important;
-        padding: 8px 12px !important;
-        font-size: 0.8rem !important;
-        line-height: 1.2 !important;
-        position: relative !important;
-        min-height: 32px !important;
-        max-width: 100% !important;
-        overflow: visible !important;
-        text-overflow: clip !important;
-        white-space: nowrap !important;
-    }
-
-    .matter-index-page .dropdown-item.has-icon i {
-        width: 14px !important;
-        height: 14px !important;
-        flex-shrink: 0 !important;
-        text-align: center !important;
-        display: inline-block !important;
-        margin-right: 8px !important;
-        position: static !important;
-    }
-
-    .matter-index-page .dropdown-menu .dropdown-item {
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-
-    .matter-index-page .table-responsive.common_table {
-        overflow: visible !important;
-    }
-
-    .matter-index-page .table tbody tr {
-        position: relative !important;
-    }
-
-    .matter-index-page .table tbody tr td:last-child {
-        overflow: visible !important;
-        position: relative !important;
-    }
-
-    .matter-index-page .dropdown-item span,
-    .matter-index-page .dropdown-item {
-        white-space: nowrap !important;
-        overflow: visible !important;
-        text-overflow: clip !important;
-    }
-
-    /*
-     * Matter list only: allow menus to paint past .main-content { overflow: hidden }
-     * and past the card body / footer (grey bar) without affecting other CRM pages.
-     */
-    .matter-index-layout > .main-content {
-        overflow: visible !important;
-    }
-
-    .matter-index-layout .matter-index-page .card,
-    .matter-index-layout .matter-index-page .card-body {
-        overflow: visible !important;
-    }
-</style>
-<div class="crm-container matter-index-layout">
-	<div class="main-content adminconsole-features">
-		<div class="server-error">
-			@include('../Elements/flash-message')
-		</div>
-		<div class="custom-error-msg">
-		</div>
-		<div class="row">
-		    <div class="col-3 col-md-3 col-lg-3">
-		        	@include('../Elements/CRM/setting')
-	        </div>
-			<div class="col-9 col-md-9 col-lg-9">
-				<div class="matter-index-page">
-					<div class="card">
-						<div class="card-header">
-							<h4>All Matters</h4>
+<div class="main-content adminconsole-features adminconsole-matter-list adminconsole-matter-spa adminconsole-matter-form matter-index-layout"
+    id="mat-admin-app"
+    data-index-url="{{ route('adminconsole.features.matter.index') }}"
+    data-create-url="{{ route('adminconsole.features.matter.create') }}"
+    data-store-url="{{ route('adminconsole.features.matter.store') }}"
+    data-edit-url-template="{{ route('adminconsole.features.matter.edit', ['id' => '__ID__']) }}"
+    data-update-url-template="{{ route('adminconsole.features.matter.update', ['id' => '__ID__']) }}"
+    data-view-url-template="{{ route('adminconsole.features.matter.view', ['id' => '__ID__']) }}"
+    data-initial-search="{{ $searchBy ?? '' }}">
+    <section class="section">
+        <div class="section-body">
+            <div class="server-error">
+                @include('../Elements/flash-message')
+            </div>
+            <div class="custom-error-msg"></div>
+            <div class="row">
+                <div class="col-3 col-md-3 col-lg-3">
+                    @include('../Elements/CRM/setting')
+                </div>
+                <div class="col-9 col-md-9 col-lg-9">
+                    <div class="card mat-list-card">
+                        <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+                            <div>
+                                <h4 class="mb-1">All matters</h4>
+                                <p class="text-muted small mb-0">Manage matter types, workflows, and fees without leaving this page.</p>
+                            </div>
                             <div class="card-header-action">
-                                <a href="javascript:;" class="btn btn-outline-primary btn-sm filter_btn me-2"><i class="fas fa-filter"></i> Filter</a>
-                                <a href="{{route('adminconsole.features.matter.create')}}" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Create Matter</a>
-							</div>
-						</div>
-						<div class="card-body">
-                            <div class="filter_panel"><h4>Search</h4>
-                                <form action="{{route('adminconsole.features.matter.index')}}" method="get">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="title" class="col-form-label">Matter Name</label>
-                                                <input type="text" name="title" value="{{ old('title', Request::get('title')) }}" class="form-control" data-valid="" autocomplete="off" placeholder="Select Matter" id="title">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6" style="margin-top:35px;">
-                                            <button type="submit" class="btn btn-primary me-2">Search</button>
-                                            <a class="btn btn-outline-secondary" href="{{route('adminconsole.features.matter.index')}}">Reset</a>
-                                        </div>
+                                <button type="button" class="btn btn-primary" id="mat-add-btn">
+                                    <i class="fa fa-plus"></i> Create matter
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="mat-list-toolbar d-flex flex-wrap align-items-center justify-content-end mb-3 gap-2">
+                                <div class="mat-list-search-form">
+                                    <div class="mat-list-search d-flex align-items-stretch">
+                                        <input id="mat-search-input" type="search" class="form-control" value="{{ $searchBy ?? '' }}" placeholder="Search by title or nick name" aria-label="Search matters">
+                                        <button type="button" id="mat-search-btn" class="btn btn-primary" aria-label="Search">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                        <button type="button" id="mat-search-clear" class="btn btn-light border ms-1" aria-label="Clear search" title="Clear search">
+                                            <i class="fas fa-times"></i>
+                                        </button>
                                     </div>
-                                </form>
+                                </div>
                             </div>
 
-							<div class="table-responsive common_table">
-								<table class="table text_wrap">
-								<thead>
-									<tr>
-										<th>Matter Name</th>
-										@if(\Illuminate\Support\Facades\Schema::hasColumn('matters', 'stream'))
-										<th>Stream</th>
-										@endif
-										<th class="text-end">Action</th>
-									</tr>
-								</thead>
-								@if(@$totalData !== 0)
-								<?php $i=0; ?>
-								<tbody class="tdata">
-								@foreach (@$lists as $list)
-									<tr id="id_{{@$list->id}}">
-										<td>{{ @$list->title == "" ? config('constants.empty') : Str::limit(@$list->title, '50', '...') }}</td>
-										@if(\Illuminate\Support\Facades\Schema::hasColumn('matters', 'stream'))
-										<td class="text-muted small">{{ $list->stream ? \Illuminate\Support\Arr::get(config('matter_streams.streams', []), $list->stream, $list->stream) : '—' }}</td>
-										@endif
-										<td class="text-nowrap text-end">
-											<div class="dropdown d-inline-block">
-												<button class="btn btn-primary dropdown-toggle matter-action-dropdown-toggle" type="button" id="matterAction_{{ $list->id }}"
-													data-bs-toggle="dropdown"
-													data-bs-popper-config='{"strategy":"fixed"}'
-													aria-haspopup="true"
-													aria-expanded="false">Action</button>
-												<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="matterAction_{{ $list->id }}">
-													<li><a class="dropdown-item has-icon" href="{{route('adminconsole.features.matter.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a></li>
-													<li><a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'matters')"><i class="fas fa-trash"></i> Delete</a></li>
-													<?php
-													$hasTemplate = \App\Models\EmailTemplate::forMatter($list->id)->ofType(\App\Models\EmailTemplate::TYPE_MATTER_FIRST)->exists();
-													?>
-													@if($hasTemplate)
-													<?php
-													$Template_info = \App\Models\EmailTemplate::forMatter($list->id)->ofType(\App\Models\EmailTemplate::TYPE_MATTER_FIRST)->first();
-													?>
-													<li><a class="dropdown-item has-icon" href="{{route('adminconsole.features.matteremailtemplate.edit', [$Template_info->id, $list->id])}}"><i class="far fa-edit"></i> Edit First Email</a></li>
-													@else
-													<li><a class="dropdown-item has-icon" href="{{ route('adminconsole.features.matteremailtemplate.create', ['matter_id' => @$list->id]) }}"><i class="far fa-edit"></i> Create First Email</a></li>
-													@endif
+                            <div id="mat-list-loading" class="mat-list-loading d-none" aria-hidden="true">
+                                <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+                                <span>Loading matters...</span>
+                            </div>
 
-													<li><a class="dropdown-item has-icon" href="{{route('upload_checklists.matter', @$list->id)}}"><i class="fas fa-list"></i> Matter Checklist</a></li>
-													<li><a class="dropdown-item has-icon" href="{{route('adminconsole.features.matterotheremailtemplate.index', @$list->id)}}"><i class="fas fa-envelope"></i> Email Templates</a></li>
-												</ul>
-											</div>
-										</td>
-									</tr>
-								@endforeach
-								</tbody>
-								@else
-								<tbody>
-									<tr>
-										<td style="text-align:center;" colspan="2">
-											No Record found
-										</td>
-									</tr>
-								</tbody>
-								@endif
-							</table>
-						</div>
-
-                        <div class="card-footer">
-							{!! $lists->appends(\Request::except('page'))->render() !!}
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+                            <div id="mat-list-content">
+                                @include('AdminConsole.features.matter.partials.list-table', [
+                                    'lists' => $lists,
+                                    'totalData' => $totalData,
+                                    'searchBy' => $searchBy ?? '',
+                                    'hasStreamColumn' => $hasStreamColumn ?? \Illuminate\Support\Facades\Schema::hasColumn('matters', 'stream'),
+                                ])
+                            </div>
+                        </div>
+                        <div class="card-footer" id="mat-list-footer">
+                            @include('AdminConsole.features.matter.partials.pagination', [
+                                'lists' => $lists,
+                                'totalData' => $totalData,
+                            ])
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 </div>
 
-@endsection
-@push('scripts')
-<script>
-jQuery(document).ready(function($){
-    $('.matter-index-page .filter_btn').on('click', function(){
-		$('.matter-index-page .filter_panel').toggle();
-	});
+<div class="modal fade mat-form-modal" id="matCreateModal" tabindex="-1" aria-labelledby="matCreateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable mat-form-modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title mb-1" id="matCreateModalLabel">Create matter</h5>
+                    <p class="text-muted small mb-0">Enter matter details, block fees, and additional fees.</p>
+                </div>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <form id="mat-create-form" class="mat-modal-form" autocomplete="off" novalidate>
+                @csrf
+                <div class="modal-body">
+                    <div id="mat-create-alert" class="alert alert-danger d-none" role="alert"></div>
+                    <div id="mat-create-form-body"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="mat-create-submit">
+                        <span class="submit-label">Save matter</span>
+                        <span class="submit-spinner spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
-	$('.cb-element').change(function () {
-        if ($('.cb-element:checked').length == $('.cb-element').length){
-            $('#checkbox-all').prop('checked',true);
-        } else {
-            $('#checkbox-all').prop('checked',false);
-        }
-    });
-});
-</script>
+<div class="modal fade mat-form-modal" id="matEditModal" tabindex="-1" aria-labelledby="matEditModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable mat-form-modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title mb-1" id="matEditModalLabel">Edit matter</h5>
+                    <p class="text-muted small mb-0">Update matter details, block fees, and additional fees.</p>
+                </div>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <form id="mat-edit-form" class="mat-modal-form" autocomplete="off" novalidate>
+                @csrf
+                @method('PUT')
+                <input type="hidden" id="mat_edit_id" name="mat_id" value="">
+                <div class="modal-body">
+                    <div id="mat-edit-alert" class="alert alert-danger d-none" role="alert"></div>
+                    <div id="mat-edit-form-body"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary me-auto mat-view-from-edit" id="mat-view-from-edit">
+                        <i class="far fa-eye"></i> View matter
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="mat-edit-submit">
+                        <span class="submit-label">Update matter</span>
+                        <span class="submit-spinner spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade mat-form-modal" id="matViewModal" tabindex="-1" aria-labelledby="matViewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="matViewModalLabel">Matter details</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div id="mat-view-body"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="mat-edit-from-view">
+                    <i class="fa fa-edit"></i> Edit matter
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script src="{{ asset('js/adminconsole/matter.js') }}?v={{ time() }}"></script>
 @endpush

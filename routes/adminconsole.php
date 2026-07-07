@@ -43,6 +43,7 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::get('/matter/create', [MatterController::class, 'create'])->name('matter.create');
         Route::post('/matter/store', [MatterController::class, 'store'])->name('matter.store');
         Route::get('/matter/edit/{id}', [MatterController::class, 'edit'])->name('matter.edit');
+        Route::get('/matter/view/{id}', [MatterController::class, 'view'])->name('matter.view');
         Route::put('/matter/{id}', [MatterController::class, 'update'])->name('matter.update');
         
         // Email Labels routes
@@ -96,6 +97,7 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::get('/personal-document-type', [PersonalDocumentTypeController::class, 'index'])->name('personaldocumenttype.index');
         Route::get('/personal-document-type/create', [PersonalDocumentTypeController::class, 'create'])->name('personaldocumenttype.create');
         Route::post('/personal-document-type/store', [PersonalDocumentTypeController::class, 'store'])->name('personaldocumenttype.store');
+        Route::get('/personal-document-type/view/{id}', [PersonalDocumentTypeController::class, 'view'])->name('personaldocumenttype.view');
         Route::get('/personal-document-type/edit/{id}', [PersonalDocumentTypeController::class, 'edit'])->name('personaldocumenttype.edit');
         Route::put('/personal-document-type/{id}', [PersonalDocumentTypeController::class, 'update'])->name('personaldocumenttype.update');
         
@@ -103,6 +105,7 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::get('/matter-document-type', [MatterDocumentTypeController::class, 'index'])->name('matterdocumenttype.index');
         Route::get('/matter-document-type/create', [MatterDocumentTypeController::class, 'create'])->name('matterdocumenttype.create');
         Route::post('/matter-document-type/store', [MatterDocumentTypeController::class, 'store'])->name('matterdocumenttype.store');
+        Route::get('/matter-document-type/view/{id}', [MatterDocumentTypeController::class, 'view'])->name('matterdocumenttype.view');
         Route::get('/matter-document-type/edit/{id}', [MatterDocumentTypeController::class, 'edit'])->name('matterdocumenttype.edit');
         Route::put('/matter-document-type/{id}', [MatterDocumentTypeController::class, 'update'])->name('matterdocumenttype.update');
 
@@ -115,6 +118,7 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::get('/document-checklist', [DocumentChecklistController::class, 'index'])->name('documentchecklist.index');
         Route::get('/document-checklist/create', [DocumentChecklistController::class, 'create'])->name('documentchecklist.create');
         Route::post('/document-checklist/store', [DocumentChecklistController::class, 'store'])->name('documentchecklist.store');
+        Route::get('/document-checklist/view/{id}', [DocumentChecklistController::class, 'view'])->name('documentchecklist.view');
         Route::get('/document-checklist/edit/{id}', [DocumentChecklistController::class, 'edit'])->name('documentchecklist.edit');
         Route::put('/document-checklist/{id}', [DocumentChecklistController::class, 'update'])->name('documentchecklist.update');
         
@@ -175,6 +179,7 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::get('/roles', [UserroleController::class, 'index'])->name('roles.index');
         Route::get('/roles/create', [UserroleController::class, 'create'])->name('roles.create');
         Route::post('/roles/store', [UserroleController::class, 'store'])->name('roles.store');
+        Route::get('/roles/view/{id}', [UserroleController::class, 'view'])->name('roles.view');
         Route::get('/roles/edit/{id}', [UserroleController::class, 'edit'])->name('roles.edit');
         Route::put('/roles/{id}', [UserroleController::class, 'update'])->name('roles.update');
         

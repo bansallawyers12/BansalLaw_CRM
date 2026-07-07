@@ -1,0 +1,83 @@
+@php
+    $teamName = 'N/A';
+    if (!empty($fetchedData->team)) {
+        $teamData = \App\Models\Team::select('name')->where('id', $fetchedData->team)->first();
+        $teamName = $teamData ? $teamData->name : 'N/A';
+    }
+    $permissionArr = [];
+    if (!empty($fetchedData->permission)) {
+        $permissionArr = strpos($fetchedData->permission, ',') !== false
+            ? explode(',', $fetchedData->permission)
+            : [$fetchedData->permission];
+    }
+@endphp
+
+<div class="row staff-view-grid">
+    <div class="col-md-6">
+        <div class="staff-view-section">
+            <h5 class="staff-view-section__title">Personal details</h5>
+            <dl class="staff-view-dl">
+                <dt>Name</dt>
+                <dd>{{ $fetchedData->first_name }} {{ $fetchedData->last_name }}</dd>
+                <dt>Email</dt>
+                <dd>{{ $fetchedData->email }}</dd>
+                <dt>Status</dt>
+                <dd>
+                    @if((int) ($fetchedData->status ?? 1) === 1)
+                        <span class="badge badge-success">Active — can log in</span>
+                    @else
+                        <span class="badge badge-secondary">Inactive — login disabled</span>
+                    @endif
+                </dd>
+                <dt>Phone</dt>
+                <dd>{{ trim(($fetchedData->country_code ?? '') . ' ' . ($fetchedData->phone ?? '')) ?: 'N/A' }}</dd>
+            </dl>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="staff-view-section">
+            <h5 class="staff-view-section__title">Office details</h5>
+            <dl class="staff-view-dl">
+                <dt>Position</dt>
+                <dd>{{ $fetchedData->position ?: 'N/A' }}</dd>
+                <dt>Role</dt>
+                <dd>{{ optional($fetchedData->usertype)->name ?? 'N/A' }}</dd>
+                <dt>Office</dt>
+                <dd>{{ optional($fetchedData->office)->office_name ?? 'N/A' }}</dd>
+                <dt>Team</dt>
+                <dd>{{ $teamName }}</dd>
+                <dt>Dashboard</dt>
+                <dd>{{ (int) ($fetchedData->show_dashboard_per ?? 0) === 1 ? 'Can view dashboard' : 'Cannot view dashboard' }}</dd>
+            </dl>
+        </div>
+    </div>
+
+    @if(!empty($permissionArr))
+    <div class="col-12">
+        <div class="staff-view-section">
+            <h5 class="staff-view-section__title">Permissions</h5>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach(['1' => 'Notes: View', '2' => 'Notes: Add/Edit', '3' => 'Notes: Delete', '4' => 'Documents: View', '5' => 'Documents: Add/Edit', '6' => 'Documents: Delete'] as $perm => $label)
+                    @if(in_array((string) $perm, $permissionArr, true) || in_array((int) $perm, $permissionArr, true))
+                        <span class="badge badge-light border">{{ $label }}</span>
+                    @endif
+                @endforeach
+            </div>
+        </div>
+    </div>
+    @endif
+
+    @if((int) ($fetchedData->is_solicitor ?? 0) === 1)
+    <div class="col-12">
+        <div class="staff-view-section">
+            <h5 class="staff-view-section__title">Legal practitioner details</h5>
+            <dl class="staff-view-dl row">
+                <div class="col-md-6"><dt>MARN</dt><dd>{{ $fetchedData->marn_number ?: 'N/A' }}</dd></div>
+                <div class="col-md-6"><dt>Business name</dt><dd>{{ $fetchedData->company_name ?: 'N/A' }}</dd></div>
+                <div class="col-md-6"><dt>Tax number</dt><dd>{{ $fetchedData->tax_number ?: 'N/A' }}</dd></div>
+                <div class="col-12"><dt>Business address</dt><dd>{{ $fetchedData->business_address ?: 'N/A' }}</dd></div>
+            </dl>
+        </div>
+    </div>
+    @endif
+</div>

@@ -3,153 +3,236 @@
 namespace App\Http\Controllers\AdminConsole;
 
 use App\Http\Controllers\Controller;
+use App\Models\Matter;
+use App\Models\Workflow;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Schema;
-use App\Models\Matter;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class MatterController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('auth:admin');
     }
 
-    /**
-     * Display a listing of the matters.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index(Request $request)
     {
-        $query = Matter::query();
-        $totalData = $query->count(); // for all data
-        //dd($totalData);
-        if ($request->has('title')) {
-            $title 		= 	$request->input('title');
-            if(trim($title) != '') {
-                $query->where('title', 'LIKE', '%' . $title . '%');
-            }
+        $data = $this->buildListPayload($request);
+
+        if ($request->ajax() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'total' => $data['totalData'],
+                'html' => view('AdminConsole.features.matter.partials.list-table', $data)->render(),
+                'pagination' => view('AdminConsole.features.matter.partials.pagination', $data)->render(),
+            ]);
         }
-        $lists	= $query->sortable(['id' => 'desc'])->paginate(20);
-        return view('AdminConsole.features.matter.index', compact(['lists', 'totalData']));
+
+        return view('AdminConsole.features.matter.index', $data);
     }
 
     public function create(Request $request)
     {
-        return view('AdminConsole.features.matter.create');
+        if ($request->ajax() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'html' => view('AdminConsole.features.matter.partials.form-fields', [
+                    'mode' => 'create',
+                    'fetchedData' => null,
+                    'fieldPrefix' => 'create_mat',
+                    'workflows' => Workflow::orderBy('name')->get(),
+                ])->render(),
+            ]);
+        }
+
+        return redirect()->route('adminconsole.features.matter.index', ['action' => 'create']);
     }
 
     public function store(Request $request)
     {
-        if ($request->isMethod('post'))
-        {
-            // Validation rules with unique check for nick_name and optional fields
-            $streamKeys = array_keys(config('matter_streams.streams', []));
-            $this->validate($request, [
-                'title' => 'required|max:255',
-                'nick_name' => 'required|max:255|unique:matters,nick_name',
-                'stream' => ['nullable', 'string', 'max:64', Rule::in($streamKeys)],
-            ]);
-
-            $requestData = $request->all();
-            $obj = new Matter;
-            $obj->title = $requestData['title'];
-            $obj->nick_name = $requestData['nick_name'];
-            if (Schema::hasColumn('matters', 'stream')) {
-                $obj->stream = isset($requestData['stream']) && $requestData['stream'] !== ''
-                    ? $requestData['stream']
-                    : null;
-            }
-            $obj->workflow_id = $requestData['workflow_id'] ?? null;
-            $obj->status = $requestData['status'] ?? 1;
-            $obj->is_for_company = $requestData['is_for_company'] ?? 0;
-
-            // Block fee defaults (stored on matter type, copied to cost assignment when editing)
-            if (Schema::hasColumn('matters', 'Block_1_Description')) {
-                $obj->Block_1_Description = $requestData['Block_1_Description'] ?? null;
-                $obj->Block_2_Description = $requestData['Block_2_Description'] ?? null;
-                $obj->Block_3_Description = $requestData['Block_3_Description'] ?? null;
-            }
-            if (Schema::hasColumn('matters', 'Block_1_Ex_Tax')) {
-                $obj->Block_1_Ex_Tax = $requestData['Block_1_Ex_Tax'] ?? null;
-                $obj->Block_2_Ex_Tax = $requestData['Block_2_Ex_Tax'] ?? null;
-                $obj->Block_3_Ex_Tax = $requestData['Block_3_Ex_Tax'] ?? null;
-            }
-            if (Schema::hasColumn('matters', 'additional_fee_1')) {
-                $obj->additional_fee_1 = $requestData['additional_fee_1'] ?? null;
-            }
-
-            $saved = $obj->save();
-            if (!$saved)
-            {
-                return redirect()->back()->with('error', config('constants.server_error'));
-            }
-            else
-            {
-                return redirect()->route('adminconsole.features.matter.index')->with('success', 'Matter Added Successfully');
-            }
+        if (!$request->isMethod('post')) {
+            return redirect()->route('adminconsole.features.matter.index');
         }
-        return view('AdminConsole.features.matter.create');
+
+        try {
+            $this->validateMatterRequest($request);
+
+            $obj = new Matter();
+            $this->fillMatterFromRequest($obj, $request->all(), $request);
+
+            if (!$obj->save()) {
+                throw new \RuntimeException(config('constants.server_error'));
+            }
+
+            return $this->respondSaved($request, 'Matter added successfully.', $obj->fresh(['workflow']));
+        } catch (ValidationException $e) {
+            return $this->respondValidationError($request, $e);
+        } catch (\Exception $e) {
+            return $this->respondError($request, $e, 'An error occurred while creating the matter.');
+        }
     }
 
-    /**
-     * Show the form for editing the specified matter.
-     */
-    public function edit($id)
+    public function edit(Request $request, $id)
     {
-        if (isset($id) && !empty($id))
-        {
-            $id = $this->decodeString($id);
-            if (Matter::where('id', '=', $id)->exists())
-            {
-                $fetchedData = Matter::find($id);
-                return view('AdminConsole.features.matter.edit', compact(['fetchedData']));
-            }
-            else
-            {
-                return redirect()->route('adminconsole.features.matter.index')->with('error', 'Matter Not Exist');
-            }
+        $matter = $this->findMatterOrFail($id);
+        if ($matter instanceof \Symfony\Component\HttpFoundation\Response) {
+            return $matter;
         }
-        else
-        {
-            return redirect()->route('adminconsole.features.matter.index')->with('error', config('constants.unauthorized'));
+
+        if ($request->ajax() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'matter' => $this->serializeMatterSummary($matter),
+                'html' => view('AdminConsole.features.matter.partials.form-fields', [
+                    'mode' => 'edit',
+                    'fetchedData' => $matter,
+                    'fieldPrefix' => 'edit_mat',
+                    'workflows' => Workflow::orderBy('name')->get(),
+                ])->render(),
+            ]);
         }
+
+        return redirect()->route('adminconsole.features.matter.index', [
+            'action' => 'edit',
+            'id' => $matter->id,
+        ]);
     }
 
-    /**
-     * Update the specified matter in storage.
-     */
+    public function view(Request $request, $id)
+    {
+        $matter = $this->findMatterOrFail($id);
+        if ($matter instanceof \Symfony\Component\HttpFoundation\Response) {
+            return $matter;
+        }
+
+        $matter->load('workflow');
+
+        if ($request->ajax() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'matter' => $this->serializeMatterSummary($matter),
+                'html' => view('AdminConsole.features.matter.partials.view-body', [
+                    'fetchedData' => $matter,
+                ])->render(),
+            ]);
+        }
+
+        return redirect()->route('adminconsole.features.matter.index', [
+            'action' => 'view',
+            'id' => $matter->id,
+        ]);
+    }
+
     public function update(Request $request, $id)
     {
-        $requestData = $request->all();
-        $streamKeys = array_keys(config('matter_streams.streams', []));
-        $this->validate($request, [
-            'title' => 'required|max:255',
-            'nick_name' => 'required|max:255|unique:matters,nick_name,'.$id,
-            'stream' => ['nullable', 'string', 'max:64', Rule::in($streamKeys)],
-        ]);
+        try {
+            $matter = $this->findMatterOrFail($id);
+            if ($matter instanceof \Symfony\Component\HttpFoundation\Response) {
+                return $matter;
+            }
 
-        $obj = Matter::find($id);
-        if (!$obj) {
-            return redirect()->route('adminconsole.features.matter.index')->with('error', 'Matter Not Found');
+            $this->validateMatterRequest($request, $matter->id);
+
+            $this->fillMatterFromRequest($matter, $request->all(), $request);
+
+            if (!$matter->save()) {
+                throw new \RuntimeException(config('constants.server_error'));
+            }
+
+            return $this->respondSaved($request, 'Matter updated successfully.', $matter->fresh(['workflow']));
+        } catch (ValidationException $e) {
+            return $this->respondValidationError($request, $e);
+        } catch (\Exception $e) {
+            return $this->respondError($request, $e, 'An error occurred while updating the matter.', is_numeric($id) ? (int) $id : null);
+        }
+    }
+
+    protected function buildListPayload(Request $request): array
+    {
+        $searchBy = trim((string) $request->query('search_by', $request->query('title', '')));
+        $query = Matter::query();
+
+        if ($searchBy !== '') {
+            $query->where(function ($q) use ($searchBy) {
+                $q->where('title', 'like', '%' . $searchBy . '%')
+                    ->orWhere('nick_name', 'like', '%' . $searchBy . '%');
+            });
         }
 
-        $obj->title = $requestData['title'];
-        $obj->nick_name = $requestData['nick_name'];
+        $totalData = $query->count();
+        $lists = $query->sortable(['id' => 'desc'])->paginate(20);
+
+        if ($searchBy !== '') {
+            $lists->appends(['search_by' => $searchBy]);
+        }
+
+        return [
+            'lists' => $lists,
+            'totalData' => $totalData,
+            'searchBy' => $searchBy,
+            'hasStreamColumn' => Schema::hasColumn('matters', 'stream'),
+        ];
+    }
+
+    protected function findMatterOrFail($id)
+    {
+        if (!isset($id) || $id === '') {
+            if (request()->ajax() || request()->expectsJson()) {
+                return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 404);
+            }
+
+            return redirect()->route('adminconsole.features.matter.index')->with('error', config('constants.unauthorized'));
+        }
+
+        $decodedId = is_numeric($id) ? (int) $id : $this->decodeString($id);
+
+        if (!Matter::where('id', $decodedId)->exists()) {
+            if (request()->ajax() || request()->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Matter not found.'], 404);
+            }
+
+            return redirect()->route('adminconsole.features.matter.index')->with('error', 'Matter Not Exist');
+        }
+
+        return Matter::find($decodedId);
+    }
+
+    protected function validateMatterRequest(Request $request, ?int $ignoreId = null): void
+    {
+        $streamKeys = array_keys(config('matter_streams.streams', []));
+        $nickRule = Rule::unique('matters', 'nick_name');
+        if ($ignoreId) {
+            $nickRule = $nickRule->ignore($ignoreId);
+        }
+
+        $this->validate($request, [
+            'title' => 'required|max:255',
+            'nick_name' => ['required', 'max:255', $nickRule],
+            'stream' => ['nullable', 'string', 'max:64', Rule::in($streamKeys)],
+        ]);
+    }
+
+    protected function fillMatterFromRequest(Matter $obj, array $requestData, Request $request): void
+    {
+        $obj->title = $requestData['title'] ?? null;
+        $obj->nick_name = $requestData['nick_name'] ?? null;
+
         if (Schema::hasColumn('matters', 'stream')) {
             $obj->stream = isset($requestData['stream']) && $requestData['stream'] !== ''
                 ? $requestData['stream']
                 : null;
         }
-        $obj->workflow_id = $requestData['workflow_id'] ?: null;
-        $obj->is_for_company = $requestData['is_for_company'] ?? $obj->is_for_company ?? 0;
+
+        $obj->workflow_id = !empty($requestData['workflow_id']) ? $requestData['workflow_id'] : null;
+        $obj->is_for_company = $requestData['is_for_company'] ?? ($obj->exists ? ($obj->is_for_company ?? 0) : 0);
+
+        if (!$obj->exists) {
+            $obj->status = $requestData['status'] ?? 1;
+        }
 
         if (Schema::hasColumn('matters', 'Block_1_Description')) {
             $obj->Block_1_Description = $requestData['Block_1_Description'] ?? null;
@@ -164,17 +247,82 @@ class MatterController extends Controller
         if (Schema::hasColumn('matters', 'additional_fee_1')) {
             $obj->additional_fee_1 = $requestData['additional_fee_1'] ?? null;
         }
+    }
 
-        $saved = $obj->save();
-        if (!$saved)
-        {
-            return redirect()->back()->with('error', config('constants.server_error'));
+    protected function resolveStreamLabel(?string $stream): string
+    {
+        if (!$stream) {
+            return '—';
         }
-        else
-        {
-            return redirect()->route('adminconsole.features.matter.index')->with('success', 'Matter Updated Successfully');
+
+        return \Illuminate\Support\Arr::get(config('matter_streams.streams', []), $stream, $stream);
+    }
+
+    protected function serializeMatterSummary(Matter $matter): array
+    {
+        if (!$matter->relationLoaded('workflow')) {
+            $matter->load('workflow');
         }
+
+        return [
+            'id' => $matter->id,
+            'title' => $matter->title,
+            'nick_name' => $matter->nick_name,
+            'stream' => $matter->stream,
+            'stream_label' => $this->resolveStreamLabel($matter->stream),
+            'workflow_id' => $matter->workflow_id,
+            'workflow_name' => optional($matter->workflow)->name,
+            'is_for_company' => (int) ($matter->is_for_company ?? 0),
+        ];
+    }
+
+    protected function respondValidationError(Request $request, ValidationException $e)
+    {
+        if ($request->ajax() || $request->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => collect($e->errors())->flatten()->first() ?: 'Validation failed.',
+                'errors' => $e->errors(),
+            ], 422);
+        }
+
+        return redirect()->back()->withErrors($e->validator)->withInput();
+    }
+
+    protected function respondError(Request $request, \Exception $e, string $message, ?int $matterId = null)
+    {
+        Log::error('Matter save error: ' . $e->getMessage(), [
+            'matter_id' => $matterId,
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ]);
+
+        $errorMsg = $message;
+        if (config('app.debug')) {
+            $errorMsg .= ' (' . $e->getMessage() . ')';
+        }
+
+        if ($request->ajax() || $request->expectsJson()) {
+            return response()->json(['success' => false, 'message' => $errorMsg], 500);
+        }
+
+        return redirect()->back()->withInput()->with('error', $errorMsg);
+    }
+
+    protected function respondSaved(Request $request, string $message, Matter $matter)
+    {
+        if ($request->ajax() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'matter' => $this->serializeMatterSummary($matter),
+                'row_html' => view('AdminConsole.features.matter.partials.row', [
+                    'list' => $matter,
+                    'hasStreamColumn' => Schema::hasColumn('matters', 'stream'),
+                ])->render(),
+            ]);
+        }
+
+        return redirect()->route('adminconsole.features.matter.index')->with('success', $message);
     }
 }
-
-

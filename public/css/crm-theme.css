@@ -977,6 +977,1086 @@ body.sidebar-mini .adminconsole-staff-list .custom-switch-input:focus ~ .custom-
   box-shadow: 0 0 0 0.2rem rgba(58, 111, 168, 0.2) !important;
 }
 
+body.sidebar-mini .adminconsole-staff-spa .staff-tab-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+body.sidebar-mini .adminconsole-staff-spa .staff-tab-btn.active {
+  background-color: var(--sidebar-active) !important;
+  color: #fff !important;
+}
+
+body.sidebar-mini .adminconsole-staff-spa .staff-list-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 28px 16px;
+  color: var(--text-muted);
+}
+
+body.sidebar-mini .adminconsole-staff-spa #staff-list-content.is-loading {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+body.sidebar-mini .adminconsole-staff-spa .staff-list-table .btn-link {
+  color: var(--navy) !important;
+  text-decoration: none !important;
+  font-weight: 600;
+}
+
+body.sidebar-mini .adminconsole-staff-spa .staff-list-table .btn-link:hover {
+  text-decoration: underline !important;
+}
+
+body.sidebar-mini .adminconsole-staff-spa .staff-form-section,
+body.sidebar-mini .adminconsole-staff-spa .staff-view-section {
+  background: var(--page-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+body.sidebar-mini .adminconsole-staff-spa .staff-form-section__title,
+body.sidebar-mini .adminconsole-staff-spa .staff-view-section__title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--navy);
+  margin-bottom: 14px;
+}
+
+body.sidebar-mini .adminconsole-staff-spa .staff-permission-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px 12px;
+}
+
+body.sidebar-mini .adminconsole-staff-spa .staff-perm-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-weight: 500;
+}
+
+body.sidebar-mini .adminconsole-staff-spa .staff-view-dl dt {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+body.sidebar-mini .adminconsole-staff-spa .staff-view-dl dd {
+  margin: 0 0 14px;
+  color: var(--text-dark);
+}
+
+/* Staff form modal — scrollable body + accordion sections (modals are outside .adminconsole-staff-form) */
+body.sidebar-mini .staff-form-modal .staff-form-modal-dialog {
+  max-width: 920px;
+  height: calc(100vh - 2rem);
+  margin: 1rem auto;
+}
+
+body.sidebar-mini .staff-form-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 2rem);
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+}
+
+body.sidebar-mini .staff-form-modal .modal-header {
+  flex: 0 0 auto;
+  background: var(--card-bg) !important;
+  border-bottom: 1px solid var(--border) !important;
+  align-items: flex-start;
+}
+
+body.sidebar-mini .staff-form-modal .modal-header .close {
+  margin-top: 0;
+}
+
+body.sidebar-mini .staff-form-modal .staff-modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.sidebar-mini .staff-form-modal .modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  min-height: 0;
+  background: var(--page-bg) !important;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+body.sidebar-mini .staff-form-modal .modal-footer {
+  flex: 0 0 auto;
+  background: var(--card-bg) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .staff-form-modal .staff-modal-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+body.sidebar-mini .staff-form-modal .staff-modal-accordion > .accordion {
+  margin-bottom: 0 !important;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+
+body.sidebar-mini .staff-form-modal .staff-modal-accordion .accordion-body {
+  padding: 16px;
+}
+
+body.sidebar-mini .staff-form-modal .staff-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  font-weight: 500;
+  color: var(--text-dark);
+  cursor: pointer;
+}
+
+body.sidebar-mini .staff-form-modal .staff-checkbox-row input {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+body.sidebar-mini .staff-form-modal .staff-permission-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+body.sidebar-mini .staff-form-modal .staff-perm-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--page-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+body.sidebar-mini .staff-form-modal .staff-perm-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-weight: 500;
+}
+
+body.sidebar-mini .staff-form-modal .staff-modal-scroll-hint {
+  text-align: center;
+  padding: 8px 0 0;
+}
+
+body.sidebar-mini .staff-form-modal .form-group label {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+body.sidebar-mini .staff-form-modal .staff-checkbox-row,
+body.sidebar-mini .staff-form-modal .staff-checkbox-row span {
+  text-transform: none !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--text-dark) !important;
+}
+
+body.sidebar-mini .staff-form-modal .cus_field_input {
+  position: relative;
+}
+
+body.sidebar-mini .staff-form-modal .cus_field_input .country_code {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  height: 100%;
+}
+
+body.sidebar-mini .staff-form-modal .accordion .accordion-header h4 .text-muted {
+  color: rgba(255, 255, 255, 0.75) !important;
+  font-weight: 500 !important;
+}
+
+/* Admin Console — Roles SPA (system/roles); docs/theme.md */
+body.sidebar-mini .adminconsole-roles-list .roles-list-search .form-control {
+  min-width: 220px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+body.sidebar-mini .adminconsole-roles-list .roles-list-search .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+body.sidebar-mini .adminconsole-roles-list .card-footer {
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+}
+
+body.sidebar-mini .adminconsole-roles-list .pagination .page-link {
+  color: var(--navy);
+  border-color: var(--border);
+}
+
+body.sidebar-mini .adminconsole-roles-list .pagination .page-item.active .page-link {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+body.sidebar-mini .adminconsole-roles-spa .roles-list-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+body.sidebar-mini .adminconsole-roles-spa #roles-list-content.is-loading {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+body.sidebar-mini .adminconsole-roles-spa .roles-list-table .btn-link {
+  color: var(--navy);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+body.sidebar-mini .adminconsole-roles-spa .roles-list-table .btn-link:hover {
+  text-decoration: underline;
+}
+
+body.sidebar-mini .adminconsole-roles-spa .roles-view-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+body.sidebar-mini .adminconsole-roles-spa .roles-view-section__title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+body.sidebar-mini .adminconsole-roles-spa .roles-view-dl dt {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+body.sidebar-mini .adminconsole-roles-spa .roles-view-dl dd {
+  margin: 0 0 14px;
+  color: var(--text-dark);
+}
+
+body.sidebar-mini .adminconsole-roles-spa .roles-view-perm-group {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+body.sidebar-mini .adminconsole-roles-spa .roles-view-perm-group:last-child {
+  border-bottom: 0;
+}
+
+body.sidebar-mini .roles-form-modal .roles-form-modal-dialog {
+  max-width: 960px;
+  height: calc(100vh - 2rem);
+  margin: 1rem auto;
+}
+
+body.sidebar-mini .roles-form-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 2rem);
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+}
+
+body.sidebar-mini .roles-form-modal .modal-header {
+  flex: 0 0 auto;
+  background: var(--card-bg) !important;
+  border-bottom: 1px solid var(--border) !important;
+  align-items: flex-start;
+}
+
+body.sidebar-mini .roles-form-modal .modal-header .close {
+  margin-top: 0;
+}
+
+body.sidebar-mini .roles-form-modal .roles-modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.sidebar-mini .roles-form-modal .modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  min-height: 0;
+  background: var(--page-bg) !important;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+body.sidebar-mini .roles-form-modal .modal-footer {
+  flex: 0 0 auto;
+  background: var(--card-bg) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .roles-form-modal .roles-modal-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+body.sidebar-mini .roles-form-modal .roles-modal-accordion > .accordion {
+  margin-bottom: 0 !important;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+
+body.sidebar-mini .roles-form-modal .roles-module-accordion > .accordion {
+  margin-bottom: 8px !important;
+}
+
+body.sidebar-mini .roles-form-modal .roles-module-accordion .select_toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+body.sidebar-mini .roles-form-modal .roles-perm-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+body.sidebar-mini .roles-form-modal .roles-perm-list li + li {
+  margin-top: 10px;
+}
+
+body.sidebar-mini .roles-form-modal .roles-perm-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  font-weight: 500;
+  color: var(--text-dark);
+  cursor: pointer;
+}
+
+body.sidebar-mini .roles-form-modal .roles-perm-item input {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+body.sidebar-mini .roles-form-modal .roles-modal-scroll-hint {
+  text-align: center;
+  padding: 8px 0 0;
+}
+
+body.sidebar-mini .roles-form-modal .form-group label {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+body.sidebar-mini .roles-form-modal .roles-perm-item {
+  text-transform: none !important;
+  font-size: 14px !important;
+}
+
+/* Admin Console — Personal Document Type SPA (features/personal-document-type) */
+body.sidebar-mini .adminconsole-personal-doc-type-list .pdt-list-search .form-control {
+  min-width: 220px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+body.sidebar-mini .adminconsole-personal-doc-type-list .pdt-list-search .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+body.sidebar-mini .adminconsole-personal-doc-type-list .card-footer {
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+}
+
+body.sidebar-mini .adminconsole-personal-doc-type-list .pagination .page-link {
+  color: var(--navy);
+  border-color: var(--border);
+}
+
+body.sidebar-mini .adminconsole-personal-doc-type-list .pagination .page-item.active .page-link {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+body.sidebar-mini .adminconsole-personal-doc-type-spa .pdt-list-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+body.sidebar-mini .adminconsole-personal-doc-type-spa #pdt-list-content.is-loading {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+body.sidebar-mini .adminconsole-personal-doc-type-spa .pdt-list-table .btn-link {
+  color: var(--navy);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+body.sidebar-mini .adminconsole-personal-doc-type-spa .pdt-list-table .btn-link:hover {
+  text-decoration: underline;
+}
+
+body.sidebar-mini .adminconsole-personal-doc-type-spa .pdt-view-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+body.sidebar-mini .adminconsole-personal-doc-type-spa .pdt-view-section__title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+body.sidebar-mini .adminconsole-personal-doc-type-spa .pdt-view-dl dt {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+body.sidebar-mini .adminconsole-personal-doc-type-spa .pdt-view-dl dd {
+  margin: 0 0 14px;
+  color: var(--text-dark);
+}
+
+body.sidebar-mini .pdt-form-modal .pdt-form-modal-dialog {
+  max-width: 720px;
+  height: calc(100vh - 2rem);
+  margin: 1rem auto;
+}
+
+body.sidebar-mini .pdt-form-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 2rem);
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+}
+
+body.sidebar-mini .pdt-form-modal .modal-header {
+  flex: 0 0 auto;
+  background: var(--card-bg) !important;
+  border-bottom: 1px solid var(--border) !important;
+  align-items: flex-start;
+}
+
+body.sidebar-mini .pdt-form-modal .modal-header .close {
+  margin-top: 0;
+}
+
+body.sidebar-mini .pdt-form-modal .pdt-modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.sidebar-mini .pdt-form-modal .modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  min-height: 0;
+  background: var(--page-bg) !important;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+body.sidebar-mini .pdt-form-modal .modal-footer {
+  flex: 0 0 auto;
+  background: var(--card-bg) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .pdt-form-modal .pdt-modal-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+body.sidebar-mini .pdt-form-modal .pdt-modal-accordion > .accordion {
+  margin-bottom: 0 !important;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+
+body.sidebar-mini .pdt-form-modal .form-group label {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Admin Console — Matter Document Type SPA (features/matter-document-type) */
+body.sidebar-mini .adminconsole-matter-document-type-list .mdt-list-search .form-control {
+  min-width: 220px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+body.sidebar-mini .adminconsole-matter-document-type-list .mdt-list-search .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+body.sidebar-mini .adminconsole-matter-document-type-list .card-footer {
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+}
+
+body.sidebar-mini .adminconsole-matter-document-type-list .pagination .page-link {
+  color: var(--navy);
+  border-color: var(--border);
+}
+
+body.sidebar-mini .adminconsole-matter-document-type-list .pagination .page-item.active .page-link {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+body.sidebar-mini .adminconsole-matter-document-type-spa .mdt-list-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+body.sidebar-mini .adminconsole-matter-document-type-spa #mdt-list-content.is-loading {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+body.sidebar-mini .adminconsole-matter-document-type-spa .mdt-list-table .btn-link {
+  color: var(--navy);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+body.sidebar-mini .adminconsole-matter-document-type-spa .mdt-list-table .btn-link:hover {
+  text-decoration: underline;
+}
+
+body.sidebar-mini .adminconsole-matter-document-type-spa .mdt-view-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+body.sidebar-mini .adminconsole-matter-document-type-spa .mdt-view-section__title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+body.sidebar-mini .adminconsole-matter-document-type-spa .mdt-view-dl dt {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+body.sidebar-mini .adminconsole-matter-document-type-spa .mdt-view-dl dd {
+  margin: 0 0 14px;
+  color: var(--text-dark);
+}
+
+body.sidebar-mini .mdt-form-modal .mdt-form-modal-dialog {
+  max-width: 720px;
+  height: calc(100vh - 2rem);
+  margin: 1rem auto;
+}
+
+body.sidebar-mini .mdt-form-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 2rem);
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+}
+
+body.sidebar-mini .mdt-form-modal .modal-header {
+  flex: 0 0 auto;
+  background: var(--card-bg) !important;
+  border-bottom: 1px solid var(--border) !important;
+  align-items: flex-start;
+}
+
+body.sidebar-mini .mdt-form-modal .modal-header .close {
+  margin-top: 0;
+}
+
+body.sidebar-mini .mdt-form-modal .mdt-modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.sidebar-mini .mdt-form-modal .modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  min-height: 0;
+  background: var(--page-bg) !important;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+body.sidebar-mini .mdt-form-modal .modal-footer {
+  flex: 0 0 auto;
+  background: var(--card-bg) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .mdt-form-modal .mdt-modal-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+body.sidebar-mini .mdt-form-modal .mdt-modal-accordion > .accordion {
+  margin-bottom: 0 !important;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+
+body.sidebar-mini .mdt-form-modal .form-group label {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Admin Console — Document Checklist SPA (features/document-checklist) */
+body.sidebar-mini .adminconsole-document-checklist-list .dcl-list-search .form-control {
+  min-width: 220px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+body.sidebar-mini .adminconsole-document-checklist-list .dcl-list-search .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+body.sidebar-mini .adminconsole-document-checklist-list .card-footer {
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+}
+
+body.sidebar-mini .adminconsole-document-checklist-list .pagination .page-link {
+  color: var(--navy);
+  border-color: var(--border);
+}
+
+body.sidebar-mini .adminconsole-document-checklist-list .pagination .page-item.active .page-link {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+body.sidebar-mini .adminconsole-document-checklist-spa .dcl-list-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+body.sidebar-mini .adminconsole-document-checklist-spa #dcl-list-content.is-loading {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+body.sidebar-mini .adminconsole-document-checklist-spa .dcl-list-table .btn-link {
+  color: var(--navy);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+body.sidebar-mini .adminconsole-document-checklist-spa .dcl-list-table .btn-link:hover {
+  text-decoration: underline;
+}
+
+body.sidebar-mini .adminconsole-document-checklist-spa .dcl-view-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+body.sidebar-mini .adminconsole-document-checklist-spa .dcl-view-section__title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+body.sidebar-mini .adminconsole-document-checklist-spa .dcl-view-dl dt {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+body.sidebar-mini .adminconsole-document-checklist-spa .dcl-view-dl dd {
+  margin: 0 0 14px;
+  color: var(--text-dark);
+}
+
+body.sidebar-mini .dcl-form-modal .dcl-form-modal-dialog {
+  max-width: 720px;
+  height: calc(100vh - 2rem);
+  margin: 1rem auto;
+}
+
+body.sidebar-mini .dcl-form-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 2rem);
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+}
+
+body.sidebar-mini .dcl-form-modal .modal-header {
+  flex: 0 0 auto;
+  background: var(--card-bg) !important;
+  border-bottom: 1px solid var(--border) !important;
+  align-items: flex-start;
+}
+
+body.sidebar-mini .dcl-form-modal .modal-header .close {
+  margin-top: 0;
+}
+
+body.sidebar-mini .dcl-form-modal .dcl-modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.sidebar-mini .dcl-form-modal .modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  min-height: 0;
+  background: var(--page-bg) !important;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+body.sidebar-mini .dcl-form-modal .modal-footer {
+  flex: 0 0 auto;
+  background: var(--card-bg) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .dcl-form-modal .dcl-modal-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+body.sidebar-mini .dcl-form-modal .dcl-modal-accordion > .accordion {
+  margin-bottom: 0 !important;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+
+body.sidebar-mini .dcl-form-modal .form-group label {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Admin Console — Matter SPA (features/matter) */
+body.sidebar-mini .adminconsole-matter-list .mat-list-search .form-control {
+  min-width: 220px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+body.sidebar-mini .adminconsole-matter-list .mat-list-search .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+body.sidebar-mini .adminconsole-matter-list .card-footer {
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+}
+
+body.sidebar-mini .adminconsole-matter-list .pagination .page-link {
+  color: var(--navy);
+  border-color: var(--border);
+}
+
+body.sidebar-mini .adminconsole-matter-list .pagination .page-item.active .page-link {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+body.sidebar-mini .adminconsole-matter-spa .mat-list-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+body.sidebar-mini .adminconsole-matter-spa #mat-list-content.is-loading {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+body.sidebar-mini .adminconsole-matter-spa .mat-list-table .btn-link {
+  color: var(--navy);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+body.sidebar-mini .adminconsole-matter-spa .mat-list-table .btn-link:hover {
+  text-decoration: underline;
+}
+
+body.sidebar-mini .adminconsole-matter-spa .mat-view-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+body.sidebar-mini .adminconsole-matter-spa .mat-view-section__title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+body.sidebar-mini .adminconsole-matter-spa .mat-view-dl dt {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+body.sidebar-mini .adminconsole-matter-spa .mat-view-dl dd {
+  margin: 0 0 14px;
+  color: var(--text-dark);
+}
+
+body.sidebar-mini .matter-index-layout > .main-content {
+  overflow: visible !important;
+}
+
+body.sidebar-mini .adminconsole-matter-spa .mat-list-table-wrap {
+  overflow: visible !important;
+}
+
+body.sidebar-mini .adminconsole-matter-spa .mat-list-table tbody tr td:last-child {
+  overflow: visible !important;
+}
+
+body.sidebar-mini .adminconsole-matter-spa .mat-list-table .dropdown-menu {
+  z-index: 1060 !important;
+  max-height: min(85vh, 520px) !important;
+  overflow-y: auto !important;
+}
+
+body.sidebar-mini .mat-form-modal .mat-form-modal-dialog {
+  max-width: 960px;
+  height: calc(100vh - 2rem);
+  margin: 1rem auto;
+}
+
+body.sidebar-mini .mat-form-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 2rem);
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+}
+
+body.sidebar-mini .mat-form-modal .modal-header {
+  flex: 0 0 auto;
+  background: var(--card-bg) !important;
+  border-bottom: 1px solid var(--border) !important;
+  align-items: flex-start;
+}
+
+body.sidebar-mini .mat-form-modal .modal-header .close {
+  margin-top: 0;
+}
+
+body.sidebar-mini .mat-form-modal .mat-modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.sidebar-mini .mat-form-modal .modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  min-height: 0;
+  background: var(--page-bg) !important;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+body.sidebar-mini .mat-form-modal .modal-footer {
+  flex: 0 0 auto;
+  background: var(--card-bg) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+body.sidebar-mini .mat-form-modal .mat-modal-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+body.sidebar-mini .mat-form-modal .mat-modal-accordion > .accordion {
+  margin-bottom: 0 !important;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+
+body.sidebar-mini .mat-form-modal .form-group label {
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+body.sidebar-mini .mat-form-modal .mat-modal-scroll-hint {
+  color: var(--text-muted);
+}
+
 /* Admin Console — Email Labels (features/email-labels); docs/theme.md */
 body.sidebar-mini .adminconsole-email-labels .table-responsive {
   overflow-x: auto !important;
@@ -1759,6 +2839,13 @@ body.sidebar-mini .main-content.adminconsole-sms-form .accordion {
 body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-header,
 body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-header,
 body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-header,
+body.sidebar-mini .main-content.adminconsole-staff-form .accordion .accordion-header,
+body.sidebar-mini .staff-form-modal .accordion .accordion-header,
+body.sidebar-mini .roles-form-modal .accordion .accordion-header,
+body.sidebar-mini .pdt-form-modal .accordion .accordion-header,
+body.sidebar-mini .mdt-form-modal .accordion .accordion-header,
+body.sidebar-mini .dcl-form-modal .accordion .accordion-header,
+body.sidebar-mini .mat-form-modal .accordion .accordion-header,
 body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header,
 body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-header,
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header,
@@ -1781,6 +2868,13 @@ body.sidebar-mini .main-content.adminconsole-sms-form .accordion .accordion-head
 body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-header:hover,
 body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-header:hover,
 body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-header:hover,
+body.sidebar-mini .main-content.adminconsole-staff-form .accordion .accordion-header:hover,
+body.sidebar-mini .staff-form-modal .accordion .accordion-header:hover,
+body.sidebar-mini .roles-form-modal .accordion .accordion-header:hover,
+body.sidebar-mini .pdt-form-modal .accordion .accordion-header:hover,
+body.sidebar-mini .mdt-form-modal .accordion .accordion-header:hover,
+body.sidebar-mini .dcl-form-modal .accordion .accordion-header:hover,
+body.sidebar-mini .mat-form-modal .accordion .accordion-header:hover,
 body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header:hover,
 body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-header:hover,
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header:hover,
@@ -1796,6 +2890,13 @@ body.sidebar-mini .main-content.adminconsole-sms-form .accordion .accordion-head
 body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-header[aria-expanded="true"],
 body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-header[aria-expanded="true"],
 body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .main-content.adminconsole-staff-form .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .staff-form-modal .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .roles-form-modal .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .pdt-form-modal .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .mdt-form-modal .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .dcl-form-modal .accordion .accordion-header[aria-expanded="true"],
+body.sidebar-mini .mat-form-modal .accordion .accordion-header[aria-expanded="true"],
 body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header[aria-expanded="true"],
 body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-header[aria-expanded="true"],
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header[aria-expanded="true"],
@@ -1813,6 +2914,13 @@ body.sidebar-mini .main-content.adminconsole-sms-form .accordion .accordion-head
 body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-header h4,
 body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-header h4,
 body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-header h4,
+body.sidebar-mini .main-content.adminconsole-staff-form .accordion .accordion-header h4,
+body.sidebar-mini .staff-form-modal .accordion .accordion-header h4,
+body.sidebar-mini .roles-form-modal .accordion .accordion-header h4,
+body.sidebar-mini .pdt-form-modal .accordion .accordion-header h4,
+body.sidebar-mini .mdt-form-modal .accordion .accordion-header h4,
+body.sidebar-mini .dcl-form-modal .accordion .accordion-header h4,
+body.sidebar-mini .mat-form-modal .accordion .accordion-header h4,
 body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-header h4,
 body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-header h4,
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-header h4,
@@ -1831,6 +2939,13 @@ body.sidebar-mini .main-content.adminconsole-sms-form .accordion .accordion-head
 body.sidebar-mini .main-content.adminconsole-workflow-form .accordion .accordion-body,
 body.sidebar-mini .main-content.adminconsole-emails-form .accordion .accordion-body,
 body.sidebar-mini .main-content.adminconsole-offices-form .accordion .accordion-body,
+body.sidebar-mini .main-content.adminconsole-staff-form .accordion .accordion-body,
+body.sidebar-mini .staff-form-modal .accordion .accordion-body,
+body.sidebar-mini .roles-form-modal .accordion .accordion-body,
+body.sidebar-mini .pdt-form-modal .accordion .accordion-body,
+body.sidebar-mini .mdt-form-modal .accordion .accordion-body,
+body.sidebar-mini .dcl-form-modal .accordion .accordion-body,
+body.sidebar-mini .mat-form-modal .accordion .accordion-body,
 body.sidebar-mini .main-content.adminconsole-crm-email-template-form .accordion .accordion-body,
 body.sidebar-mini .main-content.adminconsole-teams-form .accordion .accordion-body,
 body.sidebar-mini .main-content.adminconsole-roles-form .accordion .accordion-body,

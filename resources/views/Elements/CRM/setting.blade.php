@@ -36,24 +36,24 @@
 			<?php
 			if(array_key_exists('4',  $module_access)) {
 			?>
-			<li class="{{(Route::currentRouteName() == 'adminconsole.staff.active' || Route::currentRouteName() == 'adminconsole.staff.inactive' || Route::currentRouteName() == 'adminconsole.staff.invited' || Route::currentRouteName() == 'adminconsole.staff.create' || Route::currentRouteName() == 'adminconsole.staff.edit' || Route::currentRouteName() == 'adminconsole.staff.view') ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.staff.active')}}">Staff</a></li>
+			<li class="{{(Route::currentRouteName() == 'adminconsole.staff.index' || Route::currentRouteName() == 'adminconsole.staff.active' || Route::currentRouteName() == 'adminconsole.staff.inactive' || Route::currentRouteName() == 'adminconsole.staff.invited' || Route::currentRouteName() == 'adminconsole.staff.create' || Route::currentRouteName() == 'adminconsole.staff.edit' || Route::currentRouteName() == 'adminconsole.staff.view') ? 'active' : ''}}"><a class="nav-link" href="{{ route('adminconsole.staff.index') }}">Staff</a></li>
 			<li class="{{(Route::currentRouteName() == 'adminconsole.system.teams.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.system.teams.index')}}">Teams</a></li>
 			<?php } ?>
 			<?php
 			if(array_key_exists('6',  $module_access)) {
 			?>
-			<li class="{{(Route::currentRouteName() == 'adminconsole.system.roles.index' || Route::currentRouteName() == 'adminconsole.system.roles.create' || Route::currentRouteName() == 'adminconsole.system.roles.edit') ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.system.roles.index')}}">Roles</a></li>
+			<li class="{{(Route::currentRouteName() == 'adminconsole.system.roles.index' || Route::currentRouteName() == 'adminconsole.system.roles.create' || Route::currentRouteName() == 'adminconsole.system.roles.edit' || Route::currentRouteName() == 'adminconsole.system.roles.view') ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.system.roles.index')}}">Roles</a></li>
 			<?php } ?>
 			
-			<li class="{{(Route::currentRouteName() == 'adminconsole.features.personaldocumenttype.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.personaldocumenttype.index')}}">Personal Document Folders</a></li>
+			<li class="{{ in_array(Route::currentRouteName(), ['adminconsole.features.personaldocumenttype.index', 'adminconsole.features.personaldocumenttype.create', 'adminconsole.features.personaldocumenttype.edit', 'adminconsole.features.personaldocumenttype.view']) ? 'active' : '' }}"><a class="nav-link" href="{{route('adminconsole.features.personaldocumenttype.index')}}">Personal Document Folders</a></li>
 
-            <li class="{{(Route::currentRouteName() == 'adminconsole.features.matterdocumenttype.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.matterdocumenttype.index')}}">Matter Document Folders</a></li>
+            <li class="{{ in_array(Route::currentRouteName(), ['adminconsole.features.matterdocumenttype.index', 'adminconsole.features.matterdocumenttype.create', 'adminconsole.features.matterdocumenttype.edit', 'adminconsole.features.matterdocumenttype.view']) ? 'active' : '' }}"><a class="nav-link" href="{{route('adminconsole.features.matterdocumenttype.index')}}">Matter Document Folders</a></li>
 
-			<li class="{{(Route::currentRouteName() == 'adminconsole.features.documentchecklist.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.documentchecklist.index')}}">Document Checklist</a></li>
+			<li class="{{ in_array(Route::currentRouteName(), ['adminconsole.features.documentchecklist.index', 'adminconsole.features.documentchecklist.create', 'adminconsole.features.documentchecklist.edit', 'adminconsole.features.documentchecklist.view']) ? 'active' : '' }}"><a class="nav-link" href="{{route('adminconsole.features.documentchecklist.index')}}">Document Checklist</a></li>
 
 
 			
-			<li class="{{(Route::currentRouteName() == 'adminconsole.features.matter.index' ) ? 'active' : ''}}"><a class="nav-link" href="{{route('adminconsole.features.matter.index')}}">Matter List</a></li>
+			<li class="{{ in_array(Route::currentRouteName(), ['adminconsole.features.matter.index', 'adminconsole.features.matter.create', 'adminconsole.features.matter.edit', 'adminconsole.features.matter.view']) ? 'active' : '' }}"><a class="nav-link" href="{{route('adminconsole.features.matter.index')}}">Matter List</a></li>
 
 			<?php
 			// SMS Management menu - Available for all admin users
