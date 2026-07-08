@@ -94,7 +94,7 @@ return [
 
         'email_upload' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/email-upload.log'),
+            'path' => storage_path('logs/email-upload-errors.log'),
             'level' => 'error',
             'days' => 30,
             'permission' => 0644,

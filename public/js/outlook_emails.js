@@ -100,6 +100,20 @@ document.addEventListener('DOMContentLoaded', function() {
         ? JSON.parse(outlookContainer.getAttribute('data-matter-folders') || '[]')
         : [];
 
+    function reportEmailUploadFailure(stage, details) {
+        if (typeof window.crmLogEmailUploadFailure !== 'function') {
+            return;
+        }
+
+        const payload = Object.assign({
+            stage: stage,
+            client_id: clientId,
+            mail_type: currentFolder === 'sent' ? 'sent' : 'inbox'
+        }, details || {});
+
+        window.crmLogEmailUploadFailure(payload);
+    }
+
     loadEmails();
 
     // Event Listeners
@@ -347,6 +361,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 hideEmailUploadLoading();
 
                 if (!files || !files.length) {
+                    reportEmailUploadFailure('outlook_bridge_empty', {
+                        error: 'No Outlook email found. Open Outlook, click the email you want to upload, then try again.'
+                    });
                     showUploadErrorAlert(
                         'No Outlook email found. Open Outlook, click the email you want to upload, then try again.',
                         'Could not read Outlook email'
@@ -357,6 +374,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 handleUploadFiles(files);
             } catch (error) {
                 hideEmailUploadLoading();
+                reportEmailUploadFailure('outlook_bridge_exception', {
+                    error: (error && error.message) ? error.message : 'Could not read the selected email from Outlook.'
+                });
                 showUploadErrorAlert(
                     (error && error.message) ? error.message : 'Could not read the selected email from Outlook.',
                     'Could not read Outlook email'
@@ -419,12 +439,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     : null;
 
                 if (failure) {
+                    reportEmailUploadFailure('drop_failed', {
+                        error: failure.message,
+                        technical_error: failure.title
+                    });
                     showUploadErrorAlert(failure.message, failure.title);
                 }
             } catch (error) {
                 if (!hasSnapshotFiles) {
                     hideEmailUploadLoading();
                 }
+                reportEmailUploadFailure('drop_exception', {
+                    error: (error && error.message) ? error.message : 'Could not read the email from Outlook.'
+                });
                 showUploadErrorAlert(
                     (error && error.message) ? error.message : 'Could not read the email from Outlook.',
                     'Could not read Outlook email'
@@ -573,6 +600,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (fileResult.errors && fileResult.errors.length) {
                 errorMessage = fileResult.errors[0].error || errorMessage;
             }
+            reportEmailUploadFailure('server_file_failed', {
+                filename: file.name,
+                error: errorMessage,
+                technical_error: fileResult.errors && fileResult.errors[0] ? fileResult.errors[0].technical_error : null,
+                errors: fileResult.errors || []
+            });
             showUploadFileError(file.name, errorMessage);
             updateUploadStatusForFile(file.name, 'error', errorMessage);
         }
@@ -1422,13 +1455,25 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!response.ok) {
                 if (response.status === 403) {
                     const wafMsg = crmOutlookEmailUpload403Message(responseText, response.status);
-                    throw new Error(wafMsg || (result.message || 'Upload failed (HTTP 403).'));
+                    const errorMsg = wafMsg || (result.message || 'Upload failed (HTTP 403).');
+                    reportEmailUploadFailure('http_error', {
+                        filename: file.name,
+                        error: errorMsg,
+                        technical_error: 'HTTP ' + response.status
+                    });
+                    throw new Error(errorMsg);
                 }
                 let errorMsg = result.message || ('Upload failed (HTTP ' + response.status + ').');
                 const details = formatUploadErrorDetails(result.errors);
                 if (details) {
                     errorMsg += '\n\n' + details;
                 }
+                reportEmailUploadFailure('http_error', {
+                    filename: file.name,
+                    error: errorMsg,
+                    technical_error: 'HTTP ' + response.status,
+                    errors: result.errors || []
+                });
                 throw new Error(errorMsg);
             }
 
@@ -1530,6 +1575,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const allowedLabel = (typeof window.crmEmailUploadExtensionsLabel === 'function')
                     ? window.crmEmailUploadExtensionsLabel()
                     : '.msg, .eml';
+                reportEmailUploadFailure('invalid_file_type', {
+                    error: 'Please upload Outlook email files only (' + allowedLabel + ').'
+                });
                 showUploadErrorAlert('Please upload Outlook email files only (' + allowedLabel + ').');
                 return;
             }
@@ -1539,6 +1587,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const emptyMessage = (typeof window.crmEmailUploadEmptyFileMessage === 'function')
                     ? window.crmEmailUploadEmptyFileMessage()
                     : 'The email file is empty (0 bytes) and cannot be uploaded.';
+                reportEmailUploadFailure('empty_file', {
+                    error: emptyMessage,
+                    filenames: emptyFiles.map(function (file) { return file.name; })
+                });
                 showUploadErrorAlert(emptyMessage, 'Cannot upload directly from Outlook');
                 return;
             }
@@ -1606,6 +1658,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             filename: file.name,
                             error: errorText
                         });
+                        reportEmailUploadFailure('upload_exception', {
+                            filename: file.name,
+                            error: errorText,
+                            file_size: file.size,
+                            file_type: file.type
+                        });
                         showUploadFileError(file.name, errorText);
                         updateUploadStatusForFile(file.name, 'error', errorText);
                     }
@@ -1647,6 +1705,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (errorDetails) {
                             errorMsg += '\n\nError details:\n' + errorDetails;
                         }
+                        reportEmailUploadFailure('upload_batch_partial', {
+                            error: errorMsg,
+                            errors: allErrors.filter(function(err) { return !err.rejected; })
+                        });
                         showUploadErrorAlert(errorMsg);
                     }
                     loadEmails();
@@ -1666,6 +1728,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (errorDetails) {
                         errorMsg += '\n\nError details:\n' + errorDetails;
                     }
+                    reportEmailUploadFailure('upload_batch_failed', {
+                        error: errorMsg,
+                        errors: allErrors.filter(function(err) { return !err.rejected; })
+                    });
                     showUploadErrorAlert(errorMsg);
                 }
             } catch (error) {
@@ -1674,6 +1740,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     uploadStatus.style.color = 'red';
                     uploadStatus.textContent = 'Upload failed';
                 }
+                reportEmailUploadFailure('upload_batch_exception', {
+                    error: error.message || 'Upload failed. Please try again.'
+                });
                 showUploadErrorAlert(error.message || 'Upload failed. Please try again.');
                 console.error(error);
             } finally {

@@ -692,6 +692,46 @@
         return 'Access denied. You may not have permission to upload emails for this client.';
     }
 
+    function resolveEmailUploadLogBaseUrl() {
+        var container = document.getElementById('outlook-email-container')
+            || document.querySelector('.email-interface-container')
+            || document.querySelector('[data-base-url]');
+
+        if (container) {
+            var configured = container.getAttribute('data-base-url');
+            if (configured) {
+                return configured.replace(/\/$/, '');
+            }
+        }
+
+        return window.location.origin;
+    }
+
+    function logEmailUploadFailure(context) {
+        var payload = context || {};
+        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        var body = JSON.stringify(payload);
+
+        try {
+            fetch(resolveEmailUploadLogBaseUrl() + '/log-email-upload-error', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfMeta ? csrfMeta.content : ''
+                },
+                body: body,
+                credentials: 'same-origin',
+                keepalive: true
+            }).catch(function () {
+                // Ignore logging transport failures in the browser.
+            });
+        } catch (ignored) {
+            // Ignore logging failures in the browser.
+        }
+    }
+
     global.crmGetAllowedEmailUploadExtensions = getAllowedEmailUploadExtensions;
     global.crmEmailUploadAcceptAttribute = emailUploadAcceptAttribute;
     global.crmEmailUploadExtensionsLabel = emailUploadExtensionsLabel;
@@ -715,4 +755,5 @@
     global.crmSanitizeEmailUploadFilename = sanitizeEmailUploadFilename;
     global.crmBuildEmailUploadFormData = buildEmailUploadFormData;
     global.crmEmailUpload403Message = emailUpload403Message;
+    global.crmLogEmailUploadFailure = logEmailUploadFailure;
 })(typeof window !== 'undefined' ? window : this);

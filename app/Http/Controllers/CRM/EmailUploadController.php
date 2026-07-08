@@ -16,6 +16,7 @@ use App\Models\EmailLog;
 use App\Models\ActivitiesLog;
 use App\Models\ClientMatter;
 use App\Models\Admin;
+use App\Logging\EmailUploadErrorLogger;
 use App\Traits\LogsClientActivity;
 use Illuminate\Support\Carbon;
 
@@ -332,6 +333,7 @@ class EmailUploadController extends Controller
                             'filename' => $this->sanitizedUploadFilename($file),
                             'original_filename' => $file->getClientOriginalName(),
                             'error' => $result['error'] ?? 'Unknown error occurred while processing email',
+                            'technical_error' => $result['technical_error'] ?? null,
                             'duplicate' => !empty($result['duplicate']),
                             'existing' => $result['existing'] ?? null,
                         ];
@@ -1773,27 +1775,42 @@ class EmailUploadController extends Controller
     }
 
     /**
-     * Write email upload failures to storage/logs/email-upload-*.log (errors only).
+     * Log browser-side email upload failures to the dedicated error log file.
+     */
+    public function logClientUploadError(Request $request)
+    {
+        $errors = $request->input('errors');
+        if (is_string($errors)) {
+            $decoded = json_decode($errors, true);
+            $errors = is_array($decoded) ? $decoded : null;
+        }
+
+        $this->logEmailUploadFailure((string) $request->input('stage', 'client'), array_filter([
+            'source' => 'browser',
+            'staff_id' => Auth::id(),
+            'client_id' => $request->input('client_id'),
+            'mail_type' => $request->input('mail_type'),
+            'filename' => $request->input('filename'),
+            'error' => $request->input('error'),
+            'technical_error' => $request->input('technical_error'),
+            'errors' => $errors,
+            'file_size' => $request->input('file_size'),
+            'file_type' => $request->input('file_type'),
+        ], static fn ($value) => $value !== null && $value !== ''));
+
+        return response()->json(['status' => true]);
+    }
+
+    /**
+     * Write email upload failures to storage/logs/email-upload-errors-*.log (errors only).
      */
     protected function logEmailUploadFailure(string $stage, array $context = [], ?\Throwable $throwable = null): void
     {
         $payload = array_merge([
-            'stage' => $stage,
             'staff_id' => Auth::id(),
         ], $context);
 
-        if ($throwable !== null) {
-            $payload['exception'] = get_class($throwable);
-            $payload['error'] = $throwable->getMessage();
-            $payload['trace'] = $throwable->getTraceAsString();
-
-            $previous = $throwable->getPrevious();
-            if ($previous instanceof \Throwable) {
-                $payload['previous_error'] = $previous->getMessage();
-            }
-        }
-
-        Log::channel('email_upload')->error('Email upload failed', $payload);
+        EmailUploadErrorLogger::log($stage, $payload, $throwable);
     }
 
     protected function validateEmailUploadRequest(Request $request)
