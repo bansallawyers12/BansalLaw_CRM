@@ -886,9 +886,6 @@
 
         uploadArea.addEventListener('dragover', function(e) {
             e.preventDefault();
-            if (e.dataTransfer) {
-                e.dataTransfer.dropEffect = 'copy';
-            }
         });
 
         // Handle dropped files
@@ -898,22 +895,20 @@
             e.preventDefault();
             e.stopPropagation();
 
-            const snapshot = (typeof window.crmCaptureEmailUploadDropSnapshot === 'function')
-                ? window.crmCaptureEmailUploadDropSnapshot(e.dataTransfer)
-                : e.dataTransfer;
-
             let rawFiles = [];
             let files = [];
 
             if (typeof window.crmResolveEmailUploadDrop === 'function') {
-                const dropResult = await window.crmResolveEmailUploadDrop(snapshot);
+                const dropResult = await window.crmResolveEmailUploadDrop(e.dataTransfer);
                 rawFiles = dropResult.rawFiles || [];
                 files = dropResult.files || [];
-            } else if (typeof window.crmGetFilesFromDropSnapshot === 'function') {
-                rawFiles = await window.crmGetFilesFromDropSnapshot(snapshot);
-                files = rawFiles;
+            } else if (typeof window.crmResolveEmailUploadDropFiles === 'function') {
+                files = await window.crmResolveEmailUploadDropFiles(e.dataTransfer);
+                rawFiles = (typeof window.crmGetFilesFromDataTransfer === 'function')
+                    ? await window.crmGetFilesFromDataTransfer(e.dataTransfer)
+                    : Array.from(e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : []);
             } else {
-                rawFiles = Array.from(snapshot && snapshot.files ? snapshot.files : (e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : []));
+                rawFiles = Array.from(e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : []);
                 files = rawFiles;
             }
 

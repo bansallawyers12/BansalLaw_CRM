@@ -39,6 +39,3 @@ validators>=0.20.0
 # Logging & Monitoring
 loguru>=0.7.0
 
-# Windows-only: Outlook desktop drag-and-drop bridge
-pywin32>=306; sys_platform == "win32"
-
