@@ -515,45 +515,30 @@ document.addEventListener('DOMContentLoaded', function() {
             }).join('\n\n');
         }
 
-        function showUploadSuccessToast(message) {
-            if (typeof crmNotify !== 'undefined') {
-                crmNotify.success({
-                    title: 'Success',
-                    message: message,
-                    position: 'topRight',
-                    transitionIn: 'fadeInDown',
-                    transitionOut: 'fadeOutUp'
+        function showUploadResultModal(type, message, title) {
+            if (typeof window.crmShowEmailUploadResultModal === 'function') {
+                return window.crmShowEmailUploadResultModal({
+                    type: type,
+                    title: title,
+                    message: message || ''
                 });
             }
+
+            window.alert((title || 'Upload') + '\n\n' + (message || ''));
+            return Promise.resolve();
+        }
+
+        function showUploadSuccessToast(message) {
+            return showUploadResultModal('success', message, 'Upload Successful');
         }
 
         function showUploadFileSuccess(fileName) {
-            if (typeof crmNotify !== 'undefined') {
-                crmNotify.success({
-                    title: 'Uploaded successfully',
-                    message: fileName,
-                    position: 'topRight',
-                    timeout: 5000,
-                    transitionIn: 'fadeInDown',
-                    transitionOut: 'fadeOutUp'
-                });
-            }
+            updateUploadStatusForFile(fileName, 'success');
         }
 
         function showUploadFileError(fileName, errorMessage) {
             const text = errorMessage || 'Upload failed. Please try again.';
-            if (typeof crmNotify !== 'undefined') {
-                crmNotify.error({
-                    title: fileName,
-                    message: text.replace(/\n/g, '<br>'),
-                    position: 'topRight',
-                    timeout: 8000,
-                    transitionIn: 'fadeInDown',
-                    transitionOut: 'fadeOutUp'
-                });
-            } else {
-                window.alert(fileName + ': ' + text);
-            }
+            updateUploadStatusForFile(fileName, 'error', text);
         }
 
         function updateUploadStatusForFile(fileName, type, detail) {
@@ -613,18 +598,7 @@ document.addEventListener('DOMContentLoaded', function() {
         function showUploadErrorAlert(message, title) {
             const text = message || 'Upload failed. Please try again.';
             const alertTitle = title || 'Upload Failed';
-            if (typeof crmNotify !== 'undefined') {
-                crmNotify.error({
-                    title: alertTitle,
-                    message: text.replace(/\n/g, '<br>'),
-                    position: 'topRight',
-                    timeout: 12000,
-                    transitionIn: 'fadeInDown',
-                    transitionOut: 'fadeOutUp'
-                });
-            } else {
-                window.alert(alertTitle + '\n\n' + text);
-            }
+            return showUploadResultModal('error', text, alertTitle);
         }
 
         const DUPLICATE_EXISTS_MESSAGE = 'This email already exists.';

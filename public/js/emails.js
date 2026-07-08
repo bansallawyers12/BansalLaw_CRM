@@ -431,7 +431,7 @@
                     }
                 }
 
-                showNotification(errorMessage, 'error');
+                showUploadNotification(errorMessage, 'error', 'Upload Failed');
 
                 if (data.errors) {
                     console.error('Upload errors:', data.errors);
@@ -455,7 +455,7 @@
                     uploadProgress.className = 'upload-progress success';
                 }
                 fileStatus.textContent = 'Upload successful!';
-                showNotification(data.message || 'Files uploaded successfully!', 'success');
+                showUploadNotification(data.message || 'Files uploaded successfully!', 'success', 'Upload Successful');
 
                 setTimeout(function() {
                     const fileInputEl = document.getElementById('emailFileInput');
@@ -515,7 +515,7 @@
                 console.error('Technical error:', data.technical_error);
             }
 
-            showNotification(errorMessage, 'error');
+            showUploadNotification(errorMessage, 'error', 'Upload Failed');
 
             setTimeout(function() {
                 fileStatus.textContent = 'Ready to upload';
@@ -584,6 +584,22 @@
         }
         console.warn('Unexpected email list response shape:', data);
         return [];
+    }
+
+    /**
+     * Show upload result in a popup modal (not toast).
+     */
+    function showUploadNotification(message, type, title) {
+        if (typeof window.crmShowEmailUploadResultModal === 'function') {
+            window.crmShowEmailUploadResultModal({
+                type: type || 'info',
+                title: title,
+                message: message || ''
+            });
+            return;
+        }
+
+        showNotification(message, type, title);
     }
 
     /**
@@ -911,7 +927,7 @@
                 : null;
 
             if (failure) {
-                showNotification(failure.message, 'error', failure.title);
+                showUploadNotification(failure.message, 'error', failure.title);
                 fileStatus.textContent = failure.title || 'Upload not supported';
                 fileStatus.parentElement.className = 'upload-progress error';
                 setTimeout(function () {
@@ -953,7 +969,7 @@
                     const allowedLabel = (typeof window.crmEmailUploadExtensionsLabel === 'function')
                         ? window.crmEmailUploadExtensionsLabel()
                         : '.msg, .eml';
-                    showNotification('Please select Outlook email files only (' + allowedLabel + ')', 'error');
+                    showUploadNotification('Please select Outlook email files only (' + allowedLabel + ')', 'error', 'Invalid File Type');
                     fileStatus.textContent = 'Invalid file type';
                     fileStatus.parentElement.className = 'upload-progress error';
                     setTimeout(function () {
@@ -968,7 +984,7 @@
                     const emptyMessage = (typeof window.crmEmailUploadEmptyFileMessage === 'function')
                         ? window.crmEmailUploadEmptyFileMessage()
                         : 'The email file is empty (0 bytes) and cannot be uploaded.';
-                    showNotification(emptyMessage, 'error', 'Cannot upload directly from Outlook');
+                    showUploadNotification(emptyMessage, 'error', 'Cannot upload directly from Outlook');
                     fileStatus.textContent = 'File is empty';
                     fileStatus.parentElement.className = 'upload-progress error';
                     setTimeout(function () {
@@ -979,11 +995,11 @@
                 }
 
                 if (msgFiles.length !== resolvedFiles.length) {
-                    showNotification('Only ' + msgFiles.length + ' of ' + resolvedFiles.length + ' files are valid Outlook email files', 'info');
+                    showUploadNotification('Only ' + msgFiles.length + ' of ' + resolvedFiles.length + ' files are valid Outlook email files', 'warning', 'Some Files Skipped');
                 }
 
                 if (msgFiles.length > MAX_EMAIL_FILES) {
-                    showNotification('Maximum ' + MAX_EMAIL_FILES + ' email files allowed per upload.', 'error');
+                    showUploadNotification('Maximum ' + MAX_EMAIL_FILES + ' email files allowed per upload.', 'error', 'Too Many Files');
                     fileStatus.textContent = 'Too many files selected';
                     fileStatus.parentElement.className = 'upload-progress error';
                     setTimeout(function() {
@@ -998,9 +1014,10 @@
                 });
                 if (oversizedFiles.length > 0) {
                     const names = oversizedFiles.map(function(f) { return f.name; }).join(', ');
-                    showNotification(
+                    showUploadNotification(
                         oversizedFiles.length + ' file(s) exceed the ' + formatFileSize(MAX_EMAIL_FILE_BYTES) + ' limit: ' + names,
-                        'error'
+                        'error',
+                        'File Too Large'
                     );
                     fileStatus.textContent = 'File too large';
                     fileStatus.parentElement.className = 'upload-progress error';
@@ -1050,12 +1067,12 @@
         const matterId = getMatterId();
         
         if (!clientId) {
-            showNotification('Client ID not found', 'error');
+            showUploadNotification('Client ID not found', 'error', 'Upload Failed');
             return;
         }
         
         if (!matterId) {
-            showNotification('Matter ID not found. Please select a matter.', 'error');
+            showUploadNotification('Matter ID not found. Please select a matter.', 'error', 'Upload Failed');
             return;
         }
 
@@ -1103,7 +1120,7 @@
                                 duplicate: true,
                                 rejected: true
                             });
-                            showNotification(DUPLICATE_EXISTS_MESSAGE, 'error');
+                            showUploadNotification(DUPLICATE_EXISTS_MESSAGE, 'warning', 'Duplicate Email');
                             continue;
                         }
                     }
@@ -1160,7 +1177,7 @@
                 uploadProgress.className = 'upload-progress error';
             }
             fileStatus.textContent = 'Upload failed';
-            showNotification('Upload failed: ' + error.message, 'error');
+            showUploadNotification('Upload failed: ' + error.message, 'error', 'Upload Failed');
             
             setTimeout(function() {
                 fileStatus.textContent = 'Ready to upload';

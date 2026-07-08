@@ -732,6 +732,150 @@
         }
     }
 
+    var emailUploadResultModalReady = false;
+    var emailUploadResultModalResolve = null;
+
+    function defaultEmailUploadResultTitle(type) {
+        if (type === 'success') {
+            return 'Upload Successful';
+        }
+        if (type === 'error') {
+            return 'Upload Failed';
+        }
+        if (type === 'warning') {
+            return 'Upload Warning';
+        }
+        return 'Notice';
+    }
+
+    function ensureEmailUploadResultModal() {
+        if (emailUploadResultModalReady) {
+            return;
+        }
+        emailUploadResultModalReady = true;
+
+        if (!document.getElementById('emailUploadResultModalStyles')) {
+            var style = document.createElement('style');
+            style.id = 'emailUploadResultModalStyles';
+            style.textContent = [
+                '.email-upload-result-modal-overlay{display:none;position:fixed;inset:0;background:rgba(50,49,48,.5);z-index:10060;align-items:center;justify-content:center;padding:20px;}',
+                '.email-upload-result-modal-overlay.active{display:flex;}',
+                '.email-upload-result-modal{width:100%;max-width:520px;max-height:min(85vh,720px);background:#fff;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.2);padding:28px 24px 22px;text-align:center;display:flex;flex-direction:column;animation:emailUploadResultModalIn .2s ease-out;}',
+                '@keyframes emailUploadResultModalIn{from{opacity:0;transform:translateY(-12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}',
+                '.email-upload-result-modal__icon{width:56px;height:56px;margin:0 auto 16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;}',
+                '.email-upload-result-modal__icon--success{background:#e7f6ec;color:#107c10;}',
+                '.email-upload-result-modal__icon--error{background:#fde7e9;color:#d13438;}',
+                '.email-upload-result-modal__icon--warning{background:#fff4e5;color:#d97706;}',
+                '.email-upload-result-modal__icon--info{background:#eff6fc;color:#0078d4;}',
+                '.email-upload-result-modal__title{margin:0 0 12px;font-size:20px;font-weight:600;color:#323130;}',
+                '.email-upload-result-modal__message{margin:0 0 22px;font-size:14px;line-height:1.55;color:#605e5c;text-align:left;white-space:pre-wrap;word-break:break-word;overflow-y:auto;max-height:min(50vh,360px);padding:14px 16px;background:#faf9f8;border:1px solid #edebe9;border-radius:8px;}',
+                '.email-upload-result-modal__actions{display:flex;justify-content:center;}',
+                '.email-upload-result-modal__btn{min-width:120px;padding:10px 22px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid transparent;background:#0078d4;color:#fff;}',
+                '.email-upload-result-modal__btn:hover{background:#106ebe;}'
+            ].join('');
+            document.head.appendChild(style);
+        }
+
+        if (document.getElementById('emailUploadResultModal')) {
+            return;
+        }
+
+        var overlay = document.createElement('div');
+        overlay.id = 'emailUploadResultModal';
+        overlay.className = 'email-upload-result-modal-overlay';
+        overlay.setAttribute('aria-hidden', 'true');
+        overlay.innerHTML = ''
+            + '<div class="email-upload-result-modal" role="dialog" aria-modal="true" aria-labelledby="emailUploadResultModalTitle">'
+            + '  <div class="email-upload-result-modal__icon" id="emailUploadResultModalIcon" aria-hidden="true"></div>'
+            + '  <h3 class="email-upload-result-modal__title" id="emailUploadResultModalTitle"></h3>'
+            + '  <div class="email-upload-result-modal__message" id="emailUploadResultModalMessage"></div>'
+            + '  <div class="email-upload-result-modal__actions">'
+            + '    <button type="button" class="email-upload-result-modal__btn" id="emailUploadResultModalOk">OK</button>'
+            + '  </div>'
+            + '</div>';
+        document.body.appendChild(overlay);
+
+        var okBtn = document.getElementById('emailUploadResultModalOk');
+        var dialog = overlay.querySelector('.email-upload-result-modal');
+
+        function closeEmailUploadResultModal() {
+            overlay.classList.remove('active');
+            overlay.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('email-upload-result-modal-open');
+            if (typeof emailUploadResultModalResolve === 'function') {
+                var resolve = emailUploadResultModalResolve;
+                emailUploadResultModalResolve = null;
+                resolve();
+            }
+        }
+
+        if (okBtn) {
+            okBtn.addEventListener('click', closeEmailUploadResultModal);
+        }
+
+        overlay.addEventListener('click', function (event) {
+            if (event.target === overlay) {
+                closeEmailUploadResultModal();
+            }
+        });
+
+        if (dialog) {
+            dialog.addEventListener('click', function (event) {
+                event.stopPropagation();
+            });
+        }
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && overlay.classList.contains('active')) {
+                closeEmailUploadResultModal();
+            }
+        });
+    }
+
+    function showEmailUploadResultModal(options) {
+        options = options || {};
+        ensureEmailUploadResultModal();
+
+        var overlay = document.getElementById('emailUploadResultModal');
+        var iconEl = document.getElementById('emailUploadResultModalIcon');
+        var titleEl = document.getElementById('emailUploadResultModalTitle');
+        var messageEl = document.getElementById('emailUploadResultModalMessage');
+        var type = options.type || 'info';
+        var title = options.title || defaultEmailUploadResultTitle(type);
+        var message = options.message || '';
+
+        if (!overlay || !iconEl || !titleEl || !messageEl) {
+            window.alert(title + '\n\n' + message);
+            return Promise.resolve();
+        }
+
+        var iconMap = {
+            success: { className: 'email-upload-result-modal__icon--success', icon: 'fa-check-circle' },
+            error: { className: 'email-upload-result-modal__icon--error', icon: 'fa-exclamation-circle' },
+            warning: { className: 'email-upload-result-modal__icon--warning', icon: 'fa-exclamation-triangle' },
+            info: { className: 'email-upload-result-modal__icon--info', icon: 'fa-info-circle' }
+        };
+        var iconConfig = iconMap[type] || iconMap.info;
+
+        iconEl.className = 'email-upload-result-modal__icon ' + iconConfig.className;
+        iconEl.innerHTML = '<i class="fas ' + iconConfig.icon + '"></i>';
+        titleEl.textContent = title;
+        messageEl.textContent = message;
+
+        overlay.classList.add('active');
+        overlay.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('email-upload-result-modal-open');
+
+        var okBtn = document.getElementById('emailUploadResultModalOk');
+        if (okBtn) {
+            okBtn.focus();
+        }
+
+        return new Promise(function (resolve) {
+            emailUploadResultModalResolve = resolve;
+        });
+    }
+
     global.crmGetAllowedEmailUploadExtensions = getAllowedEmailUploadExtensions;
     global.crmEmailUploadAcceptAttribute = emailUploadAcceptAttribute;
     global.crmEmailUploadExtensionsLabel = emailUploadExtensionsLabel;
@@ -756,4 +900,5 @@
     global.crmBuildEmailUploadFormData = buildEmailUploadFormData;
     global.crmEmailUpload403Message = emailUpload403Message;
     global.crmLogEmailUploadFailure = logEmailUploadFailure;
+    global.crmShowEmailUploadResultModal = showEmailUploadResultModal;
 })(typeof window !== 'undefined' ? window : this);
