@@ -123,6 +123,11 @@ class EmailUploadController extends Controller
             // Validate file input
             $validationResponse = $this->validateEmailUploadRequest($request);
             if ($validationResponse) {
+                $this->logEmailUploadFailure('validation', [
+                    'mail_type' => 'inbox',
+                    'client_id' => $request->client_id,
+                    'response' => json_decode($validationResponse->getContent(), true),
+                ]);
                 return $validationResponse;
             }
 
@@ -133,6 +138,10 @@ class EmailUploadController extends Controller
             $clientUniqueId = !empty($clientInfo) ? $clientInfo->client_id : "";
 
             if (!$request->hasfile('email_files')) {
+                $this->logEmailUploadFailure('no_files', [
+                    'mail_type' => 'inbox',
+                    'client_id' => $clientId,
+                ]);
                 return response()->json([
                     'status' => false,
                     'message' => 'No files uploaded',
@@ -192,13 +201,14 @@ class EmailUploadController extends Controller
                         'file_size' => $file->getSize(),
                         'file_type' => $file->getMimeType()
                     ];
-                    Log::error('Email upload error', [
-                        'file' => $fileName,
-                        'original_file' => $file->getClientOriginalName(),
+                    $this->logEmailUploadFailure('file_exception', [
+                        'mail_type' => 'inbox',
+                        'client_id' => $clientId,
+                        'filename' => $fileName,
+                        'original_filename' => $file->getClientOriginalName(),
                         'file_size' => $file->getSize(),
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
+                        'file_type' => $file->getMimeType(),
+                    ], $e);
                 }
             }
 
@@ -242,11 +252,11 @@ class EmailUploadController extends Controller
                 $errorMessage = 'No files were selected for upload. Please select at least one Outlook email file.';
             }
             
-            Log::error('Email upload error', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'user_friendly_error' => $errorMessage
-            ]);
+            $this->logEmailUploadFailure('request_exception', [
+                'mail_type' => 'inbox',
+                'client_id' => $request->client_id,
+                'user_friendly_error' => $errorMessage,
+            ], $e);
 
             return response()->json([
                 'status' => false,
@@ -267,6 +277,11 @@ class EmailUploadController extends Controller
             // Validate file input
             $validationResponse = $this->validateEmailUploadRequest($request);
             if ($validationResponse) {
+                $this->logEmailUploadFailure('validation', [
+                    'mail_type' => 'sent',
+                    'client_id' => $request->client_id,
+                    'response' => json_decode($validationResponse->getContent(), true),
+                ]);
                 return $validationResponse;
             }
 
@@ -277,6 +292,10 @@ class EmailUploadController extends Controller
             $clientUniqueId = !empty($clientInfo) ? $clientInfo->client_id : "";
 
             if (!$request->hasfile('email_files')) {
+                $this->logEmailUploadFailure('no_files', [
+                    'mail_type' => 'sent',
+                    'client_id' => $clientId,
+                ]);
                 return response()->json([
                     'status' => false,
                     'message' => 'No files uploaded',
@@ -334,12 +353,14 @@ class EmailUploadController extends Controller
                         'file_size' => $file->getSize(),
                         'file_type' => $file->getMimeType()
                     ];
-                    Log::error('Email upload error', [
-                        'file' => $fileName,
+                    $this->logEmailUploadFailure('file_exception', [
+                        'mail_type' => 'sent',
+                        'client_id' => $clientId,
+                        'filename' => $fileName,
+                        'original_filename' => $file->getClientOriginalName(),
                         'file_size' => $file->getSize(),
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
+                        'file_type' => $file->getMimeType(),
+                    ], $e);
                 }
             }
 
@@ -371,9 +392,10 @@ class EmailUploadController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
-            Log::error('Sent email upload error', [
-                'error' => $e->getMessage()
-            ]);
+            $this->logEmailUploadFailure('request_exception', [
+                'mail_type' => 'sent',
+                'client_id' => $request->client_id,
+            ], $e);
 
             return response()->json([
                 'status' => false,
@@ -390,6 +412,10 @@ class EmailUploadController extends Controller
         try {
             $validationResponse = $this->validateEmailUploadRequest($request);
             if ($validationResponse) {
+                $this->logEmailUploadFailure('preview_validation', [
+                    'client_id' => $request->client_id,
+                    'response' => json_decode($validationResponse->getContent(), true),
+                ]);
                 return $validationResponse;
             }
 
@@ -397,6 +423,9 @@ class EmailUploadController extends Controller
 
             $file = $request->file('email_files')[0] ?? null;
             if (!$file) {
+                $this->logEmailUploadFailure('preview_no_file', [
+                    'client_id' => $request->client_id,
+                ]);
                 return response()->json([
                     'status' => false,
                     'message' => 'No file uploaded',
@@ -405,6 +434,12 @@ class EmailUploadController extends Controller
 
             $parsedData = $this->parseEmailMetadataWithPython($file);
             if (!$parsedData || isset($parsedData['error']) || (isset($parsedData['success']) && !$parsedData['success'])) {
+                $this->logEmailUploadFailure('preview_parse', [
+                    'client_id' => $request->client_id,
+                    'filename' => $file->getClientOriginalName(),
+                    'error' => $parsedData['error'] ?? 'Failed to parse email',
+                    'technical_error' => $parsedData['technical_error'] ?? null,
+                ]);
                 return response()->json([
                     'status' => false,
                     'message' => $parsedData['error'] ?? 'Failed to parse email',
@@ -433,9 +468,9 @@ class EmailUploadController extends Controller
                 'has_attachments' => count($attachments) > 0,
             ]);
         } catch (\Exception $e) {
-            Log::error('Preview email attachments error', [
-                'error' => $e->getMessage(),
-            ]);
+            $this->logEmailUploadFailure('preview_exception', [
+                'client_id' => $request->client_id,
+            ], $e);
 
             return response()->json([
                 'status' => false,
@@ -604,12 +639,7 @@ class EmailUploadController extends Controller
                     throw new \Exception('Failed to upload file to storage. Please check storage configuration.');
                 }
             } catch (\Exception $s3Exception) {
-                Log::error('S3 upload failed for email', [
-                    'file' => $fileName,
-                    's3_path' => $filePath,
-                    'error' => $s3Exception->getMessage()
-                ]);
-                throw new \Exception('File storage error: ' . $s3Exception->getMessage());
+                throw new \Exception('File storage error: ' . $s3Exception->getMessage(), 0, $s3Exception);
             }
             
             // Generate S3 URL - use Storage method which handles encoding properly
@@ -619,12 +649,7 @@ class EmailUploadController extends Controller
                     throw new \Exception('Failed to generate file URL');
                 }
             } catch (\Exception $urlException) {
-                Log::error('S3 URL generation failed', [
-                    'file' => $fileName,
-                    's3_path' => $filePath,
-                    'error' => $urlException->getMessage()
-                ]);
-                throw new \Exception('File URL generation error: ' . $urlException->getMessage());
+                throw new \Exception('File URL generation error: ' . $urlException->getMessage(), 0, $urlException);
             }
 
             // 3. Save document record
@@ -646,13 +671,7 @@ class EmailUploadController extends Controller
             try {
                 $document->save();
             } catch (QueryException $e) {
-                Log::error('Failed to save Document record', [
-                    'file' => $fileName,
-                    'document_data' => $document->toArray(),
-                    'error' => $e->getMessage(),
-                    'error_info' => $e->errorInfo ?? []
-                ]);
-                throw new \Exception('Failed to save document record: ' . ($e->errorInfo[2] ?? $e->getMessage()));
+                throw new \Exception('Failed to save document record: ' . ($e->errorInfo[2] ?? $e->getMessage()), 0, $e);
             }
 
             $pdfDocumentId = $this->saveEmailPdfDocument(
@@ -725,26 +744,13 @@ class EmailUploadController extends Controller
             try {
                 $mailReport->save();
             } catch (QueryException $e) {
-                Log::error('Failed to save EmailLog record', [
-                    'file' => $fileName,
-                    'document_id' => $document->id,
-                    'email_log_data' => $mailReport->toArray(),
-                    'error' => $e->getMessage(),
-                    'error_info' => $e->errorInfo ?? [],
-                    'sql' => $e->getSql() ?? 'N/A'
-                ]);
-                throw new \Exception('Failed to save email record: ' . ($e->errorInfo[2] ?? $e->getMessage()));
+                throw new \Exception('Failed to save email record: ' . ($e->errorInfo[2] ?? $e->getMessage()), 0, $e);
             }
 
             $attachmentStorageMap = $this->parseAttachmentStorageMap($request);
 
             // NEW: Save attachments
             if (isset($parsedData['attachments']) && is_array($parsedData['attachments'])) {
-                Log::info('Processing attachments', [
-                    'count' => count($parsedData['attachments']),
-                    'email_log_id' => $mailReport->id
-                ]);
-                
                 foreach ($parsedData['attachments'] as $index => $attachmentData) {
                     try {
             $origName = $attachmentData['filename'] ?? '';
@@ -765,18 +771,16 @@ class EmailUploadController extends Controller
                         unset($parsedData['attachments'][$index]['content']);
                         unset($parsedData['attachments'][$index]['data']);
                     } catch (\Exception $e) {
-                        Log::error('Error in saveAttachment loop', [
-                            'error' => $e->getMessage(),
-                            'attachment' => $attachmentData['filename'] ?? 'unknown'
-                        ]);
+                        $this->logEmailUploadFailure('attachment_save', [
+                            'mail_type' => $mailType,
+                            'client_id' => $clientId,
+                            'email_log_id' => $mailReport->id,
+                            'filename' => $fileName,
+                            'attachment' => $attachmentData['filename'] ?? 'unknown',
+                        ], $e);
                         // Continue processing other attachments
                     }
                 }
-            } else {
-                Log::info('No attachments found in parsed data', [
-                    'has_attachments_key' => isset($parsedData['attachments']),
-                    'email_log_id' => $mailReport->id
-                ]);
             }
 
             // NEW: Auto-assign labels
@@ -863,16 +867,16 @@ class EmailUploadController extends Controller
                 $errorMessage = "Database error: " . ($errorInfo[2] ?? $errorMessage);
             }
             
-            Log::error('Process email file database error', [
-                'file' => $fileName,
-                'error' => $e->getMessage(),
+            $this->logEmailUploadFailure('database', [
+                'mail_type' => $mailType,
+                'client_id' => $clientId,
+                'filename' => $fileName,
                 'error_code' => $errorCode,
                 'error_info' => $errorInfo,
                 'sql' => $e->getSql() ?? 'N/A',
                 'bindings' => $e->getBindings() ?? [],
-                'trace' => $e->getTraceAsString(),
-                'user_friendly_error' => $errorMessage
-            ]);
+                'user_friendly_error' => $errorMessage,
+            ], $e);
 
             return [
                 'success' => false,
@@ -901,13 +905,14 @@ class EmailUploadController extends Controller
                 $errorMessage = "Database error. Please try again or contact support if the issue persists.";
             }
             
-            Log::error('Process email file error', [
-                'file' => $fileName,
-                'error' => $e->getMessage(),
+            $this->logEmailUploadFailure('process_file', [
+                'mail_type' => $mailType,
+                'client_id' => $clientId,
+                'filename' => $fileName,
                 'error_code' => $e->getCode(),
-                'trace' => $e->getTraceAsString(),
-                'user_friendly_error' => $errorMessage
-            ]);
+                'user_friendly_error' => $errorMessage,
+                'technical_error' => $e->getMessage(),
+            ], $e);
 
             return [
                 'success' => false,
@@ -1050,17 +1055,10 @@ class EmailUploadController extends Controller
                 try {
                     $result = $response->json();
                 } catch (\Exception $jsonException) {
-                    Log::error('Failed to parse Python service response as JSON', [
-                        'path' => $path,
-                        'status' => $response->status(),
-                        'content_type' => $response->header('Content-Type'),
-                        'body_preview' => substr($response->body(), 0, 500),
-                        'error' => $jsonException->getMessage(),
-                    ]);
-
                     return [
                         'success' => false,
                         'error' => 'Invalid response from email processing service. The service may be experiencing issues.',
+                        'technical_error' => $jsonException->getMessage(),
                     ];
                 }
 
@@ -1079,25 +1077,12 @@ class EmailUploadController extends Controller
 
             $technicalError = $this->extractPythonServiceError($response);
 
-            Log::error('Python service error', [
-                'path' => $path,
-                'status' => $response->status(),
-                'body' => substr($response->body(), 0, 1000),
-                'technical_error' => $technicalError,
-            ]);
-
             return [
                 'success' => false,
                 'error' => $technicalError,
                 'technical_error' => $technicalError,
             ];
         } catch (\Exception $e) {
-            Log::error('Python service connection error', [
-                'path' => $path,
-                'error' => $e->getMessage(),
-                'url' => $this->pythonServiceUrl,
-            ]);
-
             return [
                 'success' => false,
                 'error' => 'Failed to connect to Python service: ' . $e->getMessage(),
@@ -1259,13 +1244,6 @@ class EmailUploadController extends Controller
             // Check for both 'content' and 'data' keys (Python service uses 'data')
             $attachmentContent = $attachmentData['content'] ?? $attachmentData['data'] ?? null;
             
-            Log::info('Processing attachment data', [
-                'filename' => $attachmentData['filename'] ?? 'unknown',
-                'has_content' => !empty($attachmentContent),
-                'content_length' => !empty($attachmentContent) ? strlen($attachmentContent) : 0,
-                'expected_size' => $fileSize
-            ]);
-            
             $decodedData = null;
             if (!empty($attachmentContent)) {
                 // Decode base64-encoded attachment data
@@ -1306,9 +1284,7 @@ class EmailUploadController extends Controller
                     }
                 }
             } else {
-                Log::info('Attachment has no content data, creating record without file', [
-                    'filename' => $attachmentData['filename'] ?? 'unknown'
-                ]);
+                // Attachment metadata only — no binary payload in parsed email.
             }
 
             $storageType = is_array($storageConfig) ? ($storageConfig['storage_type'] ?? 'email') : 'email';
@@ -1345,11 +1321,12 @@ class EmailUploadController extends Controller
                     $s3Path = $this->emailUploadStorage()->url($s3Key);
                     $fileSize = strlen($decodedData);
                 } catch (\Exception $s3Exception) {
-                    Log::error('S3 upload failed for attachment', [
-                        'filename' => $attachmentData['filename'] ?? 'unknown',
+                    $this->logEmailUploadFailure('attachment_s3', [
+                        'client_id' => $clientId,
+                        'email_log_id' => $mailReportId,
+                        'attachment' => $attachmentData['filename'] ?? 'unknown',
                         's3_key' => $s3Key,
-                        'error' => $s3Exception->getMessage(),
-                    ]);
+                    ], $s3Exception);
                     $s3Key = null;
                     $s3Path = null;
                 }
@@ -1375,11 +1352,11 @@ class EmailUploadController extends Controller
             ]);
             
         } catch (\Exception $e) {
-            Log::error('Failed to save attachment', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'attachment' => $attachmentData['filename'] ?? 'unknown'
-            ]);
+            $this->logEmailUploadFailure('attachment_save', [
+                'client_id' => $clientId,
+                'email_log_id' => $mailReportId,
+                'attachment' => $attachmentData['filename'] ?? 'unknown',
+            ], $e);
             // Don't re-throw - allow email upload to continue even if attachment fails
             // Attachment record will still be created (if we got that far) but without file
         }
@@ -1567,13 +1544,6 @@ class EmailUploadController extends Controller
             
             if ($label) {
                 $mailReport->labels()->attach($label->id);
-                
-                Log::info('Auto-assigned label', [
-                    'email_id' => $mailReport->id,
-                    'sender' => $mailReport->from_mail,
-                    'label' => $labelName,
-                    'is_from_company' => $isFromCompany
-                ]);
             }
         } catch (\Exception $e) {
             Log::warning('Failed to auto-assign label', ['error' => $e->getMessage()]);
@@ -1800,6 +1770,30 @@ class EmailUploadController extends Controller
         $disposition = strtolower((string) ($attachmentData['content_disposition'] ?? ''));
 
         return str_contains($disposition, 'attachment');
+    }
+
+    /**
+     * Write email upload failures to storage/logs/email-upload-*.log (errors only).
+     */
+    protected function logEmailUploadFailure(string $stage, array $context = [], ?\Throwable $throwable = null): void
+    {
+        $payload = array_merge([
+            'stage' => $stage,
+            'staff_id' => Auth::id(),
+        ], $context);
+
+        if ($throwable !== null) {
+            $payload['exception'] = get_class($throwable);
+            $payload['error'] = $throwable->getMessage();
+            $payload['trace'] = $throwable->getTraceAsString();
+
+            $previous = $throwable->getPrevious();
+            if ($previous instanceof \Throwable) {
+                $payload['previous_error'] = $previous->getMessage();
+            }
+        }
+
+        Log::channel('email_upload')->error('Email upload failed', $payload);
     }
 
     protected function validateEmailUploadRequest(Request $request)

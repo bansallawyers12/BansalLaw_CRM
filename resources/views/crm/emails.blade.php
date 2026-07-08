@@ -182,6 +182,7 @@
 window.__CRM_BASE__ = @json(rtrim((string) url('/'), '/'));
 window.__CRM_EMAIL_MAX_FILE_BYTES__ = @json((int) config('crm.email_upload_max_kb', 30720) * 1024);
 window.__CRM_EMAIL_ALLOWED_EXTENSIONS__ = @json(config('crm.email_upload_allowed_extensions', ['msg', 'eml']));
+window.__CRM_OUTLOOK_DRAG_BRIDGE_URL__ = 'http://127.0.0.1:5002';
 </script>
 <script src="{{ asset('js/email-upload-filename.js') }}?v={{ file_exists(public_path('js/email-upload-filename.js')) ? filemtime(public_path('js/email-upload-filename.js')) : 1 }}"></script>
 @if($canDeleteEmail)

@@ -75,7 +75,8 @@
     data-staff-id="{{ auth()->id() }}"
     data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}"
     data-personal-folders='@json($emailUploadPersonalFolders)'
-    data-matter-folders='@json($emailUploadMatterFolders)'>
+    data-matter-folders='@json($emailUploadMatterFolders)'
+    data-python-service-url="http://127.0.0.1:5002">
     
     <!-- Drag & Drop Overlay -->
     <div id="dragDropOverlay" class="drag-drop-overlay" style="display: none;">
@@ -108,8 +109,7 @@
 
         <div id="inlineDropZone" class="inline-drop-zone">
             <i class="fas fa-cloud-upload-alt"></i>
-            <span>Drag & drop saved Outlook email files ({{ $crmEmailUploadLabel }}) here or <b>browse</b> to upload</span>
-            <small class="inline-drop-zone-hint">Tip: Save the email from Outlook first (File → Save As). Dragging directly from the Outlook app is not supported.</small>
+            <span>Drag & drop Outlook emails ({{ $crmEmailUploadLabel }}) here
         </div>
 
         <div class="list-header">
@@ -378,6 +378,7 @@
 @include('partials.staff-signature-script')
 <script>
 window.__CRM_EMAIL_ALLOWED_EXTENSIONS__ = @json(config('crm.email_upload_allowed_extensions', ['msg', 'eml']));
+window.__CRM_OUTLOOK_DRAG_BRIDGE_URL__ = 'http://127.0.0.1:5002';
 </script>
 <script src="{{ asset('js/email-upload-filename.js') }}?v={{ file_exists(public_path('js/email-upload-filename.js')) ? filemtime(public_path('js/email-upload-filename.js')) : 1 }}"></script>
 @if($canDeleteEmail)

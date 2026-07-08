@@ -92,6 +92,15 @@ return [
             'level' => 'debug',
         ],
 
+        'email_upload' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/email-upload.log'),
+            'level' => 'error',
+            'days' => 30,
+            'permission' => 0644,
+            'tap' => [App\Logging\Utf8LogFormatter::class],
+        ],
+
     ],
 
 ];

@@ -987,6 +987,22 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
     font-size: 12px;
     vertical-align: middle;
 }
+.inline-drop-import-btn {
+    display: inline-block;
+    margin-left: 4px;
+    padding: 2px 8px;
+    border: 1px solid var(--outlook-blue);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--outlook-blue);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    vertical-align: middle;
+}
+.inline-drop-import-btn:hover {
+    background: #f0f6fc;
+}
 .inline-drop-zone-hint {
     display: block;
     margin-top: 4px;

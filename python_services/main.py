@@ -175,6 +175,67 @@ async def health_check():
     }
 
 
+@app.get("/outlook/drag/health")
+async def outlook_drag_health():
+    """Check whether direct Outlook drag resolution is available on this host."""
+    try:
+        from services.outlook_drag_service import is_supported, read_outlook_virtual_files
+        return {
+            "supported": is_supported(),
+            "platform": sys.platform,
+            "ready": is_supported(),
+        }
+    except Exception as exc:
+        logger.warning("Outlook drag health check failed: %s", exc)
+        return {
+            "supported": False,
+            "platform": sys.platform,
+            "ready": False,
+            "error": str(exc),
+        }
+
+
+@app.post("/outlook/drag/resolve")
+async def outlook_drag_resolve():
+    """
+    Resolve Outlook virtual files from the Windows OLE clipboard.
+
+    Used when browsers receive empty files from Outlook desktop drag-and-drop.
+    """
+    try:
+        from services.outlook_drag_service import is_supported, read_outlook_virtual_files, _build_failure_message
+
+        if not is_supported():
+            raise HTTPException(
+                status_code=400,
+                detail="Direct Outlook drag resolution is only available on Windows.",
+            )
+
+        files, diagnostic = read_outlook_virtual_files()
+        if not files:
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "success": False,
+                    "message": _build_failure_message(diagnostic),
+                    "files": [],
+                    "diagnostic": diagnostic,
+                },
+            )
+
+        return {
+            "success": True,
+            "files": files,
+            "count": len(files),
+            "diagnostic": diagnostic,
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Outlook drag resolve failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to resolve Outlook drag: {exc}")
+
+
 # ============================================================================
 # PDF Service Endpoints
 # ============================================================================

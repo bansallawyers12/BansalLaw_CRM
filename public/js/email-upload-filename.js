@@ -161,77 +161,264 @@
     }
 
     /**
+     * Capture drag payload synchronously during the drop event.
+     * dataTransfer is cleared once the drop handler finishes, so async reads fail.
+     */
+    function captureEmailUploadDropSnapshot(dataTransfer) {
+        var snapshot = {
+            files: [],
+            entries: [],
+            types: []
+        };
+
+        if (!dataTransfer) {
+            return snapshot;
+        }
+
+        if (dataTransfer.types && dataTransfer.types.length) {
+            snapshot.types = Array.prototype.slice.call(dataTransfer.types);
+        }
+
+        if (dataTransfer.files && dataTransfer.files.length) {
+            for (var i = 0; i < dataTransfer.files.length; i++) {
+                snapshot.files.push(dataTransfer.files[i]);
+            }
+        }
+
+        if (dataTransfer.items && dataTransfer.items.length) {
+            for (var j = 0; j < dataTransfer.items.length; j++) {
+                var item = dataTransfer.items[j];
+                if (!item || item.kind !== 'file') {
+                    continue;
+                }
+
+                var directFile = item.getAsFile ? item.getAsFile() : null;
+                var entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+
+                snapshot.entries.push({
+                    file: directFile,
+                    entry: entry,
+                    type: item.type || ''
+                });
+
+                if (directFile) {
+                    var alreadyCaptured = snapshot.files.some(function (existing) {
+                        return existing === directFile;
+                    });
+                    if (!alreadyCaptured) {
+                        snapshot.files.push(directFile);
+                    }
+                }
+            }
+        }
+
+        return snapshot;
+    }
+
+    function filesAreEquivalent(left, right) {
+        if (!left || !right) {
+            return false;
+        }
+        return left === right
+            || (left.name === right.name
+                && left.size === right.size
+                && left.lastModified === right.lastModified
+                && left.type === right.type);
+    }
+
+    function appendUniqueEmailUploadFile(target, file) {
+        if (!file) {
+            return;
+        }
+        var exists = target.some(function (existing) {
+            return filesAreEquivalent(existing, file);
+        });
+        if (!exists) {
+            target.push(file);
+        }
+    }
+
+    function waitForEmailUploadFileContent(file, maxAttempts, intervalMs) {
+        maxAttempts = maxAttempts || 12;
+        intervalMs = intervalMs || 100;
+
+        return new Promise(function (resolve) {
+            function attemptRead(attempt) {
+                if (!file) {
+                    resolve(null);
+                    return;
+                }
+
+                if (file.size > 0) {
+                    resolve(file);
+                    return;
+                }
+
+                if (attempt >= maxAttempts) {
+                    resolve(file);
+                    return;
+                }
+
+                if (typeof file.arrayBuffer !== 'function') {
+                    setTimeout(function () {
+                        attemptRead(attempt + 1);
+                    }, intervalMs);
+                    return;
+                }
+
+                file.arrayBuffer().then(function (buffer) {
+                    if (buffer && buffer.byteLength > 0) {
+                        resolve(new File([buffer], file.name, {
+                            type: file.type || 'application/octet-stream',
+                            lastModified: file.lastModified || Date.now()
+                        }));
+                        return;
+                    }
+
+                    setTimeout(function () {
+                        attemptRead(attempt + 1);
+                    }, intervalMs);
+                }).catch(function () {
+                    setTimeout(function () {
+                        attemptRead(attempt + 1);
+                    }, intervalMs);
+                });
+            }
+
+            attemptRead(0);
+        });
+    }
+
+    function hydrateEmailUploadDropSnapshot(snapshot) {
+        snapshot = snapshot || { files: [], entries: [], types: [] };
+        var collected = Array.isArray(snapshot.files) ? snapshot.files.slice() : [];
+        var pending = [];
+
+        (snapshot.entries || []).forEach(function (entry) {
+            if (entry && entry.entry && entry.entry.isFile && typeof entry.entry.file === 'function') {
+                pending.push(new Promise(function (resolve) {
+                    entry.entry.file(function (file) {
+                        resolve(file || entry.file || null);
+                    }, function () {
+                        resolve(entry.file || null);
+                    });
+                }));
+                return;
+            }
+
+            appendUniqueEmailUploadFile(collected, entry ? entry.file : null);
+        });
+
+        var hydratePromise = pending.length
+            ? Promise.all(pending).then(function (entryFiles) {
+                entryFiles.forEach(function (file) {
+                    appendUniqueEmailUploadFile(collected, file);
+                });
+                return collected;
+            })
+            : Promise.resolve(collected);
+
+        return hydratePromise.then(function (files) {
+            return Promise.all(files.map(function (file) {
+                return waitForEmailUploadFileContent(file);
+            })).then(function (hydrated) {
+                return hydrated.filter(function (file) {
+                    return !!file;
+                });
+            });
+        });
+    }
+
+    function getOutlookDragBridgeUrl() {
+        // Outlook drag data lives on the user's Windows workstation clipboard.
+        // Always use the local Python service, even when the CRM is hosted remotely.
+        var configured = global.__CRM_OUTLOOK_DRAG_BRIDGE_URL__;
+        if (typeof configured === 'string' && configured.trim()) {
+            var value = configured.trim().replace(/\/+$/, '');
+            if (/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/i.test(value)) {
+                return value;
+            }
+        }
+        return 'http://127.0.0.1:5002';
+    }
+
+    function base64ToEmailUploadFile(filename, contentBase64, mimeType) {
+        var binary = atob(contentBase64 || '');
+        var bytes = new Uint8Array(binary.length);
+        for (var i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+
+        var safeName = filename || ('email_' + Date.now() + '.msg');
+        var blobType = mimeType || 'application/octet-stream';
+        return new File([bytes], safeName, {
+            type: blobType,
+            lastModified: Date.now()
+        });
+    }
+
+    function snapshotHasCapturedFiles(snapshot) {
+        return !!(snapshot && snapshot.files && snapshot.files.length);
+    }
+
+    function resolveOutlookDragViaBridge() {
+        var bridgeUrl = getOutlookDragBridgeUrl();
+        return fetch(bridgeUrl + '/outlook/drag/resolve', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json'
+            }
+        }).then(function (response) {
+            return response.json().catch(function () {
+                return {};
+            }).then(function (payload) {
+                if (!response.ok || !payload || !payload.success || !payload.files || !payload.files.length) {
+                    var message = (payload && payload.message)
+                        ? payload.message
+                        : (response.status === 404
+                            ? 'No Outlook email found. Open Outlook, select the email, then drag it again.'
+                            : 'Could not read the email from Outlook. Make sure Outlook is open and the Python service is running.');
+                    throw new Error(message);
+                }
+
+                return payload.files.map(function (item) {
+                    return base64ToEmailUploadFile(
+                        item.filename,
+                        item.content_base64,
+                        item.filename && /\.eml$/i.test(item.filename)
+                            ? 'message/rfc822'
+                            : 'application/vnd.ms-outlook'
+                    );
+                });
+            });
+        });
+    }
+
+    function needsOutlookDragBridge(rawFiles, normalizedFiles) {
+        var raw = Array.from(rawFiles || []);
+        var normalized = Array.from(normalizedFiles || []);
+
+        if (!raw.length) {
+            return true;
+        }
+
+        if (!normalized.length && raw.every(isEmptyEmailUploadFile)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Resolve dropped files via DataTransferItem / FileSystem API when available.
      * Outlook and some browsers expose 0-byte File objects on dataTransfer.files alone.
      */
     function getFilesFromDataTransfer(dataTransfer) {
-        return new Promise(function (resolve) {
-            if (!dataTransfer) {
-                resolve([]);
-                return;
-            }
+        return hydrateEmailUploadDropSnapshot(captureEmailUploadDropSnapshot(dataTransfer));
+    }
 
-            var collected = [];
-            var pending = [];
-            var items = dataTransfer.items;
-
-            if (items && items.length) {
-                for (var i = 0; i < items.length; i++) {
-                    (function (item) {
-                        if (item.kind !== 'file') {
-                            return;
-                        }
-
-                        var entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
-                        if (entry && entry.isFile) {
-                            pending.push(new Promise(function (res) {
-                                entry.file(function (file) {
-                                    res(file || null);
-                                }, function () {
-                                    res(item.getAsFile());
-                                });
-                            }));
-                            return;
-                        }
-
-                        var directFile = item.getAsFile();
-                        if (directFile) {
-                            collected.push(directFile);
-                        }
-                    })(items[i]);
-                }
-            }
-
-            if (!pending.length && !collected.length && dataTransfer.files && dataTransfer.files.length) {
-                resolve(Array.from(dataTransfer.files));
-                return;
-            }
-
-            if (!pending.length) {
-                resolve(collected);
-                return;
-            }
-
-            Promise.all(pending).then(function (entryFiles) {
-                entryFiles.forEach(function (file) {
-                    if (file) {
-                        collected.push(file);
-                    }
-                });
-
-                if (!collected.length && dataTransfer.files && dataTransfer.files.length) {
-                    collected = Array.from(dataTransfer.files);
-                }
-
-                resolve(collected);
-            }).catch(function () {
-                if (dataTransfer.files && dataTransfer.files.length) {
-                    resolve(Array.from(dataTransfer.files));
-                } else {
-                    resolve(collected);
-                }
-            });
-        });
+    function getFilesFromDropSnapshot(snapshot) {
+        return hydrateEmailUploadDropSnapshot(snapshot);
     }
 
     function ensureEmailUploadFileContent(file) {
@@ -306,12 +493,11 @@
     }
 
     function emailUploadOutlookDragInstructions() {
-        return 'Browsers cannot read emails dragged directly from the Outlook desktop app.\n\n'
-            + 'To upload an email:\n'
-            + '1. In Outlook, open the email\n'
-            + '2. Go to File → Save As (or drag the email to your Desktop)\n'
-            + '3. Save it as a .msg or .eml file\n'
-            + '4. Drag the saved file here, or click Browse to select it';
+        return 'Could not read the email from Outlook.\n\n'
+            + '1. Keep Outlook open on this computer\n'
+            + '2. Click the email in Outlook so it is selected\n'
+            + '3. Drag that selected email into this upload area again\n'
+            + '4. Make sure the Python service is running locally (port 5002)';
     }
 
     function emailUploadEmptyFileMessage() {
@@ -325,9 +511,8 @@
 
         if (!raw.length) {
             return {
-                title: 'No files detected',
-                message: 'Nothing was received from the drop. '
-                    + 'Save the email from Outlook as a .msg or .eml file, then try again.'
+                title: 'Could not read Outlook email',
+                message: emailUploadOutlookDragInstructions()
             };
         }
 
@@ -374,13 +559,36 @@
         return null;
     }
 
-    function resolveEmailUploadDrop(dataTransfer) {
-        return getFilesFromDataTransfer(dataTransfer).then(function (rawFiles) {
-            return normalizeEmailUploadFiles(rawFiles).then(function (normalizedFiles) {
+    function resolveEmailUploadDrop(dataTransferOrSnapshot) {
+        var snapshot = (dataTransferOrSnapshot && dataTransferOrSnapshot.files && dataTransferOrSnapshot.entries)
+            ? dataTransferOrSnapshot
+            : captureEmailUploadDropSnapshot(dataTransferOrSnapshot);
+
+        function finalizeUploadFiles(combinedRaw, bridgeUsed) {
+            return normalizeEmailUploadFiles(combinedRaw).then(function (normalizedFiles) {
                 return {
-                    rawFiles: rawFiles,
-                    files: normalizedFiles
+                    rawFiles: combinedRaw,
+                    files: normalizedFiles,
+                    bridgeUsed: !!bridgeUsed
                 };
+            });
+        }
+
+        if (!snapshotHasCapturedFiles(snapshot)) {
+            return resolveOutlookDragViaBridge().then(function (bridgeFiles) {
+                return finalizeUploadFiles(bridgeFiles, true);
+            });
+        }
+
+        return getFilesFromDropSnapshot(snapshot).then(function (rawFromDrop) {
+            return resolveOutlookDragViaBridge().then(function (bridgeFiles) {
+                var combinedRaw = rawFromDrop.slice();
+                bridgeFiles.forEach(function (file) {
+                    appendUniqueEmailUploadFile(combinedRaw, file);
+                });
+                return finalizeUploadFiles(combinedRaw, bridgeFiles.length > 0);
+            }).catch(function () {
+                return finalizeUploadFiles(rawFromDrop, false);
             });
         });
     }
@@ -492,6 +700,10 @@
     global.crmDetectEmailUploadExtensionFromBytes = detectEmailUploadExtensionFromBytes;
     global.crmEnsureEmailUploadFileExtension = ensureEmailUploadFileExtension;
     global.crmFilterAllowedEmailUploadFiles = filterAllowedEmailUploadFiles;
+    global.crmCaptureEmailUploadDropSnapshot = captureEmailUploadDropSnapshot;
+    global.crmHydrateEmailUploadDropSnapshot = hydrateEmailUploadDropSnapshot;
+    global.crmGetFilesFromDropSnapshot = getFilesFromDropSnapshot;
+    global.crmResolveOutlookDragViaBridge = resolveOutlookDragViaBridge;
     global.crmGetFilesFromDataTransfer = getFilesFromDataTransfer;
     global.crmEnsureEmailUploadFileContent = ensureEmailUploadFileContent;
     global.crmNormalizeEmailUploadFiles = normalizeEmailUploadFiles;

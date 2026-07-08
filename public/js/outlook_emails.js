@@ -86,6 +86,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize Data
     const baseUrl = outlookContainer ? outlookContainer.getAttribute('data-base-url') : '';
+    if (outlookContainer && outlookContainer.dataset.pythonServiceUrl) {
+        window.__CRM_OUTLOOK_DRAG_BRIDGE_URL__ = outlookContainer.dataset.pythonServiceUrl;
+    }
     const clientId = outlookContainer ? outlookContainer.getAttribute('data-client-id') : '';
     const matterId = outlookContainer ? outlookContainer.getAttribute('data-matter-id') : '';
     const authEmail = outlookContainer ? outlookContainer.getAttribute('data-auth-email') : '';
@@ -308,42 +311,124 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         const inlineDropZone = document.getElementById('inlineDropZone');
+        const btnImportOutlookSelection = document.getElementById('btnImportOutlookSelection');
         if (inlineDropZone) {
-            inlineDropZone.addEventListener('click', () => {
+            inlineDropZone.addEventListener('click', (e) => {
                 if (isEmailUploading) return;
+                if (e.target && e.target.closest && e.target.closest('#btnImportOutlookSelection')) {
+                    return;
+                }
                 fileInput.click();
             });
         }
 
-        async function processDroppedEmailFiles(dataTransfer) {
+        async function importSelectedOutlookEmail() {
+            if (isEmailUploading) return;
+
+            showEmailUploadLoading(
+                'Reading from Outlook',
+                'Fetching the selected email from Outlook...',
+                '',
+                20
+            );
+
+            try {
+                if (typeof window.crmResolveOutlookDragViaBridge !== 'function') {
+                    throw new Error('Outlook import is not available in this browser.');
+                }
+
+                const bridgeFiles = await window.crmResolveOutlookDragViaBridge();
+                let files = bridgeFiles;
+
+                if (typeof window.crmNormalizeEmailUploadFiles === 'function') {
+                    files = await window.crmNormalizeEmailUploadFiles(bridgeFiles);
+                }
+
+                hideEmailUploadLoading();
+
+                if (!files || !files.length) {
+                    showUploadErrorAlert(
+                        'No Outlook email found. Open Outlook, click the email you want to upload, then try again.',
+                        'Could not read Outlook email'
+                    );
+                    return;
+                }
+
+                handleUploadFiles(files);
+            } catch (error) {
+                hideEmailUploadLoading();
+                showUploadErrorAlert(
+                    (error && error.message) ? error.message : 'Could not read the selected email from Outlook.',
+                    'Could not read Outlook email'
+                );
+            }
+        }
+
+        if (btnImportOutlookSelection) {
+            btnImportOutlookSelection.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                importSelectedOutlookEmail();
+            });
+        }
+
+        async function processDroppedEmailFiles(dataTransferOrSnapshot) {
+            const snapshot = (dataTransferOrSnapshot && dataTransferOrSnapshot.files && dataTransferOrSnapshot.entries)
+                ? dataTransferOrSnapshot
+                : dataTransferOrSnapshot;
+
+            const hasSnapshotFiles = snapshot && snapshot.files && snapshot.files.length;
+            if (!hasSnapshotFiles) {
+                showEmailUploadLoading(
+                    'Reading from Outlook',
+                    'Fetching the selected email from Outlook...',
+                    '',
+                    15
+                );
+            }
+
             let rawFiles = [];
             let files = [];
 
-            if (typeof window.crmResolveEmailUploadDrop === 'function') {
-                const dropResult = await window.crmResolveEmailUploadDrop(dataTransfer);
-                rawFiles = dropResult.rawFiles || [];
-                files = dropResult.files || [];
-            } else if (typeof window.crmResolveEmailUploadDropFiles === 'function') {
-                files = await window.crmResolveEmailUploadDropFiles(dataTransfer);
-                rawFiles = (typeof window.crmGetFilesFromDataTransfer === 'function')
-                    ? await window.crmGetFilesFromDataTransfer(dataTransfer)
-                    : Array.from(dataTransfer && dataTransfer.files ? dataTransfer.files : []);
-            } else {
-                rawFiles = Array.from(dataTransfer && dataTransfer.files ? dataTransfer.files : []);
-                files = rawFiles;
-            }
+            try {
+                if (typeof window.crmResolveEmailUploadDrop === 'function') {
+                    const dropResult = await window.crmResolveEmailUploadDrop(snapshot);
+                    rawFiles = dropResult.rawFiles || [];
+                    files = dropResult.files || [];
+                } else if (typeof window.crmResolveEmailUploadDropFiles === 'function') {
+                    files = await window.crmResolveEmailUploadDropFiles(snapshot);
+                    rawFiles = (typeof window.crmGetFilesFromDropSnapshot === 'function')
+                        ? await window.crmGetFilesFromDropSnapshot(snapshot)
+                        : Array.from(snapshot && snapshot.files ? snapshot.files : []);
+                } else {
+                    rawFiles = Array.from(snapshot && snapshot.files ? snapshot.files : []);
+                    files = rawFiles;
+                }
 
-            if (files.length > 0) {
-                handleUploadFiles(files);
-                return;
-            }
+                if (!hasSnapshotFiles) {
+                    hideEmailUploadLoading();
+                }
 
-            const failure = (typeof window.crmGetEmailUploadDropFailureMessage === 'function')
-                ? window.crmGetEmailUploadDropFailureMessage(rawFiles, files)
-                : null;
+                if (files.length > 0) {
+                    handleUploadFiles(files);
+                    return;
+                }
 
-            if (failure) {
-                showUploadErrorAlert(failure.message, failure.title);
+                const failure = (typeof window.crmGetEmailUploadDropFailureMessage === 'function')
+                    ? window.crmGetEmailUploadDropFailureMessage(rawFiles, files)
+                    : null;
+
+                if (failure) {
+                    showUploadErrorAlert(failure.message, failure.title);
+                }
+            } catch (error) {
+                if (!hasSnapshotFiles) {
+                    hideEmailUploadLoading();
+                }
+                showUploadErrorAlert(
+                    (error && error.message) ? error.message : 'Could not read the email from Outlook.',
+                    'Could not read Outlook email'
+                );
             }
         }
 
@@ -379,7 +464,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 dropZone.classList.remove('is-drag-over');
 
                 if (isEmailUploading) return;
-                processDroppedEmailFiles(e.dataTransfer);
+
+                const snapshot = (typeof window.crmCaptureEmailUploadDropSnapshot === 'function')
+                    ? window.crmCaptureEmailUploadDropSnapshot(e.dataTransfer)
+                    : e.dataTransfer;
+                processDroppedEmailFiles(snapshot);
             });
         }
 
@@ -1625,7 +1714,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             outlookContainer.addEventListener('dragover', (e) => {
-                e.preventDefault(); // necessary to allow dropping
+                e.preventDefault();
+                if (e.dataTransfer) {
+                    e.dataTransfer.dropEffect = 'copy';
+                }
             });
 
             outlookContainer.addEventListener('drop', (e) => {
@@ -1636,7 +1728,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (isEmailUploading) return;
 
-                processDroppedEmailFiles(e.dataTransfer);
+                const snapshot = (typeof window.crmCaptureEmailUploadDropSnapshot === 'function')
+                    ? window.crmCaptureEmailUploadDropSnapshot(e.dataTransfer)
+                    : e.dataTransfer;
+                processDroppedEmailFiles(snapshot);
             });
         }
     }
