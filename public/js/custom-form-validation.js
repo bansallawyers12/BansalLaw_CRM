@@ -65,6 +65,7 @@ function crmBuildEmailUploadFailureMessage(response) {
 }
 
 function crmShowEmailUploadModalError(response) {
+    $('.popuploader').hide();
     var message = crmBuildEmailUploadFailureMessage(response);
     var details = (typeof window.crmBuildEmailUploadTechnicalDetails === 'function')
         ? window.crmBuildEmailUploadTechnicalDetails(response || {})
@@ -87,6 +88,7 @@ function crmShowEmailUploadModalError(response) {
 }
 
 function crmShowEmailUploadHttpError(xhr) {
+    $('.popuploader').hide();
     var response = (xhr && xhr.responseJSON) ? xhr.responseJSON : null;
 
     if (response && response.message) {
@@ -675,6 +677,7 @@ function customValidate(formName, savetype = '')
                                     let errors = xhr.responseJSON.errors;
                                     displayValidationErrors(errors);
                                 } else if (xhr.status === 403 && typeof window.crmEmailUpload403Message === 'function') {
+                                    $('.popuploader').hide();
                                     var wafMsg = window.crmEmailUpload403Message(xhr);
                                     if(typeof crmNotify !== 'undefined') { crmNotify.error(wafMsg); }
                                     $('.custom-error-msg').html('<span class="alert alert-danger">' + wafMsg + '</span>');
@@ -717,6 +720,7 @@ function customValidate(formName, savetype = '')
                                     let errors = xhr.responseJSON.errors;
                                     displayValidationErrors2(errors);
                                 } else if (xhr.status === 403 && typeof window.crmEmailUpload403Message === 'function') {
+                                    $('.popuploader').hide();
                                     var wafMsg = window.crmEmailUpload403Message(xhr);
                                     if(typeof crmNotify !== 'undefined') { crmNotify.error(wafMsg); }
                                     $('.custom-error-msg').html('<span class="alert alert-danger">' + wafMsg + '</span>');
