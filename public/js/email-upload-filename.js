@@ -279,12 +279,116 @@
         });
     }
 
-    function resolveEmailUploadDropFiles(dataTransfer) {
-        return getFilesFromDataTransfer(dataTransfer).then(normalizeEmailUploadFiles);
+    function isEmptyEmailUploadFile(file) {
+        return !!(file && file.size === 0);
+    }
+
+    function classifyEmailUploadDropFile(file) {
+        if (!file) {
+            return 'invalid';
+        }
+
+        if (file.size > 0) {
+            if (hasAllowedEmailUploadExtension(file.name)) {
+                return 'valid';
+            }
+            if (isPotentialEmailUploadFile(file)) {
+                return 'needs_extension';
+            }
+            return 'invalid_type';
+        }
+
+        if (hasAllowedEmailUploadExtension(file.name) || hasAllowedEmailUploadMime(file)) {
+            return 'empty_email';
+        }
+
+        return 'empty_unknown';
+    }
+
+    function emailUploadOutlookDragInstructions() {
+        return 'Browsers cannot read emails dragged directly from the Outlook desktop app.\n\n'
+            + 'To upload an email:\n'
+            + '1. In Outlook, open the email\n'
+            + '2. Go to File → Save As (or drag the email to your Desktop)\n'
+            + '3. Save it as a .msg or .eml file\n'
+            + '4. Drag the saved file here, or click Browse to select it';
     }
 
     function emailUploadEmptyFileMessage() {
-        return 'The dropped file appears empty. Save the email from Outlook to your computer first, then browse to upload it.';
+        return 'The email file is empty (0 bytes) and cannot be uploaded.\n\n'
+            + emailUploadOutlookDragInstructions();
+    }
+
+    function getEmailUploadDropFailureMessage(rawFiles, normalizedFiles) {
+        var raw = Array.from(rawFiles || []);
+        var normalized = Array.from(normalizedFiles || []);
+
+        if (!raw.length) {
+            return {
+                title: 'No files detected',
+                message: 'Nothing was received from the drop. '
+                    + 'Save the email from Outlook as a .msg or .eml file, then try again.'
+            };
+        }
+
+        var classifications = raw.map(classifyEmailUploadDropFile);
+        var hasEmptyEmail = classifications.some(function (type) {
+            return type === 'empty_email' || type === 'empty_unknown';
+        });
+        var hasInvalidType = classifications.some(function (type) {
+            return type === 'invalid_type';
+        });
+        var hasValidRaw = classifications.some(function (type) {
+            return type === 'valid' || type === 'needs_extension';
+        });
+
+        if (hasEmptyEmail || (!normalized.length && raw.some(isEmptyEmailUploadFile))) {
+            return {
+                title: 'Cannot upload directly from Outlook',
+                message: emailUploadOutlookDragInstructions()
+            };
+        }
+
+        if (!normalized.length && hasInvalidType) {
+            return {
+                title: 'Invalid file type',
+                message: 'Please upload Outlook email files only (' + emailUploadExtensionsLabel() + ').'
+            };
+        }
+
+        if (!normalized.length && hasValidRaw) {
+            return {
+                title: 'Could not read dropped file',
+                message: 'The dropped file could not be prepared for upload. '
+                    + 'Save the email from Outlook as a .msg or .eml file, then try again.'
+            };
+        }
+
+        if (!normalized.length) {
+            return {
+                title: 'Upload not supported',
+                message: emailUploadOutlookDragInstructions()
+            };
+        }
+
+        return null;
+    }
+
+    function resolveEmailUploadDrop(dataTransfer) {
+        return getFilesFromDataTransfer(dataTransfer).then(function (rawFiles) {
+            return normalizeEmailUploadFiles(rawFiles).then(function (normalizedFiles) {
+                return {
+                    rawFiles: rawFiles,
+                    files: normalizedFiles
+                };
+            });
+        });
+    }
+
+    function resolveEmailUploadDropFiles(dataTransfer) {
+        return resolveEmailUploadDrop(dataTransfer).then(function (result) {
+            return result.files;
+        });
     }
 
     function sanitizeEmailUploadFilename(filename, preferredExtension) {
@@ -391,7 +495,10 @@
     global.crmGetFilesFromDataTransfer = getFilesFromDataTransfer;
     global.crmEnsureEmailUploadFileContent = ensureEmailUploadFileContent;
     global.crmNormalizeEmailUploadFiles = normalizeEmailUploadFiles;
+    global.crmResolveEmailUploadDrop = resolveEmailUploadDrop;
     global.crmResolveEmailUploadDropFiles = resolveEmailUploadDropFiles;
+    global.crmGetEmailUploadDropFailureMessage = getEmailUploadDropFailureMessage;
+    global.crmEmailUploadOutlookDragInstructions = emailUploadOutlookDragInstructions;
     global.crmEmailUploadEmptyFileMessage = emailUploadEmptyFileMessage;
     global.crmSanitizeEmailUploadFilename = sanitizeEmailUploadFilename;
     global.crmBuildEmailUploadFormData = buildEmailUploadFormData;

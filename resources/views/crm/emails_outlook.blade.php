@@ -108,7 +108,8 @@
 
         <div id="inlineDropZone" class="inline-drop-zone">
             <i class="fas fa-cloud-upload-alt"></i>
-            <span>Drag & drop Outlook email files ({{ $crmEmailUploadLabel }}) here or <b>browse</b> to upload</span>
+            <span>Drag & drop saved Outlook email files ({{ $crmEmailUploadLabel }}) here or <b>browse</b> to upload</span>
+            <small class="inline-drop-zone-hint">Tip: Save the email from Outlook first (File → Save As). Dragging directly from the Outlook app is not supported.</small>
         </div>
 
         <div class="list-header">

@@ -589,16 +589,16 @@
     /**
      * Show notification message
      */
-    function showNotification(message, type = 'info') {
+    function showNotification(message, type = 'info', title) {
         if (typeof crmNotify !== 'undefined') {
             // Replace newlines with <br> to preserve formatting in iziToast
             const formattedMessage = message.replace(/\n/g, '<br>');
             if (type === 'success') {
-                crmNotify.success({ title: 'Success', message: formattedMessage, position: 'topRight', transitionIn: 'fadeInDown', transitionOut: 'fadeOutUp' });
+                crmNotify.success({ title: title || 'Success', message: formattedMessage, position: 'topRight', transitionIn: 'fadeInDown', transitionOut: 'fadeOutUp' });
             } else if (type === 'error') {
-                crmNotify.error({ title: 'Error', message: formattedMessage, position: 'topRight', timeout: 8000, transitionIn: 'fadeInDown', transitionOut: 'fadeOutUp' });
+                crmNotify.error({ title: title || 'Error', message: formattedMessage, position: 'topRight', timeout: 12000, transitionIn: 'fadeInDown', transitionOut: 'fadeOutUp' });
             } else {
-                crmNotify.info({ title: 'Alert', message: formattedMessage, position: 'topRight', transitionIn: 'fadeInDown', transitionOut: 'fadeOutUp' });
+                crmNotify.info({ title: title || 'Alert', message: formattedMessage, position: 'topRight', transitionIn: 'fadeInDown', transitionOut: 'fadeOutUp' });
             }
             return;
         }
@@ -879,12 +879,40 @@
             e.preventDefault();
             e.stopPropagation();
 
-            const files = (typeof window.crmResolveEmailUploadDropFiles === 'function')
-                ? await window.crmResolveEmailUploadDropFiles(e.dataTransfer)
-                : Array.from(e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : []);
+            let rawFiles = [];
+            let files = [];
+
+            if (typeof window.crmResolveEmailUploadDrop === 'function') {
+                const dropResult = await window.crmResolveEmailUploadDrop(e.dataTransfer);
+                rawFiles = dropResult.rawFiles || [];
+                files = dropResult.files || [];
+            } else if (typeof window.crmResolveEmailUploadDropFiles === 'function') {
+                files = await window.crmResolveEmailUploadDropFiles(e.dataTransfer);
+                rawFiles = (typeof window.crmGetFilesFromDataTransfer === 'function')
+                    ? await window.crmGetFilesFromDataTransfer(e.dataTransfer)
+                    : Array.from(e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : []);
+            } else {
+                rawFiles = Array.from(e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : []);
+                files = rawFiles;
+            }
 
             if (files.length > 0) {
                 handleFiles(files);
+                return;
+            }
+
+            const failure = (typeof window.crmGetEmailUploadDropFailureMessage === 'function')
+                ? window.crmGetEmailUploadDropFailureMessage(rawFiles, files)
+                : null;
+
+            if (failure) {
+                showNotification(failure.message, 'error', failure.title);
+                fileStatus.textContent = failure.title || 'Upload not supported';
+                fileStatus.parentElement.className = 'upload-progress error';
+                setTimeout(function () {
+                    fileStatus.textContent = 'Ready to upload';
+                    fileStatus.parentElement.className = 'upload-progress';
+                }, 5000);
             }
         });
 
@@ -934,14 +962,14 @@
                 if (emptyFiles.length > 0) {
                     const emptyMessage = (typeof window.crmEmailUploadEmptyFileMessage === 'function')
                         ? window.crmEmailUploadEmptyFileMessage()
-                        : 'The dropped file appears empty. Save the email from Outlook to your computer first, then browse to upload it.';
-                    showNotification(emptyMessage, 'error');
+                        : 'The email file is empty (0 bytes) and cannot be uploaded.';
+                    showNotification(emptyMessage, 'error', 'Cannot upload directly from Outlook');
                     fileStatus.textContent = 'File is empty';
                     fileStatus.parentElement.className = 'upload-progress error';
                     setTimeout(function () {
                         fileStatus.textContent = 'Ready to upload';
                         fileStatus.parentElement.className = 'upload-progress';
-                    }, 4000);
+                    }, 5000);
                     return;
                 }
 

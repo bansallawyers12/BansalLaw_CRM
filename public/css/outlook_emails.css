@@ -987,6 +987,17 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
     font-size: 12px;
     vertical-align: middle;
 }
+.inline-drop-zone-hint {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: #8a8886;
+    line-height: 1.35;
+}
+.inline-drop-zone:hover .inline-drop-zone-hint,
+.inline-drop-zone.is-drag-over .inline-drop-zone-hint {
+    color: #4a7eb5;
+}
 
 /* Duplicate email confirmation modal */
 .duplicate-email-modal-overlay {

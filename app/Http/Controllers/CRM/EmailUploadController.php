@@ -537,7 +537,10 @@ class EmailUploadController extends Controller
             $fileSize = $file->getSize();
 
             if ($fileSize <= 0) {
-                throw new \Exception('Uploaded file is empty. Save the email from Outlook again and retry.');
+                throw new \Exception(
+                    'The email file is empty (0 bytes). Browsers cannot read emails dragged directly from Outlook. '
+                    . 'Save the email from Outlook as a .msg or .eml file, then upload the saved file.'
+                );
             }
             
             // Sanitized name is used for S3 keys, document records, and Python parsing.
@@ -1822,8 +1825,15 @@ class EmailUploadController extends Controller
         }
 
         $invalidFiles = [];
+        $emptyFiles = [];
         foreach ($request->file('email_files', []) as $file) {
             $originalName = (string) $file->getClientOriginalName();
+
+            if ($file->getSize() <= 0) {
+                $emptyFiles[] = $originalName ?: 'Unknown file';
+                continue;
+            }
+
             $extension = strtolower((string) $file->getClientOriginalExtension());
 
             if (!$this->isAllowedEmailUploadExtension($extension)) {
@@ -1832,6 +1842,22 @@ class EmailUploadController extends Controller
                     $invalidFiles[] = $originalName ?: 'Unknown file';
                 }
             }
+        }
+
+        if (!empty($emptyFiles)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'One or more uploaded files are empty (0 bytes). '
+                    . 'Browsers cannot read emails dragged directly from Outlook. '
+                    . 'Save the email from Outlook as a .msg or .eml file, then upload the saved file.',
+                'errors' => [
+                    'email_files' => array_map(
+                        fn (string $name) => $name . ': file is empty',
+                        $emptyFiles
+                    ),
+                ],
+                'empty_files' => $emptyFiles,
+            ], 422);
         }
 
         if (!empty($invalidFiles)) {

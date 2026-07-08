@@ -316,12 +316,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         async function processDroppedEmailFiles(dataTransfer) {
-            const files = (typeof window.crmResolveEmailUploadDropFiles === 'function')
-                ? await window.crmResolveEmailUploadDropFiles(dataTransfer)
-                : Array.from(dataTransfer && dataTransfer.files ? dataTransfer.files : []);
+            let rawFiles = [];
+            let files = [];
+
+            if (typeof window.crmResolveEmailUploadDrop === 'function') {
+                const dropResult = await window.crmResolveEmailUploadDrop(dataTransfer);
+                rawFiles = dropResult.rawFiles || [];
+                files = dropResult.files || [];
+            } else if (typeof window.crmResolveEmailUploadDropFiles === 'function') {
+                files = await window.crmResolveEmailUploadDropFiles(dataTransfer);
+                rawFiles = (typeof window.crmGetFilesFromDataTransfer === 'function')
+                    ? await window.crmGetFilesFromDataTransfer(dataTransfer)
+                    : Array.from(dataTransfer && dataTransfer.files ? dataTransfer.files : []);
+            } else {
+                rawFiles = Array.from(dataTransfer && dataTransfer.files ? dataTransfer.files : []);
+                files = rawFiles;
+            }
 
             if (files.length > 0) {
                 handleUploadFiles(files);
+                return;
+            }
+
+            const failure = (typeof window.crmGetEmailUploadDropFailureMessage === 'function')
+                ? window.crmGetEmailUploadDropFailureMessage(rawFiles, files)
+                : null;
+
+            if (failure) {
+                showUploadErrorAlert(failure.message, failure.title);
             }
         }
 
@@ -466,19 +488,20 @@ document.addEventListener('DOMContentLoaded', function() {
             updateUploadStatusForFile(file.name, 'error', errorMessage);
         }
 
-        function showUploadErrorAlert(message) {
+        function showUploadErrorAlert(message, title) {
             const text = message || 'Upload failed. Please try again.';
+            const alertTitle = title || 'Upload Failed';
             if (typeof crmNotify !== 'undefined') {
                 crmNotify.error({
-                    title: 'Upload Failed',
+                    title: alertTitle,
                     message: text.replace(/\n/g, '<br>'),
                     position: 'topRight',
-                    timeout: 10000,
+                    timeout: 12000,
                     transitionIn: 'fadeInDown',
                     transitionOut: 'fadeOutUp'
                 });
             } else {
-                window.alert(text);
+                window.alert(alertTitle + '\n\n' + text);
             }
         }
 
@@ -1426,8 +1449,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (emptyFiles.length > 0) {
                 const emptyMessage = (typeof window.crmEmailUploadEmptyFileMessage === 'function')
                     ? window.crmEmailUploadEmptyFileMessage()
-                    : 'The dropped file appears empty. Save the email from Outlook to your computer first, then browse to upload it.';
-                showUploadErrorAlert(emptyMessage);
+                    : 'The email file is empty (0 bytes) and cannot be uploaded.';
+                showUploadErrorAlert(emptyMessage, 'Cannot upload directly from Outlook');
                 return;
             }
 
