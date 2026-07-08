@@ -229,6 +229,9 @@ class SmartEmailImportController extends EmailUploadController
                         'item_id' => $itemId,
                         'filename' => $itemMeta['filename'] ?? $itemId,
                         'error' => $result['error'] ?? 'Import failed',
+                        'error_code' => $result['error_code'] ?? null,
+                        'technical_error' => $result['technical_error'] ?? null,
+                        'reference' => $result['reference'] ?? null,
                     ];
                     continue;
                 }

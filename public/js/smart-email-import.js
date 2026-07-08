@@ -342,7 +342,13 @@
 
             var data = await response.json();
             if (!response.ok || !data.status) {
-                throw new Error(data.message || 'Analyze failed');
+                var failMsg = data.message || 'Analyze failed';
+                if (Array.isArray(data.failed) && data.failed.length) {
+                    failMsg += ' — ' + data.failed.map(function (f) {
+                        return (f.filename || 'Unknown file') + ': ' + (f.error || 'Unknown error');
+                    }).join(' | ');
+                }
+                throw new Error(failMsg);
             }
 
             updateSmartImportLoading(null, 'Analysis complete. Preparing review table…', null, 100);
@@ -391,6 +397,17 @@
             '<span class="badge badge-light badge-pill">' + state.items.length + ' ready</span>' +
             '<span class="badge badge-success badge-pill">' + (data.high_confidence_count || 0) + ' high confidence</span>' +
             '<span class="badge badge-warning badge-pill">' + (data.unmatched_count || 0) + ' need assignment</span>';
+
+        if (Array.isArray(data.failed) && data.failed.length) {
+            summary.innerHTML +=
+                '<div class="alert alert-warning mt-2 mb-0 py-2 px-3" style="font-size:13px;">' +
+                '<strong>' + data.failed.length + ' file(s) could not be analyzed and are not shown below:</strong>' +
+                '<ul class="mb-0 pl-3">' +
+                data.failed.map(function (f) {
+                    return '<li>' + escapeHtml(f.filename || 'Unknown file') + ' — ' + escapeHtml(f.error || 'Unknown error') + '</li>';
+                }).join('') +
+                '</ul></div>';
+        }
 
         var tbody = $('smart-import-table-body');
         tbody.innerHTML = '';

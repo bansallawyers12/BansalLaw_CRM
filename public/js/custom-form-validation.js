@@ -14,6 +14,8 @@ $(document).ready(function() {
             if (typeof crmNotify !== 'undefined') {
                 if (toastType === 'success') {
                     crmNotify.success({ title: 'Success', message: toastMsg, position: 'topRight', transitionIn: 'fadeInDown', transitionOut: 'fadeOutUp' });
+                } else if (toastType === 'warning' && typeof crmNotify.warning === 'function') {
+                    crmNotify.warning({ title: 'Warning', message: toastMsg, position: 'topRight', timeout: 12000, transitionIn: 'fadeInDown', transitionOut: 'fadeOutUp' });
                 } else {
                     crmNotify.error({ title: 'Error', message: toastMsg, position: 'topRight', transitionIn: 'fadeInDown', transitionOut: 'fadeOutUp' });
                 }
@@ -23,6 +25,94 @@ $(document).ready(function() {
         localStorage.removeItem('toastType');
     }
 });
+
+/**
+ * Email upload (legacy modals) — helpers so the actual server error, warnings,
+ * and technical details reach the user instead of a generic message.
+ */
+function crmEmailUploadHasWarnings(response) {
+    return !!(response && Array.isArray(response.warnings) && response.warnings.length);
+}
+
+function crmEmailUploadSuccessToastMessage(response) {
+    var message = (response && response.message) ? response.message : 'Emails uploaded successfully.';
+    if (crmEmailUploadHasWarnings(response) && typeof window.crmFormatEmailUploadWarnings === 'function') {
+        var warningsText = window.crmFormatEmailUploadWarnings(response.warnings);
+        if (warningsText) {
+            message += '\nSome items could not be fully saved:\n' + warningsText;
+        }
+    }
+    return message;
+}
+
+function crmBuildEmailUploadFailureMessage(response) {
+    var message = (response && response.message) ? response.message : 'Upload failed';
+    if (response && Array.isArray(response.errors) && response.errors.length) {
+        var details = response.errors.map(function (err, index) {
+            if (typeof err === 'string') {
+                return (index + 1) + '. ' + err;
+            }
+            if (err && typeof err === 'object') {
+                return (index + 1) + '. ' + (err.filename || 'Unknown file') + ': ' + (err.error || 'Unknown error');
+            }
+            return '';
+        }).filter(Boolean).join('\n');
+        if (details) {
+            message += '\n\nError details:\n' + details;
+        }
+    }
+    return message;
+}
+
+function crmShowEmailUploadModalError(response) {
+    var message = crmBuildEmailUploadFailureMessage(response);
+    var details = (typeof window.crmBuildEmailUploadTechnicalDetails === 'function')
+        ? window.crmBuildEmailUploadTechnicalDetails(response || {})
+        : '';
+
+    if (typeof window.crmShowEmailUploadResultModal === 'function') {
+        window.crmShowEmailUploadResultModal({
+            type: 'error',
+            title: 'Upload Failed',
+            message: message,
+            details: details
+        });
+    } else if (typeof crmNotify !== 'undefined') {
+        crmNotify.error(message);
+    }
+
+    var summary = (response && response.message) ? response.message : 'Upload failed';
+    $('.custom-error-msg').html('<span class="alert alert-danger"></span>');
+    $('.custom-error-msg .alert').text(summary);
+}
+
+function crmShowEmailUploadHttpError(xhr) {
+    var response = (xhr && xhr.responseJSON) ? xhr.responseJSON : null;
+
+    if (response && response.message) {
+        crmShowEmailUploadModalError(response);
+        return;
+    }
+
+    var status = (xhr && xhr.status) ? xhr.status : 0;
+    var message = status
+        ? 'The server returned an unexpected error (HTTP ' + status + '). Please try again.'
+        : 'The upload could not reach the server. Check your connection and try again.';
+
+    if (typeof window.crmShowEmailUploadResultModal === 'function') {
+        window.crmShowEmailUploadResultModal({
+            type: 'error',
+            title: 'Upload Failed',
+            message: message,
+            details: (xhr && xhr.responseText) ? String(xhr.responseText).slice(0, 1000) : ''
+        });
+    } else if (typeof crmNotify !== 'undefined') {
+        crmNotify.error(message);
+    }
+
+    $('.custom-error-msg').html('<span class="alert alert-danger"></span>');
+    $('.custom-error-msg .alert').text(message);
+}
 
 function customValidate(formName, savetype = '')
 	{ //alert(formName);
@@ -573,12 +663,11 @@ function customValidate(formName, savetype = '')
                                 if (response.status) {
                                     $('#uploadAndFetchMailModel').modal('hide');
 									localStorage.setItem('activeTab', 'emails');
-                                    localStorage.setItem('toastMessage', response.message);
-                                    localStorage.setItem('toastType', 'success');
+                                    localStorage.setItem('toastMessage', crmEmailUploadSuccessToastMessage(response));
+                                    localStorage.setItem('toastType', crmEmailUploadHasWarnings(response) ? 'warning' : 'success');
                                     location.reload();
                                 } else {
-                                    if(typeof crmNotify !== 'undefined') { crmNotify.error(response.message); }
-                                    $('.custom-error-msg').html('<span class="alert alert-danger">' + response.message + '</span>');
+                                    crmShowEmailUploadModalError(response);
                                 }
                             },
                             error: function(xhr) {
@@ -590,8 +679,7 @@ function customValidate(formName, savetype = '')
                                     if(typeof crmNotify !== 'undefined') { crmNotify.error(wafMsg); }
                                     $('.custom-error-msg').html('<span class="alert alert-danger">' + wafMsg + '</span>');
                                 } else {
-                                    if(typeof crmNotify !== 'undefined') { crmNotify.error('An unexpected error occurred. Please try again.'); }
-                                    $('.custom-error-msg').html('<span class="alert alert-danger">An unexpected error occurred. Please try again.</span>');
+                                    crmShowEmailUploadHttpError(xhr);
                                 }
                             }
 						});
@@ -617,12 +705,11 @@ function customValidate(formName, savetype = '')
                                 if (response.status) {
                                     $('#uploadSentAndFetchMailModel').modal('hide');
 									localStorage.setItem('activeTab', 'emails');
-                                    localStorage.setItem('toastMessage', response.message);
-                                    localStorage.setItem('toastType', 'success');
+                                    localStorage.setItem('toastMessage', crmEmailUploadSuccessToastMessage(response));
+                                    localStorage.setItem('toastType', crmEmailUploadHasWarnings(response) ? 'warning' : 'success');
                                     location.reload();
                                 } else {
-                                    if(typeof crmNotify !== 'undefined') { crmNotify.error(response.message); }
-                                    $('.custom-error-msg').html('<span class="alert alert-danger">' + response.message + '</span>');
+                                    crmShowEmailUploadModalError(response);
                                 }
                             },
                             error: function(xhr) {
@@ -634,8 +721,7 @@ function customValidate(formName, savetype = '')
                                     if(typeof crmNotify !== 'undefined') { crmNotify.error(wafMsg); }
                                     $('.custom-error-msg').html('<span class="alert alert-danger">' + wafMsg + '</span>');
                                 } else {
-                                    if(typeof crmNotify !== 'undefined') { crmNotify.error('An unexpected error occurred. Please try again.'); }
-                                    $('.custom-error-msg').html('<span class="alert alert-danger">An unexpected error occurred. Please try again.</span>');
+                                    crmShowEmailUploadHttpError(xhr);
                                 }
                             }
 						});

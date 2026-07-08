@@ -405,6 +405,13 @@
     }
 
     function renderUploadBatchResult(data, uploadProgress, fileStatus, fileCountBadge) {
+        const technicalDetails = (typeof window.crmBuildEmailUploadTechnicalDetails === 'function')
+            ? window.crmBuildEmailUploadTechnicalDetails(data)
+            : '';
+        const warningsText = (typeof window.crmFormatEmailUploadWarnings === 'function')
+            ? window.crmFormatEmailUploadWarnings(data.warnings)
+            : '';
+
         if (data.status || data.success) {
             const failedCount = data.failed || 0;
             const uploadedCount = data.uploaded || 0;
@@ -426,12 +433,18 @@
                     }).join('\n\n');
                     errorMessage += '\n\nError Details:\n' + errorDetails;
 
-                    if (uploadedCount === 0 && failedCount > 0) {
-                        errorMessage += '\n\nTip: Ensure the Python service is running and the .msg files are valid Outlook email files.';
+                    const hasServiceError = (typeof window.crmEmailUploadHasServiceError === 'function')
+                        && window.crmEmailUploadHasServiceError(data.errors);
+                    if (uploadedCount === 0 && failedCount > 0 && hasServiceError) {
+                        errorMessage += '\n\nTip: The email processing (Python) service appears to be unavailable. Ensure it is running, then try again.';
                     }
                 }
 
-                showUploadNotification(errorMessage, 'error', 'Upload Failed');
+                if (warningsText) {
+                    errorMessage += '\n\nWarnings for uploaded emails:\n' + warningsText;
+                }
+
+                showUploadNotification(errorMessage, 'error', 'Upload Failed', technicalDetails);
 
                 if (data.errors) {
                     console.error('Upload errors:', data.errors);
@@ -455,7 +468,16 @@
                     uploadProgress.className = 'upload-progress success';
                 }
                 fileStatus.textContent = 'Upload successful!';
-                showUploadNotification(data.message || 'Files uploaded successfully!', 'success', 'Upload Successful');
+                if (warningsText) {
+                    showUploadNotification(
+                        (data.message || 'Files uploaded successfully!')
+                            + '\n\nSome items could not be fully saved:\n' + warningsText,
+                        'warning',
+                        'Uploaded With Warnings'
+                    );
+                } else {
+                    showUploadNotification(data.message || 'Files uploaded successfully!', 'success', 'Upload Successful');
+                }
 
                 setTimeout(function() {
                     const fileInputEl = document.getElementById('emailFileInput');
@@ -515,7 +537,7 @@
                 console.error('Technical error:', data.technical_error);
             }
 
-            showUploadNotification(errorMessage, 'error', 'Upload Failed');
+            showUploadNotification(errorMessage, 'error', 'Upload Failed', technicalDetails);
 
             setTimeout(function() {
                 fileStatus.textContent = 'Ready to upload';
@@ -589,12 +611,13 @@
     /**
      * Show upload result in a popup modal (not toast).
      */
-    function showUploadNotification(message, type, title) {
+    function showUploadNotification(message, type, title, details) {
         if (typeof window.crmShowEmailUploadResultModal === 'function') {
             window.crmShowEmailUploadResultModal({
                 type: type || 'info',
                 title: title,
-                message: message || ''
+                message: message || '',
+                details: details || ''
             });
             return;
         }
@@ -1093,6 +1116,7 @@
             let totalUploaded = 0;
             let totalFailed = 0;
             const allErrors = [];
+            const allWarnings = [];
             let stoppedEarly = false;
 
             for (let i = 0; i < files.length; i++) {
@@ -1125,6 +1149,10 @@
                     totalUploaded += fileUploaded;
                     totalFailed += fileFailed;
 
+                    if (data.warnings && Array.isArray(data.warnings) && data.warnings.length) {
+                        allWarnings.push.apply(allWarnings, data.warnings);
+                    }
+
                     if (data.errors && Array.isArray(data.errors)) {
                         allErrors.push.apply(allErrors, data.errors);
                     } else if (fileUploaded === 0 && fileFailed === 0 && !data.status) {
@@ -1155,6 +1183,7 @@
                 uploaded: totalUploaded,
                 failed: totalFailed,
                 errors: allErrors,
+                warnings: allWarnings,
                 message: stoppedEarly
                     ? (allErrors[0] && allErrors[0].error) || 'Upload stopped due to a session or security error.'
                     : (totalUploaded > 0 && totalFailed > 0

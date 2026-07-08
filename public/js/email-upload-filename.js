@@ -550,6 +550,10 @@
                 '.email-upload-result-modal__icon--info{background:#eff6fc;color:#0078d4;}',
                 '.email-upload-result-modal__title{margin:0 0 12px;font-size:20px;font-weight:600;color:#323130;}',
                 '.email-upload-result-modal__message{margin:0 0 22px;font-size:14px;line-height:1.55;color:#605e5c;text-align:left;white-space:pre-wrap;word-break:break-word;overflow-y:auto;max-height:min(50vh,360px);padding:14px 16px;background:#faf9f8;border:1px solid #edebe9;border-radius:8px;}',
+                '.email-upload-result-modal__details{margin:-12px 0 18px;text-align:left;}',
+                '.email-upload-result-modal__details-toggle{background:none;border:none;padding:0;font-size:13px;font-weight:600;color:#0078d4;cursor:pointer;text-decoration:underline;}',
+                '.email-upload-result-modal__details-toggle:hover{color:#106ebe;}',
+                '.email-upload-result-modal__details-body{margin:8px 0 0;font-size:12px;line-height:1.5;color:#605e5c;white-space:pre-wrap;word-break:break-word;overflow-y:auto;max-height:180px;padding:10px 12px;background:#f3f2f1;border:1px solid #edebe9;border-radius:6px;text-align:left;}',
                 '.email-upload-result-modal__actions{display:flex;justify-content:center;}',
                 '.email-upload-result-modal__btn{min-width:120px;padding:10px 22px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid transparent;background:#0078d4;color:#fff;}',
                 '.email-upload-result-modal__btn:hover{background:#106ebe;}'
@@ -568,11 +572,27 @@
             + '  <div class="email-upload-result-modal__icon" id="emailUploadResultModalIcon" aria-hidden="true"></div>'
             + '  <h3 class="email-upload-result-modal__title" id="emailUploadResultModalTitle"></h3>'
             + '  <div class="email-upload-result-modal__message" id="emailUploadResultModalMessage"></div>'
+            + '  <div class="email-upload-result-modal__details" id="emailUploadResultModalDetails" hidden>'
+            + '    <button type="button" class="email-upload-result-modal__details-toggle" id="emailUploadResultModalDetailsToggle" aria-expanded="false">Show technical details</button>'
+            + '    <pre class="email-upload-result-modal__details-body" id="emailUploadResultModalDetailsBody" hidden></pre>'
+            + '  </div>'
             + '  <div class="email-upload-result-modal__actions">'
             + '    <button type="button" class="email-upload-result-modal__btn" id="emailUploadResultModalOk">OK</button>'
             + '  </div>'
             + '</div>';
         document.body.appendChild(overlay);
+
+        var detailsToggle = document.getElementById('emailUploadResultModalDetailsToggle');
+        if (detailsToggle) {
+            detailsToggle.addEventListener('click', function () {
+                var body = document.getElementById('emailUploadResultModalDetailsBody');
+                if (!body) return;
+                var isHidden = body.hidden;
+                body.hidden = !isHidden;
+                detailsToggle.textContent = isHidden ? 'Hide technical details' : 'Show technical details';
+                detailsToggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            });
+        }
 
         var okBtn = document.getElementById('emailUploadResultModalOk');
         var dialog = overlay.querySelector('.email-upload-result-modal');
@@ -613,9 +633,10 @@
         var type = options.type || 'info';
         var title = options.title || defaultEmailUploadResultTitle(type);
         var message = options.message || '';
+        var details = options.details || '';
 
         if (!overlay || !iconEl || !titleEl || !messageEl) {
-            window.alert(title + '\n\n' + message);
+            window.alert(title + '\n\n' + message + (details ? '\n\n' + details : ''));
             return Promise.resolve();
         }
 
@@ -631,6 +652,23 @@
         iconEl.innerHTML = '<i class="fas ' + iconConfig.icon + '"></i>';
         titleEl.textContent = title;
         messageEl.textContent = message;
+
+        var detailsContainer = document.getElementById('emailUploadResultModalDetails');
+        var detailsBody = document.getElementById('emailUploadResultModalDetailsBody');
+        var detailsToggle = document.getElementById('emailUploadResultModalDetailsToggle');
+        if (detailsContainer && detailsBody && detailsToggle) {
+            if (details) {
+                detailsBody.textContent = details;
+                detailsBody.hidden = true;
+                detailsToggle.textContent = 'Show technical details';
+                detailsToggle.setAttribute('aria-expanded', 'false');
+                detailsContainer.hidden = false;
+            } else {
+                detailsContainer.hidden = true;
+                detailsBody.textContent = '';
+            }
+        }
+
         overlay.classList.add('active');
         overlay.setAttribute('aria-hidden', 'false');
         document.body.classList.add('email-upload-result-modal-open');
@@ -641,6 +679,76 @@
         return new Promise(function (resolve) {
             emailUploadResultModalResolve = resolve;
         });
+    }
+
+    /**
+     * Build the collapsible "technical details" text from an upload response:
+     * per-file technical errors, error codes, and log reference IDs.
+     */
+    function buildEmailUploadTechnicalDetails(data) {
+        if (!data || typeof data !== 'object') {
+            return '';
+        }
+
+        var lines = [];
+        var errors = Array.isArray(data.errors) ? data.errors : [];
+
+        errors.forEach(function (err) {
+            if (!err || typeof err !== 'object') {
+                return;
+            }
+            var parts = [];
+            if (err.error_code) {
+                parts.push('[' + err.error_code + ']');
+            }
+            if (err.technical_error && err.technical_error !== err.error) {
+                parts.push(err.technical_error);
+            }
+            if (err.reference) {
+                parts.push('Ref: ' + err.reference);
+            }
+            if (parts.length) {
+                lines.push((err.filename || 'Unknown file') + ' — ' + parts.join(' '));
+            }
+        });
+
+        if (data.technical_error) {
+            lines.push(data.technical_error);
+        }
+        if (data.reference) {
+            lines.push('Ref: ' + data.reference);
+        }
+
+        return lines.join('\n');
+    }
+
+    /**
+     * True when any per-file error indicates the Python processing service
+     * itself is down/failing (used to gate "check the Python service" tips).
+     */
+    function emailUploadHasServiceError(errors) {
+        var serviceCodes = ['service_unreachable', 'service_error', 'service_invalid_response', 'timeout'];
+        return (Array.isArray(errors) ? errors : []).some(function (err) {
+            return err && serviceCodes.indexOf(err.error_code) !== -1;
+        });
+    }
+
+    /**
+     * Format the warnings[] array from an upload response (attachment/PDF
+     * soft-failures on otherwise successful uploads) for display.
+     */
+    function formatEmailUploadWarnings(warnings) {
+        if (!Array.isArray(warnings) || !warnings.length) {
+            return '';
+        }
+        return warnings.map(function (entry) {
+            if (!entry || typeof entry !== 'object') {
+                return '';
+            }
+            var fileWarnings = Array.isArray(entry.warnings) ? entry.warnings : [];
+            var name = entry.original_filename || entry.filename || 'Unknown file';
+            return name + ':\n' + fileWarnings.map(function (w) { return '  - ' + w; }).join('\n');
+        }).filter(Boolean).join('\n\n');
     }
 
     global.crmGetAllowedEmailUploadExtensions = getAllowedEmailUploadExtensions;
@@ -664,4 +772,7 @@
     global.crmEmailUpload403Message = emailUpload403Message;
     global.crmLogEmailUploadFailure = logEmailUploadFailure;
     global.crmShowEmailUploadResultModal = showEmailUploadResultModal;
+    global.crmBuildEmailUploadTechnicalDetails = buildEmailUploadTechnicalDetails;
+    global.crmEmailUploadHasServiceError = emailUploadHasServiceError;
+    global.crmFormatEmailUploadWarnings = formatEmailUploadWarnings;
 })(typeof window !== 'undefined' ? window : this);

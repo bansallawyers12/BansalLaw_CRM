@@ -409,20 +409,25 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             return errors.map(function(err, index) {
                 const filename = err.filename || 'Unknown file';
-                let error = err.error || 'Unknown error';
-                if (err.technical_error && err.technical_error !== error) {
-                    error += '\n   Details: ' + err.technical_error;
-                }
+                const error = err.error || 'Unknown error';
                 return (index + 1) + '. ' + filename + '\n   ' + error;
             }).join('\n\n');
         }
 
-        function showUploadResultModal(type, message, title) {
+        function buildUploadTechnicalDetails(errors) {
+            if (typeof window.crmBuildEmailUploadTechnicalDetails === 'function') {
+                return window.crmBuildEmailUploadTechnicalDetails({ errors: errors });
+            }
+            return '';
+        }
+
+        function showUploadResultModal(type, message, title, details) {
             if (typeof window.crmShowEmailUploadResultModal === 'function') {
                 return window.crmShowEmailUploadResultModal({
                     type: type,
                     title: title,
-                    message: message || ''
+                    message: message || '',
+                    details: details || ''
                 });
             }
 
@@ -497,10 +502,10 @@ document.addEventListener('DOMContentLoaded', function() {
             updateUploadStatusForFile(file.name, 'error', errorMessage);
         }
 
-        function showUploadErrorAlert(message, title) {
+        function showUploadErrorAlert(message, title, details) {
             const text = message || 'Upload failed. Please try again.';
             const alertTitle = title || 'Upload Failed';
-            return showUploadResultModal('error', text, alertTitle);
+            return showUploadResultModal('error', text, alertTitle, details);
         }
 
         const DUPLICATE_EXISTS_MESSAGE = 'This email already exists.';
@@ -1415,6 +1420,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 failed: result.failed || 0,
                 rejected: 0,
                 errors: result.errors || [],
+                warnings: result.warnings || [],
                 message: result.message || '',
                 attachmentStorage: attachmentStorage
             };
@@ -1474,6 +1480,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let totalFailed = 0;
             let totalRejected = 0;
             const allErrors = [];
+            const allWarnings = [];
             const uploadedAttachmentStorage = [];
 
             try {
@@ -1508,6 +1515,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (fileResult.errors && fileResult.errors.length) {
                             allErrors.push.apply(allErrors, fileResult.errors);
                         }
+                        if (fileResult.warnings && fileResult.warnings.length) {
+                            allWarnings.push.apply(allWarnings, fileResult.warnings);
+                        }
                     } catch (fileError) {
                         totalFailed += 1;
                         const errorText = fileError.message || 'Upload failed';
@@ -1527,7 +1537,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     );
                 }
 
-                const errorDetails = formatUploadErrorDetails(allErrors.filter(function(err) { return !err.rejected; }));
+                const failedErrors = allErrors.filter(function(err) { return !err.rejected; });
+                const errorDetails = formatUploadErrorDetails(failedErrors);
+                const technicalDetails = buildUploadTechnicalDetails(failedErrors);
+                const warningsText = (typeof window.crmFormatEmailUploadWarnings === 'function')
+                    ? window.crmFormatEmailUploadWarnings(allWarnings)
+                    : '';
                 const refreshUploadedDocumentFolders = function() {
                     if (uploadedAttachmentStorage.length) {
                         return refreshDocumentFoldersFromStorage(uploadedAttachmentStorage);
@@ -1541,7 +1556,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         uploadStatus.style.color = 'green';
                         uploadStatus.textContent = 'Upload complete!';
                     }
-                    showUploadSuccessToast('Successfully uploaded ' + totalUploaded + ' email' + (totalUploaded > 1 ? 's' : '') + '.');
+                    if (warningsText) {
+                        showUploadResultModal(
+                            'warning',
+                            'Successfully uploaded ' + totalUploaded + ' email' + (totalUploaded > 1 ? 's' : '')
+                                + ', but some items could not be fully saved:\n\n' + warningsText,
+                            'Uploaded With Warnings'
+                        );
+                    } else {
+                        showUploadSuccessToast('Successfully uploaded ' + totalUploaded + ' email' + (totalUploaded > 1 ? 's' : '') + '.');
+                    }
                     loadEmails();
                     refreshUploadedDocumentFolders();
                 } else if (totalUploaded > 0) {
@@ -1556,7 +1580,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (errorDetails) {
                             errorMsg += '\n\nError details:\n' + errorDetails;
                         }
-                        showUploadErrorAlert(errorMsg);
+                        if (warningsText) {
+                            errorMsg += '\n\nWarnings for uploaded emails:\n' + warningsText;
+                        }
+                        showUploadErrorAlert(errorMsg, undefined, technicalDetails);
                     }
                     loadEmails();
                     refreshUploadedDocumentFolders();
@@ -1573,9 +1600,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     let errorMsg = 'Upload failed. Please try again.';
                     if (errorDetails) {
-                        errorMsg += '\n\nError details:\n' + errorDetails;
+                        errorMsg = 'Upload failed.\n\nError details:\n' + errorDetails;
                     }
-                    showUploadErrorAlert(errorMsg);
+                    showUploadErrorAlert(errorMsg, undefined, technicalDetails);
                 }
             } catch (error) {
                 updateEmailUploadLoading('Upload failed', error.message || 'Upload failed. Please try again.', '', 100);
