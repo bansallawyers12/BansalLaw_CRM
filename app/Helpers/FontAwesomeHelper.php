@@ -44,7 +44,7 @@ class FontAwesomeHelper
     }
 
     /**
-     * Convert legacy markup class list (fa fa-x, fas fa-x, far fa-x) to FA6 classes.
+     * Convert legacy markup class list (fa-solid fa-x, fa-solid fa-x, fa-regular fa-x) to FA6 classes.
      */
     public static function migrateClasses(string $classes): string
     {

@@ -17,7 +17,7 @@
             @else
                 <tr id="roles-empty-row">
                     <td class="text-center text-muted py-4" colspan="{{ $colspan }}">
-                        <i class="fas fa-user-shield fa-2x mb-2 d-block opacity-50"></i>
+                        <i class="fa-solid fa-user-shield fa-2x mb-2 d-block opacity-50"></i>
                         No roles found.
                         @if(!empty($searchBy))
                             Try a different search term.

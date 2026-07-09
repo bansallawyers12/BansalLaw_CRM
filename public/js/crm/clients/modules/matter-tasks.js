@@ -230,10 +230,10 @@
             html +=
                 '<a class="cdn-matter-task__action-link" href="' +
                 actionHref +
-                '" title="Open on Action page" aria-label="Open on Action page"><i class="fas fa-external-link-alt" aria-hidden="true"></i><span class="cdn-matter-task__action-link-text">Action</span></a>';
+                '" title="Open on Action page" aria-label="Open on Action page"><i class="fa-solid fa-external-link-alt" aria-hidden="true"></i><span class="cdn-matter-task__action-link-text">Action</span></a>';
         }
         html +=
-            '<button type="button" class="cdn-matter-task__del" title="Delete task" aria-label="Delete task"><i class="fas fa-trash-alt" aria-hidden="true"></i></button>';
+            '<button type="button" class="cdn-matter-task__del" title="Delete task" aria-label="Delete task"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>';
         html += '</div>';
         html += '</li>';
         return html;
@@ -276,7 +276,7 @@
             return statusBlock(
                 'empty',
                 '<div class="cdn-matter-task__empty">' +
-                    '<span class="cdn-matter-task__empty-icon" aria-hidden="true"><i class="fas fa-clipboard-list"></i></span>' +
+                    '<span class="cdn-matter-task__empty-icon" aria-hidden="true"><i class="fa-solid fa-clipboard-list"></i></span>' +
                     '<p class="cdn-matter-task__empty-title">No tasks yet</p>' +
                     '<p class="cdn-matter-task__empty-hint">Add a task above. Tasks you create here also appear on the <strong>Action</strong> page for follow-up.</p>' +
                     '</div>'

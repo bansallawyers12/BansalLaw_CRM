@@ -89,7 +89,7 @@
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<button type="button" class="btn btn-primary" id="verification-payment-forms-submit">
-								<i class="fas fa-check"></i> Verify and Proceed to Next Stage
+								<i class="fa-solid fa-check"></i> Verify and Proceed to Next Stage
 							</button>
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 						</div>
@@ -137,7 +137,7 @@
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<button type="button" class="btn btn-primary" id="decision-received-submit">
-								<i class="fas fa-check"></i> Proceed to Decision Received
+								<i class="fa-solid fa-check"></i> Proceed to Decision Received
 							</button>
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 						</div>
@@ -214,7 +214,7 @@
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<button type="button" class="btn btn-danger" id="discontinue-matter-submit">
-								<i class="fas fa-ban"></i> Discontinue
+								<i class="fa-solid fa-ban"></i> Discontinue
 							</button>
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 						</div>
@@ -247,7 +247,7 @@
 					<small class="form-text text-muted">Stage will be mapped by name; if no match, first stage is used.</small>
 				</div>
 				<button type="button" class="btn btn-primary" id="change-workflow-submit">
-					<i class="fas fa-exchange-alt"></i> Change Workflow
+					<i class="fa-solid fa-exchange-alt"></i> Change Workflow
 				</button>
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 			</div>

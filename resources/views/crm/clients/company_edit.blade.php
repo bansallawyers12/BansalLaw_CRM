@@ -89,32 +89,32 @@
 
             <!-- Mobile Sidebar Toggle -->
             <button class="sidebar-toggle" onclick="toggleSidebar()">
-                <i class="fas fa-bars"></i>
+                <i class="fa-solid fa-bars"></i>
             </button>
 
             <!-- Sidebar Navigation -->
             <div class="sidebar-navigation" id="sidebarNav">
                 <div class="nav-header">
-                    <h3><i class="fas fa-building"></i> {{ $fetchedData->type == 'lead' ? 'Edit Company Lead' : 'Edit Company Client' }} : {{ $company ? $company->company_name : 'Unnamed Company' }}</h3>
+                    <h3><i class="fa-solid fa-building"></i> {{ $fetchedData->type == 'lead' ? 'Edit Company Lead' : 'Edit Company Client' }} : {{ $company ? $company->company_name : 'Unnamed Company' }}</h3>
                     <div class="client-id">
                         {{ $fetchedData->type == 'lead' ? 'Lead ID' : ($fetchedData->type == 'client' ? 'Client ID' : '') }} : {{ $fetchedData->client_id }}
                     </div>
                 </div>
                 <nav class="nav-menu">
                     <button class="nav-item active" onclick="scrollToSection('companySection')">
-                        <i class="fas fa-building"></i>
+                        <i class="fa-solid fa-building"></i>
                         <span>Company Information</span>
                     </button>
                     <button class="nav-item" onclick="scrollToSection('contactPersonSection')">
-                        <i class="fas fa-user-tie"></i>
+                        <i class="fa-solid fa-user-tie"></i>
                         <span>Contact Person</span>
                     </button>
                     <button class="nav-item" onclick="scrollToSection('addressSection')">
-                        <i class="fas fa-map-marker-alt"></i>
+                        <i class="fa-solid fa-map-marker-alt"></i>
                         <span>Business Address</span>
                     </button>
                     <button class="nav-item" onclick="scrollToSection('contactsSection')">
-                        <i class="fas fa-phone"></i>
+                        <i class="fa-solid fa-phone"></i>
                         <span>Contacts</span>
                     </button>
                 </nav>
@@ -122,7 +122,7 @@
                 <!-- Back Button in Sidebar -->
                 <div class="sidebar-actions">
                     <button type="button" class="nav-item summary-nav back-btn" onclick="goBackWithRefresh()">
-                        <i class="fas fa-arrow-left"></i>
+                        <i class="fa-solid fa-arrow-left"></i>
                         <span>Back</span>
                     </button>
                 </div>
@@ -159,9 +159,9 @@
             <!-- Main Content Area -->
             <div class="main-content-area">
                 <ul class="nav nav-pills client-edit-top-pills" role="tablist">
-                    <li class="nav-item" role="presentation"><a class="nav-link active" href="#companyEditHome" role="tab" onclick="showCompanyMatterTab('companyEditHome'); return false;"><i class="fas fa-building"></i> Company Profile</a></li>
-                    <li class="nav-item" role="presentation"><a class="nav-link" href="#menu2" role="tab" onclick="showCompanyMatterTab('menu2'); return false;"><i class="fas fa-briefcase"></i> Matter Details</a></li>
-                    <li class="nav-item" role="presentation"><a class="nav-link" href="#menu4" role="tab" onclick="showCompanyMatterTab('menu4'); return false;"><i class="fas fa-gavel"></i> Court Dates &amp; Hearings</a></li>
+                    <li class="nav-item" role="presentation"><a class="nav-link active" href="#companyEditHome" role="tab" onclick="showCompanyMatterTab('companyEditHome'); return false;"><i class="fa-solid fa-building"></i> Company Profile</a></li>
+                    <li class="nav-item" role="presentation"><a class="nav-link" href="#menu2" role="tab" onclick="showCompanyMatterTab('menu2'); return false;"><i class="fa-solid fa-briefcase"></i> Matter Details</a></li>
+                    <li class="nav-item" role="presentation"><a class="nav-link" href="#menu4" role="tab" onclick="showCompanyMatterTab('menu4'); return false;"><i class="fa-solid fa-gavel"></i> Court Dates &amp; Hearings</a></li>
                 </ul>
                 <div class="tab-content">
                 <form id="editCompanyForm" action="{{ route('clients.update') }}" method="POST">
@@ -174,10 +174,10 @@
                 <section id="companySection" class="content-section">
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-building"></i> Company Information</h3>
+                            <h3><i class="fa-solid fa-building"></i> Company Information</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('companyInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                             </div>
                         </div>
@@ -278,11 +278,11 @@
                                         <div class="trading-name-row" style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;">
                                             <input type="text" name="trading_names[]" value="{{ old("trading_names.{$idx}", is_object($tn) ? $tn->trading_name : $tn) }}" placeholder="Trading name" style="flex: 1;">
                                             <label><input type="radio" name="trading_name_primary" value="{{ $idx }}" {{ ($tn->is_primary ?? ($idx === 0)) ? 'checked' : '' }}> Primary</label>
-                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTradingName(this)"><i class="fas fa-times"></i></button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTradingName(this)"><i class="fa-solid fa-times"></i></button>
                                         </div>
                                         @endforeach
                                     </div>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addTradingName()"><i class="fas fa-plus"></i> Add another</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addTradingName()"><i class="fa-solid fa-plus"></i> Add another</button>
                                 </div>
                                 
                                 <div class="form-group">
@@ -365,10 +365,10 @@
                 <section id="contactPersonSection" class="content-section">
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-user-tie"></i> Primary Contact Person</h3>
+                            <h3><i class="fa-solid fa-user-tie"></i> Primary Contact Person</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('contactPersonInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                             </div>
                         </div>
@@ -504,13 +504,13 @@
                     <!-- Phone Numbers -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-mobile-alt"></i> Phone Numbers</h3>
+                            <h3><i class="fa-solid fa-mobile-alt"></i> Phone Numbers</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('phoneNumbers')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addPhoneNumber()" title="Add Phone Number">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -526,11 +526,11 @@
                                             @if($contact->canVerify())
                                                 @if($contact->is_verified)
                                                     <span class="verified-badge" title="Verified on {{ $contact->verified_at ? $contact->verified_at->format('M j, Y g:i A') : 'Unknown' }}">
-                                                        <i class="fas fa-check-circle"></i> Verified
+                                                        <i class="fa-solid fa-check-circle"></i> Verified
                                                     </span>
                                                 @else
                                                     <button type="button" class="btn-verify-phone" onclick="sendOTP({{ $contact->id ?? 'null' }}, '{{ $contact->phone }}', '{{ $contact->country_code }}')" data-contact-id="{{ $contact->id ?? '' }}">
-                                                        <i class="fas fa-lock"></i> Verify
+                                                        <i class="fa-solid fa-lock"></i> Verify
                                                     </button>
                                                 @endif
                                             @endif
@@ -552,7 +552,7 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addPhoneNumber()"><i class="fas fa-plus-circle"></i> Add Phone Number</button>
+                            <button type="button" class="add-item-btn" onclick="addPhoneNumber()"><i class="fa-solid fa-circle-plus"></i> Add Phone Number</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="savePhoneNumbers()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('phoneNumbers')">Cancel</button>
@@ -563,13 +563,13 @@
                     <!-- Email Addresses -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-envelope"></i> Email Addresses</h3>
+                            <h3><i class="fa-solid fa-envelope"></i> Email Addresses</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('emailAddresses')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addEmailAddress()" title="Add Email Address">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -584,11 +584,11 @@
                                             <span class="summary-value">{{ $email->email }}</span>
                                             @if($email->is_verified)
                                                 <span class="verified-badge" title="Verified on {{ $email->verified_at ? $email->verified_at->format('M j, Y g:i A') : 'Unknown' }}">
-                                                    <i class="fas fa-check-circle"></i> Verified
+                                                    <i class="fa-solid fa-check-circle"></i> Verified
                                                 </span>
                                             @else
                                                 <button type="button" class="btn-verify-email" onclick="sendEmailVerification({{ $email->id }}, '{{ $email->email }}')" data-email-id="{{ $email->id }}">
-                                                    <i class="fas fa-lock"></i> Verify
+                                                    <i class="fa-solid fa-lock"></i> Verify
                                                 </button>
                                             @endif
                                         </div>
@@ -609,7 +609,7 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addEmailAddress()"><i class="fas fa-plus-circle"></i> Add Email Address</button>
+                            <button type="button" class="add-item-btn" onclick="addEmailAddress()"><i class="fa-solid fa-circle-plus"></i> Add Email Address</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveEmailAddresses()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('emailAddresses')">Cancel</button>
@@ -724,7 +724,7 @@
         const row = $('<div class="trading-name-row" style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;">' +
             '<input type="text" name="trading_names[]" placeholder="Trading name" style="flex: 1;">' +
             '<label><input type="radio" name="trading_name_primary" value="' + idx + '"> Primary</label>' +
-            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTradingName(this)"><i class="fas fa-times"></i></button>' +
+            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTradingName(this)"><i class="fa-solid fa-times"></i></button>' +
             '</div>');
         container.append(row);
         // Update primary radio values

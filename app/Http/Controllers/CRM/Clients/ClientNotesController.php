@@ -386,7 +386,7 @@ class ClientNotesController extends Controller
             <div class="note-card-redesign <?php if($list->pin == 1) echo 'pinned'; ?>" data-matterid="<?php echo $list->matter_id; ?>" id="note_id_<?php echo $list->id; ?>" data-id="<?php echo $list->id;?>" data-type="<?php echo $typeLabel;?>">
                 <?php if($list->pin == 1) { ?>
                     <div class="pined_note">
-                        <i class="fa fa-thumb-tack" aria-hidden="true"></i>
+                        <i class="fa-solid fa-thumbtack" aria-hidden="true"></i>
                     </div>
                 <?php } ?>
 
@@ -395,7 +395,7 @@ class ClientNotesController extends Controller
                     <div class="note-toggle-btn-div">
                         <div class="dropdown">
                             <button class="btn btn-link dropdown-toggle note-toggle-btn-div-type" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fa fa-ellipsis-v"></i>
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
                             </button>
                             <div class="dropdown-menu">
                                 <a class="dropdown-item opennoteform" data-id="<?php echo $list->id;?>" href="javascript:;">Edit</a>
@@ -422,7 +422,7 @@ class ClientNotesController extends Controller
                 $notePhone = trim((string) ($list->mobile_number ?? ''));
                 if ($notePhone !== '') { ?>
                 <div class="note-meta-redesign" style="margin-bottom: 10px;">
-                    <i class="fas fa-phone" style="color: #2563eb;" aria-hidden="true"></i>
+                    <i class="fa-solid fa-phone" style="color: #2563eb;" aria-hidden="true"></i>
                     <strong style="margin-left: 6px;">Number:</strong> <?php echo htmlspecialchars($notePhone); ?>
                 </div>
                 <?php } ?>

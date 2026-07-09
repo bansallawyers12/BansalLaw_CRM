@@ -67,7 +67,7 @@
 				<div class="modal-body">
 					<div id="agreementDropZone" class="agreement-drop-zone" role="button" tabindex="0" aria-label="Drop PDF or click to browse">
 						<input type="file" name="agreement_doc" id="agreementFileInput" class="agreement-file-input" accept=".pdf" required>
-						<i class="fas fa-cloud-upload-alt agreement-drop-icon"></i>
+						<i class="fa-solid fa-cloud-upload-alt agreement-drop-icon"></i>
 						<p class="agreement-drop-text mb-0">Drag file here or <strong>click to browse</strong></p>
 						<span id="agreementFileName" class="agreement-file-name text-muted small d-block mt-1"></span>
 					</div>

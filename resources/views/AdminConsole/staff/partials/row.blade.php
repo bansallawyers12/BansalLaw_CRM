@@ -45,11 +45,11 @@
     </td>
     <td class="text-nowrap">
         <button type="button" class="btn btn-sm btn-outline-primary staff-view-btn" data-staff-id="{{ $list->id }}">
-            <i class="far fa-eye"></i> View
+            <i class="fa-regular fa-eye"></i> View
         </button>
         @if($canEdit)
             <button type="button" class="btn btn-sm btn-primary staff-edit-btn" data-staff-id="{{ $list->id }}">
-                <i class="fa fa-edit"></i> Edit
+                <i class="fa-solid fa-edit"></i> Edit
             </button>
         @endif
     </td>

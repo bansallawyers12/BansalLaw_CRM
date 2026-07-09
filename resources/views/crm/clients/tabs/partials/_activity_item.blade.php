@@ -68,31 +68,31 @@
     <span
         class="feed-icon {{ $activity->activity_type === 'sms' ? 'feed-icon-sms' : '' }} {{ $activity->activity_type === 'activity' ? 'feed-icon-activity' : '' }} {{ $activity->activity_type === 'stage' ? 'feed-icon-stage' : '' }} {{ $activity->activity_type === 'financial' ? 'feed-icon-accounting' : '' }} {{ $activity->activity_type === 'signature' ? 'feed-icon-signature' : '' }} {{ $isLeadConverted ? 'feed-icon-lead-converted' : '' }} {{ ! $isLeadConverted && $activity->activity_type === 'note' ? 'feed-icon-note ' . str_replace('activity-type-', 'feed-icon-', $noteTypeClass) : '' }}">
         @if($activity->activity_type === 'sms')
-            <i class="fas fa-sms"></i>
+            <i class="fa-solid fa-sms"></i>
         @elseif($isLeadConverted)
-            <i class="fas fa-user-check"></i>
+            <i class="fa-solid fa-user-check"></i>
         @elseif($activity->activity_type === 'note')
             <i class="fas {{ $noteIcon }}"></i>
         @elseif($activity->activity_type === 'activity')
-            <i class="fas fa-bolt"></i>
+            <i class="fa-solid fa-bolt"></i>
         @elseif($activity->activity_type === 'stage')
-            <i class="fas fa-tasks" aria-hidden="true"></i>
+            <i class="fa-solid fa-tasks" aria-hidden="true"></i>
         @elseif($activity->activity_type === 'financial')
-            <i class="fas fa-dollar-sign"></i>
+            <i class="fa-solid fa-dollar-sign"></i>
         @elseif($activity->activity_type === 'signature')
-            <i class="fas fa-file-signature"></i>
+            <i class="fa-solid fa-file-signature"></i>
         @elseif($activity->activity_type === 'document')
-            <i class="fas fa-file-alt"></i>
+            <i class="fa-solid fa-file-alt"></i>
         @elseif(str_contains(strtolower($activity->subject ?? ''), "invoice") ||
                 str_contains(strtolower($activity->subject ?? ''), "receipt") ||
                 str_contains(strtolower($activity->subject ?? ''), "ledger") ||
                 str_contains(strtolower($activity->subject ?? ''), "payment") ||
                 str_contains(strtolower($activity->subject ?? ''), "account"))
-            <i class="fas fa-dollar-sign"></i>
+            <i class="fa-solid fa-dollar-sign"></i>
         @elseif(str_contains($activity->subject ?? '', "document"))
-            <i class="fas fa-file-alt"></i>
+            <i class="fa-solid fa-file-alt"></i>
         @else
-            <i class="fas fa-sticky-note"></i>
+            <i class="fa-solid fa-sticky-note"></i>
         @endif
     </span>
     <div class="feed-content">
@@ -101,7 +101,7 @@
                 aria-expanded="false" aria-controls="{{ $detailId }}"
                 aria-label="Show or hide full activity content">
                 <span class="feed-item-summary-text">{{ $summaryLine }}</span>
-                <span class="feed-item-summary-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
+                <span class="feed-item-summary-chevron" aria-hidden="true"><i class="fa-solid fa-chevron-down"></i></span>
             </button>
             <div class="feed-item-detail" id="{{ $detailId }}" hidden>
                 @if($activity->activity_type === 'stage')
@@ -119,7 +119,7 @@
                             <strong>{{ $displayCreator }}{{ $activity->subject ? '  ' . $activity->subject : '' }}</strong>
                         @endif
                         @if($canConvert)
-                            <i class="fas fa-ellipsis-v convert-activity-to-note" style="margin-left: 5px; cursor: pointer;"
+                            <i class="fa-solid fa-ellipsis-vertical convert-activity-to-note" style="margin-left: 5px; cursor: pointer;"
                                 title="Convert to Note" data-activity-id="{{ $activity->id }}"
                                 data-activity-subject="{{ $activity->subject }}"
                                 data-activity-description="{{ $activity->description }}"

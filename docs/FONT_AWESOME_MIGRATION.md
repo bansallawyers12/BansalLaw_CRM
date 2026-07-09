@@ -75,7 +75,7 @@ FontAwesomeHelper::iconName('clock-o'); // 'clock'
 |----|--------|--------|
 | 0 | Config, helper, `<x-fa>`, this doc | Done |
 | 1 | Central CDN partial @ 6.7.2 | Done |
-| 2 | Blade: `fa fa-*`, `far fa-*`, `fas fa-*` | Pending |
+| 2 | Blade: `fa fa-*`, `far fa-*`, `fas fa-*` | Done (183 files) |
 | 3 | PHP + JS string HTML + icon renames | Pending |
 | 4 | Delete legacy files under `public/fonts/` (FA only) | Pending |
 

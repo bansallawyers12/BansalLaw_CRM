@@ -14,8 +14,8 @@
     <td class="workflow-stages-count-cell">{{ $wf->stages->count() }}</td>
     <td class="text-nowrap">
         <div class="workflows-index-actions">
-            <a class="btn btn-sm btn-primary" href="{{ $stagesUrl }}"><i class="fas fa-list"></i> Manage Stages</a>
-            <button type="button" class="btn btn-sm btn-secondary edit-workflow-btn"><i class="far fa-edit"></i> Edit Workflow</button>
+            <a class="btn btn-sm btn-primary" href="{{ $stagesUrl }}"><i class="fa-solid fa-list"></i> Manage Stages</a>
+            <button type="button" class="btn btn-sm btn-secondary edit-workflow-btn"><i class="fa-regular fa-edit"></i> Edit Workflow</button>
         </div>
     </td>
 </tr>

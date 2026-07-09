@@ -9,7 +9,7 @@
 
             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                 <div>
-                    <h4 class="mb-1"><i class="fas fa-gavel text-secondary me-2"></i>Rule 42 withdrawal authority types</h4>
+                    <h4 class="mb-1"><i class="fa-solid fa-gavel text-secondary me-2"></i>Rule 42 withdrawal authority types</h4>
                     <p class="text-muted small mb-0">
                         Labels shown when staff post a <strong>Fee transfer</strong> from trust. Inactive types cannot be selected on new entries but remain on historical records.
                     </p>

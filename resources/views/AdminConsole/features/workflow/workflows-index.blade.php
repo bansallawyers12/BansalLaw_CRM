@@ -19,7 +19,7 @@
 							<h4>Workflows</h4>
 							<div class="card-header-action">
 								<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createWorkflowModal">
-									<i class="fa fa-plus"></i> Add Workflow
+									<i class="fa-solid fa-plus"></i> Add Workflow
 								</button>
 							</div>
 						</div>
@@ -89,7 +89,7 @@
 						<span class="custom-error field-error" data-field="matter_id" role="alert"></span>
 					</div>
 					<div class="alert alert-info mb-0 mt-3" role="alert">
-						<i class="fas fa-info-circle"></i>
+						<i class="fa-solid fa-info-circle"></i>
 						The new workflow will be pre-populated with all stages from the <strong>General</strong> workflow.
 						Use <strong>Manage Stages</strong> after creation to add, rename, or remove non-protected stages.
 					</div>
@@ -137,7 +137,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<a href="#" id="edit-workflow-stages-link" class="btn btn-outline-primary me-auto"><i class="fas fa-list"></i> Manage Stages</a>
+					<a href="#" id="edit-workflow-stages-link" class="btn btn-outline-primary me-auto"><i class="fa-solid fa-list"></i> Manage Stages</a>
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 					<button type="submit" class="btn btn-primary" id="edit-workflow-submit">
 						<span class="submit-label">Update Workflow</span>
@@ -208,8 +208,8 @@ jQuery(document).ready(function($) {
 			'<td class="workflow-matter-cell">' + escapeHtml(matterLabel) + '</td>' +
 			'<td class="workflow-stages-count-cell">' + (workflow.stages_count || 0) + '</td>' +
 			'<td class="text-nowrap"><div class="workflows-index-actions">' +
-			'<a class="btn btn-sm btn-primary" href="' + escapeHtml(stagesUrl) + '"><i class="fas fa-list"></i> Manage Stages</a> ' +
-			'<button type="button" class="btn btn-sm btn-secondary edit-workflow-btn"><i class="far fa-edit"></i> Edit Workflow</button>' +
+			'<a class="btn btn-sm btn-primary" href="' + escapeHtml(stagesUrl) + '"><i class="fa-solid fa-list"></i> Manage Stages</a> ' +
+			'<button type="button" class="btn btn-sm btn-secondary edit-workflow-btn"><i class="fa-regular fa-edit"></i> Edit Workflow</button>' +
 			'</div></td></tr>';
 	}
 

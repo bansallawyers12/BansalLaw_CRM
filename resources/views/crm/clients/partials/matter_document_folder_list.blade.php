@@ -12,10 +12,10 @@
                 <div class="checklist-actions">
                     @if (!$fetch->file_name)
                         <a href="javascript:;" class="edit-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ htmlspecialchars($fetch->checklist) }}" title="Edit Checklist Name">
-                            <i class="fas fa-edit"></i>
+                            <i class="fa-solid fa-edit"></i>
                         </a>
                         <a href="javascript:;" class="delete-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ htmlspecialchars($fetch->checklist) }}" title="Delete Checklist">
-                            <i class="fas fa-trash"></i>
+                            <i class="fa-solid fa-trash"></i>
                         </a>
                     @endif
                 </div>
@@ -25,7 +25,7 @@
             @if ($fetch->file_name)
                 <div data-id="{{ $fetch->id }}" data-name="{{ htmlspecialchars($fetch->file_name) }}" class="doc-row" title="Uploaded by: {{ htmlspecialchars($admin->first_name ?? 'NA') }} on {{ date('d/m/Y H:i', strtotime($fetch->created_at)) }}" oncontextmenu="showVisaFileContextMenu(event, {{ (int) $fetch->id }}, {{ json_encode($fetch->filetype) }}, {{ json_encode($previewUrl) }}, {{ json_encode((string) $fetch->folder_name) }}, {{ json_encode($fetch->status ?? 'draft') }}); return false;">
                     <a href="javascript:void(0);" onclick="previewFile({{ json_encode($fetch->filetype) }}, {{ json_encode($previewUrl) }}, {{ json_encode('preview-container-matter-' . $fetch->folder_name) }})">
-                        <i class="fas fa-file-image matter-doc-file-icon"></i> <span>{{ htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) }}</span>
+                        <i class="fa-solid fa-file-image matter-doc-file-icon"></i> <span>{{ htmlspecialchars($fetch->file_name . '.' . $fetch->filetype) }}</span>
                     </a>
                 </div>
             @else
@@ -43,7 +43,7 @@
                              data-doccategory="{{ $fetch->folder_name }}"
                              data-formid="mig_upload_form_{{ $fetch->id }}">
                             <div class="drag-zone-inner">
-                                <i class="fas fa-cloud-upload-alt"></i>
+                                <i class="fa-solid fa-cloud-upload-alt"></i>
                                 <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                             </div>
                         </div>

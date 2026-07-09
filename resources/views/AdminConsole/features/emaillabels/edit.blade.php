@@ -16,7 +16,7 @@
 							<div class="card-header">
 								<h4>Edit Email Label</h4>
 								<div class="card-header-action">
-									<a href="{{route('adminconsole.features.emaillabels.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+									<a href="{{route('adminconsole.features.emaillabels.index')}}" class="btn btn-primary"><i class="fa-solid fa-arrow-left"></i> Back</a>
 								</div>
 							</div>
 						</div>
@@ -74,8 +74,8 @@
 												<div class="col-12 col-md-6 col-lg-6">
 													<div class="form-group"> 
 														<label for="icon">Icon</label>
-														<input type="text" name="icon" class="form-control" autocomplete="off" placeholder="fas fa-tag" value="{{ old('icon', @$fetchedData->icon ?: 'fas fa-tag') }}">
-														<small class="form-text text-muted">Font Awesome icon class (e.g., fas fa-tag, fas fa-star)</small>
+														<input type="text" name="icon" class="form-control" autocomplete="off" placeholder="fa-solid fa-tag" value="{{ old('icon', @$fetchedData->icon ?: 'fa-solid fa-tag') }}">
+														<small class="form-text text-muted">Font Awesome icon class (e.g., fa-solid fa-tag, fa-solid fa-star)</small>
 														@if ($errors->has('icon'))
 															<span class="custom-error" role="alert">
 																<strong>{{ @$errors->first('icon') }}</strong>

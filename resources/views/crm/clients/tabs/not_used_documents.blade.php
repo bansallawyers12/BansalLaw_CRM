@@ -62,12 +62,12 @@
                         <div class="not-used-main">
                             <div class="not-used-header">
                                 <div class="not-used-header-text">
-                                    <h3><i class="fas fa-folder-minus"></i> Not Used Documents</h3>
+                                    <h3><i class="fa-solid fa-folder-minus"></i> Not Used Documents</h3>
                                     <p>Documents removed from Personal or Matter folders appear here. Use <strong>Revert</strong> to restore a file to its original folder.</p>
                                 </div>
                                 <div class="not-used-header-actions">
                                     <button type="button" class="btn btn-secondary client-nav-button" data-tab="personaldocuments">
-                                        <i class="fas fa-arrow-left"></i> Back to Personal Documents
+                                        <i class="fa-solid fa-arrow-left"></i> Back to Personal Documents
                                     </button>
                                 </div>
                             </div>
@@ -75,28 +75,28 @@
                             <div class="not-used-toolbar">
                                 <div class="not-used-stats">
                                     <span class="not-used-stat-chip not-used-stat-total">
-                                        <i class="fas fa-layer-group"></i> {{ $notUsedTotalCount }} total
+                                        <i class="fa-solid fa-layer-group"></i> {{ $notUsedTotalCount }} total
                                     </span>
                                     <span class="not-used-stat-chip not-used-stat-personal">
-                                        <i class="fas fa-user"></i> {{ $notUsedPersonalCount }} personal
+                                        <i class="fa-solid fa-user"></i> {{ $notUsedPersonalCount }} personal
                                     </span>
                                     <span class="not-used-stat-chip not-used-stat-matter">
-                                        <i class="fas fa-briefcase"></i> {{ $notUsedMatterCount }} matter
+                                        <i class="fa-solid fa-briefcase"></i> {{ $notUsedMatterCount }} matter
                                     </span>
                                 </div>
                                 <div class="not-used-search-wrap">
-                                    <i class="fas fa-search"></i>
+                                    <i class="fa-solid fa-search"></i>
                                     <input type="search" id="notUsedDocsSearch" class="not-used-search" placeholder="Search checklist, file name, or type…" autocomplete="off">
                                 </div>
                             </div>
 
                             @if ($notUsedTotalCount === 0)
                                 <div class="not-used-empty-state" id="notUsedEmptyState">
-                                    <div class="not-used-empty-icon"><i class="fas fa-inbox"></i></div>
+                                    <div class="not-used-empty-icon"><i class="fa-solid fa-inbox"></i></div>
                                     <h4>No documents in Not Used</h4>
                                     <p>When you mark a document as "Not Used" from Personal or Matter Documents, it will appear here for review or revert.</p>
                                     <button type="button" class="btn btn-primary client-nav-button" data-tab="personaldocuments">
-                                        <i class="fas fa-folder-open"></i> Go to Personal Documents
+                                        <i class="fa-solid fa-folder-open"></i> Go to Personal Documents
                                     </button>
                                 </div>
                             @endif
@@ -162,19 +162,19 @@
                                                             <div class="not-used-actions">
                                                                 @if (!empty($fetch->file_name))
                                                                     <button type="button" class="btn-not-used-action btn-not-used-preview" title="Preview" onclick="previewFile({{ json_encode($fetch->filetype) }}, {{ json_encode($previewUrl) }}, {{ json_encode('preview-container-notuseddocumnetlist') }})">
-                                                                        <i class="fas fa-eye"></i>
+                                                                        <i class="fa-solid fa-eye"></i>
                                                                     </button>
                                                                 @endif
                                                                 @if ($fetch->myfile)
                                                                     <button type="button" class="btn-not-used-action btn-not-used-download download-file" data-document-id="{{ $fetch->id }}" data-id="{{ $fetch->id }}" data-filename="{{ e($downloadFilename) }}" title="Download">
-                                                                        <i class="fas fa-download"></i>
+                                                                        <i class="fa-solid fa-download"></i>
                                                                     </button>
                                                                 @endif
                                                                 <button type="button" class="btn-not-used-action btn-not-used-revert backtodoc" data-id="{{ $fetch->id }}" data-doctype="{{ $fetch->doc_type }}" data-doccategory="{{ $fetch->folder_name }}" title="Revert to original folder">
-                                                                    <i class="fas fa-undo"></i> Revert
+                                                                    <i class="fa-solid fa-undo"></i> Revert
                                                                 </button>
                                                                 <button type="button" class="btn-not-used-action btn-not-used-delete" title="Delete permanently" onclick="$('.deletenote[data-id=\'{{ $fetch->id }}\']').trigger('click');">
-                                                                    <i class="fas fa-trash-alt"></i>
+                                                                    <i class="fa-solid fa-trash-can"></i>
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -184,7 +184,7 @@
                                         </table>
                                     </div>
                                     <div class="not-used-no-results" id="notUsedNoResults" style="display: none;">
-                                        <i class="fas fa-search"></i>
+                                        <i class="fa-solid fa-search"></i>
                                         <p>No documents match your search.</p>
                                     </div>
                             </div>
@@ -192,7 +192,7 @@
 
                         <div class="preview-pane file-preview-container preview-container-notuseddocumnetlist not-used-preview-pane client-doc-preview-pane">
                             <div class="not-used-preview-placeholder">
-                                <i class="fas fa-file-alt"></i>
+                                <i class="fa-solid fa-file-alt"></i>
                                 <p>Select a file to preview it here</p>
                             </div>
                         </div>
@@ -203,16 +203,16 @@
             <!-- Custom Context Menu for Not Used Documents -->
             <div id="notUsedFileContextMenu" class="context-menu not-used-context-menu">
                 <div class="context-menu-item" onclick="handleNotUsedContextAction('preview')">
-                    <i class="fa fa-eye"></i> Preview
+                    <i class="fa-solid fa-eye"></i> Preview
                 </div>
                 <div class="context-menu-item" onclick="handleNotUsedContextAction('download')">
-                    <i class="fa fa-download"></i> Download
+                    <i class="fa-solid fa-download"></i> Download
                 </div>
                 <div class="context-menu-item" onclick="handleNotUsedContextAction('back-to-doc')">
-                    <i class="fa fa-undo"></i> Revert
+                    <i class="fa-solid fa-undo"></i> Revert
                 </div>
                 <div class="context-menu-item context-menu-item-danger" onclick="handleNotUsedContextAction('delete')">
-                    <i class="fa fa-trash"></i> Delete
+                    <i class="fa-solid fa-trash"></i> Delete
                 </div>
             </div>
 

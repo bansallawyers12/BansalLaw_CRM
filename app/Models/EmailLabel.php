@@ -69,20 +69,20 @@ class EmailLabel extends Model
 
         // Default icons based on label name
         $defaultIcons = [
-            'inbox' => 'fas fa-inbox',
-            'sent' => 'fas fa-paper-plane',
-            'draft' => 'fas fa-edit',
-            'trash' => 'fas fa-trash',
-            'spam' => 'fas fa-ban',
-            'archive' => 'fas fa-archive',
-            'work' => 'fas fa-briefcase',
-            'personal' => 'fas fa-user',
-            'important' => 'fas fa-star',
-            'urgent' => 'fas fa-exclamation-triangle',
+            'inbox' => 'fa-solid fa-inbox',
+            'sent' => 'fa-solid fa-paper-plane',
+            'draft' => 'fa-solid fa-edit',
+            'trash' => 'fa-solid fa-trash',
+            'spam' => 'fa-solid fa-ban',
+            'archive' => 'fa-solid fa-archive',
+            'work' => 'fa-solid fa-briefcase',
+            'personal' => 'fa-solid fa-user',
+            'important' => 'fa-solid fa-star',
+            'urgent' => 'fa-solid fa-exclamation-triangle',
         ];
 
         $labelName = strtolower($this->name);
-        return $defaultIcons[$labelName] ?? 'fas fa-tag';
+        return $defaultIcons[$labelName] ?? 'fa-solid fa-tag';
     }
 
     /**

@@ -17,7 +17,7 @@
             @else
                 <tr id="mdt-empty-row">
                     <td class="text-center text-muted py-4" colspan="{{ $colspan }}">
-                        <i class="fas fa-folder-open fa-2x mb-2 d-block opacity-50"></i>
+                        <i class="fa-solid fa-folder-open fa-2x mb-2 d-block opacity-50"></i>
                         No matter document folders found.
                         @if(!empty($searchBy))
                             Try a different search term.

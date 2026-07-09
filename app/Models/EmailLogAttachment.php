@@ -158,18 +158,18 @@ class EmailLogAttachment extends Model
     public function getIconClassAttribute(): string
     {
         if ($this->isImage()) {
-            return 'fas fa-image text-blue-500';
+            return 'fa-solid fa-image text-blue-500';
         }
         
         if ($this->isPdf()) {
-            return 'fas fa-file-pdf text-red-500';
+            return 'fa-solid fa-file-pdf text-red-500';
         }
         
         if ($this->isDocument()) {
-            return 'fas fa-file-alt text-gray-500';
+            return 'fa-solid fa-file-alt text-gray-500';
         }
         
-        return 'fas fa-paperclip text-gray-400';
+        return 'fa-solid fa-paperclip text-gray-400';
     }
 
     /**

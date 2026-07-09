@@ -117,14 +117,14 @@
 <div class="card" id="conflictPartiesCard" data-client-id="{{ $fetchedData->id }}">
     <div id="conflictPartiesView" class="cp-view" role="region" aria-label="Other parties summary">
         <div class="cp-card-header">
-            <h3><i class="fas fa-user-shield"></i> Other Parties &amp; Conflict Check</h3>
+            <h3><i class="fa-solid fa-user-shield"></i> Other Parties &amp; Conflict Check</h3>
             <button type="button"
                     class="btn btn-primary btn-sm cp-open-edit cp-open-edit--icon"
                     title="Edit other parties"
                     aria-label="Edit other parties"
                     aria-expanded="false"
                     aria-controls="conflictPartiesEdit">
-                <i class="fas fa-pen" aria-hidden="true"></i>
+                <i class="fa-solid fa-pen" aria-hidden="true"></i>
             </button>
         </div>
 
@@ -172,7 +172,7 @@
          aria-label="Edit other parties"
          aria-hidden="true">
         <div class="cp-card-header">
-            <span><i class="fas fa-edit text-primary me-1"></i>Editing other parties</span>
+            <span><i class="fa-solid fa-edit text-primary me-1"></i>Editing other parties</span>
             <button type="button" class="btn btn-link btn-sm p-0 cp-open-edit" aria-label="Close editor">Close</button>
         </div>
 
@@ -186,7 +186,7 @@
         <div id="cpPartiesContainer"></div>
 
         <button type="button" class="btn btn-outline-primary btn-sm mb-3" id="cpAddPartyBtn">
-            <i class="fas fa-plus"></i> Add party
+            <i class="fa-solid fa-plus"></i> Add party
         </button>
 
         <div class="d-flex gap-2 mb-4">
@@ -195,7 +195,7 @@
         </div>
 
         <div class="cp-subsection" id="cpOutcomeSection">
-            <div class="cp-subsection-title"><i class="fas fa-clipboard-check"></i> Conflict check outcome</div>
+            <div class="cp-subsection-title"><i class="fa-solid fa-clipboard-check"></i> Conflict check outcome</div>
             <p class="text-muted small mb-2" id="cpLastCheckHint">
                 @if($latestCheckedAt && $latestOutcomeLabel)
                     Last check: {{ $latestCheckedAt }} — {{ $latestOutcomeLabel }}
@@ -311,7 +311,7 @@
             return '<option value="' + c + '"' + (cc === c ? ' selected' : '') + '>' + c + '</option>';
         }).join('');
         return '<div class="cp-repeat-item cp-phone-item">' +
-            '<button type="button" class="cp-remove-mini cp-remove-phone" title="Remove phone"><i class="fas fa-times"></i></button>' +
+            '<button type="button" class="cp-remove-mini cp-remove-phone" title="Remove phone"><i class="fa-solid fa-times"></i></button>' +
             '<div class="cp-fields-grid">' +
             '<div><label class="small">Type</label><select class="form-control form-control-sm cp-ph-type">' +
             '<option' + (data.contact_type === 'Mobile' ? ' selected' : '') + '>Mobile</option>' +
@@ -328,7 +328,7 @@
     function emailRow(data) {
         data = data || {};
         return '<div class="cp-repeat-item cp-email-item">' +
-            '<button type="button" class="cp-remove-mini cp-remove-email" title="Remove email"><i class="fas fa-times"></i></button>' +
+            '<button type="button" class="cp-remove-mini cp-remove-email" title="Remove email"><i class="fa-solid fa-times"></i></button>' +
             '<div class="cp-fields-grid">' +
             '<div><label class="small">Type</label><select class="form-control form-control-sm cp-em-type">' +
             '<option' + (data.email_type === 'Personal' ? ' selected' : '') + '>Personal</option>' +
@@ -342,7 +342,7 @@
     function aliasInput(val) {
         return '<div class="cp-repeat-item cp-alias-item d-flex gap-1 align-items-center">' +
             '<input type="text" class="form-control form-control-sm cp-alias-val flex-grow-1" value="' + esc(val || '') + '" placeholder="Former / maiden name">' +
-            '<button type="button" class="btn btn-link btn-sm text-danger p-0 cp-remove-alias" title="Remove"><i class="fas fa-times"></i></button>' +
+            '<button type="button" class="btn btn-link btn-sm text-danger p-0 cp-remove-alias" title="Remove"><i class="fa-solid fa-times"></i></button>' +
             '</div>';
     }
 

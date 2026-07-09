@@ -3,7 +3,7 @@
 
 <div class="repeatable-section">
     <button type="button" class="remove-item-btn" title="Remove Passport" onclick="removePassportField(this)">
-        <i class="fas fa-trash"></i>
+        <i class="fa-solid fa-trash"></i>
     </button>
     
     <input type="hidden" name="passport_id[{{ $index }}]" value="{{ $passport->id ?? '' }}">

@@ -1,13 +1,13 @@
 <!-- Activity Feed (Personal Details, Company Details, Activity nav; single #activity-feed instance) -->
 <aside class="activity-feed" id="activity-feed">
     <div class="activity-feed-header">
-        <h2><i class="fas fa-history"></i> Activity Feed</h2>
+        <h2><i class="fa-solid fa-history"></i> Activity Feed</h2>
         <div class="activity-feed-header-actions">
             <button type="button" class="btn btn-sm btn-link p-0 activity-feed-filter-toggle" id="activity-feed-filter-toggle" title="Hide filters" aria-expanded="true" aria-controls="activity-feed-filter-bar" hidden>
-                <i class="fas fa-chevron-up" aria-hidden="true"></i>
+                <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
             </button>
             <button type="button" class="btn btn-sm btn-link p-0 activity-feed-refresh" id="activity-feed-refresh" title="Refresh">
-                <i class="fas fa-sync-alt"></i>
+                <i class="fa-solid fa-sync-alt"></i>
             </button>
             <label for="increase-activity-feed-width">
                 <input type="checkbox" id="increase-activity-feed-width" title="Expand Width">
@@ -38,10 +38,10 @@
         </div>
         <div class="activity-feed-filter-actions">
             <button type="button" class="btn btn-sm btn-primary activity-feed-apply" id="activity-feed-apply">
-                <i class="fas fa-search"></i> Apply
+                <i class="fa-solid fa-search"></i> Apply
             </button>
             <button type="button" class="btn btn-sm btn-outline-secondary activity-feed-reset" id="activity-feed-reset">
-                <i class="fas fa-redo"></i> Reset
+                <i class="fa-solid fa-redo"></i> Reset
             </button>
         </div>
     </div>
@@ -49,22 +49,22 @@
     <!-- Activity Type Filters -->
     <div class="activity-filters">
         <button class="activity-filter-btn active" data-filter="all">
-            <i class="fas fa-list"></i> All
+            <i class="fa-solid fa-list"></i> All
         </button>
         <button class="activity-filter-btn" data-filter="activity">
-            <i class="fas fa-bolt"></i> Activity
+            <i class="fa-solid fa-bolt"></i> Activity
         </button>
         <button class="activity-filter-btn" data-filter="note">
-            <i class="fas fa-sticky-note"></i> Notes
+            <i class="fa-solid fa-sticky-note"></i> Notes
         </button>
         <button class="activity-filter-btn" data-filter="document">
-            <i class="fas fa-file-alt"></i> Documents
+            <i class="fa-solid fa-file-alt"></i> Documents
         </button>
         <button class="activity-filter-btn" data-filter="signature">
-            <i class="fas fa-file-signature"></i> Signatures
+            <i class="fa-solid fa-file-signature"></i> Signatures
         </button>
         <button class="activity-filter-btn" data-filter="accounting">
-            <i class="fas fa-dollar-sign"></i> Accounting
+            <i class="fa-solid fa-dollar-sign"></i> Accounting
         </button>
     </div>
     
@@ -133,12 +133,12 @@
                 ])
             @endforeach
             <li class="feed-item feed-item-no-results" style="text-align: center; padding: 20px; color: #6c757d;">
-                <i class="fas fa-filter" style="font-size: 1.5em; margin-bottom: 8px; opacity: 0.5;"></i>
+                <i class="fa-solid fa-filter" style="font-size: 1.5em; margin-bottom: 8px; opacity: 0.5;"></i>
                 <p class="mb-0 small">No activities match your filters</p>
             </li>
         @else
             <li class="feed-item feed-item--empty" style="text-align: center; padding: 20px; color: #6c757d;">
-                <i class="fas fa-inbox" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
+                <i class="fa-solid fa-inbox" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>
                 <p>No activities found</p>
             </li>
         @endif

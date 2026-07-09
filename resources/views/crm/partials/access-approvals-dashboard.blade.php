@@ -14,14 +14,14 @@
 <section class="access-approvals-dashboard focus-container" style="margin-bottom: 1.5rem;">
     <div class="focus-header access-approvals-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
         <h3 style="margin: 0;">
-            <i class="fas fa-user-shield" aria-hidden="true"></i>
+            <i class="fa-solid fa-user-shield" aria-hidden="true"></i>
             Access approvals
             @if($dashCrmAccessPending > 0)
                 <span class="badge badge-access-pending ms-1" id="crm-access-approvals-count">{{ $dashCrmAccessPending }}</span>
             @endif
         </h3>
         <a href="{{ route('crm.access.queue') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="fas fa-inbox me-1" aria-hidden="true"></i> Full access queue
+            <i class="fa-solid fa-inbox me-1" aria-hidden="true"></i> Full access queue
         </a>
     </div>
     <div id="crm-access-dashboard-mini-queue" class="access-approvals-queue px-1 py-2" style="min-height: 2rem;">Loading…</div>

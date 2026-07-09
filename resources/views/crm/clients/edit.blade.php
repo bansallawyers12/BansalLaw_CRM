@@ -99,7 +99,7 @@
 
             <!-- Mobile Sidebar Toggle -->
             <button class="sidebar-toggle" onclick="toggleSidebar()">
-                <i class="fas fa-bars"></i>
+                <i class="fa-solid fa-bars"></i>
             </button>
 
             <!-- Sidebar Navigation -->
@@ -122,19 +122,19 @@
                 <nav class="sidebar-primary-nav" aria-label="Client record sections">
                     <div class="sidebar-primary-nav__label">Sections</div>
                     <button type="button" class="sidebar-primary-tab active" data-tab-id="home" onclick="showTab('home')">
-                        <i class="fas fa-user"></i><span>Client Info</span>
+                        <i class="fa-solid fa-user"></i><span>Client Info</span>
                     </button>
                     <button type="button" class="sidebar-primary-tab" data-tab-id="menu2" onclick="showTab('menu2')">
-                        <i class="fas fa-briefcase"></i><span>Matter Details</span>
+                        <i class="fa-solid fa-briefcase"></i><span>Matter Details</span>
                     </button>
                     <button type="button" class="sidebar-primary-tab" data-tab-id="menu4" onclick="showTab('menu4')">
-                        <i class="fas fa-gavel"></i><span>Court Dates &amp; Hearings</span>
+                        <i class="fa-solid fa-gavel"></i><span>Court Dates &amp; Hearings</span>
                     </button>
                 </nav>
 
                 <div class="sidebar-actions">
                     <button type="button" class="sidebar-back-btn" onclick="goBackWithRefresh()">
-                        <i class="fas fa-arrow-left"></i>
+                        <i class="fa-solid fa-arrow-left"></i>
                         <span>Back</span>
                     </button>
                 </div>
@@ -206,10 +206,10 @@
                 <section id="personalSection" class="content-section">
                     <section id="section-basic-info" class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-user-circle"></i> Basic Information</h3>
+                            <h3><i class="fa-solid fa-user-circle"></i> Basic Information</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('basicInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                             </div>
                         </div>
@@ -276,7 +276,7 @@
                                         <input type="text" id="dob" name="dob" value="{{ $fetchedData->dob ? date('d/m/Y', strtotime($fetchedData->dob)) : '' }}" placeholder="dd/mm/yyyy" autocomplete="off" style="flex: 1;">
                                         @if($fetchedData->updated_at)
                                             <span class="last-updated-badge" style="font-size: 0.85em; color: #6c757d; white-space: nowrap;" title="Last updated: {{ $fetchedData->updated_at->format('M j, Y g:i A') }}">
-                                                <i class="far fa-circle" style="color: #6c757d; margin-right: 4px;"></i>
+                                                <i class="fa-regular fa-circle" style="color: #6c757d; margin-right: 4px;"></i>
                                                 Updated: {{ $fetchedData->updated_at->format('d/m/Y') }}
                                             </span>
                                         @endif
@@ -334,13 +334,13 @@
                     <!-- Contact Information -->
                     <section id="section-phone-numbers" class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-mobile-alt"></i> Phone Numbers</h3>
+                            <h3><i class="fa-solid fa-mobile-alt"></i> Phone Numbers</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('phoneNumbers')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addPhoneNumber()" title="Add Phone Number">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -357,11 +357,11 @@
                                             @if($contact->canVerify())
                                                 @if($contact->is_verified)
                                                     <span class="verified-badge" title="Verified on {{ $contact->verified_at ? $contact->verified_at->format('M j, Y g:i A') : 'Unknown' }}">
-                                                        <i class="fas fa-check-circle"></i> Verified
+                                                        <i class="fa-solid fa-check-circle"></i> Verified
                                                     </span>
                                                 @else
                                                     <button type="button" class="btn-verify-phone" onclick="sendOTP({{ $contact->id ?? 'null' }}, '{{ $contact->phone }}', '{{ $contact->country_code }}')" data-contact-id="{{ $contact->id ?? '' }}">
-                                                        <i class="fas fa-lock"></i> Verify
+                                                        <i class="fa-solid fa-lock"></i> Verify
                                                     </button>
                                                 @endif
                                             @endif
@@ -383,7 +383,7 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addPhoneNumber()"><i class="fas fa-plus-circle"></i> Add Phone Number</button>
+                            <button type="button" class="add-item-btn" onclick="addPhoneNumber()"><i class="fa-solid fa-circle-plus"></i> Add Phone Number</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="savePhoneNumbers()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('phoneNumbers')">Cancel</button>
@@ -394,13 +394,13 @@
                     <!-- Email Addresses -->
                     <section id="section-email-addresses" class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-envelope"></i> Email Addresses</h3>
+                            <h3><i class="fa-solid fa-envelope"></i> Email Addresses</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('emailAddresses')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addEmailAddress()" title="Add Email Address">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -416,11 +416,11 @@
                                             <!-- Verification Button/Badge -->
                                             @if($email->is_verified)
                                                 <span class="verified-badge" title="Verified on {{ $email->verified_at ? $email->verified_at->format('M j, Y g:i A') : 'Unknown' }}">
-                                                    <i class="fas fa-check-circle"></i> Verified
+                                                    <i class="fa-solid fa-check-circle"></i> Verified
                                                 </span>
                                             @else
                                                 <button type="button" class="btn-verify-email" onclick="sendEmailVerification({{ $email->id }}, '{{ $email->email }}')" data-email-id="{{ $email->id }}">
-                                                    <i class="fas fa-lock"></i> Verify
+                                                    <i class="fa-solid fa-lock"></i> Verify
                                                 </button>
                                             @endif
                                         </div>
@@ -441,7 +441,7 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addEmailAddress()"><i class="fas fa-plus-circle"></i> Add Email Address</button>
+                            <button type="button" class="add-item-btn" onclick="addEmailAddress()"><i class="fa-solid fa-circle-plus"></i> Add Email Address</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveEmailAddresses()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('emailAddresses')">Cancel</button>
@@ -461,7 +461,7 @@
                 <section id="section-lead-source" class="content-section" style="margin-bottom:1.25rem;">
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-funnel-dollar"></i> Lead Source &amp; Assignment</h3>
+                            <h3><i class="fa-solid fa-funnel-dollar"></i> Lead Source &amp; Assignment</h3>
                         </div>
                         <p class="text-muted" style="margin-top:0;margin-bottom:1rem;">Where did this {{ $__crmEditLeadType ? 'lead' : 'client' }} come from?</p>
 
@@ -515,14 +515,14 @@
                 <section class="content-section" style="margin-bottom: 1.25rem;">
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-user-friends"></i> Refer by</h3>
+                            <h3><i class="fa-solid fa-user-friends"></i> Refer by</h3>
                         </div>
                         <p class="text-muted" style="margin-top: 0;">Who referred this {{ $__crmEditLeadType ? 'lead' : 'client' }} (optional).</p>
                         <div class="form-group">
                             <label for="client_refer_by">Refer by</label>
                             <input type="text" class="form-control" id="client_refer_by" name="refer_by" value="{{ old('refer_by', $fetchedData->refer_by ?? '') }}" maxlength="500" placeholder="e.g. name, staff member, campaign">
                         </div>
-                        <button type="button" class="btn btn-primary" onclick="saveReferByInfo()"><i class="fas fa-save"></i> Save</button>
+                        <button type="button" class="btn btn-primary" onclick="saveReferByInfo()"><i class="fa-solid fa-save"></i> Save</button>
                         <span id="referBySaveMsg" class="text-muted small" style="margin-left: 10px;" role="status"></span>
                     </section>
                 </section>
@@ -531,13 +531,13 @@
                 <section id="visaPassportSection" class="content-section" style="display:none">
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-id-card"></i> Passport Information</h3>
+                            <h3><i class="fa-solid fa-id-card"></i> Passport Information</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('passportInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addPassportDetail()" title="Add Passport">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -589,7 +589,7 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addPassportDetail()"><i class="fas fa-plus-circle"></i> Add Passport</button>
+                            <button type="button" class="add-item-btn" onclick="addPassportDetail()"><i class="fa-solid fa-circle-plus"></i> Add Passport</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="savePassportInfo()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('passportInfo')">Cancel</button>
@@ -600,13 +600,13 @@
                     <!-- Visa Information -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-plane-departure"></i> Visa Information</h3>
+                            <h3><i class="fa-solid fa-plane-departure"></i> Visa Information</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('visaInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addVisaDetail()" title="Add Visa Detail">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -667,7 +667,7 @@
                                     @endforeach
                                 </div>
 
-                                <button type="button" class="add-item-btn" onclick="addVisaDetail()"><i class="fas fa-plus-circle"></i> Add Visa Detail</button>
+                                <button type="button" class="add-item-btn" onclick="addVisaDetail()"><i class="fa-solid fa-circle-plus"></i> Add Visa Detail</button>
                             </div>
 
                             <!-- Visa Expiry Verified -->
@@ -692,13 +692,13 @@
                     <!-- Travel Information Section -->
                     <section class="form-section" style="display:none">
                         <div class="section-header">
-                            <h3><i class="fas fa-plane-departure"></i> Travel Information</h3>
+                            <h3><i class="fa-solid fa-plane-departure"></i> Travel Information</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('travelInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addTravelDetail()" title="Add Travel Detail">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -755,7 +755,7 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addTravelDetail()"><i class="fas fa-plus-circle"></i> Add Travel Detail</button>
+                            <button type="button" class="add-item-btn" onclick="addTravelDetail()"><i class="fa-solid fa-circle-plus"></i> Add Travel Detail</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveTravelInfo()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('travelInfo')">Cancel</button>
@@ -768,13 +768,13 @@
                 <section id="skillsEducationSection" class="content-section" style="display:none">
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-graduation-cap"></i> Educational Qualifications</h3>
+                            <h3><i class="fa-solid fa-graduation-cap"></i> Educational Qualifications</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('qualificationsInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addQualification()" title="Add Qualification">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -838,7 +838,7 @@
                                                 <div class="summary-item-inline" style="grid-column: 1 / -1;">
                                                     <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">RELEVANT:</span>
                                                     <span class="summary-value" style="color: #28a745; font-weight: 500;">
-                                                        <i class="fas fa-check-circle"></i> Yes
+                                                        <i class="fa-solid fa-check-circle"></i> Yes
                                                     </span>
                                                 </div>
                                                 @endif
@@ -865,13 +865,13 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addQualification()"><i class="fas fa-plus-circle"></i> Add Qualification</button>
+                            <button type="button" class="add-item-btn" onclick="addQualification()"><i class="fa-solid fa-circle-plus"></i> Add Qualification</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveQualificationsInfo()">
-                                    <i class="fas fa-save"></i> Save
+                                    <i class="fa-solid fa-save"></i> Save
                                 </button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('qualificationsInfo')">
-                                    <i class="fas fa-times"></i> Cancel
+                                    <i class="fa-solid fa-times"></i> Cancel
                                 </button>
                             </div>
                         </div>
@@ -880,13 +880,13 @@
                     <!-- Work Experience Section -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-briefcase"></i> Work Experience</h3>
+                            <h3><i class="fa-solid fa-briefcase"></i> Work Experience</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('experienceInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addExperience()" title="Add Experience">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -957,7 +957,7 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addExperience()"><i class="fas fa-plus-circle"></i> Add Experience</button>
+                            <button type="button" class="add-item-btn" onclick="addExperience()"><i class="fa-solid fa-circle-plus"></i> Add Experience</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveExperienceInfo()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('experienceInfo')">Cancel</button>
@@ -968,13 +968,13 @@
                     <!-- Occupation & Skills Section -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-cogs"></i> Occupation & Skills</h3>
+                            <h3><i class="fa-solid fa-cogs"></i> Occupation & Skills</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('occupationInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addOccupation()" title="Add Occupation">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -1040,7 +1040,7 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addOccupation()"><i class="fas fa-plus-circle"></i> Add Occupation</button>
+                            <button type="button" class="add-item-btn" onclick="addOccupation()"><i class="fa-solid fa-circle-plus"></i> Add Occupation</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveOccupationInfo()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('occupationInfo')">Cancel</button>
@@ -1051,13 +1051,13 @@
                     <!-- English Test Scores Section -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-language"></i> English Test Scores</h3>
+                            <h3><i class="fa-solid fa-language"></i> English Test Scores</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('testScoreInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addTestScore()" title="Add Test Score">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -1104,7 +1104,7 @@
                                                 <div class="summary-item-inline">
                                                     <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">PROFICIENCY LEVEL:</span>
                                                     <span id="proficiency-level-{{ $index }}" class="proficiency-level-display" style="font-weight: 700; font-size: 0.9em; padding: 4px 8px; border-radius: 4px; display: inline-block;">
-                                                        <i class="fas fa-spinner fa-spin"></i> Calculating...
+                                                        <i class="fa-solid fa-spinner fa-spin"></i> Calculating...
                                                     </span>
                                                 </div>
                                             </div>
@@ -1143,7 +1143,7 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addTestScore()"><i class="fas fa-plus-circle"></i> Add Test Score</button>
+                            <button type="button" class="add-item-btn" onclick="addTestScore()"><i class="fa-solid fa-circle-plus"></i> Add Test Score</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveTestScoreInfo()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('testScoreInfo')">Cancel</button>
@@ -1156,10 +1156,10 @@
                 <section id="otherInformationSection" class="content-section" style="display:none">
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-info-circle"></i> Additional Information</h3>
+                            <h3><i class="fa-solid fa-info-circle"></i> Additional Information</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('additionalInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                             </div>
                         </div>
@@ -1280,13 +1280,13 @@
                     <!-- Character Section -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-shield-alt"></i> Character&History</h3>
+                            <h3><i class="fa-solid fa-shield-alt"></i> Character&History</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('characterInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addCharacterRow('characterContainer', 'character_detail')" title="Add Character&History">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -1331,7 +1331,7 @@
                             <div id="characterContainer">
                                 @foreach($clientCharacters as $index => $character)
                                     <div class="repeatable-section">
-                                        <button type="button" class="remove-item-btn" title="Remove Character" onclick="removeCharacterField(this)"><i class="fas fa-trash"></i></button>
+                                        <button type="button" class="remove-item-btn" title="Remove Character" onclick="removeCharacterField(this)"><i class="fa-solid fa-trash"></i></button>
                                         <input type="hidden" name="character_id[{{ $index }}]" value="{{ $character->id }}">
                                         <div class="content-grid">
                                             <div class="form-group">
@@ -1354,7 +1354,7 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addCharacterRow('characterContainer', 'character_detail')"><i class="fas fa-plus-circle"></i> Add Character&History</button>
+                            <button type="button" class="add-item-btn" onclick="addCharacterRow('characterContainer', 'character_detail')"><i class="fa-solid fa-circle-plus"></i> Add Character&History</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveCharacterInfo()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('characterInfo')">Cancel</button>
@@ -1365,10 +1365,10 @@
                     <!-- Related Files Section -->
                     <section class="form-section" style="display:none">
                         <div class="section-header">
-                            <h3><i class="fas fa-link"></i> Related Files</h3>
+                            <h3><i class="fa-solid fa-link"></i> Related Files</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('relatedFilesInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                             </div>
                         </div>
@@ -1445,7 +1445,7 @@
                                     </div>
                                 @else
                                     <div class="alert alert-info">
-                                        <i class="fas fa-info-circle"></i> Related Files are only available for clients with visa types other than Citizen or PR.
+                                        <i class="fa-solid fa-info-circle"></i> Related Files are only available for clients with visa types other than Citizen or PR.
                                     </div>
                                 @endif
                             </div>
@@ -1469,13 +1469,13 @@
                     <!-- Partner Section -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-heart"></i> Partner</h3>
+                            <h3><i class="fa-solid fa-heart"></i> Partner</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('partnerInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addPartnerRow('partner')" title="Add Partner">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -1530,7 +1530,7 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addPartnerRow('partner')"><i class="fas fa-plus-circle"></i> Add Partner</button>
+                            <button type="button" class="add-item-btn" onclick="addPartnerRow('partner')"><i class="fa-solid fa-circle-plus"></i> Add Partner</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="savePartnerInfo()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('partnerInfo')">Cancel</button>
@@ -1541,13 +1541,13 @@
                     <!-- Children Section -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-child"></i> Children</h3>
+                            <h3><i class="fa-solid fa-child"></i> Children</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('childrenInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addPartnerRow('children')" title="Add Child">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -1608,7 +1608,7 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addPartnerRow('children')"><i class="fas fa-plus-circle"></i> Add Child</button>
+                            <button type="button" class="add-item-btn" onclick="addPartnerRow('children')"><i class="fa-solid fa-circle-plus"></i> Add Child</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveChildrenInfo()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('childrenInfo')">Cancel</button>
@@ -1619,13 +1619,13 @@
                     <!-- Parents Section -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-user-friends"></i> Parents</h3>
+                            <h3><i class="fa-solid fa-user-friends"></i> Parents</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('parentsInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addPartnerRow('parent')" title="Add Parent">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -1700,7 +1700,7 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addPartnerRow('parent')"><i class="fas fa-plus-circle"></i> Add Parent</button>
+                            <button type="button" class="add-item-btn" onclick="addPartnerRow('parent')"><i class="fa-solid fa-circle-plus"></i> Add Parent</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveParentsInfo()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('parentsInfo')">Cancel</button>
@@ -1711,13 +1711,13 @@
                     <!-- Siblings Section -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-users"></i> Siblings</h3>
+                            <h3><i class="fa-solid fa-users"></i> Siblings</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('siblingsInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addPartnerRow('siblings')" title="Add Sibling">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -1792,7 +1792,7 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addPartnerRow('siblings')"><i class="fas fa-plus-circle"></i> Add Sibling</button>
+                            <button type="button" class="add-item-btn" onclick="addPartnerRow('siblings')"><i class="fa-solid fa-circle-plus"></i> Add Sibling</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveSiblingsInfo()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('siblingsInfo')">Cancel</button>
@@ -1803,13 +1803,13 @@
                     <!-- Others Section -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fas fa-users"></i> Others</h3>
+                            <h3><i class="fa-solid fa-users"></i> Others</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('othersInfo')">
-                                    <i class="fas fa-pen"></i>
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                                 <button type="button" class="add-section-btn" onclick="addPartnerRow('others')" title="Add Other">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -1884,7 +1884,7 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" class="add-item-btn" onclick="addPartnerRow('others')"><i class="fas fa-plus-circle"></i> Add Other</button>
+                            <button type="button" class="add-item-btn" onclick="addPartnerRow('others')"><i class="fa-solid fa-circle-plus"></i> Add Other</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveOthersInfo()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('othersInfo')">Cancel</button>
@@ -1907,7 +1907,7 @@
 
     <!-- Go to Top Button -->
     <button id="goToTopBtn" class="go-to-top-btn" onclick="scrollToTop()" title="Go to Top">
-        <i class="fas fa-chevron-up"></i>
+        <i class="fa-solid fa-chevron-up"></i>
     </button>
 
     @include('crm.clients.partials.add-matter-modal')
@@ -2169,7 +2169,7 @@
             var data = await res.json().catch(function(){ return {}; });
             if (res.ok && data.success) {
                 if (msgEl) {
-                    msgEl.innerHTML = '<i class="fas fa-check-circle" style="color:#188038;"></i> <span style="color:#188038;">Saved</span>';
+                    msgEl.innerHTML = '<i class="fa-solid fa-check-circle" style="color:#188038;"></i> <span style="color:#188038;">Saved</span>';
                     setTimeout(function(){ msgEl.innerHTML = ''; }, 2500);
                 }
                 return;

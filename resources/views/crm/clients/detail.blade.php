@@ -161,7 +161,7 @@ use App\Http\Controllers\Controller;
                                    class="cdn-client-hero__name-edit"
                                    title="{{ $__crmIsLeadType ? 'Edit Lead' : 'Edit Client' }}"
                                    aria-label="{{ $__crmIsLeadType ? 'Edit Lead' : 'Edit Client' }}">
-                                    <i class="fa fa-edit" aria-hidden="true"></i>
+                                    <i class="fa-solid fa-edit" aria-hidden="true"></i>
                                 </a>
                             @endif
                         </div>
@@ -389,41 +389,41 @@ use App\Http\Controllers\Controller;
             {  //if client unique reference id is present in url
             ?>
                 <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button active" data-tab="personaldetails" aria-selected="true" aria-controls="personaldetails-tab">
-                    <i class="fas fa-th-large" aria-hidden="true"></i>
+                    <i class="fa-solid fa-th-large" aria-hidden="true"></i>
                     <span>Overview</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-activityfeed" class="client-nav-button" data-tab="activityfeed" aria-selected="false" aria-controls="activityfeed-tab">
-                    <i class="fas fa-history" aria-hidden="true"></i>
+                    <i class="fa-solid fa-history" aria-hidden="true"></i>
                     <span>Timeline</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-clientaction" class="client-nav-button" data-tab="clientaction" aria-selected="false" aria-controls="clientaction-tab">
-                    <i class="fas fa-tasks" aria-hidden="true"></i>
+                    <i class="fa-solid fa-tasks" aria-hidden="true"></i>
                     <span>Tasks</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-noteterm" class="client-nav-button" data-tab="noteterm" aria-selected="false" aria-controls="noteterm-tab">
-                    <i class="fas fa-sticky-note" aria-hidden="true"></i>
+                    <i class="fa-solid fa-sticky-note" aria-hidden="true"></i>
                     <span>Notes</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-personaldocuments" class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments" aria-selected="false" aria-controls="personaldocuments-tab">
-                    <i class="fas fa-folder-open" aria-hidden="true"></i>
+                    <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
                     <span>Documents</span>
                 </button>
                 @if(! $crmDetailNavIsLead && $matter_cnt > 0 && !($hideMatterDocumentsForBankMatter ?? false))
                 <button type="button" role="tab" id="cdn-tab-matterdocuments-top" class="client-nav-button" data-tab="matterdocuments" aria-selected="false" aria-controls="matterdocuments-tab">
-                    <i class="fas fa-file-contract" aria-hidden="true"></i>
+                    <i class="fa-solid fa-file-contract" aria-hidden="true"></i>
                     <span>Matter documents</span>
                 </button>
                 @endif
                 <button type="button" role="tab" id="cdn-tab-legalforms" class="client-nav-button" data-tab="legalforms" aria-selected="false" aria-controls="legalforms-tab">
-                    <i class="fas fa-file-signature" aria-hidden="true"></i>
+                    <i class="fa-solid fa-file-signature" aria-hidden="true"></i>
                     <span>Legal Forms</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-emails" class="client-nav-button" data-tab="emails" aria-selected="false" aria-controls="emails-tab">
-                    <i class="fas fa-inbox" aria-hidden="true"></i>
+                    <i class="fa-solid fa-inbox" aria-hidden="true"></i>
                     <span>Emails</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-account" class="client-nav-button" data-tab="account" aria-selected="false" aria-controls="account-tab">
-                    <i class="fas fa-file-invoice-dollar" aria-hidden="true"></i>
+                    <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
                     <span>Billing</span>
                 </button>
             <?php
@@ -433,23 +433,23 @@ use App\Http\Controllers\Controller;
                 $cdnShowMattersDocSubtab = false;
             ?>
                 <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button active" data-tab="personaldetails" aria-selected="true" aria-controls="personaldetails-tab">
-                    <i class="fas fa-th-large" aria-hidden="true"></i>
+                    <i class="fa-solid fa-th-large" aria-hidden="true"></i>
                     <span>Overview</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-activityfeed" class="client-nav-button" data-tab="activityfeed" aria-selected="false" aria-controls="activityfeed-tab">
-                    <i class="fas fa-history" aria-hidden="true"></i>
+                    <i class="fa-solid fa-history" aria-hidden="true"></i>
                     <span>Timeline</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-clientaction" class="client-nav-button" data-tab="clientaction" aria-selected="false" aria-controls="clientaction-tab">
-                    <i class="fas fa-tasks" aria-hidden="true"></i>
+                    <i class="fa-solid fa-tasks" aria-hidden="true"></i>
                     <span>Tasks</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-noteterm" class="client-nav-button" data-tab="noteterm" aria-selected="false" aria-controls="noteterm-tab">
-                    <i class="fas fa-sticky-note" aria-hidden="true"></i>
+                    <i class="fa-solid fa-sticky-note" aria-hidden="true"></i>
                     <span>Notes</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-personaldocuments" class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments" aria-selected="false" aria-controls="personaldocuments-tab">
-                    <i class="fas fa-folder-open" aria-hidden="true"></i>
+                    <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
                     <span>Documents</span>
                 </button>
             <?php
@@ -483,7 +483,7 @@ use App\Http\Controllers\Controller;
             @if(empty($fetchedData->is_company) && $__crmIsLeadType)
             <div class="lead-actions-bar">
                 <a href="{{ route('leads.history', base64_encode(convert_uuencode($fetchedData->id))) }}" class="btn btn-sm btn-warning lead-actions-bar__history">
-                    <i class="fa fa-history"></i> View History
+                    <i class="fa-solid fa-history"></i> View History
                 </a>
                 @if(($fetchedData->converted ?? 0) == 0)
                 @php
@@ -495,12 +495,12 @@ use App\Http\Controllers\Controller;
                     @csrf
                     <input type="hidden" name="lead_id" value="{{ base64_encode(convert_uuencode($fetchedData->id)) }}">
                     <button type="submit" class="btn btn-sm btn-success">
-                        <i class="fa fa-user"></i> Convert To Client
+                        <i class="fa-solid fa-user"></i> Convert To Client
                     </button>
                 </form>
                 @else
                 <span class="btn btn-sm btn-secondary disabled">
-                    <i class="fa fa-check"></i> Converted to Client
+                    <i class="fa-solid fa-check"></i> Converted to Client
                 </span>
                 @endif
             </div>
@@ -757,7 +757,7 @@ use App\Http\Controllers\Controller;
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="smsModalLabel">
-					<i class="fas fa-sms"></i> Send SMS
+					<i class="fa-solid fa-sms"></i> Send SMS
 				</h5>
 				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
@@ -777,7 +777,7 @@ use App\Http\Controllers\Controller;
 									<option value="">Select phone number...</option>
 								</select>
 								<small class="form-text text-muted">
-									<i class="fas fa-info-circle"></i> 
+									<i class="fa-solid fa-info-circle"></i> 
 									Australian numbers will use Cellcast, international numbers will use Twilio
 								</small>
 							</div>
@@ -812,7 +812,7 @@ use App\Http\Controllers\Controller;
 						<!-- Buttons -->
                         <div class="col-12">
 							<button type="submit" class="btn btn-primary" id="sendSmsBtn">
-								<i class="fas fa-paper-plane"></i> Send SMS
+								<i class="fa-solid fa-paper-plane"></i> Send SMS
 							</button>
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
@@ -971,7 +971,7 @@ use App\Http\Controllers\Controller;
 				<input type="hidden" name="client_id" id="client_id" value="">
 				<input type="hidden" name="create_new_as_red" id="create_new_as_red" value="0">
 					<div id="tags_red_mode_hint" class="alert alert-warning py-2 mb-2" style="display: none;">
-						<i class="fas fa-exclamation-triangle text-danger"></i> <strong>Red Tag mode:</strong> Any new tags you add will be created as Red tags (hidden by default).
+						<i class="fa-solid fa-exclamation-triangle text-danger"></i> <strong>Red Tag mode:</strong> Any new tags you add will be created as Red tags (hidden by default).
 					</div>
 					<div class="row">
 						<div class="col-12 col-md-12 col-lg-12">
@@ -1066,7 +1066,7 @@ use App\Http\Controllers\Controller;
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" onclick="customValidate('inbox-email-reassign-to-client-matter')">
-					<i class="fa fa-save"></i> Re-assign Inbox Email
+					<i class="fa-solid fa-save"></i> Re-assign Inbox Email
 				</button>
 			</div>
 			</form>
@@ -1110,7 +1110,7 @@ use App\Http\Controllers\Controller;
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" onclick="customValidate('sent-email-reassign-to-client-matter')">
-					<i class="fa fa-save"></i> Re-assign Sent Email
+					<i class="fa-solid fa-save"></i> Re-assign Sent Email
 				</button>
 		</div>
 		</form>
@@ -1141,7 +1141,7 @@ use App\Http\Controllers\Controller;
 	<div class="modal-dialog modal-dialog-centered" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="googleReviewReminderModalLabel"><i class="fab fa-google me-2" aria-hidden="true"></i>Google review reminder</h5>
+				<h5 class="modal-title" id="googleReviewReminderModalLabel"><i class="fa-brands fa-google me-2" aria-hidden="true"></i>Google review reminder</h5>
 				<button type="button" class="close grr-modal-close-btn js-google-review-reminder" data-action="snooze_one_day" aria-label="Close and remind again tomorrow" title="Close — ask again tomorrow">
 					<span aria-hidden="true">&times;</span>
 				</button>
@@ -1152,7 +1152,7 @@ use App\Http\Controllers\Controller;
 			</div>
 			<div class="modal-footer flex-wrap justify-content-stretch gap-2 grr-modal-footer">
 				<button type="button" class="btn w-100 m-0 js-google-review-send-sms grr-btn grr-btn-sms">
-					<i class="fas fa-sms me-1" aria-hidden="true"></i>Send SMS with review link
+					<i class="fa-solid fa-sms me-1" aria-hidden="true"></i>Send SMS with review link
 				</button>
 				<button type="button" class="btn flex-grow-1 m-0 js-google-review-reminder grr-btn grr-btn-not-interested" data-action="not_interested">Not interested</button>
 				<button type="button" class="btn flex-grow-1 m-0 js-google-review-reminder grr-btn grr-btn-snooze" data-action="snooze">Remind me in 1 week</button>
@@ -1901,7 +1901,7 @@ $('#sendSmsForm').on('submit', function(e) {
     const submitBtn = $('#sendSmsBtn');
     const originalText = submitBtn.html();
     
-    submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+    submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Sending...');
     
     const formData = {
         _token: '{{ csrf_token() }}',

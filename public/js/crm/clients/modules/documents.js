@@ -180,8 +180,8 @@
             }
             parent.empty().append(
                 $('<input style="display: inline-block;width: auto;" class="form-control opentime" type="text">').prop('value', opentime),
-                $('<button class="btn btn-primary btn-sm mb-1"><i class="fas fa-check"></i></button>'),
-                $('<button class="btn btn-danger btn-sm mb-1"><i class="far fa-trash-alt"></i></button>')
+                $('<button class="btn btn-primary btn-sm mb-1"><i class="fa-solid fa-check"></i></button>'),
+                $('<button class="btn btn-danger btn-sm mb-1"><i class="fa-regular fa-trash-can"></i></button>')
             );
             return false;
         });
@@ -240,7 +240,7 @@
                                     href: 'javascript:void(0);',
                                     onclick: 'previewFile(\'' + filetype + '\', \'' + previewUrl + '\', \'' + folderName + '\')'
                                 }).append(
-                                    $('<i>', { class: 'fas fa-file-image' }),
+                                    $('<i>', { class: 'fa-solid fa-file-image' }),
                                     ' ',
                                     $('<span>').text(fileName)
                                 )
@@ -291,8 +291,8 @@
             }
             parent.empty().append(
                 $('<input style="display: inline-block;width: auto;" class="form-control opentime" type="text">').prop('value', opentime),
-                $('<button class="btn btn-primary btn-sm mb-1"><i class="fas fa-check"></i></button>'),
-                $('<button class="btn btn-danger btn-sm mb-1"><i class="far fa-trash-alt"></i></button>')
+                $('<button class="btn btn-primary btn-sm mb-1"><i class="fa-solid fa-check"></i></button>'),
+                $('<button class="btn btn-danger btn-sm mb-1"><i class="fa-regular fa-trash-can"></i></button>')
             );
             return false;
         });
@@ -351,7 +351,7 @@
                                     href: 'javascript:void(0);',
                                     onclick: 'previewFile(\'' + filetype + '\', \'' + previewUrl + '\', \'' + folderName + '\')'
                                 }).append(
-                                    $('<i>', { class: 'fas fa-file-image' }),
+                                    $('<i>', { class: 'fa-solid fa-file-image' }),
                                     ' ',
                                     $('<span>').text(fileName)
                                 )
@@ -399,7 +399,7 @@
                 alert('Missing file info. Please try again.');
                 return false;
             }
-            $this.html('<i class="fas fa-spinner fa-spin"></i> Downloading...');
+            $this.html('<i class="fa-solid fa-spinner fa-spin"></i> Downloading...');
             $this.prop('disabled', true);
             var form = $('<form>', {
                 method: 'POST',

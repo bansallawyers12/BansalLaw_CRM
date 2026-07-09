@@ -18,7 +18,7 @@
                 <div class="col-9 col-md-9 col-lg-9">
                     <div class="card">
                         <div class="card-header">
-                            <h4><i class="fas fa-paper-plane"></i> Send SMS</h4>
+                            <h4><i class="fa-solid fa-paper-plane"></i> Send SMS</h4>
                         </div>
                         <div class="card-body">
                             <form id="smsForm">
@@ -52,10 +52,10 @@
                                 
                                 <div class="roles-form-actions">
                                     <button type="submit" class="btn btn-primary" id="sendBtn">
-                                        <i class="fas fa-paper-plane me-1"></i> Send SMS
+                                        <i class="fa-solid fa-paper-plane me-1"></i> Send SMS
                                     </button>
                                     <a href="{{ route('adminconsole.features.sms.dashboard') }}" class="btn btn-outline-secondary ms-2">
-                                        <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                                        <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
                                     </a>
                                 </div>
                             </form>
@@ -97,7 +97,7 @@ $(document).ready(function() {
             _token: $('input[name="_token"]').val()
         };
         
-        $('#sendBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Sending...');
+        $('#sendBtn').prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i> Sending...');
         
         $.ajax({
             url: '{{ route("adminconsole.features.sms.send") }}',
@@ -121,7 +121,7 @@ $(document).ready(function() {
                 }
             },
             complete: function() {
-                $('#sendBtn').prop('disabled', false).html('<i class="fas fa-paper-plane me-1"></i> Send SMS');
+                $('#sendBtn').prop('disabled', false).html('<i class="fa-solid fa-paper-plane me-1"></i> Send SMS');
             }
         });
     });

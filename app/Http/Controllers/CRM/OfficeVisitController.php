@@ -317,7 +317,7 @@ class OfficeVisitController extends Controller
 						</div>
 					</div>
 					<div class="col-md-7">
-						<b>In Person Assignee </b> <a class="openassignee" href="javascript:;"><i class="fa fa-edit"></i></a>
+						<b>In Person Assignee </b> <a class="openassignee" href="javascript:;"><i class="fa-solid fa-edit"></i></a>
 						<br>
 						<?php
 						$admin = \App\Models\Staff::find($CheckinLog->user_id);
@@ -342,7 +342,7 @@ class OfficeVisitController extends Controller
 									<a class="saveassignee btn btn-success" data-id="<?php echo $CheckinLog->id; ?>" href="javascript:;">Save</a>
 								</div>
 								<div class="col-md-2">
-									<a class="closeassignee" href="javascript:;"><i class="fa fa-times"></i></a>
+									<a class="closeassignee" href="javascript:;"><i class="fa-solid fa-times"></i></a>
 								</div>
 							</div>
 						</div>

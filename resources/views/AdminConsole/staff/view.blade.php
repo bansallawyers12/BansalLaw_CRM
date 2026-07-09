@@ -17,8 +17,8 @@
 						<div class="card-header">
 							<h4>View Staff</h4>
 							<div class="card-header-action">
-								<a href="{{ route('adminconsole.staff.edit', $fetchedData->id) }}" class="btn btn-primary"><i class="fa fa-edit"></i> Edit</a>
-								<a href="{{ route('adminconsole.staff.active') }}" class="btn btn-secondary"><i class="fa fa-arrow-left"></i> Back</a>
+								<a href="{{ route('adminconsole.staff.edit', $fetchedData->id) }}" class="btn btn-primary"><i class="fa-solid fa-edit"></i> Edit</a>
+								<a href="{{ route('adminconsole.staff.active') }}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back</a>
 							</div>
 						</div>
 					</div>
@@ -144,7 +144,7 @@
 					<div class="card">
 						<div class="card-body">
 							<h4 class="text-primary">
-								<i class="fas fa-user-tie"></i> SOLICITOR DETAILS
+								<i class="fa-solid fa-user-tie"></i> SOLICITOR DETAILS
 							</h4>
 							<hr>
 

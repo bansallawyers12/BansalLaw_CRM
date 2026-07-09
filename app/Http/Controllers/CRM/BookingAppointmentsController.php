@@ -912,7 +912,7 @@ class BookingAppointmentsController extends Controller
             })
             ->addColumn('actions', function ($appointment) {
                 return '<a href="' . route('booking.appointments.show', $appointment->id) . '" class="btn btn-sm btn-primary">' .
-                    '<i class="fas fa-eye"></i> View' .
+                    '<i class="fa-solid fa-eye"></i> View' .
                     '</a>';
             })
             ->rawColumns(['client_info', 'appointment_info', 'consultant_info', 'status_badge', 'payment_info', 'actions'])

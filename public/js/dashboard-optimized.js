@@ -581,12 +581,12 @@ function updateTaskCount() {
             $('.todo-task-list-container').html(`
                 <div class="todo-empty-state">
                     <div class="todo-empty-icon">
-                        <i class="fas fa-check-circle"></i>
+                        <i class="fa-solid fa-check-circle"></i>
                     </div>
                     <h4>All caught up!</h4>
                     <p>You have no tasks at the moment.</p>
                     <button class="todo-empty-add-btn" onclick="openCreateTaskModal()">
-                        <i class="fas fa-plus"></i>
+                        <i class="fa-solid fa-plus"></i>
                         Add a task
                     </button>
                 </div>

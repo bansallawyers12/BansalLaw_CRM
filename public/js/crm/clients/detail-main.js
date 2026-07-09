@@ -764,7 +764,7 @@ $(document).ready(function() {
         return `
             <div class="preview-loading-overlay" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.96); z-index: 5;">
                 <div style="text-align: center; padding: 16px;">
-                    <i class="fas fa-spinner fa-spin fa-2x" style="color: #4a90e2;"></i>
+                    <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: #4a90e2;"></i>
                     <p class="preview-loading-message" style="margin-top: 12px; margin-bottom: 0; color: #666; font-size: 14px;">${message}</p>
                 </div>
             </div>
@@ -819,10 +819,10 @@ $(document).ready(function() {
                 </div>
                 <div class="client-doc-preview-header-actions">
                     <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary client-doc-preview-open-btn">
-                        <i class="fas fa-external-link-alt"></i> Open
+                        <i class="fa-solid fa-external-link-alt"></i> Open
                     </a>
                     <a href="${downloadUrl}" class="btn btn-sm btn-outline-secondary client-doc-preview-download-btn">
-                        <i class="fas fa-download"></i> Download
+                        <i class="fa-solid fa-download"></i> Download
                     </a>
                 </div>
             </div>
@@ -1009,7 +1009,7 @@ $(document).ready(function() {
                 ${previewHeaderHtml}
                 <div class="preview-loading-body" style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 200px;">
                     <div style="text-align: center;">
-                        <i class="fas fa-spinner fa-spin fa-2x" style="color: #4a90e2;"></i>
+                        <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: #4a90e2;"></i>
                         <p style="margin-top: 10px; color: #666;">${isOfficePreview ? 'Converting document for preview…' : 'Loading preview…'}</p>
                     </div>
                 </div>
@@ -1029,7 +1029,7 @@ $(document).ready(function() {
                 <div class="preview-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
                     ${previewHeaderHtml}
                     <div class="preview-error-body" style="flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-                        <i class="fas fa-exclamation-circle fa-3x" style="color: #dc3545; margin-bottom: 15px;"></i>
+                        <i class="fa-solid fa-exclamation-circle fa-3x" style="color: #dc3545; margin-bottom: 15px;"></i>
                         <p style="margin-bottom: 15px;">Unable to load preview.</p>
                         <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-primary">Open File</a>
                     </div>
@@ -1145,7 +1145,7 @@ $(document).ready(function() {
                 <div class="preview-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
                     ${previewHeaderHtml}
                     <div class="preview-error-body" style="flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-                        <i class="fas fa-file fa-3x" style="color: #6c757d; margin-bottom: 15px;"></i>
+                        <i class="fa-solid fa-file fa-3x" style="color: #6c757d; margin-bottom: 15px;"></i>
                         <p style="margin-bottom: 15px;">Preview not available for this file type.</p>
                         <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-primary">Open File</a>
                     </div>
@@ -2387,7 +2387,7 @@ success: function(response) {
 
 
 
-                                //var trRows_office = '<tr class="'+rowCls+'"><td><input name="id[]" type="hidden" value="'+subArray.id+'" /><input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="'+subArray.trans_date+'" /></td><td><input data-valid="required" class="form-control report_date_fields_invoice" name="entry_date[]" type="text" value="'+subArray.entry_date+'" /></td><td><select class="form-control gst_included_cls" name="gst_included[]"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td><td><select class="form-control payment_type_cls" name="payment_type[]"><option value="">Select</option><option value="Professional Fee">Professional Fee</option><option value="Department Charges">Department Charges</option><option value="Surcharge">Surcharge</option><option value="Disbursements">Disbursements</option><option value="Other Cost">Other Cost</option></select></td><td><input data-valid="required" class="form-control" name="description[]" type="text" value="'+subArray.description+'" /></td><td><span class="currencyinput">$</span><input data-valid="required" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" value="'+subArray.withdraw_amount+'" /></td><td><a class="removeitems_invoice" href="javascript:;"><i class="fa fa-times"></i></a></td></tr>';
+                                //var trRows_office = '<tr class="'+rowCls+'"><td><input name="id[]" type="hidden" value="'+subArray.id+'" /><input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="'+subArray.trans_date+'" /></td><td><input data-valid="required" class="form-control report_date_fields_invoice" name="entry_date[]" type="text" value="'+subArray.entry_date+'" /></td><td><select class="form-control gst_included_cls" name="gst_included[]"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td><td><select class="form-control payment_type_cls" name="payment_type[]"><option value="">Select</option><option value="Professional Fee">Professional Fee</option><option value="Department Charges">Department Charges</option><option value="Surcharge">Surcharge</option><option value="Disbursements">Disbursements</option><option value="Other Cost">Other Cost</option></select></td><td><input data-valid="required" class="form-control" name="description[]" type="text" value="'+subArray.description+'" /></td><td><span class="currencyinput">$</span><input data-valid="required" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" value="'+subArray.withdraw_amount+'" /></td><td><a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-times"></i></a></td></tr>';
 
                                 var trRows_office = `<tr class="${rowCls}">
 
@@ -2459,7 +2459,7 @@ success: function(response) {
 
                                     <td>
 
-                                        <a class="removeitems_invoice" href="javascript:;"><i class="fa fa-times"></i></a>
+                                        <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-times"></i></a>
 
                                     </td>
 
@@ -2645,7 +2645,7 @@ success: function(response) {
 
                                     <td>
 
-                                        <a class="removeitems_invoice" href="javascript:;"><i class="fa fa-times"></i></a>
+                                        <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-times"></i></a>
 
                                     </td>
 
@@ -3048,7 +3048,7 @@ success: function(response) {
 
                         <td>
 
-                            <a class="removeitems_invoice" href="javascript:;"><i class="fa fa-times"></i></a>
+                            <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-times"></i></a>
 
                         </td>>`;
 
@@ -4318,7 +4318,7 @@ success: function(response) {
                         '<input type="number" name="disbursements[' + idx + '][amount]" class="form-control form-control-sm disbursement-amount-input" placeholder="0.00" step="0.01" min="0" value="' + amount + '">' +
                     '</div>' +
                     '<div class="col-md-1 col-2 text-right">' +
-                        '<button type="button" class="btn btn-outline-danger btn-sm btn-remove-disbursement-row"><i class="fas fa-times"></i></button>' +
+                        '<button type="button" class="btn btn-outline-danger btn-sm btn-remove-disbursement-row"><i class="fa-solid fa-times"></i></button>' +
                     '</div>' +
                 '</div>'
             );
@@ -5450,7 +5450,7 @@ success: function(response) {
                         '<div class="grid_content">' +
                             '<span id="grid_' + doc.id + '" class="gridfilename">' + fileName + '</span>' +
                             '<div class="dropdown d-inline dropdown_ellipsis_icon">' +
-                                '<a class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>' +
+                                '<a class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></a>' +
                                 '<div class="dropdown-menu">' +
                                     '<a href="javascript:void(0);" class="dropdown-item" onclick="previewFile(\'' + fileExt + '\', \'' + previewUrl + '\', \'preview-container-' + categoryId + '\')">Preview</a>' +
                                     '<a href="#" class="dropdown-item download-file" data-document-id="' + doc.id + '" data-filename="' + dlFilename + '">Download</a>' +
@@ -5493,19 +5493,19 @@ success: function(response) {
             var $total = $('#notuseddocuments-tab .not-used-stat-total');
             if ($total.length) {
                 var match = ($total.text().match(/(\d+)/) || [0, 0]);
-                $total.html('<i class="fas fa-layer-group"></i> ' + (parseInt(match[1], 10) + 1) + ' total');
+                $total.html('<i class="fa-solid fa-layer-group"></i> ' + (parseInt(match[1], 10) + 1) + ' total');
             }
             if (docType === 'personal') {
                 var $personal = $('#notuseddocuments-tab .not-used-stat-personal');
                 if ($personal.length) {
                     var pMatch = ($personal.text().match(/(\d+)/) || [0, 0]);
-                    $personal.html('<i class="fas fa-user"></i> ' + (parseInt(pMatch[1], 10) + 1) + ' personal');
+                    $personal.html('<i class="fa-solid fa-user"></i> ' + (parseInt(pMatch[1], 10) + 1) + ' personal');
                 }
             } else {
                 var $matter = $('#notuseddocuments-tab .not-used-stat-matter');
                 if ($matter.length) {
                     var mMatch = ($matter.text().match(/(\d+)/) || [0, 0]);
-                    $matter.html('<i class="fas fa-briefcase"></i> ' + (parseInt(mMatch[1], 10) + 1) + ' matter');
+                    $matter.html('<i class="fa-solid fa-briefcase"></i> ' + (parseInt(mMatch[1], 10) + 1) + ' matter');
                 }
             }
         }
@@ -5517,10 +5517,10 @@ success: function(response) {
             var previewUrl = doc.preview_url || (site_url + '/documents/preview/' + doc.id);
             var dlName = doc.myfile_key || (fileName + (fileExt ? '.' + fileExt : ''));
             var previewBtn = fileName
-                ? '<button type="button" class="btn-not-used-action btn-not-used-preview" title="Preview" onclick="previewFile(\'' + fileExt + '\', \'' + previewUrl + '\', \'preview-container-notuseddocumnetlist\')"><i class="fas fa-eye"></i></button>'
+                ? '<button type="button" class="btn-not-used-action btn-not-used-preview" title="Preview" onclick="previewFile(\'' + fileExt + '\', \'' + previewUrl + '\', \'preview-container-notuseddocumnetlist\')"><i class="fa-solid fa-eye"></i></button>'
                 : '';
             var downloadBtn = doc.myfile
-                ? '<button type="button" class="btn-not-used-action btn-not-used-download download-file" data-document-id="' + doc.id + '" data-id="' + doc.id + '" data-filename="' + dlName + '" title="Download"><i class="fas fa-download"></i></button>'
+                ? '<button type="button" class="btn-not-used-action btn-not-used-download download-file" data-document-id="' + doc.id + '" data-id="' + doc.id + '" data-filename="' + dlName + '" title="Download"><i class="fa-solid fa-download"></i></button>'
                 : '';
 
             return '<a class="download-file" data-document-id="' + doc.id + '" data-id="' + doc.id + '" data-filename="' + dlName + '" href="#" style="display: none;"></a>' +
@@ -5530,10 +5530,10 @@ success: function(response) {
                     previewBtn +
                     downloadBtn +
                     '<button type="button" class="btn-not-used-action btn-not-used-revert backtodoc" data-id="' + doc.id + '" data-doctype="' + doc.doc_type + '" data-doccategory="' + folderId + '" title="Revert to original folder">' +
-                        '<i class="fas fa-undo"></i> Revert' +
+                        '<i class="fa-solid fa-undo"></i> Revert' +
                     '</button>' +
                     '<button type="button" class="btn-not-used-action btn-not-used-delete" title="Delete permanently" onclick="$(\'.deletenote[data-id=\\\'' + doc.id + '\\\']\').trigger(\'click\');">' +
-                        '<i class="fas fa-trash-alt"></i>' +
+                        '<i class="fa-solid fa-trash-can"></i>' +
                     '</button>' +
                 '</div>';
         }
@@ -6804,7 +6804,7 @@ success: function(response) {
 
             // Show immediate feedback that upload is starting
 
-            $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa fa-clock-o"></i> Uploading document...</span>');
+            $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa-solid fa-clock"></i> Uploading document...</span>');
 
 
 
@@ -7522,7 +7522,7 @@ success: function(response) {
                     message: 'Uploading video to server…'
                 });
             } else {
-                $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa fa-clock-o"></i> Uploading document...</span>');
+                $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa-solid fa-clock"></i> Uploading document...</span>');
             }
 
             $.ajax({
@@ -7780,7 +7780,7 @@ success: function(response) {
             
             // Visual feedback
             dragZone.addClass('uploading');
-            $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa fa-clock-o"></i> Uploading document...</span>');
+            $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa-solid fa-clock"></i> Uploading document...</span>');
             
             // Upload via AJAX
             $.ajax({
@@ -8036,7 +8036,7 @@ success: function(response) {
 
             // Show immediate feedback that upload is starting
 
-            $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa fa-clock-o"></i> Uploading document...</span>');
+            $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa-solid fa-clock"></i> Uploading document...</span>');
 
             
 

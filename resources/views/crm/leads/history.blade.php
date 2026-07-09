@@ -46,11 +46,11 @@
 								<div class="clearfix"></div>
 								<div class="author-box-name">
 									<a href="#">{{$fetchedData->first_name}} {{$fetchedData->last_name}}</a>
-									<p class="text-muted text-center"><i class="fa fa-ticket"></i> LEAD-{{str_pad($fetchedData->id, 3, '0', STR_PAD_LEFT)}}</p>
+									<p class="text-muted text-center"><i class="fa-solid fa-ticket"></i> LEAD-{{str_pad($fetchedData->id, 3, '0', STR_PAD_LEFT)}}</p>
 								</div>
 								<div class="author-mail_sms">
-								<a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
-								<a href="{{route('leads.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit"><i class="fa fa-edit"></i></a>								
+								<a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" class="clientemail" title="Compose Mail"><i class="fa-solid fa-envelope"></i></a>
+								<a href="{{route('leads.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit"><i class="fa-solid fa-edit"></i></a>								
 							</div>
 							</div>
 							
@@ -245,7 +245,7 @@
 								        @csrf
 								        <input type="hidden" name="lead_id" value="{{base64_encode(convert_uuencode($fetchedData->id))}}">
 								        <button type="submit" style="background: #54ca68;border-radius: 4px;padding: 7px 10px;font-size: 14px;line-height: 18px;color: #fff;border: 0px;cursor: pointer;" class="nav-link">
-								            <i class="fa fa-user"></i> Convert To Client
+								            <i class="fa-solid fa-user"></i> Convert To Client
 								        </button>
 								    </form>
 								    </li>
@@ -255,7 +255,7 @@
 							<div class="history_timeline">
 								<ul class="nav nav-tabs" id="myTab" role="tablist">
 									<li class="nav-item "><a class="nav-link active" href="#timeline" data-bs-toggle="tab">History</a></li>
-									<li class="nav-item"><a class="nav-link" href="#emails" data-bs-toggle="tab"><i class="fa fa-inbox"></i> Emails</a></li>
+									<li class="nav-item"><a class="nav-link" href="#emails" data-bs-toggle="tab"><i class="fa-solid fa-inbox"></i> Emails</a></li>
 								</ul>
 								<div class="tab-content">								
 									<div class="active tab-pane" id="timeline">
@@ -263,7 +263,7 @@
 										<div class="timeline timeline-inverse followuphistory">
 											<!-- END timeline item -->
 											<div>
-												<i class="far fa-clock bg-gray"></i>
+												<i class="fa-regular fa-clock bg-gray"></i>
 											</div>
 										</div>
 									</div>
@@ -309,7 +309,7 @@
 				</div>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-primary" onclick="return customValidate('add-note');"><i class="fa fa-save"></i> Save</button>
+				<button type="button" class="btn btn-primary" onclick="return customValidate('add-note');"><i class="fa-solid fa-save"></i> Save</button>
 			</div>
 			</form>
 		</div>

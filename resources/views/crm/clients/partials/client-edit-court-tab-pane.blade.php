@@ -4,7 +4,7 @@
       <section id="section-add-hearing" class="content-section" style="margin-bottom: 20px; padding: 20px;">
         <section class="form-section" style="margin-bottom: 0;">
           <div class="section-header">
-            <h3><i class="fas fa-plus-circle"></i> Add Court Hearing / Date</h3>
+            <h3><i class="fa-solid fa-circle-plus"></i> Add Court Hearing / Date</h3>
             <span class="badge" style="background:#e8f5e9;color:#2e7d32;font-size:0.8em;padding:4px 10px;border-radius:12px;">Optional</span>
           </div>
           <div id="hearingFormMsg" style="margin-bottom:8px;"></div>
@@ -90,7 +90,7 @@
             </div>
           </div>
           <button type="button" class="btn btn-primary" onclick="submitHearing()">
-            <i class="fas fa-calendar-plus"></i> Add Hearing
+            <i class="fa-solid fa-calendar-plus"></i> Add Hearing
           </button>
         </section>
       </section>
@@ -99,12 +99,12 @@
       <section id="section-hearings-list" class="content-section" style="margin-top:1.5rem; margin-bottom: 20px; padding: 20px;">
         <section class="form-section" style="margin-bottom: 0;">
           <div class="section-header">
-            <h3><i class="fas fa-calendar-alt"></i> Scheduled &amp; Past Hearings</h3>
+            <h3><i class="fa-solid fa-calendar-alt"></i> Scheduled &amp; Past Hearings</h3>
           </div>
           <div id="hearingsListContainer">
             @if(($courtHearings ?? collect())->isEmpty())
               <div class="matter-tab-empty" style="padding:2rem;">
-                <div class="matter-tab-empty__icon"><i class="fas fa-calendar-times" style="font-size:2.5rem;color:#adb5bd;"></i></div>
+                <div class="matter-tab-empty__icon"><i class="fa-solid fa-calendar-times" style="font-size:2.5rem;color:#adb5bd;"></i></div>
                 <p class="matter-tab-empty__title">No hearings recorded</p>
                 <p class="matter-tab-empty__hint text-muted">Add the first court date using the form above.</p>
               </div>
@@ -157,7 +157,7 @@
                         </td>
                         <td>
                           <button type="button" class="btn btn-sm btn-danger" onclick="deleteHearing({{ $hearing->id }})" title="Delete">
-                            <i class="fas fa-trash"></i>
+                            <i class="fa-solid fa-trash"></i>
                           </button>
                         </td>
                       </tr>

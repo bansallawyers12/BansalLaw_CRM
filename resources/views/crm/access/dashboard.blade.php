@@ -9,16 +9,16 @@
             <div class="card mb-4" id="crm-access-pending-card">
                 <div class="card-header d-flex justify-content-between align-items-center py-2">
                     <h5 class="mb-0">
-                        <i class="fas fa-clock me-2" aria-hidden="true"></i>
+                        <i class="fa-solid fa-clock me-2" aria-hidden="true"></i>
                         Pending approvals
                         <span class="badge ms-2" id="crm-pending-badge">—</span>
                     </h5>
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-sm btn-light" id="crm-pending-refresh" title="Refresh">
-                            <i class="fas fa-sync-alt"></i>
+                            <i class="fa-solid fa-sync-alt"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-light" id="crm-pending-toggle" data-collapsed="0" title="Collapse">
-                            <i class="fas fa-chevron-up"></i>
+                            <i class="fa-solid fa-chevron-up"></i>
                         </button>
                     </div>
                 </div>
@@ -480,7 +480,7 @@
                 var items = data.items || [];
 
                 if (items.length === 0) {
-                    tb.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3"><i class="fas fa-check-circle text-success me-1"></i>No pending requests.</td></tr>';
+                    tb.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3"><i class="fa-solid fa-check-circle text-success me-1"></i>No pending requests.</td></tr>';
                     return;
                 }
 
@@ -567,7 +567,7 @@
         var collapsed = this.getAttribute('data-collapsed') === '1';
         body.style.display = collapsed ? '' : 'none';
         this.setAttribute('data-collapsed', collapsed ? '0' : '1');
-        this.querySelector('i').className = 'fas fa-chevron-' + (collapsed ? 'up' : 'down');
+        this.querySelector('i').className = 'fa-solid fa-chevron-' + (collapsed ? 'up' : 'down');
     });
 
     /* ── all-grants table ───────────────────────────────────────────────────── */

@@ -38,20 +38,20 @@
             {{-- ── Header ── --}}
             <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-2">
                 <div>
-                    <h4 class="mb-1"><i class="fas fa-book text-secondary me-2"></i>Trust accounting — user guide</h4>
+                    <h4 class="mb-1"><i class="fa-solid fa-book text-secondary me-2"></i>Trust accounting — user guide</h4>
                     <p class="text-muted mb-0" style="font-size:14px;">
                         Step-by-step instructions for every part of the VLSB+C-compliant trust module built into this CRM.
                         Super-admin access required for all trust admin screens.
                     </p>
                 </div>
                 <a href="{{ route('trust-accounting.reports.index') }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-arrow-left me-1"></i> Reports hub
+                    <i class="fa-solid fa-arrow-left me-1"></i> Reports hub
                 </a>
             </div>
 
             {{-- ── Law callout ── --}}
             <div class="guide-law mb-4">
-                <strong><i class="fas fa-gavel me-1"></i> Relevant law (Victoria)</strong> — This module implements
+                <strong><i class="fa-solid fa-gavel me-1"></i> Relevant law (Victoria)</strong> — This module implements
                 the <em>Legal Profession Uniform Law Application Act 2014 (Vic)</em> and the
                 <em>Legal Profession Uniform General Rules 2015</em>, specifically:
                 <ul class="mb-0 mt-1">
@@ -105,7 +105,7 @@
                 <p>The trust module is a single, integrated compliance workflow. Here is how the pieces fit together:</p>
 
                 <div class="guide-flow">
-                    <span class="guide-flow-item"><i class="fas fa-university me-1"></i> Client trust entry</span>
+                    <span class="guide-flow-item"><i class="fa-solid fa-university me-1"></i> Client trust entry</span>
                     <span class="guide-flow-arrow">→</span>
                     <span class="guide-flow-item">Trust ledger (per client/matter)</span>
                     <span class="guide-flow-arrow">→</span>
@@ -123,7 +123,7 @@
                 <div class="row mt-3">
                     <div class="col-md-6">
                         <div class="guide-card">
-                            <h5><i class="fas fa-users me-2 text-primary"></i>Who can access trust admin?</h5>
+                            <h5><i class="fa-solid fa-users me-2 text-primary"></i>Who can access trust admin?</h5>
                             <p class="mb-0 small">Only staff with <strong>super-admin effective privileges</strong>
                             (the checkbox in the Staff Console) can access the trust admin screens
                             (reports, reconciliation, period locks, archives, etc.). Regular staff can post
@@ -133,7 +133,7 @@
                     </div>
                     <div class="col-md-6">
                         <div class="guide-card">
-                            <h5><i class="fas fa-receipt me-2 text-success"></i>Transaction numbering</h5>
+                            <h5><i class="fa-solid fa-receipt me-2 text-success"></i>Transaction numbering</h5>
                             <p class="mb-0 small">Every trust entry gets a unique <strong>TR-{year}-NNNNNN</strong>
                             receipt number automatically. Fee transfers issued as journal
                             entries get <strong>TJ-{year}-NNNNNN</strong>. The year is the
@@ -208,7 +208,7 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="guide-card">
-                            <h5><i class="fas fa-arrow-circle-down me-2 text-success"></i>Trust Deposit (money received)</h5>
+                            <h5><i class="fa-solid fa-arrow-circle-down me-2 text-success"></i>Trust Deposit (money received)</h5>
                             <ol class="small mb-0">
                                 <li>Open the client record and click the <strong>Accounts</strong> tab.</li>
                                 <li>Click <strong>"Trust Account Entry"</strong> (green button).</li>
@@ -228,7 +228,7 @@
                     </div>
                     <div class="col-md-6">
                         <div class="guide-card">
-                            <h5><i class="fas fa-exchange-alt me-2 text-warning"></i>Fee Transfer (trust → office)</h5>
+                            <h5><i class="fa-solid fa-exchange-alt me-2 text-warning"></i>Fee Transfer (trust → office)</h5>
                             <ol class="small mb-0">
                                 <li>Click <strong>"Trust Account Entry"</strong> and select type
                                     <em>Fee Transfer</em>.</li>
@@ -248,7 +248,7 @@
                     </div>
                     <div class="col-md-6">
                         <div class="guide-card">
-                            <h5><i class="fas fa-arrow-circle-up me-2 text-danger"></i>Disbursement (payment from trust)</h5>
+                            <h5><i class="fa-solid fa-arrow-circle-up me-2 text-danger"></i>Disbursement (payment from trust)</h5>
                             <ol class="small mb-0">
                                 <li>Select type <em>Disbursement (Trust Payment)</em>.</li>
                                 <li>Describe exactly what the payment is for
@@ -262,7 +262,7 @@
                     </div>
                     <div class="col-md-6">
                         <div class="guide-card">
-                            <h5><i class="fas fa-undo-alt me-2" style="color:#6f42c1;"></i>Refund to client</h5>
+                            <h5><i class="fa-solid fa-undo-alt me-2" style="color:#6f42c1;"></i>Refund to client</h5>
                             <ol class="small mb-0">
                                 <li>Select type <em>Refund to Client</em>.</li>
                                 <li>Enter the date and amount. The running balance will decrease.</li>
@@ -301,7 +301,7 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="guide-card">
-                            <h5><i class="fas fa-arrow-down me-2 text-success"></i>Deposit (money-in) fields</h5>
+                            <h5><i class="fa-solid fa-arrow-down me-2 text-success"></i>Deposit (money-in) fields</h5>
                             <table class="table table-sm table-bordered mb-0 small">
                                 <thead class="table-light"><tr><th>Field</th><th>Purpose</th></tr></thead>
                                 <tbody>
@@ -314,7 +314,7 @@
                     </div>
                     <div class="col-md-6">
                         <div class="guide-card">
-                            <h5><i class="fas fa-arrow-up me-2 text-danger"></i>Payment (money-out) fields</h5>
+                            <h5><i class="fa-solid fa-arrow-up me-2 text-danger"></i>Payment (money-out) fields</h5>
                             <table class="table table-sm table-bordered mb-0 small">
                                 <thead class="table-light"><tr><th>Field</th><th>Purpose</th></tr></thead>
                                 <tbody>
@@ -337,7 +337,7 @@
                 </div>
 
                 <div class="guide-card mt-2">
-                    <h5><i class="fas fa-file-pdf me-2 text-danger"></i>Trust receipt PDF (Rule 35 &amp; 36)</h5>
+                    <h5><i class="fa-solid fa-file-pdf me-2 text-danger"></i>Trust receipt PDF (Rule 35 &amp; 36)</h5>
                     <p class="small mb-0">
                         When a trust entry is saved, a PDF receipt is automatically generated naming
                         <strong>Bansal Lawyers law practice trust account</strong> (Rule 35 — the receipt must
@@ -395,7 +395,7 @@
                 </div>
 
                 <div class="guide-card mt-2">
-                    <h5><i class="fas fa-eye me-2 text-secondary"></i>Where Rule 42 data appears</h5>
+                    <h5><i class="fa-solid fa-eye me-2 text-secondary"></i>Where Rule 42 data appears</h5>
                     <ul class="small mb-0">
                         <li><strong>Client Accounts tab → Trust ledger</strong> — Rule 42 column shows the
                             authority type label (hover for full details). Non-fee-transfer rows show "—".</li>
@@ -477,7 +477,7 @@
                     <h5 class="small fw-semibold">What is automatically audited</h5>
                     <div class="row">
                         <div class="col-md-6">
-                            <p class="small fw-semibold mb-1"><i class="fas fa-user me-1"></i> Client record changes</p>
+                            <p class="small fw-semibold mb-1"><i class="fa-solid fa-user me-1"></i> Client record changes</p>
                             <ul class="small mb-0">
                                 <li>First name</li>
                                 <li>Last name</li>
@@ -489,7 +489,7 @@
                             </ul>
                         </div>
                         <div class="col-md-6">
-                            <p class="small fw-semibold mb-1"><i class="fas fa-folder me-1"></i> Matter record changes</p>
+                            <p class="small fw-semibold mb-1"><i class="fa-solid fa-folder me-1"></i> Matter record changes</p>
                             <ul class="small mb-0">
                                 <li>Matter reference number (<code>client_unique_matter_no</code>)</li>
                                 <li>Matter description / case detail</li>
@@ -527,7 +527,7 @@
                 </div>
 
                 <div class="guide-card">
-                    <h5><i class="fas fa-file-alt me-2 text-primary"></i>On-demand statement (any time)</h5>
+                    <h5><i class="fa-solid fa-file-alt me-2 text-primary"></i>On-demand statement (any time)</h5>
                     <ol class="small mb-0">
                         <li>From the client's Accounts tab, select the matter from the dropdown.</li>
                         <li>Click the <strong>Trust Statement</strong> button. A PDF opens in a new tab
@@ -540,7 +540,7 @@
                 </div>
 
                 <div class="guide-card">
-                    <h5><i class="fas fa-calendar-alt me-2 text-warning"></i>30 June annual batch run</h5>
+                    <h5><i class="fa-solid fa-calendar-alt me-2 text-warning"></i>30 June annual batch run</h5>
                     <ol class="small mb-0">
                         <li>Go to <a href="{{ route('trust-accounting.statements.annual') }}">Reports → Trust statements → 30 June batch</a>.</li>
                         <li>The page lists every matter with a non-zero trust balance as at 30 June this year.
@@ -578,7 +578,7 @@
                 </div>
 
                 <div class="guide-card">
-                    <h5><i class="fas fa-archive me-2 text-secondary"></i>Creating a monthly archive</h5>
+                    <h5><i class="fa-solid fa-archive me-2 text-secondary"></i>Creating a monthly archive</h5>
                     <ol class="small mb-0">
                         <li>Go to <a href="{{ route('trust-accounting.archives.index') }}">Reports → Monthly archives</a>.</li>
                         <li>Enter the <strong>Year</strong> and <strong>Month</strong> to archive (e.g. 2026 / 5 for May 2026).
@@ -598,7 +598,7 @@
                 </div>
 
                 <div class="guide-card">
-                    <h5><i class="fas fa-file-archive me-2 text-secondary"></i>Auditor's pack (ZIP download)</h5>
+                    <h5><i class="fa-solid fa-file-archive me-2 text-secondary"></i>Auditor's pack (ZIP download)</h5>
                     <p class="small mb-1">
                         Go to <a href="{{ route('trust-accounting.reports.index') }}">Reports hub</a>
                         and use the <strong>Auditor's pack</strong> card. Enter a date range and click
@@ -632,49 +632,49 @@
                 <div class="row">
                     <div class="col-md-3 mb-3">
                         <div class="guide-card h-100">
-                            <h5><i class="fas fa-balance-scale me-2 text-primary"></i>Trial balance</h5>
+                            <h5><i class="fa-solid fa-balance-scale me-2 text-primary"></i>Trial balance</h5>
                             <p class="small mb-0">Funds held per client/matter as at a date. Use this to
                             confirm total trust holdings match the bank balance.</p>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
                         <div class="guide-card h-100">
-                            <h5><i class="fas fa-arrow-down me-2 text-success"></i>Receipts journal</h5>
+                            <h5><i class="fa-solid fa-arrow-down me-2 text-success"></i>Receipts journal</h5>
                             <p class="small mb-0">All money-in movements in a date range.
                             CSV includes payer name, banking date, bank reference, and invoice reference (Rule 36).</p>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
                         <div class="guide-card h-100">
-                            <h5><i class="fas fa-arrow-up me-2 text-danger"></i>Payments journal</h5>
+                            <h5><i class="fa-solid fa-arrow-up me-2 text-danger"></i>Payments journal</h5>
                             <p class="small mb-0">All money-out movements in a date range.
                             CSV includes payee name, cheque number, EFT details (Rule 43), and full Rule 42 authority columns.</p>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
                         <div class="guide-card h-100">
-                            <h5><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Overdrawn ledger</h5>
+                            <h5><i class="fa-solid fa-exclamation-triangle me-2 text-warning"></i>Overdrawn ledger</h5>
                             <p class="small mb-0">Rule 40 — any ledger rows with a negative running balance.
                             Must be cleared immediately and reported.</p>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
                         <div class="guide-card h-100">
-                            <h5><i class="fas fa-file-alt me-2 text-primary"></i>Trust statements</h5>
+                            <h5><i class="fa-solid fa-file-alt me-2 text-primary"></i>Trust statements</h5>
                             <p class="small mb-0">Rule 52 — on-demand PDF or 30 June annual batch run
                             for all matters with funds held.</p>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
                         <div class="guide-card h-100">
-                            <h5><i class="fas fa-archive me-2 text-secondary"></i>Monthly archives</h5>
+                            <h5><i class="fa-solid fa-archive me-2 text-secondary"></i>Monthly archives</h5>
                             <p class="small mb-0">Rule 38 — immutable month-end CSV copies of all three journals.
                             Download individual CSVs or the full auditor's pack ZIP.</p>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
                         <div class="guide-card h-100">
-                            <h5><i class="fas fa-link me-2 text-info"></i>Bank reconciliation</h5>
+                            <h5><i class="fa-solid fa-link me-2 text-info"></i>Bank reconciliation</h5>
                             <p class="small mb-0">Match bank statement lines to ledger rows. Shows
                             movement variance and trial balance total for Rule 48 sign-off.</p>
                         </div>

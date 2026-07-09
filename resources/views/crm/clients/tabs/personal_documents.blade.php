@@ -48,10 +48,10 @@
                                         <?php if ($isClientGenerated || $isSuperAdmin): ?>
                                             <div class="action-buttons pd-folder-tab-actions">
                                                 <?php if ($isClientGenerated): ?>
-                                                    <button type="button" class="btn btn-sm btn-warning update-personal-cat-title" data-id="<?= $id ?>" title="Rename folder"><i class="fa fa-edit" aria-hidden="true"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-warning update-personal-cat-title" data-id="<?= $id ?>" title="Rename folder"><i class="fa-solid fa-edit" aria-hidden="true"></i></button>
                                                 <?php endif; ?>
                                                 <?php if ($isSuperAdmin): ?>
-                                                    <button type="button" class="btn btn-sm btn-danger delete-personal-cat-title" data-id="<?= $id ?>" data-title="<?= htmlspecialchars($catVal->title) ?>" title="Delete folder"><i class="fa fa-trash" aria-hidden="true"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-danger delete-personal-cat-title" data-id="<?= $id ?>" data-title="<?= htmlspecialchars($catVal->title) ?>" title="Delete folder"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
                                                 <?php endif; ?>
                                             </div>
                                         <?php endif; ?>
@@ -60,10 +60,10 @@
                             </nav>
                             <div class="pd-header-actions">
                                 <button type="button" class="btn pd-btn pd-btn-light add_personal_doc_cat-btn add_personal_doc_cat" data-type="personal" data-categoryid="">
-                                    <i class="fas fa-plus"></i> Add Folder
+                                    <i class="fa-solid fa-plus"></i> Add Folder
                                 </button>
                                 <button type="button" class="btn pd-btn pd-btn-ghost pd-not-used-btn client-nav-button" data-tab="notuseddocuments">
-                                    <i class="fas fa-folder-minus"></i> Not Used Documents
+                                    <i class="fa-solid fa-folder-minus"></i> Not Used Documents
                                 </button>
                             </div>
                         </div>
@@ -80,13 +80,13 @@
                                 <div class="subtab2-pane <?= $isActive ?>" id="<?= $id ?>-subtab2">
                                     <div class="checklist-table-container">
                                         <div class="subtab2-header pd-section-header">
-                                            <h3><i class="fas fa-file-alt"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
+                                            <h3><i class="fa-solid fa-file-alt"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
                                             <div class="pd-section-actions">
                                                 <button type="button" class="btn pd-btn pd-btn-primary add-checklist-btn add_education_doc" data-type="personal" data-categoryid="<?= $id ?>">
-                                                    <i class="fas fa-plus"></i> Add Checklist
+                                                    <i class="fa-solid fa-plus"></i> Add Checklist
                                                 </button>
                                                 <button type="button" class="btn pd-btn pd-btn-outline bulk-upload-toggle-btn" data-categoryid="<?= $id ?>" data-categoryname="<?= htmlspecialchars($catVal->title) ?>">
-                                                    <i class="fas fa-upload"></i> Bulk Upload
+                                                    <i class="fa-solid fa-upload"></i> Bulk Upload
                                                 </button>
                                             </div>
                                         </div>
@@ -94,7 +94,7 @@
                                         <!-- Bulk Upload Dropzone (Hidden by default) -->
                                         <div class="bulk-upload-dropzone-container" id="bulk-upload-<?= $id ?>" style="display: none; margin: 15px 0; padding: 20px;">
                                             <div class="bulk-upload-dropzone" data-categoryid="<?= $id ?>" style="text-align: center; padding: 30px; cursor: pointer;">
-                                                <i class="fas fa-cloud-upload-alt bulk-upload-icon"></i>
+                                                <i class="fa-solid fa-cloud-upload-alt bulk-upload-icon"></i>
                                                 <p class="bulk-upload-lead">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
@@ -143,10 +143,10 @@
                                                                 <div class="checklist-actions" style="display: flex; gap: 5px;">
                                                                     <?php if (!$fetch->file_name): ?>
                                                                     <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Edit Checklist Name">
-                                                                        <i class="fas fa-edit"></i>
+                                                                        <i class="fa-solid fa-edit"></i>
                                                                     </a>
                                                                     <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Delete Checklist">
-                                                                        <i class="fas fa-trash"></i>
+                                                                        <i class="fa-solid fa-trash"></i>
                                                                     </a>
                                                                     <?php endif; ?>
                                                                 </div>
@@ -175,7 +175,7 @@
                                                                              data-doccategory="<?= $id ?>"
                                                                              data-formid="upload_form_<?= $fetch->id ?>">
                                                                             <div class="drag-zone-inner">
-                                                                                <i class="fas fa-cloud-upload-alt"></i>
+                                                                                <i class="fa-solid fa-cloud-upload-alt"></i>
                                                                                 <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                                             </div>
                                                                         </div>
@@ -224,7 +224,7 @@
                                                         <div class="grid_content">
                                                             <span id="grid_<?= $fetch->id ?>" class="gridfilename"><?= htmlspecialchars($fetch->file_name) ?></span>
                                                             <div class="dropdown d-inline dropdown_ellipsis_icon">
-                                                                <a class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
+                                                                <a class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></a>
                                                                 <div class="dropdown-menu">
                                                                     <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrlGrid) ?>, <?= json_encode('preview-container-' . $id) ?>)'>Preview</a>
                                                                     <a href="#" class="dropdown-item download-file" data-document-id="<?= $fetch->id ?>" data-filename="<?= htmlspecialchars($dlFilenameGrid) ?>">Download</a>
@@ -252,25 +252,25 @@
             <!-- Custom Context Menu -->
             <div id="fileContextMenu" class="context-menu personal-docs-context-menu" style="display: none; position: fixed; z-index: 10000; min-width: 180px;">
                 <div class="context-menu-item" onclick="handleContextAction('rename-checklist')" style="padding: 8px 12px; cursor: pointer;">
-                    <i class="fa fa-edit" style="margin-right: 8px;"></i> Rename Checklist
+                    <i class="fa-solid fa-edit" style="margin-right: 8px;"></i> Rename Checklist
                 </div>
                 <div class="context-menu-item" onclick="handleContextAction('rename-doc')" style="padding: 8px 12px; cursor: pointer;">
-                    <i class="fa fa-file-text" style="margin-right: 8px;"></i> Rename File Name
+                    <i class="fa-solid fa-file-lines" style="margin-right: 8px;"></i> Rename File Name
                 </div>
                 <div class="context-menu-item" onclick="handleContextAction('move')" style="padding: 8px 12px; cursor: pointer;">
-                    <i class="fa fa-arrows-alt" style="margin-right: 8px;"></i> Move Document
+                    <i class="fa-solid fa-up-down-left-right" style="margin-right: 8px;"></i> Move Document
                 </div>
                 <div class="context-menu-item" onclick="handleContextAction('preview')" style="padding: 8px 12px; cursor: pointer;">
-                    <i class="fa fa-eye" style="margin-right: 8px;"></i> Preview
+                    <i class="fa-solid fa-eye" style="margin-right: 8px;"></i> Preview
                 </div>
                 <div id="context-pdf-option" class="context-menu-item" onclick="handleContextAction('pdf')" style="padding: 8px 12px; cursor: pointer; display: none;">
-                    <i class="fa fa-file-pdf" style="margin-right: 8px;"></i> PDF
+                    <i class="fa-solid fa-file-pdf" style="margin-right: 8px;"></i> PDF
                 </div>
                 <div class="context-menu-item" onclick="handleContextAction('download')" style="padding: 8px 12px; cursor: pointer;">
-                    <i class="fa fa-download" style="margin-right: 8px;"></i> Download
+                    <i class="fa-solid fa-download" style="margin-right: 8px;"></i> Download
                 </div>
                 <div class="context-menu-item" onclick="handleContextAction('not-used')" style="padding: 8px 12px; cursor: pointer;">
-                    <i class="fa fa-trash" style="margin-right: 8px;"></i> Not Used
+                    <i class="fa-solid fa-trash" style="margin-right: 8px;"></i> Not Used
                 </div>
             </div>
 
@@ -359,7 +359,7 @@
             <div id="personalVideoUploadOverlay" class="personal-video-upload-overlay" aria-hidden="true">
                 <div class="personal-video-upload-panel" role="dialog" aria-labelledby="pvuTitle" aria-live="polite">
                     <div class="pvu-icon-wrap">
-                        <i class="fas fa-file-video pvu-main-icon"></i>
+                        <i class="fa-solid fa-file-video pvu-main-icon"></i>
                         <span class="pvu-spinner-ring"></span>
                     </div>
                     <h4 id="pvuTitle" class="pvu-title">Uploading Video</h4>
@@ -374,19 +374,19 @@
                     </div>
                     <ol class="pvu-timeline">
                         <li class="pvu-step" data-step="upload">
-                            <span class="pvu-step-marker"><i class="fas fa-cloud-upload-alt"></i></span>
+                            <span class="pvu-step-marker"><i class="fa-solid fa-cloud-upload-alt"></i></span>
                             <span class="pvu-step-label">Upload</span>
                         </li>
                         <li class="pvu-step" data-step="queued">
-                            <span class="pvu-step-marker"><i class="fas fa-layer-group"></i></span>
+                            <span class="pvu-step-marker"><i class="fa-solid fa-layer-group"></i></span>
                             <span class="pvu-step-label">Queued</span>
                         </li>
                         <li class="pvu-step" data-step="processing">
-                            <span class="pvu-step-marker"><i class="fas fa-cog"></i></span>
+                            <span class="pvu-step-marker"><i class="fa-solid fa-cog"></i></span>
                             <span class="pvu-step-label">Processing</span>
                         </li>
                         <li class="pvu-step" data-step="complete">
-                            <span class="pvu-step-marker"><i class="fas fa-check"></i></span>
+                            <span class="pvu-step-marker"><i class="fa-solid fa-check"></i></span>
                             <span class="pvu-step-label">Done</span>
                         </li>
                     </ol>
@@ -1471,7 +1471,7 @@
             <div id="bulk-upload-mapping-modal" class="bulk-upload-mapping-modal">
                 <div class="bulk-upload-mapping-content">
                     <div class="bulk-upload-mapping-header">
-                        <h3><i class="fas fa-link"></i> Map Files to Checklists</h3>
+                        <h3><i class="fa-solid fa-link"></i> Map Files to Checklists</h3>
                         <span class="close-mapping-modal">&times;</span>
                     </div>
                     <div id="bulk-upload-mapping-table"></div>
@@ -1555,7 +1555,7 @@
                     
                     // Hide all other dropzones first
                     $('.bulk-upload-dropzone-container').not('#bulk-upload-' + categoryId).slideUp();
-                    $('.bulk-upload-toggle-btn').not(this).html('<i class="fas fa-upload"></i> Bulk Upload');
+                    $('.bulk-upload-toggle-btn').not(this).html('<i class="fa-solid fa-upload"></i> Bulk Upload');
                     
                     if (dropzoneContainer.is(':visible')) {
                         dropzoneContainer.slideUp(200, function() {
@@ -1563,7 +1563,7 @@
                                 adjustClientDocumentsPanelHeight();
                             }
                         });
-                        $(this).html('<i class="fas fa-upload"></i> Bulk Upload');
+                        $(this).html('<i class="fa-solid fa-upload"></i> Bulk Upload');
                         resetBulkUploadSelection(categoryId);
                         hideBulkUploadModal();
                     } else {
@@ -1573,7 +1573,7 @@
                                 adjustClientDocumentsPanelHeight();
                             }
                         });
-                        $(this).html('<i class="fas fa-times"></i> Close');
+                        $(this).html('<i class="fa-solid fa-times"></i> Close');
                         currentCategoryId = categoryId;
                     }
                 });
@@ -1933,7 +1933,7 @@
                         html += '<tr class="bulk-upload-file-item" data-file-index="' + index + '" data-file-name="' + escapeHtml(fileName) + '">';
                         html += '<td>';
                         html += '<div class="file-info">';
-                        html += '<i class="fas fa-file personal-doc-file-icon"></i>';
+                        html += '<i class="fa-solid fa-file personal-doc-file-icon"></i>';
                         html += '<div>';
                         html += '<div class="file-name">' + escapeHtml(fileName) + '</div>';
                         html += '<div class="file-size">' + fileSize + '</div>';
@@ -1956,7 +1956,7 @@
                         html += '</td>';
                         html += '<td style="text-align: center;">';
                         html += '<button type="button" class="btn btn-sm btn-danger remove-bulk-file" data-file-index="' + index + '" title="Remove file">';
-                        html += '<i class="fas fa-trash-alt"></i>';
+                        html += '<i class="fa-solid fa-trash-can"></i>';
                         html += '</button>';
                         html += '</td>';
                         html += '</tr>';

@@ -19,13 +19,13 @@
     <td><span class="badge badge-light border">{{ $docTypeLabel }}</span></td>
     <td class="text-nowrap">
         <button type="button" class="btn btn-sm btn-outline-primary dcl-view-btn" data-dcl-id="{{ $list->id }}">
-            <i class="far fa-eye"></i> View
+            <i class="fa-regular fa-eye"></i> View
         </button>
         <button type="button" class="btn btn-sm btn-primary dcl-edit-btn" data-dcl-id="{{ $list->id }}">
-            <i class="fa fa-edit"></i> Edit
+            <i class="fa-solid fa-edit"></i> Edit
         </button>
         <button type="button" class="btn btn-sm btn-outline-danger dcl-delete-btn" data-dcl-id="{{ $list->id }}">
-            <i class="fas fa-trash"></i> Delete
+            <i class="fa-solid fa-trash"></i> Delete
         </button>
     </td>
 </tr>

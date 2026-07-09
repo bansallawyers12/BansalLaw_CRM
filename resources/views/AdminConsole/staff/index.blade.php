@@ -32,7 +32,7 @@
                             </div>
                             <div class="card-header-action">
                                 <button type="button" class="btn btn-primary" id="staff-add-btn">
-                                    <i class="fa fa-plus"></i> Add Staff
+                                    <i class="fa-solid fa-plus"></i> Add Staff
                                 </button>
                             </div>
                         </div>
@@ -53,10 +53,10 @@
                                     <div class="staff-list-toolbar d-flex align-items-stretch">
                                         <input id="staff-search-input" type="search" class="form-control" value="{{ $searchBy ?? '' }}" placeholder="Search name or email" aria-label="Search staff">
                                         <button type="button" id="staff-search-btn" class="btn btn-primary" aria-label="Search">
-                                            <i class="fas fa-search"></i>
+                                            <i class="fa-solid fa-search"></i>
                                         </button>
                                         <button type="button" id="staff-search-clear" class="btn btn-light border ms-1" aria-label="Clear search" title="Clear search">
-                                            <i class="fas fa-times"></i>
+                                            <i class="fa-solid fa-times"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -136,7 +136,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-primary me-auto staff-view-from-edit" id="staff-view-from-edit">
-                        <i class="far fa-eye"></i> View profile
+                        <i class="fa-regular fa-eye"></i> View profile
                     </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="staff-edit-submit">
@@ -163,7 +163,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" id="staff-edit-from-view">
-                    <i class="fa fa-edit"></i> Edit staff
+                    <i class="fa-solid fa-edit"></i> Edit staff
                 </button>
             </div>
         </div>

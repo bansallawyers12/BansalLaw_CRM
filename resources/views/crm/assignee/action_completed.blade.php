@@ -308,25 +308,25 @@
                                 <div class="col-md-12 filter-buttons">
                                     <a href="{{URL::to('/action_completed?group_type=All')}}" id="All" class="group_type {{ $task_group == 'All' ? 'active' : '' }}">All <span class="countAction">{{ $taskGroupCounts['All'] }}</span></a>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Call')}}" id="Call" class="group_type {{ $task_group == 'Call' ? 'active' : '' }}"><i class="fa fa-phone" aria-hidden="true"></i> Call <span class="countAction">{{ $taskGroupCounts['Call'] }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Call')}}" id="Call" class="group_type {{ $task_group == 'Call' ? 'active' : '' }}"><i class="fa-solid fa-phone" aria-hidden="true"></i> Call <span class="countAction">{{ $taskGroupCounts['Call'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Checklist')}}" id="Checklist" class="group_type {{ $task_group == 'Checklist' ? 'active' : '' }}"><i class="fa fa-bars" aria-hidden="true"></i> Checklist <span class="countAction">{{ $taskGroupCounts['Checklist'] }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Checklist')}}" id="Checklist" class="group_type {{ $task_group == 'Checklist' ? 'active' : '' }}"><i class="fa-solid fa-bars" aria-hidden="true"></i> Checklist <span class="countAction">{{ $taskGroupCounts['Checklist'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Review')}}" id="Review" class="group_type {{ $task_group == 'Review' ? 'active' : '' }}"><i class="fa fa-check" aria-hidden="true"></i> Review <span class="countAction">{{ $taskGroupCounts['Review'] }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Review')}}" id="Review" class="group_type {{ $task_group == 'Review' ? 'active' : '' }}"><i class="fa-solid fa-check" aria-hidden="true"></i> Review <span class="countAction">{{ $taskGroupCounts['Review'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Query')}}" id="Query" class="group_type {{ $task_group == 'Query' ? 'active' : '' }}"><i class="fa fa-question" aria-hidden="true"></i> Query <span class="countAction">{{ $taskGroupCounts['Query'] }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Query')}}" id="Query" class="group_type {{ $task_group == 'Query' ? 'active' : '' }}"><i class="fa-solid fa-question" aria-hidden="true"></i> Query <span class="countAction">{{ $taskGroupCounts['Query'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Urgent')}}" id="Urgent" class="group_type {{ $task_group == 'Urgent' ? 'active' : '' }}"><i class="fa fa-flag" aria-hidden="true"></i> Urgent <span class="countAction">{{ $taskGroupCounts['Urgent'] }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Urgent')}}" id="Urgent" class="group_type {{ $task_group == 'Urgent' ? 'active' : '' }}"><i class="fa-solid fa-flag" aria-hidden="true"></i> Urgent <span class="countAction">{{ $taskGroupCounts['Urgent'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Personal Action')}}" id="Personal Action" class="group_type {{ $task_group == 'Personal Action' ? 'active' : '' }}"><i class="fa fa-tasks" aria-hidden="true"></i> Personal Action <span class="countAction">{{ $taskGroupCounts['Personal Action'] }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Personal Action')}}" id="Personal Action" class="group_type {{ $task_group == 'Personal Action' ? 'active' : '' }}"><i class="fa-solid fa-tasks" aria-hidden="true"></i> Personal Action <span class="countAction">{{ $taskGroupCounts['Personal Action'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Follow Up')}}" id="Follow Up" class="group_type {{ $task_group == 'Follow Up' ? 'active' : '' }}"><i class="fa fa-calendar-check-o" aria-hidden="true"></i> Follow up <span class="countAction">{{ $taskGroupCounts['Follow Up'] ?? 0 }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Follow Up')}}" id="Follow Up" class="group_type {{ $task_group == 'Follow Up' ? 'active' : '' }}"><i class="fa-solid fa-calendar-check-o" aria-hidden="true"></i> Follow up <span class="countAction">{{ $taskGroupCounts['Follow Up'] ?? 0 }}</span></a>
                                     </button>
                                 </div>
                             </div>
@@ -443,7 +443,7 @@
                                                                         </div>
                                                                     </div>
                                                                 </div>">
-                                                                    <i class="fa fa-edit" aria-hidden="true"></i>
+                                                                    <i class="fa-solid fa-edit" aria-hidden="true"></i>
                                                                 </button>
                                                             @endif
 
@@ -451,7 +451,7 @@
                                                                 @csrf
                                                                 @method('DELETE')
                                                                 <button type="submit" class="btn btn-danger btn-sm" data-bs-toggle="tooltip" title="Delete" onclick="return confirm('Are you sure want to delete?');">
-                                                                    <i class="fa fa-trash" aria-hidden="true"></i>
+                                                                    <i class="fa-solid fa-trash" aria-hidden="true"></i>
                                                                 </button>
                                                             </form>
                                                         </div>

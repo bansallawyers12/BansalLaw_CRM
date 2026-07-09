@@ -418,7 +418,7 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
 <div class="fd-wizard-wrapper">
     <div class="fd-card">
         <div class="fd-card-header">
-            <h4><i class="fas fa-clipboard-check me-2"></i>Front-Desk Check-In</h4>
+            <h4><i class="fa-solid fa-clipboard-check me-2"></i>Front-Desk Check-In</h4>
             <p>Record a client or walk-in arrival at the front desk</p>
         </div>
         <div class="fd-card-body">
@@ -463,7 +463,7 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
                 </div>
                 <div class="text-right">
                     <button type="button" class="btn btn-lg px-5 fd-btn-action" id="fdLookupBtn">
-                        <i class="fas fa-search me-2"></i>Look Up
+                        <i class="fa-solid fa-search me-2"></i>Look Up
                     </button>
                 </div>
                 <div class="fd-spinner mt-3" id="fdLookupSpinner">
@@ -481,14 +481,14 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
                 <div class="border-top pt-3 mt-2">
                     <p class="text-muted small mb-2">Not in the list?</p>
                     <button type="button" class="btn btn-sm fd-btn-walkin" id="fdWalkInBtn">
-                        <i class="fas fa-user-slash me-1"></i>Continue as Walk-In (no CRM record)
+                        <i class="fa-solid fa-user-slash me-1"></i>Continue as Walk-In (no CRM record)
                     </button>
                 </div>
 
                 <div class="text-right mt-4">
-                    <button class="btn btn-light me-2" id="fdStep2Back"><i class="fas fa-arrow-left me-1"></i>Back</button>
+                    <button class="btn btn-light me-2" id="fdStep2Back"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
                     <button type="button" class="btn fd-btn-action" id="fdStep2Next" disabled>
-                        Confirm Selection <i class="fas fa-arrow-right ms-1"></i>
+                        Confirm Selection <i class="fa-solid fa-arrow-right ms-1"></i>
                     </button>
                 </div>
             </div>
@@ -500,15 +500,15 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
 
                 <div class="fd-appt-choices mb-4">
                     <button type="button" class="fd-choice-btn fd-choice-yes" id="fdNewClientYes">
-                        <i class="fas fa-user-plus me-2" aria-hidden="true"></i>Yes — I'm a new client
+                        <i class="fa-solid fa-user-plus me-2" aria-hidden="true"></i>Yes — I'm a new client
                     </button>
                     <button type="button" class="fd-choice-btn fd-choice-no" id="fdNewClientNo">
-                        <i class="fas fa-user-check me-2" aria-hidden="true"></i>No — I already have a file
+                        <i class="fa-solid fa-user-check me-2" aria-hidden="true"></i>No — I already have a file
                     </button>
                 </div>
 
                 <div class="text-right mt-2">
-                    <button class="btn btn-light" id="fdStepNewClientBack"><i class="fas fa-arrow-left me-1"></i>Back</button>
+                    <button class="btn btn-light" id="fdStepNewClientBack"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
                 </div>
             </div>
 
@@ -568,9 +568,9 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
                 </div>
 
                 <div class="text-right mt-4">
-                    <button class="btn btn-light me-2" id="fdStepLeadFormBack"><i class="fas fa-arrow-left me-1"></i>Back</button>
+                    <button class="btn btn-light me-2" id="fdStepLeadFormBack"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
                     <button type="button" class="btn btn-lg px-5 fd-btn-confirm" id="fdLeadSubmitBtn">
-                        <i class="fas fa-paper-plane me-2"></i>Submit Check-In
+                        <i class="fa-solid fa-paper-plane me-2"></i>Submit Check-In
                     </button>
                 </div>
                 <div class="fd-spinner mt-3" id="fdLeadSubmitSpinner">
@@ -582,11 +582,11 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
             {{-- ── STEP 2d: Not a client — dead end ─────────────── --}}
             <div class="fd-wizard-step" id="fdStepNotClient">
                 <div class="fd-success">
-                    <i class="fas fa-hand-paper" aria-hidden="true"></i>
+                    <i class="fa-solid fa-hand-paper" aria-hidden="true"></i>
                     <h5>Please speak with our receptionist</h5>
                     <p class="text-muted mb-4">Our front-desk team will be happy to help you locate your file.</p>
                     <button type="button" class="btn fd-btn-action" id="fdNotClientStartOver">
-                        <i class="fas fa-redo me-2"></i>Start Over
+                        <i class="fa-solid fa-redo me-2"></i>Start Over
                     </button>
                 </div>
             </div>
@@ -596,9 +596,9 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
                 <h6 class="fd-step-title mb-3 text-uppercase small">Step 3 — Confirm Details</h6>
                 <div id="fdConfirmSummary"></div>
                 <div class="text-right mt-4">
-                    <button class="btn btn-light me-2" id="fdStep3Back"><i class="fas fa-arrow-left me-1"></i>Back</button>
+                    <button class="btn btn-light me-2" id="fdStep3Back"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
                     <button type="button" class="btn fd-btn-confirm" id="fdStep3Next">
-                        Details Correct <i class="fas fa-check ms-1"></i>
+                        Details Correct <i class="fa-solid fa-check ms-1"></i>
                     </button>
                 </div>
             </div>
@@ -610,10 +610,10 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
 
                 <div class="fd-appt-choices mb-4">
                     <button type="button" class="fd-choice-btn fd-choice-yes" id="fdHasApptYes">
-                        <i class="fas fa-calendar-check me-2" aria-hidden="true"></i>Yes, has appointment
+                        <i class="fa-solid fa-calendar-check me-2" aria-hidden="true"></i>Yes, has appointment
                     </button>
                     <button type="button" class="fd-choice-btn fd-choice-no" id="fdHasApptNo">
-                        <i class="fas fa-calendar-times me-2" aria-hidden="true"></i>No appointment
+                        <i class="fa-solid fa-calendar-times me-2" aria-hidden="true"></i>No appointment
                     </button>
                 </div>
 
@@ -629,9 +629,9 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
                 </div>
 
                 <div class="text-right mt-4">
-                    <button class="btn btn-light me-2" id="fdStep4Back"><i class="fas fa-arrow-left me-1"></i>Back</button>
+                    <button class="btn btn-light me-2" id="fdStep4Back"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
                     <button type="button" class="btn fd-btn-action" id="fdStep4Next" disabled>
-                        Continue <i class="fas fa-arrow-right ms-1"></i>
+                        Continue <i class="fa-solid fa-arrow-right ms-1"></i>
                     </button>
                 </div>
             </div>
@@ -660,9 +660,9 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
                 </div>
 
                 <div class="text-right mt-4">
-                    <button class="btn btn-light me-2" id="fdStep5Back"><i class="fas fa-arrow-left me-1"></i>Back</button>
+                    <button class="btn btn-light me-2" id="fdStep5Back"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
                     <button type="button" class="btn btn-lg px-5 fd-btn-confirm" id="fdSubmitBtn">
-                        <i class="fas fa-paper-plane me-2"></i>Submit Check-In
+                        <i class="fa-solid fa-paper-plane me-2"></i>Submit Check-In
                     </button>
                 </div>
                 <div class="fd-spinner mt-3" id="fdSubmitSpinner">
@@ -674,14 +674,14 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
             {{-- ── SUCCESS ───────────────────────────────────────── --}}
             <div class="fd-wizard-step" id="fdStepSuccess">
                 <div class="fd-success">
-                    <i class="fas fa-check-circle"></i>
+                    <i class="fa-solid fa-check-circle"></i>
                     <h5>Check-In Recorded!</h5>
                     <p id="fdSuccessMsg" class="mb-4"></p>
                     <button type="button" class="btn fd-btn-action" id="fdStartOver">
-                        <i class="fas fa-redo me-2"></i>New Check-In
+                        <i class="fa-solid fa-redo me-2"></i>New Check-In
                     </button>
                     <a href="{{ route('officevisits.waiting') }}" class="btn btn-outline-secondary ms-2">
-                        <i class="fas fa-list me-2"></i>Office Visits
+                        <i class="fa-solid fa-list me-2"></i>Office Visits
                     </a>
                 </div>
             </div>
@@ -875,7 +875,7 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
                     (m.is_company && m.company_name ? '<span class="text-muted small ms-1">(' + escHtml(m.company_name) + ')</span>' : '') +
                     '<br><small class="text-muted">' + escHtml(m.email || '—') + ' &bull; ' + escHtml(m.phone || '—') + '</small>' +
                 '</div>' +
-                '<i class="fas fa-check-circle text-primary mt-1" style="display:none;" data-checkmark></i>' +
+                '<i class="fa-solid fa-check-circle text-primary mt-1" style="display:none;" data-checkmark></i>' +
                 '</div>';
 
             div.addEventListener('click', function () {
@@ -1081,7 +1081,7 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
 
         if (!state.adminId) {
             $('#fdApptList').innerHTML =
-                '<p class="text-muted"><i class="fas fa-info-circle me-1"></i>' +
+                '<p class="text-muted"><i class="fa-solid fa-info-circle me-1"></i>' +
                 'Walk-in visitor — no CRM record to match an appointment against. ' +
                 'The visit will still be recorded.</p>';
             hide($('#fdApptSpinner'));
@@ -1140,7 +1140,7 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
                     ' <span class="badge badge-' + statusBadge + '">' + escHtml(a.status) + '</span>' +
                     '<br><small class="text-muted">Consultant: ' + escHtml(a.consultant || '—') + ' &bull; ' + escHtml(a.location || '—') + '</small>' +
                 '</div>' +
-                '<i class="fas fa-check-circle text-info" style="display:none;" data-checkmark></i>' +
+                '<i class="fa-solid fa-check-circle text-info" style="display:none;" data-checkmark></i>' +
                 '</div>';
 
             div.addEventListener('click', function () {

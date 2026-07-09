@@ -11,19 +11,19 @@
 
             <div class="row mb-3">
                 <div class="col-md-8">
-                    <h4 class="mb-1"><i class="fas fa-clipboard-list text-secondary me-2"></i>Trust audit log</h4>
+                    <h4 class="mb-1"><i class="fa-solid fa-clipboard-list text-secondary me-2"></i>Trust audit log</h4>
                     <p class="text-muted mb-0" style="font-size: 14px;">Append-only record of trust ledger voids, Rule 42 authorities, bank reconciliation actions, and period lock/unlock. Filter and export CSV (up to 10,000 rows per download) for examinations.</p>
                 </div>
                 <div class="col-md-4 text-md-end mt-2 mt-md-0">
                     <a href="{{ route('trust-accounting.guide') }}" class="btn btn-outline-info btn-sm me-1">
-                        <i class="fas fa-book me-1"></i> Guide
+                        <i class="fa-solid fa-book me-1"></i> Guide
                     </a>
                     <a href="{{ route('trust-accounting.reports.index') }}" class="btn btn-outline-primary btn-sm me-1">Reports</a>
                     <a href="{{ route('trust-accounting.practice-sequences.index') }}" class="btn btn-outline-secondary btn-sm me-1">
-                        <i class="fas fa-sort-numeric-down me-1"></i> Sequences
+                        <i class="fa-solid fa-sort-numeric-down me-1"></i> Sequences
                     </a>
                     <a href="{{ route('trust-accounting.periods.index') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-lock me-1"></i> Period locks
+                        <i class="fa-solid fa-lock me-1"></i> Period locks
                     </a>
                 </div>
             </div>

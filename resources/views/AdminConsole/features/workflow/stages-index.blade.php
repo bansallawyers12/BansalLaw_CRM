@@ -18,8 +18,8 @@
 						<div class="card-header">
 							<h4>Workflow Stages: {{ $workflow->name }}</h4>
 							<div class="card-header-action">
-								<a href="{{ route('adminconsole.features.workflow.index') }}" class="btn btn-secondary"><i class="fa fa-arrow-left"></i> Back to Workflows</a>
-								<button type="button" class="btn btn-primary" id="open-create-stage-modal-btn"><i class="fa fa-plus"></i> Add Stage</button>
+								<a href="{{ route('adminconsole.features.workflow.index') }}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back to Workflows</a>
+								<button type="button" class="btn btn-primary" id="open-create-stage-modal-btn"><i class="fa-solid fa-plus"></i> Add Stage</button>
 							</div>
 						</div>
 						<div class="card-body">
@@ -86,7 +86,7 @@
 							</tbody>
 						</table>
 					</div>
-					<button type="button" class="btn btn-info btn-sm add-create-stage-row-btn"><i class="fa fa-plus"></i> Add Another Stage</button>
+					<button type="button" class="btn btn-info btn-sm add-create-stage-row-btn"><i class="fa-solid fa-plus"></i> Add Another Stage</button>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -124,7 +124,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-info add-after-from-edit-btn d-none"><i class="fa fa-plus"></i> Add After</button>
+					<button type="button" class="btn btn-info add-after-from-edit-btn d-none"><i class="fa-solid fa-plus"></i> Add After</button>
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 					<button type="submit" class="btn btn-primary" id="edit-workflow-stage-submit">
 						<span class="submit-label">Save Stage</span>
@@ -147,7 +147,7 @@
 			<div class="modal-body pt-2">
 				<div class="workflow-delete-confirm text-center">
 					<div class="workflow-delete-icon mb-3" aria-hidden="true">
-						<i class="fas fa-trash-alt"></i>
+						<i class="fa-solid fa-trash-can"></i>
 					</div>
 					<p class="mb-1">Are you sure you want to delete <strong id="delete-workflow-stage-name"></strong>?</p>
 					<p class="text-muted small mb-0">This action cannot be undone.</p>
@@ -260,8 +260,8 @@ jQuery(document).ready(function($) {
 			? ' <span class="badge badge-secondary ms-1 align-middle stage-protected-badge" title="This stage cannot be renamed or deleted">Protected</span>'
 			: '';
 		var deleteBtn = isFrozen
-			? '<button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Protected stages cannot be deleted"><i class="fas fa-trash"></i> Delete</button>'
-			: '<button type="button" class="btn btn-sm btn-outline-danger delete-workflow-stage-btn"><i class="fas fa-trash"></i> Delete</button>';
+			? '<button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Protected stages cannot be deleted"><i class="fa-solid fa-trash"></i> Delete</button>'
+			: '<button type="button" class="btn btn-sm btn-outline-danger delete-workflow-stage-btn"><i class="fa-solid fa-trash"></i> Delete</button>';
 
 		return '<tr id="id_' + stage.id + '"' +
 			' data-stage-id="' + stage.id + '"' +
@@ -272,8 +272,8 @@ jQuery(document).ready(function($) {
 			'<td class="workflow-stage-name-cell"><span class="stage-name-text">' + escapeHtml(displayName) + '</span>' + protectedBadge + '</td>' +
 			'<td class="workflow-stage-matter-count-cell">' + (stage.matter_count || 0) + '</td>' +
 			'<td class="workflow-stage-actions-col"><div class="workflow-stage-cell-actions">' +
-			'<button type="button" class="btn btn-sm btn-primary edit-workflow-stage-btn" title="' + (isFrozen ? 'View (protected — name cannot be changed)' : 'Edit stage name') + '"><i class="far fa-edit"></i> Edit</button> ' +
-			'<button type="button" class="btn btn-sm btn-info add-after-workflow-stage-btn" data-after-stage-id="' + stage.id + '" title="Insert a new stage immediately after this one"><i class="fa fa-plus"></i> Add After</button> ' +
+			'<button type="button" class="btn btn-sm btn-primary edit-workflow-stage-btn" title="' + (isFrozen ? 'View (protected — name cannot be changed)' : 'Edit stage name') + '"><i class="fa-regular fa-edit"></i> Edit</button> ' +
+			'<button type="button" class="btn btn-sm btn-info add-after-workflow-stage-btn" data-after-stage-id="' + stage.id + '" title="Insert a new stage immediately after this one"><i class="fa-solid fa-plus"></i> Add After</button> ' +
 			deleteBtn +
 			'</div></td></tr>';
 	}
@@ -358,7 +358,7 @@ jQuery(document).ready(function($) {
 	$('.add-create-stage-row-btn').on('click', function() {
 		$('#create-stage-name-rows').append(
 			'<tr class="create-stage-name-row"><td><input type="text" name="stage_name[]" placeholder="Stage Name" class="form-control" required maxlength="255"></td>' +
-			'<td class="text-end" style="width: 48px;"><a href="javascript:void(0);" class="remove-create-stage-row text-danger" title="Remove"><i class="fa fa-trash"></i></a></td></tr>'
+			'<td class="text-end" style="width: 48px;"><a href="javascript:void(0);" class="remove-create-stage-row text-danger" title="Remove"><i class="fa-solid fa-trash"></i></a></td></tr>'
 		);
 	});
 

@@ -228,7 +228,7 @@
 							</div>
 							@else
 							<div class="text-center crm-notifications-empty">
-								<i class="fas fa-bell" aria-hidden="true"></i>
+								<i class="fa-solid fa-bell" aria-hidden="true"></i>
 								<h5 class="mt-3">No Notifications</h5>
 								<p class="text-muted">You don't have any notifications yet.</p>
 							</div>

@@ -568,10 +568,10 @@ $(function () {
     me.click(function () {
       $(target).collapse("toggle");
       $(target).on("shown.bs.collapse", function () {
-        me.html('<i class="fas fa-minus"></i>');
+        me.html('<i class="fa-solid fa-minus"></i>');
       });
       $(target).on("hidden.bs.collapse", function () {
-        me.html('<i class="fas fa-plus"></i>');
+        me.html('<i class="fa-solid fa-plus"></i>');
       });
       return false;
     });

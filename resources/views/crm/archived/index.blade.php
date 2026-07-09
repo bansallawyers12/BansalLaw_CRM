@@ -85,9 +85,9 @@
                                             <div class="dropdown d-inline">
                                                 <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-haspopup="true" aria-expanded="false">Action</button>
                                                 <div class="dropdown-menu dropdown-menu-end">
-                                                    <a class="dropdown-item has-icon" href="javascript:;" onclick="movetoclientAction({{$list->id}}, 'admins','is_archived')"><i class="fas fa-arrow-right" aria-hidden="true"></i> Move to clients</a>
+                                                    <a class="dropdown-item has-icon" href="javascript:;" onclick="movetoclientAction({{$list->id}}, 'admins','is_archived')"><i class="fa-solid fa-arrow-right" aria-hidden="true"></i> Move to clients</a>
                                                     <a class="dropdown-item has-icon" href="javascript:;" onclick="unarchiveClientAction({{$list->id}}, '{{ @$list->first_name }} {{ @$list->last_name }}')">
-                                                        <i class="fas fa-undo"></i> Unarchive
+                                                        <i class="fa-solid fa-undo"></i> Unarchive
                                                     </a>
                                                 </div>
                                             </div>

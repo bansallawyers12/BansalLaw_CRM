@@ -214,14 +214,14 @@
                     <div id="smart-import-upload-panel">
                         <div class="smart-import-dropzone" id="smart-import-dropzone">
                             <input type="file" id="smart-import-files" accept="{{ $crmEmailUploadAccept }}" multiple>
-                            <i class="fas fa-cloud-upload-alt fa-2x mb-2" style="color: var(--navy, #1e3d60);"></i>
+                            <i class="fa-solid fa-cloud-upload-alt fa-2x mb-2" style="color: var(--navy, #1e3d60);"></i>
                             <p class="mb-1"><strong>Drop Outlook email files ({{ $crmEmailUploadLabel }}) here</strong> or click to browse</p>
                             <small class="text-muted">Up to 10 files, max {{ (int) config('crm.email_upload_max_kb', 30720) / 1024 }}MB each</small>
                         </div>
                         <div class="smart-import-status mt-2" id="smart-import-upload-status"></div>
                         <div class="smart-import-actions">
                             <button type="button" class="btn btn-primary btn-theme-lg" id="smart-import-analyze-btn" disabled>
-                                <i class="fas fa-search me-1"></i> Analyze &amp; Match
+                                <i class="fa-solid fa-search me-1"></i> Analyze &amp; Match
                             </button>
                         </div>
                     </div>
@@ -255,13 +255,13 @@
 
                         <div class="smart-import-actions">
                             <button type="button" class="btn btn-success" id="smart-import-confirm-high-btn">
-                                <i class="fas fa-check-double me-1"></i> Confirm High Confidence
+                                <i class="fa-solid fa-check-double me-1"></i> Confirm High Confidence
                             </button>
                             <button type="button" class="btn btn-primary btn-theme-lg" id="smart-import-confirm-selected-btn">
-                                <i class="fas fa-check me-1"></i> Confirm Selected
+                                <i class="fa-solid fa-check me-1"></i> Confirm Selected
                             </button>
                             <button type="button" class="btn btn-outline-secondary" id="smart-import-reset-btn">
-                                <i class="fas fa-redo me-1"></i> Upload More
+                                <i class="fa-solid fa-redo me-1"></i> Upload More
                             </button>
                         </div>
                         <div class="smart-import-status mt-2" id="smart-import-confirm-status"></div>
@@ -275,7 +275,7 @@
 <div class="smart-import-loading-overlay" id="smartImportLoadingOverlay" aria-hidden="true" aria-live="polite" aria-busy="false">
     <div class="smart-import-loading-card" role="status">
         <div class="smart-import-loading-icon" aria-hidden="true">
-            <i class="fas fa-envelope-open-text"></i>
+            <i class="fa-solid fa-envelope-open-text"></i>
             <span class="smart-import-loading-spinner"></span>
         </div>
         <h3 class="smart-import-loading-title" id="smartImportLoadingTitle">Processing emails</h3>

@@ -18,7 +18,7 @@
                 <div class="col-9 col-md-9 col-lg-9">
                     <div class="card">
                         <div class="card-header">
-                            <h4><i class="fas fa-history"></i> SMS History</h4>
+                            <h4><i class="fa-solid fa-history"></i> SMS History</h4>
                             <p class="text-muted">View and manage all SMS messages</p>
                         </div>
                         <div class="card-body">
@@ -60,14 +60,14 @@
                                             </td>
                                             <td class="text-nowrap">
                                                 <a href="{{ route('adminconsole.features.sms.history.show', $sms->id) }}" class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-eye me-1"></i> View
+                                                    <i class="fa-solid fa-eye me-1"></i> View
                                                 </a>
                                             </td>
                                         </tr>
                                         @empty
                                         <tr>
                                             <td colspan="6" class="text-center py-4">
-                                                <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                                                <i class="fa-solid fa-inbox fa-2x text-muted mb-2"></i>
                                                 <p class="text-muted">No SMS messages found</p>
                                             </td>
                                         </tr>

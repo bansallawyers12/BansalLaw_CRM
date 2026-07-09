@@ -10,7 +10,7 @@
         <div class="section-body">
             <div class="row mb-3">
                 <div class="col-md-8">
-                    <h4 class="mb-1"><i class="fas fa-sort-numeric-down text-secondary me-2"></i>Trust practice sequences</h4>
+                    <h4 class="mb-1"><i class="fa-solid fa-sort-numeric-down text-secondary me-2"></i>Trust practice sequences</h4>
                     <p class="text-muted mb-0" style="font-size: 14px;">
                         Read-only counters used for practice-wide trust receipt numbers (<code>TR-{{ '{year}' }}-NNNNNN</code>)
                         and trust journal numbers (<code>TJ-{{ '{year}' }}-NNNNNN</code>). Victorian trust year begins 1&nbsp;April;
@@ -20,10 +20,10 @@
                 </div>
                 <div class="col-md-4 text-md-end mt-2 mt-md-0">
                     <a href="{{ route('trust-accounting.reports.index') }}" class="btn btn-outline-primary btn-sm me-1">
-                        <i class="fas fa-file-export me-1"></i> Reports
+                        <i class="fa-solid fa-file-export me-1"></i> Reports
                     </a>
                     <a href="{{ route('trust-accounting.periods.index') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-lock me-1"></i> Period locks
+                        <i class="fa-solid fa-lock me-1"></i> Period locks
                     </a>
                 </div>
             </div>

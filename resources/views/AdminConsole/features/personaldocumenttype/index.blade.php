@@ -30,7 +30,7 @@
                             </div>
                             <div class="card-header-action">
                                 <button type="button" class="btn btn-primary" id="pdt-add-btn">
-                                    <i class="fa fa-plus"></i> Add folder
+                                    <i class="fa-solid fa-plus"></i> Add folder
                                 </button>
                             </div>
                         </div>
@@ -40,10 +40,10 @@
                                     <div class="pdt-list-search d-flex align-items-stretch">
                                         <input id="pdt-search-input" type="search" class="form-control" value="{{ $searchBy ?? '' }}" placeholder="Search by title" aria-label="Search folders">
                                         <button type="button" id="pdt-search-btn" class="btn btn-primary" aria-label="Search">
-                                            <i class="fas fa-search"></i>
+                                            <i class="fa-solid fa-search"></i>
                                         </button>
                                         <button type="button" id="pdt-search-clear" class="btn btn-light border ms-1" aria-label="Clear search" title="Clear search">
-                                            <i class="fas fa-times"></i>
+                                            <i class="fa-solid fa-times"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -125,7 +125,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-primary me-auto pdt-view-from-edit" id="pdt-view-from-edit">
-                        <i class="far fa-eye"></i> View folder
+                        <i class="fa-regular fa-eye"></i> View folder
                     </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="pdt-edit-submit">
@@ -152,7 +152,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" id="pdt-edit-from-view">
-                    <i class="fa fa-edit"></i> Edit folder
+                    <i class="fa-solid fa-edit"></i> Edit folder
                 </button>
             </div>
         </div>

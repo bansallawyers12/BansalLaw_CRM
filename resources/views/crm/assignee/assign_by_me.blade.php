@@ -307,10 +307,10 @@
                                                                         <button class="btn btn-info" id="updateTask">Update Task</button>
                                                                     </div>
                                                                 </div>'>
-                                                                <i class="fa fa-edit" aria-hidden="true"></i>
+                                                                <i class="fa-solid fa-edit" aria-hidden="true"></i>
                                                             </button>
                                                             <button class="btn btn-danger btn-sm deleteNote" data-remote="/destroy_activity/{{ $list->id }}" data-bs-toggle="tooltip" title="Delete Task">
-                                                                <i class="fa fa-trash" aria-hidden="true"></i>
+                                                                <i class="fa-solid fa-trash" aria-hidden="true"></i>
                                                             </button>
                                                         @endif
                                                     </td>
@@ -354,7 +354,7 @@
         <div class="modal-content completion-notes-modal-content">
             <div class="modal-header completion-notes-modal-header">
                 <h5 class="modal-title" id="completionNotesModalLabel">
-                    <i class="fa fa-check completion-task-modal-header-icon" aria-hidden="true"></i> Complete Task
+                    <i class="fa-solid fa-check completion-task-modal-header-icon" aria-hidden="true"></i> Complete Task
                 </h5>
                 <button type="button" class="close completion-notes-modal-close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -363,7 +363,7 @@
             <div class="modal-body completion-notes-modal-body">
                 <div class="form-group mb-0">
                     <label for="completionNotes" class="completion-notes-label">
-                        <i class="fa fa-comment"></i> Completion Notes/Feedback
+                        <i class="fa-solid fa-comment"></i> Completion Notes/Feedback
                     </label>
                     <textarea
                         class="form-control completion-notes-textarea"
@@ -372,16 +372,16 @@
                         placeholder="Enter any notes or feedback about completing this task..."
                     ></textarea>
                     <small class="form-text completion-notes-hint">
-                        <i class="fa fa-info-circle"></i> These notes will be saved in the activity log.
+                        <i class="fa-solid fa-info-circle"></i> These notes will be saved in the activity log.
                     </small>
                 </div>
             </div>
             <div class="modal-footer completion-notes-modal-footer">
                 <button type="button" class="btn btn-cancel-complete" data-bs-dismiss="modal">
-                    <i class="fa fa-times"></i> Cancel
+                    <i class="fa-solid fa-times"></i> Cancel
                 </button>
                 <button type="button" class="btn btn-complete-task-primary" id="confirmTaskCompletion">
-                    <i class="fa fa-check"></i> Complete Task
+                    <i class="fa-solid fa-check"></i> Complete Task
                 </button>
             </div>
         </div>
@@ -500,7 +500,7 @@
             
             // Disable button to prevent double submission
             var $button = $(this);
-            $button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Completing...');
+            $button.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Completing...');
             
             $.ajax({
                 type: 'post',
@@ -516,7 +516,7 @@
                     $('#completionNotesModal').modal('hide');
                     
                     // Reset button
-                    $button.prop('disabled', false).html('<i class="fa fa-check"></i> Complete Task');
+                    $button.prop('disabled', false).html('<i class="fa-solid fa-check"></i> Complete Task');
                     
                     // Clear stored IDs
                     currentTaskId = null;
@@ -530,7 +530,7 @@
                     alert('An error occurred while completing the task.');
                     
                     // Reset button
-                    $button.prop('disabled', false).html('<i class="fa fa-check"></i> Complete Task');
+                    $button.prop('disabled', false).html('<i class="fa-solid fa-check"></i> Complete Task');
                 }
             });
         });

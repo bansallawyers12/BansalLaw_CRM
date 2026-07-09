@@ -52,11 +52,11 @@
     }
 
     var FEED_NO_RESULTS_HTML = '<li class="feed-item feed-item-no-results" style="text-align: center; padding: 20px; color: #6c757d;">' +
-        '<i class="fas fa-filter" style="font-size: 1.5em; margin-bottom: 8px; opacity: 0.5;"></i>' +
+        '<i class="fa-solid fa-filter" style="font-size: 1.5em; margin-bottom: 8px; opacity: 0.5;"></i>' +
         '<p class="mb-0 small">No activities match your filters</p></li>';
 
     var FEED_EMPTY_HTML = '<li class="feed-item feed-item--empty" style="text-align: center; padding: 20px; color: #6c757d;">' +
-        '<i class="fas fa-inbox" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>' +
+        '<i class="fa-solid fa-inbox" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5;"></i>' +
         '<p>No activities found</p></li>';
 
     /**
@@ -511,19 +511,19 @@
     function getActivityIconElement(activityType, subject) {
         var sl = (subject || '').toLowerCase();
         if (activityType === 'sms') {
-            return { html: '<i class="fas fa-sms"></i>', cls: 'feed-icon-sms' };
+            return { html: '<i class="fa-solid fa-sms"></i>', cls: 'feed-icon-sms' };
         }
         if (activityType === 'document') {
-            return { html: '<i class="fas fa-file-alt"></i>', cls: '' };
+            return { html: '<i class="fa-solid fa-file-alt"></i>', cls: '' };
         }
         if (activityType === 'signature') {
-            return { html: '<i class="fas fa-file-signature"></i>', cls: 'feed-icon-signature' };
+            return { html: '<i class="fa-solid fa-file-signature"></i>', cls: 'feed-icon-signature' };
         }
         if (activityType === 'financial') {
-            return { html: '<i class="fas fa-dollar-sign"></i>', cls: 'feed-icon-accounting' };
+            return { html: '<i class="fa-solid fa-dollar-sign"></i>', cls: 'feed-icon-accounting' };
         }
         if (activityType === 'lead_converted' || sl.indexOf('lead converted') !== -1) {
-            return { html: '<i class="fas fa-user-check"></i>', cls: 'feed-icon-lead-converted' };
+            return { html: '<i class="fa-solid fa-user-check"></i>', cls: 'feed-icon-lead-converted' };
         }
         if (activityType === 'note') {
             var nt = getNoteTypeClass(subject);
@@ -531,18 +531,18 @@
             return { html: '<i class="fas ' + ic + '"></i>', cls: 'feed-icon-note' + nt.feedIcon };
         }
         if (activityType === 'activity') {
-            return { html: '<i class="fas fa-bolt"></i>', cls: 'feed-icon-activity' };
+            return { html: '<i class="fa-solid fa-bolt"></i>', cls: 'feed-icon-activity' };
         }
         if (activityType === 'stage') {
-            return { html: '<i class="fas fa-tasks" aria-hidden="true"></i>', cls: 'feed-icon-stage' };
+            return { html: '<i class="fa-solid fa-tasks" aria-hidden="true"></i>', cls: 'feed-icon-stage' };
         }
         if (sl.indexOf('invoice') !== -1 || sl.indexOf('receipt') !== -1 || sl.indexOf('ledger') !== -1 || sl.indexOf('payment') !== -1 || sl.indexOf('account') !== -1) {
-            return { html: '<i class="fas fa-dollar-sign"></i>', cls: '' };
+            return { html: '<i class="fa-solid fa-dollar-sign"></i>', cls: '' };
         }
         if (sl.indexOf('document') !== -1) {
-            return { html: '<i class="fas fa-file-alt"></i>', cls: '' };
+            return { html: '<i class="fa-solid fa-file-alt"></i>', cls: '' };
         }
-        return { html: '<i class="fas fa-sticky-note"></i>', cls: '' };
+        return { html: '<i class="fa-solid fa-sticky-note"></i>', cls: '' };
     }
 
     /**
@@ -612,7 +612,7 @@
                 if (isStage) {
                     liOpen += '<button type="button" class="feed-item-summary" data-feed-toggle aria-expanded="false" aria-controls="' + detailId + '" aria-label="Show or hide full activity content">' +
                         '<span class="feed-item-summary-text">' + escapeHtml(summaryLine) + '</span>' +
-                        '<span class="feed-item-summary-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span></button>' +
+                        '<span class="feed-item-summary-chevron" aria-hidden="true"><i class="fa-solid fa-chevron-down"></i></span></button>' +
                         '<div class="feed-item-detail" id="' + detailId + '" hidden>' +
                         '<div class="feed-item-body-outer" data-clampable="1">' +
                         '<div class="feed-item-body-chunk">' + (messageHtml || '') + '</div>' +
@@ -620,11 +620,11 @@
                 } else {
                     liOpen += '<button type="button" class="feed-item-summary" data-feed-toggle aria-expanded="false" aria-controls="' + detailId + '" aria-label="Show or hide full activity content">' +
                         '<span class="feed-item-summary-text">' + escapeHtml(summaryLine) + '</span>' +
-                        '<span class="feed-item-summary-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span></button>' +
+                        '<span class="feed-item-summary-chevron" aria-hidden="true"><i class="fa-solid fa-chevron-down"></i></span></button>' +
                         '<div class="feed-item-detail" id="' + detailId + '" hidden>' +
                         '<p class="feed-item-full-headline mb-0"><strong>' + headline + '</strong>' +
                         (canConvert
-                            ? '<i class="fas fa-ellipsis-v convert-activity-to-note" style="margin-left: 5px; cursor: pointer;" title="Convert to Note" data-activity-id="' + id + '" data-activity-subject="' + escapeAttr(subject) + '" data-activity-description="' + escapeAttr(v.raw_description != null ? v.raw_description : '') + '" data-activity-created-by="' + escapeAttr(v.created_by) + '" data-activity-created-at="' + escapeAttr(v.raw_created_at != null ? v.raw_created_at : '') + '" data-client-id="' + escapeAttr((window.ClientDetailConfig && window.ClientDetailConfig.clientId) || '') + '"></i>'
+                            ? '<i class="fa-solid fa-ellipsis-vertical convert-activity-to-note" style="margin-left: 5px; cursor: pointer;" title="Convert to Note" data-activity-id="' + id + '" data-activity-subject="' + escapeAttr(subject) + '" data-activity-description="' + escapeAttr(v.raw_description != null ? v.raw_description : '') + '" data-activity-created-by="' + escapeAttr(v.created_by) + '" data-activity-created-at="' + escapeAttr(v.raw_created_at != null ? v.raw_created_at : '') + '" data-client-id="' + escapeAttr((window.ClientDetailConfig && window.ClientDetailConfig.clientId) || '') + '"></i>'
                             : '') + '</p>';
                     if (messageHtml) {
                         liOpen += '<div class="feed-item-body-outer" data-clampable="1">' +

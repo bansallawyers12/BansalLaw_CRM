@@ -59,7 +59,7 @@
                         <div class="col-md-1">
                             <label>&nbsp;</label>
                             <button type="button" id="apply-filters" class="btn btn-primary btn-block">
-                                <i class="fas fa-filter"></i> Apply
+                                <i class="fa-solid fa-filter"></i> Apply
                             </button>
                         </div>
                     </div>
@@ -71,7 +71,7 @@
                 <div class="col-md-3">
                     <div class="card card-statistic-1">
                         <div class="card-icon bg-primary">
-                            <i class="fas fa-sign-in-alt"></i>
+                            <i class="fa-solid fa-sign-in-alt"></i>
                         </div>
                         <div class="card-wrap">
                             <div class="card-header">
@@ -86,7 +86,7 @@
                 <div class="col-md-3">
                     <div class="card card-statistic-1">
                         <div class="card-icon bg-success">
-                            <i class="fas fa-users"></i>
+                            <i class="fa-solid fa-users"></i>
                         </div>
                         <div class="card-wrap">
                             <div class="card-header">
@@ -101,7 +101,7 @@
                 <div class="col-md-3">
                     <div class="card card-statistic-1">
                         <div class="card-icon bg-warning">
-                            <i class="fas fa-exclamation-triangle"></i>
+                            <i class="fa-solid fa-exclamation-triangle"></i>
                         </div>
                         <div class="card-wrap">
                             <div class="card-header">
@@ -116,7 +116,7 @@
                 <div class="col-md-3">
                     <div class="card card-statistic-1">
                         <div class="card-icon bg-info">
-                            <i class="fas fa-chart-line"></i>
+                            <i class="fa-solid fa-chart-line"></i>
                         </div>
                         <div class="card-wrap">
                             <div class="card-header">

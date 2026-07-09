@@ -173,17 +173,17 @@
 			  		<div class="receipt-type-selector__options">
 			  		<label class="receipt-type-option">
 						<input type="radio" name="receipt_type" value="client_receipt" checked>
-						<span class="receipt-type-option__pill"><i class="fas fa-university"></i> Trust Account Entry</span>
+						<span class="receipt-type-option__pill"><i class="fa-solid fa-university"></i> Trust Account Entry</span>
 			  		</label>
 
 			  		<label class="receipt-type-option">
 						<input type="radio" name="receipt_type" value="invoice_receipt">
-						<span class="receipt-type-option__pill"><i class="fas fa-file-invoice-dollar"></i> Tax Invoice</span>
+						<span class="receipt-type-option__pill"><i class="fa-solid fa-file-invoice-dollar"></i> Tax Invoice</span>
 			  		</label>
 
 			  		<label class="receipt-type-option">
 						<input type="radio" name="receipt_type" value="office_receipt">
-						<span class="receipt-type-option__pill"><i class="fas fa-hand-holding-usd"></i> Office Receipt</span>
+						<span class="receipt-type-option__pill"><i class="fa-solid fa-hand-holding-usd"></i> Office Receipt</span>
 			  		</label>
 			  		</div>
 				</div>
@@ -210,7 +210,7 @@
                        	<div class="col-12">
 							<div class="form-group trust-entry-lines-panel">
                                 <div class="trust-entry-lines-panel__header">
-                                    <h6 class="trust-entry-lines-panel__title"><i class="fas fa-list-ul"></i> Transaction lines</h6>
+                                    <h6 class="trust-entry-lines-panel__title"><i class="fa-solid fa-list-ul"></i> Transaction lines</h6>
                                     <p class="trust-entry-lines-panel__hint">Add one or more trust receipts, payments, transfers, or refunds. Scroll horizontally on smaller screens to see all columns.</p>
                                 </div>
                                 <div class="trust-entry-table-scroll">
@@ -313,7 +313,7 @@
                                             </td>
 
                                             <td class="trust-entry-action-col">
-                                                <button type="button" class="btn btn-outline-danger trust-entry-remove-btn removeitems" title="Remove line"><i class="fa fa-times"></i></button>
+                                                <button type="button" class="btn btn-outline-danger trust-entry-remove-btn removeitems" title="Remove line"><i class="fa-solid fa-times"></i></button>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -341,7 +341,7 @@
                                 <div class="mt-3 w-100 trust-rule42-panel" id="ledger-rule42-block" style="display: none;">
                                     <div class="card border-warning mb-0">
                                         <div class="card-header py-2 trust-rule42-panel__header">
-                                            <strong><i class="fas fa-gavel"></i> Rule 42 — withdrawal authority</strong>
+                                            <strong><i class="fa-solid fa-gavel"></i> Rule 42 — withdrawal authority</strong>
                                             <span class="text-muted small ms-1">(required for Fee Transfer lines)</span>
                                         </div>
                                         <div class="card-body py-3">
@@ -380,7 +380,7 @@
 						</div>
 
                         <div class="col-12 trust-entry-form-footer">
-                            <a href="javascript:;" class="btn btn-sm btn-outline-primary trust-entry-add-line openproductrinfo"><i class="fa fa-plus"></i> Add New Line</a>
+                            <a href="javascript:;" class="btn btn-sm btn-outline-primary trust-entry-add-line openproductrinfo"><i class="fa-solid fa-plus"></i> Add New Line</a>
 
                             <div class="trust-entry-form-footer__actions">
                             <div class="upload_client_receipt_document trust-entry-upload">
@@ -389,7 +389,7 @@
                                 
                                 <div class="ledger-drag-drop-zone" id="ledgerDragDropZone">
                                     <div class="drag-zone-inner">
-                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <i class="fa-solid fa-cloud-upload-alt"></i>
                                         <div class="drag-zone-content">
                                             <p class="drag-zone-text">Drag files here or <strong>click to browse</strong></p>
                                             <small class="drag-zone-formats">PDF, JPG, PNG, DOC, DOCX (multiple files)</small>
@@ -402,7 +402,7 @@
                                 <div id="ledger-selected-files-display" class="ledger-selected-files-display" style="display: none;">
                                     <div id="ledger-files-list" class="files-list"></div>
                                     <button type="button" class="btn btn-sm btn-link text-danger remove-all-files" title="Remove all files">
-                                        <i class="fas fa-times"></i> Clear All
+                                        <i class="fa-solid fa-times"></i> Clear All
                                     </button>
                                 </div>
                                 
@@ -494,7 +494,7 @@
                                             </td>
 
                                             <td>
-                                                <a class="removeitems_invoice" href="javascript:;"><i class="fa fa-times"></i></a>
+                                                <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-times"></i></a>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -514,7 +514,7 @@
 						</div>
 
                         <div class="col-3 col-md-3 col-lg-3">
-                            <a href="javascript:;" class="openproductrinfo_invoice"><i class="fa fa-plus"></i> Add New Line</a>
+                            <a href="javascript:;" class="openproductrinfo_invoice"><i class="fa-solid fa-plus"></i> Add New Line</a>
                         </div>
 
 						<div class="col-9 col-md-9 col-lg-9 text-right">
@@ -551,19 +551,19 @@
                                 <div class="quick-actions-toolbar" style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--navy);">
                                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                                         <span style="font-weight: 600; color: var(--navy);">
-                                            <i class="fas fa-bolt"></i> Quick Actions:
+                                            <i class="fa-solid fa-bolt"></i> Quick Actions:
                                         </span>
                                         <button type="button" class="btn btn-sm btn-outline-primary paste-clipboard-btn" 
                                                 title="Paste amount from clipboard">
-                                            <i class="fas fa-clipboard"></i> Paste from Clipboard
+                                            <i class="fa-solid fa-clipboard"></i> Paste from Clipboard
                                             <span class="clipboard-preview" style="margin-left: 5px; font-weight: bold; color: #28a745;"></span>
                                         </button>
                                         <button type="button" class="btn btn-sm btn-outline-info repeat-last-entry-btn"
                                                 title="Repeat last office receipt entry">
-                                            <i class="fas fa-redo"></i> Repeat Last Entry
+                                            <i class="fa-solid fa-redo"></i> Repeat Last Entry
                                         </button>
                                         <small style="margin-left: auto; color: #4b5563;">
-                                            <i class="fas fa-info-circle"></i> Use these shortcuts to speed up data entry
+                                            <i class="fa-solid fa-info-circle"></i> Use these shortcuts to speed up data entry
                                         </small>
                                     </div>
                                 </div>
@@ -615,7 +615,7 @@
                                             </td>
 
                                             <td>
-                                                <a class="removeitems_office" href="javascript:;"><i class="fa fa-times"></i></a>
+                                                <a class="removeitems_office" href="javascript:;"><i class="fa-solid fa-times"></i></a>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -635,7 +635,7 @@
 						</div>
 
                         <div class="col-3 col-md-3 col-lg-3">
-                            <a href="javascript:;" class="openproductrinfo_office"><i class="fa fa-plus"></i> Add New Line</a>
+                            <a href="javascript:;" class="openproductrinfo_office"><i class="fa-solid fa-plus"></i> Add New Line</a>
                         </div>
 
 						<div class="col-9 col-md-9 col-lg-9 text-right" style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
@@ -646,7 +646,7 @@
                                 <!-- NEW: Drag and Drop Zone -->
                                 <div class="ledger-drag-drop-zone office-drag-drop-zone" id="officeDragDropZone">
                                     <div class="drag-zone-inner">
-                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <i class="fa-solid fa-cloud-upload-alt"></i>
                                         <div class="drag-zone-content">
                                             <p class="drag-zone-text">Drag files here or <strong>click to browse</strong></p>
                                             <small class="drag-zone-formats">Accepted: PDF, JPG, PNG, DOC, DOCX (Multiple files allowed)</small>
@@ -661,7 +661,7 @@
                                 <div id="office-selected-files-display" class="ledger-selected-files-display" style="display: none;">
                                     <div id="office-files-list" class="files-list"></div>
                                     <button type="button" class="btn btn-sm btn-link text-danger remove-all-files-office" title="Remove all files">
-                                        <i class="fas fa-times"></i> Clear All
+                                        <i class="fa-solid fa-times"></i> Clear All
                                     </button>
                                 </div>
                                 
@@ -669,8 +669,8 @@
                                 <span class="file-selection-hint1" style="margin-right: 10px; color: #34395e;"></span>
                             </div>
 
-                            <button onclick="customValidate('office_receipt_form','draft')" type="button" class="btn btn-secondary" style="margin: 0px !important;"><i class="fas fa-save"></i> Save Draft</button>
-                            <button onclick="customValidate('office_receipt_form','final')" type="button" class="btn btn-primary" style="margin: 0px !important;"><i class="fas fa-check"></i> Save and Finalize</button>
+                            <button onclick="customValidate('office_receipt_form','draft')" type="button" class="btn btn-secondary" style="margin: 0px !important;"><i class="fa-solid fa-save"></i> Save Draft</button>
+                            <button onclick="customValidate('office_receipt_form','final')" type="button" class="btn btn-primary" style="margin: 0px !important;"><i class="fa-solid fa-check"></i> Save and Finalize</button>
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
                     </div>
@@ -766,7 +766,7 @@
                                             </td>
 
                                             <td>
-                                                <a class="removeitems_invoice" href="javascript:;"><i class="fa fa-times"></i></a>
+                                                <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-times"></i></a>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -882,7 +882,7 @@
                                             </td>
 
                                             <td>
-                                                <a class="removeitems" href="javascript:;"><i class="fa fa-times"></i></a>
+                                                <a class="removeitems" href="javascript:;"><i class="fa-solid fa-times"></i></a>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -902,7 +902,7 @@
 						</div>
 
                         <div class="col-3 col-md-3 col-lg-3">
-                            <a href="javascript:;" class="openproductrinfo"><i class="fa fa-plus"></i> Add New Line</a>
+                            <a href="javascript:;" class="openproductrinfo"><i class="fa-solid fa-plus"></i> Add New Line</a>
                         </div>
 
 						<div class="col-9 col-md-9 col-lg-9 text-right">
@@ -910,7 +910,7 @@
                             <div class="upload_client_receipt_document" style="display:inline-block;">
                                 <input type="hidden" name="type" value="client">
                                 <input type="hidden" name="doctype" value="client_receipt">
-                                <a href="javascript:;" class="btn btn-primary"><i class="fa fa-plus"></i> Add Document</a>
+                                <a href="javascript:;" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Document</a>
                                 <input class="docclientreceiptupload" type="file" name="document_upload[]"/>
                             </div>
 
@@ -1032,7 +1032,7 @@
                                             </td>
 
                                             <td>
-                                                <a class="removeitems_invoice" href="javascript:;"><i class="fa fa-times"></i></a>
+                                                <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-times"></i></a>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -1052,7 +1052,7 @@
 						</div>
 
                         <div class="col-3 col-md-3 col-lg-3">
-                            <a href="javascript:;" class="openproductrinfo_invoice"><i class="fa fa-plus"></i> Add New Line</a>
+                            <a href="javascript:;" class="openproductrinfo_invoice"><i class="fa-solid fa-plus"></i> Add New Line</a>
                         </div>
 
 						<div class="col-9 col-md-9 col-lg-9 text-right">
@@ -1158,7 +1158,7 @@
                                             </td>
 
                                             <td>
-                                                <a class="removeitems_office" href="javascript:;"><i class="fa fa-times"></i></a>
+                                                <a class="removeitems_office" href="javascript:;"><i class="fa-solid fa-times"></i></a>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -1178,7 +1178,7 @@
 						</div>
 
                         <div class="col-3 col-md-3 col-lg-3">
-                            <a href="javascript:;" class="openproductrinfo_office"><i class="fa fa-plus"></i> Add New Line</a>
+                            <a href="javascript:;" class="openproductrinfo_office"><i class="fa-solid fa-plus"></i> Add New Line</a>
                         </div>
 
 						<div class="col-9 col-md-9 col-lg-9 text-right" style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
@@ -1189,7 +1189,7 @@
                                 <!-- NEW: Drag and Drop Zone -->
                                 <div class="ledger-drag-drop-zone office-drag-drop-zone" id="officeDragDropZone2">
                                     <div class="drag-zone-inner">
-                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <i class="fa-solid fa-cloud-upload-alt"></i>
                                         <div class="drag-zone-content">
                                             <p class="drag-zone-text">Drag files here or <strong>click to browse</strong></p>
                                             <small class="drag-zone-formats">Accepted: PDF, JPG, PNG, DOC, DOCX (Multiple files allowed)</small>
@@ -1204,7 +1204,7 @@
                                 <div id="office-selected-files-display2" class="ledger-selected-files-display" style="display: none;">
                                     <div id="office-files-list2" class="files-list"></div>
                                     <button type="button" class="btn btn-sm btn-link text-danger remove-all-files-office" title="Remove all files">
-                                        <i class="fas fa-times"></i> Clear All
+                                        <i class="fa-solid fa-times"></i> Clear All
                                     </button>
                                 </div>
                             </div>
@@ -1303,7 +1303,7 @@
                                             </td>
 
 					                        <td>
-                                                <a class="removeitems_journal" href="javascript:;"><i class="fa fa-times"></i></a>
+                                                <a class="removeitems_journal" href="javascript:;"><i class="fa-solid fa-times"></i></a>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -1323,7 +1323,7 @@
 						</div>
 
                         <div class="col-3 col-md-3 col-lg-3">
-                            <a href="javascript:;" class="openproductrinfo_journal"><i class="fa fa-plus"></i> Add New Line</a>
+                            <a href="javascript:;" class="openproductrinfo_journal"><i class="fa-solid fa-plus"></i> Add New Line</a>
                         </div>
 
 						<div class="col-9 col-md-9 col-lg-9 text-right">
@@ -1331,7 +1331,7 @@
                             <div class="upload_journal_receipt_document" style="display:inline-block;">
                                 <input type="hidden" name="type" value="client">
                                 <input type="hidden" name="doctype" value="journal_receipt">
-                                <a href="javascript:;" class="btn btn-primary"><i class="fa fa-plus"></i> Add Document</a>
+                                <a href="javascript:;" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Document</a>
 
                                 <input class="docjournalreceiptupload" type="file" name="document_upload[]"/>
                             </div>

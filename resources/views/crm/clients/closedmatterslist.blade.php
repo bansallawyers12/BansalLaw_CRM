@@ -88,7 +88,7 @@
                     <div class="card-header-actions">
                         @if($_cmInsightsBtn)
                         <a href="{{ route('clients.insights', ['section' => 'matters']) }}" class="btn btn-theme btn-theme-sm" title="Matter Insights">
-                            <i class="fas fa-chart-line"></i> Insights
+                            <i class="fa-solid fa-chart-line"></i> Insights
                         </a>
                         @endif
                         <select name="per_page" id="per_page" class="form-control per-page-select">
@@ -96,7 +96,7 @@
                                 <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>{{ $option }} / page</option>
                             @endforeach
                         </select>
-                        <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fas fa-filter"></i> Filter</a>
+                        <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fa-solid fa-filter"></i> Filter</a>
                     </div>
                 </div>
 
@@ -130,11 +130,11 @@
                             <h4>
                                 Search By Details
                                 @if($activeMatterFilters > 0)
-                                    <span class="active-filters-badge"><i class="fas fa-filter"></i> {{ $activeMatterFilters }} Active</span>
+                                    <span class="active-filters-badge"><i class="fa-solid fa-filter"></i> {{ $activeMatterFilters }} Active</span>
                                 @endif
                             </h4>
                             @if($activeMatterFilters > 0)
-                                <button type="button" class="clear-filter-btn" id="clearMatterFilters"><i class="fas fa-undo"></i> Clear Filters</button>
+                                <button type="button" class="clear-filter-btn" id="clearMatterFilters"><i class="fa-solid fa-undo"></i> Clear Filters</button>
                             @endif
                         </div>
                         <form action="{{ route('clients.closedmatterslist') }}" method="get" id="matterFilterForm">
@@ -216,7 +216,7 @@
                                 @endphp
                                 <div class="quick-filters">
                                     @foreach($quickFilters as $key => $label)
-                                        <span class="quick-filter-chip matter-quick-filter {{ request('quick_date_range') === $key ? 'active' : '' }}" data-filter="{{ $key }}"><i class="fas fa-calendar"></i> {{ $label }}</span>
+                                        <span class="quick-filter-chip matter-quick-filter {{ request('quick_date_range') === $key ? 'active' : '' }}" data-filter="{{ $key }}"><i class="fa-solid fa-calendar"></i> {{ $label }}</span>
                                     @endforeach
                                 </div>
                                 <div class="divider-text">Or Custom Range</div>
@@ -251,8 +251,8 @@
                             return request()->url() . '?' . http_build_query($q);
                         };
                         $sortIcon = function($column) use ($currentSort, $currentDirection) {
-                            if ($currentSort !== $column) return '<i class="fas fa-sort text-muted"></i>';
-                            return $currentDirection === 'asc' ? '<i class="fas fa-sort-up"></i>' : '<i class="fas fa-sort-down"></i>';
+                            if ($currentSort !== $column) return '<i class="fa-solid fa-sort text-muted"></i>';
+                            return $currentDirection === 'asc' ? '<i class="fa-solid fa-sort-up"></i>' : '<i class="fa-solid fa-sort-down"></i>';
                         };
                     @endphp
                     <div class="table-responsive">
@@ -305,20 +305,20 @@
                                             <td class="tdCls">{{ date('d/m/Y', strtotime($list->created_at)) }}</td>
                                             <td class="tdCls">
                                                 @if($matter_office)
-                                                    <span class="badge badge-info" style="font-size: 12px;"><i class="fas fa-building"></i> {{ $matter_office->office_name }}</span>
+                                                    <span class="badge badge-info" style="font-size: 12px;"><i class="fa-solid fa-building"></i> {{ $matter_office->office_name }}</span>
                                                 @else
-                                                    <span class="badge badge-warning" style="font-size: 11px;"><i class="fas fa-exclamation-triangle"></i> Not Assigned</span>
+                                                    <span class="badge badge-warning" style="font-size: 11px;"><i class="fa-solid fa-exclamation-triangle"></i> Not Assigned</span>
                                                 @endif
                                             </td>
                                             <td class="tdCls">
                                                 @if($isDiscontinued)
                                                     @if($_cmCanReopen)
-                                                    <button class="btn btn-primary btn-sm closed-matter-reopen" type="button" data-matter-id="{{ $list->id }}"><i class="fas fa-redo"></i> Reopen</button>
+                                                    <button class="btn btn-primary btn-sm closed-matter-reopen" type="button" data-matter-id="{{ $list->id }}"><i class="fa-solid fa-redo"></i> Reopen</button>
                                                     @else
                                                         @if($list->reopen_requested_by)
-                                                            <button class="btn btn-secondary btn-sm" disabled type="button" title="Reopen Requested"><i class="fas fa-clock"></i> Requested</button>
+                                                            <button class="btn btn-secondary btn-sm" disabled type="button" title="Reopen Requested"><i class="fa-solid fa-clock"></i> Requested</button>
                                                         @else
-                                                            <button class="btn btn-warning btn-sm closed-matter-request-reopen" type="button" data-matter-id="{{ $list->id }}" title="Request Admin to Reopen Matter"><i class="fas fa-hand-paper"></i> Request</button>
+                                                            <button class="btn btn-warning btn-sm closed-matter-request-reopen" type="button" data-matter-id="{{ $list->id }}" title="Request Admin to Reopen Matter"><i class="fa-solid fa-hand-paper"></i> Request</button>
                                                         @endif
                                                     @endif
                                                 @else
@@ -375,7 +375,7 @@ jQuery(document).ready(function($){
         if (!matterId) return;
         if (!confirm('Reopen this matter? It will be moved back to active matters.')) return;
         var $btn = $(this);
-        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Reopening...');
+        $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Reopening...');
         $.ajax({
             url: '{{ route("clients.matter.reopen") }}',
             method: 'POST',
@@ -388,12 +388,12 @@ jQuery(document).ready(function($){
                     window.location.reload();
                 } else {
                     alert(resp.message || 'Failed to reopen matter.');
-                    $btn.prop('disabled', false).html('<i class="fas fa-redo"></i> Reopen');
+                    $btn.prop('disabled', false).html('<i class="fa-solid fa-redo"></i> Reopen');
                 }
             },
             error: function(){
                 alert('An error occurred. Please try again.');
-                $btn.prop('disabled', false).html('<i class="fas fa-redo"></i> Reopen');
+                $btn.prop('disabled', false).html('<i class="fa-solid fa-redo"></i> Reopen');
             }
         });
     });
@@ -404,7 +404,7 @@ jQuery(document).ready(function($){
         if (!matterId) return;
         if (!confirm('Send a request to the admin to reopen this matter?')) return;
         var $btn = $(this);
-        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Requesting...');
+        $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Requesting...');
         $.ajax({
             url: '{{ route("clients.matter.request-reopen") }}',
             method: 'POST',
@@ -416,12 +416,12 @@ jQuery(document).ready(function($){
                     window.location.reload();
                 } else {
                     alert(resp.message || 'Failed to request reopen.');
-                    $btn.prop('disabled', false).html('<i class="fas fa-hand-paper"></i> Request');
+                    $btn.prop('disabled', false).html('<i class="fa-solid fa-hand-paper"></i> Request');
                 }
             },
             error: function(){
                 alert('An error occurred. Please try again.');
-                $btn.prop('disabled', false).html('<i class="fas fa-hand-paper"></i> Request');
+                $btn.prop('disabled', false).html('<i class="fa-solid fa-hand-paper"></i> Request');
             }
         });
     });

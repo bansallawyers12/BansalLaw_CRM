@@ -944,7 +944,7 @@ function customValidate(formName, savetype = '')
 											}
 
 											// Create AWS link if available
-											let awsLink = (awsUrl != "") ? '<a target="_blank" class="link-primary" href="'+awsUrl+'" title="View Receipt '+subArray.trans_no+'"><i class="fas fa-file-pdf"></i></a>' : '';
+											let awsLink = (awsUrl != "") ? '<a target="_blank" class="link-primary" href="'+awsUrl+'" title="View Receipt '+subArray.trans_no+'"><i class="fa-solid fa-file-pdf"></i></a>' : '';
 
 											// Format currency
 											let depositAmount = subArray.deposit_amount ? "$" + parseFloat(subArray.deposit_amount).toFixed(2) : '';
@@ -1137,10 +1137,10 @@ function customValidate(formName, savetype = '')
 												// Generate action link
 												var actionLink = '';
 												if(subArray.save_type === 'draft'){
-													actionLink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fas fa-pencil-alt"></i></a>';
+													actionLink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fa-solid fa-pen"></i></a>';
 												} else if(subArray.save_type === 'final') {
 													var invoiceUrl = "/clients/genInvoice/" + subArray.receipt_id;
-													actionLink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fas fa-file-pdf"></i></a>';
+													actionLink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fa-solid fa-file-pdf"></i></a>';
 												}
 
 												// Status mapping
@@ -1175,10 +1175,10 @@ function customValidate(formName, savetype = '')
                                             // Generate action link
                                             var actionLink = '';
                                             if (subArray.save_type === 'draft') {
-                                                actionLink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fas fa-pencil-alt"></i></a>';
+                                                actionLink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fa-solid fa-pen"></i></a>';
                                             } else if (subArray.save_type === 'final') {
                                                 var invoiceUrl = "/clients/genInvoice/" + subArray.receipt_id;
-                                                actionLink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fas fa-file-pdf"></i></a>';
+                                                actionLink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fa-solid fa-file-pdf"></i></a>';
                                             }
 
                                             // Status mapping
@@ -1237,13 +1237,13 @@ function customValidate(formName, savetype = '')
 												$.each(requestAddData, function(index2, subArray2) {
 													if(subArray2.save_type == 'draft'){
 														var unique_invoice_id2 = "invoiceTrRow_"+subArray2.id;
-														var draftlink2 = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray2.receipt_id+'"><i class="fas fa-pencil-alt"></i></a>';
+														var draftlink2 = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray2.receipt_id+'"><i class="fa-solid fa-pen"></i></a>';
 														trRows_invoice2 += "<tr class='invoiceTrRow' id='"+unique_invoice_id2+"'><td>"+subArray2.invoice_no+" "+draftlink2+"</td><td>"+subArray2.trans_date+"</td><td>"+subArray2.entry_date+"</td><td>"+subArray2.trans_no+"</td><td>"+subArray2.gst_included+"</td><td>"+subArray2.payment_type+"</td><td>"+subArray2.description+"</td><td>$"+subArray2.deposit_amount+"</td></tr>";
 													}
 													else if(subArray2.save_type == 'final') {
 														var unique_invoice_id2 = "invoiceTrRow_"+subArray2.id;
 														var invoiceUrl2 = "/clients/genInvoice/"+subArray2.receipt_id;
-														var finallink2 = '<a target="_blank" class="link-primary" href="'+invoiceUrl2+'"><i class="fas fa-file-pdf"></i></a>';
+														var finallink2 = '<a target="_blank" class="link-primary" href="'+invoiceUrl2+'"><i class="fa-solid fa-file-pdf"></i></a>';
 														trRows_invoice2 += "<tr class='invoiceTrRow' id='"+unique_invoice_id2+"'><td>"+subArray2.invoice_no+" "+finallink2+"</td><td>"+subArray2.trans_date+"</td><td>"+subArray2.entry_date+"</td><td>"+subArray2.trans_no+"</td><td>"+subArray2.gst_included+"</td><td>"+subArray2.payment_type+"</td><td>"+subArray2.description+"</td><td>$"+subArray2.deposit_amount+"</td></tr>";
 													}
 												});
@@ -1259,12 +1259,12 @@ function customValidate(formName, savetype = '')
 												$('#invoiceTrRow_'+subArray.id).empty();
 												//console.log('save_type='+subArray.save_type);
 												if(subArray.save_type == 'draft'){
-													var draftlink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fas fa-pencil-alt"></i></a>';
+													var draftlink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fa-solid fa-pen"></i></a>';
 													var trRows_invoice = "<td>"+subArray.invoice_no+" "+draftlink+"</td><td>"+subArray.trans_date+"</td><td>"+subArray.entry_date+"</td><td>"+subArray.trans_no+"</td><td>"+subArray.gst_included+"</td><td>"+subArray.payment_type+"</td><td>"+subArray.description+"</td><td>$"+subArray.deposit_amount+"</td>";
 												}
 												else if(subArray.save_type == 'final') {
 													var invoiceUrl = "/clients/genInvoice/"+subArray.receipt_id;
-													var finallink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fas fa-file-pdf"></i></a>';
+													var finallink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fa-solid fa-file-pdf"></i></a>';
 													var trRows_invoice = "<td>"+subArray.invoice_no+" "+finallink+"</td><td>"+subArray.trans_date+"</td><td>"+subArray.entry_date+"</td><td>"+subArray.trans_no+"</td><td>"+subArray.gst_included+"</td><td>"+subArray.payment_type+"</td><td>"+subArray.description+"</td><td>$"+subArray.deposit_amount+"</td>";
 												}
 												$('#invoiceTrRow_'+subArray.id).append(trRows_invoice);
@@ -1391,7 +1391,7 @@ function customValidate(formName, savetype = '')
                                                 var awsUrl = obj.awsUrl;
                                                 var trRows_office = "";
                                                 $.each(reqData, function(index, subArray) {
-                                                    let awsLink = awsUrl !== "" ? '<a target="_blank" class="link-primary" href="' + awsUrl + '"><i class="fas fa-file-pdf"></i></a>' : '';
+                                                    let awsLink = awsUrl !== "" ? '<a target="_blank" class="link-primary" href="' + awsUrl + '"><i class="fa-solid fa-file-pdf"></i></a>' : '';
 
                                                     let payIconMap = {
                                                         'Cash': 'fa-arrow-down',
@@ -1506,10 +1506,10 @@ function customValidate(formName, savetype = '')
                                             // Generate action link
                                             var actionLink = '';
                                             if (subArray.save_type === 'draft') {
-                                                actionLink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fas fa-pencil-alt"></i></a>';
+                                                actionLink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fa-solid fa-pen"></i></a>';
                                             } else if (subArray.save_type === 'final') {
                                                 var invoiceUrl = "/clients/genInvoice/" + subArray.receipt_id;
-                                                actionLink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fas fa-file-pdf"></i></a>';
+                                                actionLink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fa-solid fa-file-pdf"></i></a>';
                                             }
 
                                             // Status mapping
@@ -1577,7 +1577,7 @@ function customValidate(formName, savetype = '')
 										var trRows_journal = "";
 										$.each(reqData, function(index, subArray) {
 											if(awsUrl != ""){
-												var awsLink = '<a target="_blank" class="link-primary" href="'+awsUrl+'"><i class="fas fa-file-pdf"></i></a>';
+												var awsLink = '<a target="_blank" class="link-primary" href="'+awsUrl+'"><i class="fa-solid fa-file-pdf"></i></a>';
 											} else {
 												var awsLink = '';
 											}
@@ -3129,18 +3129,18 @@ function getallactivities(client_id){
 			var iconClass = '';
 			
 			if (activityType === 'sms') {
-				subjectIcon = '<i class="fas fa-sms"></i>';
+				subjectIcon = '<i class="fa-solid fa-sms"></i>';
 				iconClass = 'feed-icon-sms';
 			} else if (activityType === 'activity') {
-				subjectIcon = '<i class="fas fa-bolt"></i>';
+				subjectIcon = '<i class="fa-solid fa-bolt"></i>';
 				iconClass = 'feed-icon-activity';
 			} else if (activityType === 'financial') {
-				subjectIcon = '<i class="fas fa-dollar-sign"></i>';
+				subjectIcon = '<i class="fa-solid fa-dollar-sign"></i>';
 				iconClass = 'feed-icon-accounting';
 			} else if (v.subject && v.subject.toLowerCase().includes("document")) {
-				subjectIcon = '<i class="fas fa-file-alt"></i>';
+				subjectIcon = '<i class="fa-solid fa-file-alt"></i>';
 			} else {
-				subjectIcon = '<i class="fas fa-sticky-note"></i>';
+				subjectIcon = '<i class="fa-solid fa-sticky-note"></i>';
 			}
 
 			var subject = v.subject ?? '';

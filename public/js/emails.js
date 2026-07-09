@@ -297,7 +297,7 @@
         modal.setAttribute('aria-hidden', 'true');
         modal.innerHTML = `
             <div class="duplicate-email-modal" role="dialog" aria-labelledby="duplicateEmailModalTitle" aria-modal="true">
-                <div class="duplicate-email-modal__icon" aria-hidden="true"><i class="fas fa-envelope-open-text"></i></div>
+                <div class="duplicate-email-modal__icon" aria-hidden="true"><i class="fa-solid fa-envelope-open-text"></i></div>
                 <h3 class="duplicate-email-modal__title" id="duplicateEmailModalTitle">Duplicate Email</h3>
                 <p class="duplicate-email-modal__message">${DUPLICATE_EXISTS_MESSAGE}</p>
                 <p class="duplicate-email-modal__filename" id="duplicateEmailFileName"></p>
@@ -755,47 +755,47 @@
      * Get attachment icon class based on content type
      */
     function getAttachmentIcon(contentType) {
-        if (!contentType) return 'fas fa-paperclip';
+        if (!contentType) return 'fa-solid fa-paperclip';
         
         const type = contentType.toLowerCase();
         
         // Images
         if (type.includes('image')) {
-            return 'fas fa-image';
+            return 'fa-solid fa-image';
         }
         
         // PDFs
         if (type.includes('pdf')) {
-            return 'fas fa-file-pdf';
+            return 'fa-solid fa-file-pdf';
         }
         
         // Word documents
         if (type.includes('word') || type.includes('document') || type.includes('.docx')) {
-            return 'fas fa-file-word';
+            return 'fa-solid fa-file-word';
         }
         
         // Excel spreadsheets
         if (type.includes('excel') || type.includes('spreadsheet') || type.includes('.xlsx')) {
-            return 'fas fa-file-excel';
+            return 'fa-solid fa-file-excel';
         }
         
         // PowerPoint
         if (type.includes('powerpoint') || type.includes('presentation')) {
-            return 'fas fa-file-powerpoint';
+            return 'fa-solid fa-file-powerpoint';
         }
         
         // Archives
         if (type.includes('zip') || type.includes('rar') || type.includes('archive')) {
-            return 'fas fa-file-archive';
+            return 'fa-solid fa-file-archive';
         }
         
         // Code files
         if (type.includes('text/plain') || type.includes('code') || type.includes('javascript') || type.includes('html')) {
-            return 'fas fa-file-code';
+            return 'fa-solid fa-file-code';
         }
         
         // Default
-        return 'fas fa-paperclip';
+        return 'fa-solid fa-paperclip';
     }
 
     /**
@@ -1483,12 +1483,12 @@
         const hasAttachments = email.attachments && Array.isArray(email.attachments) && email.attachments.length > 0;
         const regularAttachments = hasAttachments ? getRegularAttachments(email.attachments) : [];
         const attachmentIcon = hasAttachments
-            ? `<i class="fas fa-paperclip attachment-indicator" title="${email.attachments.length} attachment(s)"></i>`
+            ? `<i class="fa-solid fa-paperclip attachment-indicator" title="${email.attachments.length} attachment(s)"></i>`
             : '';
         const attachmentNamesHtml = regularAttachments.length
             ? `<div class="email-item-attachments">${regularAttachments.slice(0, 3).map(function(att) {
                 const name = att.filename || att.display_name || att.file_name || 'Attachment';
-                return `<span class="email-item-attachment-line"><i class="fas fa-file-alt"></i> ${escapeHtml(name)}</span>`;
+                return `<span class="email-item-attachment-line"><i class="fa-solid fa-file-alt"></i> ${escapeHtml(name)}</span>`;
             }).join('')}${regularAttachments.length > 3 ? `<span class="email-item-attachment-more">+${regularAttachments.length - 3} more</span>` : ''}</div>`
             : '';
 
@@ -1496,7 +1496,7 @@
         const labelBadges = (email.labels && Array.isArray(email.labels)) 
             ? email.labels.map(label => 
                 `<span class="label-badge" style="background-color: ${label.color}20; border-color: ${label.color}; color: ${label.color}">
-                    <i class="${label.icon || 'fas fa-tag'}"></i> ${label.name}
+                    <i class="${label.icon || 'fa-solid fa-tag'}"></i> ${label.name}
                 </span>`
             ).join('')
             : '';
@@ -1565,7 +1565,7 @@
         emailList.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon">
-                    <i class="fas fa-inbox"></i>
+                    <i class="fa-solid fa-inbox"></i>
                 </div>
                 <div class="empty-state-text">
                     <h3>${message || 'No emails found'}</h3>
@@ -1586,7 +1586,7 @@
             emailList.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">
-                        <i class="fas fa-spinner fa-spin"></i>
+                        <i class="fa-solid fa-spinner fa-spin"></i>
                     </div>
                     <div class="empty-state-text">
                         <h3>Loading emails...</h3>
@@ -1651,14 +1651,14 @@
                                 data-attachment-id="${att.id}" 
                                 data-filename="${escapeHtml(att.filename || att.display_name || 'file')}"
                                 title="Download ${escapeHtml(att.filename || 'file')}">
-                            <i class="fas fa-download"></i> Download
+                            <i class="fa-solid fa-download"></i> Download
                         </button>
                         ${canPreviewAttachment(att.content_type) ? `
                         <button class="preview-btn preview-attachment-btn" 
                                 data-attachment-id="${att.id}" 
                                 data-filename="${escapeHtml(att.filename || att.display_name || 'file')}"
                                 title="Preview ${escapeHtml(att.filename || 'file')}">
-                            <i class="fas fa-eye"></i> Preview
+                            <i class="fa-solid fa-eye"></i> Preview
                         </button>
                         ` : ''}
                     </div>
@@ -1669,7 +1669,7 @@
                 <div class="attachment-list">
                     <div class="attachment-list-header">
                         <span class="attachment-list-title">
-                            <i class="fas fa-paperclip"></i> 
+                            <i class="fa-solid fa-paperclip"></i> 
                             ${regularAttachments.length} Attachment${regularAttachments.length !== 1 ? 's' : ''}
                         </span>
                         ${regularAttachments.length > 1 ? `
@@ -1677,7 +1677,7 @@
                                 data-mail-report-id="${email.id}"
                                 data-email-subject="${escapeHtml(subject)}"
                                 title="Download all attachments as ZIP">
-                            <i class="fas fa-download"></i> Download All
+                            <i class="fa-solid fa-download"></i> Download All
                         </button>
                         ` : ''}
                     </div>
@@ -1691,7 +1691,7 @@
         if (email.preview_url) {
             previewSection = `
                 <div class="gmail-original-download">
-                    <i class="fas fa-file-alt"></i>
+                    <i class="fa-solid fa-file-alt"></i>
                     <a href="${escapeHtml(email.preview_url)}" target="_blank">Download Original .msg</a>
                 </div>
             `;
@@ -1704,7 +1704,7 @@
         if (rawBody && rawBody.trim() !== '') {
             emailBodyHtml = '<div class="gmail-body-frame-wrap"><iframe class="gmail-body-frame" id="gmailBodyFrame_' + email.id + '" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" title="Email body"></iframe></div>';
         } else {
-            emailBodyHtml = '<div class="gmail-body-empty"><i class="fas fa-envelope-open"></i><p>No email content available.</p></div>';
+            emailBodyHtml = '<div class="gmail-body-empty"><i class="fa-solid fa-envelope-open"></i><p>No email content available.</p></div>';
         }
 
         // Sender initial for avatar
@@ -1728,7 +1728,7 @@
                             <span class="gmail-to-value">${escapeHtml(to)}</span>
                             ${cc ? `<span class="gmail-cc-label">cc</span><span class="gmail-cc-value">${escapeHtml(cc)}</span>` : ''}
                             <button class="gmail-details-toggle" onclick="this.closest('.gmail-header').querySelector('.gmail-details-expanded').classList.toggle('show')">
-                                <i class="fas fa-chevron-down"></i>
+                                <i class="fa-solid fa-chevron-down"></i>
                             </button>
                         </div>
                         <div class="gmail-details-expanded">
@@ -2496,7 +2496,7 @@
         } else {
             labelContent.innerHTML = filteredLabels.map(label => {
                 const isApplied = currentLabelIds.includes(label.id);
-                const icon = label.icon || 'fas fa-tag';
+                const icon = label.icon || 'fa-solid fa-tag';
                 const color = label.color || '#3B82F6';
                 
                 return `
@@ -2507,7 +2507,7 @@
                             <i class="${icon}"></i>
                         </span>
                         <span class="submenu-item-text">${escapeHtml(label.name)}</span>
-                        ${isApplied ? '<i class="fas fa-check submenu-item-check"></i>' : ''}
+                        ${isApplied ? '<i class="fa-solid fa-check submenu-item-check"></i>' : ''}
                     </div>
                 `;
             }).join('');
@@ -3023,7 +3023,7 @@
                     // Disable button during download
                     const originalHtml = target.innerHTML;
                     target.disabled = true;
-                    target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
+                    target.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Downloading...';
                     
                     downloadAttachment(attachmentId, filename).finally(() => {
                         target.disabled = false;
@@ -3053,7 +3053,7 @@
                     // Disable button during download
                     const originalHtml = target.innerHTML;
                     target.disabled = true;
-                    target.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating ZIP...';
+                    target.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating ZIP...';
                     
                     downloadAllAttachments(mailReportId, emailSubject).finally(() => {
                         target.disabled = false;

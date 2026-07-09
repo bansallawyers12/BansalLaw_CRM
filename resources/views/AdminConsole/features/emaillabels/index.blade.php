@@ -22,7 +22,7 @@
 							<h4>Email Labels</h4>
 							<div class="card-header-action">
 								<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createEmailLabelModal">
-									<i class="fa fa-plus"></i> Create Email Label
+									<i class="fa-solid fa-plus"></i> Create Email Label
 								</button>
 							</div>
 						</div>
@@ -113,8 +113,8 @@
 						<div class="col-12 col-md-6">
 							<div class="form-group mb-0">
 								<label for="create_label_icon">Icon</label>
-								<input type="text" id="create_label_icon" name="icon" class="form-control" autocomplete="off" placeholder="fas fa-tag" value="fas fa-tag">
-								<small class="form-text text-muted">Font Awesome class (e.g. fas fa-tag, fas fa-star)</small>
+								<input type="text" id="create_label_icon" name="icon" class="form-control" autocomplete="off" placeholder="fa-solid fa-tag" value="fa-solid fa-tag">
+								<small class="form-text text-muted">Font Awesome class (e.g. fa-solid fa-tag, fa-solid fa-star)</small>
 								<span class="custom-error field-error" data-field="icon" role="alert"></span>
 							</div>
 						</div>
@@ -129,7 +129,7 @@
 							<div class="email-label-preview-wrap">
 								<span class="text-muted small d-block mb-1">Preview</span>
 								<span class="badge email-label-badge" id="create_label_preview" style="background-color: #3A6FA820; border: 1px solid #3A6FA8; color: #3A6FA8;">
-									<i class="fas fa-tag"></i> <span class="preview-name">Label name</span>
+									<i class="fa-solid fa-tag"></i> <span class="preview-name">Label name</span>
 								</span>
 							</div>
 						</div>
@@ -192,8 +192,8 @@
 						<div class="col-12 col-md-6">
 							<div class="form-group mb-0">
 								<label for="edit_label_icon">Icon</label>
-								<input type="text" id="edit_label_icon" name="icon" class="form-control" autocomplete="off" placeholder="fas fa-tag" value="fas fa-tag">
-								<small class="form-text text-muted">Font Awesome class (e.g. fas fa-tag, fas fa-star)</small>
+								<input type="text" id="edit_label_icon" name="icon" class="form-control" autocomplete="off" placeholder="fa-solid fa-tag" value="fa-solid fa-tag">
+								<small class="form-text text-muted">Font Awesome class (e.g. fa-solid fa-tag, fa-solid fa-star)</small>
 								<span class="custom-error field-error" data-field="icon" role="alert"></span>
 							</div>
 						</div>
@@ -218,7 +218,7 @@
 							<div class="email-label-preview-wrap">
 								<span class="text-muted small d-block mb-1">Preview</span>
 								<span class="badge email-label-badge" id="edit_label_preview" style="background-color: #3A6FA820; border: 1px solid #3A6FA8; color: #3A6FA8;">
-									<i class="fas fa-tag"></i> <span class="preview-name">Label name</span>
+									<i class="fa-solid fa-tag"></i> <span class="preview-name">Label name</span>
 								</span>
 							</div>
 						</div>
@@ -249,7 +249,7 @@
 			<div class="modal-body pt-2">
 				<div class="email-label-delete-confirm text-center">
 					<div class="email-label-delete-icon mb-3" aria-hidden="true">
-						<i class="fas fa-trash-alt"></i>
+						<i class="fa-solid fa-trash-can"></i>
 					</div>
 					<p class="mb-1">Are you sure you want to delete <strong id="delete-email-label-name"></strong>?</p>
 					<p class="text-muted small mb-0">This action cannot be undone.</p>
@@ -332,7 +332,7 @@ jQuery(document).ready(function($) {
 
 	function buildEmailLabelRow(label) {
 		var color = label.color || defaultColor;
-		var icon = label.icon || 'fas fa-tag';
+		var icon = label.icon || 'fa-solid fa-tag';
 		var typeBadge = label.type === 'system'
 			? '<span class="badge badge-info">System</span>'
 			: '<span class="badge badge-secondary">Custom</span>';
@@ -340,10 +340,10 @@ jQuery(document).ready(function($) {
 			? '<span class="badge badge-success">Active</span>'
 			: '<span class="badge badge-danger">Inactive</span>';
 		var actionMenu = label.type === 'system'
-			? '<li><span class="dropdown-item-text text-muted small px-3 py-2 d-block"><i class="far fa-edit me-2"></i>System labels cannot be edited</span></li>' +
-			  '<li><span class="dropdown-item-text text-muted small px-3 py-2 d-block"><i class="fas fa-trash me-2"></i>System labels cannot be deleted</span></li>'
-			: '<li><a class="dropdown-item has-icon edit-email-label-btn" href="javascript:void(0);"><i class="far fa-edit"></i> Edit</a></li>' +
-			  '<li><a class="dropdown-item has-icon delete-email-label-btn" href="javascript:void(0);"><i class="fas fa-trash"></i> Delete</a></li>';
+			? '<li><span class="dropdown-item-text text-muted small px-3 py-2 d-block"><i class="fa-regular fa-edit me-2"></i>System labels cannot be edited</span></li>' +
+			  '<li><span class="dropdown-item-text text-muted small px-3 py-2 d-block"><i class="fa-solid fa-trash me-2"></i>System labels cannot be deleted</span></li>'
+			: '<li><a class="dropdown-item has-icon edit-email-label-btn" href="javascript:void(0);"><i class="fa-regular fa-edit"></i> Edit</a></li>' +
+			  '<li><a class="dropdown-item has-icon delete-email-label-btn" href="javascript:void(0);"><i class="fa-solid fa-trash"></i> Delete</a></li>';
 
 		return '<tr id="id_' + label.id + '"' +
 			' data-label-id="' + label.id + '"' +
@@ -421,7 +421,7 @@ jQuery(document).ready(function($) {
 			if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
 				color = defaultColor;
 			}
-			var icon = $.trim($(iconInput).val()) || 'fas fa-tag';
+			var icon = $.trim($(iconInput).val()) || 'fa-solid fa-tag';
 			$(preview).css({
 				backgroundColor: color + '20',
 				borderColor: color,
@@ -495,7 +495,7 @@ jQuery(document).ready(function($) {
 		createUi.clearFormErrors();
 		$('#create-email-label-form')[0].reset();
 		$('#create_label_type').val('custom');
-		$('#create_label_icon').val('fas fa-tag');
+		$('#create_label_icon').val('fa-solid fa-tag');
 		$('#create_colorPicker').val(defaultColor);
 		$('#create_colorHex').val(defaultColor);
 		createUi.updatePreview();
@@ -551,7 +551,7 @@ jQuery(document).ready(function($) {
 		var labelId = $row.attr('data-label-id');
 		var labelType = $row.attr('data-label-type') || 'custom';
 		var labelColor = $row.attr('data-label-color') || defaultColor;
-		var labelIcon = $row.attr('data-label-icon') || 'fas fa-tag';
+		var labelIcon = $row.attr('data-label-icon') || 'fa-solid fa-tag';
 		var labelName = $row.attr('data-label-name') || '';
 		var labelDescription = $row.attr('data-label-description') || '';
 		var isActive = $row.attr('data-label-is-active') === '1' ? '1' : '0';

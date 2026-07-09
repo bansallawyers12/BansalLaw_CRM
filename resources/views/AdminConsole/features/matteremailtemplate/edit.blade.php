@@ -19,7 +19,7 @@
 							<div class="card-header">
 								<h4>Edit Matter Email Template</h4>
 								<div class="card-header-action">
-									<a href="{{route('adminconsole.features.matter.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
+									<a href="{{route('adminconsole.features.matter.index')}}" class="btn btn-primary"><i class="fa-solid fa-arrow-left"></i> Back</a>
 								</div>
 							</div>
 						</div>

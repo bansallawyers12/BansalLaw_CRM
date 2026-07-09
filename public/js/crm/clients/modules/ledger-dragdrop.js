@@ -199,10 +199,10 @@
             for (var i = 0; i < files.length; i++) {
                 var file = files[i];
                 var fileItem = $('<div class="file-item">' +
-                    '<i class="fas fa-file-alt"></i>' +
+                    '<i class="fa-solid fa-file-alt"></i>' +
                     '<span class="file-name">' + file.name + ' (' + formatLedgerFileSize(file.size) + ')</span>' +
                     '<a href="javascript:;" class="ledger-remove-file" data-file-index="' + i + '" title="Remove file">' +
-                        '<i class="fas fa-times"></i>' +
+                        '<i class="fa-solid fa-times"></i>' +
                     '</a>' +
                 '</div>');
                 filesList.append(fileItem);
@@ -487,10 +487,10 @@
             for (var i = 0; i < files.length; i++) {
                 var file = files[i];
                 var fileItem = $('<div class="file-item">' +
-                    '<i class="fas fa-file-alt"></i>' +
+                    '<i class="fa-solid fa-file-alt"></i>' +
                     '<span class="file-name">' + file.name + ' (' + formatOfficeFileSize(file.size) + ')</span>' +
                     '<a href="javascript:;" class="office-remove-file" data-file-index="' + i + '" title="Remove file">' +
-                        '<i class="fas fa-times"></i>' +
+                        '<i class="fa-solid fa-times"></i>' +
                     '</a>' +
                 '</div>');
                 filesList.append(fileItem);

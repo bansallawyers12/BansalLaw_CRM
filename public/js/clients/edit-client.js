@@ -521,7 +521,7 @@ function addPartnerRow(type) {
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove ${type.charAt(0).toUpperCase() + type.slice(1)}" onclick="removePartnerRow(this, '${type}')"><i class="fas fa-times-circle"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove ${type.charAt(0).toUpperCase() + type.slice(1)}" onclick="removePartnerRow(this, '${type}')"><i class="fa-solid fa-times-circle"></i></button>
             <input type="hidden" name="${type}_id[${index}]" class="partner-id">
             <div class="content-grid">
                 <div class="form-group">
@@ -664,7 +664,7 @@ function addPassportDetail() {
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Passport" onclick="removePassportField(this)"><i class="fas fa-trash"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Passport" onclick="removePassportField(this)"><i class="fa-solid fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Country</label>
@@ -737,7 +737,7 @@ async function addTravelDetail() {
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Travel" onclick="removeTravelField(this)"><i class="fas fa-trash"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Travel" onclick="removeTravelField(this)"><i class="fa-solid fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Country Visited</label>
@@ -815,7 +815,7 @@ function addPhoneNumber() {
     const index = container.children.length;
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Phone" onclick="removePhoneField(this)"><i class="fas fa-trash"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Phone" onclick="removePhoneField(this)"><i class="fa-solid fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Type</label>
@@ -1089,7 +1089,7 @@ function addEmailAddress() {
     const index = container.children.length;
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Email" onclick="removeEmailField(this)"><i class="fas fa-trash"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Email" onclick="removeEmailField(this)"><i class="fa-solid fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Type</label>
@@ -1188,7 +1188,7 @@ async function addVisaDetail() {
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Visa" onclick="removeVisaField(this)"><i class="fas fa-trash"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Visa" onclick="removeVisaField(this)"><i class="fa-solid fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Visa Type / Subclass</label>
@@ -1323,7 +1323,7 @@ async function addQualification() {
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Qualification" onclick="removeQualificationField(this)"><i class="fas fa-trash"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Qualification" onclick="removeQualificationField(this)"><i class="fa-solid fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Qualification Level</label>
@@ -1412,7 +1412,7 @@ async function addExperience() {
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Experience" onclick="removeExperienceField(this)"><i class="fas fa-times-circle"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Experience" onclick="removeExperienceField(this)"><i class="fa-solid fa-times-circle"></i></button>
             <div class="content-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
                 <div class="form-group">
                     <label>Job Title</label>
@@ -1490,7 +1490,7 @@ function addCharacterRow(containerId, fieldName) {
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Character" onclick="removeCharacterField(this)"><i class="fas fa-trash"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Character" onclick="removeCharacterField(this)"><i class="fa-solid fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Type</label>
@@ -1862,11 +1862,11 @@ window.savePhoneNumbers = function() {
                 if (phone.country_code === '+61' && !isPlaceholder) {
                     if (phone.id && phone.id !== 'pending') {
                         verificationButton = `<button type="button" class="btn-verify-phone" onclick="sendOTP('${phone.id}', '${phone.phone}', '${phone.country_code}')" data-contact-id="${phone.id}">
-                            <i class="fas fa-lock"></i> Verify
+                            <i class="fa-solid fa-lock"></i> Verify
                          </button>`;
                     } else {
                         verificationButton = `<span class="text-muted" style="font-size: 12px;" title="Save the phone first to enable verification">
-                            <i class="fas fa-info-circle"></i> Save to verify
+                            <i class="fa-solid fa-info-circle"></i> Save to verify
                          </span>`;
                     }
                 }
@@ -1933,16 +1933,16 @@ window.saveEmailAddresses = function() {
                 let verificationButton = '';
                 if (email.is_verified) {
                     verificationButton = `<span class="verified-badge">
-                        <i class="fas fa-check-circle"></i> Verified
+                        <i class="fa-solid fa-check-circle"></i> Verified
                      </span>`;
                 } else if (email.id && email.id > 0) {
                     // Use email.id from server response (guaranteed to be correct)
                     verificationButton = `<button type="button" class="btn-verify-email" onclick="sendEmailVerification(${email.id}, '${email.email}')" data-email-id="${email.id}">
-                        <i class="fas fa-lock"></i> Verify
+                        <i class="fa-solid fa-lock"></i> Verify
                      </button>`;
                 } else {
                     verificationButton = `<span class="text-muted" style="font-size: 12px;" title="Save the email first to enable verification">
-                        <i class="fas fa-info-circle"></i> Save to verify
+                        <i class="fa-solid fa-info-circle"></i> Save to verify
                      </span>`;
                 }
                 
@@ -3378,11 +3378,11 @@ function showNotification(message, type = 'info') {
     notification.className = `notification notification-${type}`;
     notification.innerHTML = `
         <div class="notification-content">
-            <i class="fas fa-${icon}"></i>
+            <i class="fa-solid fa-${icon}"></i>
             <span>${message}</span>
         </div>
         <button class="notification-close" onclick="this.parentElement.remove()">
-            <i class="fas fa-times"></i>
+            <i class="fa-solid fa-times"></i>
         </button>
     `;
     
@@ -3970,7 +3970,7 @@ $(document).ready(function() {
                 if (summaryItem) {
                     const verifiedBadge = document.createElement('span');
                     verifiedBadge.className = 'verified-badge';
-                    verifiedBadge.innerHTML = '<i class="fas fa-check-circle"></i> Verified';
+                    verifiedBadge.innerHTML = '<i class="fa-solid fa-check-circle"></i> Verified';
                     verifiedBadge.title = 'Verified on ' + new Date().toLocaleString();
                     
                     verifyBtn.replaceWith(verifiedBadge);
@@ -4270,7 +4270,7 @@ window.sendEmailVerification = function(emailId, emailAddress) {
     // Show loading state
     const button = document.querySelector(`button[data-email-id="${emailId}"]`);
     const originalContent = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
     button.disabled = true;
 
     fetch(crmClientUrl('/clients/email/send-verification'), {
@@ -4289,7 +4289,7 @@ window.sendEmailVerification = function(emailId, emailAddress) {
             alert('Verification email sent successfully! Please ask the client to check their email and click the verification link.');
             
             // Update button to show resend option with polling indicator
-            button.innerHTML = '<i class="fas fa-redo"></i> Resend <i class="fas fa-spinner fa-spin" style="margin-left: 5px; font-size: 10px;"></i>';
+            button.innerHTML = '<i class="fa-solid fa-redo"></i> Resend <i class="fa-solid fa-spinner fa-spin" style="margin-left: 5px; font-size: 10px;"></i>';
             button.onclick = function() { resendEmailVerification(emailId, emailAddress); };
             
             // Start polling for verification status
@@ -4322,7 +4322,7 @@ function resendEmailVerification(emailId, emailAddress) {
 
     const button = document.querySelector(`button[data-email-id="${emailId}"]`);
     const originalContent = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
     button.disabled = true;
 
     fetch(crmClientUrl('/clients/email/resend-verification'), {
@@ -4365,7 +4365,7 @@ function updateEmailVerificationStatus(emailId, isVerified) {
             if (summaryItem) {
                 const verifiedBadge = document.createElement('span');
                 verifiedBadge.className = 'verified-badge';
-                verifiedBadge.innerHTML = '<i class="fas fa-check-circle"></i> Verified';
+                verifiedBadge.innerHTML = '<i class="fa-solid fa-check-circle"></i> Verified';
                 verifiedBadge.title = 'Verified on ' + new Date().toLocaleString();
                 
                 // Replace the verify button with verified badge
@@ -4394,11 +4394,11 @@ function updateDetailViewEmailIcons(emailId, isVerified) {
                 const iconElement = element.querySelector('i');
                 if (iconElement) {
                     if (isVerified) {
-                        iconElement.className = 'fas fa-check-circle verified-icon fa-lg';
+                        iconElement.className = 'fa-solid fa-check-circle verified-icon fa-lg';
                         iconElement.style.color = '#28a745';
                         iconElement.title = 'Verified on ' + new Date().toLocaleString();
                     } else {
-                        iconElement.className = 'far fa-circle unverified-icon fa-lg';
+                        iconElement.className = 'fa-regular fa-circle unverified-icon fa-lg';
                         iconElement.style.color = '#6c757d';
                         iconElement.title = 'Not verified';
                     }
@@ -4454,7 +4454,7 @@ function checkEmailVerificationStatus(emailId) {
                 // Update UI to show error state
                 const verifyBtn = document.querySelector(`button[data-email-id="${emailId}"]`);
                 if (verifyBtn) {
-                    verifyBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Email Not Found';
+                    verifyBtn.innerHTML = '<i class="fa-solid fa-exclamation-triangle"></i> Email Not Found';
                     verifyBtn.disabled = true;
                     verifyBtn.style.opacity = '0.6';
                     verifyBtn.title = 'Email record not found. Please refresh the page.';
@@ -4545,7 +4545,7 @@ function startEmailVerificationPolling(emailId) {
             activeEmailPollingIntervals.delete(emailId);
             // Remove spinner from button
             if (verifyBtn && verifyBtn.innerHTML.includes('fa-spinner')) {
-                verifyBtn.innerHTML = verifyBtn.innerHTML.replace('<i class="fas fa-spinner fa-spin" style="margin-left: 5px; font-size: 10px;"></i>', '');
+                verifyBtn.innerHTML = verifyBtn.innerHTML.replace('<i class="fa-solid fa-spinner fa-spin" style="margin-left: 5px; font-size: 10px;"></i>', '');
             }
         }
     }, 5000); // Check every 5 seconds
@@ -4636,7 +4636,7 @@ function addOccupationRow() {
     
     const newOccupationHTML = `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Occupation" onclick="removeOccupationField(this)"><i class="fas fa-trash"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Occupation" onclick="removeOccupationField(this)"><i class="fa-solid fa-trash"></i></button>
             <div class="content-grid">
                 <div class="form-group">
                     <label>Skill Assessment</label>
@@ -4800,7 +4800,7 @@ function addTestScoreRow() {
     
     const newTestScoreHTML = `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Test" onclick="removeTestScoreField(this)"><i class="fas fa-trash"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Test" onclick="removeTestScoreField(this)"><i class="fa-solid fa-trash"></i></button>
             <div class="content-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
                 <div class="form-group">
                     <label>Test Type</label>

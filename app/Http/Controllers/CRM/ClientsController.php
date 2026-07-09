@@ -7452,11 +7452,11 @@ class ClientsController extends Controller
             $html .= '<div class="content">
                 <h4 class="appointmentname">' . htmlspecialchars($appointmentlistslast->service_type) . '</h4>
                 <div class="appitem">
-                    <i class="fa fa-clock"></i>
+                    <i class="fa-solid fa-clock"></i>
                     <span class="appcontent appointmenttime">' . $displayTimeLast . '</span>
                 </div>
                 <div class="appitem">
-                    <i class="fa fa-calendar"></i>
+                    <i class="fa-solid fa-calendar"></i>
                     <span class="appcontent appointmentdate">' . $appointmentDateLast . '</span>
                 </div>
                 <div class="description appointmentdescription">

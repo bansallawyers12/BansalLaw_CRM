@@ -24,7 +24,7 @@
 					<input type="hidden" name="client_id" value="{{ $fetchedData->id }}">
 					<input type="hidden" name="user_id" value="{{ @Auth::user()->id }}">
 					<button type="submit" class="btn btn-success">
-						<i class="fas fa-user-check me-1"></i> Convert to Client only
+						<i class="fa-solid fa-user-check me-1"></i> Convert to Client only
 					</button>
 				</form>
 				<hr class="my-4">
@@ -85,7 +85,7 @@
                                     @endforeach
                                 </select>
                                 <small class="form-text text-muted">
-                                    <i class="fas fa-building"></i> This matter will be handled by the selected office
+                                    <i class="fa-solid fa-building"></i> This matter will be handled by the selected office
                                 </small>
                             </div>
                         </div>
@@ -650,7 +650,7 @@
         <div class="modal-content assign-staff-modal">
             <div class="modal-header assign-staff-header">
                 <div class="modal-title-section">
-                    <i class="fas fa-user-plus text-white me-2"></i>
+                    <i class="fa-solid fa-user-plus text-white me-2"></i>
                     <h5 class="modal-title mb-0" id="create_action_popupLabel">Assign Staff</h5>
                 </div>
                 <div class="modal-actions">
@@ -665,12 +665,12 @@
                     <div class="col-12">
                         <div class="form-group enhanced-form-group">
                             <label for="staff-search-input" class="form-label">
-                                <i class="fas fa-users text-muted me-1"></i>
+                                <i class="fa-solid fa-users text-muted me-1"></i>
                                 Select Assignee <span class="text-danger">*</span>
                             </label>
                             <div class="dropdown-multi-select modern-dropdown">
                                 <div class="enhanced-dropdown-input-wrapper">
-                                    <i class="fas fa-user-plus dropdown-input-icon"></i>
+                                    <i class="fa-solid fa-user-plus dropdown-input-icon"></i>
                                     <input type="text" 
                                            id="staff-search-input" 
                                            class="form-control enhanced-dropdown-input" 
@@ -679,7 +679,7 @@
                                            aria-haspopup="true" 
                                            aria-expanded="false" style="padding-left: 38px !important;">
                                     <span id="selected-staff-display" class="selected-staff-display"></span>
-                                    <i class="fas fa-chevron-down dropdown-chevron-icon"></i>
+                                    <i class="fa-solid fa-chevron-down dropdown-chevron-icon"></i>
                                 </div>
                                 <div class="dropdown-menu modern-dropdown-menu" id="staffDropdownMenu" aria-labelledby="staff-search-input">
                                     <!-- Select All/None buttons -->
@@ -695,7 +695,7 @@
                                         <div class="staff-item modern-staff-item" data-name="{{ strtolower($admin->first_name.' '.$admin->last_name.' '.@$branchname->office_name) }}">
                                             <label class="modern-staff-label">
                                                 <input type="checkbox" class="checkbox-item modern-checkbox" value="{{ $admin->id }}" data-name="{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})">
-                                                <i class="fas fa-user-circle me-2 text-muted"></i>
+                                                <i class="fa-solid fa-user-circle me-2 text-muted"></i>
                                                 <span class="staff-name">{{ $admin->first_name }} {{ $admin->last_name }}</span>
                                                 <span class="staff-branch text-muted">({{ @$branchname->office_name }})</span>
                                             </label>
@@ -718,12 +718,12 @@
                     <div class="col-12">
                         <div class="form-group enhanced-form-group">
                             <label for="assignnote" class="form-label">
-                                <i class="fas fa-sticky-note text-muted me-1"></i>
+                                <i class="fa-solid fa-sticky-note text-muted me-1"></i>
                                 Note <span class="text-danger">*</span>
                             </label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
-                                    <span class="input-group-text"><i class="fas fa-align-left"></i></span>
+                                    <span class="input-group-text"><i class="fa-solid fa-align-left"></i></span>
                                 </div>
                                 <textarea id="assignnote" class="form-control enhanced-textarea" placeholder="Enter a note..."></textarea>
                             </div>
@@ -733,12 +733,12 @@
                     <div class="col-12 col-md-6">
                         <div class="form-group enhanced-form-group">
                             <label for="popoverdatetime" class="form-label">
-                                <i class="fas fa-calendar text-muted me-1"></i>
+                                <i class="fa-solid fa-calendar text-muted me-1"></i>
                                 Date <span class="text-danger">*</span>
                             </label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
-                                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                    <span class="input-group-text"><i class="fa-solid fa-calendar-alt"></i></span>
                                 </div>
                                 <input type="date" class="form-control enhanced-input" placeholder="yyyy-mm-dd" id="popoverdatetime" value="{{ date('Y-m-d') }}" name="popoverdate">
                             </div>
@@ -748,12 +748,12 @@
                     <div class="col-12 col-md-6">
                         <div class="form-group enhanced-form-group">
                             <label for="task_group" class="form-label">
-                                <i class="fas fa-tag text-muted me-1"></i>
+                                <i class="fa-solid fa-tag text-muted me-1"></i>
                                 Group <span class="text-danger">*</span>
                             </label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
-                                    <span class="input-group-text"><i class="fas fa-list"></i></span>
+                                    <span class="input-group-text"><i class="fa-solid fa-list"></i></span>
                                 </div>
                                 <select class="form-control enhanced-select" id="task_group" name="task_group">
                                     <option value="">Select Group</option>
@@ -773,14 +773,14 @@
                                 <div class="col-12 col-md-4">
                                     <label class="form-label d-flex align-items-center">
                                         <input class="note_deadline_checkbox me-2" type="checkbox" id="note_deadline_checkbox" name="note_deadline_checkbox" value="">
-                                        <i class="fas fa-clock text-muted me-1"></i>
+                                        <i class="fa-solid fa-clock text-muted me-1"></i>
                                         Note Deadline
                                     </label>
                                 </div>
                                 <div class="col-12 col-md-8">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
-                                            <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
+                                            <span class="input-group-text"><i class="fa-solid fa-calendar-check"></i></span>
                                         </div>
                                         <input type="date" class="form-control enhanced-input" placeholder="yyyy-mm-dd" id="note_deadline" value="<?php echo date('Y-m-d');?>" name="note_deadline" disabled>
                                     </div>
@@ -795,10 +795,10 @@
                 
                 <div class="modal-footer-buttons">
                     <button class="btn btn-primary btn-lg btn-assign-staff" id="assignStaff">
-                        <i class="fas fa-user-plus me-2"></i>Assign Staff
+                        <i class="fa-solid fa-user-plus me-2"></i>Assign Staff
                     </button>
                     <button type="button" class="btn btn-outline-secondary btn-lg" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2"></i>Cancel
+                        <i class="fa-solid fa-times me-2"></i>Cancel
                     </button>
                 </div>
             </div>
@@ -809,7 +809,7 @@
 <!-- Loading overlay for the modal -->
 <div class="popuploader" style="display: none;">
     <div style="background: white; padding: 20px; border-radius: 5px; display: inline-block;">
-        <i class="fa fa-spinner fa-spin" style="font-size: 24px; color: #007bff;"></i>
+        <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: #007bff;"></i>
         <p style="margin-top: 10px; margin-bottom: 0;">Processing...</p>
     </div>
 </div>

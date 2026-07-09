@@ -151,7 +151,7 @@
 						</div>
 						<a href="{{ route('adminconsole.features.esignature.export', ['format' => 'csv', 'start_date' => $startDate, 'end_date' => $endDate]) }}"
 						   class="btn btn-sm btn-outline-light">
-							<i class="fas fa-download me-1"></i> Export CSV
+							<i class="fa-solid fa-download me-1"></i> Export CSV
 						</a>
 					</div>
 					<div class="card-body esignature-analytics-page">

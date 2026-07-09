@@ -409,11 +409,11 @@
                         <h4 class="mb-0" style="flex: 1 1 auto;">All Journal Receipt List</h4>
                         <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
                             @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
-                            <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm" title="View Financial Analytics Dashboard"><i class="fas fa-chart-line"></i> Analytics</a>
+                            <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm" title="View Financial Analytics Dashboard"><i class="fa-solid fa-chart-line"></i> Analytics</a>
                             @endif
-                            <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fas fa-filter"></i> Filter</a>
+                            <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fa-solid fa-filter"></i> Filter</a>
                             <button type="button" class="btn btn-primary Validate_Receipt">
-                                <i class="fas fa-check-circle"></i>
+                                <i class="fa-solid fa-check-circle"></i>
                                 Validate Receipt
                             </button>
                         </div>
@@ -427,7 +427,7 @@
                             Search By Details
                             @if(request()->hasAny(['date_filter_type', 'from_date', 'to_date', 'financial_year']))
                                 <span class="active-filters-badge">
-                                    <i class="fas fa-filter"></i>
+                                    <i class="fa-solid fa-filter"></i>
                                     {{ collect([request('date_filter_type'), request('from_date'), request('to_date'), request('financial_year')])->filter()->count() }} Active
                                 </span>
                             @endif
@@ -441,14 +441,14 @@
                                 <div class="col-md-12 text-center">
                                     <div class="filter-buttons-container">
                                         <button type="submit" class="btn btn-primary btn-theme-lg me-3">
-                                            <i class="fas fa-search"></i> Search
+                                            <i class="fa-solid fa-search"></i> Search
                                         </button>
                                         <a class="btn btn-info" href="{{URL::to('/clients/journalreceiptlist')}}">
-                                            <i class="fas fa-redo"></i> Reset All
+                                            <i class="fa-solid fa-redo"></i> Reset All
                                         </a>
                                         @if(request()->hasAny(['date_filter_type', 'from_date', 'to_date', 'financial_year']))
                                             <button type="button" class="clear-filter-btn ms-2" id="clearDateFilters">
-                                                <i class="fas fa-times-circle"></i> Clear Date Filters
+                                                <i class="fa-solid fa-times-circle"></i> Clear Date Filters
                                             </button>
                                         @endif
                                     </div>
@@ -470,71 +470,71 @@
                                     <th class="sortable-header {{ request('sort_by') == 'receipt_id' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="receipt_id">
                                         SNo.
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'client_id' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="client_id">
                                         Client Id
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'name' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="name">
                                         Name
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'trans_date' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="trans_date">
                                         Trans. Date
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'entry_date' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="entry_date">
                                         Entry Date
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'trans_no' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="trans_no">
                                         Trans. No
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'invoice_no' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="invoice_no">
                                         Invoice No
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'amount' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="amount">
                                         Amount
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'validate_receipt' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="validate_receipt">
                                         Receipt Validate
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'validated_by' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="validated_by">
                                         Validate By
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                 </tr>
@@ -571,9 +571,9 @@
                                             <td id="validate_{{@$list->id}}">
                                                 <span class="modern-badge {{ $receipt_validate == 'Yes' ? 'badge-success' : 'badge-danger' }}">
                                                     @if($receipt_validate == 'Yes')
-                                                        <i class="fas fa-check"></i>
+                                                        <i class="fa-solid fa-check"></i>
                                                     @else
-                                                        <i class="fas fa-times"></i>
+                                                        <i class="fa-solid fa-times"></i>
                                                     @endif
                                                     {{ $receipt_validate }}
                                                 </span>
@@ -586,7 +586,7 @@
                                     <tr>
                                         <td colspan="11">
                                             <div class="listing-empty-inner">
-                                                <i class="fas fa-inbox" aria-hidden="true"></i>
+                                                <i class="fa-solid fa-inbox" aria-hidden="true"></i>
                                                 <div class="listing-empty-title">No records found</div>
                                                 <div class="listing-empty-hint">Try adjusting your filters to find what you are looking for</div>
                                             </div>
@@ -701,7 +701,7 @@ jQuery(document).ready(function($){
                             $('.listing-container #validate_' + subArray.id +' span')
                                 .removeClass('badge-danger')
                                 .addClass('modern-badge badge-success')
-                                .html('<i class="fas fa-check"></i> Yes');
+                                .html('<i class="fa-solid fa-check"></i> Yes');
                             if(subArray.first_name != ""){
                                 var validateby_full_name = subArray.first_name+" "+subArray.last_name;
                             } else {

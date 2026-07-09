@@ -7,14 +7,14 @@
 
 <section id="section-address" class="form-section">
     <div class="section-header">
-        <h3><i class="fas fa-home"></i> Current Address</h3>
+        <h3><i class="fa-solid fa-home"></i> Current Address</h3>
         <div class="section-actions">
             <button type="button" class="edit-section-btn" onclick="toggleEditMode('addressInfo')" title="Edit Address">
-                <i class="fas fa-pen"></i>
+                <i class="fa-solid fa-pen"></i>
             </button>
             @if($currentAddress)
             <button type="button" class="delete-section-btn" onclick="window.deleteCurrentAddress()" title="Delete Current Address">
-                <i class="fas fa-trash"></i>
+                <i class="fa-solid fa-trash"></i>
             </button>
             @endif
         </div>

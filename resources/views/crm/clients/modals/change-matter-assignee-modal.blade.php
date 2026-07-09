@@ -66,7 +66,7 @@
                                     @endforeach
                                 </select>
                                 <small class="form-text text-muted">
-                                    <i class="fas fa-building"></i> Optional - Leave blank to keep current office
+                                    <i class="fa-solid fa-building"></i> Optional - Leave blank to keep current office
                                 </small>
                             </div>
                         </div>
@@ -97,7 +97,7 @@
                             <label>Other parties <small class="text-muted">(optional)</small></label>
                             <div id="change_matter_opposing_parties_container" class="mb-2"></div>
                             <button type="button" class="btn btn-sm btn-outline-secondary" id="change_matter_add_opposing_btn">
-                                <i class="fas fa-plus"></i> Add other party
+                                <i class="fa-solid fa-plus"></i> Add other party
                             </button>
                             <input type="hidden" name="opposing_parties_json" id="change_matter_opposing_parties_json" value="[]">
                         </div>

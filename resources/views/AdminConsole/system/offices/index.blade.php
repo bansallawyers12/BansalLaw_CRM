@@ -20,7 +20,7 @@
 							<h4>All Branches</h4>
 							<div class="card-header-action">
 								<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createOfficeModal">
-									<i class="fa fa-plus"></i> Create Branch
+									<i class="fa-solid fa-plus"></i> Create Branch
 								</button>
 							</div>
 						</div>
@@ -107,7 +107,7 @@
 					@include('AdminConsole.system.offices.partials.form-fields', ['fieldPrefix' => 'edit', 'countries' => $countries])
 				</div>
 				<div class="modal-footer">
-					<a href="#" id="edit-office-view-link" class="btn btn-outline-primary me-auto"><i class="far fa-eye"></i> View Branch</a>
+					<a href="#" id="edit-office-view-link" class="btn btn-outline-primary me-auto"><i class="fa-regular fa-eye"></i> View Branch</a>
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 					<button type="submit" class="btn btn-primary" id="edit-office-submit">
 						<span class="submit-label">Update Branch</span>
@@ -130,7 +130,7 @@
 			<div class="modal-body pt-2">
 				<div class="office-delete-confirm text-center">
 					<div class="office-delete-icon mb-3" aria-hidden="true">
-						<i class="fas fa-trash-alt"></i>
+						<i class="fa-solid fa-trash-can"></i>
 					</div>
 					<p class="mb-1">Are you sure you want to delete <strong id="delete-office-name"></strong>?</p>
 					<p class="text-muted small mb-0">This action cannot be undone.</p>
@@ -356,9 +356,9 @@ jQuery(document).ready(function($) {
 			'<td class="text-nowrap"><div class="dropdown d-inline-block">' +
 			'<button class="btn btn-primary dropdown-toggle" type="button" id="officeAction_' + office.id + '" data-bs-toggle="dropdown" data-bs-popper-config=\'{"strategy":"fixed"}\' aria-haspopup="true" aria-expanded="false">Action</button>' +
 			'<ul class="dropdown-menu dropdown-menu-end offices-action-menu" aria-labelledby="officeAction_' + office.id + '">' +
-			'<li><a class="dropdown-item has-icon" href="' + escapeHtml(office.view_url) + '"><i class="far fa-eye"></i> View</a></li>' +
-			'<li><a class="dropdown-item has-icon edit-office-btn" href="javascript:void(0);"><i class="far fa-edit"></i> Edit</a></li>' +
-			'<li><a class="dropdown-item has-icon delete-office-btn" href="javascript:void(0);"><i class="fas fa-trash"></i> Delete</a></li>' +
+			'<li><a class="dropdown-item has-icon" href="' + escapeHtml(office.view_url) + '"><i class="fa-regular fa-eye"></i> View</a></li>' +
+			'<li><a class="dropdown-item has-icon edit-office-btn" href="javascript:void(0);"><i class="fa-regular fa-edit"></i> Edit</a></li>' +
+			'<li><a class="dropdown-item has-icon delete-office-btn" href="javascript:void(0);"><i class="fa-solid fa-trash"></i> Delete</a></li>' +
 			'</ul></div></td></tr>';
 	}
 

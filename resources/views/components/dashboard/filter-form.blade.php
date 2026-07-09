@@ -13,7 +13,7 @@
                        name="client_name"
                        placeholder="Search Client Name..."
                        value="{{ $filters['client_name'] ?? '' }}">
-                <i class="fas fa-search"></i>
+                <i class="fa-solid fa-search"></i>
             </div>
 
             <select name="client_stage" class="stage-select">
@@ -27,7 +27,7 @@
             </select>
 
             <button type="submit" class="filter-button{{ $filtersActive ? ' filter-button--active' : '' }}">
-                <i class="fas fa-filter"></i> Filter
+                <i class="fa-solid fa-filter"></i> Filter
                 @if($filtersActive)
                     <span class="filter-active-dot" aria-hidden="true"></span>
                 @endif
@@ -35,7 +35,7 @@
 
             @if($filtersActive)
                 <a href="{{ route('dashboard') }}" class="clear-filters">
-                    <i class="fas fa-times"></i> Clear Filters
+                    <i class="fa-solid fa-times"></i> Clear Filters
                 </a>
             @endif
         </form>

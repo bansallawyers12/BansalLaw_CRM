@@ -13,7 +13,7 @@
             <div class="card shadow-sm w-100" style="max-width: 560px;">
                 <div class="card-body py-5 px-4 text-center">
                     <div class="mb-3 text-secondary" style="font-size: 3rem;" aria-hidden="true">
-                        <i class="fas fa-user-lock"></i>
+                        <i class="fa-solid fa-user-lock"></i>
                     </div>
                     <h4 class="mb-2">You do not have permission to view this {{ $recordLabel }}</h4>
                     @if(!empty($displayName))

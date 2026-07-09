@@ -7,12 +7,12 @@
     <div class="grid_list">
         <div class="grid_col">
             <div class="grid_icon">
-                <i class="fas fa-file-image"></i>
+                <i class="fa-solid fa-file-image"></i>
             </div>
             <div class="grid_content">
                 <span id="grid_{{ $fetch->id }}" class="gridfilename">{{ $fetch->file_name }}</span>
                 <div class="dropdown d-inline dropdown_ellipsis_icon">
-                    <a class="dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
+                    <a class="dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></a>
                     <div class="dropdown-menu">
                         <a href="javascript:void(0);" class="dropdown-item" onclick="previewFile({{ json_encode($fetch->filetype) }}, {{ json_encode($gridPreviewUrl) }}, {{ json_encode('preview-container-matter-' . $fetch->folder_name) }})">Preview</a>
                         <a href="#" class="dropdown-item download-file" data-document-id="{{ $fetch->id }}" data-id="{{ $fetch->id }}" data-filename="{{ htmlspecialchars($gridDownloadFilename) }}">Download</a>

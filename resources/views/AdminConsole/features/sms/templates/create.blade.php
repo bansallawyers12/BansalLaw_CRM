@@ -18,10 +18,10 @@
                 <div class="col-9 col-md-9 col-lg-9">
                     <div class="card">
                         <div class="card-header">
-                            <h4><i class="fas fa-plus"></i> Create SMS Template</h4>
+                            <h4><i class="fa-solid fa-plus"></i> Create SMS Template</h4>
                             <div class="card-header-action">
                                 <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-outline-primary">
-                                    <i class="fas fa-arrow-left"></i> Back to Templates
+                                    <i class="fa-solid fa-arrow-left"></i> Back to Templates
                                 </a>
                             </div>
                         </div>
@@ -81,10 +81,10 @@
                                 
                                 <div class="roles-form-actions">
                                     <button type="submit" class="btn btn-primary" id="saveBtn">
-                                        <i class="fas fa-save me-1"></i> Create Template
+                                        <i class="fa-solid fa-save me-1"></i> Create Template
                                     </button>
                                     <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-outline-secondary ms-2">
-                                        <i class="fas fa-times me-1"></i> Cancel
+                                        <i class="fa-solid fa-times me-1"></i> Cancel
                                     </a>
                                 </div>
                             </form>
@@ -119,7 +119,7 @@ $(document).ready(function() {
             _token: $('input[name="_token"]').val()
         };
         
-        $('#saveBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
+        $('#saveBtn').prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Creating...');
         
         $.ajax({
             url: '{{ route("adminconsole.features.sms.templates.store") }}',
@@ -142,7 +142,7 @@ $(document).ready(function() {
                 }
             },
             complete: function() {
-                $('#saveBtn').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Create Template');
+                $('#saveBtn').prop('disabled', false).html('<i class="fa-solid fa-save me-1"></i> Create Template');
             }
         });
     });
