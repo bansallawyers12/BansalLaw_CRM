@@ -1332,7 +1332,7 @@
                                                 }
                                                 ?>
                                                 <span class="aging-badge <?php echo $agingClass; ?>">
-                                                    <i class="fas <?php echo $agingIcon; ?>"></i>
+                                                    <i class="fa-solid <?php echo $agingIcon; ?>"></i>
                                                     <?php echo $agingLabel; ?>
                                                     <?php if (!empty($agingDays)) { ?>
                                                         <span class="aging-days"><?php echo $agingDays; ?></span>

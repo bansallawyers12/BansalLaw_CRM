@@ -750,7 +750,7 @@
         var iconData = matterIconMapJS[matterNick] || { icon: 'fa-folder-open', color: '#555' };
         var iconEl   = document.getElementById('matterDropdownIcon');
         var labelEl  = document.getElementById('matterDropdownLabel');
-        iconEl.className = 'fas ' + iconData.icon;
+        iconEl.className = 'fa-solid ' + iconData.icon;
         iconEl.style.color = iconData.color;
         labelEl.textContent = matterTitle;
         preview.style.display = 'flex';
@@ -787,7 +787,7 @@
         // Update dynamic form title
         var iconData = matterIconMapJS[matterNick] || { icon: 'fa-folder-plus', color: '#3b5bdb' };
         document.getElementById('matterDynamicFormTitle').innerHTML =
-            '<i class="fas ' + iconData.icon + '" style="color:' + iconData.color + ';margin-right:6px;"></i> New Matter: ' + matterTitle;
+            '<i class="fa-solid ' + iconData.icon + '" style="color:' + iconData.color + ';margin-right:6px;"></i> New Matter: ' + matterTitle;
 
         // Show selected badge
         var badge = document.getElementById('selectedMatterBadge');

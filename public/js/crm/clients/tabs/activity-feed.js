@@ -528,7 +528,7 @@
         if (activityType === 'note') {
             var nt = getNoteTypeClass(subject);
             var ic = (subject || '').toLowerCase().indexOf('call') !== -1 ? 'fa-phone' : (sl.indexOf('email') !== -1 ? 'fa-envelope' : (sl.indexOf('in-person') !== -1 ? 'fa-user-friends' : (sl.indexOf('attention') !== -1 ? 'fa-exclamation-triangle' : (sl.indexOf('others') !== -1 ? 'fa-ellipsis-h' : 'fa-sticky-note'))));
-            return { html: '<i class="fas ' + ic + '"></i>', cls: 'feed-icon-note' + nt.feedIcon };
+            return { html: '<i class="fa-solid ' + ic + '"></i>', cls: 'feed-icon-note' + nt.feedIcon };
         }
         if (activityType === 'activity') {
             return { html: '<i class="fa-solid fa-bolt"></i>', cls: 'feed-icon-activity' };

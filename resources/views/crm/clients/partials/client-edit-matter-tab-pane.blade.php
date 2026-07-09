@@ -167,7 +167,7 @@
                                       <a href="{{ $detailUrl }}" class="matter-tab-ref-link">{{ $ref !== null && $ref !== '' ? $ref : '—' }}</a>
                                   </td>
                                   <td>
-                                    <i class="fas {{ $rowIconData['icon'] }}" style="color:{{ $rowIconData['color'] }};margin-right:5px;"></i>
+                                    <i class="fa-solid {{ $rowIconData['icon'] }}" style="color:{{ $rowIconData['color'] }};margin-right:5px;"></i>
                                     {{ \Illuminate\Support\Str::limit($typeLabel, 50) }}
                                   </td>
                                   <td>{{ $cmatter->workflowStage->name ?? '—' }}</td>

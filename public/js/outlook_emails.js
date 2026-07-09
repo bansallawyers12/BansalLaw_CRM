@@ -754,7 +754,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const icon = getAttachmentFileIcon(att.filename, att.content_type);
             return `
                 <div class="attachment-storage-row__file-inner">
-                    <span class="attachment-storage-row__icon"><i class="fas ${icon}"></i></span>
+                    <span class="attachment-storage-row__icon"><i class="fa-solid ${icon}"></i></span>
                     <span class="attachment-storage-row__filename" title="${escapeHtml(att.filename)}">${escapeHtml(att.filename)}</span>
                 </div>
             `;
@@ -2013,7 +2013,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             return ''
                 + '<div class="email-attachment-row">'
-                + '  <div class="email-attachment-row__icon"><i class="fas ' + item.icon + '"></i></div>'
+                + '  <div class="email-attachment-row__icon"><i class="fa-solid ' + item.icon + '"></i></div>'
                 + '  <div class="email-attachment-row__info">'
                 + '    <div class="email-attachment-row__name" title="' + escapeHtml(item.name) + '">' + escapeHtml(item.name) + '</div>'
                 + (sizeLabel ? '    <div class="email-attachment-row__meta">' + escapeHtml(sizeLabel) + '</div>' : '')

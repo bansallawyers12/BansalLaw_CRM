@@ -72,7 +72,7 @@
         @elseif($isLeadConverted)
             <i class="fa-solid fa-user-check"></i>
         @elseif($activity->activity_type === 'note')
-            <i class="fas {{ $noteIcon }}"></i>
+            <i class="fa-solid {{ $noteIcon }}"></i>
         @elseif($activity->activity_type === 'activity')
             <i class="fa-solid fa-bolt"></i>
         @elseif($activity->activity_type === 'stage')

@@ -969,7 +969,7 @@ function customValidate(formName, savetype = '')
 											trRows += `<tr>
 												<td>${subArray.trans_date} ${awsLink}</td>
 												<td class="type-cell">
-													<i class="fas ${typeIcon} type-icon" title="${subArray.client_fund_ledger_type}"></i>
+													<i class="fa-solid ${typeIcon} type-icon" title="${subArray.client_fund_ledger_type}"></i>
 													<span>${subArray.client_fund_ledger_type}  ${subArray.invoice_no ? `(${subArray.invoice_no})` : ''}</span>
 												</td>
 												<td style="font-size:0.9em;color:#495057;">${methodCellDyn}</td>
@@ -1407,7 +1407,7 @@ function customValidate(formName, savetype = '')
                                                         <tr>
                                                             <td>${subArray.trans_date} ${awsLink}</td>
                                                             <td class="type-cell">
-                                                                <i class="fas ${paymentIcon} type-icon"></i>
+                                                                <i class="fa-solid ${paymentIcon} type-icon"></i>
                                                                 <span>
                                                                 ${subArray.payment_method}<br/>
                                                                 (${subArray.invoice_no})

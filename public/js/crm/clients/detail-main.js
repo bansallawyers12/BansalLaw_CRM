@@ -814,7 +814,7 @@ $(document).ready(function() {
         return `
             <div class="client-doc-preview-header">
                 <div class="client-doc-preview-header-title">
-                    <i class="fas ${iconClass}" aria-hidden="true"></i>
+                    <i class="fa-solid ${iconClass}" aria-hidden="true"></i>
                     <span class="client-doc-preview-filename" title="${safeLabel}">${safeLabel}</span>
                 </div>
                 <div class="client-doc-preview-header-actions">
@@ -1060,7 +1060,7 @@ $(document).ready(function() {
             const downloadUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'download=1';
             const toolbar = isOfficePreview ? `
                     <div class="client-doc-preview-office-bar">
-                        <span><i class="fas ${iconClass}" style="margin-right: 6px;"></i> ${typeLabel}</span>
+                        <span><i class="fa-solid ${iconClass}" style="margin-right: 6px;"></i> ${typeLabel}</span>
                         <a href="${downloadUrl}" class="btn btn-sm btn-outline-secondary">Download original</a>
                     </div>` : '';
 
@@ -5428,7 +5428,7 @@ success: function(response) {
                 '<td style="white-space: initial;">' +
                     '<div data-id="' + doc.id + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="' + uploadTitle + '" oncontextmenu="showFileContextMenu(event, ' + doc.id + ', \'' + fileExt + '\', \'' + previewUrl + '\', \'' + categoryId + '\', \'' + (doc.status || 'draft') + '\'); return false;">' +
                         '<a href="javascript:void(0);" onclick="previewFile(\'' + fileExt + '\', \'' + previewUrl + '\', \'preview-container-' + categoryId + '\')">' +
-                            '<i class="fas ' + documentFileIconClass(fileExt) + '"></i> <span>' + displayName + '</span>' +
+                            '<i class="fa-solid ' + documentFileIconClass(fileExt) + '"></i> <span>' + displayName + '</span>' +
                         '</a>' +
                     '</div>' +
                 '</td>' +
@@ -5446,7 +5446,7 @@ success: function(response) {
             if ($grid.length && !$grid.find('#gid_' + doc.id).length) {
                 var gridHtml = '<div class="grid_list" id="gid_' + doc.id + '">' +
                     '<div class="grid_col">' +
-                        '<div class="grid_icon"><i class="fas ' + documentFileIconClass(fileExt) + '"></i></div>' +
+                        '<div class="grid_icon"><i class="fa-solid ' + documentFileIconClass(fileExt) + '"></i></div>' +
                         '<div class="grid_content">' +
                             '<span id="grid_' + doc.id + '" class="gridfilename">' + fileName + '</span>' +
                             '<div class="dropdown d-inline dropdown_ellipsis_icon">' +
@@ -5562,7 +5562,7 @@ success: function(response) {
                 fileCell = '<div data-id="' + doc.id + '" data-name="' + fileName + '" class="doc-row not-used-file-link" title="' + uploadTitle + '" ' +
                     'oncontextmenu="showNotUsedFileContextMenu(event, ' + doc.id + ', \'' + fileExt + '\', \'' + previewUrl + '\', \'' + doc.doc_type + '\', \'' + (doc.status || 'draft') + '\'); return false;">' +
                     '<a href="javascript:void(0);" onclick="previewFile(\'' + fileExt + '\', \'' + previewUrl + '\', \'preview-container-notuseddocumnetlist\')">' +
-                        '<i class="fas ' + documentFileIconClass(fileExt) + '"></i> <span>' + displayName + '</span>' +
+                        '<i class="fa-solid ' + documentFileIconClass(fileExt) + '"></i> <span>' + displayName + '</span>' +
                     '</a></div>';
             }
 
@@ -6849,7 +6849,7 @@ success: function(response) {
 
                                 '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'preview-container-' + doccategoryL + '\')">' +
 
-                                    '<i class="fas ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
+                                    '<i class="fa-solid ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
 
                                 '</a>' +
 
@@ -7619,7 +7619,7 @@ success: function(response) {
                     uploadTd.html(
                         '<div data-id="' + targetFileId + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="showFileContextMenu(event, ' + targetFileId + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + targetCategoryId + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
                             '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'preview-container-' + targetCategoryId + '\')">' +
-                                '<i class="fas ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
+                                '<i class="fa-solid ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
                             '</a>' +
                         '</div>'
                     );
@@ -7806,7 +7806,7 @@ success: function(response) {
                         uploadTd.html(
                             '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="' + contextMenuFn + '(event, ' + fileid + ', \'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + visa_doc_cat + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
                                 '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + previewPane + '\')">' +
-                                    '<i class="fas ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
+                                    '<i class="fa-solid ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
                                 '</a>' +
                             '</div>'
                         );
@@ -8106,7 +8106,7 @@ success: function(response) {
 
                                 '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + previewUrl + '\', \'' + previewPane + '\')">' +
 
-                                    '<i class="fas ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
+                                    '<i class="fa-solid ' + documentFileIconClass(ress.filetype) + '"></i> <span>' + ress.filename + '</span>' +
 
                                 '</a>' +
 

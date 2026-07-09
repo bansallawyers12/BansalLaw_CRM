@@ -649,7 +649,7 @@
         var iconConfig = iconMap[type] || iconMap.info;
 
         iconEl.className = 'email-upload-result-modal__icon ' + iconConfig.className;
-        iconEl.innerHTML = '<i class="fas ' + iconConfig.icon + '"></i>';
+        iconEl.innerHTML = '<i class="fa-solid ' + iconConfig.icon + '"></i>';
         titleEl.textContent = title;
         messageEl.textContent = message;
 

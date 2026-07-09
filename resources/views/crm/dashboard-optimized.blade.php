@@ -1579,7 +1579,7 @@ window.showToast = function(message, type = 'info') {
     }[type] || 'fa-info-circle';
     
     toast.innerHTML = `
-        <i class="fas ${icon}"></i>
+        <i class="fa-solid ${icon}"></i>
         <span class="toast-message">${message}</span>
         <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
     `;

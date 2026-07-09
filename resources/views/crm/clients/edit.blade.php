@@ -105,7 +105,7 @@
             <!-- Sidebar Navigation -->
             <div class="sidebar-navigation" id="sidebarNav">
                 <div class="nav-header">
-                    <h3><i class="fas {{ $fetchedData->type == 'client' ? 'fa-id-card' : 'fa-user-edit' }}"></i> {{ $fetchedData->type == 'lead' ? 'Edit Lead' : 'Client Details Form' }}</h3>
+                    <h3><i class="fa-solid {{ $fetchedData->type == 'client' ? 'fa-id-card' : 'fa-user-edit' }}"></i> {{ $fetchedData->type == 'lead' ? 'Edit Lead' : 'Client Details Form' }}</h3>
                 </div>
 
                 <div class="sidebar-identity">

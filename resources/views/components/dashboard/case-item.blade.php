@@ -120,7 +120,7 @@
         </span>
     </div>
     <div class="case-activity-badge {{ $activity['class'] }}">
-        <i class="fas {{ $activity['icon'] }}"></i>
+        <i class="fa-solid {{ $activity['icon'] }}"></i>
         <span class="activity-label">{{ $activity['label'] }}</span>
     </div>
 </li>

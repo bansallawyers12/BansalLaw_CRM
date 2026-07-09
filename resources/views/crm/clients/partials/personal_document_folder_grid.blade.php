@@ -8,7 +8,7 @@
         <div class="grid_list" id="gid_{{ $fetch->id }}">
             <div class="grid_col">
                 <div class="grid_icon">
-                    <i class="fas {{ $gridFileIcon }}"></i>
+                    <i class="fa-solid {{ $gridFileIcon }}"></i>
                 </div>
                 <div class="grid_content">
                     <span id="grid_{{ $fetch->id }}" class="gridfilename">{{ $fetch->file_name }}</span>

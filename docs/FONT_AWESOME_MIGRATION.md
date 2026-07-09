@@ -76,8 +76,8 @@ FontAwesomeHelper::iconName('clock-o'); // 'clock'
 | 0 | Config, helper, `<x-fa>`, this doc | Done |
 | 1 | Central CDN partial @ 6.7.2 | Done |
 | 2 | Blade: `fa fa-*`, `far fa-*`, `fas fa-*` | Done (183 files) |
-| 3 | PHP + JS string HTML + icon renames | Pending |
-| 4 | Delete legacy files under `public/fonts/` (FA only) | Pending |
+| 3 | PHP + JS string HTML + icon renames | Done (35 files + 18 `fas` prefix fixes) |
+| 4 | Delete legacy files under `public/fonts/` (FA only) | Done |
 
 ### PR 2 batches (Blade)
 
@@ -112,15 +112,15 @@ rg '\bfab fa-' resources app public/js
 - Receipts modal add/remove lines  
 - Sortable column headers  
 
-## Legacy assets (PR 4 — do not delete yet)
+## Legacy assets (PR 4 — removed)
 
-Safe to remove **after** class migration, if `rg` shows no references:
+Deleted after class migration (no code references remained):
 
 ```
 public/icons/font-awesome/
 public/fonts/fontawesome-webfont.svg
-public/fonts/fa-*.svg
-public/fonts/webfonts/fa-*.svg
+public/fonts/fa-*.{svg,eot,ttf,woff,woff2}
+public/fonts/webfonts/fa-*.{svg,eot,ttf,woff,woff2}
 ```
 
 **Keep** other theme fonts: `themify.svg`, `nunito-*`, `ElegantIcons.svg`, etc.

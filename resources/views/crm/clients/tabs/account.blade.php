@@ -210,7 +210,7 @@
                                     $type_icon = 'fa-arrow-circle-up';
                                     $type_color = '#6c757d';
                                 }?>
-                                <i class="fas {{$type_icon}} type-icon" title="{{$lsbc_label}}" style="color: {{$type_color}};"></i>
+                                <i class="fa-solid {{$type_icon}} type-icon" title="{{$lsbc_label}}" style="color: {{$type_color}};"></i>
                                 <span>
                                     <strong style="font-size: 0.9em;">{{$lsbc_label}}</strong>
                                     <br/>
@@ -658,7 +658,7 @@
                                 ];
                                 ?>
                                 <td class="type-cell" style="text-align: left; vertical-align: middle;">
-                                   <i class="fas  <?php echo $payClassMap[$off_val->payment_method] ?? 'fa-money-bill'; ?> type-icon"></i>
+                                   <i class="fa-solid  <?php echo $payClassMap[$off_val->payment_method] ?? 'fa-money-bill'; ?> type-icon"></i>
                                    <span>
                                     {{$off_val->payment_method}}
                                     
