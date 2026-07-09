@@ -88,7 +88,7 @@
 									<label for="name">Phone Number</label>
 									<div class="cus_field_input">
 									<div class="country_code">
-										<input class="telephone" id="telephone" type="tel" name="country_code" readonly value="{{ old('country_code', $fetchedData->country_code ?? $fetchedData->phone ?? '') }}" >
+										<input class="telephone" id="telephone" type="tel" name="country_code" value="{{ old('country_code', $fetchedData->country_code ?? $fetchedData->phone ?? '') }}" >
 									</div>
 									<input type="text" name="phone" value="{{ old('phone', @$fetchedData->phone) }}" class="form-control tel_input" data-valid="" autocomplete="off" placeholder="Enter Phone">
                                     @if ($errors->has('phone'))

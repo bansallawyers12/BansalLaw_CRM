@@ -284,6 +284,7 @@
             margin: 20px auto;
         }
     </style>
+    @include('components.sweetalert2-assets')
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans antialiased">
     
@@ -523,6 +524,7 @@
     </div>
 
     <!-- Professional SignaturePad Implementation -->
+    @include('components.sweetalert2-scripts')
     <script>
         
         // Track which images have been processed to avoid duplicates

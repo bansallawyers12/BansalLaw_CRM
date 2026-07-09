@@ -14,12 +14,14 @@
 	<!-- Favicons-->
 
 	 <!-- BASE CSS -->
+	@include('components.bootstrap5-assets')
 	<link href="{{asset('css/app.min.css')}}" rel="stylesheet">
 	<link href="{{asset('css/bootstrap-social.css')}}" rel="stylesheet">
 	<link href="{{asset('css/style.css')}}" rel="stylesheet">
 	<link href="{{asset('css/components.css')}}" rel="stylesheet">
 	<link href="{{asset('css/custom.css')}}" rel="stylesheet">
 	<link href="{{asset('css/crm-theme.css')}}" rel="stylesheet">
+	@include('components.sweetalert2-assets')
 
     <script async src="https://www.google.com/recaptcha/api.js"></script> <!-- Add recaptcha script -->
 </head>
@@ -41,9 +43,13 @@
 	<script type="text/javascript">
 		var site_url = "<?php echo URL::to('/'); ?>";
 	</script>
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+	{{-- app.min.js: legacy Popper/Bootstrap/moment bundle (jQuery stripped; CDN 3.7.1 above must load first) --}}
 	<script src="{{asset('js/app.min.js')}}"></script>
+	@include('components.bootstrap5-scripts')
 	<script src="{{asset('js/bootstrap5-jquery-compat.js')}}"></script>
 	<script src="{{asset('js/scripts.js')}}"></script>
 	<script src="{{asset('js/custom.js')}}"></script>
+	@include('components.sweetalert2-scripts')
 </body>
 </html>

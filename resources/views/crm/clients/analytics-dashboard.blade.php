@@ -4,7 +4,7 @@
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
 <link rel="stylesheet" href="{{ asset('css/financial-analytics-dashboard.css') }}">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+@include('components.chartjs-scripts')
 @endsection
 
 @section('content')

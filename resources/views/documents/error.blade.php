@@ -118,6 +118,7 @@
             }
         }
     </style>
+    @include('components.sweetalert2-assets')
 </head>
 <body>
     <div class="container">
@@ -156,6 +157,7 @@
             </p>
         </div>
     </div>
+    @include('components.sweetalert2-scripts')
 </body>
 </html>
 

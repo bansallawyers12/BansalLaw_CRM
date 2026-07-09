@@ -60,7 +60,7 @@
                         <label for="{{ $fieldPrefix }}_phone">Phone number</label>
                         <div class="cus_field_input">
                             <div class="country_code">
-                                <input class="telephone staff-country-code" id="{{ $fieldPrefix }}_telephone" type="tel" name="country_code" readonly value="{{ old('country_code', $isEdit ? ($fetchedData->country_code ?? '') : '') }}">
+                                <input class="telephone staff-country-code" id="{{ $fieldPrefix }}_telephone" type="tel" name="country_code" value="{{ old('country_code', $isEdit ? ($fetchedData->country_code ?? '') : '') }}">
                             </div>
                             <input type="text" id="{{ $fieldPrefix }}_phone" name="phone" value="{{ old('phone', $isEdit ? $fetchedData->phone : '') }}" class="form-control tel_input" placeholder="Phone number" required>
                         </div>

@@ -131,6 +131,7 @@
             }
         }
     </style>
+    @include('components.sweetalert2-assets')
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans antialiased">
     <div class="min-h-screen p-4">
@@ -321,6 +322,7 @@
         </div>
     </div>
 
+    @include('components.sweetalert2-scripts')
     <script>
         let currentPage = 1;
         let signatureFields = [];

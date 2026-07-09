@@ -17,6 +17,7 @@
     <!-- Styles -->
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
     <link href="{{ asset('css/crm-theme.css') }}" rel="stylesheet">
+    @include('components.sweetalert2-assets')
 </head>
 <body class="crm-app-minimal">
     <div id="app">
@@ -78,5 +79,6 @@
     <script>window.crmLoginUrl = {!! json_encode(route('crm.login')) !!};</script>
     <script src="{{ asset('js/cross-tab-logout.js') }}"></script>
     @endauth
+    @include('components.sweetalert2-scripts')
 </body>
 </html>

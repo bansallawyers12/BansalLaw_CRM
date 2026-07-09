@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Upload Document - E-Signature App</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('components.sweetalert2-assets')
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans antialiased">
     <div class="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
@@ -77,5 +78,6 @@
 
         </div>
     </div>
+    @include('components.sweetalert2-scripts')
 </body>
 </html>

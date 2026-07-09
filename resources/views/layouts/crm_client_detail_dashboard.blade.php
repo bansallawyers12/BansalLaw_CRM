@@ -11,8 +11,10 @@
     <meta name="current-user-id" content="{{ optional(auth('admin')->user())->id }}">
     <title>{{ config('app.name') }} | Client Details</title>
     <link rel="icon" type="image/png" href="{{asset('img/favicon.png')}}">
+    @include('components.bootstrap5-assets')
     <link rel="stylesheet" href="{{asset('css/app.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/iziToast.min.css')}}">
+    @include('components.sweetalert2-assets')
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     @include('components.flatpickr-assets')
     <link rel="stylesheet" href="{{asset('css/tom-select.bootstrap5.min.css')}}">
@@ -745,6 +747,7 @@
         });
     };
     </script>
+    {{-- app.min.js: legacy Popper/Bootstrap/moment bundle (jQuery stripped; CDN 3.7.1 above must load first) --}}
     <script src="{{asset('js/app.min.js')}}"></script>
     @stack('datatables')
     @stack('tinymce')
@@ -753,12 +756,14 @@
     <script src="{{asset('js/tom-select.complete.min.js')}}"></script>
     <script src="{{asset('js/ts-init.js')}}"></script>
     <script src="{{asset('js/intlTelInput.js')}}"></script>
+    <script src="{{asset('js/intl-tel-input-init.js')}}"></script>
     <script src="{{ asset('js/email-upload-filename.js') }}?v={{ file_exists(public_path('js/email-upload-filename.js')) ? filemtime(public_path('js/email-upload-filename.js')) : 1 }}"></script>
     <script src="{{asset('js/custom-form-validation.js')}}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    @include('components.bootstrap5-scripts')
     <script src="{{asset('js/bootstrap5-jquery-compat.js')}}"></script>
     <script src="{{asset('js/scripts.js')}}"></script>
     <script src="{{asset('js/iziToast.min.js')}}"></script>
+    @include('components.sweetalert2-scripts')
     <script src="{{asset('js/crm-notify.js')}}"></script>
     <script src="{{asset('js/custom.js')}}"></script>
     @auth('admin')
@@ -900,7 +905,7 @@
             }); */
             //$('.country_input').flagStrap();
 
-            $(".telephone").intlTelInput();
+            window.initIntlTelInputs();
             $('.drop_table_data button').on('click', function(){
                 $('.client_dropdown_list').toggleClass('active');
             });

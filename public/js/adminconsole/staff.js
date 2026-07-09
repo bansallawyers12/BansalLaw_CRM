@@ -279,12 +279,8 @@
         }
 
         $container.find('.telephone').each(function () {
-            var $tel = $(this);
-            if ($tel.data('intlTelInput')) {
-                return;
-            }
-            if (typeof $tel.intlTelInput === 'function') {
-                $tel.intlTelInput();
+            if (typeof window.initIntlTelInput === 'function') {
+                window.initIntlTelInput(this);
             }
         });
     }

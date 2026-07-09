@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Documents - E-Signature App</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('components.sweetalert2-assets')
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans antialiased">
     <div class="min-h-screen px-4 sm:px-6 lg:px-8 py-12">
@@ -323,12 +324,12 @@
         </div>
     </div>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    @include('components.bootstrap5-assets')
     <link rel="stylesheet" href="{{asset('css/tom-select.bootstrap5.min.css')}}">
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <link rel="stylesheet" href="{{asset('css/dataTables.bootstrap5.min.css')}}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    @include('components.bootstrap5-scripts')
     <script src="{{asset('js/bootstrap5-jquery-compat.js')}}"></script>
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
@@ -337,6 +338,7 @@
     <script src="{{asset('js/dataTables.bootstrap5.min.js')}}"></script>
     <script src="{{asset('js/tom-select.complete.min.js')}}"></script>
     <script src="{{asset('js/ts-init.js')}}"></script>
+    @include('components.sweetalert2-scripts')
 
     <script>
     $(document).ready(function() {

@@ -339,7 +339,7 @@
 	
 	function successMessage(msg){
 		var html = '<div class="alert alert-success alert-dismissible fade show" role="alert"><div class="alert-body">';
-		html +=	'<button type="button" class="close" data-dismiss="alert" aria-label="Close">&times;</button>';
+		html +=	'<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
 		html += '<strong>'+msg+'</strong>';
 		html += '</div></div>';
 		
@@ -347,7 +347,7 @@
 	}
 	function errorMessage(msg){
 		var html = '<div class="alert alert-danger alert-dismissible fade show"><div class="alert-body">';
-		html += '<button type="button" class="close" data-dismiss="alert" aria-label="Close">&times;</button>'+msg;	
+		html += '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>'+msg;	
 		html += '</div></div>';
 		
 		return html;	

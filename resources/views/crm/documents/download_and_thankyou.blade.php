@@ -12,6 +12,7 @@
         p { color: #444; margin-bottom: 12px; }
         a { color: #007bff; text-decoration: underline; }
     </style>
+    @include('components.sweetalert2-assets')
 </head>
 <body>
 <div class="single_package">
@@ -27,6 +28,7 @@
         </div>
     </div>
 </div>
+@include('components.sweetalert2-scripts')
 <script>
     // Trigger download
     window.onload = function() {

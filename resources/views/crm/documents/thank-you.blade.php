@@ -107,6 +107,7 @@
             z-index: 999;
         }
     </style>
+    @include('components.sweetalert2-assets')
 </head>
 <body>
     <div class="success-card">
@@ -138,6 +139,7 @@
     
     <!-- Confetti Animation -->
     <canvas id="confetti"></canvas>
+    @include('components.sweetalert2-scripts')
     <script>
         // Lightweight confetti
         const canvas = document.getElementById('confetti');

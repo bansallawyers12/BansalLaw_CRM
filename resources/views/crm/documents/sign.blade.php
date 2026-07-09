@@ -382,6 +382,7 @@
             background: #d97706;
         }
     </style>
+    @include('components.sweetalert2-assets')
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans antialiased">
     
@@ -597,6 +598,7 @@
     </div>
 
     <!-- Simple SignaturePad Implementation -->
+    @include('components.sweetalert2-scripts')
     <script>
         // Simple SignaturePad implementation
         class SimpleSignaturePad {

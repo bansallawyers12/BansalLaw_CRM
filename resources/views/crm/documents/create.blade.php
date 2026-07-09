@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Upload Document — {{ config('app.name') }}</title>
     <link rel="stylesheet" href="{{ asset('css/crm-theme.css') }}">
+    @include('components.sweetalert2-assets')
     <style>
         /* documents/create — Powder Blue & Soft Gold (docs/theme.md) */
         .doc-create-page {
@@ -323,5 +324,6 @@
             </div>
         </div>
     </div>
+    @include('components.sweetalert2-scripts')
 </body>
 </html>

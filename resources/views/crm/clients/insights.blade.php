@@ -3,7 +3,7 @@
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+@include('components.chartjs-scripts')
 <style>
     .insights-container {
         padding: 32px;

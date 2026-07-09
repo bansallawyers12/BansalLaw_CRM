@@ -8,6 +8,33 @@
 
     var $ = jQuery;
 
+    function migrateLegacyBootstrapAttributes(root) {
+        var scope = root && root.querySelectorAll ? root : document;
+
+        scope.querySelectorAll('[data-toggle]').forEach(function(el) {
+            var toggle = el.getAttribute('data-toggle');
+            if (toggle && !el.getAttribute('data-bs-toggle')) {
+                el.setAttribute('data-bs-toggle', toggle);
+            }
+        });
+
+        scope.querySelectorAll('[data-dismiss]').forEach(function(el) {
+            var dismiss = el.getAttribute('data-dismiss');
+            if (dismiss && !el.getAttribute('data-bs-dismiss')) {
+                el.setAttribute('data-bs-dismiss', dismiss);
+            }
+        });
+
+        scope.querySelectorAll('[data-toggle][data-target]').forEach(function(el) {
+            var target = el.getAttribute('data-target');
+            if (target && !el.getAttribute('data-bs-target')) {
+                el.setAttribute('data-bs-target', target);
+            }
+        });
+    }
+
+    migrateLegacyBootstrapAttributes();
+
     // Modal: $('#modal').modal('show'|'hide'|'toggle')
     // Always assign (like $.fn.popover below): legacy plugins may define a broken $.fn.modal
     // that targets Bootstrap 4; BS5 markup requires delegating to bootstrap.Modal.
@@ -168,4 +195,5 @@
             }
         });
     };
+    window.migrateLegacyBootstrapAttributes = migrateLegacyBootstrapAttributes;
 })();

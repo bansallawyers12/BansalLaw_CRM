@@ -18,6 +18,7 @@
 			<link rel="stylesheet" type="text/css" href="{{asset('public/icons/simple-line-icons/css/simple-line-icons.css')}}" />
 		
 		<!-- Main styles for this application-->
+			@include('components.bootstrap5-assets')
 			<link rel="stylesheet" type="text/css" href="{{asset('public/css/style.css')}}" />
 			<link rel="stylesheet" type="text/css" href="{{asset('public/css/pace.min.css')}}" />
 			<link rel="stylesheet" type="text/css" href="{{asset('public/css/admin.css')}}" />
@@ -67,7 +68,7 @@
 		<!-- Apnamentor necessary plugins-->
 			<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 			<script src="{{asset('public/js/popper.js/js/popper.min.js')}}"></script>
-			<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+			@include('components.bootstrap5-scripts')
 			<script src="{{asset('public/js/pace-progress/js/pace.min.js')}}"></script>
 			<script src="{{asset('public/js/perfect-scrollbar/js/perfect-scrollbar.min.js')}}"></script>
 			<script src="{{asset('public/icons/@coreui/coreui-pro/js/coreui.min.js')}}"></script>
