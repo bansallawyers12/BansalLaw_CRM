@@ -185,7 +185,7 @@
 		<div class="modal-content" style="max-height: 90vh;">
 			<div class="modal-header bg-warning text-dark">
 				<h5 class="modal-title" id="signaturePlacementModalLabel">
-					<i class="fas fa-pen-nib me-2"></i>Place Signature Fields
+					<i class="fa-solid fa-pen-nib me-2"></i>Place Signature Fields
 				</h5>
 				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
@@ -218,7 +218,7 @@
 							<h6 class="font-weight-bold mb-2">Signature Fields</h6>
 							<div id="sig-fields-container" class="mb-3" style="max-height: 280px; overflow-y: auto;"></div>
 							<button type="button" class="btn btn-outline-primary btn-sm btn-block mb-3" id="sig-add-field">
-								<i class="fas fa-plus me-1"></i>Add Signature Field
+								<i class="fa-solid fa-plus me-1"></i>Add Signature Field
 							</button>
 						</div>
 					</div>
@@ -228,7 +228,7 @@
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 				<button type="button" class="btn btn-success" id="sig-save-btn">
-					<i class="fas fa-save me-1"></i>Save Signature Locations
+					<i class="fa-solid fa-floppy-disk me-1"></i>Save Signature Locations
 				</button>
 			</div>
 		</div>

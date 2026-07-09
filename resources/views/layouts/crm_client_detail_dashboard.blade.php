@@ -659,18 +659,18 @@
         data-broadcast-unread-url="{{ route('notifications.broadcasts.unread') }}">
         <div class="broadcast-banner__header">
             <h5 class="broadcast-banner__header-title">
-                <i class="fas fa-bullhorn"></i>
+                <i class="fa-solid fa-bullhorn"></i>
                 Broadcast Message
             </h5>
             <button type="button" class="broadcast-banner__close-btn" data-action="dismiss" aria-label="Close">
-                <i class="fas fa-times"></i>
+                <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
         <div class="broadcast-banner__content">
             <div class="broadcast-banner__title" data-broadcast-title></div>
             <div class="broadcast-banner__message" data-broadcast-message></div>
             <div class="broadcast-banner__meta" data-broadcast-meta>
-                <i class="fas fa-info-circle"></i>
+                <i class="fa-solid fa-circle-info"></i>
                 <span data-broadcast-meta-text></span>
             </div>
             <div class="broadcast-banner__actions">
@@ -1310,15 +1310,15 @@
                     <div class="teams-notification" id="teams-notification-${notification.id}">
                         <div class="teams-notification-header">
                             <div class="teams-notification-title">
-                                <i class="fas fa-users"></i>
+                                <i class="fa-solid fa-users"></i>
                                 Office Visit Assignment
                             </div>
                             <div class="teams-notification-controls">
                                 <button class="teams-notification-btn" onclick="minimizeNotification(${notification.id})">
-                                    <i class="fas fa-minus"></i>
+                                    <i class="fa-solid fa-minus"></i>
                                 </button>
                                 <button class="teams-notification-btn" onclick="closeNotification(${notification.id})">
-                                    <i class="fas fa-times"></i>
+                                    <i class="fa-solid fa-xmark"></i>
                                 </button>
                             </div>
                         </div>

@@ -58,6 +58,9 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\CacheAccessGrantGlobalCounts',
 
         '\App\Console\Commands\BackfillEmailPdfPreviews',
+
+        // Font Awesome FA6 migration (one-time DB icon class updates)
+        '\App\Console\Commands\MigrateFontAwesomeDbIcons',
     ];
 
     /**

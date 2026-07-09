@@ -112,7 +112,7 @@
                                     </div>
                                     @if($workflowSelectedMatter->deadline)
                                         <div class="mt-2">
-                                            <span class="badge badge-info"><i class="fas fa-calendar-alt"></i> Deadline: {{ \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('d/m/Y') }}</span>
+                                            <span class="badge badge-info"><i class="fa-solid fa-calendar-days"></i> Deadline: {{ \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('d/m/Y') }}</span>
                                         </div>
                                     @endif
                                 </div>
@@ -128,21 +128,21 @@
                                     {{-- Discontinued matter: show Reopen (Admin only), Change Workflow --}}
                                     @if($workflowCanReopen)
                                     <button class="btn btn-primary btn-sm matter-detail-reopen-btn" id="workflow-tab-reopen" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Reopen Matter">
-                                        <i class="fas fa-redo"></i> Reopen
+                                        <i class="fa-solid fa-arrow-rotate-right"></i> Reopen
                                     </button>
                                     @else
                                         @if($workflowSelectedMatter->reopen_requested_by ?? null)
                                             <button class="btn btn-secondary btn-sm" disabled title="Reopen Requested">
-                                                <i class="fas fa-clock"></i> Reopen Requested
+                                                <i class="fa-solid fa-clock"></i> Reopen Requested
                                             </button>
                                         @else
                                             <button class="btn btn-warning btn-sm matter-detail-request-reopen-btn" id="workflow-tab-request-reopen" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Request Admin to Reopen Matter">
-                                                <i class="fas fa-hand-paper"></i> Request Reopen
+                                                <i class="fa-solid fa-hand-paper"></i> Request Reopen
                                             </button>
                                         @endif
                                     @endif
                                     <button class="btn btn-outline-secondary btn-sm" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}" title="Change workflow for this matter">
-                                        <i class="fas fa-exchange-alt"></i> Change Workflow
+                                        <i class="fa-solid fa-right-left"></i> Change Workflow
                                     </button>
                                 @else
                                     {{-- Active matter: show normal workflow buttons --}}
@@ -162,7 +162,7 @@
                                         $workflowIsLastStage = $workflowNextStage === null;
                                     @endphp
                                     <button class="btn btn-outline-primary btn-sm" id="workflow-tab-back-to-previous-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Back to Previous Stage" {{ $workflowIsFirstStage ? 'disabled' : '' }}>
-                                        <i class="fas fa-angle-left"></i> Back to Previous Stage
+                                        <i class="fa-solid fa-angle-left"></i> Back to Previous Stage
                                     </button>
                                     @php
                                         $workflowNextBtnDisabled = $workflowIsLastStage;
@@ -173,15 +173,15 @@
                                         }
                                     @endphp
                                     <button class="btn btn-success btn-sm" id="workflow-tab-proceed-to-next-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" data-next-stage-name="{{ $workflowNextStageName ?? '' }}" data-current-stage-name="{{ $workflowCurrentStageName ?? '' }}" data-is-verification-stage="{{ $workflowIsVerificationStage ? '1' : '0' }}" data-can-verify-and-proceed="{{ $workflowCanVerifyAndProceed ? '1' : '0' }}" title="{{ $workflowNextBtnTitle }}" {{ $workflowNextBtnDisabled ? 'disabled' : '' }}>
-                                        Proceed to Next Stage <i class="fas fa-angle-right"></i>
+                                        Proceed to Next Stage <i class="fa-solid fa-angle-right"></i>
                                     </button>
                                     @if($workflowCanDiscontinue)
                                     <button class="btn btn-outline-danger btn-sm" id="workflow-tab-discontinue" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Discontinue Matter">
-                                        <i class="fas fa-ban"></i> Discontinue
+                                        <i class="fa-solid fa-ban"></i> Discontinue
                                     </button>
                                     @endif
                                     <button class="btn btn-outline-secondary btn-sm" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}" title="Change workflow for this matter">
-                                        <i class="fas fa-exchange-alt"></i> Change Workflow
+                                        <i class="fa-solid fa-right-left"></i> Change Workflow
                                     </button>
                                 @endif
                             </div>
@@ -194,7 +194,7 @@
                 <div class="col-md-12">
                     <div class="info-card">
                         <h5>
-                            <i class="fas fa-folder-open"></i> {{ $workflowMatterName }} ({{ $workflowMatterNumber }})
+                            <i class="fa-solid fa-folder-open"></i> {{ $workflowMatterName }} ({{ $workflowMatterNumber }})
                         </h5>
 
                         @if($workflowAllStages->count() > 0)
@@ -329,7 +329,7 @@
         function doProceedToNextStage(matterId, decisionOutcome, decisionNote, btnEl, verificationConfirm, verificationNote) {
             var btn = btnEl || document.getElementById('workflow-tab-proceed-to-next-stage');
             var orig = btn ? btn.innerHTML : '';
-            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...'; }
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...'; }
 
             var payload = { matter_id: matterId };
             if (decisionOutcome) payload.decision_outcome = decisionOutcome;
@@ -374,7 +374,7 @@
                 var btn = this;
                 var orig = btn.innerHTML;
                 btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
 
                 fetch('{{ route("clients.matter.update-previous-stage") }}', {
                     method: 'POST',
@@ -426,7 +426,7 @@
                 var btn = this;
                 var orig = btn.innerHTML;
                 btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
                 fetch('{{ route("clients.matter.change-workflow") }}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '', 'Accept': 'application/json' },
@@ -495,7 +495,7 @@
                 var btn = this;
                 var orig = btn.innerHTML;
                 btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
 
                 var currentTab = document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') || 'personaldetails';
 
@@ -545,7 +545,7 @@
             if (!confirm('Reopen this matter? It will be moved back to active matters.')) return;
             btn.disabled = true;
             var origHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Reopening...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Reopening...';
             var currentTab = document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') || '';
             fetch('{{ route("clients.matter.reopen") }}', {
                 method: 'POST',
@@ -579,7 +579,7 @@
             if (!confirm('Send a request to the admin to reopen this matter?')) return;
             btn.disabled = true;
             var origHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Requesting...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Requesting...';
             var currentTab = document.querySelector('.client-nav-button.active')?.getAttribute('data-tab') || '';
             fetch('{{ route("clients.matter.request-reopen") }}', {
                 method: 'POST',

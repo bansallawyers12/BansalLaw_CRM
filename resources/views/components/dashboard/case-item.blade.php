@@ -51,7 +51,7 @@
         ],
         'note_added' => [
             'label' => 'Note Added',
-            'icon' => 'fa-sticky-note',
+            'icon' => 'fa-note-sticky',
             'class' => 'activity-note',
             'color' => '#ffc107'
         ],
@@ -69,13 +69,13 @@
         ],
         'status_changed' => [
             'label' => 'Status Changed',
-            'icon' => 'fa-exchange-alt',
+            'icon' => 'fa-right-left',
             'class' => 'activity-status',
             'color' => '#1e3d60'
         ],
         'stage_updated' => [
             'label' => 'Stage Updated',
-            'icon' => 'fa-tasks',
+            'icon' => 'fa-list-check',
             'class' => 'activity-stage',
             'color' => '#fd7e14'
         ],
@@ -120,7 +120,7 @@
         </span>
     </div>
     <div class="case-activity-badge {{ $activity['class'] }}">
-        <i class="fas {{ $activity['icon'] }}"></i>
+        <i class="fa-solid {{ $activity['icon'] }}"></i>
         <span class="activity-label">{{ $activity['label'] }}</span>
     </div>
 </li>

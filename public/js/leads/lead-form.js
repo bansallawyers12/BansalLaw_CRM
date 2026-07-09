@@ -16,7 +16,7 @@ function addPhoneNumber() {
     const phoneNumberHTML = `
         <div class="repeatable-section" data-index="${index}">
             <button type="button" class="remove-item-btn" title="Remove Phone" onclick="removePhoneField(this)">
-                <i class="fas fa-trash"></i>
+                <i class="fa-solid fa-trash"></i>
             </button>
             <div class="content-grid">
                 <div class="form-group">
@@ -102,7 +102,7 @@ function addEmailAddress() {
     const emailHTML = `
         <div class="repeatable-section" data-index="${index}">
             <button type="button" class="remove-item-btn" title="Remove Email" onclick="removeEmailField(this)">
-                <i class="fas fa-trash"></i>
+                <i class="fa-solid fa-trash"></i>
             </button>
             <div class="content-grid">
                 <div class="form-group">
@@ -164,7 +164,7 @@ function addPassport() {
     const passportHTML = `
         <div class="repeatable-section" data-index="${index}">
             <button type="button" class="remove-item-btn" title="Remove Passport" onclick="removePassport(this)">
-                <i class="fas fa-trash"></i>
+                <i class="fa-solid fa-trash"></i>
             </button>
             <div class="content-grid">
                 <div class="form-group">
@@ -212,7 +212,7 @@ function addVisa() {
     const visaHTML = `
         <div class="repeatable-section" data-index="${index}">
             <button type="button" class="remove-item-btn" title="Remove Visa" onclick="removeVisa(this)">
-                <i class="fas fa-trash"></i>
+                <i class="fa-solid fa-trash"></i>
             </button>
             <div class="content-grid">
                 <div class="form-group">
@@ -260,7 +260,7 @@ function addAddress() {
     const addressHTML = `
         <div class="repeatable-section" data-index="${index}">
             <button type="button" class="remove-item-btn" title="Remove Address" onclick="removeAddress(this)">
-                <i class="fas fa-trash"></i>
+                <i class="fa-solid fa-trash"></i>
             </button>
             <div class="content-grid">
                 <div class="form-group full-width">
@@ -321,7 +321,7 @@ function addTravel() {
     const travelHTML = `
         <div class="repeatable-section" data-index="${index}">
             <button type="button" class="remove-item-btn" title="Remove Travel Entry" onclick="removeTravel(this)">
-                <i class="fas fa-trash"></i>
+                <i class="fa-solid fa-trash"></i>
             </button>
             <div class="content-grid">
                 <div class="form-group">
@@ -369,7 +369,7 @@ function addTestScore() {
     const testScoreHTML = `
         <div class="repeatable-section" data-index="${index}">
             <button type="button" class="remove-item-btn" title="Remove Test Score" onclick="removeTestScore(this)">
-                <i class="fas fa-trash"></i>
+                <i class="fa-solid fa-trash"></i>
             </button>
             <div class="content-grid">
                 <div class="form-group">
@@ -436,7 +436,7 @@ function addQualification() {
     const qualificationHTML = `
         <div class="repeatable-section" data-index="${index}">
             <button type="button" class="remove-item-btn" title="Remove Qualification" onclick="removeQualification(this)">
-                <i class="fas fa-trash"></i>
+                <i class="fa-solid fa-trash"></i>
             </button>
             <div class="content-grid">
                 <div class="form-group">
@@ -491,7 +491,7 @@ function addExperience() {
     const experienceHTML = `
         <div class="repeatable-section" data-index="${index}">
             <button type="button" class="remove-item-btn" title="Remove Experience" onclick="removeExperience(this)">
-                <i class="fas fa-trash"></i>
+                <i class="fa-solid fa-trash"></i>
             </button>
             <div class="content-grid">
                 <div class="form-group">
@@ -543,7 +543,7 @@ function addOccupation() {
     const occupationHTML = `
         <div class="repeatable-section" data-index="${index}">
             <button type="button" class="remove-item-btn" title="Remove Occupation" onclick="removeOccupation(this)">
-                <i class="fas fa-trash"></i>
+                <i class="fa-solid fa-trash"></i>
             </button>
             <div class="content-grid">
                 <div class="form-group full-width">
@@ -592,7 +592,7 @@ function addFamilyMember() {
     const familyHTML = `
         <div class="repeatable-section" data-index="${index}">
             <button type="button" class="remove-item-btn" title="Remove Family Member" onclick="removeFamilyMember(this)">
-                <i class="fas fa-trash"></i>
+                <i class="fa-solid fa-trash"></i>
             </button>
             <div class="content-grid">
                 <div class="form-group">

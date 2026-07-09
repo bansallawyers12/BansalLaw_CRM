@@ -9,7 +9,7 @@
 
             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                 <div>
-                    <h4 class="mb-1"><i class="fas fa-link text-secondary me-2"></i>Bank reconciliation</h4>
+                    <h4 class="mb-1"><i class="fa-solid fa-link text-secondary me-2"></i>Bank reconciliation</h4>
                     <p class="text-muted small mb-0">
                         Enter bank statement lines (positive amount = credit to trust account; negative = debit / payment). Match each line to the corresponding trust ledger row. Ledger lists are capped at 500 rows — narrow the date range if needed.
                     </p>

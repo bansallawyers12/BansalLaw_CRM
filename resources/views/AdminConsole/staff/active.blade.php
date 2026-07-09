@@ -41,7 +41,7 @@
 									<div class="staff-list-toolbar d-flex align-items-stretch">
 										<input id="search-input" type="search" name="search_by" class="form-control" value="{{ request('search_by', '') }}" placeholder="Search name or email" aria-label="Search staff" />
 										<button id="search-button" type="submit" class="btn btn-primary" aria-label="Search">
-											<i class="fas fa-search"></i>
+											<i class="fa-solid fa-search"></i>
 										</button>
 									</div>
 								</form>

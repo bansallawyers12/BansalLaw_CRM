@@ -200,11 +200,11 @@
                     <div class="card-header-actions">
                         @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
                         <a href="{{ route('clients.insights', ['section' => 'leads']) }}" class="btn btn-theme btn-theme-sm" title="Lead Insights">
-                            <i class="fas fa-chart-line"></i> Insights
+                            <i class="fa-solid fa-chart-line"></i> Insights
                         </a>
                         @endif
                         <a href="javascript:;" class="btn btn-theme btn-theme-sm" data-bs-toggle="modal" data-bs-target="#importLeadModal" title="Import Lead">
-                            <i class="fas fa-upload"></i> Import Lead
+                            <i class="fa-solid fa-upload"></i> Import Lead
                         </a>
                         <a href="{{route('leads.create')}}" class="btn btn-primary">Create Lead</a>
                         <select name="per_page" id="per_page" class="form-control per-page-select">
@@ -215,7 +215,7 @@
                             @endforeach
                         </select>
                         <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn">
-                            <i class="fas fa-filter"></i> Filter
+                            <i class="fa-solid fa-filter"></i> Filter
                         </a>
                     </div>
                 </div>
@@ -268,13 +268,13 @@
                                 Search By Details
                                 @if($activeLeadFilters > 0)
                                     <span class="active-filters-badge">
-                                        <i class="fas fa-filter"></i> {{ $activeLeadFilters }} Active
+                                        <i class="fa-solid fa-filter"></i> {{ $activeLeadFilters }} Active
                                     </span>
                                 @endif
                             </h4>
                             @if($activeLeadFilters > 0)
                                 <button type="button" class="clear-filter-btn" id="clearLeadFilters">
-                                    <i class="fas fa-undo"></i> Clear Filters
+                                    <i class="fa-solid fa-undo"></i> Clear Filters
                                 </button>
                             @endif
                         </div>
@@ -360,7 +360,7 @@
                                 <div class="quick-filters">
                                     @foreach($quickFilters as $key => $label)
                                         <span class="quick-filter-chip lead-quick-filter {{ request('quick_date_range') === $key ? 'active' : '' }}" data-filter="{{ $key }}">
-                                            <i class="fas fa-calendar"></i> {{ $label }}
+                                            <i class="fa-solid fa-calendar"></i> {{ $label }}
                                         </span>
                                     @endforeach
                                 </div>
@@ -427,7 +427,7 @@
                                             </a>
 
                                         </td>
-                                        <td><i class="fa fa-mobile"></i> {{@$list->phone}} <br/> <i class="fa fa-envelope"></i> {{@$list->email}}</td>
+                                        <td><i class="fa-solid fa-mobile"></i> {{@$list->phone}} <br/> <i class="fa-solid fa-envelope"></i> {{@$list->email}}</td>
                                         <td>{{date('d/m/Y h:i:s a', strtotime($list->created_at))}}</td>
                                         <td>
                                             @php
@@ -436,7 +436,7 @@
                                                 $stageSlug = \Illuminate\Support\Str::slug($stageKey, '_');
                                             @endphp
                                             <span class="status-badge {{ $stageSlug }}">
-                                                <i class="fas fa-circle"></i> {{ $stageLabel }}
+                                                <i class="fa-solid fa-circle"></i> {{ $stageLabel }}
                                             </span>
                                             @if($list->lead_status === 'follow_up' && $list->followup_date)
                                                 <br><small class="text-muted">Follow-up: {{ $list->followup_date->format('d/m/Y') }}</small>
@@ -445,12 +445,12 @@
                                         <td>
                                             <div class="action-buttons">
                                                 <a href="{{route('clients.edit', base64_encode(convert_uuencode(@$list->id)))}}" class="btn-edit-icon" title="Edit Lead">
-                                                    <i class="fa fa-edit"></i>
+                                                    <i class="fa-solid fa-pen-to-square"></i>
                                                 </a>
                                                 <form action="{{ route('leads.archive', base64_encode(convert_uuencode(@$list->id))) }}" method="POST" class="archive-lead-form" style="display: inline-block;">
                                                     @csrf
                                                     <button type="button" class="btn-archive-icon" title="Archive Lead" onclick="confirmArchive(event, '{{ @$list->first_name }} {{ @$list->last_name }}');">
-                                                        <i class="fa fa-archive"></i>
+                                                        <i class="fa-solid fa-box-archive"></i>
                                                     </button>
                                                 </form>
                                             </div>
@@ -506,7 +506,7 @@
     </div>
     <div class="modal-footer">
         <button type="submit" class="btn btn-primary" onClick='customValidate("add-assign")'>
-            <i class="fa fa-save"></i> Assign Lead
+            <i class="fa-solid fa-floppy-disk"></i> Assign Lead
         </button>
     </div>
 </form>
@@ -520,7 +520,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="importLeadModalLabel">
-                    <i class="fas fa-upload"></i> Import Lead from File
+                    <i class="fa-solid fa-upload"></i> Import Lead from File
                 </h5>
                 <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -529,7 +529,7 @@
             <div class="modal-body">
                 @if ($errors->has('import_file'))
                     <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-circle"></i>
+                        <i class="fa-solid fa-circle-exclamation"></i>
                         <strong>{{ $errors->first('import_file') }}</strong>
                     </div>
                 @endif
@@ -537,7 +537,7 @@
                 <form method="post" name="importLeadForm" action="{{ URL::to('/clients/import') }}" autocomplete="off" enctype="multipart/form-data">
                     @csrf
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i>
+                        <i class="fa-solid fa-circle-info"></i>
                         <strong>Instructions:</strong> Upload a JSON file from the lead form. A new lead will be created and the Notes field will be added as an activity note.
                     </div>
 
@@ -561,7 +561,7 @@
 
                     <div class="modal-footer">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-upload"></i> Import Lead
+                            <i class="fa-solid fa-upload"></i> Import Lead
                         </button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     </div>

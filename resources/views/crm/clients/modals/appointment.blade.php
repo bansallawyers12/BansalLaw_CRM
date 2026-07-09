@@ -4,7 +4,7 @@
 		<div class="modal-content">
 			<div class="modal-header appointment-schedule-modal-header">
 				<h5 class="modal-title" id="interestModalLabel">
-					<i class="fas fa-calendar-plus me-2"></i>Schedule Appointment
+					<i class="fa-solid fa-calendar-plus me-2"></i>Schedule Appointment
 				</h5>
 				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
@@ -99,7 +99,7 @@
                                     @endforeach
                                 </select>
                                 <small class="form-text text-muted d-block mt-2">
-                                    <i class="fas fa-info-circle"></i>
+                                    <i class="fa-solid fa-circle-info"></i>
                                     Optional. Choose who this booking belongs to; it uses that consultant&rsquo;s calendar. Leave empty to assign automatically.
                                 </small>
                             </div>
@@ -145,7 +145,7 @@
                                         <!-- Date & Time Label at Top -->
                                         <div class="form-group">
                                             <label for="description" class="font-weight-bold text-dark mb-3" style="font-size: 16px;">
-                                                <i class="fas fa-calendar-clock me-2" style="color: var(--navy);"></i>
+                                                <i class="fa-solid fa-calendar-clock me-2" style="color: var(--navy);"></i>
                                                 Date & Time <span class="span_req">*</span>
                                             </label>
 
@@ -155,7 +155,7 @@
                                                     <div class="datetime-content">
                                                         <div class="calendar-section">
                                                             <div class="section-header">
-                                                                <i class="fas fa-calendar-check"></i>
+                                                                <i class="fa-solid fa-calendar-check"></i>
                                                                 <span>Select Date</span>
                                                             </div>
                                                             <div class="calendar-wrapper">
@@ -165,7 +165,7 @@
                                                         
                                                         <div class="timeslot-section">
                                                             <div class="section-header">
-                                                                <i class="fas fa-clock"></i>
+                                                                <i class="fa-solid fa-clock"></i>
                                                                 <span>Available Time Slots</span>
                                                             </div>
                                                             <div class="timeslot-wrapper">
@@ -176,7 +176,7 @@
                                                                 <!-- New Modern UI -->
                                                                 <div class="selected-date-display">
                                                                     <div class="date-icon">
-                                                                        <i class="fas fa-calendar-day"></i>
+                                                                        <i class="fa-solid fa-calendar-day"></i>
                                                                     </div>
                                                                     <div class="date-info">
                                                                         <div class="modern-selected-date">Select a date</div>
@@ -190,7 +190,7 @@
                                                                 
                                                                 <div class="no-slots-message" style="display: none;">
                                                                     <div class="no-slots-icon">
-                                                                        <i class="fas fa-calendar-times"></i>
+                                                                        <i class="fa-solid fa-calendar-xmark"></i>
                                                                     </div>
                                                                     <div class="no-slots-text">
                                                                         <h6>No Available Slots</h6>
@@ -208,14 +208,14 @@
                                                 <div class="custom-control custom-checkbox">
                                                     <input type="checkbox" class="custom-control-input" name="slot_overwrite" id="slot_overwrite" value="0">
                                                     <label class="custom-control-label" for="slot_overwrite">
-                                                        <i class="fas fa-unlock-alt me-2"></i>Slot Overwrite
+                                                        <i class="fa-solid fa-unlock-alt me-2"></i>Slot Overwrite
                                                     </label>
                                                     <input type="hidden" name="slot_overwrite_hidden" id="slot_overwrite_hidden" value="0">
                                                 </div>
                                                 <div class="custom-control custom-checkbox mt-2">
                                                     <input type="checkbox" class="custom-control-input" name="send_confirmation_email" id="send_confirmation_email" value="1" checked>
                                                     <label class="custom-control-label" for="send_confirmation_email">
-                                                        <i class="fas fa-envelope me-2"></i>Send confirmation email to client
+                                                        <i class="fa-solid fa-envelope me-2"></i>Send confirmation email to client
                                                     </label>
                                                 </div>
                                             </div>
@@ -263,10 +263,10 @@
 
                         <div class="col-12 col-md-12 col-lg-12 text-right pt-3 appointment-modal-actions-row">
 							<button onclick="customValidate('appointform')" type="button" class="btn btn-primary btn-lg px-4" id="appointform_save">
-								<i class="fas fa-calendar-check me-2"></i>Schedule Appointment
+								<i class="fa-solid fa-calendar-check me-2"></i>Schedule Appointment
 							</button>
 							<button type="button" class="btn btn-outline-secondary btn-lg px-4 ms-2" data-bs-dismiss="modal">
-								<i class="fas fa-times me-2"></i>Cancel
+								<i class="fa-solid fa-xmark me-2"></i>Cancel
 							</button>
 						</div>
 					</div>

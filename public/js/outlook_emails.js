@@ -645,9 +645,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 return 'fa-file-image';
             }
             if (['zip', 'rar', '7z'].indexOf(ext) !== -1) {
-                return 'fa-file-archive';
+                return 'fa-file-zipper';
             }
-            return 'fa-file-alt';
+            return 'fa-file-lines';
         }
 
         function buildFolderOptionsHtml(storageType, selectedFolderId) {
@@ -754,7 +754,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const icon = getAttachmentFileIcon(att.filename, att.content_type);
             return `
                 <div class="attachment-storage-row__file-inner">
-                    <span class="attachment-storage-row__icon"><i class="fas ${icon}"></i></span>
+                    <span class="attachment-storage-row__icon"><i class="fa-solid ${icon}"></i></span>
                     <span class="attachment-storage-row__filename" title="${escapeHtml(att.filename)}">${escapeHtml(att.filename)}</span>
                 </div>
             `;
@@ -1809,12 +1809,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return 'fa-file-image email-attachment-icon--image';
         }
         if (['zip', 'rar', '7z'].includes(ext)) {
-            return 'fa-file-archive';
+            return 'fa-file-zipper';
         }
         if (ext === 'msg') {
             return 'fa-envelope';
         }
-        return 'fa-file-alt';
+        return 'fa-file-lines';
     }
 
     function canPreviewEmailAttachment(att) {
@@ -1966,7 +1966,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const lines = items.slice(0, 3).map(function(item) {
-            return '<span class="email-item-attachment-line"><i class="fas fa-file-alt"></i> ' + escapeHtml(item.name) + '</span>';
+            return '<span class="email-item-attachment-line"><i class="fa-solid fa-file-lines"></i> ' + escapeHtml(item.name) + '</span>';
         }).join('');
 
         const extra = items.length > 3
@@ -2008,19 +2008,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const rows = items.map(function(item) {
             const sizeLabel = formatFileSize(item.size);
             const previewBtn = item.previewUrl
-                ? '<a href="' + item.previewUrl + '" target="_blank" rel="noopener" class="email-attachment-btn email-attachment-btn--preview" title="Preview ' + escapeHtml(item.name) + '"><i class="fas fa-eye"></i> Preview</a>'
+                ? '<a href="' + item.previewUrl + '" target="_blank" rel="noopener" class="email-attachment-btn email-attachment-btn--preview" title="Preview ' + escapeHtml(item.name) + '"><i class="fa-solid fa-eye"></i> Preview</a>'
                 : '';
 
             return ''
                 + '<div class="email-attachment-row">'
-                + '  <div class="email-attachment-row__icon"><i class="fas ' + item.icon + '"></i></div>'
+                + '  <div class="email-attachment-row__icon"><i class="fa-solid ' + item.icon + '"></i></div>'
                 + '  <div class="email-attachment-row__info">'
                 + '    <div class="email-attachment-row__name" title="' + escapeHtml(item.name) + '">' + escapeHtml(item.name) + '</div>'
                 + (sizeLabel ? '    <div class="email-attachment-row__meta">' + escapeHtml(sizeLabel) + '</div>' : '')
                 + '  </div>'
                 + '  <div class="email-attachment-row__actions">'
                 + previewBtn
-                + '    <a href="' + item.downloadUrl + '" target="_blank" rel="noopener" class="email-attachment-btn email-attachment-btn--download" title="Download ' + escapeHtml(item.name) + '"><i class="fas fa-download"></i> Download</a>'
+                + '    <a href="' + item.downloadUrl + '" target="_blank" rel="noopener" class="email-attachment-btn email-attachment-btn--download" title="Download ' + escapeHtml(item.name) + '"><i class="fa-solid fa-download"></i> Download</a>'
                 + '  </div>'
                 + '</div>';
         }).join('');
@@ -2028,7 +2028,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return ''
             + '<div class="email-attachments-panel">'
             + '  <div class="email-attachments-panel__header">'
-            + '    <i class="fas fa-paperclip"></i>'
+            + '    <i class="fa-solid fa-paperclip"></i>'
             + '    <span>Attachments (' + items.length + ')</span>'
             + '  </div>'
             + '  <div class="email-attachments-panel__list">' + rows + '</div>'
@@ -2055,7 +2055,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const preview = normalizePreviewText(email.text_preview || '', 80);
             
             const hasAttachment = (email.attachments && email.attachments.length > 0) || email.msg_file_url || email.pdf_file_url;
-            const attachmentIcon = hasAttachment ? '<i class="fas fa-paperclip email-list-clip" title="Has attachments"></i>' : '';
+            const attachmentIcon = hasAttachment ? '<i class="fa-solid fa-paperclip email-list-clip" title="Has attachments"></i>' : '';
             const attachmentSummary = renderEmailAttachmentListSummary(email);
 
             let dateStr = formatEmailDate(getEmailDate(email));

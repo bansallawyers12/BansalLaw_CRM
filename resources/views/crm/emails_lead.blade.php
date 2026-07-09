@@ -33,7 +33,7 @@
         <!-- Left Email List Pane (no upload for leads - emails are from CRM send only) -->
         <div class="email-list-pane">
             <div class="upload-section-header lead-email-notice">
-                <span class="upload-title"><i class="fas fa-info-circle"></i> Emails sent to this lead from the CRM</span>
+                <span class="upload-title"><i class="fa-solid fa-circle-info"></i> Emails sent to this lead from the CRM</span>
             </div>
             <div class="upload-section-container" style="display: none;">
                 <!-- Upload hidden for leads - no .msg upload support yet -->
@@ -43,16 +43,16 @@
             <div class="email-list-header">
                 <span class="results-count" id="resultsCount">0 results</span>
                 <div class="pagination-controls">
-                    <button class="pagination-btn" id="prevBtn" title="Previous"><i class="fas fa-chevron-left"></i></button>
+                    <button class="pagination-btn" id="prevBtn" title="Previous"><i class="fa-solid fa-chevron-left"></i></button>
                     <span class="page-info" id="pageInfo">1/1</span>
-                    <button class="pagination-btn" id="nextBtn" title="Next"><i class="fas fa-chevron-right"></i></button>
+                    <button class="pagination-btn" id="nextBtn" title="Next"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>
             </div>
             
             <div class="email-list" id="emailList">
                 <div class="empty-state">
                     <div class="empty-state-icon">
-                        <i class="fas fa-inbox"></i>
+                        <i class="fa-solid fa-inbox"></i>
                     </div>
                     <div class="empty-state-text">
                         <h3>No emails found</h3>
@@ -66,7 +66,7 @@
         <div class="email-content-pane">
             <div class="email-content-placeholder" id="emailContentPlaceholder">
                 <div class="placeholder-content">
-                    <i class="fas fa-envelope-open"></i>
+                    <i class="fa-solid fa-envelope-open"></i>
                     <h3>Select an email to view its contents</h3>
                 </div>
             </div>
@@ -95,22 +95,22 @@
 <!-- Email Context Menu -->
 <div id="emailContextMenu" class="email-context-menu" style="display: none;">
     <div class="context-menu-item" data-action="apply-label">
-        <i class="fas fa-tag"></i>
+        <i class="fa-solid fa-tag"></i>
         <span>Apply Label</span>
-        <i class="fas fa-chevron-right context-menu-arrow"></i>
+        <i class="fa-solid fa-chevron-right context-menu-arrow"></i>
     </div>
     <div class="context-menu-item" data-action="reply">
-        <i class="fas fa-reply"></i>
+        <i class="fa-solid fa-reply"></i>
         <span>Reply</span>
     </div>
     <div class="context-menu-item" data-action="forward">
-        <i class="fas fa-share"></i>
+        <i class="fa-solid fa-share"></i>
         <span>Forward</span>
     </div>
     @if($canDeleteEmail)
     <div class="context-menu-separator"></div>
     <div class="context-menu-item" data-action="delete">
-        <i class="fas fa-trash"></i>
+        <i class="fa-solid fa-trash"></i>
         <span>Delete</span>
     </div>
     @endif
@@ -119,7 +119,7 @@
 <!-- Label Submenu -->
 <div id="labelSubmenu" class="email-context-submenu" style="display: none;">
     <div class="submenu-header">
-        <i class="fas fa-arrow-left submenu-back"></i>
+        <i class="fa-solid fa-arrow-left submenu-back"></i>
         <span>Select Label</span>
     </div>
     <div class="submenu-content" id="labelSubmenuContent">

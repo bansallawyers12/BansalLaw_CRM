@@ -266,7 +266,7 @@
                     <div class="card-header-actions">
                         @if($_cmInsightsBtn)
                         <a href="{{ route('clients.insights', ['section' => 'matters']) }}" class="btn btn-theme btn-theme-sm" title="Matter Insights">
-                            <i class="fas fa-chart-line"></i> Insights
+                            <i class="fa-solid fa-chart-line"></i> Insights
                         </a>
                         @endif
                         <select name="per_page" id="per_page" class="form-control per-page-select">
@@ -276,7 +276,7 @@
                                 </option>
                             @endforeach
                         </select>
-                        <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fas fa-filter"></i> Filter</a>
+                        <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fa-solid fa-filter"></i> Filter</a>
                     </div>
                 </div>
                 
@@ -313,13 +313,13 @@
                                 Search By Details
                                 @if($activeMatterFilters > 0)
                                     <span class="active-filters-badge">
-                                        <i class="fas fa-filter"></i> {{ $activeMatterFilters }} Active
+                                        <i class="fa-solid fa-filter"></i> {{ $activeMatterFilters }} Active
                                     </span>
                                 @endif
                             </h4>
                             @if($activeMatterFilters > 0)
                                 <button type="button" class="clear-filter-btn" id="clearMatterFilters">
-                                    <i class="fas fa-undo"></i> Clear Filters
+                                    <i class="fa-solid fa-undo"></i> Clear Filters
                                 </button>
                             @endif
                         </div>
@@ -422,7 +422,7 @@
                                 <div class="quick-filters">
                                     @foreach($quickFilters as $key => $label)
                                         <span class="quick-filter-chip matter-quick-filter {{ request('quick_date_range') === $key ? 'active' : '' }}" data-filter="{{ $key }}">
-                                            <i class="fas fa-calendar"></i> {{ $label }}
+                                            <i class="fa-solid fa-calendar"></i> {{ $label }}
                                         </span>
                                     @endforeach
                                 </div>
@@ -464,11 +464,11 @@
                         };
                         $sortIcon = function ($column) use ($currentSort, $currentDirection) {
                             if ($currentSort !== $column) {
-                                return '<i class="fas fa-sort text-muted"></i>';
+                                return '<i class="fa-solid fa-sort text-muted"></i>';
                             }
                             return $currentDirection === 'asc'
-                                ? '<i class="fas fa-sort-up"></i>'
-                                : '<i class="fas fa-sort-down"></i>';
+                                ? '<i class="fa-solid fa-sort-up"></i>'
+                                : '<i class="fa-solid fa-sort-down"></i>';
                         };
                     @endphp
                     <div class="table-responsive">
@@ -531,7 +531,7 @@
                                             <td class="tdCls">
                                                 @if($matter_office)
                                                     <span class="badge badge-info" style="font-size: 12px;">
-                                                        <i class="fas fa-building"></i> {{ $matter_office->office_name }}
+                                                        <i class="fa-solid fa-building"></i> {{ $matter_office->office_name }}
                                                     </span>
                                                     <br>
                                                     <a href="javascript:;" class="btn btn-sm btn-outline-primary mt-1 edit-office-btn" 
@@ -540,11 +540,11 @@
                                                        data-matter-title="{{ $list->title }}"
                                                        data-office-id="{{ $list->office_id }}"
                                                        title="Change Office">
-                                                        <i class="fas fa-edit"></i> Change
+                                                        <i class="fa-solid fa-pen-to-square"></i> Change
                                                     </a>
                                                 @else
                                                     <span class="badge badge-warning" style="font-size: 11px;">
-                                                        <i class="fas fa-exclamation-triangle"></i> Not Assigned
+                                                        <i class="fa-solid fa-triangle-exclamation"></i> Not Assigned
                                                     </span>
                                                     <br>
                                                     <a href="javascript:;" class="btn btn-sm btn-success mt-1 assign-office-btn" 
@@ -552,7 +552,7 @@
                                                        data-matter-no="{{ $list->client_unique_matter_no }}"
                                                        data-matter-title="{{ $list->title }}"
                                                        title="Assign Office">
-                                                        <i class="fas fa-plus"></i> Assign
+                                                        <i class="fa-solid fa-plus"></i> Assign
                                                     </a>
                                                 @endif
                                             </td>
@@ -561,7 +561,7 @@
                                                 <div class="dropdown d-inline">
                                                     <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-haspopup="true" aria-expanded="false">Action</button>
                                                     <div class="dropdown-menu dropdown-menu-end">
-                                                        <a class="dropdown-item has-icon" href="javascript:;" onclick="deleteAction({{$list->id}}, 'client_matters')"><i class="fas fa-trash"></i> Delete Matter</a>
+                                                        <a class="dropdown-item has-icon" href="javascript:;" onclick="deleteAction({{$list->id}}, 'client_matters')"><i class="fa-solid fa-trash"></i> Delete Matter</a>
                                                     </div>
                                                 </div>
                                             </td>
@@ -778,7 +778,7 @@ jQuery(document).ready(function($){
         var originalText = submitBtn.html();
         
         // Disable button and show loading
-        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+        submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Saving...');
         
         $.ajax({
             url: '{{ route("matters.update-office") }}',

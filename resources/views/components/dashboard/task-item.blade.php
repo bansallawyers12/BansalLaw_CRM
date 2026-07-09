@@ -85,7 +85,7 @@
         </div>
         <div class="todo-task-meta">
             <span class="task-client-info">
-                <i class="fas fa-user"></i>
+                <i class="fa-solid fa-user"></i>
                 {{ $clientName }}
                 @if($clientCode)
                     <span class="task-client-code">({{ $clientCode }})</span>
@@ -98,12 +98,12 @@
         <span class="todo-task-due {{ $urgencyClass }}">
             @if($note->note_deadline)
                 @if($isOverdue)
-                    <i class="fas fa-exclamation-circle"></i>
+                    <i class="fa-solid fa-circle-exclamation"></i>
                 @else
-                    <i class="far fa-calendar"></i>
+                    <i class="fa-regular fa-calendar"></i>
                 @endif
             @else
-                <i class="fas fa-infinity"></i>
+                <i class="fa-solid fa-infinity"></i>
             @endif
             {{ $daysLeftText }}
         </span>
@@ -112,13 +112,13 @@
                 <button class="todo-action-btn"
                         onclick="event.stopPropagation(); openExtendModal({{ $note->id }})"
                         title="Extend Deadline">
-                    <i class="fas fa-calendar-plus"></i>
+                    <i class="fa-solid fa-calendar-plus"></i>
                 </button>
             @else
                 <button class="todo-action-btn"
                         onclick="event.stopPropagation(); openAddDeadlineModal({{ $note->id }})"
                         title="Add Deadline">
-                    <i class="fas fa-calendar-plus"></i>
+                    <i class="fa-solid fa-calendar-plus"></i>
                 </button>
             @endif
         </div>

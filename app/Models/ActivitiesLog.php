@@ -164,16 +164,16 @@ class ActivitiesLog extends Authenticatable
 			'activity' => 'fa-bolt',
 			'stage' => 'fa-route',
 			'email' => 'fa-envelope',
-			'document' => 'fa-file-alt',
+			'document' => 'fa-file-lines',
 			'signature' => 'fa-file-signature',
-			'note' => 'fa-sticky-note',
+			'note' => 'fa-note-sticky',
 			'financial' => 'fa-dollar-sign',
 			'lead_converted' => 'fa-user-check',
 			'followup_scheduled' => 'fa-calendar-plus',
 			'followup_completed' => 'fa-calendar-check',
-			'followup_rescheduled' => 'fa-calendar-alt',
-			'followup_cancelled' => 'fa-calendar-times',
-			default => 'fa-sticky-note',
+			'followup_rescheduled' => 'fa-calendar-days',
+			'followup_cancelled' => 'fa-calendar-xmark',
+			default => 'fa-note-sticky',
 		};
 	}
 

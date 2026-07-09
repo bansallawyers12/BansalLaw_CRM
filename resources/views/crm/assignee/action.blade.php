@@ -651,12 +651,12 @@
                     <template id="action-add-task-popover-template">
                         <div class="modern-popover-content add-task-layout">
                             <div class="form-group">
-                                <label class="control-label"><i class="fa fa-user-circle"></i> Client</label>
+                                <label class="control-label"><i class="fa-solid fa-user-circle"></i> Client</label>
                                 <select id="add_task_client_select" class="form-control js-data-example-ajaxccsearch__addmytask" data-placeholder="Search and select client..."></select>
                                 <div id="add_task_client_error" class="error-message"></div>
                             </div>
                             <div class="form-group">
-                                <label class="control-label"><i class="fa fa-users"></i> Assignees</label>
+                                <label class="control-label"><i class="fa-solid fa-users"></i> Assignees</label>
                                 <div class="dropdown-multi-select" style="width: 100%;">
                                     <button type="button" class="btn btn-default dropdown-toggle" id="add_task_dropdown_btn" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 100%;">
                                         Select assignees <span class="selected-count"></span>
@@ -690,14 +690,14 @@
                                 <div id="add_task_assignees_error" class="error-message"></div>
                             </div>
                             <div class="form-group form-group-full-width">
-                                <label class="control-label"><i class="fa fa-comment"></i> Task Description</label>
+                                <label class="control-label"><i class="fa-solid fa-comment"></i> Task Description</label>
                                 <textarea id="add_task_assignnote" class="form-control" rows="3" placeholder="Enter task description..."></textarea>
                                 <div id="add_task_note_error" class="error-message"></div>
                             </div>
                             <input id="add_task_task_group" name="task_group" type="hidden" value="Personal Action">
                             <div class="text-center">
                                 <button type="button" class="btn btn-primary" id="add_my_task_submit">
-                                    <i class="fa fa-plus-circle"></i> Add My Task
+                                    <i class="fa-solid fa-circle-plus"></i> Add My Task
                                 </button>
                             </div>
                         </div>
@@ -705,7 +705,7 @@
                     {{-- Do not use class "tab-button" here: global tab handler calls table.ajax.reload() on every .tab-button click and breaks this popover/Tom Select. --}}
                     {{-- Do not use data-role="popover": legacy public/js/popover.js conflicts with BS5 (re-inits empty popover + Tom Select without dropdownParent). --}}
                     <button type="button" class="btn btn-primary add_my_task add-my-task-header-btn" data-bs-toggle="popover" data-container="body" data-placement="bottom-start" data-html="true">
-                        <i class="fas fa-plus"></i> Add My Task
+                        <i class="fa-solid fa-plus"></i> Add My Task
                     </button>
                 </div>
             </div>
@@ -766,7 +766,7 @@
         <div class="modal-content completion-notes-modal-content">
             <div class="modal-header completion-notes-modal-header">
                 <h5 class="modal-title" id="completionNotesModalLabel">
-                    <i class="fa fa-check completion-task-modal-header-icon" aria-hidden="true"></i> Complete Task
+                    <i class="fa-solid fa-check completion-task-modal-header-icon" aria-hidden="true"></i> Complete Task
                 </h5>
                 <button type="button" class="close completion-notes-modal-close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -775,7 +775,7 @@
             <div class="modal-body completion-notes-modal-body">
                 <div class="form-group mb-0">
                     <label for="completionNotes" class="completion-notes-label">
-                        <i class="fa fa-comment"></i> Completion Notes/Feedback
+                        <i class="fa-solid fa-comment"></i> Completion Notes/Feedback
                     </label>
                     <textarea 
                         class="form-control completion-notes-textarea" 
@@ -784,16 +784,16 @@
                         placeholder="Enter any notes or feedback about completing this task..."
                     ></textarea>
                     <small class="form-text completion-notes-hint">
-                        <i class="fa fa-info-circle"></i> These notes will be saved in the activity log.
+                        <i class="fa-solid fa-circle-info"></i> These notes will be saved in the activity log.
                     </small>
                 </div>
             </div>
             <div class="modal-footer completion-notes-modal-footer">
                 <button type="button" class="btn btn-cancel-complete" data-bs-dismiss="modal">
-                    <i class="fa fa-times"></i> Cancel
+                    <i class="fa-solid fa-xmark"></i> Cancel
                 </button>
                 <button type="button" class="btn btn-complete-task-primary" id="confirmTaskCompletion">
-                    <i class="fa fa-check"></i> Complete Task
+                    <i class="fa-solid fa-check"></i> Complete Task
                 </button>
             </div>
         </div>
@@ -1277,7 +1277,7 @@ $(function () {
             boundary: 'viewport',
             container: 'body',
             customClass: 'add-my-task-popover',
-            title: '<i class="fa fa-plus-circle"></i> Add New Task',
+            title: '<i class="fa-solid fa-circle-plus"></i> Add New Task',
             template: '<div class="popover" role="tooltip"><div class="popover-arrow"></div><h3 class="popover-header"></h3><div class="popover-body"></div></div>'
         };
         if (actionAddTaskHtml) {
@@ -1388,7 +1388,7 @@ $(function () {
         return `
             <div id="popover-content" class="modern-popover-content update-task-layout">
                 <div class="form-group">
-                    <label class="control-label"><i class="fa fa-user"></i> Select Assignee</label>
+                    <label class="control-label"><i class="fa-solid fa-user"></i> Select Assignee</label>
                     <select class="crm-ts-assignee form-control" id="update_task_rem_cat" name="rem_cat">
                         <option value="">Select Assignee...</option>
                         @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
@@ -1402,7 +1402,7 @@ $(function () {
                 </div>
                 
                 <div class="form-group">
-                    <label class="control-label"><i class="fa fa-tag"></i> Task Group</label>
+                    <label class="control-label"><i class="fa-solid fa-tag"></i> Task Group</label>
                     <select class="crm-ts-assignee form-control" id="update_task_task_group" name="task_group">
                         <option value="">Select Group...</option>
                         <option value="Call" ${taskGroup == 'Call' ? 'selected' : ''}>📞 Call</option>
@@ -1417,7 +1417,7 @@ $(function () {
                 </div>
                 
                 <div class="form-group form-group-full-width">
-                    <label class="control-label"><i class="fa fa-comment"></i> Task Description</label>
+                    <label class="control-label"><i class="fa-solid fa-comment"></i> Task Description</label>
                     <textarea id="update_task_assignnote" class="form-control" rows="3" placeholder="Enter task description...">${noteId}</textarea>
                     <div id="note-error" class="error-message"></div>
                 </div>
@@ -1427,7 +1427,7 @@ $(function () {
                 
                 <div class="text-center">
                     <button class="btn btn-primary" id="updateTask">
-                        <i class="fa fa-save"></i> Update Task
+                        <i class="fa-solid fa-floppy-disk"></i> Update Task
                     </button>
                 </div>
             </div>`;
@@ -1827,7 +1827,7 @@ $(function () {
         
         // Disable button to prevent double submission
         var $button = $(this);
-        $button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Completing...');
+        $button.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Completing...');
         
         $.ajax({
             type: 'post',
@@ -1843,7 +1843,7 @@ $(function () {
                 $('#completionNotesModal').modal('hide');
                 
                 // Reset button
-                $button.prop('disabled', false).html('<i class="fa fa-check"></i> Complete Task');
+                $button.prop('disabled', false).html('<i class="fa-solid fa-check"></i> Complete Task');
                 
                 // Clear stored IDs
                 currentTaskId = null;
@@ -1868,7 +1868,7 @@ $(function () {
                 }
                 
                 // Reset button
-                $button.prop('disabled', false).html('<i class="fa fa-check"></i> Complete Task');
+                $button.prop('disabled', false).html('<i class="fa-solid fa-check"></i> Complete Task');
             }
         });
     });

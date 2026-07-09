@@ -22,6 +22,7 @@
 	<link href="{{asset('css/custom.css')}}" rel="stylesheet">
 	<link href="{{asset('css/crm-theme.css')}}" rel="stylesheet">
 	@include('components.sweetalert2-assets')
+	@include('components.font-awesome')
 
     <script async src="https://www.google.com/recaptcha/api.js"></script> <!-- Add recaptcha script -->
 </head>

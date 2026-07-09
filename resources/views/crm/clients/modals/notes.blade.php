@@ -78,7 +78,7 @@
 		<div class="modal-content create-note-modal">
 			<div class="modal-header create-note-header">
 				<div class="modal-title-section">
-					<i class="fas fa-sticky-note create-note-header__icon me-2" aria-hidden="true"></i>
+					<i class="fa-solid fa-note-sticky create-note-header__icon me-2" aria-hidden="true"></i>
 					<h5 class="modal-title mb-0" id="appliationModalLabel">Create Note</h5>
 				</div>
 				<div class="modal-actions">
@@ -98,12 +98,12 @@
                         <div class="col-12 col-md-6">
 							<div class="form-group enhanced-form-group">
 								<label for="matter_id" class="form-label">
-									<i class="fas fa-folder-open text-muted me-1"></i>
+									<i class="fa-solid fa-folder-open text-muted me-1"></i>
 									Select Matter
 								</label>
 								<div class="input-group">
 									<div class="input-group-prepend">
-										<span class="input-group-text"><i class="fas fa-list-ul"></i></span>
+										<span class="input-group-text"><i class="fa-solid fa-list-ul"></i></span>
                                         </div>
 									<select name="matter_id" id="matter_id" class="form-control enhanced-select">
 								    <option value="">Select Client Matters</option>
@@ -141,12 +141,12 @@
                         <div class="col-12 col-md-6">
 							<div class="form-group enhanced-form-group">
 								<label for="task_group" class="form-label">
-									<i class="fas fa-tag text-muted me-1"></i>
+									<i class="fa-solid fa-tag text-muted me-1"></i>
 									Type <span class="text-danger">*</span>
 								</label>
 								<div class="input-group">
 									<div class="input-group-prepend">
-										<span class="input-group-text"><i class="fas fa-list"></i></span>
+										<span class="input-group-text"><i class="fa-solid fa-list"></i></span>
 									</div>
 									<select name="task_group" class="form-control enhanced-select" data-valid="required" id="noteTypeEnhanced">
                                     <option value="">Please Select</option>
@@ -169,7 +169,7 @@
 						<div class="col-12">
 							<div class="form-group enhanced-form-group">
 								<label for="description" class="form-label">
-									<i class="fas fa-align-left text-muted me-1"></i>
+									<i class="fa-solid fa-align-left text-muted me-1"></i>
 									Description <span class="text-danger">*</span>
 								</label>
 								<div class="rich-text-container">
@@ -184,13 +184,13 @@
                         <div class="col-12">
 							<div class="modal-footer-buttons">
 								<button type="button" class="btn btn-primary btn-lg btn-create-action" data-container="body" data-role="popover" data-placement="bottom" data-html="true">
-									<i class="fas fa-cog me-2"></i>Create Task
+									<i class="fa-solid fa-gear me-2"></i>Create Task
 								</button>
 								<button onclick="customValidate('notetermform_n')" type="button" class="btn btn-primary btn-lg btn-create-note">
-									<i class="fas fa-save me-2"></i>Create Note
+									<i class="fa-solid fa-floppy-disk me-2"></i>Create Note
 								</button>
 								<button type="button" class="btn btn-outline-secondary btn-lg" data-bs-dismiss="modal">
-									<i class="fas fa-times me-2"></i>Cancel
+									<i class="fa-solid fa-xmark me-2"></i>Cancel
 								</button>
 							</div>
                         </div>

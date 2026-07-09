@@ -1,6 +1,6 @@
 @php
     $labelColor = $list->color ?: '#3A6FA8';
-    $labelIcon = $list->icon ?? 'fas fa-tag';
+    $labelIcon = $list->icon ?? 'fa-solid fa-tag';
     $createdBy = $list->user ? trim($list->user->first_name . ' ' . $list->user->last_name) : 'System';
     $updatedAt = $list->updated_at ? date('Y-m-d H:i', strtotime($list->updated_at)) : '-';
     $displayName = $list->name == '' ? config('constants.empty') : Str::limit($list->name, 50, '...');
@@ -44,11 +44,11 @@
                 aria-haspopup="true">Action</button>
             <ul class="dropdown-menu dropdown-menu-end email-labels-action-menu" aria-labelledby="actionBtn_{{ $list->id }}">
                 @if($list->type == 'system')
-                    <li><span class="dropdown-item-text text-muted small px-3 py-2 d-block"><i class="far fa-edit me-2"></i>System labels cannot be edited</span></li>
-                    <li><span class="dropdown-item-text text-muted small px-3 py-2 d-block"><i class="fas fa-trash me-2"></i>System labels cannot be deleted</span></li>
+                    <li><span class="dropdown-item-text text-muted small px-3 py-2 d-block"><i class="fa-regular fa-pen-to-square me-2"></i>System labels cannot be edited</span></li>
+                    <li><span class="dropdown-item-text text-muted small px-3 py-2 d-block"><i class="fa-solid fa-trash me-2"></i>System labels cannot be deleted</span></li>
                 @else
-                    <li><a class="dropdown-item has-icon edit-email-label-btn" href="javascript:void(0);"><i class="far fa-edit"></i> Edit</a></li>
-                    <li><a class="dropdown-item has-icon delete-email-label-btn" href="javascript:void(0);"><i class="fas fa-trash"></i> Delete</a></li>
+                    <li><a class="dropdown-item has-icon edit-email-label-btn" href="javascript:void(0);"><i class="fa-regular fa-pen-to-square"></i> Edit</a></li>
+                    <li><a class="dropdown-item has-icon delete-email-label-btn" href="javascript:void(0);"><i class="fa-solid fa-trash"></i> Delete</a></li>
                 @endif
             </ul>
         </div>

@@ -109,7 +109,7 @@
                                         </button>
                                         <?php if ($isClientGenerated): ?>
                                             <div class="action-buttons md-folder-tab-actions">
-                                                <button type="button" class="btn btn-sm btn-warning update-visa-cat-title" data-id="<?= $id ?>" title="Rename folder"><i class="fa fa-edit" aria-hidden="true"></i></button>
+                                                <button type="button" class="btn btn-sm btn-warning update-visa-cat-title" data-id="<?= $id ?>" title="Rename folder"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>
                                             </div>
                                         <?php endif; ?>
                                     </div>
@@ -117,10 +117,10 @@
                             </nav>
                             <div class="md-header-actions">
                                 <button type="button" class="btn md-btn md-btn-light add-visa-doc-category-btn add-visa-doc-category" data-type="visa" data-categoryid="">
-                                    <i class="fas fa-plus"></i> Add Folder
+                                    <i class="fa-solid fa-plus"></i> Add Folder
                                 </button>
                                 <button type="button" class="btn md-btn md-btn-ghost md-not-used-btn client-nav-button" data-tab="notuseddocuments">
-                                    <i class="fas fa-folder-minus"></i> Not Used Documents
+                                    <i class="fa-solid fa-folder-minus"></i> Not Used Documents
                                 </button>
                             </div>
                         </div>
@@ -136,13 +136,13 @@
                                 <div class="subtab6-pane <?= $isActive ?>" id="<?= $id ?>-subtab6">
                                     <div class="checklist-table-container">
                                         <div class="subtab6-header md-section-header">
-                                            <h3><i class="fas fa-file-alt"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
+                                            <h3><i class="fa-solid fa-file-lines"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
                                             <div class="md-section-actions">
                                                 <button type="button" class="btn md-btn md-btn-primary add-checklist-btn add_migration_doc" data-type="visa" data-categoryid="<?= $id ?>">
-                                                    <i class="fas fa-plus"></i> Add Checklist
+                                                    <i class="fa-solid fa-plus"></i> Add Checklist
                                                 </button>
                                                 <button type="button" class="btn md-btn md-btn-outline bulk-upload-toggle-btn-visa" data-categoryid="<?= $id ?>" data-categoryname="<?= htmlspecialchars($catVal->title) ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>">
-                                                    <i class="fas fa-upload"></i> Bulk Upload
+                                                    <i class="fa-solid fa-upload"></i> Bulk Upload
                                                 </button>
                                             </div>
                                         </div>
@@ -150,7 +150,7 @@
                                         <!-- Bulk upload dropzone for matter documents (hidden by default) -->
                                         <div class="bulk-upload-dropzone-container-visa matter-bulk-dropzone" id="bulk-upload-visa-<?= $id ?>" style="display: none;">
                                             <div class="bulk-upload-dropzone-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" style="text-align: center; padding: 30px; cursor: pointer;">
-                                                <i class="fas fa-cloud-upload-alt matter-bulk-dropzone-icon"></i>
+                                                <i class="fa-solid fa-cloud-arrow-up matter-bulk-dropzone-icon"></i>
                                                 <p class="matter-bulk-dropzone-lead">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
@@ -202,10 +202,10 @@
                                                                 <div class="checklist-actions">
                                                                     <?php if (!$fetch->file_name): ?>
                                                                     <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Edit Checklist Name">
-                                                                        <i class="fas fa-edit"></i>
+                                                                        <i class="fa-solid fa-pen-to-square"></i>
                                                                     </a>
                                                                     <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Delete Checklist">
-                                                                        <i class="fas fa-trash"></i>
+                                                                        <i class="fa-solid fa-trash"></i>
                                                                     </a>
                                                                     <?php endif; ?>
                                                                 </div>
@@ -218,7 +218,7 @@
                                                                 ?>
                                                                 <div data-id="<?= $fetch->id ?>" data-name="<?= htmlspecialchars($fetch->file_name) ?>" class="doc-row" title="Uploaded by: <?= htmlspecialchars($admin->first_name ?? 'NA') ?> on <?= date('d/m/Y H:i', strtotime($fetch->created_at)) ?>" oncontextmenu='showVisaFileContextMenu(event, <?= (int) $fetch->id ?>, <?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode((string) $id) ?>, <?= json_encode($fetch->status ?? 'draft') ?>); return false;'>
                                                                     <a href="javascript:void(0);" onclick='previewFile(<?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($previewUrl) ?>, <?= json_encode($matterPreviewContainerId) ?>)'>
-                                                                        <i class="fas fa-file-image matter-doc-file-icon"></i> <span><?= htmlspecialchars($displayFileName) ?></span>
+                                                                        <i class="fa-solid fa-file-image matter-doc-file-icon"></i> <span><?= htmlspecialchars($displayFileName) ?></span>
                                                                     </a>
                                                                 </div>
                                                             <?php else: ?>
@@ -233,7 +233,7 @@
                                                                         <input type="hidden" name="doccategory" value="<?= $catVal->title ?>">
                                                                         <div class="document-drag-drop-zone visa-doc-drag-zone" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" data-formid="mig_upload_form_<?= $fetch->id ?>">
                                                                             <div class="drag-zone-inner">
-                                                                                <i class="fas fa-cloud-upload-alt"></i>
+                                                                                <i class="fa-solid fa-cloud-arrow-up"></i>
                                                                                 <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                                             </div>
                                                                         </div>
@@ -267,17 +267,17 @@
                                                         <td colspan="3" style="padding: 10px 16px;">
                                                             <div class="d-flex flex-wrap align-items-center gap-2" style="flex-wrap: wrap;">
                                                                 <button type="button" class="btn btn-sm btn-primary visa-sig-send-btn" data-doc-id="<?= $fetch->id ?>" <?= $docStatus === 'sent' ? 'disabled' : '' ?>>
-                                                                    <i class="fas fa-paper-plane me-1"></i> Send
+                                                                    <i class="fa-solid fa-paper-plane me-1"></i> Send
                                                                 </button>
                                                                 <button type="button" class="btn btn-sm btn-outline-secondary visa-sig-revise-btn" data-doc-id="<?= $fetch->id ?>">
-                                                                    <i class="fas fa-edit me-1"></i> Revise
+                                                                    <i class="fa-solid fa-pen-to-square me-1"></i> Revise
                                                                 </button>
                                                                 <button type="button" class="btn btn-sm btn-outline-danger visa-sig-remove-btn" data-doc-id="<?= $fetch->id ?>">
-                                                                    <i class="fas fa-times me-1"></i> Remove
+                                                                    <i class="fa-solid fa-xmark me-1"></i> Remove
                                                                 </button>
                                                                 <?php if ($docStatus === 'sent' && $signingUrl && $signerId): ?>
                                                                 <button type="button" class="btn btn-sm btn-outline-info visa-sig-reminder-btn" data-doc-id="<?= $fetch->id ?>" data-signer-id="<?= $signerId ?>">
-                                                                    <i class="fas fa-bell me-1"></i> Reminder
+                                                                    <i class="fa-solid fa-bell me-1"></i> Reminder
                                                                 </button>
                                                                 <?php endif; ?>
                                                             </div>
@@ -305,7 +305,7 @@
                                                             ?>
                                                             <div data-id="<?= $signedDoc->id ?>" data-name="<?= htmlspecialchars($signedDoc->file_name ?? '') ?>" class="doc-row" title="Signed document" oncontextmenu="showVisaFileContextMenu(event, <?= $signedDoc->id ?>, '<?= htmlspecialchars($signedDoc->filetype ?? 'pdf') ?>', '<?= $signedFileUrlJs ?>', '<?= $id ?>', '<?= $signedDoc->status ?? 'signed' ?>'); return false;">
                                                                 <a href="javascript:void(0);" onclick="previewFile('<?= $signedDoc->filetype ?? 'pdf' ?>','<?= $signedFileUrlJs ?>','<?= $matterPreviewContainerId ?>')">
-                                                                    <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($signedDisplayName) ?></span>
+                                                                    <i class="fa-solid fa-file-image"></i> <span><?= htmlspecialchars($signedDisplayName) ?></span>
                                                                 </a>
                                                             </div>
                                                         </td>
@@ -338,7 +338,7 @@
                                                         <td style="white-space: initial;">
                                                             <div data-id="<?= $signedDoc->id ?>" data-name="<?= htmlspecialchars($signedDoc->file_name ?? '') ?>" class="doc-row" title="Signed document" oncontextmenu="showVisaFileContextMenu(event, <?= $signedDoc->id ?>, '<?= htmlspecialchars($signedDoc->filetype ?? 'pdf') ?>', '<?= $signedFileUrlJs ?>', '<?= $id ?>', '<?= $signedDoc->status ?? 'signed' ?>'); return false;">
                                                                 <a href="javascript:void(0);" onclick="previewFile('<?= $signedDoc->filetype ?? 'pdf' ?>','<?= $signedFileUrlJs ?>','<?= $matterPreviewContainerId ?>')">
-                                                                    <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($signedDisplayName) ?></span>
+                                                                    <i class="fa-solid fa-file-image"></i> <span><?= htmlspecialchars($signedDisplayName) ?></span>
                                                                 </a>
                                                             </div>
                                                         </td>
@@ -377,12 +377,12 @@
                                                     <div class="grid_list" id="gid_<?= $fetch->id ?>">
                                                         <div class="grid_col">
                                                             <div class="grid_icon">
-                                                                <i class="fas fa-file-image"></i>
+                                                                <i class="fa-solid fa-file-image"></i>
                                                             </div>
                                                             <div class="grid_content">
                                                                 <span id="grid_<?= $fetch->id ?>" class="gridfilename"><?= htmlspecialchars($fetch->file_name) ?></span>
                                                                 <div class="dropdown d-inline dropdown_ellipsis_icon">
-                                                                    <a class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
+                                                                    <a class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></a>
                                                                     <div class="dropdown-menu">
                                                                         <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?= json_encode($fetch->filetype ?? 'pdf') ?>, <?= json_encode($gridPreviewUrl) ?>, <?= json_encode('preview-container-matter-' . $fetch->folder_name) ?>)'>Preview</a>
                                                                         <a href="#" class="dropdown-item download-file" data-id="<?= $fetch->id ?>" data-document-id="<?= $fetch->id ?>" data-filename="<?= e($gridDownloadFilename) ?>">Download</a>
@@ -400,7 +400,7 @@
 
                                     <div class="preview-pane file-preview-container <?= $matterPreviewContainerId ?> matter-preview-pane client-doc-preview-pane">
                                         <div class="client-doc-preview-empty">
-                                            <i class="fas fa-file-alt client-doc-preview-empty-icon" aria-hidden="true"></i>
+                                            <i class="fa-solid fa-file-lines client-doc-preview-empty-icon" aria-hidden="true"></i>
                                             <p class="preview-placeholder-text"><strong>Document Preview</strong></p>
                                             <p class="preview-placeholder-text">Select a file from the list to preview it here</p>
                                         </div>
@@ -415,28 +415,28 @@
             <!-- Custom context menu for matter documents -->
             <div id="visaFileContextMenu" class="context-menu matter-docs-context-menu" style="display: none; position: fixed; z-index: 10000; min-width: 180px;">
                 <div id="visa-context-send-signature" class="context-menu-item" onclick="handleVisaContextAction('send-for-signature')" style="display: none;">
-                    <i class="fa fa-pen-fancy"></i> Send for Signature
+                    <i class="fa-solid fa-pen-fancy"></i> Send for Signature
                 </div>
                 <div class="context-menu-item" onclick="handleVisaContextAction('rename-checklist')">
-                    <i class="fa fa-edit"></i> Rename Checklist
+                    <i class="fa-solid fa-pen-to-square"></i> Rename Checklist
                 </div>
                 <div class="context-menu-item" onclick="handleVisaContextAction('rename-doc')">
-                    <i class="fa fa-file-text"></i> Rename File Name
+                    <i class="fa-solid fa-file-lines"></i> Rename File Name
                 </div>
                 <div class="context-menu-item" onclick="handleVisaContextAction('move')">
-                    <i class="fa fa-arrows-alt"></i> Move Document
+                    <i class="fa-solid fa-up-down-left-right"></i> Move Document
                 </div>
                 <div class="context-menu-item" onclick="handleVisaContextAction('preview')">
-                    <i class="fa fa-eye"></i> Preview
+                    <i class="fa-solid fa-eye"></i> Preview
                 </div>
                 <div id="visa-context-pdf-option" class="context-menu-item" onclick="handleVisaContextAction('pdf')" style="display: none;">
-                    <i class="fa fa-file-pdf"></i> PDF
+                    <i class="fa-solid fa-file-pdf"></i> PDF
                 </div>
                 <div class="context-menu-item" onclick="handleVisaContextAction('download')">
-                    <i class="fa fa-download"></i> Download
+                    <i class="fa-solid fa-download"></i> Download
                 </div>
                 <div class="context-menu-item" onclick="handleVisaContextAction('not-used')">
-                    <i class="fa fa-trash"></i> Not Used
+                    <i class="fa-solid fa-trash"></i> Not Used
                 </div>
             </div>
 
@@ -698,7 +698,7 @@
                     $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Sending...');
                     $.post('{{ url("/signatures") }}/' + docId + '/send', { _token: '{{ csrf_token() }}' })
                         .done(function() { location.reload(); })
-                        .fail(function(xhr) { alert(xhr.responseJSON?.message || 'Failed to send'); $btn.prop('disabled', false).html('<i class="fas fa-paper-plane me-1"></i> Send'); });
+                        .fail(function(xhr) { alert(xhr.responseJSON?.message || 'Failed to send'); $btn.prop('disabled', false).html('<i class="fa-solid fa-paper-plane me-1"></i> Send'); });
                 });
                 $(document).on('click', '.visa-sig-revise-btn', function() {
                     var docId = $(this).data('doc-id');
@@ -1036,7 +1036,7 @@
                     
                     // Hide all other dropzones first
                     $('.bulk-upload-dropzone-container-visa').not('#bulk-upload-visa-' + categoryId).slideUp();
-                    $('.bulk-upload-toggle-btn-visa').not(this).html('<i class="fas fa-upload"></i> Bulk Upload');
+                    $('.bulk-upload-toggle-btn-visa').not(this).html('<i class="fa-solid fa-upload"></i> Bulk Upload');
                     
                     if (dropzoneContainer.is(':visible')) {
                         dropzoneContainer.slideUp(200, function() {
@@ -1044,7 +1044,7 @@
                                 adjustClientDocumentsPanelHeight();
                             }
                         });
-                        $(this).html('<i class="fas fa-upload"></i> Bulk Upload');
+                        $(this).html('<i class="fa-solid fa-upload"></i> Bulk Upload');
                         resetVisaBulkUploadSelection(categoryId);
                         if (typeof window.hideBulkUploadModal === 'function') {
                             window.hideBulkUploadModal();
@@ -1058,7 +1058,7 @@
                                 adjustClientDocumentsPanelHeight();
                             }
                         });
-                        $(this).html('<i class="fas fa-times"></i> Close');
+                        $(this).html('<i class="fa-solid fa-xmark"></i> Close');
                         currentVisaCategoryId = categoryId;
                         currentVisaMatterId = matterId || null;
                     }
@@ -1380,7 +1380,7 @@
                         html += '<tr class="bulk-upload-file-item" data-file-index="' + index + '" data-file-name="' + escapeHtml(fileName) + '">';
                         html += '<td>';
                         html += '<div class="file-info">';
-                        html += '<i class="fas fa-file matter-bulk-file-icon"></i>';
+                        html += '<i class="fa-solid fa-file matter-bulk-file-icon"></i>';
                         html += '<div>';
                         html += '<div class="file-name">' + escapeHtml(fileName) + '</div>';
                         html += '<div class="file-size">' + fileSize + '</div>';
@@ -1404,7 +1404,7 @@
                         html += '</td>';
                         html += '<td style="text-align: center;">';
                         html += '<button type="button" class="btn btn-sm btn-danger remove-bulk-file" data-file-index="' + index + '" title="Remove file">';
-                        html += '<i class="fas fa-trash-alt"></i>';
+                        html += '<i class="fa-solid fa-trash-can"></i>';
                         html += '</button>';
                         html += '</td>';
                         html += '</tr>';

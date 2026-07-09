@@ -101,13 +101,13 @@ class SortableHelper
         
         // Add sort indicator class and icon
         $class = $attributes['class'] ?? '';
-        $icon = 'fa fa-sort';
+        $icon = 'fa-solid fa-sort';
         
         if ($currentDirection === 'asc') {
-            $icon = 'fa fa-sort-up';
+            $icon = 'fa-solid fa-sort-up';
             $class .= ' sort-asc';
         } elseif ($currentDirection === 'desc') {
-            $icon = 'fa fa-sort-down';
+            $icon = 'fa-solid fa-sort-down';
             $class .= ' sort-desc';
         }
         

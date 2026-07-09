@@ -21,7 +21,7 @@
 							<h4>Crm Email Template</h4>
 							<div class="card-header-action">
 								<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCrmEmailTemplateModal">
-									<i class="fa fa-plus"></i> Create Email Template
+									<i class="fa-solid fa-plus"></i> Create Email Template
 								</button>
 							</div>
 						</div>
@@ -154,7 +154,7 @@
 			<div class="modal-body pt-2">
 				<div class="crm-email-template-delete-confirm text-center">
 					<div class="crm-email-template-delete-icon mb-3" aria-hidden="true">
-						<i class="fas fa-trash-alt"></i>
+						<i class="fa-solid fa-trash-can"></i>
 					</div>
 					<p class="mb-1">Are you sure you want to delete <strong id="delete-crm-email-template-name"></strong>?</p>
 					<p class="text-muted small mb-0">This action cannot be undone.</p>
@@ -328,8 +328,8 @@ jQuery(document).ready(function($) {
 			'<td class="text-nowrap"><div class="dropdown d-inline-block">' +
 			'<button class="btn btn-primary dropdown-toggle" type="button" id="crmTplAction_' + template.id + '" data-bs-toggle="dropdown" data-bs-popper-config=\'{"strategy":"fixed"}\' aria-haspopup="true" aria-expanded="false">Action</button>' +
 			'<ul class="dropdown-menu dropdown-menu-end crm-email-template-action-menu" aria-labelledby="crmTplAction_' + template.id + '">' +
-			'<li><a class="dropdown-item has-icon edit-crm-email-template-btn" href="javascript:void(0);"><i class="far fa-edit"></i> Edit</a></li>' +
-			'<li><a class="dropdown-item has-icon delete-crm-email-template-btn" href="javascript:void(0);"><i class="fas fa-trash"></i> Delete</a></li>' +
+			'<li><a class="dropdown-item has-icon edit-crm-email-template-btn" href="javascript:void(0);"><i class="fa-regular fa-pen-to-square"></i> Edit</a></li>' +
+			'<li><a class="dropdown-item has-icon delete-crm-email-template-btn" href="javascript:void(0);"><i class="fa-solid fa-trash"></i> Delete</a></li>' +
 			'</ul></div></td></tr>';
 	}
 

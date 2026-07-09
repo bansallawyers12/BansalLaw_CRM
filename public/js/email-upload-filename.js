@@ -641,15 +641,15 @@
         }
 
         var iconMap = {
-            success: { className: 'email-upload-result-modal__icon--success', icon: 'fa-check-circle' },
-            error: { className: 'email-upload-result-modal__icon--error', icon: 'fa-exclamation-circle' },
-            warning: { className: 'email-upload-result-modal__icon--warning', icon: 'fa-exclamation-triangle' },
-            info: { className: 'email-upload-result-modal__icon--info', icon: 'fa-info-circle' }
+            success: { className: 'email-upload-result-modal__icon--success', icon: 'fa-circle-check' },
+            error: { className: 'email-upload-result-modal__icon--error', icon: 'fa-circle-exclamation' },
+            warning: { className: 'email-upload-result-modal__icon--warning', icon: 'fa-triangle-exclamation' },
+            info: { className: 'email-upload-result-modal__icon--info', icon: 'fa-circle-info' }
         };
         var iconConfig = iconMap[type] || iconMap.info;
 
         iconEl.className = 'email-upload-result-modal__icon ' + iconConfig.className;
-        iconEl.innerHTML = '<i class="fas ' + iconConfig.icon + '"></i>';
+        iconEl.innerHTML = '<i class="fa-solid ' + iconConfig.icon + '"></i>';
         titleEl.textContent = title;
         messageEl.textContent = message;
 

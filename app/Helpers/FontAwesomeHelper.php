@@ -44,14 +44,27 @@ class FontAwesomeHelper
     }
 
     /**
-     * Convert legacy markup class list (fa fa-x, fas fa-x, far fa-x) to FA6 classes.
+     * Convert legacy markup class list to FA6 classes.
+     *
+     * Handles:
+     * - fa/fas/far/fab + fa-{icon}
+     * - already-migrated fa-solid/fa-regular/fa-brands + fa-{legacy-icon}
      */
     public static function migrateClasses(string $classes): string
     {
         $parts = preg_split('/\s+/', trim($classes)) ?: [];
         $legacyPrefix = null;
+        $modernPrefix = null;
         $icon = null;
         $rest = [];
+
+        $utility = [
+            'fa-spin', 'fa-fw', 'fa-lg', 'fa-xs', 'fa-sm',
+            'fa-1x', 'fa-2x', 'fa-3x', 'fa-4x', 'fa-5x',
+            'fa-beat', 'fa-fade', 'fa-beat-fade', 'fa-bounce',
+            'fa-flip', 'fa-shake', 'fa-pulse', 'fa-flip-horizontal',
+            'fa-flip-vertical', 'fa-rotate-90', 'fa-rotate-180', 'fa-rotate-270',
+        ];
 
         foreach ($parts as $part) {
             if ($part === '') {
@@ -62,7 +75,12 @@ class FontAwesomeHelper
 
                 continue;
             }
-            if (str_starts_with($part, 'fa-') && $icon === null && ! in_array($part, ['fa-spin', 'fa-fw', 'fa-lg', 'fa-xs', 'fa-sm', 'fa-1x', 'fa-2x', 'fa-3x', 'fa-4x', 'fa-5x'], true)) {
+            if (in_array($part, ['fa-solid', 'fa-regular', 'fa-brands', 'fa-light', 'fa-thin', 'fa-duotone'], true)) {
+                $modernPrefix = $part;
+
+                continue;
+            }
+            if (str_starts_with($part, 'fa-') && $icon === null && ! in_array($part, $utility, true)) {
                 $icon = substr($part, 3);
 
                 continue;
@@ -70,19 +88,38 @@ class FontAwesomeHelper
             $rest[] = $part;
         }
 
-        if ($legacyPrefix === null || $icon === null) {
+        if ($icon === null) {
             return $classes;
         }
 
-        $style = match ($legacyPrefix) {
-            'far' => 'regular',
-            'fab' => 'brands',
-            default => 'solid',
-        };
+        $renamed = self::iconName($icon);
 
-        $spin = in_array('fa-spin', $parts, true);
-        $modifiers = array_values(array_filter($rest, fn ($c) => $c !== 'fa-spin'));
+        if ($legacyPrefix !== null) {
+            $style = match ($legacyPrefix) {
+                'far' => 'regular',
+                'fab' => 'brands',
+                default => 'solid',
+            };
+            $spin = in_array('fa-spin', $parts, true);
+            $modifiers = array_values(array_filter($rest, fn ($c) => $c !== 'fa-spin'));
 
-        return self::iconClass($style, $icon, $spin, implode(' ', $modifiers));
+            return self::iconClass($style, $icon, $spin, implode(' ', $modifiers));
+        }
+
+        if ($modernPrefix !== null) {
+            $out = array_filter(array_merge(
+                [$modernPrefix, 'fa-'.$renamed],
+                $rest
+            ));
+
+            return implode(' ', $out);
+        }
+
+        // Icon-only token (e.g. "fa-file-lines" stored without style prefix)
+        if ($renamed !== $icon) {
+            return implode(' ', array_filter(array_merge(['fa-'.$renamed], $rest)));
+        }
+
+        return $classes;
     }
 }

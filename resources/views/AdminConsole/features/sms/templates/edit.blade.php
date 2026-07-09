@@ -18,10 +18,10 @@
                 <div class="col-9 col-md-9 col-lg-9">
                     <div class="card">
                         <div class="card-header">
-                            <h4><i class="fas fa-edit"></i> Edit SMS Template</h4>
+                            <h4><i class="fa-solid fa-pen-to-square"></i> Edit SMS Template</h4>
                             <div class="card-header-action">
                                 <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-outline-primary">
-                                    <i class="fas fa-arrow-left"></i> Back to Templates
+                                    <i class="fa-solid fa-arrow-left"></i> Back to Templates
                                 </a>
                             </div>
                         </div>
@@ -82,10 +82,10 @@
                                 
                                 <div class="roles-form-actions">
                                     <button type="submit" class="btn btn-primary" id="saveBtn">
-                                        <i class="fas fa-save me-1"></i> Update Template
+                                        <i class="fa-solid fa-floppy-disk me-1"></i> Update Template
                                     </button>
                                     <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-outline-secondary ms-2">
-                                        <i class="fas fa-times me-1"></i> Cancel
+                                        <i class="fa-solid fa-xmark me-1"></i> Cancel
                                     </a>
                                 </div>
                             </form>
@@ -121,7 +121,7 @@ $(document).ready(function() {
             _method: 'PUT'
         };
         
-        $('#saveBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Updating...');
+        $('#saveBtn').prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i> Updating...');
         
         $.ajax({
             url: '{{ route("adminconsole.features.sms.templates.update", $template->id) }}',
@@ -144,7 +144,7 @@ $(document).ready(function() {
                 }
             },
             complete: function() {
-                $('#saveBtn').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Update Template');
+                $('#saveBtn').prop('disabled', false).html('<i class="fa-solid fa-floppy-disk me-1"></i> Update Template');
             }
         });
     });

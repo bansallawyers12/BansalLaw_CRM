@@ -24,7 +24,7 @@
             @else
                 <tr id="mat-empty-row">
                     <td class="text-center text-muted py-4" colspan="{{ $colspan }}">
-                        <i class="fas fa-briefcase fa-2x mb-2 d-block opacity-50"></i>
+                        <i class="fa-solid fa-briefcase fa-2x mb-2 d-block opacity-50"></i>
                         No matters found.
                         @if(!empty($searchBy))
                             Try a different search term.

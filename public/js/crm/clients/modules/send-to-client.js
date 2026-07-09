@@ -37,7 +37,7 @@
 
     function sendInvoiceToClientAjax(invoiceId, invoiceNo, $btn) {
         var originalHtml = $btn.html();
-        $btn.html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+        $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> Sending...');
         $btn.prop('disabled', true);
 
         $.ajax({
@@ -125,7 +125,7 @@
 
     function sendClientFundReceiptToClientAjax(receiptId, receiptNo, $btn) {
         var originalHtml = $btn.html();
-        $btn.html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+        $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> Sending...');
         $btn.prop('disabled', true);
 
         $.ajax({
@@ -213,7 +213,7 @@
 
     function sendOfficeReceiptToClientAjax(receiptId, receiptNo, $btn) {
         var originalHtml = $btn.html();
-        $btn.html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+        $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> Sending...');
         $btn.prop('disabled', true);
 
         $.ajax({
@@ -323,7 +323,7 @@
 
     function sendToHubdocAjax(invoiceId, $btn) {
         var originalHtml = $btn.html();
-        $btn.html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+        $btn.html('<i class="fa-solid fa-spinner fa-spin"></i> Sending...');
         $btn.prop('disabled', true);
 
         var baseUrl = window.ClientDetailConfig.urls.sendToHubdoc;

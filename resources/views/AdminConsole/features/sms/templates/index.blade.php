@@ -18,10 +18,10 @@
                 <div class="col-9 col-md-9 col-lg-9">
                     <div class="card">
                         <div class="card-header">
-                            <h4><i class="fas fa-file-alt"></i> SMS Templates</h4>
+                            <h4><i class="fa-solid fa-file-lines"></i> SMS Templates</h4>
                             <div class="card-header-action">
                                 <a href="{{ route('adminconsole.features.sms.templates.create') }}" class="btn btn-primary">
-                                    <i class="fas fa-plus me-1"></i> Create Template
+                                    <i class="fa-solid fa-plus me-1"></i> Create Template
                                 </a>
                             </div>
                         </div>
@@ -73,20 +73,20 @@
                                             </td>
                                             <td class="text-nowrap">
                                                 <a href="{{ route('adminconsole.features.sms.templates.edit', $template->id) }}" class="btn btn-sm btn-outline-primary me-1">
-                                                    <i class="fas fa-edit"></i> Edit
+                                                    <i class="fa-solid fa-pen-to-square"></i> Edit
                                                 </a>
                                                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteTemplate({{ $template->id }})">
-                                                    <i class="fas fa-trash"></i> Delete
+                                                    <i class="fa-solid fa-trash"></i> Delete
                                                 </button>
                                             </td>
                                         </tr>
                                         @empty
                                         <tr>
                                             <td colspan="7" class="text-center py-4">
-                                                <i class="fas fa-file-alt fa-2x text-muted mb-2"></i>
+                                                <i class="fa-solid fa-file-lines fa-2x text-muted mb-2"></i>
                                                 <p class="text-muted">No templates found</p>
                                                 <a href="{{ route('adminconsole.features.sms.templates.create') }}" class="btn btn-primary">
-                                                    <i class="fas fa-plus me-1"></i> Create First Template
+                                                    <i class="fa-solid fa-plus me-1"></i> Create First Template
                                                 </a>
                                             </td>
                                         </tr>

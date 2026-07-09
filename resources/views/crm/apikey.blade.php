@@ -23,11 +23,11 @@
 							@csrf
 							<div class="card-body">
 								<div class="alert alert-info">
-									<i class="fas fa-info-circle"></i> You don't have an API key yet. Click the button below to generate one.
+									<i class="fa-solid fa-circle-info"></i> You don't have an API key yet. Click the button below to generate one.
 								</div>
 								<div class="form-group">
 									<button type="submit" class="btn btn-primary" onClick="customValidate('add-key')">
-										<i class="fas fa-key"></i> Generate API Key
+										<i class="fa-solid fa-key"></i> Generate API Key
 									</button>
 								</div>
 							</div>
@@ -35,7 +35,7 @@
 						@else
 						<div class="card-body">
 							<div class="alert alert-success">
-								<i class="fas fa-check-circle"></i> Your API key has been generated successfully.
+								<i class="fa-solid fa-circle-check"></i> Your API key has been generated successfully.
 							</div>
 							<div class="form-group">
 								<label>Your API Key:</label>
@@ -43,7 +43,7 @@
 									<input type="text" class="form-control" value="{{ @Auth::user()->client_id }}" readonly id="apiKeyField">
 									<div class="input-group-append">
 										<button class="btn btn-primary" type="button" onclick="copyApiKey()">
-											<i class="far fa-copy"></i> Copy
+											<i class="fa-regular fa-copy"></i> Copy
 										</button>
 									</div>
 								</div>
@@ -68,7 +68,7 @@ function copyApiKey() {
 	// Show feedback
 	var btn = event.target.closest('button');
 	var originalHTML = btn.innerHTML;
-	btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+	btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
 	setTimeout(function() {
 		btn.innerHTML = originalHTML;
 	}, 2000);

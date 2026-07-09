@@ -1,21 +1,21 @@
 <div class="tab-pane" id="legalforms-tab">
     <div class="legal-forms-container">
         <div class="legal-forms-header">
-            <h4><i class="fas fa-file-signature"></i> Legal Forms & Agreements</h4>
+            <h4><i class="fa-solid fa-file-signature"></i> Legal Forms & Agreements</h4>
             <div class="legal-forms-actions">
                 <div class="dropdown">
                     <button class="btn btn-primary dropdown-toggle" type="button" id="createLegalFormBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-plus"></i> Create Form
+                        <i class="fa-solid fa-plus"></i> Create Form
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="createLegalFormBtn" style="z-index: 1050; min-width: 240px;">
                         <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('short_costs_disclosure')">
-                            <i class="fas fa-file-invoice-dollar text-primary"></i> Short Costs Disclosure
+                            <i class="fa-solid fa-file-invoice-dollar text-primary"></i> Short Costs Disclosure
                         </a></li>
                         <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('cost_agreement')">
-                            <i class="fas fa-file-contract text-purple"></i> Cost Agreement
+                            <i class="fa-solid fa-file-contract text-purple"></i> Cost Agreement
                         </a></li>
                         <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('authority_to_act')">
-                            <i class="fas fa-stamp text-success"></i> Authority to Act
+                            <i class="fa-solid fa-stamp text-success"></i> Authority to Act
                         </a></li>
                     </ul>
                 </div>
@@ -24,7 +24,7 @@
 
         <div id="legal-forms-list" class="legal-forms-list">
             <div class="text-center py-4" id="legal-forms-loading">
-                <i class="fas fa-spinner fa-spin"></i> Loading forms...
+                <i class="fa-solid fa-spinner fa-spin"></i> Loading forms...
             </div>
         </div>
     </div>
@@ -60,8 +60,8 @@
                     {{-- Firm Details Section --}}
                     <div class="card mb-3">
                         <div class="card-header" style="background: #f0f4f8; cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#firmDetailsCollapse">
-                            <strong><i class="fas fa-building"></i> Firm Details</strong>
-                            <i class="fas fa-chevron-down float-end mt-1"></i>
+                            <strong><i class="fa-solid fa-building"></i> Firm Details</strong>
+                            <i class="fa-solid fa-chevron-down float-end mt-1"></i>
                         </div>
                         <div class="collapse" id="firmDetailsCollapse">
                             <div class="card-body">
@@ -116,7 +116,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label fw-bold mb-0" id="lf_scope_label">Scope of Work</label>
                             <button type="button" class="btn btn-sm btn-outline-primary ai-generate-btn" onclick="generateWithAI('scope_of_work')" title="Auto-generate with Claude using client, matter, and CRM notes linked to this matter">
-                                <i class="fas fa-magic"></i> AI Generate
+                                <i class="fa-solid fa-magic"></i> AI Generate
                             </button>
                         </div>
                         <textarea name="scope_of_work" id="lf_scope_of_work" class="form-control lf-modal-textarea" rows="5" placeholder="Describe the work to be undertaken..."></textarea>
@@ -128,7 +128,7 @@
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <label class="form-label fw-bold mb-0">Authority Scope</label>
                                 <button type="button" class="btn btn-sm btn-outline-primary ai-generate-btn" onclick="generateWithAI('authority_scope')" title="Auto-generate with Claude using client, matter, and CRM notes">
-                                    <i class="fas fa-magic"></i> AI Generate
+                                    <i class="fa-solid fa-magic"></i> AI Generate
                                 </button>
                             </div>
                             <textarea name="authority_scope" id="lf_authority_scope" class="form-control lf-modal-textarea" rows="4" placeholder="Describe what you are authorising the firm to do on your behalf..."></textarea>
@@ -140,7 +140,7 @@
                     <div id="lf_costs_section" style="display:none;">
                         <div class="card mb-3">
                             <div class="card-header" style="background: #f0f4f8;">
-                                <strong><i class="fas fa-calculator"></i> Cost Estimates</strong>
+                                <strong><i class="fa-solid fa-calculator"></i> Cost Estimates</strong>
                             </div>
                             <div class="card-body">
                                 <div id="lf_fee_type_section" class="mb-3" style="display:none;">
@@ -209,7 +209,7 @@
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <label class="form-label fw-bold mb-0">Variables That Might Affect Costs</label>
                                     <button type="button" class="btn btn-sm btn-outline-primary ai-generate-btn" onclick="generateWithAI('variables_affecting_costs')" title="Auto-generate with Claude using client, matter, and CRM notes">
-                                        <i class="fas fa-magic"></i> AI Generate
+                                        <i class="fa-solid fa-magic"></i> AI Generate
                                     </button>
                                 </div>
                                 <textarea name="variables_affecting_costs" id="lf_variables_affecting_costs" class="form-control lf-modal-textarea" rows="3" placeholder="e.g. Amount of correspondence required, complexity of legal issues, whether spouse consents..."></textarea>
@@ -219,8 +219,8 @@
                         {{-- Payment Arrangements --}}
                         <div class="card mb-3">
                             <div class="card-header" style="background: #f0f4f8; cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#paymentCollapse">
-                                <strong><i class="fas fa-university"></i> Payment Arrangements</strong>
-                                <i class="fas fa-chevron-down float-end mt-1"></i>
+                                <strong><i class="fa-solid fa-building-columns"></i> Payment Arrangements</strong>
+                                <i class="fa-solid fa-chevron-down float-end mt-1"></i>
                             </div>
                             <div class="collapse" id="paymentCollapse">
                                 <div class="card-body">
@@ -267,7 +267,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="saveLegalFormBtn" onclick="saveLegalForm()">
-                    <i class="fas fa-save"></i> Create Form & Generate Word Document
+                    <i class="fa-solid fa-floppy-disk"></i> Create Form & Generate Word Document
                 </button>
             </div>
         </div>
@@ -288,9 +288,9 @@
     };
 
     const FORM_TYPE_ICONS = {
-        'short_costs_disclosure': 'fas fa-file-invoice-dollar',
-        'cost_agreement': 'fas fa-file-contract',
-        'authority_to_act': 'fas fa-stamp'
+        'short_costs_disclosure': 'fa-solid fa-file-invoice-dollar',
+        'cost_agreement': 'fa-solid fa-file-contract',
+        'authority_to_act': 'fa-solid fa-stamp'
     };
 
     const FORM_TYPE_COLORS = {
@@ -376,7 +376,7 @@
         var formData = new FormData(form);
         var btn = document.getElementById('saveLegalFormBtn');
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
 
         $.ajax({
             url: LF_BASE,
@@ -417,7 +417,7 @@
             },
             complete: function() {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-save"></i> Create Form & Generate Word Document';
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Create Form & Generate Word Document';
             }
         });
     };
@@ -429,7 +429,7 @@
         if (matterSelect) matterId = matterSelect.value || '';
 
         var listEl = document.getElementById('legal-forms-list');
-        listEl.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Loading forms...</div>';
+        listEl.innerHTML = '<div class="text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i> Loading forms...</div>';
 
         $.ajax({
             url: LF_BASE + '/client-forms',
@@ -439,7 +439,7 @@
                 if (response.success && response.forms) {
                     renderLegalFormsList(response.forms);
                 } else {
-                    listEl.innerHTML = '<div class="text-center py-4 text-muted"><i class="fas fa-file-alt"></i><br>No forms found.</div>';
+                    listEl.innerHTML = '<div class="text-center py-4 text-muted"><i class="fa-solid fa-file-lines"></i><br>No forms found.</div>';
                 }
             },
             error: function() {
@@ -452,14 +452,14 @@
         var listEl = document.getElementById('legal-forms-list');
 
         if (!forms || forms.length === 0) {
-            listEl.innerHTML = '<div class="legal-forms-empty"><div class="legal-forms-empty-icon"><i class="fas fa-file-signature"></i></div><p>No legal forms created yet.</p><p class="text-muted">Click "Create Form" to generate a Short Costs Disclosure, Cost Agreement, or Authority to Act.</p></div>';
+            listEl.innerHTML = '<div class="legal-forms-empty"><div class="legal-forms-empty-icon"><i class="fa-solid fa-file-signature"></i></div><p>No legal forms created yet.</p><p class="text-muted">Click "Create Form" to generate a Short Costs Disclosure, Cost Agreement, or Authority to Act.</p></div>';
             return;
         }
 
         var html = '<div class="legal-forms-grid">';
         forms.forEach(function(form) {
             var label = FORM_TYPE_LABELS[form.form_type] || form.form_type;
-            var icon = FORM_TYPE_ICONS[form.form_type] || 'fas fa-file';
+            var icon = FORM_TYPE_ICONS[form.form_type] || 'fa-solid fa-file';
             var color = FORM_TYPE_COLORS[form.form_type] || '#6b7280';
             var date = form.form_date ? new Date(form.form_date).toLocaleDateString('en-AU') : new Date(form.created_at).toLocaleDateString('en-AU');
             var creator = form.creator ? (form.creator.first_name || '') + ' ' + (form.creator.last_name || '') : '';
@@ -475,8 +475,8 @@
             html += '</div>';
             html += '</div>';
             html += '<div class="legal-form-card-actions">';
-            html += '<a href="' + LF_BASE + '/' + form.id + '/download" class="btn btn-sm btn-outline-success" title="Download Word Document"><i class="fas fa-file-word"></i> Download</a>';
-            html += '<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteLegalForm(' + form.id + ')" title="Delete"><i class="fas fa-trash"></i></button>';
+            html += '<a href="' + LF_BASE + '/' + form.id + '/download" class="btn btn-sm btn-outline-success" title="Download Word Document"><i class="fa-solid fa-file-word"></i> Download</a>';
+            html += '<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteLegalForm(' + form.id + ')" title="Delete"><i class="fa-solid fa-trash"></i></button>';
             html += '</div>';
             html += '</div>';
         });
@@ -507,7 +507,7 @@
         }
 
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
         textarea.style.opacity = '0.5';
 
         $.ajax({

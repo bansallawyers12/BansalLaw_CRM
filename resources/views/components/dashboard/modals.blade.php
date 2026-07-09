@@ -17,7 +17,7 @@
                     
                     <div class="simple-form-group">
                         <label class="simple-form-label">
-                            <i class="fas fa-user text-primary"></i> Client
+                            <i class="fa-solid fa-user text-primary"></i> Client
                         </label>
                         <select class="simple-form-control" id="dashboard_client_select" name="client_id" required>
                             <option value="">Search client...</option>
@@ -30,12 +30,12 @@
 
                     <div class="simple-form-group">
                         <label class="simple-form-label">
-                            <i class="fas fa-users text-primary"></i> Assignees
+                            <i class="fa-solid fa-users text-primary"></i> Assignees
                         </label>
                         <div class="dropdown-multi-select modern-dropdown">
                             <button type="button" class="btn btn-default dropdown-toggle simple-dropdown-btn" id="dashboard_dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <span id="dashboard-selected-users-text">SELECT ASSIGNEES</span>
-                                <i class="fas fa-chevron-down"></i>
+                                <i class="fa-solid fa-chevron-down"></i>
                             </button>
                             <div class="dropdown-menu modern-dropdown-menu" aria-labelledby="dashboard_dropdownMenuButton">
                                 <div class="dropdown-search">
@@ -52,7 +52,7 @@
                                     <div class="staff-item modern-staff-item" data-name="{{ strtolower($admin->first_name.' '.$admin->last_name.' '.@$branchname->office_name) }}">
                                         <label class="modern-staff-label">
                                             <input type="checkbox" class="checkbox-item modern-checkbox dashboard-checkbox-item" value="{{ $admin->id }}" data-name="{{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})">
-                                            <i class="fas fa-user-circle me-2 text-muted"></i>
+                                            <i class="fa-solid fa-user-circle me-2 text-muted"></i>
                                             <span class="staff-name">{{ $admin->first_name }} {{ $admin->last_name }}</span>
                                             <span class="staff-branch text-muted">({{ @$branchname->office_name }})</span>
                                         </label>
@@ -72,7 +72,7 @@
 
                     <div class="simple-form-group">
                         <label class="simple-form-label">
-                            <i class="fas fa-align-left text-primary"></i> Task Description
+                            <i class="fa-solid fa-align-left text-primary"></i> Task Description
                         </label>
                         <textarea class="simple-form-control simple-textarea" id="dashboard_assignnote" name="description" placeholder="Enter task description..." rows="4"></textarea>
                         <span class="custom-error note_error" role="alert" style="display: none;"></span>
@@ -80,7 +80,7 @@
 
                     <div class="simple-form-group">
                         <label class="simple-form-label">
-                            <i class="fas fa-calendar-alt text-primary"></i> Date <span class="text-danger">*</span>
+                            <i class="fa-solid fa-calendar-days text-primary"></i> Date <span class="text-danger">*</span>
                         </label>
                         <input type="date" id="dashboard_popoverdatetime" name="followup_datetime" class="simple-form-control" required value="{{ date('Y-m-d') }}">
                         <span class="custom-error date_error" role="alert" style="display: none;"></span>
@@ -88,7 +88,7 @@
 
                     <div class="simple-form-group">
                         <label class="simple-form-label">
-                            <i class="fas fa-tag text-primary"></i> Group <span class="text-danger">*</span>
+                            <i class="fa-solid fa-tag text-primary"></i> Group <span class="text-danger">*</span>
                         </label>
                         <select class="simple-form-control" id="dashboard_task_group" name="task_group" required>
                             <option value="">Select Group</option>
@@ -104,14 +104,14 @@
                     <div class="simple-form-group">
                         <label class="simple-form-label d-flex align-items-center">
                             <input class="note_deadline_checkbox me-2" type="checkbox" id="dashboard_note_deadline_checkbox" name="note_deadline_checkbox" value="">
-                            <i class="fas fa-clock text-primary"></i> Note Deadline
+                            <i class="fa-solid fa-clock text-primary"></i> Note Deadline
                         </label>
                         <input type="date" class="simple-form-control" id="dashboard_note_deadline" name="note_deadline" value="{{ date('Y-m-d', strtotime('+1 day')) }}" disabled>
                     </div>
 
                     <div class="simple-modal-footer">
                         <button type="button" class="btn btn-primary simple-submit-btn-action" id="dashboard_assignStaff">
-                            <i class="fas fa-plus"></i> ADD MY TASK
+                            <i class="fa-solid fa-plus"></i> ADD MY TASK
                         </button>
                     </div>
                 </form>
@@ -576,7 +576,7 @@
         <div class="modal-content dashboard-completion-modal-content">
             <div class="modal-header dashboard-completion-modal-header">
                 <h5 class="modal-title" id="dashboardCompletionNotesModalLabel">
-                    <i class="fa fa-check completion-task-modal-header-icon" aria-hidden="true"></i> Complete Task
+                    <i class="fa-solid fa-check completion-task-modal-header-icon" aria-hidden="true"></i> Complete Task
                 </h5>
                 <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -585,7 +585,7 @@
             <div class="modal-body">
                 <div class="form-group mb-0">
                     <label for="dashboardCompletionNotes">
-                        <i class="fa fa-comment"></i> Completion Notes (optional)
+                        <i class="fa-solid fa-comment"></i> Completion Notes (optional)
                     </label>
                     <textarea
                         class="form-control"
@@ -594,16 +594,16 @@
                         placeholder="Add any notes or feedback about completing this task..."
                     ></textarea>
                     <small class="form-text">
-                        <i class="fa fa-info-circle"></i> These notes will be saved in the activity log.
+                        <i class="fa-solid fa-circle-info"></i> These notes will be saved in the activity log.
                     </small>
                 </div>
             </div>
             <div class="modal-footer dashboard-completion-modal-footer">
                 <button type="button" class="btn btn-cancel-complete" data-bs-dismiss="modal">
-                    <i class="fa fa-times"></i> Cancel
+                    <i class="fa-solid fa-xmark"></i> Cancel
                 </button>
                 <button type="button" class="btn btn-complete-task-primary" id="dashboardConfirmTaskCompletion">
-                    <i class="fa fa-check"></i> Complete Task
+                    <i class="fa-solid fa-check"></i> Complete Task
                 </button>
             </div>
         </div>

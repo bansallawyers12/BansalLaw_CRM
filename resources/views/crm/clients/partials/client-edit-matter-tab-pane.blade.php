@@ -7,11 +7,11 @@
               'CIV'   => ['icon' => 'fa-balance-scale', 'color' => '#4a6fa5'],
               'CRM'   => ['icon' => 'fa-gavel',         'color' => '#c0392b'],
               'FAM'   => ['icon' => 'fa-heart',         'color' => '#e67e22'],
-              'PROP'  => ['icon' => 'fa-home',          'color' => '#27ae60'],
+              'PROP'  => ['icon' => 'fa-house',          'color' => '#27ae60'],
               'CORP'  => ['icon' => 'fa-building',      'color' => '#8e44ad'],
               'LAB'   => ['icon' => 'fa-briefcase',     'color' => '#2980b9'],
               'CONS'  => ['icon' => 'fa-shopping-cart', 'color' => '#16a085'],
-              'BANK'  => ['icon' => 'fa-university',    'color' => '#d35400'],
+              'BANK'  => ['icon' => 'fa-building-columns',    'color' => '#d35400'],
               'TAX'   => ['icon' => 'fa-calculator',   'color' => '#7f8c8d'],
               'IP'    => ['icon' => 'fa-lightbulb',     'color' => '#f39c12'],
               'CONST' => ['icon' => 'fa-scroll',        'color' => '#1a5276'],
@@ -29,7 +29,7 @@
       <section class="content-section" id="matterTypeSelectorSection" style="margin-bottom: 20px; padding: 20px;">
         <section class="form-section" style="margin-bottom: 0;">
           <div class="section-header">
-            <h3><i class="fas fa-list-alt"></i> Select Matter Type</h3>
+            <h3><i class="fa-solid fa-list-alt"></i> Select Matter Type</h3>
             <span class="badge" style="background:#e8f0fe;color:#3b5bdb;font-size:0.8em;padding:4px 10px;border-radius:12px;">Required to add a new matter</span>
           </div>
           <p class="text-muted" style="margin-bottom:1rem;">Select a law matter type from the dropdown to add a new matter for this client.</p>
@@ -57,7 +57,7 @@
             </div>
             <div class="col-md-6" style="display:flex;align-items:flex-end;padding-bottom:15px;">
               <div id="matterDropdownPreview" style="display:none;align-items:center;gap:10px;background:#f0f4ff;border-radius:8px;padding:8px 16px;border:1px solid #d0daf5;">
-                <i id="matterDropdownIcon" class="fas fa-folder-open" style="font-size:1.5rem;"></i>
+                <i id="matterDropdownIcon" class="fa-solid fa-folder-open" style="font-size:1.5rem;"></i>
                 <span id="matterDropdownLabel" style="font-weight:600;color:#3b5bdb;font-size:0.95em;"></span>
               </div>
             </div>
@@ -65,10 +65,10 @@
 
           <div id="matterDropdownCTA" style="display:none;margin-top:4px;">
             <button type="button" class="btn btn-primary" onclick="openMatterFormFromDropdown()" style="border-radius:8px;">
-              <i class="fas fa-plus-circle"></i> Add this Matter
+              <i class="fa-solid fa-circle-plus"></i> Add this Matter
             </button>
             <button type="button" class="btn btn-secondary" onclick="resetMatterDropdown()" style="margin-left:8px;border-radius:8px;">
-              <i class="fas fa-times"></i> Clear
+              <i class="fa-solid fa-xmark"></i> Clear
             </button>
           </div>
         </section>
@@ -78,9 +78,9 @@
       <section class="content-section" id="matterDynamicFormSection" style="display:none; margin-bottom: 20px; padding: 20px;">
         <section class="form-section" style="margin-bottom: 0;">
           <div class="section-header" style="align-items:center;">
-            <h3 id="matterDynamicFormTitle"><i class="fas fa-folder-plus"></i> New Matter Details</h3>
+            <h3 id="matterDynamicFormTitle"><i class="fa-solid fa-folder-plus"></i> New Matter Details</h3>
             <button type="button" class="btn btn-sm btn-secondary" onclick="clearMatterTypeSelection()" style="margin-left:auto;">
-              <i class="fas fa-times"></i> Cancel
+              <i class="fa-solid fa-xmark"></i> Cancel
             </button>
           </div>
 
@@ -100,7 +100,7 @@
             <label style="margin-top:0.9rem;font-weight:600;">Other parties <small class="text-muted">(optional)</small></label>
             <div id="dyn_opposing_parties_wrap"></div>
             <button type="button" class="btn btn-sm btn-outline-secondary" id="dyn_add_opposing_party_btn" style="margin-top:6px;">
-              <i class="fas fa-plus"></i> Add other party
+              <i class="fa-solid fa-plus"></i> Add other party
             </button>
           </div>
 
@@ -112,7 +112,7 @@
 
           <div style="margin-top:1rem;">
             <button type="button" class="btn btn-primary" id="dynSubmitMatterBtn" onclick="submitDynamicMatter()">
-              <i class="fas fa-plus-circle"></i> Create Matter
+              <i class="fa-solid fa-circle-plus"></i> Create Matter
             </button>
             <button type="button" class="btn btn-secondary" onclick="clearMatterTypeSelection()" style="margin-left:8px;">Cancel</button>
           </div>
@@ -124,13 +124,13 @@
         <section class="form-section matter-tab-section__card" style="margin-bottom: 0;">
           <div class="section-header matter-tab-section__header">
             <div>
-              <h3 class="matter-tab-section__title"><i class="fas fa-folder-open"></i> Existing Matters</h3>
+              <h3 class="matter-tab-section__title"><i class="fa-solid fa-folder-open"></i> Existing Matters</h3>
               <p class="matter-tab-section__subtitle text-muted">Active matters for {{ $fetchedData->first_name }} {{ $fetchedData->last_name }} ({{ $__crmEditLeadType ? 'Lead' : 'Client' }} ID: {{ $fetchedData->client_id }})</p>
             </div>
           </div>
           @if($editMatterList->isEmpty())
               <div class="matter-tab-empty">
-                  <div class="matter-tab-empty__icon"><i class="fas fa-briefcase"></i></div>
+                  <div class="matter-tab-empty__icon"><i class="fa-solid fa-briefcase"></i></div>
                   <p class="matter-tab-empty__title">No matters yet</p>
                   <p class="matter-tab-empty__hint text-muted">Select a matter type above to create the first matter for this {{ $__crmEditLeadType ? 'lead' : 'client' }}.</p>
               </div>
@@ -167,7 +167,7 @@
                                       <a href="{{ $detailUrl }}" class="matter-tab-ref-link">{{ $ref !== null && $ref !== '' ? $ref : '—' }}</a>
                                   </td>
                                   <td>
-                                    <i class="fas {{ $rowIconData['icon'] }}" style="color:{{ $rowIconData['color'] }};margin-right:5px;"></i>
+                                    <i class="fa-solid {{ $rowIconData['icon'] }}" style="color:{{ $rowIconData['color'] }};margin-right:5px;"></i>
                                     {{ \Illuminate\Support\Str::limit($typeLabel, 50) }}
                                   </td>
                                   <td>{{ $cmatter->workflowStage->name ?? '—' }}</td>
@@ -194,10 +194,10 @@
                                   </td>
                                   <td class="text-nowrap text-end">
                                       <button type="button" class="btn btn-sm btn-primary changeMatterAssignee" data-client-matter-id="{{ $cmatter->id }}" title="Edit matter details">
-                                          <i class="fas fa-pen"></i>
+                                          <i class="fa-solid fa-pen"></i>
                                       </button>
                                       <a href="{{ $detailUrl }}" class="btn btn-sm btn-secondary" title="View full matter details">
-                                          <i class="fas fa-external-link-alt"></i>
+                                          <i class="fa-solid fa-up-right-from-square"></i>
                                       </a>
                                   </td>
                               </tr>
@@ -206,7 +206,7 @@
                   </table>
               </div>
               <p class="matter-tab-footer-link text-muted">
-                  <a href="{{ route('clients.clientsmatterslist', array_filter(['client_id' => $fetchedData->client_id])) }}"><i class="fas fa-external-link-alt"></i> Full matter list</a>
+                  <a href="{{ route('clients.clientsmatterslist', array_filter(['client_id' => $fetchedData->client_id])) }}"><i class="fa-solid fa-up-right-from-square"></i> Full matter list</a>
                   @if($fetchedData->client_id)
                       <span> (filter: {{ $fetchedData->client_id }})</span>
                   @endif

@@ -12,7 +12,7 @@
             class="remove-item-btn" 
             title="Remove {{ ucfirst($type) }}" 
             onclick="removePartnerRow(this, '{{ $type }}', {{ $member->id }})">
-        <i class="fas fa-times-circle"></i>
+        <i class="fa-solid fa-circle-xmark"></i>
     </button>
     
     <input type="hidden" name="{{ $memberIdField }}[{{ $index }}]" class="partner-id" value="{{ $member->related_client_id }}">

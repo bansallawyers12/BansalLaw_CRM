@@ -26,7 +26,7 @@
 								<div class="card-header">
 									<h4>{{ isset($fetchedData) ? 'Edit team' : 'Teams' }}</h4>
 									<div class="card-header-action">
-										<a href="{{ route('adminconsole.system.teams.index') }}" class="btn btn-outline-primary"><i class="fa fa-arrow-left"></i> Back</a>
+										<a href="{{ route('adminconsole.system.teams.index') }}" class="btn btn-outline-primary"><i class="fa-solid fa-arrow-left"></i> Back</a>
 									</div>
 								</div>
 							</div>
@@ -65,7 +65,7 @@
 													</div>
 												</div>
 												<div class="form-group text-end mb-0">
-													<button type="submit" class="btn btn-primary"><i class="far fa-save"></i> Save</button>
+													<button type="submit" class="btn btn-primary"><i class="fa-regular fa-floppy-disk"></i> Save</button>
 												</div>
 											</div>
 										</div>
@@ -99,7 +99,7 @@
 																			<span class="teams-color-swatch" style="--team-color: {{ $list->color ?? '#ccc' }};" title="{{ $list->color ?? '' }}"></span>
 																		</td>
 																		<td class="text-nowrap">
-																			<a class="btn btn-sm btn-primary" href="{{ route('adminconsole.system.teams.edit', $list->id) }}"><i class="far fa-edit"></i> Edit</a>
+																			<a class="btn btn-sm btn-primary" href="{{ route('adminconsole.system.teams.edit', $list->id) }}"><i class="fa-regular fa-pen-to-square"></i> Edit</a>
 																		</td>
 																	</tr>
 																@endforeach

@@ -11,32 +11,32 @@
 
             <div class="row mb-3">
                 <div class="col-md-8">
-                    <h4 class="mb-1"><i class="fas fa-lock text-secondary me-2"></i>Trust accounting periods</h4>
+                    <h4 class="mb-1"><i class="fa-solid fa-lock text-secondary me-2"></i>Trust accounting periods</h4>
                     <p class="text-muted mb-0" style="font-size: 14px;">
                         Lock a date range after reconciliation or end-of-month close. While locked, staff cannot create trust entries, void lines, or edit trust metadata for those transaction dates.
                     </p>
                 </div>
                 <div class="col-md-4 text-md-end mt-2 mt-md-0">
                     <a href="{{ route('trust-accounting.guide') }}" class="btn btn-outline-info btn-sm me-1">
-                        <i class="fas fa-book me-1"></i> Guide
+                        <i class="fa-solid fa-book me-1"></i> Guide
                     </a>
                     <a href="{{ route('trust-accounting.reports.index') }}" class="btn btn-outline-primary btn-sm me-1">
-                        <i class="fas fa-file-export me-1"></i> Reports
+                        <i class="fa-solid fa-file-export me-1"></i> Reports
                     </a>
                     <a href="{{ route('trust-accounting.withdrawal-authority-types.index') }}" class="btn btn-outline-primary btn-sm me-1">
-                        <i class="fas fa-gavel me-1"></i> Rule 42 types
+                        <i class="fa-solid fa-gavel me-1"></i> Rule 42 types
                     </a>
                     <a href="{{ route('trust-accounting.reconciliation.index') }}" class="btn btn-outline-primary btn-sm me-1">
-                        <i class="fas fa-link me-1"></i> Reconciliation
+                        <i class="fa-solid fa-link me-1"></i> Reconciliation
                     </a>
                     <a href="{{ route('trust-accounting.practice-sequences.index') }}" class="btn btn-outline-secondary btn-sm me-1">
-                        <i class="fas fa-sort-numeric-down me-1"></i> Sequences
+                        <i class="fa-solid fa-sort-numeric-down me-1"></i> Sequences
                     </a>
                     <a href="{{ route('trust-accounting.archives.index') }}" class="btn btn-outline-secondary btn-sm me-1">
-                        <i class="fas fa-archive me-1"></i> Archives
+                        <i class="fa-solid fa-box-archive me-1"></i> Archives
                     </a>
                     <a href="{{ route('trust-accounting.audit-log.index') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-list-alt me-1"></i> Trust audit log
+                        <i class="fa-solid fa-list-alt me-1"></i> Trust audit log
                     </a>
                 </div>
             </div>
@@ -68,7 +68,7 @@
                                     @error('notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-lock me-1"></i> Lock period
+                                    <i class="fa-solid fa-lock me-1"></i> Lock period
                                 </button>
                             </form>
                         </div>
@@ -119,7 +119,7 @@
                                                         @csrf
                                                         <input type="hidden" name="unlock_reason" value="">
                                                         <button type="submit" class="btn btn-sm btn-outline-warning">
-                                                            <i class="fas fa-unlock me-1"></i> Unlock
+                                                            <i class="fa-solid fa-unlock me-1"></i> Unlock
                                                         </button>
                                                     </form>
                                                 @elseif($p->unlocked_at)

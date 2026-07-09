@@ -18,7 +18,7 @@
                 <div class="col-9 col-md-9 col-lg-9">
                     <div class="card">
                         <div class="card-header">
-                            <h4><i class="fas fa-sms"></i> SMS Management Dashboard</h4>
+                            <h4><i class="fa-solid fa-sms"></i> SMS Management Dashboard</h4>
                             <p class="text-muted">Monitor SMS activity, manage templates, and send messages</p>
                         </div>
                         <div class="card-body">
@@ -27,7 +27,7 @@
                                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                     <div class="card card-statistic-1">
                                         <div class="card-icon bg-primary">
-                                            <i class="fas fa-paper-plane"></i>
+                                            <i class="fa-solid fa-paper-plane"></i>
                                         </div>
                                         <div class="card-wrap">
                                             <div class="card-header">
@@ -42,7 +42,7 @@
                                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                     <div class="card card-statistic-1">
                                         <div class="card-icon bg-danger">
-                                            <i class="fas fa-flag"></i>
+                                            <i class="fa-solid fa-flag"></i>
                                         </div>
                                         <div class="card-wrap">
                                             <div class="card-header">
@@ -57,7 +57,7 @@
                                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                     <div class="card card-statistic-1">
                                         <div class="card-icon bg-info">
-                                            <i class="fas fa-globe"></i>
+                                            <i class="fa-solid fa-globe"></i>
                                         </div>
                                         <div class="card-wrap">
                                             <div class="card-header">
@@ -72,7 +72,7 @@
                                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                     <div class="card card-statistic-1">
                                         <div class="card-icon bg-warning">
-                                            <i class="fas fa-exclamation-triangle"></i>
+                                            <i class="fa-solid fa-triangle-exclamation"></i>
                                         </div>
                                         <div class="card-wrap">
                                             <div class="card-header">
@@ -97,22 +97,22 @@
                                             <div class="row g-3">
                                                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                                     <a href="{{ route('adminconsole.features.sms.send.create') }}" class="btn btn-primary w-100">
-                                                        <i class="fas fa-plus me-1"></i> Send SMS
+                                                        <i class="fa-solid fa-plus me-1"></i> Send SMS
                                                     </a>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                                     <a href="{{ route('adminconsole.features.sms.history') }}" class="btn btn-outline-primary w-100">
-                                                        <i class="fas fa-history me-1"></i> View History
+                                                        <i class="fa-solid fa-history me-1"></i> View History
                                                     </a>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                                     <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-outline-primary w-100">
-                                                        <i class="fas fa-file-alt me-1"></i> Manage Templates
+                                                        <i class="fa-solid fa-file-lines me-1"></i> Manage Templates
                                                     </a>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                                     <a href="{{ route('adminconsole.features.sms.statistics') }}" class="btn btn-outline-secondary w-100">
-                                                        <i class="fas fa-chart-bar me-1"></i> View Statistics
+                                                        <i class="fa-solid fa-chart-bar me-1"></i> View Statistics
                                                     </a>
                                                 </div>
                                             </div>
@@ -127,10 +127,10 @@
                                     <div class="card">
                                         <div class="card-header">
                                             <h4>
-                                                <i class="fas fa-clock"></i> Recent SMS Activity
+                                                <i class="fa-solid fa-clock"></i> Recent SMS Activity
                                                 <small class="float-end">
                                                     <span class="badge badge-success">
-                                                        <i class="fas fa-circle"></i> Services Online
+                                                        <i class="fa-solid fa-circle"></i> Services Online
                                                     </span>
                                                 </small>
                                             </h4>
@@ -179,11 +179,11 @@
                                             </div>
                                             @else
                                             <div class="text-center py-4">
-                                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                                <i class="fa-solid fa-inbox fa-3x text-muted mb-3"></i>
                                                 <h5>No SMS Activity Yet</h5>
                                                 <p class="text-muted">Send your first SMS message to see activity here!</p>
                                                 <a href="{{ route('adminconsole.features.sms.send.create') }}" class="btn btn-primary">
-                                                    <i class="fas fa-paper-plane me-1"></i> Send First SMS
+                                                    <i class="fa-solid fa-paper-plane me-1"></i> Send First SMS
                                                 </a>
                                             </div>
                                             @endif

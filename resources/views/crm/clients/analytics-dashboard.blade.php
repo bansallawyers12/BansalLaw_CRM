@@ -11,10 +11,10 @@
 <div class="analytics-container financial-analytics-dashboard">
     <!-- Page Header -->
     <div class="analytics-header">
-        <h1><i class="fas fa-chart-line"></i> Financial Analytics Dashboard</h1>
+        <h1><i class="fa-solid fa-chart-line"></i> Financial Analytics Dashboard</h1>
         <p class="analytics-header-lead">Comprehensive overview of your financial performance and key metrics</p>
         <p class="analytics-header-period">
-            <i class="fas fa-calendar-alt"></i> Data period: {{ $startDate->format('M d, Y') }} - {{ $endDate->format('M d, Y') }}
+            <i class="fa-solid fa-calendar-days"></i> Data period: {{ $startDate->format('M d, Y') }} - {{ $endDate->format('M d, Y') }}
         </p>
         
         <!-- Date Range Selector -->
@@ -48,7 +48,7 @@
                 </div>
                 
                 <button type="submit" class="btn-apply">
-                    <i class="fas fa-sync-alt"></i> Apply
+                    <i class="fa-solid fa-rotate"></i> Apply
                 </button>
             </form>
         </div>
@@ -97,7 +97,7 @@
 
     @unless($hasData)
     <div class="analytics-empty-alert" role="status">
-        <i class="fas fa-info-circle" aria-hidden="true"></i>
+        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
         <div>
             <strong>No data available</strong>
             <p>
@@ -117,7 +117,7 @@
                     role="tab"
                     aria-label="View all transaction types"
                     aria-selected="{{ $receiptType === null ? 'true' : 'false' }}">
-                <i class="fas fa-chart-pie" aria-hidden="true"></i> All Types
+                <i class="fa-solid fa-chart-pie" aria-hidden="true"></i> All Types
             </button>
             <button class="tab-item {{ $receiptType == 1 ? 'active' : '' }}"
                     data-type="1"
@@ -125,7 +125,7 @@
                     role="tab"
                     aria-label="View client receipts only"
                     aria-selected="{{ $receiptType == 1 ? 'true' : 'false' }}">
-                <i class="fas fa-receipt" aria-hidden="true"></i> Client Receipts
+                <i class="fa-solid fa-receipt" aria-hidden="true"></i> Client Receipts
             </button>
             <button class="tab-item {{ $receiptType == 2 ? 'active' : '' }}"
                     data-type="2"
@@ -133,7 +133,7 @@
                     role="tab"
                     aria-label="View office receipts only"
                     aria-selected="{{ $receiptType == 2 ? 'true' : 'false' }}">
-                <i class="fas fa-building" aria-hidden="true"></i> Office Receipts
+                <i class="fa-solid fa-building" aria-hidden="true"></i> Office Receipts
             </button>
             <button class="tab-item {{ $receiptType == 3 ? 'active' : '' }}"
                     data-type="3"
@@ -141,7 +141,7 @@
                     role="tab"
                     aria-label="View invoices only"
                     aria-selected="{{ $receiptType == 3 ? 'true' : 'false' }}">
-                <i class="fas fa-file-invoice-dollar" aria-hidden="true"></i> Invoices
+                <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i> Invoices
             </button>
             <button class="tab-item {{ $receiptType == 4 ? 'active' : '' }}"
                     data-type="4"
@@ -149,7 +149,7 @@
                     role="tab"
                     aria-label="View journal receipts only"
                     aria-selected="{{ $receiptType == 4 ? 'true' : 'false' }}">
-                <i class="fas fa-book" aria-hidden="true"></i> Journal Receipts
+                <i class="fa-solid fa-book" aria-hidden="true"></i> Journal Receipts
             </button>
         </div>
     </div>
@@ -166,12 +166,12 @@
                     <div class="stat-card-subtitle">{{ number_format($dashboardStats['monthly_stats']['deposit_count'], 0) }} transactions</div>
                 </div>
                 <div class="stat-card-icon blue">
-                    <i class="fas fa-dollar-sign"></i>
+                    <i class="fa-solid fa-dollar-sign"></i>
                 </div>
             </div>
             @if($dashboardStats['monthly_stats']['trends']['deposits']['direction'] != 'neutral')
             <span class="stat-card-trend {{ $dashboardStats['monthly_stats']['trends']['deposits']['direction'] }}">
-                <i class="fas fa-arrow-{{ $dashboardStats['monthly_stats']['trends']['deposits']['direction'] == 'up' ? 'up' : 'down' }}"></i>
+                <i class="fa-solid fa-arrow-{{ $dashboardStats['monthly_stats']['trends']['deposits']['direction'] == 'up' ? 'up' : 'down' }}"></i>
                 {{ $dashboardStats['monthly_stats']['trends']['deposits']['percentage'] }}% vs last period
             </span>
             @endif
@@ -188,7 +188,7 @@
                     <div class="stat-card-subtitle">This period</div>
                 </div>
                 <div class="stat-card-icon green">
-                    <i class="fas fa-exchange-alt"></i>
+                    <i class="fa-solid fa-right-left"></i>
                 </div>
             </div>
         </div>
@@ -204,12 +204,12 @@
                     <div class="stat-card-subtitle">{{ number_format($dashboardStats['monthly_stats']['office_receipt_count'], 0) }} transactions</div>
                 </div>
                 <div class="stat-card-icon orange">
-                    <i class="fas fa-building"></i>
+                    <i class="fa-solid fa-building"></i>
                 </div>
             </div>
             @if($dashboardStats['monthly_stats']['trends']['office_receipts']['direction'] != 'neutral')
             <span class="stat-card-trend {{ $dashboardStats['monthly_stats']['trends']['office_receipts']['direction'] }}">
-                <i class="fas fa-arrow-{{ $dashboardStats['monthly_stats']['trends']['office_receipts']['direction'] == 'up' ? 'up' : 'down' }}"></i>
+                <i class="fa-solid fa-arrow-{{ $dashboardStats['monthly_stats']['trends']['office_receipts']['direction'] == 'up' ? 'up' : 'down' }}"></i>
                 {{ $dashboardStats['monthly_stats']['trends']['office_receipts']['percentage'] }}% vs last period
             </span>
             @endif
@@ -226,7 +226,7 @@
                     <div class="stat-card-subtitle">Require attention</div>
                 </div>
                 <div class="stat-card-icon purple">
-                    <i class="fas fa-exclamation-triangle"></i>
+                    <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
             </div>
             <span class="stat-card-trend neutral">
@@ -245,7 +245,7 @@
                     <div class="stat-card-subtitle">Processing time</div>
                 </div>
                 <div class="stat-card-icon teal">
-                    <i class="fas fa-clock"></i>
+                    <i class="fa-solid fa-clock"></i>
                 </div>
             </div>
             @if($dashboardStats['allocation_metrics']['old_unallocated_count'] > 0)
@@ -266,7 +266,7 @@
                     <div class="stat-card-subtitle">${{ number_format($dashboardStats['invoice_stats']['unpaid_amount'], 2) }} outstanding</div>
                 </div>
                 <div class="stat-card-icon red">
-                    <i class="fas fa-file-invoice-dollar"></i>
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
                 </div>
             </div>
             @if($dashboardStats['invoice_stats']['overdue_invoices'] > 0)
@@ -287,7 +287,7 @@
                     <div class="stat-card-subtitle">{{ number_format($dashboardStats['invoice_stats']['paid_invoices'], 0) }} of {{ number_format($dashboardStats['invoice_stats']['total_invoices'], 0) }} paid</div>
                 </div>
                 <div class="stat-card-icon green">
-                    <i class="fas fa-check-circle"></i>
+                    <i class="fa-solid fa-circle-check"></i>
                 </div>
             </div>
         </div>
@@ -303,7 +303,7 @@
                     <div class="stat-card-subtitle">{{ number_format($dashboardStats['monthly_stats']['invoice_count'], 0) }} invoices</div>
                 </div>
                 <div class="stat-card-icon blue">
-                    <i class="fas fa-receipt"></i>
+                    <i class="fa-solid fa-receipt"></i>
                 </div>
             </div>
         </div>
@@ -319,7 +319,7 @@
                     <div class="stat-card-subtitle">{{ number_format($dashboardStats['monthly_stats']['journal_receipt_count'] ?? 0, 0) }} transactions</div>
                 </div>
                 <div class="stat-card-icon teal">
-                    <i class="fas fa-book"></i>
+                    <i class="fa-solid fa-book"></i>
                 </div>
             </div>
         </div>
@@ -331,7 +331,7 @@
         <!-- Trend Chart -->
         <div class="chart-card full-width">
             <h3 class="chart-card-title">
-                <i class="fas fa-chart-line"></i> 6-Month Financial Trend
+                <i class="fa-solid fa-chart-line"></i> 6-Month Financial Trend
             </h3>
             <div class="chart-container">
                 <canvas id="trendChart" role="img" aria-label="Line chart showing 6-month financial trend for deposits, office receipts, and invoices"></canvas>
@@ -341,7 +341,7 @@
         <!-- Payment Method Breakdown -->
         <div class="chart-card">
             <h3 class="chart-card-title">
-                <i class="fas fa-credit-card"></i> Payment Methods
+                <i class="fa-solid fa-credit-card"></i> Payment Methods
             </h3>
             <div class="chart-container">
                 <canvas id="paymentMethodChart" role="img" aria-label="Doughnut chart showing payment method distribution"></canvas>
@@ -351,7 +351,7 @@
         <!-- Receipt Allocation Status -->
         <div class="chart-card">
             <h3 class="chart-card-title">
-                <i class="fas fa-tasks"></i> Receipt Allocation
+                <i class="fa-solid fa-list-check"></i> Receipt Allocation
             </h3>
             <div class="chart-container">
                 <canvas id="allocationChart" role="img" aria-label="Pie chart showing allocated versus unallocated receipt ratio"></canvas>
@@ -363,7 +363,7 @@
     @if(isset($dashboardStats['top_clients']) && count($dashboardStats['top_clients']) > 0)
     <div class="table-card">
         <h3 class="table-card-title">
-            <i class="fas fa-trophy"></i> Top Clients by Transaction Volume
+            <i class="fa-solid fa-trophy"></i> Top Clients by Transaction Volume
         </h3>
         <table class="analytics-table">
             <thead>
@@ -380,11 +380,11 @@
                 <tr>
                     <td>
                         @if($index == 0)
-                            <i class="fas fa-trophy rank-icon--gold" aria-hidden="true"></i> #{{ $index + 1 }}
+                            <i class="fa-solid fa-trophy rank-icon--gold" aria-hidden="true"></i> #{{ $index + 1 }}
                         @elseif($index == 1)
-                            <i class="fas fa-medal rank-icon--silver" aria-hidden="true"></i> #{{ $index + 1 }}
+                            <i class="fa-solid fa-medal rank-icon--silver" aria-hidden="true"></i> #{{ $index + 1 }}
                         @elseif($index == 2)
-                            <i class="fas fa-award rank-icon--bronze" aria-hidden="true"></i> #{{ $index + 1 }}
+                            <i class="fa-solid fa-award rank-icon--bronze" aria-hidden="true"></i> #{{ $index + 1 }}
                         @else
                             #{{ $index + 1 }}
                         @endif
@@ -401,10 +401,10 @@
     @else
     <div class="table-card">
         <h3 class="table-card-title">
-            <i class="fas fa-trophy"></i> Top Clients by Transaction Volume
+            <i class="fa-solid fa-trophy"></i> Top Clients by Transaction Volume
         </h3>
                <div class="table-empty-state">
-            <i class="fas fa-users" aria-hidden="true"></i>
+            <i class="fa-solid fa-users" aria-hidden="true"></i>
             <p>No client data available for this period</p>
         </div>
     </div>
@@ -412,23 +412,23 @@
 
     <!-- Quick Links -->
     <h3 class="analytics-quick-access-title">
-        <i class="fas fa-link" aria-hidden="true"></i> Quick Access
+        <i class="fa-solid fa-link" aria-hidden="true"></i> Quick Access
     </h3>
     <div class="quick-links">
         <a href="{{ route('clients.clientreceiptlist') }}" class="quick-link-card">
-            <i class="fas fa-receipt"></i>
+            <i class="fa-solid fa-receipt"></i>
             <h4>Client Receipts</h4>
         </a>
         <a href="{{ route('clients.invoicelist') }}" class="quick-link-card">
-            <i class="fas fa-file-invoice-dollar"></i>
+            <i class="fa-solid fa-file-invoice-dollar"></i>
             <h4>Invoice Lists</h4>
         </a>
         <a href="{{ route('clients.officereceiptlist') }}" class="quick-link-card">
-            <i class="fas fa-building"></i>
+            <i class="fa-solid fa-building"></i>
             <h4>Office Receipts</h4>
         </a>
         <a href="{{ route('clients.journalreceiptlist') }}" class="quick-link-card">
-            <i class="fas fa-book"></i>
+            <i class="fa-solid fa-book"></i>
             <h4>Journal Receipts</h4>
         </a>
     </div>
@@ -457,7 +457,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!trendData || !trendData.months || trendData.months.length === 0) {
             document.getElementById('trendChart').parentElement.innerHTML =
-                '<p class="chart-placeholder-message"><i class="fas fa-info-circle" aria-hidden="true"></i> No trend data available for the selected period</p>';
+                '<p class="chart-placeholder-message"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> No trend data available for the selected period</p>';
         } else {
             const trendCtx = document.getElementById('trendChart').getContext('2d');
             new Chart(trendCtx, {
@@ -523,7 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
         console.error('Error initializing trend chart:', error);
         document.getElementById('trendChart').parentElement.innerHTML =
-            '<p class="chart-placeholder-message chart-placeholder-message--error"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Error loading chart</p>';
+            '<p class="chart-placeholder-message chart-placeholder-message--error"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Error loading chart</p>';
     }
 
     // Payment Method Chart
@@ -532,7 +532,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!paymentMethods || paymentMethods.length === 0) {
             document.getElementById('paymentMethodChart').parentElement.innerHTML =
-                '<p class="chart-placeholder-message"><i class="fas fa-info-circle" aria-hidden="true"></i> No payment method data for this period</p>';
+                '<p class="chart-placeholder-message"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> No payment method data for this period</p>';
         } else {
             const paymentMethodCtx = document.getElementById('paymentMethodChart').getContext('2d');
             new Chart(paymentMethodCtx, {
@@ -571,7 +571,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
         console.error('Error initializing payment method chart:', error);
         document.getElementById('paymentMethodChart').parentElement.innerHTML =
-            '<p class="chart-placeholder-message chart-placeholder-message--error"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Error loading chart</p>';
+            '<p class="chart-placeholder-message chart-placeholder-message--error"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Error loading chart</p>';
     }
 
     // Allocation Chart
@@ -580,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!receiptStats || ((parseInt(receiptStats.allocated_count) || 0) === 0 && (parseInt(receiptStats.unallocated_count) || 0) === 0)) {
             document.getElementById('allocationChart').parentElement.innerHTML =
-                '<p class="chart-placeholder-message"><i class="fas fa-info-circle" aria-hidden="true"></i> No allocation data available</p>';
+                '<p class="chart-placeholder-message"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> No allocation data available</p>';
         } else {
             const allocationCtx = document.getElementById('allocationChart').getContext('2d');
             new Chart(allocationCtx, {
@@ -612,7 +612,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
         console.error('Error initializing allocation chart:', error);
         document.getElementById('allocationChart').parentElement.innerHTML =
-            '<p class="chart-placeholder-message chart-placeholder-message--error"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Error loading chart</p>';
+            '<p class="chart-placeholder-message chart-placeholder-message--error"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Error loading chart</p>';
     }
 });
 

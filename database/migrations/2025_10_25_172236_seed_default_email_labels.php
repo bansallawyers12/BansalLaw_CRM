@@ -16,7 +16,7 @@ return new class extends Migration
                 'name' => 'Inbox',
                 'color' => '#3B82F6', // Blue
                 'type' => 'system',
-                'icon' => 'fas fa-inbox',
+                'icon' => 'fa-solid fa-inbox',
                 'description' => 'Received emails',
                 'is_active' => true,
                 'created_at' => now(),
@@ -27,7 +27,7 @@ return new class extends Migration
                 'name' => 'Sent',
                 'color' => '#10B981', // Green
                 'type' => 'system',
-                'icon' => 'fas fa-paper-plane',
+                'icon' => 'fa-solid fa-paper-plane',
                 'description' => 'Sent emails',
                 'is_active' => true,
                 'created_at' => now(),
@@ -38,7 +38,7 @@ return new class extends Migration
                 'name' => 'Important',
                 'color' => '#EF4444', // Red
                 'type' => 'system',
-                'icon' => 'fas fa-star',
+                'icon' => 'fa-solid fa-star',
                 'description' => 'Important emails',
                 'is_active' => true,
                 'created_at' => now(),
@@ -49,7 +49,7 @@ return new class extends Migration
                 'name' => 'Follow Up',
                 'color' => '#F59E0B', // Yellow/Orange
                 'type' => 'system',
-                'icon' => 'fas fa-flag',
+                'icon' => 'fa-solid fa-flag',
                 'description' => 'Emails requiring follow up',
                 'is_active' => true,
                 'created_at' => now(),

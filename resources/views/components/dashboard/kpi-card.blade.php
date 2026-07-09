@@ -1,7 +1,7 @@
 @props([
     'title',
     'count',
-    'icon' => 'fas fa-chart-bar',
+    'icon' => 'fa-solid fa-chart-bar',
     'iconClass' => 'icon-active',
     'route' => null,
     'color' => 'primary',

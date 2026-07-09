@@ -569,7 +569,7 @@ class DashboardService
             $description = '';
             if (!empty($completionNotes)) {
                 $description .= '<p>';
-                $description .= '<i class="fas fa-ellipsis-v convert-activity-to-note" ';
+                $description .= '<i class="fa-solid fa-ellipsis-vertical convert-activity-to-note" ';
                 $description .= 'style="cursor: pointer; color: #6c757d;" ';
                 $description .= 'title="Convert to Note" ';
                 $description .= 'data-activity-id="" ';

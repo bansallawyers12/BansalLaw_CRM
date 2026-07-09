@@ -512,7 +512,7 @@
             </div>
             <div style="display: flex; gap: 10px;">
                 <a href="{{ route('documents.create') }}" class="btn-primary-custom">
-                    <i class="fas fa-plus"></i> Send New Document
+                    <i class="fa-solid fa-plus"></i> Send New Document
                 </a>
             </div>
         </div>
@@ -634,7 +634,7 @@
                        value="{{ request('search') }}" style="flex: 1; min-width: 200px;">
                 
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-search"></i> Search
+                    <i class="fa-solid fa-search"></i> Search
                 </button>
                 
                 @if(request()->anyFilled(['association', 'status', 'search', 'scope']))
@@ -653,10 +653,10 @@
             <div id="bulk-actions-bar" style="display: none; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                 <span id="selected-count" style="font-weight: 600; margin-right: 15px;">0 selected</span>
                 <button type="button" onclick="bulkResend()" class="btn btn-sm btn-warning">
-                    <i class="fas fa-bell"></i> Send Reminders
+                    <i class="fa-solid fa-bell"></i> Send Reminders
                 </button>
                 <button type="button" onclick="bulkVoid()" class="btn btn-sm btn-danger">
-                    <i class="fas fa-ban"></i> Void
+                    <i class="fa-solid fa-ban"></i> Void
                 </button>
                 <button type="button" onclick="clearSelection()" class="btn btn-sm btn-light">
                     Clear Selection
@@ -718,12 +718,12 @@
                             @if(($doc->client_id && $doc->client) || ($doc->lead_id && $doc->lead))
                                 @if($doc->client_id && $doc->client)
                                 <a href="{{ route('clients.detail', base64_encode(convert_uuencode($doc->client_id))) }}" class="association-chip">
-                                    <i class="fas fa-user"></i>
+                                    <i class="fa-solid fa-user"></i>
                                     Client: {{ $doc->client->first_name }} {{ $doc->client->last_name }}
                                 </a>
                                 @elseif($doc->lead_id && $doc->lead)
                                 <a href="{{ route('clients.detail', base64_encode(convert_uuencode($doc->lead_id))) }}" class="association-chip">
-                                    <i class="fas fa-user-tag"></i>
+                                    <i class="fa-solid fa-user-tag"></i>
                                     Lead: {{ $doc->lead->first_name }} {{ $doc->lead->last_name }}
                                 </a>
                                 @endif
@@ -746,11 +746,11 @@
             </div>
             @else
             <div class="empty-state">
-                <i class="fas fa-inbox"></i>
+                <i class="fa-solid fa-inbox"></i>
                 <h3>No documents found</h3>
                 <p>Start by sending a new document for signature</p>
                 <a href="{{ route('documents.create') }}" class="btn-primary-custom" style="margin-top: 20px;">
-                    <i class="fas fa-plus"></i> Send New Document
+                    <i class="fa-solid fa-plus"></i> Send New Document
                 </a>
             </div>
             @endif
@@ -766,7 +766,7 @@
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-link"></i> Attach Document to Client/Lead
+                        <i class="fa-solid fa-link"></i> Attach Document to Client/Lead
                     </h5>
                     <button type="button" class="close" data-bs-dismiss="modal">
                         <span>&times;</span>
@@ -803,7 +803,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-check"></i> Attach Document
+                        <i class="fa-solid fa-check"></i> Attach Document
                     </button>
                 </div>
             </form>

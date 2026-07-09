@@ -27,18 +27,18 @@
                     @else
                     <div class="card">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h3><i class="fas fa-user"></i> Personal Information</h3>
+                            <h3><i class="fa-solid fa-user"></i> Personal Information</h3>
                         </div>
                         <div class="field-group">
                             <span class="field-label">Age / Date of Birth</span>
                             <span class="field-value">
                                 <?php
                                 if ( isset($fetchedData->age) && $fetchedData->age != '') {
-                                    $verifiedDobTick = '<i class="far fa-circle unverified-icon fa-lg"></i>';
+                                    $verifiedDobTick = '<i class="fa-regular fa-circle unverified-icon fa-lg"></i>';
                                     if ($detailHasDobVerifiedCol) {
                                         $verifiedDob = \App\Models\Admin::where('id', $fetchedData->id)->whereNotNull('dob_verified_date')->first();
                                         if ($verifiedDob) {
-                                            $verifiedDobTick = '<i class="fas fa-check-circle verified-icon fa-lg"></i>';
+                                            $verifiedDobTick = '<i class="fa-solid fa-circle-check verified-icon fa-lg"></i>';
                                         }
                                     }
                                     
@@ -113,16 +113,16 @@
                                         if( isset($emailVal->email_type) && $emailVal->email_type != "" ){
                                             // Show verification status for ALL email types
                                             if ( $emailVal->is_verified ) {
-                                                $emailStr .= $emailVal->email.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                                $emailStr .= $emailVal->email.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                             } else {
-                                                $emailStr .= $emailVal->email.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                                $emailStr .= $emailVal->email.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                             }
                                         } else {
                                             // For emails without type, still show verification status if available
                                             if ( isset($emailVal->is_verified) && $emailVal->is_verified ) {
-                                                $emailStr .= $emailVal->email.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                                $emailStr .= $emailVal->email.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                             } else {
-                                                $emailStr .= $emailVal->email.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                                $emailStr .= $emailVal->email.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                             }
                                         }
                                     }
@@ -163,16 +163,16 @@
                                         if( isset($conVal->contact_type) && $conVal->contact_type != "" ){
                                             // Show verification status for ALL contact types
                                             if ( $conVal->is_verified ) {
-                                                $phonenoStr .= $formattedPhone.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                                $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                             } else {
-                                                $phonenoStr .= $formattedPhone.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                                $phonenoStr .= $formattedPhone.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                             }
                                         } else {
                                             // For phones without type, still show verification status if available
                                             if ( isset($conVal->is_verified) && $conVal->is_verified ) {
-                                                $phonenoStr .= $formattedPhone.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                                $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                             } else {
-                                                $phonenoStr .= $formattedPhone.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                                $phonenoStr .= $formattedPhone.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                             }
                                         }
                                     }
@@ -233,7 +233,7 @@
                     @endphp
                     @if($nomineeNominationsList->isNotEmpty())
                     <div class="card">
-                        <h3><i class="fas fa-user-check"></i> Nominated by employer</h3>
+                        <h3><i class="fa-solid fa-user-check"></i> Nominated by employer</h3>
                         <p style="margin: 0 0 12px 0; color: #6c757d; font-size: 0.9rem;">
                             This client is listed as a nominated employee on the following company record(s). Only employers you are allowed to open are shown.
                         </p>
@@ -294,7 +294,7 @@
 
                     @if(!$hidePersonalDetailsVisaCard)
                     <div class="card">
-                        <h3><i class="fas fa-passport"></i>Visa</h3>
+                        <h3><i class="fa-solid fa-passport"></i>Visa</h3>
                         <?php
                         $all_visas_to_display = collect();
                         if ($detailHasVisaCols) {
@@ -342,9 +342,9 @@
                                         if( $visa_Info && !empty($visa_Info->visa_expiry_date)){
                                             $verifiedVisa = \App\Models\Admin::where('id',$fetchedData->id)->whereNotNull('visa_expiry_verified_at')->first();
                                             if ( $verifiedVisa) {
-                                                $verifiedVisaTick = '<i class="fas fa-check-circle verified-icon fa-lg"></i>';
+                                                $verifiedVisaTick = '<i class="fa-solid fa-circle-check verified-icon fa-lg"></i>';
                                             } else {
-                                                $verifiedVisaTick = '<i class="far fa-circle unverified-icon fa-lg"></i>';
+                                                $verifiedVisaTick = '<i class="fa-regular fa-circle unverified-icon fa-lg"></i>';
                                             }
                                             
                                             // Check if visa is expiring within 7 days
@@ -472,7 +472,7 @@
                     @if(!empty($clientQualification_Info) && $clientQualification_Info->count() > 0)
                     <div class="card">
                         <div class="qualification-section">
-                            <h3><i class="fas fa-info-circle"></i> Qualification</h3>
+                            <h3><i class="fa-solid fa-circle-info"></i> Qualification</h3>
                             <div class="qualification-list" style="overflow-x: auto;">
                                 <table class="table eoi-table">
                                     <thead>
@@ -533,7 +533,7 @@
                     @if(!empty($clientExperience_Info) && $clientExperience_Info->count() > 0)
                     <div class="card">
                         <div class="experience-section">
-                            <h3><i class="fas fa-info-circle"></i> Work Experience</h3>
+                            <h3><i class="fa-solid fa-circle-info"></i> Work Experience</h3>
                             <div class="experience-list" style="overflow-x: auto;">
                                 <table class="table eoi-table">
                                     <thead>
@@ -589,7 +589,7 @@
                     @if(!empty($clientFamilyDetails) && $clientFamilyDetails->count() > 0)
                     <div class="card">
                         <div class="relationship-section">
-                            <h3><i class="fas fa-address-card"></i> Relationships</h3>
+                            <h3><i class="fa-solid fa-address-card"></i> Relationships</h3>
                             <div class="relationship-list" style="max-height: 300px; overflow-y: auto;">
                                 <table class="table relationship-table">
                                     <thead>
@@ -689,7 +689,7 @@
                     if($fetchedData->related_files != '')
                     { ?>
                     <div class="card">
-                        <h3><i class="fas fa-address-card"></i> Related Files</h3>
+                        <h3><i class="fa-solid fa-address-card"></i> Related Files</h3>
                         <div class="field-group">
                             <ul style="margin-left: 15px;">
                                 <?php
@@ -755,7 +755,7 @@
                             }
                             ?>
                         <div class="card">
-                            <h3><i class="fas fa-user"></i> Matter assignee
+                            <h3><i class="fa-solid fa-user"></i> Matter assignee
                                 @if($overviewClientMatterId)
                                 <a style="margin-left: 24px;" class="changeMatterAssignee" href="javascript:;" role="button" data-client-matter-id="{{ $overviewClientMatterId }}">Edit details</a>
                                 @else
@@ -827,7 +827,7 @@
                         </div>
 
                         <div class="card">
-                            <h3><i class="fas fa-briefcase"></i> Matter Details</h3>
+                            <h3><i class="fa-solid fa-briefcase"></i> Matter Details</h3>
                             @php
                                 $mdRows = [];
                                 if ($matter_dis_ref_info_arr && $__sch::hasColumn('client_matters', 'incidence_type')) {
@@ -1011,10 +1011,10 @@
                     @unless($suppressPersonalDetailsTagCard ?? false)
                     <div class="card">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h3><i class="fas fa-address-card"></i> Tag(s):</h3>
+                            <h3><i class="fa-solid fa-address-card"></i> Tag(s):</h3>
                             <div class="d-flex gap-1">
-                                <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-primary opentagspopup btn-sm d-inline-flex align-items-center justify-content-center" style="width:28px;height:28px;min-width:28px;padding:0;" title="Add Tag"><i class="fas fa-plus"></i></a>
-                                <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-danger openredtagspopup btn-sm d-inline-flex align-items-center justify-content-center" style="width:28px;height:28px;min-width:28px;padding:0;" title="Add Tag (hidden by default)"><i class="fas fa-plus"></i></a>
+                                <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-primary opentagspopup btn-sm d-inline-flex align-items-center justify-content-center" style="width:28px;height:28px;min-width:28px;padding:0;" title="Add Tag"><i class="fa-solid fa-plus"></i></a>
+                                <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-danger openredtagspopup btn-sm d-inline-flex align-items-center justify-content-center" style="width:28px;height:28px;min-width:28px;padding:0;" title="Add Tag (hidden by default)"><i class="fa-solid fa-plus"></i></a>
                             </div>
                         </div>
                        
@@ -1032,7 +1032,7 @@
                             @if($redTagCount > 0)
                                 <div class="red-tags-section" style="display: none; margin-top: 10px;">
                                     <div style="margin-bottom: 5px; font-size: 11px; color: #dc3545; font-weight: bold;">
-                                        <i class="fas fa-exclamation-triangle"></i> Red Tags:
+                                        <i class="fa-solid fa-triangle-exclamation"></i> Red Tags:
                                     </div>
                                     @foreach($redTags as $tagName)
                                         <span class="ui label tag-red ag-flex ag-align-center ag-space-between" style="display: inline-flex; margin: 5px 5px 5px 0; background-color: #dc3545; border: 1px solid #c82333;">
@@ -1042,7 +1042,7 @@
                                 </div>
                                 <div style="margin-top: 10px;">
                                     <a href="javascript:;" id="toggleRedTags" class="btn btn-sm btn-outline-danger" data-client-id="{{$fetchedData->id}}" title="Show Red Tags">
-                                        <i class="fas fa-eye"></i>
+                                        <i class="fa-solid fa-eye"></i>
                                     </a>
                                 </div>
                             @endif
@@ -1113,7 +1113,7 @@
                 @endphp
                 @if($clientHearings->count() > 0)
                 <div class="card" style="margin-top:20px;">
-                    <h3><i class="fas fa-gavel"></i> Court Hearings</h3>
+                    <h3><i class="fa-solid fa-gavel"></i> Court Hearings</h3>
                     <div style="overflow-x:auto;">
                         <table style="width:100%;border-collapse:collapse;margin-top:10px;">
                             <thead>
@@ -1207,7 +1207,7 @@
                     // Set initial state
                     if (isVisible) {
                         redTagsSection.style.display = 'block';
-                        toggleRedTagsBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+                        toggleRedTagsBtn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
                         toggleRedTagsBtn.classList.remove('btn-outline-danger');
                         toggleRedTagsBtn.classList.add('btn-danger');
                         toggleRedTagsBtn.title = 'Hide Red Tags';
@@ -1219,7 +1219,7 @@
                         if (isCurrentlyVisible) {
                             // Hide red tags
                             redTagsSection.style.display = 'none';
-                            this.innerHTML = '<i class="fas fa-eye"></i>';
+                            this.innerHTML = '<i class="fa-solid fa-eye"></i>';
                             this.classList.remove('btn-danger');
 this.classList.add('btn-outline-danger');
                 this.title = 'Show Red Tags';
@@ -1227,7 +1227,7 @@ this.classList.add('btn-outline-danger');
                         } else {
                             // Show red tags
                             redTagsSection.style.display = 'block';
-                            this.innerHTML = '<i class="fas fa-eye-slash"></i>';
+                            this.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
                             this.classList.remove('btn-outline-danger');
 this.classList.add('btn-danger');
                 this.title = 'Hide Red Tags';

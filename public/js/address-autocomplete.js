@@ -193,7 +193,7 @@
                 
                 // Show user-friendly error message
                 const errorMsg = $('<div class="autocomplete-error" style="color: #dc3545; font-size: 12px; margin-top: 5px; padding: 8px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px;">' +
-                    '<i class="fas fa-exclamation-triangle"></i> Address search unavailable. Please refresh the page or contact support.' +
+                    '<i class="fa-solid fa-triangle-exclamation"></i> Address search unavailable. Please refresh the page or contact support.' +
                     '</div>');
                 $wrapper.find('.autocomplete-error').remove();
                 $wrapper.find('.address-search-container').append(errorMsg);
@@ -219,7 +219,7 @@
                         
                         // Show user-friendly error message from backend
                         const errorMsg = $('<div class="autocomplete-error" style="color: #dc3545; font-size: 12px; margin-top: 5px; padding: 8px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px;">' +
-                            '<i class="fas fa-exclamation-triangle"></i> ' + response.error_message +
+                            '<i class="fa-solid fa-triangle-exclamation"></i> ' + response.error_message +
                             '</div>');
                         $wrapper.find('.autocomplete-error, .autocomplete-info').remove();
                         $wrapper.find('.address-search-container').append(errorMsg);
@@ -241,7 +241,7 @@
                         
                         // Show informational message that search completed but no results
                         const infoMsg = $('<div class="autocomplete-info" style="color: #856404; font-size: 12px; margin-top: 5px; padding: 8px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">' +
-                            '<i class="fas fa-info-circle"></i> No addresses found. Please enter the address manually.' +
+                            '<i class="fa-solid fa-circle-info"></i> No addresses found. Please enter the address manually.' +
                             '</div>');
                         $wrapper.find('.autocomplete-info').remove();
                         $wrapper.find('.address-search-container').append(infoMsg);
@@ -270,7 +270,7 @@
                     
                     // Show user-friendly error message
                     const errorMsg = $('<div class="autocomplete-error" style="color: #dc3545; font-size: 12px; margin-top: 5px; padding: 8px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px;">' +
-                        '<i class="fas fa-exclamation-triangle"></i> ' + errorMessage +
+                        '<i class="fa-solid fa-triangle-exclamation"></i> ' + errorMessage +
                         '</div>');
                     $wrapper.find('.autocomplete-error, .autocomplete-info').remove();
                     $wrapper.find('.address-search-container').append(errorMsg);
@@ -326,7 +326,7 @@
             
             // Show user-friendly error message
             const errorMsg = $('<div class="autocomplete-error" style="color: #dc3545; font-size: 12px; margin-top: 5px; padding: 8px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px;">' +
-                '<i class="fas fa-exclamation-triangle"></i> Unable to fetch address details. Please enter manually.' +
+                '<i class="fa-solid fa-triangle-exclamation"></i> Unable to fetch address details. Please enter manually.' +
                 '</div>');
             $wrapper.find('.autocomplete-error').remove();
             $wrapper.find('.address-search-container').append(errorMsg);
@@ -372,7 +372,7 @@
                 
                 // Show error message
                 const errorMsg = $('<div class="autocomplete-error" style="color: #dc3545; font-size: 12px; margin-top: 5px; padding: 8px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px;">' +
-                    '<i class="fas fa-exclamation-triangle"></i> ' + errorMessage +
+                    '<i class="fa-solid fa-triangle-exclamation"></i> ' + errorMessage +
                     '</div>');
                 $wrapper.find('.autocomplete-error').remove();
                 $wrapper.find('.address-search-container').append(errorMsg);

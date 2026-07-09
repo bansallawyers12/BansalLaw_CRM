@@ -3,7 +3,7 @@
     <div class="email-delete-modal" role="dialog" aria-labelledby="emailDeleteModalTitle" aria-modal="true">
         <div class="email-delete-modal__step email-delete-modal__step--1" data-step="1">
             <div class="email-delete-modal__icon email-delete-modal__icon--warn" aria-hidden="true">
-                <i class="fas fa-trash-alt"></i>
+                <i class="fa-solid fa-trash-can"></i>
             </div>
             <p class="email-delete-modal__step-label">Step 1 of 2</p>
             <h3 class="email-delete-modal__title" id="emailDeleteModalTitle">Delete this email?</h3>
@@ -25,14 +25,14 @@
             <div class="email-delete-modal__actions">
                 <button type="button" class="email-delete-modal__btn email-delete-modal__btn--cancel" id="emailDeleteCancelBtn">Cancel</button>
                 <button type="button" class="email-delete-modal__btn email-delete-modal__btn--continue" id="emailDeleteContinueBtn">
-                    Continue <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                    Continue <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
 
         <div class="email-delete-modal__step email-delete-modal__step--2" data-step="2" hidden>
             <div class="email-delete-modal__icon email-delete-modal__icon--danger" aria-hidden="true">
-                <i class="fas fa-exclamation-triangle"></i>
+                <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
             <p class="email-delete-modal__step-label email-delete-modal__step-label--danger">Step 2 of 2 — Final confirmation</p>
             <h3 class="email-delete-modal__title">Permanently delete this email?</h3>
@@ -49,10 +49,10 @@
             </div>
             <div class="email-delete-modal__actions">
                 <button type="button" class="email-delete-modal__btn email-delete-modal__btn--back" id="emailDeleteBackBtn">
-                    <i class="fas fa-arrow-left" aria-hidden="true"></i> Go back
+                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Go back
                 </button>
                 <button type="button" class="email-delete-modal__btn email-delete-modal__btn--delete" id="emailDeleteConfirmBtn">
-                    <i class="fas fa-trash-alt" aria-hidden="true"></i> Delete permanently
+                    <i class="fa-solid fa-trash-can" aria-hidden="true"></i> Delete permanently
                 </button>
             </div>
         </div>

@@ -358,17 +358,17 @@
             <div class="card">
                 <div class="card-header">
                     <h4>
-                        <i class="fas fa-calendar-check me-2"></i>
+                        <i class="fa-solid fa-calendar-check me-2"></i>
                         Bookings
                         <small class="text-muted">(Leads &amp; clients, appointments, and consultants from CRM)</small>
                     </h4>
                     <div class="card-header-action">
                         @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
                         <a href="{{ route('booking.sync.dashboard') }}" class="btn btn-sm btn-info">
-                            <i class="fas fa-sync"></i> Sync Status
+                            <i class="fa-solid fa-rotate"></i> Sync Status
                         </a>
                         <button onclick="manualSync()" class="btn btn-sm btn-primary">
-                            <i class="fas fa-sync-alt"></i> Manual Sync
+                            <i class="fa-solid fa-rotate"></i> Manual Sync
                         </button>
                         @endif
                     </div>
@@ -379,7 +379,7 @@
                         <div class="col-lg col-md-6 col-sm-6 col-12">
                             <div class="card card-statistic-1">
                                 <div class="card-icon bg-warning">
-                                    <i class="fas fa-clock"></i>
+                                    <i class="fa-solid fa-clock"></i>
                                 </div>
                                 <div class="card-wrap">
                                     <div class="card-header">
@@ -394,7 +394,7 @@
                         <div class="col-lg col-md-6 col-sm-6 col-12">
                             <div class="card card-statistic-1">
                                 <div class="card-icon bg-primary">
-                                    <i class="fas fa-dollar-sign"></i>
+                                    <i class="fa-solid fa-dollar-sign"></i>
                                 </div>
                                 <div class="card-wrap">
                                     <div class="card-header">
@@ -409,7 +409,7 @@
                         <div class="col-lg col-md-6 col-sm-6 col-12">
                             <div class="card card-statistic-1">
                                 <div class="card-icon bg-success">
-                                    <i class="fas fa-check-circle"></i>
+                                    <i class="fa-solid fa-circle-check"></i>
                                 </div>
                                 <div class="card-wrap">
                                     <div class="card-header">
@@ -424,7 +424,7 @@
                         <div class="col-lg col-md-6 col-sm-6 col-12">
                             <div class="card card-statistic-1">
                                 <div class="card-icon bg-info">
-                                    <i class="fas fa-calendar-check"></i>
+                                    <i class="fa-solid fa-calendar-check"></i>
                                 </div>
                                 <div class="card-wrap">
                                     <div class="card-header">
@@ -439,7 +439,7 @@
                         <div class="col-lg col-md-6 col-sm-6 col-12">
                             <div class="card card-statistic-1">
                                 <div class="card-icon bg-primary">
-                                    <i class="fas fa-list"></i>
+                                    <i class="fa-solid fa-list"></i>
                                 </div>
                                 <div class="card-wrap">
                                     <div class="card-header">
@@ -500,10 +500,10 @@
                                     <label>&nbsp;</label>
                                     <div>
                                         <button type="submit" class="btn btn-primary" style="width: calc(50% - 5px); margin-right: 5px;">
-                                            <i class="fas fa-filter"></i> Filter
+                                            <i class="fa-solid fa-filter"></i> Filter
                                         </button>
                                         <a href="{{ route('booking.appointments.index') }}" class="btn btn-secondary" style="width: calc(50% - 5px);">
-                                            <i class="fas fa-redo"></i> Reset
+                                            <i class="fa-solid fa-arrow-rotate-right"></i> Reset
                                         </a>
                                     </div>
                                 </div>
@@ -529,7 +529,7 @@
                             <tbody id="appointments-table-body">
                                 <tr>
                                     <td colspan="9" class="text-center text-muted py-4">
-                                        <i class="fas fa-spinner fa-spin"></i> Loading appointments…
+                                        <i class="fa-solid fa-spinner fa-spin"></i> Loading appointments…
                                     </td>
                                 </tr>
                             </tbody>
@@ -671,15 +671,15 @@ function buildAppointmentRowHtml(row) {
     const showUrl = row.show_url || '';
     const editUrl = row.edit_url || '';
     const viewBtn = showUrl
-        ? ('<a href="' + escapeHtml(showUrl) + '" class="btn btn-sm btn-primary" title="View in CRM"><i class="fas fa-eye"></i></a>')
-        : ('<button type="button" class="btn btn-sm btn-secondary" disabled title="Not synced to CRM yet"><i class="fas fa-eye"></i></button>');
+        ? ('<a href="' + escapeHtml(showUrl) + '" class="btn btn-sm btn-primary" title="View in CRM"><i class="fa-solid fa-eye"></i></a>')
+        : ('<button type="button" class="btn btn-sm btn-secondary" disabled title="Not synced to CRM yet"><i class="fa-solid fa-eye"></i></button>');
     const editBtn = editUrl
-        ? ('<a href="' + escapeHtml(editUrl) + '" class="btn btn-sm btn-warning" title="Edit in CRM"><i class="fas fa-edit"></i></a>')
-        : ('<button type="button" class="btn btn-sm btn-secondary" disabled title="Not synced to CRM yet"><i class="fas fa-edit"></i></button>');
+        ? ('<a href="' + escapeHtml(editUrl) + '" class="btn btn-sm btn-warning" title="Edit in CRM"><i class="fa-solid fa-pen-to-square"></i></a>')
+        : ('<button type="button" class="btn btn-sm btn-secondary" disabled title="Not synced to CRM yet"><i class="fa-solid fa-pen-to-square"></i></button>');
     const crmId = row.crm_appointment_id;
     const quickBtn = crmId
-        ? ('<button type="button" class="btn btn-sm btn-info quick-action-btn" data-id="' + escapeHtml(String(crmId)) + '" title="Quick Actions"><i class="fas fa-bolt"></i></button>')
-        : ('<button type="button" class="btn btn-sm btn-secondary" disabled title="Requires synced CRM record"><i class="fas fa-bolt"></i></button>');
+        ? ('<button type="button" class="btn btn-sm btn-info quick-action-btn" data-id="' + escapeHtml(String(crmId)) + '" title="Quick Actions"><i class="fa-solid fa-bolt"></i></button>')
+        : ('<button type="button" class="btn btn-sm btn-secondary" disabled title="Requires synced CRM record"><i class="fa-solid fa-bolt"></i></button>');
 
     return (
         '<tr>' +
@@ -687,7 +687,7 @@ function buildAppointmentRowHtml(row) {
         '<td>' + clientCell + '</td>' +
         '<td><strong>' + escapeHtml(row.appointment_date_label || '') + '</strong><br>' +
         '<small>' + timeLine + '</small><br>' +
-        '<small><i class="fas fa-map-marker-alt"></i> ' + locLabel + '</small></td>' +
+        '<small><i class="fa-solid fa-location-dot"></i> ' + locLabel + '</small></td>' +
         '<td>' + serviceMain + '<br><small>' + serviceSub + '</small></td>' +
         '<td>' + consultantCell + '</td>' +
         '<td>' + descCell + '</td>' +
@@ -740,7 +740,7 @@ function loadAppointmentsList(page) {
     const $tbody = $('#appointments-table-body');
     $tbody.html(
         '<tr><td colspan="9" class="text-center text-muted py-4">' +
-        '<i class="fas fa-spinner fa-spin"></i> Loading appointments…</td></tr>'
+        '<i class="fa-solid fa-spinner fa-spin"></i> Loading appointments…</td></tr>'
     );
 
     $.ajax({
@@ -760,7 +760,7 @@ function loadAppointmentsList(page) {
         if (!rows.length) {
             $tbody.html(
                 '<tr><td colspan="9" class="text-center text-muted py-4">' +
-                '<i class="fas fa-info-circle"></i> No appointments found.</td></tr>'
+                '<i class="fa-solid fa-circle-info"></i> No appointments found.</td></tr>'
             );
         } else {
             $tbody.html(rows.map(buildAppointmentRowHtml).join(''));

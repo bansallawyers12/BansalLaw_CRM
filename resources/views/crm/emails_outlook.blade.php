@@ -80,7 +80,7 @@
     <!-- Drag & Drop Overlay -->
     <div id="dragDropOverlay" class="drag-drop-overlay" style="display: none;">
         <div class="drag-drop-content">
-            <i class="fas fa-cloud-upload-alt" style="font-size: 48px; margin-bottom: 15px;"></i>
+            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 48px; margin-bottom: 15px;"></i>
             <h3>Drop Outlook email files here ({{ $crmEmailUploadLabel }})</h3>
         </div>
     </div>
@@ -90,31 +90,31 @@
         <div class="list-toolbar">
             <div class="folder-tabs" role="tablist" aria-label="Mail folders">
                 <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
-                    <i class="fas fa-inbox"></i> Inbox
+                    <i class="fa-solid fa-inbox"></i> Inbox
                 </button>
                 <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
-                    <i class="fas fa-paper-plane"></i> Sent Items
+                    <i class="fa-solid fa-paper-plane"></i> Sent Items
                 </button>
                 <button type="button" class="folder-item" data-folder="drafts" role="tab" aria-selected="false">
-                    <i class="fas fa-file-alt"></i> Drafts
+                    <i class="fa-solid fa-file-lines"></i> Drafts
                 </button>
             </div>
             <button type="button" class="action-btn action-btn--upload" id="btnUploadEmail" title="Upload Outlook email ({{ $crmEmailUploadLabel }})" hidden>
-                <i class="fas fa-upload"></i> Upload
+                <i class="fa-solid fa-upload"></i> Upload
             </button>
             <input type="file" id="outlookEmailFileInput" accept="{{ $crmEmailUploadAccept }}" multiple hidden>
         </div>
         <div id="uploadStatus" class="upload-status" hidden></div>
 
         <div id="inlineDropZone" class="inline-drop-zone">
-            <i class="fas fa-cloud-upload-alt"></i>
+            <i class="fa-solid fa-cloud-arrow-up"></i>
             <span>Drag & drop saved Outlook email files ({{ $crmEmailUploadLabel }}) here </span>
         </div>
 
         <div class="list-header">
             <div class="list-header-row">
                 <div class="search-box">
-                    <i class="fas fa-search search-box-icon" aria-hidden="true"></i>
+                    <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
                     <input type="text" id="searchInput" placeholder="Search emails...">
                 </div>
             </div>
@@ -165,8 +165,8 @@
         <div class="pagination-bar">
             <span id="pageInfo">Loading...</span>
             <div class="pagination-controls">
-                <button id="prevBtn" disabled><i class="fas fa-chevron-left"></i></button>
-                <button id="nextBtn" disabled><i class="fas fa-chevron-right"></i></button>
+                <button id="prevBtn" disabled><i class="fa-solid fa-chevron-left"></i></button>
+                <button id="nextBtn" disabled><i class="fa-solid fa-chevron-right"></i></button>
             </div>
         </div>
     </div>
@@ -175,7 +175,7 @@
     <div class="outlook-reading-pane">
         <!-- Empty State -->
         <div class="empty-state" id="emptyState">
-            <i class="far fa-envelope-open"></i>
+            <i class="fa-regular fa-envelope-open"></i>
             <p>Select an item to read</p>
         </div>
 
@@ -183,12 +183,12 @@
         <div class="reading-pane-content" id="readingPane">
             <div class="reading-header">
                 <div class="action-bar">
-                    <button class="action-btn" id="btnReply"><i class="fas fa-reply"></i> Reply</button>
-                    <button class="action-btn" id="btnReplyAll"><i class="fas fa-reply-all"></i> Reply All</button>
-                    <button class="action-btn" id="btnForward"><i class="fas fa-share"></i> Forward</button>
+                    <button class="action-btn" id="btnReply"><i class="fa-solid fa-reply"></i> Reply</button>
+                    <button class="action-btn" id="btnReplyAll"><i class="fa-solid fa-reply-all"></i> Reply All</button>
+                    <button class="action-btn" id="btnForward"><i class="fa-solid fa-share"></i> Forward</button>
                     @if($canDeleteEmail)
                     <button type="button" class="action-btn action-btn--danger" id="btnDeleteEmail" title="Delete email and attachments">
-                        <i class="fas fa-trash"></i> Delete
+                        <i class="fa-solid fa-trash"></i> Delete
                     </button>
                     @endif
                 </div>
@@ -219,10 +219,10 @@
 <div class="compose-modal" id="composeModal">
     <div class="compose-header">
         <div class="compose-header-main">
-            <i class="fas fa-envelope compose-header-icon" aria-hidden="true"></i>
+            <i class="fa-solid fa-envelope compose-header-icon" aria-hidden="true"></i>
             <span class="compose-title" id="composeTitle">New Message</span>
         </div>
-        <button type="button" class="compose-close" id="closeModal" aria-label="Close"><i class="fas fa-times"></i></button>
+        <button type="button" class="compose-close" id="closeModal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="compose-body">
         <div class="compose-field">
@@ -235,14 +235,14 @@
         </div>
         <div class="compose-message-stack">
             <div class="compose-format-bar" id="composeFormatBar" role="toolbar" aria-label="Formatting">
-                <button type="button" class="compose-format-btn" data-cmd="bold" title="Bold"><i class="fas fa-bold"></i></button>
-                <button type="button" class="compose-format-btn" data-cmd="italic" title="Italic"><i class="fas fa-italic"></i></button>
-                <button type="button" class="compose-format-btn" data-cmd="underline" title="Underline"><i class="fas fa-underline"></i></button>
+                <button type="button" class="compose-format-btn" data-cmd="bold" title="Bold"><i class="fa-solid fa-bold"></i></button>
+                <button type="button" class="compose-format-btn" data-cmd="italic" title="Italic"><i class="fa-solid fa-italic"></i></button>
+                <button type="button" class="compose-format-btn" data-cmd="underline" title="Underline"><i class="fa-solid fa-underline"></i></button>
                 <span class="compose-format-sep" aria-hidden="true"></span>
-                <button type="button" class="compose-format-btn" data-cmd="insertUnorderedList" title="Bullet list"><i class="fas fa-list-ul"></i></button>
-                <button type="button" class="compose-format-btn" data-cmd="insertOrderedList" title="Numbered list"><i class="fas fa-list-ol"></i></button>
+                <button type="button" class="compose-format-btn" data-cmd="insertUnorderedList" title="Bullet list"><i class="fa-solid fa-list-ul"></i></button>
+                <button type="button" class="compose-format-btn" data-cmd="insertOrderedList" title="Numbered list"><i class="fa-solid fa-list-ol"></i></button>
                 <span class="compose-format-sep" aria-hidden="true"></span>
-                <button type="button" class="compose-format-btn" data-cmd="removeFormat" title="Clear formatting"><i class="fas fa-eraser"></i></button>
+                <button type="button" class="compose-format-btn" data-cmd="removeFormat" title="Clear formatting"><i class="fa-solid fa-eraser"></i></button>
             </div>
             <div id="composeReplyInput" class="compose-reply-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Type your message..."></div>
             <div id="composeQuoteWrap" class="compose-quote-wrap" hidden>
@@ -260,7 +260,7 @@
         </div>
     </div>
     <div class="compose-footer">
-        <button type="button" class="btn-send" id="btnSend"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send</button>
+        <button type="button" class="btn-send" id="btnSend"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Send</button>
         <button type="button" class="btn-discard" id="btnDiscard">Discard</button>
     </div>
 </div>
@@ -269,7 +269,7 @@
 <div class="email-upload-loading-overlay" id="emailUploadLoadingOverlay" aria-hidden="true" aria-live="polite" aria-busy="false">
     <div class="email-upload-loading-card" role="status">
         <div class="email-upload-loading-icon" aria-hidden="true">
-            <i class="fas fa-envelope"></i>
+            <i class="fa-solid fa-envelope"></i>
             <span class="email-upload-loading-spinner"></span>
         </div>
         <h3 class="email-upload-loading-title" id="emailUploadLoadingTitle">Uploading email</h3>
@@ -286,7 +286,7 @@
 <div class="duplicate-email-modal-overlay" id="duplicateEmailModal" aria-hidden="true">
     <div class="duplicate-email-modal" role="dialog" aria-labelledby="duplicateEmailModalTitle" aria-modal="true">
         <div class="duplicate-email-modal__icon" aria-hidden="true">
-            <i class="fas fa-envelope-open-text"></i>
+            <i class="fa-solid fa-envelope-open-text"></i>
         </div>
         <h3 class="duplicate-email-modal__title" id="duplicateEmailModalTitle">Duplicate Email</h3>
         <p class="duplicate-email-modal__message">This email already exists.</p>
@@ -309,7 +309,7 @@
         <div class="attachment-storage-modal__header">
             <div class="attachment-storage-modal__header-main">
                 <div class="attachment-storage-modal__icon" aria-hidden="true">
-                    <i class="fas fa-paperclip"></i>
+                    <i class="fa-solid fa-paperclip"></i>
                 </div>
                 <div>
                     <h3 id="attachmentStorageModalTitle">Save Attachments to Documents</h3>
@@ -323,11 +323,11 @@
             <span class="attachment-storage-mode__label">How do you want to save these files?</span>
             <div class="attachment-storage-mode__toggle" role="group" aria-label="Attachment save mode">
                 <button type="button" class="attachment-mode-btn active" data-mode="bulk" id="attachmentModeBulk">
-                    <i class="fas fa-layer-group" aria-hidden="true"></i>
+                    <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
                     Same folder for all
                 </button>
                 <button type="button" class="attachment-mode-btn" data-mode="individual" id="attachmentModeIndividual">
-                    <i class="fas fa-sliders-h" aria-hidden="true"></i>
+                    <i class="fa-solid fa-sliders-h" aria-hidden="true"></i>
                     Different per file
                 </button>
             </div>
@@ -368,7 +368,7 @@
         <div class="attachment-storage-modal__actions">
             <button type="button" class="attachment-storage-modal__btn attachment-storage-modal__btn--cancel" id="attachmentStorageCancel">Cancel upload</button>
             <button type="button" class="attachment-storage-modal__btn attachment-storage-modal__btn--confirm" id="attachmentStorageConfirm">
-                <i class="fas fa-upload" aria-hidden="true"></i> Continue upload
+                <i class="fa-solid fa-upload" aria-hidden="true"></i> Continue upload
             </button>
         </div>
     </div>

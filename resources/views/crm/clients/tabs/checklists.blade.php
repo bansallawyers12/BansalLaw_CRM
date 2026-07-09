@@ -2,10 +2,10 @@
            <div class="tab-pane" id="checklists-tab">
                 <div class="card full-width checklists-container">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0"><i class="fas fa-tasks me-2"></i>Checklists</h4>
+                        <h4 class="mb-0"><i class="fa-solid fa-list-check me-2"></i>Checklists</h4>
                         <div class="checklist-add-wrapper position-relative">
                             <button type="button" class="btn btn-primary btn-add-checklist" id="btn-add-checklist">
-                                <i class="fas fa-plus me-2"></i>Create Checklist
+                                <i class="fa-solid fa-plus me-2"></i>Create Checklist
                             </button>
                             <div class="checklist-create-dropdown" id="checklist-create-dropdown" style="display: none;">
                                 <div class="dropdown-arrow"></div>
@@ -63,7 +63,7 @@
                                                         @endforeach
                                                     </select>
                                                     <small class="form-text text-muted">
-                                                        <i class="fas fa-building"></i> This matter will be handled by the selected office
+                                                        <i class="fa-solid fa-building"></i> This matter will be handled by the selected office
                                                     </small>
                                                 </div>
                                             </div>
@@ -105,7 +105,7 @@
                             </div>
                         @endif
                         <div class="checklists-sent-section">
-                            <h5 class="font-weight-bold mb-3"><i class="fas fa-list me-2"></i>Your Checklists</h5>
+                            <h5 class="font-weight-bold mb-3"><i class="fa-solid fa-list me-2"></i>Your Checklists</h5>
                             <div id="checklists-list-container">
                                 <?php
                                 $checklist_forms = collect();
@@ -118,7 +118,7 @@
                                 ?>
                                 @if($checklist_forms->isEmpty())
                                     <div class="alert alert-info" id="checklists-empty-state">
-                                        <i class="fas fa-info-circle me-2"></i>
+                                        <i class="fa-solid fa-circle-info me-2"></i>
                                         No checklists yet. Click <strong>Create Checklist</strong> to add one. You'll select matter, assign Legal Practitioner and team, complete cost assignment, and create cost agreement.
                                     </div>
                                     <div id="checklists-list" style="display: none;"></div>
@@ -153,7 +153,7 @@
                                                 <div class="checklist-item-header" data-bs-toggle="collapse" data-bs-target="#checklist-detail-{{ $form->id }}">
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <div class="d-flex align-items-center">
-                                                            <i class="fas fa-chevron-right checklist-toggle-icon me-2"></i>
+                                                            <i class="fa-solid fa-chevron-right checklist-toggle-icon me-2"></i>
                                                             <div>
                                                                 <strong class="checklist-matter-name">{{ $matterName }}</strong>
                                                                 <span class="checklist-date ms-2 small">{{ $form->created_at ? $form->created_at->format('d/m/Y') : '' }}</span>
@@ -162,14 +162,14 @@
                                                         <div class="checklist-summary d-flex align-items-center">
                                                             @if(($fetchedData->type ?? null) === 1 || in_array(trim((string) ($fetchedData->type ?? '')), ['lead', 'l', '1'], true))
                                                             <button type="button" class="btn btn-sm btn-outline-primary convertLeadToClient me-2" onclick="event.stopPropagation(); $('#convertLeadToClientModal').modal('show');" title="Convert to Client">
-                                                                <i class="fas fa-user-check me-1"></i> Convert to Client
+                                                                <i class="fa-solid fa-user-check me-1"></i> Convert to Client
                                                             </button>
                                                             @endif
                                                             <span class="badge badge-info me-2">
-                                                                <i class="fas fa-users"></i> {{ $office ? $office->office_name : 'No Office' }}
+                                                                <i class="fa-solid fa-users"></i> {{ $office ? $office->office_name : 'No Office' }}
                                                             </span>
                                                             <span class="badge badge-success">
-                                                                <i class="fas fa-dollar-sign"></i> ${{ number_format($totalOurCost + $totalDisbursements, 2) }}
+                                                                <i class="fa-solid fa-dollar-sign"></i> ${{ number_format($totalOurCost + $totalDisbursements, 2) }}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -180,7 +180,7 @@
                                                         <div class="row">
                                                             <!-- Team Section -->
                                                             <div class="col-md-6 mb-3">
-                                                                <h6 class="font-weight-bold mb-3"><i class="fas fa-users me-2"></i>Team Members</h6>
+                                                                <h6 class="font-weight-bold mb-3"><i class="fa-solid fa-users me-2"></i>Team Members</h6>
                                                                 <div class="team-member mb-2">
                                                                     <label class="mb-1">Legal Practitioner:</label>
                                                                     <div class="font-weight-500">
@@ -202,14 +202,14 @@
                                                                 <div class="team-member">
                                                                     <label class="mb-1">Handling Office:</label>
                                                                     <div class="font-weight-500">
-                                                                        <i class="fas fa-building me-1 text-primary"></i>{{ $office ? $office->office_name : 'No Office Assigned' }}
+                                                                        <i class="fa-solid fa-building me-1 text-primary"></i>{{ $office ? $office->office_name : 'No Office Assigned' }}
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                             
                                                             <!-- Cost Breakdown Section (compact) -->
                                                             <div class="col-md-6 mb-3 cost-breakdown-col">
-                                                                <h6 class="font-weight-bold cost-breakdown-title"><i class="fas fa-calculator me-2"></i>Cost Breakdown</h6>
+                                                                <h6 class="font-weight-bold cost-breakdown-title"><i class="fa-solid fa-calculator me-2"></i>Cost Breakdown</h6>
                                                                 <div class="cost-item cost-breakdown-item">
                                                                     <div class="d-flex justify-content-between align-items-center">
                                                                         <span>Our Cost (Block Fees):</span>
@@ -231,7 +231,7 @@
                                                                 </div>
                                                                 <div class="cost-breakdown-edit mt-2">
                                                                     <button type="button" class="btn btn-outline-secondary btn-sm btn-amend-checklist" data-id="{{ $form->id }}" data-client-id="{{ $fetchedData->id ?? '' }}" data-client-matter-id="{{ $form->client_matter_id }}" title="Amend Cost Assignment">
-                                                                        <i class="fas fa-edit me-1"></i>Edit
+                                                                        <i class="fa-solid fa-pen-to-square me-1"></i>Edit
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -241,11 +241,11 @@
                                                         <div class="checklist-actions-section mt-3 pt-3 border-top">
                                                             <div class="row">
                                                                 <div class="col-12">
-                                                                    <h6 class="font-weight-bold mb-3"><i class="fas fa-tools me-2"></i>Actions</h6>
+                                                                    <h6 class="font-weight-bold mb-3"><i class="fa-solid fa-tools me-2"></i>Actions</h6>
                                                                     <div class="d-flex flex-wrap gap-2">
                                                                         @if($agreementDoc && $agreementDoc->status === 'signed' && $agreementDoc->signed_doc_link)
                                                                         <a href="{{ route('documents.download.signed', $agreementDoc->id) }}" target="_blank" class="btn btn-success btn-sm" title="Download Signed Document">
-                                                                            <i class="fas fa-download me-1"></i>Download Signed
+                                                                            <i class="fa-solid fa-download me-1"></i>Download Signed
                                                                         </a>
                                                                         @endif
                                                                         <button type="button" class="btn btn-outline-info btn-sm btn-send-checklist" title="Send Document Checklist to client"
@@ -253,13 +253,13 @@
                                                                             data-client-email="{{ $fetchedData->email ?? '' }}"
                                                                             data-client-name="{{ trim(($fetchedData->first_name ?? '') . ' ' . ($fetchedData->last_name ?? '')) ?: ($fetchedData->company_name ?? '') }}"
                                                                             data-client-matter-id="{{ $form->client_matter_id ?? '' }}">
-                                                                            <i class="fas fa-paper-plane me-1"></i>Send Checklist
+                                                                            <i class="fa-solid fa-paper-plane me-1"></i>Send Checklist
                                                                         </button>
                                                                         <button type="button" class="btn btn-primary btn-sm visaAgreementCreateForm" data-id="{{ $form->id }}" data-client-matter-id="{{ $form->client_matter_id }}" title="Create Visa Agreement">
-                                                                            <i class="fas fa-file-contract me-1"></i>Create Visa Agreement
+                                                                            <i class="fa-solid fa-file-contract me-1"></i>Create Visa Agreement
                                                                         </button>
                                                                         <button type="button" class="btn btn-success btn-sm finalizeAgreementConvertToPdf" data-id="{{ $form->id }}" data-client-matter-id="{{ $form->client_matter_id }}" title="Upload PDF and place signature fields">
-                                                                            <i class="fas fa-lock me-1"></i>Upload and Place Signatures
+                                                                            <i class="fa-solid fa-lock me-1"></i>Upload and Place Signatures
                                                                         </button>
                                                                     </div>
                                                                 </div>
@@ -268,10 +268,10 @@
                                                             @if($agreementDoc && $agreementDoc->status === 'signed' && $agreementDoc->signed_doc_link)
                                                             <!-- Document Signed - Download Section -->
                                                             <div class="signature-section mt-3 p-3 rounded border border-success" style="background-color: rgba(40, 167, 69, 0.1);">
-                                                                <h6 class="font-weight-bold mb-2 text-success"><i class="fas fa-check-circle me-2"></i>Document Signed</h6>
+                                                                <h6 class="font-weight-bold mb-2 text-success"><i class="fa-solid fa-circle-check me-2"></i>Document Signed</h6>
                                                                 <p class="mb-2 small text-muted">The client has signed the cost agreement. Download the signed copy below.</p>
                                                                 <a href="{{ route('documents.download.signed', $agreementDoc->id) }}" target="_blank" class="btn btn-success btn-sm">
-                                                                    <i class="fas fa-download me-1"></i>Download Signed Document
+                                                                    <i class="fa-solid fa-download me-1"></i>Download Signed Document
                                                                 </a>
                                                             </div>
                                                             @elseif($agreementDoc && $agreementDoc->signature_doc_link)
@@ -287,7 +287,7 @@
                                                             @endphp
                                                             <!-- Signature Link Section -->
                                                             <div class="signature-section mt-3 p-3 bg-light rounded">
-                                                                <h6 class="font-weight-bold mb-2"><i class="fas fa-signature me-2"></i>Signature Link</h6>
+                                                                <h6 class="font-weight-bold mb-2"><i class="fa-solid fa-signature me-2"></i>Signature Link</h6>
                                                                 @if($signingUrl)
                                                                 <div class="mb-2">
                                                                     <small class="text-muted">
@@ -298,10 +298,10 @@
                                                                     <input type="text" class="form-control signature-link-input" value="{{ $signingUrl }}" readonly>
                                                                     <div class="input-group-append">
                                                                         <button class="btn btn-outline-secondary btn-copy-signature-link" type="button" data-link="{{ $signingUrl }}">
-                                                                            <i class="fas fa-copy"></i> Copy
+                                                                            <i class="fa-solid fa-copy"></i> Copy
                                                                         </button>
                                                                         <a href="{{ $signingUrl }}" target="_blank" class="btn btn-outline-primary">
-                                                                            <i class="fas fa-external-link-alt"></i> View
+                                                                            <i class="fa-solid fa-up-right-from-square"></i> View
                                                                         </a>
                                                                         <button type="button" class="btn btn-info btn-send-signature-email" title="Send Email with Signature Link"
                                                                             data-signing-url="{{ $signingUrl }}"
@@ -311,7 +311,7 @@
                                                                             data-client-email="{{ $fetchedData->email ?? '' }}"
                                                                             data-client-name="{{ $fetchedData->first_name ?? '' }} {{ $fetchedData->last_name ?? '' }}"
                                                                             data-client-matter-id="{{ $form->client_matter_id }}">
-                                                                            <i class="fas fa-envelope me-1"></i> Send Email
+                                                                            <i class="fa-solid fa-envelope me-1"></i> Send Email
                                                                         </button>
                                                                         @if($primarySigner)
                                                                         <form action="{{ route('signatures.reminder', $agreementDoc->id) }}" method="POST" class="d-inline ms-1" onsubmit="return confirm('Send a reminder email to the signer?');">
@@ -319,37 +319,37 @@
                                                                             <input type="hidden" name="signer_id" value="{{ $primarySigner->id }}">
                                                                             <button type="submit" class="btn btn-warning" title="Send reminder to signer"
                                                                                 {{ $primarySigner->reminder_count >= 3 ? 'disabled' : '' }}>
-                                                                                <i class="fas fa-bell me-1"></i> Send Reminder ({{ $primarySigner->reminder_count }}/3)
+                                                                                <i class="fa-solid fa-bell me-1"></i> Send Reminder ({{ $primarySigner->reminder_count }}/3)
                                                                             </button>
                                                                         </form>
                                                                         @endif
                                                                     </div>
                                                                 </div>
                                                                 <small class="text-muted d-block mt-2">
-                                                                    <i class="fas fa-info-circle"></i> Share this link with the client to sign the agreement
+                                                                    <i class="fa-solid fa-circle-info"></i> Share this link with the client to sign the agreement
                                                                 </small>
                                                                 @if($primarySigner)
                                                                 <small class="text-muted d-block mt-1">
                                                                     @if($primarySigner->last_reminder_sent_at)
-                                                                        <i class="fas fa-clock"></i> Last reminder: {{ $primarySigner->last_reminder_sent_at->format('M d, Y g:i A') }}
+                                                                        <i class="fa-solid fa-clock"></i> Last reminder: {{ $primarySigner->last_reminder_sent_at->format('M d, Y g:i A') }}
                                                                     @else
-                                                                        <i class="fas fa-info-circle"></i> No reminders sent yet
+                                                                        <i class="fa-solid fa-circle-info"></i> No reminders sent yet
                                                                     @endif
                                                                 </small>
                                                                 @endif
                                                                 @else
                                                                 <div class="alert alert-warning mb-0">
-                                                                    <i class="fas fa-exclamation-triangle"></i> Signature link data is invalid. Please try placing signature fields again.
+                                                                    <i class="fa-solid fa-triangle-exclamation"></i> Signature link data is invalid. Please try placing signature fields again.
                                                                 </div>
                                                                 @endif
                                                             </div>
                                                             @elseif($agreementDoc)
                                                             <!-- Document Uploaded - Awaiting Signature Setup -->
                                                             <div class="signature-section mt-3 p-3 bg-warning-light rounded border border-warning">
-                                                                <h6 class="font-weight-bold mb-2"><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Signature Setup Required</h6>
+                                                                <h6 class="font-weight-bold mb-2"><i class="fa-solid fa-triangle-exclamation me-2 text-warning"></i>Signature Setup Required</h6>
                                                                 <p class="mb-2 small">The agreement has been uploaded but signature fields haven't been placed yet.</p>
                                                                 <button type="button" class="btn btn-warning btn-sm btn-place-signature-fields" data-document-id="{{ $agreementDoc->id }}" title="Place signature fields inline">
-                                                                    <i class="fas fa-pen-nib me-1"></i>Place Signature Fields
+                                                                    <i class="fa-solid fa-pen-nib me-1"></i>Place Signature Fields
                                                                 </button>
                                                             </div>
                                                             @endif
@@ -953,7 +953,7 @@
             // Visual feedback
             var $btn = $(this);
             var originalHtml = $btn.html();
-            $btn.html('<i class="fas fa-check"></i> Copied!');
+            $btn.html('<i class="fa-solid fa-check"></i> Copied!');
             $btn.addClass('btn-success').removeClass('btn-outline-secondary');
             
             setTimeout(function() {
@@ -1368,7 +1368,7 @@
                     else if (xhr.responseText && xhr.responseText.length < 200) msg = xhr.responseText;
                     alert(msg);
                 }).always(function() {
-                    $btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i>Save Signature Locations');
+                    $btn.prop('disabled', false).html('<i class="fa-solid fa-floppy-disk me-1"></i>Save Signature Locations');
                 });
             });
         }

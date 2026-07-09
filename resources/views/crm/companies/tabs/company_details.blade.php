@@ -4,10 +4,10 @@
         {{-- Company Information Card --}}
         <div class="card" style="margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3><i class="fas fa-building"></i> Company Information</h3>
+                <h3><i class="fa-solid fa-building"></i> Company Information</h3>
                 <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}" 
                    class="btn btn-sm btn-primary">
-                    <i class="fas fa-edit"></i> Edit
+                    <i class="fa-solid fa-pen-to-square"></i> Edit
                 </a>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
@@ -73,7 +73,7 @@
         @if($comp && $comp->sponsorships->isNotEmpty())
             @foreach($comp->sponsorships as $idx => $s)
             <div class="card" style="margin-bottom: 20px;">
-                <h3><i class="fas fa-file-contract"></i> Sponsorship @if($comp->sponsorships->count() > 1) ({{ $idx + 1 }}) @endif</h3>
+                <h3><i class="fa-solid fa-file-contract"></i> Sponsorship @if($comp->sponsorships->count() > 1) ({{ $idx + 1 }}) @endif</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
                     @if($s->sponsorship_type)<div class="field-group"><span class="field-label">Type:</span><span class="field-value">{{ $s->sponsorship_type }}</span></div>@endif
                     @if($s->sponsorship_status)<div class="field-group"><span class="field-label">Status:</span><span class="field-value">{{ $s->sponsorship_status }}</span></div>@endif
@@ -88,7 +88,7 @@
             @endforeach
         @elseif($comp && ($comp->sponsorship_type || $comp->sponsorship_status || $comp->trn))
         <div class="card" style="margin-bottom: 20px;">
-            <h3><i class="fas fa-file-contract"></i> Sponsorship</h3>
+            <h3><i class="fa-solid fa-file-contract"></i> Sponsorship</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
                 @if($comp->sponsorship_type)<div class="field-group"><span class="field-label">Type:</span><span class="field-value">{{ $comp->sponsorship_type }}</span></div>@endif
                 @if($comp->sponsorship_status)<div class="field-group"><span class="field-label">Status:</span><span class="field-value">{{ $comp->sponsorship_status }}</span></div>@endif
@@ -102,7 +102,7 @@
         {{-- Directors Card --}}
         @if($comp && $comp->directors->isNotEmpty())
         <div class="card" style="margin-bottom: 20px;">
-            <h3><i class="fas fa-users-cog"></i> Directors</h3>
+            <h3><i class="fa-solid fa-users-cog"></i> Directors</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
                 @foreach($comp->directors as $dir)
                 @php $dirName = $dir->directorClient ? trim($dir->directorClient->first_name.' '.$dir->directorClient->last_name) : ($dir->director_name ?? ''); @endphp
@@ -115,7 +115,7 @@
         {{-- Financial Card --}}
         @if($comp && ($comp->annual_turnover || $comp->wages_expenditure))
         <div class="card" style="margin-bottom: 20px;">
-            <h3><i class="fas fa-dollar-sign"></i> Financial</h3>
+            <h3><i class="fa-solid fa-dollar-sign"></i> Financial</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
                 @if($comp->annual_turnover)<div class="field-group"><span class="field-label">Annual Turnover:</span><span class="field-value">${{ number_format($comp->annual_turnover, 2) }}</span></div>@endif
                 @if($comp->wages_expenditure)<div class="field-group"><span class="field-label">Wages Expenditure:</span><span class="field-value">${{ number_format($comp->wages_expenditure, 2) }}</span></div>@endif
@@ -127,7 +127,7 @@
         @php $hasWorkforce = $comp && ($comp->workforce_australian_citizens !== null || $comp->workforce_permanent_residents !== null || $comp->workforce_temp_visa_holders !== null || $comp->workforce_total !== null || $comp->workforce_foreign_494 !== null || $comp->workforce_foreign_other_temp_activity !== null || $comp->workforce_foreign_overseas_students !== null || $comp->workforce_foreign_working_holiday !== null || $comp->workforce_foreign_other !== null); @endphp
         @if($hasWorkforce)
         <div class="card" style="margin-bottom: 20px;">
-            <h3><i class="fas fa-users"></i> Workforce</h3>
+            <h3><i class="fa-solid fa-users"></i> Workforce</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 15px;">
                 @if($comp->workforce_australian_citizens !== null)<div class="field-group"><span class="field-label">workforce_aus_professionals:</span><span class="field-value">{{ $comp->workforce_australian_citizens }}</span></div>@endif
                 @if($comp->workforce_permanent_residents !== null)<div class="field-group"><span class="field-label">workforce_aus_tradespersons:</span><span class="field-value">{{ $comp->workforce_permanent_residents }}</span></div>@endif
@@ -145,7 +145,7 @@
         {{-- Operations Card --}}
         @if($comp && ($comp->business_operating_since || $comp->main_business_activity))
         <div class="card" style="margin-bottom: 20px;">
-            <h3><i class="fas fa-briefcase"></i> Operations</h3>
+            <h3><i class="fa-solid fa-briefcase"></i> Operations</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
                 @if($comp->business_operating_since)<div class="field-group"><span class="field-label">Operating Since:</span><span class="field-value">{{ $comp->business_operating_since->format('d/m/Y') }}</span></div>@endif
                 @if($comp->main_business_activity)<div class="field-group"><span class="field-label">Main Activity:</span><span class="field-value">{{ $comp->main_business_activity }}</span></div>@endif
@@ -156,7 +156,7 @@
         {{-- LMT Card --}}
         @if($comp && ($comp->lmt_required !== null || $comp->lmt_start_date || $comp->lmt_notes))
         <div class="card" style="margin-bottom: 20px;">
-            <h3><i class="fas fa-clipboard-check"></i> Labour Market Testing (LMT)</h3>
+            <h3><i class="fa-solid fa-clipboard-check"></i> Labour Market Testing (LMT)</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
                 @if($comp->lmt_required !== null)<div class="field-group"><span class="field-label">LMT Required:</span><span class="field-value">{{ $comp->lmt_required ? 'Yes' : 'No' }}</span></div>@endif
                 @if($comp->lmt_start_date)<div class="field-group"><span class="field-label">Start:</span><span class="field-value">{{ $comp->lmt_start_date->format('d/m/Y') }}</span></div>@endif
@@ -169,7 +169,7 @@
         {{-- Training Card --}}
         @if($comp && ($comp->training_position_title || $comp->trainer_name))
         <div class="card" style="margin-bottom: 20px;">
-            <h3><i class="fas fa-graduation-cap"></i> Training</h3>
+            <h3><i class="fa-solid fa-graduation-cap"></i> Training</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
                 @if($comp->training_position_title)<div class="field-group"><span class="field-label">Position Title:</span><span class="field-value">{{ $comp->training_position_title }}</span></div>@endif
                 @if($comp->trainer_name)<div class="field-group"><span class="field-label">Trainer Name:</span><span class="field-value">{{ $comp->trainer_name }}</span></div>@endif
@@ -180,7 +180,7 @@
         {{-- Nominations Card --}}
         @if($comp && $comp->nominations->isNotEmpty())
         <div class="card" style="margin-bottom: 20px;">
-            <h3><i class="fas fa-user-check"></i> Nominations</h3>
+            <h3><i class="fa-solid fa-user-check"></i> Nominations</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 15px;">
                 @foreach($comp->nominations as $nom)
                 <div class="field-group">
@@ -212,7 +212,7 @@
 
         {{-- Company Phone & Email Card --}}
         <div class="card" style="margin-bottom: 20px;">
-            <h3><i class="fas fa-phone"></i> Contact Information</h3>
+            <h3><i class="fa-solid fa-phone"></i> Contact Information</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
                 {{-- Company Phone Number --}}
                 <div class="field-group">
@@ -248,15 +248,15 @@
 
                                 if( isset($conVal->contact_type) && $conVal->contact_type != "" ){
                                     if ( $conVal->is_verified ) {
-                                        $phonenoStr .= $formattedPhone.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                        $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                     } else {
-                                        $phonenoStr .= $formattedPhone.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                        $phonenoStr .= $formattedPhone.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                     }
                                 } else {
                                     if ( isset($conVal->is_verified) && $conVal->is_verified ) {
-                                        $phonenoStr .= $formattedPhone.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                        $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                     } else {
-                                        $phonenoStr .= $formattedPhone.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                        $phonenoStr .= $formattedPhone.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                     }
                                 }
                             }
@@ -291,15 +291,15 @@
                                 $check_verified_email = $emailVal->email_type."".$emailVal->email;
                                 if( isset($emailVal->email_type) && $emailVal->email_type != "" ){
                                     if ( $emailVal->is_verified ) {
-                                        $emailStr .= $emailVal->email.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                        $emailStr .= $emailVal->email.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                     } else {
-                                        $emailStr .= $emailVal->email.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                        $emailStr .= $emailVal->email.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                     }
                                 } else {
                                     if ( isset($emailVal->is_verified) && $emailVal->is_verified ) {
-                                        $emailStr .= $emailVal->email.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                        $emailStr .= $emailVal->email.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                     } else {
-                                        $emailStr .= $emailVal->email.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                        $emailStr .= $emailVal->email.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                     }
                                 }
                             }
@@ -316,10 +316,10 @@
         @if($fetchedData->company->contactPerson)
             <div class="card" style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h3><i class="fas fa-user-tie"></i> Primary Contact Person</h3>
+                    <h3><i class="fa-solid fa-user-tie"></i> Primary Contact Person</h3>
                     <a href="{{ route('clients.detail', base64_encode(convert_uuencode($fetchedData->company->contactPerson->id))) }}" 
                        class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-external-link-alt"></i> View Profile
+                        <i class="fa-solid fa-up-right-from-square"></i> View Profile
                     </a>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
@@ -366,11 +366,11 @@
 
         {{-- Tags Section --}}
         <div class="card">
-            <h3><i class="fas fa-address-card"></i> Tag(s):   
+            <h3><i class="fa-solid fa-address-card"></i> Tag(s):   
                 <span class="float-right text-muted" style="margin-left:180px;">
                 <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-primary opentagspopup btn-sm">Add Tag</a>
                 <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-outline-danger openredtagspopup btn-sm ms-1" title="Add Tag (hidden by default)">
-                    <i class="fas fa-exclamation-triangle"></i> Add Tag
+                    <i class="fa-solid fa-triangle-exclamation"></i> Add Tag
                 </a>
                 </span>
             </h3>
@@ -390,7 +390,7 @@
                 @if($redTagCount > 0)
                     <div class="red-tags-section" style="display: none; margin-top: 10px;">
                         <div style="margin-bottom: 5px; font-size: 11px; color: #dc3545; font-weight: bold;">
-                            <i class="fas fa-exclamation-triangle"></i> Red Tags:
+                            <i class="fa-solid fa-triangle-exclamation"></i> Red Tags:
                         </div>
                         @foreach($redTags as $tagName)
                             <span class="ui label tag-red ag-flex ag-align-center ag-space-between" style="display: inline-flex; margin: 5px 5px 5px 0; background-color: #dc3545; border: 1px solid #c82333;">
@@ -401,7 +401,7 @@
                     
                     <div style="margin-top: 10px;">
                         <a href="javascript:;" id="toggleRedTags" class="btn btn-sm btn-outline-danger" data-client-id="{{$fetchedData->id}}" title="Show Red Tags">
-                            <i class="fas fa-eye"></i>
+                            <i class="fa-solid fa-eye"></i>
                         </a>
                     </div>
                 @endif
@@ -477,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set initial state
         if (isVisible) {
             redTagsSection.style.display = 'block';
-            toggleRedTagsBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            toggleRedTagsBtn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
             toggleRedTagsBtn.classList.remove('btn-outline-danger');
             toggleRedTagsBtn.classList.add('btn-danger');
             toggleRedTagsBtn.title = 'Hide Red Tags';
@@ -489,7 +489,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (isCurrentlyVisible) {
                 // Hide red tags
                 redTagsSection.style.display = 'none';
-                this.innerHTML = '<i class="fas fa-eye"></i>';
+                this.innerHTML = '<i class="fa-solid fa-eye"></i>';
                 this.classList.remove('btn-danger');
                 this.classList.add('btn-outline-danger');
                 this.title = 'Show Red Tags';
@@ -497,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 // Show red tags
                 redTagsSection.style.display = 'block';
-                this.innerHTML = '<i class="fas fa-eye-slash"></i>';
+                this.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
                 this.classList.remove('btn-outline-danger');
                 this.classList.add('btn-danger');
                 this.title = 'Hide Red Tags';

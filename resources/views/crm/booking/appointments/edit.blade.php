@@ -7,16 +7,16 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4>
-                    <i class="fas fa-edit me-2"></i>
+                    <i class="fa-solid fa-pen-to-square me-2"></i>
                     Edit Appointment - #{{ $appointment->id }}
                 </h4>
                 <a href="{{ route('booking.appointments.show', $appointment->id) }}" class="btn btn-sm btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Back to Appointment Details
+                    <i class="fa-solid fa-arrow-left"></i> Back to Appointment Details
                 </a>
             </div>
 
             <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i>
+                <i class="fa-solid fa-circle-info"></i>
                 Use this form to update the appointment date, time, meeting type, and preferred language.
             </div>
 
@@ -53,7 +53,7 @@
 
             <div class="card">
                 <div class="card-header bg-info text-white">
-                    <i class="fas fa-calendar-alt"></i> Update Date & Time
+                    <i class="fa-solid fa-calendar-days"></i> Update Date & Time
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ route('booking.appointments.update', $appointment->id) }}" class="needs-validation" novalidate>
@@ -205,7 +205,7 @@
                         </div>
                         <div class="form-group mb-0">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Update Appointment
+                                <i class="fa-solid fa-floppy-disk"></i> Update Appointment
                             </button>
                             <a href="{{ route('booking.appointments.index') }}" class="btn btn-light ms-2">Cancel</a>
                         </div>

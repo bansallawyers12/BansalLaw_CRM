@@ -185,7 +185,7 @@
                 </div>
                 <div class="card-header">
                     <h4>All Clients Email List</h4>
-                    <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fas fa-filter"></i> Filter</a>
+                    <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fa-solid fa-filter"></i> Filter</a>
                 </div>
                 
                 <div class="card-body">
@@ -258,8 +258,8 @@
                                                 <div class="dropdown d-inline">
                                                     <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-haspopup="true" aria-expanded="false">Action</button>
                                                     <div class="dropdown-menu dropdown-menu-end">
-                                                        <a class="dropdown-item has-icon" href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->id)) )}}"><i class="fas fa-eye"></i> View Details</a>
-                                                        <a class="dropdown-item has-icon" href="mailto:{{ @$list->email }}"><i class="fas fa-envelope"></i> Send Email</a>
+                                                        <a class="dropdown-item has-icon" href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->id)) )}}"><i class="fa-solid fa-eye"></i> View Details</a>
+                                                        <a class="dropdown-item has-icon" href="mailto:{{ @$list->email }}"><i class="fa-solid fa-envelope"></i> Send Email</a>
                                                     </div>
                                                 </div>
                                             </td>

@@ -21,7 +21,7 @@
 						<div class="card-header">
 							<h4>Offices</h4>
 							<div class="card-header-action">
-								<a href="{{route('adminconsole.system.offices.index')}}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Office List</a>
+								<a href="{{route('adminconsole.system.offices.index')}}" class="btn btn-primary"><i class="fa-solid fa-arrow-left"></i> Office List</a>
 							</div>
 						</div>
 						<div class="card-body">
@@ -49,7 +49,7 @@
 						<div class="card-header">
 							<h4>Office Information</h4>
 							<div class="card-header-action">
-								<a href="{{route('adminconsole.system.offices.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" class="btn btn-primary"><i class="far fa-edit"></i> Edit office</a>
+								<a href="{{route('adminconsole.system.offices.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" class="btn btn-primary"><i class="fa-regular fa-pen-to-square"></i> Edit office</a>
 							</div>
 						</div>
 						<div class="card-body">
@@ -121,8 +121,8 @@
 							<div class="tab-content" id="clientContent" style="padding-top:15px;">
 								<div class="tab-pane fade show active" id="date" role="tabpanel" aria-labelledby="date-tab">
 									<div class="office-view-table-toolbar office-view-table-toolbar--split">
-										<a href="{{ route('adminconsole.staff.create') }}" class="btn btn-outline-primary btn-sm"><i class="fa fa-plus"></i> Add staff</a>
-										<a href="{{ route('adminconsole.system.clients.createclient') }}" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i> Add client</a>
+										<a href="{{ route('adminconsole.staff.create') }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-plus"></i> Add staff</a>
+										<a href="{{ route('adminconsole.system.clients.createclient') }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Add client</a>
 									</div>
 									<div class="table-responsive common_table">
 										<table class="table text_wrap table-2">

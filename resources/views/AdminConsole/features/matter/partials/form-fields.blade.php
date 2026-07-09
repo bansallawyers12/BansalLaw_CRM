@@ -163,5 +163,5 @@
 </div>
 
 <p class="mat-modal-scroll-hint text-muted small mb-0 mt-2">
-    <i class="fas fa-arrows-alt-v"></i> Expand each section or scroll to see all fields.
+    <i class="fa-solid fa-up-down-left-right-v"></i> Expand each section or scroll to see all fields.
 </p>

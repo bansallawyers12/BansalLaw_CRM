@@ -23,10 +23,10 @@
             </div>
             <div class="header-actions">
                 <a href="{{ route('adminconsole.system.clients.createclient') }}" class="action-btn action-btn-primary">
-                    <i class="fas fa-user-plus"></i> New client
+                    <i class="fa-solid fa-user-plus"></i> New client
                 </a>
                 <button type="button" class="action-btn action-btn-secondary" id="refreshDashboard" title="Refresh Dashboard (Alt+R)">
-                    <i class="fas fa-sync-alt"></i> Refresh
+                    <i class="fa-solid fa-rotate"></i> Refresh
                 </button>
             </div>
         </header>
@@ -38,7 +38,7 @@
                 :count="$count_active_matter" 
                 :route="route('clients.clientsmatterslist')"
                 subtitle="Open matters — go to full list"
-                icon="fas fa-briefcase"
+                icon="fa-solid fa-briefcase"
                 icon-class="icon-active" 
             />
             
@@ -46,7 +46,7 @@
                 :title="'Urgent Notes Deadlines'" 
                 :count="$count_note_deadline"
                 :subtitle="count($notesData) . ' shown below'"
-                icon="fas fa-hourglass-half"
+                icon="fa-solid fa-hourglass-half"
                 icon-class="icon-pending" 
             />
             
@@ -54,7 +54,7 @@
                 :title="'Cases Requiring Attention'" 
                 :count="$count_cases_requiring_attention_data"
                 subtitle="Matters that may need follow-up"
-                icon="fas fa-exclamation-triangle"
+                icon="fa-solid fa-triangle-exclamation"
                 icon-class="icon-pending" 
             />
         </section>
@@ -68,7 +68,7 @@
                 <div class="todo-header">
                     <div class="todo-header-left">
                         <h3>
-                            <i class="fas fa-tasks dashboard-theme-icon-primary"></i> 
+                            <i class="fa-solid fa-list-check dashboard-theme-icon-primary"></i> 
                             My Actions
                         </h3>
                         <span class="todo-count-badge">{{ count($notesData) }}</span>
@@ -77,12 +77,12 @@
                     <div id="add-task-popover-template" style="display:none;">
                         <div class="modern-popover-content add-task-layout">
                             <div class="form-group">
-                                <label class="control-label"><i class="fa fa-user-circle"></i> Client</label>
+                                <label class="control-label"><i class="fa-solid fa-user-circle"></i> Client</label>
                                 <select id="assign_client_id" class="form-control js-data-example-ajaxccsearch__addmytask" placeholder="Search and select client..."></select>
                                 <div id="client-error" class="error-message"></div>
                             </div>
                             <div class="form-group">
-                                <label class="control-label"><i class="fa fa-users"></i> Assignees</label>
+                                <label class="control-label"><i class="fa-solid fa-users"></i> Assignees</label>
                                 <div class="dropdown-multi-select" style="width: 100%;">
                                     <button type="button" class="btn btn-default dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 100%;">
                                         Select assignees <span class="selected-count"></span>
@@ -116,20 +116,20 @@
                                 <div id="assignees-error" class="error-message"></div>
                             </div>
                             <div class="form-group form-group-full-width">
-                                <label class="control-label"><i class="fa fa-comment"></i> Task Description</label>
+                                <label class="control-label"><i class="fa-solid fa-comment"></i> Task Description</label>
                                 <textarea id="assignnote" class="form-control" rows="3" placeholder="Enter task description..."></textarea>
                                 <div id="note-error" class="error-message"></div>
                             </div>
                             <input id="task_group" name="task_group" type="hidden" value="Personal Action">
                             <div class="text-center">
                                 <button type="button" class="btn btn-primary" id="add_my_task">
-                                    <i class="fa fa-plus-circle"></i> Add My Task
+                                    <i class="fa-solid fa-circle-plus"></i> Add My Task
                                 </button>
                             </div>
                         </div>
                     </div>
                     <button class="todo-add-btn add_my_task" data-container="body" data-placement="bottom-start" data-html="true" data-content-id="add-task-popover-template" title="Add New Task">
-                        <i class="fas fa-plus"></i>
+                        <i class="fa-solid fa-plus"></i>
                     </button>
                 </div>
                 
@@ -156,12 +156,12 @@
                     @else
                         <div class="todo-empty-state">
                             <div class="todo-empty-icon">
-                                <i class="fas fa-check-circle"></i>
+                                <i class="fa-solid fa-circle-check"></i>
                             </div>
                             <h4>All caught up!</h4>
                             <p>You have no actions at the moment.</p>
                             <button class="todo-empty-add-btn add_my_task" data-container="body" data-placement="bottom-start" data-html="true" data-content-id="add-task-popover-template" title="Add New Task">
-                                <i class="fas fa-plus"></i>
+                                <i class="fa-solid fa-plus"></i>
                                 Add an action
                             </button>
                         </div>
@@ -173,7 +173,7 @@
             <div class="focus-container">
                 <div class="focus-header">
                     <h3>
-                        <i class="fas fa-exclamation-circle" style="color: var(--warning-color);"></i> 
+                        <i class="fa-solid fa-circle-exclamation" style="color: var(--warning-color);"></i> 
                         Cases Requiring Attention
                     </h3>
                     <span class="badge-count">{{ count($cases_requiring_attention_data) }}</span>
@@ -187,7 +187,7 @@
                         </ul>
                     @else
                         <div class="empty-state-modern empty-state-modern--compact">
-                            <i class="fas fa-thumbs-up fa-2x"></i>
+                            <i class="fa-solid fa-thumbs-up fa-2x"></i>
                             <h4>Great Work!</h4>
                             <p>No cases requiring immediate attention.</p>
                         </div>
@@ -201,7 +201,7 @@
             <div class="cases-overview-header">
                 <div class="header-left">
                     <h3>
-                        <i class="fas fa-table"></i> 
+                        <i class="fa-solid fa-table"></i> 
                         Client Matters 
                         <span class="total-count">({{ $data->total() }} total)</span>
                     </h3>
@@ -258,7 +258,7 @@
                                     @endphp
                                     @if($emailCount > 0)
                                         <span class="badge badge-email" title="{{ $emailCount }} unread emails">
-                                            <i class="fas fa-envelope"></i> {{ $emailCount }}
+                                            <i class="fa-solid fa-envelope"></i> {{ $emailCount }}
                                         </span>
                                     @endif
                                 </td>
@@ -342,7 +342,7 @@
                                 <td class="matter-row-action">
                                     @if(!empty($clientDetailParams))
                                         <a href="{{ route('clients.detail', $clientDetailParams) }}" class="matter-row-open" title="Open matter">
-                                            <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                                            <i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i>
                                         </a>
                                     @endif
                                 </td>
@@ -352,12 +352,12 @@
                             <tr>
                                 <td colspan="9" class="empty-state">
                                     <div class="empty-state-modern">
-                                        <i class="fas fa-inbox fa-3x"></i>
+                                        <i class="fa-solid fa-inbox fa-3x"></i>
                                         <h4>No Records Found</h4>
                                         <p>Try adjusting your filters or search criteria.</p>
                                         @if($dashboardFiltersActive)
                                             <a href="{{ route('dashboard') }}" class="btn btn-primary mt-3">
-                                                <i class="fas fa-times"></i> Clear All Filters
+                                                <i class="fa-solid fa-xmark"></i> Clear All Filters
                                             </a>
                                         @endif
                                     </div>
@@ -1345,7 +1345,7 @@ $(function () {
             placement: 'top',
             boundary: 'viewport',
             container: 'body',
-            title: '<i class="fa fa-plus-circle"></i> Add New Task',
+            title: '<i class="fa-solid fa-circle-plus"></i> Add New Task',
             template: '<div class="popover add-my-task-popover" role="tooltip"><div class="popover-header"></div><div class="popover-body"></div></div>'
         };
         if (contentId && $('#' + contentId).length) {
@@ -1572,14 +1572,14 @@ window.showToast = function(message, type = 'info') {
     toast.className = `toast toast-${type}`;
     
     const icon = {
-        success: 'fa-check-circle',
-        error: 'fa-exclamation-circle',
-        warning: 'fa-exclamation-triangle',
-        info: 'fa-info-circle'
-    }[type] || 'fa-info-circle';
+        success: 'fa-circle-check',
+        error: 'fa-circle-exclamation',
+        warning: 'fa-triangle-exclamation',
+        info: 'fa-circle-info'
+    }[type] || 'fa-circle-info';
     
     toast.innerHTML = `
-        <i class="fas ${icon}"></i>
+        <i class="fa-solid ${icon}"></i>
         <span class="toast-message">${message}</span>
         <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
     `;

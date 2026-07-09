@@ -22,7 +22,7 @@ use App\Http\Controllers\Controller;
         <div class="sidebar-header">
             <!-- Sidebar Toggle Button -->
             <button id="sidebar-toggle" class="sidebar-toggle-btn" title="Hide Sidebar">
-                <i class="fas fa-chevron-left"></i>
+                <i class="fa-solid fa-chevron-left"></i>
             </button>
             <div class="client-info">
                 <h3 class="client-id">
@@ -50,7 +50,7 @@ use App\Http\Controllers\Controller;
                 <p class="client-name">
                     {{ $fetchedData->company->company_name ?? 'Unnamed Company' }}
                     <a href="{{route('clients.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit" class="client-name-edit">
-                        <i class="fa fa-edit"></i>
+                        <i class="fa-solid fa-pen-to-square"></i>
                     </a>
                 </p>
                 
@@ -73,11 +73,11 @@ use App\Http\Controllers\Controller;
                 <div class="sidebar-actions-row">
                     <!-- Action Icons -->
                     <div class="client-actions">
-                        <a href="javascript:;" class="create_note_d" datatype="note" title="Add Notes"><i class="fas fa-plus"></i></a>
-                        <a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{ $fetchedData->company->company_name ?? 'Unnamed Company' }}" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
-                        <a href="javascript:;" class="send-sms-btn" data-client-id="{{@$fetchedData->id}}" data-client-name="{{ $fetchedData->company->company_name ?? 'Unnamed Company' }}" title="Send SMS"><i class="fas fa-sms"></i></a>
-                        <a href="javascript:;" datatype="not_picked_call" class="not_picked_call" title="Not Picked Call"><i class="fas fa-mobile-alt"></i></a>
-                        <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#create_appoint" title="Add Appointment"><i class="fas fa-calendar-plus"></i></a>
+                        <a href="javascript:;" class="create_note_d" datatype="note" title="Add Notes"><i class="fa-solid fa-plus"></i></a>
+                        <a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{ $fetchedData->company->company_name ?? 'Unnamed Company' }}" class="clientemail" title="Compose Mail"><i class="fa-solid fa-envelope"></i></a>
+                        <a href="javascript:;" class="send-sms-btn" data-client-id="{{@$fetchedData->id}}" data-client-name="{{ $fetchedData->company->company_name ?? 'Unnamed Company' }}" title="Send SMS"><i class="fa-solid fa-sms"></i></a>
+                        <a href="javascript:;" datatype="not_picked_call" class="not_picked_call" title="Not Picked Call"><i class="fa-solid fa-mobile-screen-button"></i></a>
+                        <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#create_appoint" title="Add Appointment"><i class="fa-solid fa-calendar-plus"></i></a>
                     </div>
                     
                 </div>
@@ -271,35 +271,35 @@ use App\Http\Controllers\Controller;
             {  //if client unique reference id is present in url
             ?>
                 <button class="client-nav-button active" data-tab="companydetails">
-                    <i class="fas fa-building"></i>
+                    <i class="fa-solid fa-building"></i>
                     <span>Company Details</span>
                 </button>
                 <button class="client-nav-button" data-tab="activityfeed">
-                    <i class="fas fa-history"></i>
+                    <i class="fa-solid fa-history"></i>
                     <span>Activity</span>
                 </button>
                 <button class="client-nav-button" data-tab="noteterm">
-                    <i class="fas fa-sticky-note"></i>
+                    <i class="fa-solid fa-note-sticky"></i>
                     <span>Notes</span>
                 </button>
                 <button class="client-nav-button" data-tab="personaldocuments">
-                    <i class="fas fa-folder-open"></i>
+                    <i class="fa-solid fa-folder-open"></i>
                     <span>Company Documents</span>
                 </button>
                 <button class="client-nav-button" data-tab="nominationdocuments">
-                    <i class="fas fa-file-contract"></i>
+                    <i class="fa-solid fa-file-contract"></i>
                     <span>Nomination Documents</span>
                 </button>
                 <button class="client-nav-button" data-tab="account">
-                    <i class="fas fa-file-invoice-dollar"></i>
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
                     <span>Account</span>
                 </button>
                 <button class="client-nav-button" data-tab="emails">
-                    <i class="fas fa-inbox"></i>
+                    <i class="fa-solid fa-inbox"></i>
                     <span>Emails</span>
                 </button>
                 <button class="client-nav-button" data-tab="workflow">
-                    <i class="fas fa-stream"></i>
+                    <i class="fa-solid fa-bars-staggered"></i>
                     <span>Workflow</span>
                 </button>
                 <?php
@@ -319,19 +319,19 @@ use App\Http\Controllers\Controller;
             {  //If no matter is exist
             ?>
                 <button class="client-nav-button active" data-tab="companydetails">
-                    <i class="fas fa-building"></i>
+                    <i class="fa-solid fa-building"></i>
                     <span>Company Details</span>
                 </button>
                 <button class="client-nav-button" data-tab="activityfeed">
-                    <i class="fas fa-history"></i>
+                    <i class="fa-solid fa-history"></i>
                     <span>Activity</span>
                 </button>
                 <button class="client-nav-button" data-tab="noteterm">
-                    <i class="fas fa-sticky-note"></i>
+                    <i class="fa-solid fa-note-sticky"></i>
                     <span>Notes</span>
                 </button>
                 <button class="client-nav-button" data-tab="personaldocuments">
-                    <i class="fas fa-folder-open"></i>
+                    <i class="fa-solid fa-folder-open"></i>
                     <span>Company Documents</span>
                 </button>
             <?php
@@ -579,7 +579,7 @@ use App\Http\Controllers\Controller;
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="smsModalLabel">
-					<i class="fas fa-sms"></i> Send SMS
+					<i class="fa-solid fa-sms"></i> Send SMS
 				</h5>
 				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
@@ -599,7 +599,7 @@ use App\Http\Controllers\Controller;
 									<option value="">Select phone number...</option>
 								</select>
 								<small class="form-text text-muted">
-									<i class="fas fa-info-circle"></i> 
+									<i class="fa-solid fa-circle-info"></i> 
 									Australian numbers will use Cellcast, international numbers will use Twilio
 								</small>
 							</div>
@@ -634,7 +634,7 @@ use App\Http\Controllers\Controller;
 						<!-- Buttons -->
                         <div class="col-12">
 							<button type="submit" class="btn btn-primary" id="sendSmsBtn">
-								<i class="fas fa-paper-plane"></i> Send SMS
+								<i class="fa-solid fa-paper-plane"></i> Send SMS
 							</button>
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
@@ -804,7 +804,7 @@ use App\Http\Controllers\Controller;
 				<input type="hidden" name="client_id" id="client_id" value="">
 				<input type="hidden" name="create_new_as_red" id="create_new_as_red" value="0">
 					<div id="tags_red_mode_hint" class="alert alert-warning py-2 mb-2" style="display: none;">
-						<i class="fas fa-exclamation-triangle text-danger"></i> <strong>Red Tag mode:</strong> Any new tags you add will be created as Red tags (hidden by default).
+						<i class="fa-solid fa-triangle-exclamation text-danger"></i> <strong>Red Tag mode:</strong> Any new tags you add will be created as Red tags (hidden by default).
 					</div>
 					<div class="row">
 						<div class="col-12 col-md-12 col-lg-12">
@@ -898,7 +898,7 @@ use App\Http\Controllers\Controller;
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" onclick="customValidate('inbox-email-reassign-to-client-matter')">
-					<i class="fa fa-save"></i> Re-assign Inbox Email
+					<i class="fa-solid fa-floppy-disk"></i> Re-assign Inbox Email
 				</button>
 			</div>
 			</form>
@@ -942,7 +942,7 @@ use App\Http\Controllers\Controller;
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" onclick="customValidate('sent-email-reassign-to-client-matter')">
-					<i class="fa fa-save"></i> Re-assign Sent Email
+					<i class="fa-solid fa-floppy-disk"></i> Re-assign Sent Email
 				</button>
 			</div>
 			</form>
@@ -1526,7 +1526,7 @@ $('#sendSmsForm').on('submit', function(e) {
     const submitBtn = $('#sendSmsBtn');
     const originalText = submitBtn.html();
     
-    submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+    submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Sending...');
     
     const formData = {
         _token: '{{ csrf_token() }}',

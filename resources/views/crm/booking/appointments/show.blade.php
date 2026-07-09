@@ -59,10 +59,10 @@ html, body {
             <!-- Back Button -->
             <div class="mb-3">
                 <a href="{{ route('booking.appointments.index') }}" class="btn btn-sm btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Back to List
+                    <i class="fa-solid fa-arrow-left"></i> Back to List
                 </a>
                 <a href="{{ route('booking.sync.dashboard') }}" class="btn btn-sm btn-info">
-                    <i class="fas fa-sync"></i> Sync Status
+                    <i class="fa-solid fa-rotate"></i> Sync Status
                 </a>
             </div>
 
@@ -70,7 +70,7 @@ html, body {
             <div class="card">
                 <div class="card-header">
                     <h4>
-                        <i class="fas fa-calendar-check me-2"></i>
+                        <i class="fa-solid fa-calendar-check me-2"></i>
                         Appointment Details - #{{ $appointment->id }}
                     </h4>
                     <div class="card-header-action">
@@ -96,7 +96,7 @@ html, body {
                             <!-- Client Information -->
                             <div class="card info-card">
                                 <div class="card-header bg-primary text-white">
-                                    <i class="fas fa-user"></i> Client Information
+                                    <i class="fa-solid fa-user"></i> Client Information
                                 </div>
                                 <div class="card-body">
                                     <div class="info-row">
@@ -139,7 +139,7 @@ html, body {
                                         <div class="row">
                                             <div class="col-12">
                                                 <a href="{{ route('clients.detail', $clientDetailParams) }}" class="btn btn-sm btn-info btn-block" target="_blank">
-                                                    <i class="fas fa-external-link-alt"></i> View Client Profile
+                                                    <i class="fa-solid fa-up-right-from-square"></i> View Client Profile
                                                 </a>
                                             </div>
                                         </div>
@@ -151,7 +151,7 @@ html, body {
                             <!-- Appointment Details -->
                             <div class="card info-card">
                                 <div class="card-header bg-info text-white">
-                                    <i class="fas fa-calendar"></i> Appointment Details
+                                    <i class="fa-solid fa-calendar"></i> Appointment Details
                                 </div>
                                 <div class="card-body">
                                     <div class="info-row">
@@ -198,7 +198,7 @@ html, body {
                             <!-- Service Information -->
                             <div class="card info-card">
                                 <div class="card-header bg-secondary text-white">
-                                    <i class="fas fa-briefcase"></i> Service Information
+                                    <i class="fa-solid fa-briefcase"></i> Service Information
                                 </div>
                                 <div class="card-body">
                                     <div class="info-row">
@@ -248,7 +248,7 @@ html, body {
                             @if($appointment->is_paid)
                             <div class="card info-card">
                                 <div class="card-header bg-success text-white">
-                                    <i class="fas fa-dollar-sign"></i> Payment Information
+                                    <i class="fa-solid fa-dollar-sign"></i> Payment Information
                                 </div>
                                 <div class="card-body">
                                     <div class="info-row">
@@ -312,9 +312,9 @@ html, body {
                             <!-- Admin Notes -->
                             <div class="card info-card">
                                 <div class="card-header bg-warning text-dark">
-                                    <i class="fas fa-sticky-note"></i> Admin Notes
+                                    <i class="fa-solid fa-note-sticky"></i> Admin Notes
                                     <button class="btn btn-sm btn-light float-right" onclick="addNote()">
-                                        <i class="fas fa-plus"></i> Add
+                                        <i class="fa-solid fa-plus"></i> Add
                                     </button>
                                 </div>
                                 <div class="card-body">
@@ -346,7 +346,7 @@ html, body {
                             <!-- Sync Information -->
                             <div class="card info-card">
                                 <div class="card-header bg-light">
-                                    <i class="fas fa-sync"></i> Sync Information
+                                    <i class="fa-solid fa-rotate"></i> Sync Information
                                 </div>
                                 <div class="card-body">
                                     <div class="info-row">
@@ -417,7 +417,7 @@ html, body {
                             <!-- Notification History -->
                             <div class="card info-card">
                                 <div class="card-header bg-info text-white">
-                                    <i class="fas fa-bell"></i> Notification History
+                                    <i class="fa-solid fa-bell"></i> Notification History
                                 </div>
                                 <div class="card-body">
                                     <div class="info-row">
@@ -454,34 +454,34 @@ html, body {
                     <!-- Quick Actions -->
                     <div class="card">
                         <div class="card-header bg-dark text-white">
-                            <i class="fas fa-bolt"></i> Quick Actions
+                            <i class="fa-solid fa-bolt"></i> Quick Actions
                         </div>
                         <div class="card-body text-center action-buttons">
                             @if($appointment->status === 'pending')
                             <button class="btn btn-success" onclick="updateStatus('confirmed')">
-                                <i class="fas fa-check"></i> Confirm Appointment
+                                <i class="fa-solid fa-check"></i> Confirm Appointment
                             </button>
                             @endif
                             
                             @if(in_array($appointment->status, ['pending', 'confirmed']))
                             <button class="btn btn-primary" onclick="markCompleteAppointment()">
-                                <i class="fas fa-check-circle"></i> Mark Completed
+                                <i class="fa-solid fa-circle-check"></i> Mark Completed
                             </button>
                             <button class="btn btn-danger" onclick="cancelAppointment()">
-                                <i class="fas fa-times"></i> Cancel
+                                <i class="fa-solid fa-xmark"></i> Cancel
                             </button>
                             @endif
                             
                             <!--<button class="btn btn-warning" onclick="sendReminder()">
-                                <i class="fas fa-envelope"></i> Send Reminder
+                                <i class="fa-solid fa-envelope"></i> Send Reminder
                             </button>-->
                             
                             <button class="btn btn-info" onclick="sendSMS()">
-                                <i class="fas fa-sms"></i> Send SMS
+                                <i class="fa-solid fa-sms"></i> Send SMS
                             </button>
                             
                             <button class="btn btn-secondary" onclick="window.print()">
-                                <i class="fas fa-print"></i> Print
+                                <i class="fa-solid fa-print"></i> Print
                             </button>
                         </div>
                     </div>

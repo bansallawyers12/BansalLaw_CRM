@@ -27,11 +27,11 @@
                 <div class="col-9 col-md-9 col-lg-9">
                     <div class="card">
                         <div class="card-header">
-                            <h4><i class="fas fa-search"></i> Activity Search</h4>
+                            <h4><i class="fa-solid fa-search"></i> Activity Search</h4>
                             <div class="card-header-action">
                                 @if(isset($totalActivities) && $totalActivities > 0)
                                     <button type="button" class="btn btn-outline-primary" onclick="exportActivities()">
-                                        <i class="fas fa-file-export me-1"></i> Export Results
+                                        <i class="fa-solid fa-file-export me-1"></i> Export Results
                                     </button>
                                 @endif
                             </div>
@@ -46,7 +46,7 @@
                                     <!-- Assigner Filter -->
                                     <div class="col-md-6 mb-3">
                                         <label for="assigner_id" class="form-label">
-                                            <i class="fas fa-user-tag"></i> Assigner (Who Created)
+                                            <i class="fa-solid fa-user-tag"></i> Assigner (Who Created)
                                         </label>
                                         <select name="assigner_id" id="assigner_id" class="form-control crm-ts-activity-search">
                                             <option value="">All Assigners</option>
@@ -62,7 +62,7 @@
                                     <!-- Assignee Filter -->
                                     <div class="col-md-6 mb-3">
                                         <label for="assignee_id" class="form-label">
-                                            <i class="fas fa-user-check"></i> Assignee (Assigned To)
+                                            <i class="fa-solid fa-user-check"></i> Assignee (Assigned To)
                                         </label>
                                         <select name="assignee_id" id="assignee_id" class="form-control crm-ts-activity-search">
                                             <option value="">All Assignees</option>
@@ -80,7 +80,7 @@
                                     <!-- Client Filter -->
                                     <div class="col-md-6 mb-3">
                                         <label for="client_id" class="form-label">
-                                            <i class="fas fa-user"></i> Client
+                                            <i class="fa-solid fa-user"></i> Client
                                         </label>
                                         <select name="client_id" id="client_id" class="form-control crm-ts-activity-search crm-ts-activity-search-ajax">
                                             <option value="">All Clients</option>
@@ -95,7 +95,7 @@
                                     <!-- Activity Type Filter -->
                                     <div class="col-md-6 mb-3">
                                         <label for="activity_type" class="form-label">
-                                            <i class="fas fa-list"></i> Activity Type
+                                            <i class="fa-solid fa-list"></i> Activity Type
                                         </label>
                                         <select name="activity_type" id="activity_type" class="form-control crm-ts-activity-search">
                                             <option value="">All Types</option>
@@ -113,7 +113,7 @@
                                     <!-- Action Category Filter -->
                                     <div class="col-md-4 mb-3">
                                         <label for="task_group" class="form-label">
-                                            <i class="fas fa-tasks"></i> Action Category
+                                            <i class="fa-solid fa-list-check"></i> Action Category
                                         </label>
                                         <select name="task_group" id="task_group" class="form-control crm-ts-activity-search">
                                             <option value="">All Categories</option>
@@ -129,7 +129,7 @@
                                     <!-- Action Status Filter -->
                                     <div class="col-md-4 mb-3">
                                         <label for="task_status" class="form-label">
-                                            <i class="fas fa-check-circle"></i> Action Status
+                                            <i class="fa-solid fa-circle-check"></i> Action Status
                                         </label>
                                         <select name="task_status" id="task_status" class="form-control crm-ts-activity-search">
                                             <option value="">All Statuses</option>
@@ -141,7 +141,7 @@
                                     <!-- Keyword Filter -->
                                     <div class="col-md-4 mb-3">
                                         <label for="keyword" class="form-label">
-                                            <i class="fas fa-search"></i> Keyword
+                                            <i class="fa-solid fa-search"></i> Keyword
                                         </label>
                                         <input type="text" name="keyword" id="keyword" class="form-control" 
                                                placeholder="Search in subject/description" 
@@ -153,7 +153,7 @@
                                     <!-- Date From -->
                                     <div class="col-md-6 mb-3">
                                         <label for="date_from" class="form-label">
-                                            <i class="fas fa-calendar"></i> Date From
+                                            <i class="fa-solid fa-calendar"></i> Date From
                                         </label>
                                         <input type="date" name="date_from" id="date_from" class="form-control" 
                                                value="{{ request('date_from') }}">
@@ -162,7 +162,7 @@
                                     <!-- Date To -->
                                     <div class="col-md-6 mb-3">
                                         <label for="date_to" class="form-label">
-                                            <i class="fas fa-calendar"></i> Date To
+                                            <i class="fa-solid fa-calendar"></i> Date To
                                         </label>
                                         <input type="date" name="date_to" id="date_to" class="form-control" 
                                                value="{{ request('date_to') }}">
@@ -172,10 +172,10 @@
                                 <div class="row">
                                     <div class="col-md-12 d-flex justify-content-end flex-wrap gap-2">
                                         <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
-                                            <i class="fas fa-redo me-1"></i> Reset
+                                            <i class="fa-solid fa-arrow-rotate-right me-1"></i> Reset
                                         </button>
                                         <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-search me-1"></i> Search Activities
+                                            <i class="fa-solid fa-search me-1"></i> Search Activities
                                         </button>
                                     </div>
                                 </div>
@@ -187,7 +187,7 @@
                             @if(request('search'))
                                 <div class="mt-4">
                                     <h5 class="mb-3">
-                                        <i class="fas fa-list-alt"></i> Search Results 
+                                        <i class="fa-solid fa-list-alt"></i> Search Results 
                                         <span class="badge badge-primary">{{ $totalActivities }} activities found</span>
                                     </h5>
                                     
@@ -260,9 +260,9 @@
                                                             <td>
                                                                 @if($activity->task_group)
                                                                     @if($activity->task_status == 1)
-                                                                        <span class="badge badge-success"><i class="fas fa-check"></i> Complete</span>
+                                                                        <span class="badge badge-success"><i class="fa-solid fa-check"></i> Complete</span>
                                                                     @else
-                                                                        <span class="badge badge-warning"><i class="fas fa-clock"></i> Pending</span>
+                                                                        <span class="badge badge-warning"><i class="fa-solid fa-clock"></i> Pending</span>
                                                                     @endif
                                                                 @else
                                                                     <span class="text-muted">-</span>
@@ -272,7 +272,7 @@
                                                                 <button type="button" class="btn btn-sm btn-outline-primary me-1" 
                                                                         onclick="viewActivityDetails({{ $activity->id }})"
                                                                         data-bs-toggle="tooltip" title="View Details">
-                                                                    <i class="fas fa-eye"></i>
+                                                                    <i class="fa-solid fa-eye"></i>
                                                                 </button>
                                                                 @if($activity->client_id)
                                                                     <a href="{{ route('clients.detail', base64_encode(convert_uuencode($activity->client_id))) }}" 
@@ -280,7 +280,7 @@
                                                                        rel="noopener"
                                                                        class="btn btn-sm btn-primary"
                                                                        data-bs-toggle="tooltip" title="View Client">
-                                                                        <i class="fas fa-user"></i>
+                                                                        <i class="fa-solid fa-user"></i>
                                                                     </a>
                                                                 @endif
                                                             </td>
@@ -296,13 +296,13 @@
                                         </div>
                                     @else
                                         <div class="alert alert-info">
-                                            <i class="fas fa-info-circle"></i> No activities found matching your search criteria. Try adjusting your filters.
+                                            <i class="fa-solid fa-circle-info"></i> No activities found matching your search criteria. Try adjusting your filters.
                                         </div>
                                     @endif
                                 </div>
                             @else
                                 <div class="alert alert-light border text-center activity-search-empty-hint">
-                                    <i class="fas fa-search fa-3x text-muted opacity-50"></i>
+                                    <i class="fa-solid fa-search fa-3x text-muted opacity-50"></i>
                                     <h5 class="mt-3">Search Staff Activities</h5>
                                     <p class="text-muted">Use the filters above to search for activities by assigner, assignee, date range, and more.</p>
                                 </div>
@@ -325,7 +325,7 @@
             </div>
             <div class="modal-body" id="activityDetailsContent">
                 <div class="text-center">
-                    <i class="fas fa-spinner fa-spin"></i> Loading...
+                    <i class="fa-solid fa-spinner fa-spin"></i> Loading...
                 </div>
             </div>
         </div>

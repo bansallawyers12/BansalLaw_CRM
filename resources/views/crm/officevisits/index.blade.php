@@ -343,7 +343,7 @@ body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:l
 								<div class="mydropdown" style="margin-top:10px;">
 								  <button type="button" onclick="myFunction()" class="dropbtn">
 								  <?php echo isset($_GET['office_name']) ? $_GET['office_name'] : 'All Branches'; ?>
-								   <i style="font-size: 10px;" class="fa fa-arrow-down"></i></button>
+								   <i style="font-size: 10px;" class="fa-solid fa-arrow-down"></i></button>
 								  <div id="myDropdown" class="dropdown-content">
 								  <a href="{{ URL::to($baseUrl) }}">All Branches</a>
 								  <?php $branchs = \App\Models\Branch::all(); foreach($branchs as $branch){ ?>

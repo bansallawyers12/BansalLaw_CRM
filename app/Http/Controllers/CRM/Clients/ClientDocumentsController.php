@@ -230,10 +230,10 @@ class ClientDocumentsController extends Controller
                                     <div class="checklist-actions" style="display: flex; gap: 5px;">
                                         <?php if (!$fetch->file_name): ?>
                                         <a href="javascript:;" class="edit-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
-                                            <i class="fas fa-edit"></i>
+                                            <i class="fa-solid fa-pen-to-square"></i>
                                         </a>
                                         <a href="javascript:;" class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fa-solid fa-trash"></i>
                                         </a>
                                         <?php endif; ?>
                                     </div>
@@ -244,7 +244,7 @@ class ClientDocumentsController extends Controller
                                 if( isset($fetch->file_name) && $fetch->file_name !=""){ ?>
                                     <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu='showFileContextMenu(event, <?php echo (int) $fetch->id; ?>, <?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode((string) $request->folder_name); ?>, <?php echo json_encode($fetch->status ?? 'draft'); ?>); return false;'>
                                         <a href="javascript:void(0);" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode('preview-container-' . $request->folder_name); ?>)'>
-                                            <i class="fas fa-file-image"></i> <span><?php echo htmlspecialchars($fetch->file_name . '.' . $fetch->filetype); ?></span>
+                                            <i class="fa-solid fa-file-image"></i> <span><?php echo htmlspecialchars($fetch->file_name . '.' . $fetch->filetype); ?></span>
                                         </a>
                                     </div>
                                 <?php
@@ -266,7 +266,7 @@ class ClientDocumentsController extends Controller
                                                  data-doccategory="<?php echo $request->folder_name; ?>"
                                                  data-formid="upload_form_<?php echo $fetch->id; ?>">
                                                 <div class="drag-zone-inner">
-                                                    <i class="fas fa-cloud-upload-alt"></i>
+                                                    <i class="fa-solid fa-cloud-arrow-up"></i>
                                                     <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                 </div>
                                             </div>
@@ -302,12 +302,12 @@ class ClientDocumentsController extends Controller
                         <div class="grid_list">
                             <div class="grid_col">
                                 <div class="grid_icon">
-                                    <i class="fas fa-file-image"></i>
+                                    <i class="fa-solid fa-file-image"></i>
                                 </div>
                                 <div class="grid_content">
                                     <span id="grid_<?php echo $fetch->id; ?>" class="gridfilename"><?php echo $fetch->file_name; ?></span>
                                     <div class="dropdown d-inline dropdown_ellipsis_icon">
-                                        <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
+                                        <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></a>
                                         <div class="dropdown-menu">
                                             <?php if( isset($fetch->myfile) && $fetch->myfile != ""){?>
                                             <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($gridPreviewUrl); ?>, <?php echo json_encode('preview-container-' . $request->folder_name); ?>)'>Preview</a>
@@ -762,10 +762,10 @@ class ClientDocumentsController extends Controller
                                     <div class="checklist-actions" style="display: flex; gap: 5px;">
                                         <?php if (!$fetch->file_name): ?>
                                         <a href="javascript:;" class="edit-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
-                                            <i class="fas fa-edit"></i>
+                                            <i class="fa-solid fa-pen-to-square"></i>
                                         </a>
                                         <a href="javascript:;" class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fa-solid fa-trash"></i>
                                         </a>
                                         <?php endif; ?>
                                     </div>
@@ -776,7 +776,7 @@ class ClientDocumentsController extends Controller
                                 if( isset($fetch->file_name) && $fetch->file_name !=""){ ?>
                                     <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu='showVisaFileContextMenu(event, <?php echo (int) $fetch->id; ?>, <?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode((string) $fetch->folder_name); ?>, <?php echo json_encode($fetch->status ?? 'draft'); ?>); return false;'>
                                         <a href="javascript:void(0);" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode('preview-container-matter-' . $fetch->folder_name); ?>)'>
-                                            <i class="fas fa-file-image"></i> <span><?php echo htmlspecialchars($fetch->file_name . '.' . $fetch->filetype); ?></span>
+                                            <i class="fa-solid fa-file-image"></i> <span><?php echo htmlspecialchars($fetch->file_name . '.' . $fetch->filetype); ?></span>
                                         </a>
                                     </div>
                                 <?php
@@ -799,7 +799,7 @@ class ClientDocumentsController extends Controller
                                                  data-doccategory="<?php echo $fetch->folder_name;?>"
                                                  data-formid="mig_upload_form_<?php echo $fetch->id;?>">
                                                 <div class="drag-zone-inner">
-                                                    <i class="fas fa-cloud-upload-alt"></i>
+                                                    <i class="fa-solid fa-cloud-arrow-up"></i>
                                                     <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                 </div>
                                             </div>
@@ -840,12 +840,12 @@ class ClientDocumentsController extends Controller
                         <div class="grid_list">
                             <div class="grid_col">
                                 <div class="grid_icon">
-                                    <i class="fas fa-file-image"></i>
+                                    <i class="fa-solid fa-file-image"></i>
                                 </div>
                                 <div class="grid_content">
                                     <span id="grid_<?php echo $fetch->id; ?>" class="gridfilename"><?php echo $fetch->file_name; ?></span>
                                     <div class="dropdown d-inline dropdown_ellipsis_icon">
-                                        <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
+                                        <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></a>
                                         <div class="dropdown-menu">
                                             <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($gridPreviewUrl); ?>, <?php echo json_encode('preview-container-matter-' . $fetch->folder_name); ?>)'>Preview</a>
                                             <a href="#" class="dropdown-item download-file" data-document-id="<?php echo $fetch->id; ?>" data-id="<?php echo $fetch->id; ?>" data-filename="<?php echo htmlspecialchars($gridDownloadFilename); ?>">Download</a>
@@ -995,10 +995,10 @@ class ClientDocumentsController extends Controller
                                     <div class="checklist-actions" style="display: flex; gap: 5px;">
                                         <?php if (!$fetch->file_name) { ?>
                                         <a href="javascript:;" class="edit-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
-                                            <i class="fas fa-edit"></i>
+                                            <i class="fa-solid fa-pen-to-square"></i>
                                         </a>
                                         <a href="javascript:;" class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fa-solid fa-trash"></i>
                                         </a>
                                         <?php } ?>
                                     </div>
@@ -1008,7 +1008,7 @@ class ClientDocumentsController extends Controller
                                 <?php if (isset($fetch->file_name) && $fetch->file_name != '') { ?>
                                     <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu='showNominationFileContextMenu(event, <?php echo (int) $fetch->id; ?>, <?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode((string) $fetch->folder_name); ?>, <?php echo json_encode($fetch->status ?? 'draft'); ?>); return false;'>
                                         <a href="javascript:void(0);" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($previewUrl); ?>, <?php echo json_encode('preview-container-nomdocumnetlist'); ?>)'>
-                                            <i class="fas fa-file-image"></i> <span><?php echo htmlspecialchars($fetch->file_name.'.'.$fetch->filetype); ?></span>
+                                            <i class="fa-solid fa-file-image"></i> <span><?php echo htmlspecialchars($fetch->file_name.'.'.$fetch->filetype); ?></span>
                                         </a>
                                     </div>
                                 <?php } else { ?>
@@ -1027,7 +1027,7 @@ class ClientDocumentsController extends Controller
                                                  data-doccategory="<?php echo $fetch->folder_name; ?>"
                                                  data-formid="mig_upload_form_<?php echo $fetch->id; ?>">
                                                 <div class="drag-zone-inner">
-                                                    <i class="fas fa-cloud-upload-alt"></i>
+                                                    <i class="fa-solid fa-cloud-arrow-up"></i>
                                                     <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                 </div>
                                             </div>
@@ -1063,12 +1063,12 @@ class ClientDocumentsController extends Controller
                         <div class="grid_list">
                             <div class="grid_col">
                                 <div class="grid_icon">
-                                    <i class="fas fa-file-image"></i>
+                                    <i class="fa-solid fa-file-image"></i>
                                 </div>
                                 <div class="grid_content">
                                     <span id="grid_<?php echo $fetch->id; ?>" class="gridfilename"><?php echo $fetch->file_name; ?></span>
                                     <div class="dropdown d-inline dropdown_ellipsis_icon">
-                                        <a class="dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
+                                        <a class="dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></a>
                                         <div class="dropdown-menu">
                                             <a href="javascript:void(0);" class="dropdown-item" onclick='previewFile(<?php echo json_encode($fetch->filetype); ?>, <?php echo json_encode($gridPreviewUrl); ?>, <?php echo json_encode('preview-container-nomdocumnetlist'); ?>)'>Preview</a>
                                             <a href="#" class="dropdown-item download-file" data-document-id="<?php echo $fetch->id; ?>" data-id="<?php echo $fetch->id; ?>" data-filename="<?php echo htmlspecialchars($gridDownloadFilename); ?>">Download</a>
@@ -2153,8 +2153,8 @@ class ClientDocumentsController extends Controller
                 // Only show edit/delete buttons if no file uploaded
                 if (!$doc->file_name) {
                     $html .= '<div class="checklist-actions" style="display: flex; gap: 5px;">';
-                    $html .= '<a href="javascript:;" class="edit-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . htmlspecialchars($checklist) . '" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;"><i class="fas fa-edit"></i></a>';
-                    $html .= '<a href="javascript:;" class="delete-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . htmlspecialchars($checklist) . '" title="Delete Checklist" style="color: #dc3545; cursor: pointer;"><i class="fas fa-trash"></i></a>';
+                    $html .= '<a href="javascript:;" class="edit-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . htmlspecialchars($checklist) . '" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;"><i class="fa-solid fa-pen-to-square"></i></a>';
+                    $html .= '<a href="javascript:;" class="delete-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . htmlspecialchars($checklist) . '" title="Delete Checklist" style="color: #dc3545; cursor: pointer;"><i class="fa-solid fa-trash"></i></a>';
                     $html .= '</div>';
                 }
                 

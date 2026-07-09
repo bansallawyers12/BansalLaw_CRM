@@ -5,15 +5,15 @@
 @endphp
 <nav class="main-topbar">
     <button class="topbar-toggle" title="Show menu" aria-label="Toggle topbar">
-        <i class="fas fa-ellipsis-h"></i>
+        <i class="fa-solid fa-ellipsis"></i>
     </button>
     <div class="topbar-left">
         <div class="icon-group">
-            <a href="{{route('dashboard')}}" class="icon-btn" title="Dashboard"><i class="fas fa-tachometer-alt"></i></a>
-            <a href="{{ route('signatures.index') }}" class="icon-btn" title="Signature Dashboard"><i class="fas fa-pen"></i></a>
+            <a href="{{route('dashboard')}}" class="icon-btn" title="Dashboard"><i class="fa-solid fa-tachometer-alt"></i></a>
+            <a href="{{ route('signatures.index') }}" class="icon-btn" title="Signature Dashboard"><i class="fa-solid fa-pen"></i></a>
             <div class="icon-dropdown js-dropdown">
                 <a href="{{ route('booking.appointments.index') }}" class="icon-btn" title="Website Bookings" style="position: relative;">
-                    <i class="fas fa-globe"></i>
+                    <i class="fa-solid fa-globe"></i>
                     @php
                         $pendingCount = \App\Models\BookingAppointment::where('status', 'pending')->where('is_paid', 1)->count();
                     @endphp
@@ -23,55 +23,55 @@
                 </a>
                 <div class="icon-dropdown-menu">
                     <a class="dropdown-item" href="{{ route('booking.appointments.index') }}">
-                        <i class="fas fa-list me-2"></i> All Bookings
+                        <i class="fa-solid fa-list me-2"></i> All Bookings
                     </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}">
-                        <i class="fas fa-calendar-alt me-2"></i> Ajay Calendar
+                        <i class="fa-solid fa-calendar-days me-2"></i> Ajay Calendar
                     </a>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}">
-                        <i class="fas fa-calendar-alt me-2"></i> Michael
+                        <i class="fa-solid fa-calendar-days me-2"></i> Michael
                     </a>
                     @if($_crmTopAdminish)
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ route('booking.sync.dashboard') }}">
-                        <i class="fas fa-sync me-2"></i> Sync Status
+                        <i class="fa-solid fa-rotate me-2"></i> Sync Status
                     </a>
                     @endif
                 </div>
             </div>
-            <a href="{{route('officevisits.waiting')}}" class="icon-btn" title="In Person"><i class="fas fa-user-check"></i></a>
+            <a href="{{route('officevisits.waiting')}}" class="icon-btn" title="In Person"><i class="fa-solid fa-user-check"></i></a>
             @if(Auth::user() instanceof \App\Models\Staff && Auth::user()->canAccessFrontDeskCheckIn())
-            <a href="{{ route('front-desk.checkin.index') }}" class="icon-btn {{ str_starts_with(Route::currentRouteName() ?? '', 'front-desk.checkin') ? 'active' : '' }}" title="Front-Desk Check-In"><i class="fas fa-clipboard-check"></i></a>
+            <a href="{{ route('front-desk.checkin.index') }}" class="icon-btn {{ str_starts_with(Route::currentRouteName() ?? '', 'front-desk.checkin') ? 'active' : '' }}" title="Front-Desk Check-In"><i class="fa-solid fa-clipboard-check"></i></a>
             @endif
-            <a href="{{route('assignee.action')}}" class="icon-btn" title="Action"><i class="fas fa-tasks"></i></a>
+            <a href="{{route('assignee.action')}}" class="icon-btn" title="Action"><i class="fa-solid fa-list-check"></i></a>
             <div class="icon-dropdown js-dropdown">
-                <a href="{{route('clients.index')}}" class="icon-btn" title="Clients"><i class="fas fa-users"></i></a>
+                <a href="{{route('clients.index')}}" class="icon-btn" title="Clients"><i class="fa-solid fa-users"></i></a>
                 <div class="icon-dropdown-menu">
-                    <a class="dropdown-item" href="{{route('clients.index')}}"><i class="fas fa-list me-2"></i> Client List</a>
-                    <a class="dropdown-item" href="{{route('clients.clientsmatterslist')}}"><i class="fas fa-folder-open me-2"></i> Matter List</a>
-                    <a class="dropdown-item" href="{{ route('emails.smart-import.index') }}"><i class="fas fa-file-import me-2"></i> Smart Email Import</a>
+                    <a class="dropdown-item" href="{{route('clients.index')}}"><i class="fa-solid fa-list me-2"></i> Client List</a>
+                    <a class="dropdown-item" href="{{route('clients.clientsmatterslist')}}"><i class="fa-solid fa-folder-open me-2"></i> Matter List</a>
+                    <a class="dropdown-item" href="{{ route('emails.smart-import.index') }}"><i class="fa-solid fa-file-import me-2"></i> Smart Email Import</a>
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{route('leads.index')}}"><i class="fas fa-list-alt me-2"></i> Lead List</a>
-                    <a class="dropdown-item" href="{{route('leads.create')}}"><i class="fas fa-plus-circle me-2"></i> Add Lead</a>
+                    <a class="dropdown-item" href="{{route('leads.index')}}"><i class="fa-solid fa-list-alt me-2"></i> Lead List</a>
+                    <a class="dropdown-item" href="{{route('leads.create')}}"><i class="fa-solid fa-circle-plus me-2"></i> Add Lead</a>
                 </div>
             </div>
             <div class="icon-dropdown js-dropdown">
-                <a href="{{route('clients.invoicelist')}}" class="icon-btn" title="Accounts"><i class="fas fa-briefcase"></i></a>
+                <a href="{{route('clients.invoicelist')}}" class="icon-btn" title="Accounts"><i class="fa-solid fa-briefcase"></i></a>
                 <div class="icon-dropdown-menu">
                     @if($_crmTopAdminish)
-                    <a class="dropdown-item" href="{{route('clients.analytics-dashboard')}}" style="background: linear-gradient(135deg, var(--navy)15 0%, var(--sidebar-active)15 100%); font-weight: 600;"><i class="fas fa-chart-line me-2" style="color: var(--navy);"></i> Analytics Dashboard</a>
+                    <a class="dropdown-item" href="{{route('clients.analytics-dashboard')}}" style="background: linear-gradient(135deg, var(--navy)15 0%, var(--sidebar-active)15 100%); font-weight: 600;"><i class="fa-solid fa-chart-line me-2" style="color: var(--navy);"></i> Analytics Dashboard</a>
                     <div class="dropdown-divider"></div>
                     @endif
-                    <a class="dropdown-item" href="{{route('clients.clientreceiptlist')}}"><i class="fas fa-receipt me-2"></i> Client Receipts</a>
-                    <a class="dropdown-item" href="{{route('clients.invoicelist')}}"><i class="fas fa-file-invoice-dollar me-2"></i> Invoice Lists</a>
-                    <a class="dropdown-item" href="{{route('clients.officereceiptlist')}}"><i class="fas fa-building me-2"></i> Office Receipts</a>
-                    <a class="dropdown-item" href="{{route('clients.journalreceiptlist')}}"><i class="fas fa-book me-2"></i> Journal Receipts</a>
+                    <a class="dropdown-item" href="{{route('clients.clientreceiptlist')}}"><i class="fa-solid fa-receipt me-2"></i> Client Receipts</a>
+                    <a class="dropdown-item" href="{{route('clients.invoicelist')}}"><i class="fa-solid fa-file-invoice-dollar me-2"></i> Invoice Lists</a>
+                    <a class="dropdown-item" href="{{route('clients.officereceiptlist')}}"><i class="fa-solid fa-building me-2"></i> Office Receipts</a>
+                    <a class="dropdown-item" href="{{route('clients.journalreceiptlist')}}"><i class="fa-solid fa-book me-2"></i> Journal Receipts</a>
                     @if($_trustSuperAdmin)
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ route('trust-accounting.periods.index') }}"><i class="fas fa-lock me-2"></i> Trust period locks</a>
-                    <a class="dropdown-item" href="{{ route('trust-accounting.reports.index') }}"><i class="fas fa-file-export me-2"></i> Trust reports (exam pack)</a>
-                    <a class="dropdown-item" href="{{ route('trust-accounting.audit-log.index') }}"><i class="fas fa-clipboard-list me-2"></i> Trust audit log</a>
+                    <a class="dropdown-item" href="{{ route('trust-accounting.periods.index') }}"><i class="fa-solid fa-lock me-2"></i> Trust period locks</a>
+                    <a class="dropdown-item" href="{{ route('trust-accounting.reports.index') }}"><i class="fa-solid fa-file-export me-2"></i> Trust reports (exam pack)</a>
+                    <a class="dropdown-item" href="{{ route('trust-accounting.audit-log.index') }}"><i class="fa-solid fa-clipboard-list me-2"></i> Trust audit log</a>
                     @endif
                     <div class="dropdown-divider"></div>
                 </div>
@@ -81,7 +81,7 @@
     <div class="topbar-center">
         <form class="topbar-search">
             <div class="topbar-search__inner">
-                <span class="topbar-search__icon" aria-hidden="true"><i class="fas fa-search"></i></span>
+                <span class="topbar-search__icon" aria-hidden="true"><i class="fa-solid fa-search"></i></span>
                 <select class="form-control js-data-example-ajaxccsearch" type="search" placeholder="Search" aria-label="Search" data-width="320"></select>
             </div>
         </form>
@@ -95,19 +95,19 @@
                 @csrf
                 <input type="hidden" name="elevated" value="{{ $_saElevated ? '0' : '1' }}">
                 <button type="submit" class="icon-btn {{ $_saElevated ? 'text-primary' : '' }}" title="{{ $_saElevated ? 'Using Super Admin access — click to return to normal role' : 'Switch to Super Admin access (full privileges)' }}" style="white-space: nowrap;">
-                    <i class="fas fa-user-shield"></i>
+                    <i class="fa-solid fa-user-shield"></i>
                     <span class="d-none d-xl-inline ms-1" style="font-size: 12px; font-weight: 600;">{{ $_saElevated ? 'Super Admin' : 'Normal' }}</span>
                 </button>
             </form>
         @endif
-        <a href="javascript:;" title="Add Office Check-In" class="icon-btn opencheckin"><i class="fas fa-person-booth"></i></a>
+        <a href="javascript:;" title="Add Office Check-In" class="icon-btn opencheckin"><i class="fa-solid fa-person-booth"></i></a>
         @if(Auth::user())
             @php
                 $notifUnread = \App\Models\Notification::where('receiver_id', Auth::user()->id)->where('receiver_status', 0)->count();
             @endphp
             <a href="{{ route('crm.all-notifications') }}" class="icon-btn notification-toggle" title="Notifications">
                 <span class="notification-bell-inner">
-                    <i class="fas fa-bell" aria-hidden="true"></i>
+                    <i class="fa-solid fa-bell" aria-hidden="true"></i>
                     <span class="countbell" id="countbell_notification" aria-live="polite">{{ $notifUnread > 0 ? $notifUnread : '' }}</span>
                 </span>
             </a>
@@ -118,18 +118,18 @@
             </a>
             <div class="profile-menu" id="profile-menu">
                 <a href="{{route('my_profile')}}">
-                    <i class="far fa-user"></i> 
+                    <i class="fa-regular fa-user"></i> 
                     <span>Profile</span>
                 </a>
                 @if($_crmTopAdminish)
                 <a href="{{route('adminconsole.features.matter.index')}}">
-                    <i class="fas fa-cogs"></i> 
+                    <i class="fa-solid fa-gears"></i> 
                     <span>Admin Console</span>
                 </a>
                 @endif
                 <div class="dropdown-divider"></div>
                 <a href="javascript:void(0)" class="text-danger dropdown-item" data-logout="all">
-                    <i class="fas fa-sign-out-alt"></i>
+                    <i class="fa-solid fa-right-from-bracket"></i>
                     <span>Log out everywhere</span>
                 </a>
             </div>

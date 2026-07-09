@@ -1183,9 +1183,9 @@ class ClientMatterHubController extends Controller
 				<div class="accordion-header collapsed <?php echo $stage1; ?> <?php if($currentStage->name == $stages->name && $clientMatter->matter_status == 1){ echo  'app_blue'; }  ?>" role="button" data-toggle="collapse" data-target="#<?php echo $stagname; ?>_accor" aria-expanded="false">
 					<h4><?php echo $stages->name; ?></h4>
 					<div class="accord_hover">
-						<a title="Add Note" class="openappnote" data-app-type="<?php echo $stages->name; ?>" data-id="<?php echo $clientMatter->id; ?>" href="javascript:;"><i class="fa fa-file-alt"></i></a>
+						<a title="Add Note" class="openappnote" data-app-type="<?php echo $stages->name; ?>" data-id="<?php echo $clientMatter->id; ?>" href="javascript:;"><i class="fa-solid fa-file-lines"></i></a>
 						<!-- opendocnote REMOVED - workflow checklist upload flow dead (no modal, no handler) -->
-						<a data-app-type="<?php echo $stages->name; ?>" title="Email" data-id="<?php echo $clientMatter->id; ?>" data-email="" data-name="" class="openclientemail" title="Compose Mail" href="javascript:;"><i class="fa fa-envelope"></i></a>
+						<a data-app-type="<?php echo $stages->name; ?>" title="Email" data-id="<?php echo $clientMatter->id; ?>" data-email="" data-name="" class="openclientemail" title="Compose Mail" href="javascript:;"><i class="fa-solid fa-envelope"></i></a>
 					</div>
 				</div>
 				<?php
@@ -1658,7 +1658,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 			$fileUrl = !empty($doclist->myfile) ? url('/documents/preview/' . $doclist->id) : URL::to('/public/img/documents').'/'.$doclist->file_name;
 			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
-				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->cp_checklist_name.'</td>';
+				$doclistdata .= '<td><i class="fa-solid fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->cp_checklist_name.'</td>';
 				$doclistdata .= '<td>';
 				$docType = $doclist->doc_type ?? '';
 				if($docType == 'application'){ $doclistdata .= 'Application'; }else if($docType == 'acceptance'){ $doclistdata .=  'Acceptance'; }else if($docType == 'payment'){ $doclistdata .=  'Payment'; }else if($docType == 'formi20'){ $doclistdata .=  'Form I 20'; }else if($docType == 'visaapplication'){ $doclistdata .=  'Visa Application'; }else if($docType == 'interview'){ $doclistdata .=  'Interview'; }else if($docType == 'enrolment'){ $doclistdata .=  'Enrolment'; }else if($docType == 'courseongoing'){ $doclistdata .=  'Course Ongoing'; }else{ $doclistdata .= $docType; }
@@ -1669,7 +1669,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 			$doclistdata .= '<td>'.date('Y-m-d',strtotime($doclist->created_at)).'</td>';
 			$doclistdata .= '<td>';
 			if($docStatus == 1){
-				$doclistdata .= '<span class="check"><i class="fa fa-eye"></i></span>';
+				$doclistdata .= '<span class="check"><i class="fa-solid fa-eye"></i></span>';
 			}
 				$doclistdata .= '<div class="dropdown d-inline">
 					<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
@@ -1702,7 +1702,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 				$appcount = Document::workflowChecklist()->where('cp_list_id', $checklistItem->id)->count();
 				$checklistdata .= '<tr>';
 				if($appcount >0){
-					$checklistdata .= '<td><span class="check"><i class="fa fa-check"></i></span></td>';
+					$checklistdata .= '<td><span class="check"><i class="fa-solid fa-check"></i></span></td>';
 				}else{
 					$checklistdata .= '<td><span class="round"></span></td>';
 				}
@@ -1773,7 +1773,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 			$fileUrl = !empty($doclist->myfile) ? url('/documents/preview/' . $doclist->id) : URL::to('/public/img/documents').'/'.$doclist->file_name;
 			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
-				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->cp_checklist_name.'</td>';
+				$doclistdata .= '<td><i class="fa-solid fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->cp_checklist_name.'</td>';
 				$doclistdata .= '<td>';
 				$docType = $doclist->doc_type ?? '';
 				if($docType == 'application'){ $doclistdata .= 'Application'; }else if($docType == 'acceptance'){ $doclistdata .=  'Acceptance'; }else if($docType == 'payment'){ $doclistdata .=  'Payment'; }else if($docType == 'formi20'){ $doclistdata .=  'Form I 20'; }else if($docType == 'visaapplication'){ $doclistdata .=  'Visa Application'; }else if($docType == 'interview'){ $doclistdata .=  'Interview'; }else if($docType == 'enrolment'){ $doclistdata .=  'Enrolment'; }else if($docType == 'courseongoing'){ $doclistdata .=  'Course Ongoing'; }else{ $doclistdata .= $docType; }
@@ -1784,7 +1784,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 			$doclistdata .= '<td>'.date('Y-m-d',strtotime($doclist->created_at)).'</td>';
 			$doclistdata .= '<td>';
 			if($docStatus == 1){
-				$doclistdata .= '<span class="check"><i class="fa fa-eye"></i></span>';
+				$doclistdata .= '<span class="check"><i class="fa-solid fa-eye"></i></span>';
 			}
 				$doclistdata .= '<div class="dropdown d-inline">
 					<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
@@ -1835,7 +1835,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 			$fileUrl = !empty($doclist->myfile) ? url('/documents/preview/' . $doclist->id) : URL::to('/public/img/documents').'/'.$doclist->file_name;
 			$docStatus = $doclist->cp_doc_status ?? 0;
 			$doclistdata .= '<tr id="">';
-				$doclistdata .= '<td><i class="fa fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->cp_checklist_name.'</td>';
+				$doclistdata .= '<td><i class="fa-solid fa-file"></i> '. $doclist->file_name.'<br>'.@$docdata->cp_checklist_name.'</td>';
 				$doclistdata .= '<td>';
 				$docType = $doclist->doc_type ?? '';
 				if($docType == 'application'){ $doclistdata .= 'Application'; }else if($docType == 'acceptance'){ $doclistdata .=  'Acceptance'; }else if($docType == 'payment'){ $doclistdata .=  'Payment'; }else if($docType == 'formi20'){ $doclistdata .=  'Form I 20'; }else if($docType == 'visaapplication'){ $doclistdata .=  'Visa Application'; }else if($docType == 'interview'){ $doclistdata .=  'Interview'; }else if($docType == 'enrolment'){ $doclistdata .=  'Enrolment'; }else if($docType == 'courseongoing'){ $doclistdata .=  'Course Ongoing'; }else{ $doclistdata .= $docType; }
@@ -1846,7 +1846,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 			$doclistdata .= '<td>'.date('Y-m-d',strtotime($doclist->created_at)).'</td>';
 			$doclistdata .= '<td>';
 			if($docStatus == 1){
-				$doclistdata .= '<span class="check"><i class="fa fa-eye"></i></span>';
+				$doclistdata .= '<span class="check"><i class="fa-solid fa-eye"></i></span>';
 			}
 				$doclistdata .= '<div class="dropdown d-inline">
 					<button class="btn btn-primary dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>

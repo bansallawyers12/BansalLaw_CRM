@@ -407,7 +407,7 @@
     }
 
     /* Modern Icons */
-    .listing-container .fas.fa-check-circle {
+    .listing-container .fa-solid.fa-circle-check {
         color: #10b981;
         font-size: 16px;
         margin-right: 6px;
@@ -815,7 +815,7 @@
 
                         <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
                             @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
-                            <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm" title="View Financial Analytics Dashboard"><i class="fas fa-chart-line"></i> Analytics</a>
+                            <a href="{{ route('clients.analytics-dashboard') }}" class="btn btn-theme btn-theme-sm" title="View Financial Analytics Dashboard"><i class="fa-solid fa-chart-line"></i> Analytics</a>
                             @endif
                             <label for="per_page" class="sr-only">Items per page</label>
                             <select name="per_page" id="per_page" class="form-control per-page-select">
@@ -826,9 +826,9 @@
                                 <option value="200" {{ $perPage == 200 ? 'selected' : '' }}>200</option>
                                 <option value="500" {{ $perPage == 500 ? 'selected' : '' }}>500</option>
                             </select>
-                            <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fas fa-filter"></i> Filter</a>
+                            <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fa-solid fa-filter"></i> Filter</a>
                             <button type="button" class="btn btn-primary is_checked_client_void_invoice">
-                                <i class="fas fa-check-circle"></i>
+                                <i class="fa-solid fa-circle-check"></i>
                                 Void Invoice
                             </button>
                         </div>
@@ -885,7 +885,7 @@
                              title="Click to filter Current invoices (0-30 days)">
                             <div class="aging-card-header">
                                 <div class="aging-icon">
-                                    <i class="fas fa-check-circle"></i>
+                                    <i class="fa-solid fa-circle-check"></i>
                                 </div>
                                 <div class="aging-card-title">
                                     <h5>Current</h5>
@@ -902,7 +902,7 @@
                              title="Click to filter Warning invoices (30-60 days overdue)">
                             <div class="aging-card-header">
                                 <div class="aging-icon">
-                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
                                 </div>
                                 <div class="aging-card-title">
                                     <h5>Warning</h5>
@@ -919,7 +919,7 @@
                              title="Click to filter Urgent invoices (60-90 days overdue)">
                             <div class="aging-card-header">
                                 <div class="aging-icon">
-                                    <i class="fas fa-exclamation-circle"></i>
+                                    <i class="fa-solid fa-circle-exclamation"></i>
                                 </div>
                                 <div class="aging-card-title">
                                     <h5>Urgent</h5>
@@ -936,7 +936,7 @@
                              title="Click to filter Critical invoices (90+ days overdue)">
                             <div class="aging-card-header">
                                 <div class="aging-icon">
-                                    <i class="fas fa-times-circle"></i>
+                                    <i class="fa-solid fa-circle-xmark"></i>
                                 </div>
                                 <div class="aging-card-title">
                                     <h5>Critical</h5>
@@ -953,7 +953,7 @@
                             Search By Details
                             @if(request()->hasAny(['client_id', 'client_matter_id', 'amount', 'hubdoc_status', 'aging_category', 'date_filter_type', 'from_date', 'to_date', 'financial_year']))
                                 <span class="active-filters-badge">
-                                    <i class="fas fa-filter"></i>
+                                    <i class="fa-solid fa-filter"></i>
                                     {{ collect([request('client_id'), request('client_matter_id'), request('amount'), request('hubdoc_status'), request('aging_category'), request('date_filter_type'), request('from_date'), request('to_date'), request('financial_year')])->filter()->count() }} Active
                                 </span>
                             @endif
@@ -964,7 +964,7 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="client_id" class="col-form-label" style="color:#4a5568 !important;">
-                                            <i class="fas fa-user"></i> Client ID
+                                            <i class="fa-solid fa-user"></i> Client ID
                                         </label>
                                         <select name="client_id" id="client_id" class="form-control crm-ts-plain">
                                             <option value="">Select Client</option>
@@ -980,7 +980,7 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="client_matter_id" class="col-form-label" style="color:#4a5568 !important;">
-                                            <i class="fas fa-briefcase"></i> Client Matter ID
+                                            <i class="fa-solid fa-briefcase"></i> Client Matter ID
                                         </label>
                                         <select name="client_matter_id" id="client_matter_id" class="form-control crm-ts-plain">
                                             <option value="">Select Matter</option>
@@ -996,7 +996,7 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="amount" class="col-form-label" style="color:#4a5568 !important;">
-                                            <i class="fas fa-dollar-sign"></i> Amount
+                                            <i class="fa-solid fa-dollar-sign"></i> Amount
                                         </label>
                                         <input type="number" name="amount" id="amount" value="{{ old('amount', Request::get('amount')) }}" class="form-control" placeholder="Enter amount" step="0.01" min="0">
                                     </div>
@@ -1005,7 +1005,7 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="hubdoc_status" class="col-form-label" style="color:#4a5568 !important;">
-                                            <i class="fas fa-cloud-upload-alt"></i> Hubdoc Status
+                                            <i class="fa-solid fa-cloud-arrow-up"></i> Hubdoc Status
                                         </label>
                                         <select name="hubdoc_status" id="hubdoc_status" class="form-control">
                                             <option value="">All Invoices</option>
@@ -1021,7 +1021,7 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label for="aging_category" class="col-form-label" style="color:#4a5568 !important;">
-                                            <i class="fas fa-clock"></i> Aging Category
+                                            <i class="fa-solid fa-clock"></i> Aging Category
                                         </label>
                                         <select name="aging_category" id="aging_category" class="form-control">
                                             <option value="">All Aging Categories</option>
@@ -1036,7 +1036,7 @@
 
                             <!-- Enhanced Date Filter Section -->
                             <div class="date-filter-section">
-                                <h5><i class="fas fa-calendar-alt"></i> Date Filter</h5>
+                                <h5><i class="fa-solid fa-calendar-days"></i> Date Filter</h5>
                                 
                                 <!-- Hidden field to track filter type -->
                                 <input type="hidden" name="date_filter_type" id="date_filter_type" value="{{ request('date_filter_type', '') }}">
@@ -1044,28 +1044,28 @@
                                 <!-- Quick Filter Chips -->
                                 <div class="quick-filters">
                                     <span class="quick-filter-chip {{ request('date_filter_type') == 'today' ? 'active' : '' }}" data-filter="today">
-                                        <i class="fas fa-calendar-day"></i> Today
+                                        <i class="fa-solid fa-calendar-day"></i> Today
                                     </span>
                                     <span class="quick-filter-chip {{ request('date_filter_type') == 'this_week' ? 'active' : '' }}" data-filter="this_week">
-                                        <i class="fas fa-calendar-week"></i> This Week
+                                        <i class="fa-solid fa-calendar-week"></i> This Week
                                     </span>
                                     <span class="quick-filter-chip {{ request('date_filter_type') == 'this_month' ? 'active' : '' }}" data-filter="this_month">
-                                        <i class="fas fa-calendar"></i> This Month
+                                        <i class="fa-solid fa-calendar"></i> This Month
                                     </span>
                                     <span class="quick-filter-chip {{ request('date_filter_type') == 'this_quarter' ? 'active' : '' }}" data-filter="this_quarter">
-                                        <i class="fas fa-calendar-check"></i> This Quarter
+                                        <i class="fa-solid fa-calendar-check"></i> This Quarter
                                     </span>
                                     <span class="quick-filter-chip {{ request('date_filter_type') == 'this_year' ? 'active' : '' }}" data-filter="this_year">
-                                        <i class="fas fa-calendar-alt"></i> This Year
+                                        <i class="fa-solid fa-calendar-days"></i> This Year
                                     </span>
                                     <span class="quick-filter-chip {{ request('date_filter_type') == 'last_month' ? 'active' : '' }}" data-filter="last_month">
-                                        <i class="fas fa-calendar-minus"></i> Last Month
+                                        <i class="fa-solid fa-calendar-minus"></i> Last Month
                                     </span>
                                     <span class="quick-filter-chip {{ request('date_filter_type') == 'last_quarter' ? 'active' : '' }}" data-filter="last_quarter">
-                                        <i class="fas fa-calendar-minus"></i> Last Quarter
+                                        <i class="fa-solid fa-calendar-minus"></i> Last Quarter
                                     </span>
                                     <span class="quick-filter-chip {{ request('date_filter_type') == 'last_year' ? 'active' : '' }}" data-filter="last_year">
-                                        <i class="fas fa-calendar-minus"></i> Last Year
+                                        <i class="fa-solid fa-calendar-minus"></i> Last Year
                                     </span>
                                 </div>
 
@@ -1075,7 +1075,7 @@
                                 <div class="date-range-wrapper">
                                     <div class="form-group">
                                         <label for="from_date" class="col-form-label" style="color:#4a5568 !important;">
-                                            <i class="fas fa-calendar-plus"></i> From Date
+                                            <i class="fa-solid fa-calendar-plus"></i> From Date
                                         </label>
                                         <input type="text" name="from_date" id="from_date" value="{{ old('from_date', Request::get('from_date')) }}" class="form-control datepicker" autocomplete="off" placeholder="Select start date">
                                     </div>
@@ -1084,7 +1084,7 @@
                                     
                                     <div class="form-group">
                                         <label for="to_date" class="col-form-label" style="color:#4a5568 !important;">
-                                            <i class="fas fa-calendar-check"></i> To Date
+                                            <i class="fa-solid fa-calendar-check"></i> To Date
                                         </label>
                                         <input type="text" name="to_date" id="to_date" value="{{ old('to_date', Request::get('to_date')) }}" class="form-control datepicker" autocomplete="off" placeholder="Select end date">
                                     </div>
@@ -1095,7 +1095,7 @@
                                 <!-- Financial Year Selector -->
                                 <div class="fy-selector">
                                     <label for="financial_year" class="col-form-label" style="color:#4a5568 !important;">
-                                        <i class="fas fa-chart-line"></i> Financial Year:
+                                        <i class="fa-solid fa-chart-line"></i> Financial Year:
                                     </label>
                                     <select name="financial_year" id="financial_year" class="form-control">
                                         <option value="">Select Financial Year</option>
@@ -1124,14 +1124,14 @@
                                 <div class="col-md-12 text-center">
                                     <div class="filter-buttons-container">
                                         <button type="submit" class="btn btn-primary btn-theme-lg me-3">
-                                            <i class="fas fa-search"></i> Search
+                                            <i class="fa-solid fa-search"></i> Search
                                         </button>
                                         <a class="btn btn-info" href="{{URL::to('/clients/invoicelist')}}">
-                                            <i class="fas fa-redo"></i> Reset All
+                                            <i class="fa-solid fa-arrow-rotate-right"></i> Reset All
                                         </a>
                                         @if(request()->hasAny(['client_id', 'client_matter_id', 'amount', 'hubdoc_status', 'aging_category', 'date_filter_type', 'from_date', 'to_date', 'financial_year']))
                                             <button type="button" class="clear-filter-btn ms-2" id="clearDateFilters">
-                                                <i class="fas fa-times-circle"></i> Clear Date Filters
+                                                <i class="fa-solid fa-circle-xmark"></i> Clear Date Filters
                                             </button>
                                         @endif
                                     </div>
@@ -1153,64 +1153,64 @@
                                     <th class="sortable-header {{ request('sort_by') == 'client_id' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="client_id">
                                         Client Id
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'client_matter' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="client_matter">
                                         Client Matter
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'name' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="name">
                                         Name
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'reference' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="reference">
                                         Reference
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'trans_date' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="trans_date">
                                         Trans. Date
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'amount' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="amount">
                                         Amount
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'hubdoc_status' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="hubdoc_status" style="text-align: center;">
-                                        <i class="fas fa-cloud-upload-alt" style="color: var(--navy); margin-right: 4px;"></i>Hubdoc
+                                        <i class="fa-solid fa-cloud-arrow-up" style="color: var(--navy); margin-right: 4px;"></i>Hubdoc
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'aging' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="aging">
                                         Aging Status
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'voided_by' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="voided_by">
                                         Voided By
                                         <span class="sort-icon">
-                                            <i class="fas fa-caret-up"></i>
-                                            <i class="fas fa-caret-down"></i>
+                                            <i class="fa-solid fa-caret-up"></i>
+                                            <i class="fa-solid fa-caret-down"></i>
                                         </span>
                                     </th>
                                 </tr>
@@ -1272,13 +1272,13 @@
                                                         if(isset($list->hubdoc_sent) && $list->hubdoc_sent == 1) {
                                                             ?>
                                                             <div class="hubdoc-tick sent">
-                                                                <i class="fas fa-check"></i>
+                                                                <i class="fa-solid fa-check"></i>
                                                             </div>
                                                             <?php
                                                         } else {
                                                             ?>
                                                             <div class="hubdoc-tick not-sent">
-                                                                <i class="fas fa-minus"></i>
+                                                                <i class="fa-solid fa-minus"></i>
                                                             </div>
                                                             <?php
                                                         }
@@ -1308,31 +1308,31 @@
                                                 } elseif ($isPaidInvoice) {
                                                     $agingClass = 'badge-paid';
                                                     $agingLabel = 'Paid';
-                                                    $agingIcon = 'fa-check-circle';
+                                                    $agingIcon = 'fa-circle-check';
                                                     $agingDays = null;
                                                 } else {
                                                     if ($daysOld <= 30) {
                                                         $agingClass = 'badge-current';
                                                         $agingLabel = 'Current';
-                                                        $agingIcon = 'fa-check-circle';
+                                                        $agingIcon = 'fa-circle-check';
                                                     } elseif ($daysOld <= 60) {
                                                         $agingClass = 'badge-warning';
                                                         $agingLabel = 'Warning';
-                                                        $agingIcon = 'fa-exclamation-triangle';
+                                                        $agingIcon = 'fa-triangle-exclamation';
                                                     } elseif ($daysOld <= 90) {
                                                         $agingClass = 'badge-urgent';
                                                         $agingLabel = 'Urgent';
-                                                        $agingIcon = 'fa-exclamation-circle';
+                                                        $agingIcon = 'fa-circle-exclamation';
                                                     } else {
                                                         $agingClass = 'badge-critical';
                                                         $agingLabel = 'Critical';
-                                                        $agingIcon = 'fa-times-circle';
+                                                        $agingIcon = 'fa-circle-xmark';
                                                     }
                                                     $agingDays = $daysOld . ' days';
                                                 }
                                                 ?>
                                                 <span class="aging-badge <?php echo $agingClass; ?>">
-                                                    <i class="fas <?php echo $agingIcon; ?>"></i>
+                                                    <i class="fa-solid <?php echo $agingIcon; ?>"></i>
                                                     <?php echo $agingLabel; ?>
                                                     <?php if (!empty($agingDays)) { ?>
                                                         <span class="aging-days"><?php echo $agingDays; ?></span>
@@ -1347,7 +1347,7 @@
                                     <tr>
                                         <td colspan="10" style="text-align: center; padding: 60px 20px;">
                                             <div style="opacity: 0.5;">
-                                                <i class="fas fa-inbox" style="font-size: 48px; color: #cbd5e1; margin-bottom: 16px;"></i>
+                                                <i class="fa-solid fa-inbox" style="font-size: 48px; color: #cbd5e1; margin-bottom: 16px;"></i>
                                                 <div style="font-size: 18px; font-weight: 600; color: #64748b;">No Records Found</div>
                                                 <div style="font-size: 14px; color: #94a3b8; margin-top: 8px;">Try adjusting your filters to find what you're looking for</div>
                                             </div>

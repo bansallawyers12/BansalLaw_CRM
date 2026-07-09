@@ -2,10 +2,10 @@
 {{-- Company Information Card --}}
 <div class="card" style="margin-bottom: 20px;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3><i class="fas fa-building"></i> Company Information</h3>
+        <h3><i class="fa-solid fa-building"></i> Company Information</h3>
         <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}"
            class="btn btn-sm btn-primary">
-            <i class="fas fa-edit"></i> Edit
+            <i class="fa-solid fa-pen-to-square"></i> Edit
         </a>
     </div>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
@@ -68,7 +68,7 @@
 
 {{-- Company Phone & Email Card --}}
 <div class="card" style="margin-bottom: 20px;">
-    <h3><i class="fas fa-phone"></i> Contact Information</h3>
+    <h3><i class="fa-solid fa-phone"></i> Contact Information</h3>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
         <div class="field-group">
             <span class="field-label">Phone:</span>
@@ -101,15 +101,15 @@
 
                         if( isset($conVal->contact_type) && $conVal->contact_type != "" ){
                             if ( $conVal->is_verified ) {
-                                $phonenoStr .= $formattedPhone.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                             } else {
-                                $phonenoStr .= $formattedPhone.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                $phonenoStr .= $formattedPhone.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                             }
                         } else {
                             if ( isset($conVal->is_verified) && $conVal->is_verified ) {
-                                $phonenoStr .= $formattedPhone.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                             } else {
-                                $phonenoStr .= $formattedPhone.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                $phonenoStr .= $formattedPhone.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                             }
                         }
                     }
@@ -142,15 +142,15 @@
                     foreach($companyEmails as $emailKey=>$emailVal){
                         if( isset($emailVal->email_type) && $emailVal->email_type != "" ){
                             if ( $emailVal->is_verified ) {
-                                $emailStr .= $emailVal->email.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                $emailStr .= $emailVal->email.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                             } else {
-                                $emailStr .= $emailVal->email.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                $emailStr .= $emailVal->email.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                             }
                         } else {
                             if ( isset($emailVal->is_verified) && $emailVal->is_verified ) {
-                                $emailStr .= $emailVal->email.' <i class="fas fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                $emailStr .= $emailVal->email.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                             } else {
-                                $emailStr .= $emailVal->email.' <i class="far fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
+                                $emailStr .= $emailVal->email.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                             }
                         }
                     }
@@ -167,10 +167,10 @@
 @if($contactPerson)
     <div class="card" style="margin-bottom: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3><i class="fas fa-user-tie"></i> Primary Contact Person</h3>
+            <h3><i class="fa-solid fa-user-tie"></i> Primary Contact Person</h3>
             <a href="{{ route('clients.detail', base64_encode(convert_uuencode($contactPerson->id))) }}"
                class="btn btn-sm btn-outline-primary">
-                <i class="fas fa-external-link-alt"></i> View Profile
+                <i class="fa-solid fa-up-right-from-square"></i> View Profile
             </a>
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">

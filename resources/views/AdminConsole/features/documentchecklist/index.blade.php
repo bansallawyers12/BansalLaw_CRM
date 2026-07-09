@@ -30,7 +30,7 @@
                             </div>
                             <div class="card-header-action">
                                 <button type="button" class="btn btn-primary" id="dcl-add-btn">
-                                    <i class="fa fa-plus"></i> Add checklist
+                                    <i class="fa-solid fa-plus"></i> Add checklist
                                 </button>
                             </div>
                         </div>
@@ -40,10 +40,10 @@
                                     <div class="dcl-list-search d-flex align-items-stretch">
                                         <input id="dcl-search-input" type="search" class="form-control" value="{{ $searchBy ?? '' }}" placeholder="Search by name" aria-label="Search checklists">
                                         <button type="button" id="dcl-search-btn" class="btn btn-primary" aria-label="Search">
-                                            <i class="fas fa-search"></i>
+                                            <i class="fa-solid fa-search"></i>
                                         </button>
                                         <button type="button" id="dcl-search-clear" class="btn btn-light border ms-1" aria-label="Clear search" title="Clear search">
-                                            <i class="fas fa-times"></i>
+                                            <i class="fa-solid fa-xmark"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -123,7 +123,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-primary me-auto dcl-view-from-edit" id="dcl-view-from-edit">
-                        <i class="far fa-eye"></i> View checklist
+                        <i class="fa-regular fa-eye"></i> View checklist
                     </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="dcl-edit-submit">
@@ -149,7 +149,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" id="dcl-edit-from-view">
-                    <i class="fa fa-edit"></i> Edit checklist
+                    <i class="fa-solid fa-pen-to-square"></i> Edit checklist
                 </button>
             </div>
         </div>
