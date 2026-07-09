@@ -237,6 +237,53 @@ class ClientMatter extends Model
     }
 
     /**
+     * Workflow stage names that indicate a closed matter (mirrors clientsmatterslist / closedmatterslist).
+     */
+    public const CLOSED_WORKFLOW_STAGE_NAMES = ['file closed', 'withdrawn', 'refund', 'discontinued'];
+
+    public static function closedWorkflowStageNames(): array
+    {
+        return self::CLOSED_WORKFLOW_STAGE_NAMES;
+    }
+
+    /**
+     * Whether a matter is closed (discontinued or in a closed workflow stage).
+     */
+    public static function isClosed(?self $matter = null, ?int $matterStatus = null, ?string $workflowStageName = null): bool
+    {
+        if ($matter instanceof self) {
+            $matterStatus = (int) $matter->matter_status;
+            if ($matter->relationLoaded('workflowStage') && $matter->workflowStage) {
+                $workflowStageName = $matter->workflowStage->name;
+            }
+        }
+
+        if ((int) ($matterStatus ?? 1) === 0) {
+            return true;
+        }
+
+        $stage = strtolower(trim((string) ($workflowStageName ?? '')));
+
+        return $stage !== '' && in_array($stage, self::closedWorkflowStageNames(), true);
+    }
+
+    /**
+     * @param  object|null  $row  stdClass/Model with matter_status and optional workflow_stage_name
+     */
+    public static function isClosedRow(?object $row): bool
+    {
+        if (! $row) {
+            return false;
+        }
+
+        return self::isClosed(
+            null,
+            isset($row->matter_status) ? (int) $row->matter_status : null,
+            $row->workflow_stage_name ?? null
+        );
+    }
+
+    /**
      * Whether this client has at least one active matter with a matter type assigned.
      * Matches client detail / matter switcher logic (active + sel_matter_id set).
      */

@@ -41,10 +41,20 @@
                 icon="fa-solid fa-briefcase"
                 icon-class="icon-active" 
             />
+
+            <x-dashboard.kpi-card 
+                :title="'Closed Matters'" 
+                :count="$count_closed_matter" 
+                :route="route('clients.closedmatterslist')"
+                subtitle="Closed matters — go to full list"
+                icon="fa-solid fa-box-archive"
+                icon-class="icon-closed" 
+            />
             
             <x-dashboard.kpi-card 
                 :title="'Urgent Notes Deadlines'" 
                 :count="$count_note_deadline"
+                :route="route('assignee.action')"
                 :subtitle="count($notesData) . ' shown below'"
                 icon="fa-solid fa-hourglass-half"
                 icon-class="icon-pending" 
@@ -53,6 +63,7 @@
             <x-dashboard.kpi-card 
                 :title="'Cases Requiring Attention'" 
                 :count="$count_cases_requiring_attention_data"
+                :route="route('dashboard') . '#cases-requiring-attention'"
                 subtitle="Matters that may need follow-up"
                 icon="fa-solid fa-triangle-exclamation"
                 icon-class="icon-pending" 
@@ -170,7 +181,7 @@
             </div>
 
             {{-- Cases Requiring Attention --}}
-            <div class="focus-container">
+            <div class="focus-container dashboard-scroll-anchor" id="cases-requiring-attention">
                 <div class="focus-header">
                     <h3>
                         <i class="fa-solid fa-circle-exclamation" style="color: var(--warning-color);"></i> 

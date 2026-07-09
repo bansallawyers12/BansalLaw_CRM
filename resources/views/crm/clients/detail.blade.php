@@ -13,6 +13,30 @@
 <style>
 .lead-actions-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 18px; background: #f0f4ff; border-bottom: 1px solid #c7d7fa; }
 .lead-actions-bar__history { color: #fff; }
+.crm-closed-matter-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 0.75rem;
+    padding: 0.65rem 1rem;
+    border-radius: 6px;
+    background: #fff8e6;
+    border: 1px solid #e6c878;
+    color: #5c4a1a;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+.crm-container--closed-matter-view .tab-content input:not([type=hidden]):not([type=checkbox]):not([type=radio]),
+.crm-container--closed-matter-view .tab-content textarea,
+.crm-container--closed-matter-view .tab-content select {
+    pointer-events: none;
+    background-color: #f8f9fa;
+}
+.crm-container--closed-matter-view .tab-content .btn:not(.nav-link):not([data-bs-toggle="tab"]):not([data-bs-toggle="pill"]):not(.crm-closed-matter-allow),
+.crm-container--closed-matter-view .tab-content button:not(.nav-link):not([data-bs-toggle="tab"]):not([data-bs-toggle="pill"]):not(.crm-closed-matter-allow) {
+    pointer-events: none;
+    opacity: 0.55;
+}
 </style>
 
 <?php
@@ -22,7 +46,7 @@ use App\Http\Controllers\Controller;
     $cdnActiveTabSlug = strtolower((string) ($activeTab ?? 'personaldetails'));
     $cdnActivityTabOnly = $cdnActiveTabSlug === 'activityfeed';
 @endphp
-<div class="crm-container crm-container--unified{{ $cdnActivityTabOnly ? ' crm-container--activity-tab' : ' crm-container--no-feed' }}" data-client-id="{{ $fetchedData->id }}">
+<div class="crm-container crm-container--unified{{ $cdnActivityTabOnly ? ' crm-container--activity-tab' : ' crm-container--no-feed' }}{{ !empty($isClosedMatterView) ? ' crm-container--closed-matter-view' : '' }}" data-client-id="{{ $fetchedData->id }}" @if(!empty($isClosedMatterView)) data-closed-matter-view="1" @endif>
     <!-- Collapsed Toggle Button (shown when sidebar is collapsed) -->
     <button id="collapsed-toggle" class="collapsed-toggle-btn" title="Show Sidebar">
         ☰
@@ -75,12 +99,14 @@ use App\Http\Controllers\Controller;
 
             $cdnMatterRow = null;
             $cdnMatterRefLabel = null;
-            if (! empty($id1) && ! in_array(strtolower((string) $id1), array_map('strtolower', $clientDetailBackTabSlugs), true)) {
+            if (! empty($selectedClientMatter)) {
+                $cdnMatterRow = $selectedClientMatter;
+                $cdnMatterRefLabel = (string) $selectedClientMatter->client_unique_matter_no;
+            } elseif (! empty($id1) && ! in_array(strtolower((string) $id1), array_map('strtolower', $clientDetailBackTabSlugs), true)) {
                 $cdnMatterRefLabel = (string) $id1;
                 $cdnMatterRow = \App\Models\ClientMatter::where('client_id', $fetchedData->id)
                     ->where('client_unique_matter_no', $id1)
-                    ->where('matter_status', 1)
-                    ->with('matter')
+                    ->with('matter', 'workflowStage')
                     ->first();
             } else {
                 $cdnMatterRow = \App\Models\ClientMatter::where('client_id', $fetchedData->id)
@@ -148,6 +174,12 @@ use App\Http\Controllers\Controller;
         @endphp
 
         <section class="cdn-client-hero" aria-label="Client summary">
+            @if(!empty($isClosedMatterView))
+                <div class="crm-closed-matter-banner" role="status">
+                    <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                    <span>This matter is closed. You can view details but cannot make changes.</span>
+                </div>
+            @endif
             <div class="cdn-client-hero__inner">
                 <div class="cdn-client-hero__identity">
                     <div class="cdn-client-hero__avatar" aria-hidden="true">{{ $cdnInitials }}</div>
@@ -156,7 +188,7 @@ use App\Http\Controllers\Controller;
                             <h1 class="cdn-client-hero__name">
                                 {{ trim($cdnFn . ' ' . $cdnLn) }}
                             </h1>
-                            @if(empty($fetchedData->is_company))
+                            @if(empty($fetchedData->is_company) && empty($isClosedMatterView))
                                 <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}"
                                    class="cdn-client-hero__name-edit"
                                    title="{{ $__crmIsLeadType ? 'Edit Lead' : 'Edit Client' }}"
@@ -179,16 +211,23 @@ use App\Http\Controllers\Controller;
                         </div>
                         <div class="cdn-client-hero__matter-row">
                             @if($cdnMatterRefLabel)
-                                <span class="cdn-client-hero__matter-chip">{{ $cdnMatterChipTitle }} ({{ $cdnMatterRefLabel }})</span>
+                                <span class="cdn-client-hero__matter-chip">
+                                    {{ $cdnMatterChipTitle }} ({{ $cdnMatterRefLabel }})
+                                    @if(!empty($isClosedMatterView))
+                                        <span class="badge bg-secondary ms-1">Closed</span>
+                                    @endif
+                                </span>
                             @else
                                 <span class="cdn-client-hero__matter-chip">No active matter</span>
                             @endif
+                            @if(empty($isClosedMatterView))
                             <button type="button" class="btn cdn-client-hero__matter-btn" id="cdn-focus-matter-select" title="Change matter">Change Matter</button>
                             @if(is_array($matterFormForLead ?? null))
                                 <button type="button" class="btn cdn-client-hero__matter-btn" id="cdn-open-add-matter" title="Add a new matter for this client" onclick="openAddMatterModal()">Add Matter</button>
                             @endif
                             @if($cdnHeroCanDiscontinue && $cdnMatterRefLabel && isset($cdnMatterRow) && $cdnMatterRow)
                                 <button type="button" class="btn cdn-client-hero__matter-btn text-danger" title="Close this matter" data-matter-id="{{ $cdnMatterRow->id }}" onclick="openCloseMatterModal(this)" style="background: rgba(211, 47, 47, 0.1); border-color: rgba(211, 47, 47, 0.2); font-weight: 600;">Close Matter</button>
+                            @endif
                             @endif
                         </div>
                         <div class="cdn-client-hero__tags" aria-label="Tags">
@@ -198,13 +237,16 @@ use App\Http\Controllers\Controller;
                             @if($cdnHeroTagMore > 0)
                                 <span class="cdn-client-hero__tag cdn-client-hero__tag--more">+{{ $cdnHeroTagMore }} more</span>
                             @endif
+                            @if(empty($isClosedMatterView))
                             <span class="cdn-client-hero__tag-actions">
                                 <button type="button" class="cdn-client-hero__tag-add cdn-client-hero__tag-add--red openredtagspopup" data-id="{{ $fetchedData->id }}" title="Add red tag (hidden by default on profile)" aria-label="Add red tag">+</button>
                                 <button type="button" class="cdn-client-hero__tag-add cdn-client-hero__tag-add--blue opentagspopup" data-id="{{ $fetchedData->id }}" title="Add or edit tags" aria-label="Add or edit tags">+</button>
                             </span>
+                            @endif
                         </div>
                     </div>
                 </div>
+                @if(empty($isClosedMatterView))
                 <div class="cdn-client-hero__actions">
                     <div class="cdn-client-hero__actions-top" role="group" aria-label="Scheduling and workflow">
                         <button type="button" class="btn cdn-client-hero__action-btn" data-bs-toggle="modal" data-bs-target="#create_appoint" title="Schedule appointment">Appointment</button>
@@ -219,6 +261,9 @@ use App\Http\Controllers\Controller;
                         <p class="cdn-client-hero__last-update">Last update on {{ $cdnHeroLastUpdateOn }}</p>
                     @endif
                 </div>
+                @elseif($cdnHeroLastUpdateOn)
+                    <p class="cdn-client-hero__last-update">Last update on {{ $cdnHeroLastUpdateOn }}</p>
+                @endif
             </div>
         </section>
 
@@ -1413,6 +1458,7 @@ $(document).ready(function() {
         cdnShowMattersDocSubtab: @json(!empty($cdnShowMattersDocSubtab)),
         matterRefNo: @json(($id1 ?? '')),
         clientMatterId: @json($cdnMatterRow?->id ?? null),
+        isClosedMatterView: @json(!empty($isClosedMatterView)),
         clientFirstName: @json(($fetchedData->first_name ?? 'client')),
         notPickedCallSmsDefault: @json($notPickedCallSmsDefault ?? ''),
         detailBaseUrl: '{{ url("/clients/detail") }}',
@@ -1539,6 +1585,7 @@ $(document).ready(function() {
 
 {{-- Newly added external JS placeholders for progressive migration --}}
 <script src="{{ URL::asset('js/crm/clients/shared.js') }}?v={{ time() }}"></script>
+<script src="{{ URL::asset('js/crm/clients/closed-matter-view.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/detail.js') }}" defer></script>
 
 {{-- Client detail utilities (must load before detail-main.js) --}}

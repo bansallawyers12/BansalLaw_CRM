@@ -121,7 +121,11 @@
       }
       var statClass = status === 'Archived'
         ? 'ui label crm-ts-result__statistics'
-        : 'ui label yellow crm-ts-result__statistics';
+        : (status === 'Closed'
+          ? 'ui label grey crm-ts-result__statistics'
+          : (status === 'Active'
+            ? 'ui label green crm-ts-result__statistics'
+            : 'ui label yellow crm-ts-result__statistics'));
       if (status) {
         badges += '<span class="' + statClass + '">' + escape(status) + '</span>';
       }

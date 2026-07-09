@@ -10,12 +10,18 @@
 
 @php
     /* docs/theme.md — Icon Dot Colours (KPI icons) */
-    $iconWrapperClass = in_array($iconClass, ['icon-active', 'icon-pending', 'icon-success'], true)
+    $iconWrapperClass = in_array($iconClass, ['icon-active', 'icon-pending', 'icon-success', 'icon-closed'], true)
         ? $iconClass
         : 'icon-active';
+    $cardModifier = str_replace('icon-', '', $iconWrapperClass);
+    $tag = $route ? 'a' : 'div';
 @endphp
 
-<div class="kpi-card-modern kpi-card-modern--{{ str_replace('icon-', '', $iconWrapperClass) }}">
+<{{ $tag }}
+    @if($route) href="{{ $route }}" @endif
+    class="kpi-card-modern kpi-card-modern--{{ $cardModifier }}{{ $route ? ' kpi-card-modern--link' : '' }}"
+    @if($route) aria-label="{{ $title }} — {{ number_format($count) }}" @endif
+>
     <div class="kpi-card-inner">
         <div class="kpi-icon-wrapper {{ $iconWrapperClass }}">
             <i class="{{ $icon }}"></i>
@@ -23,11 +29,7 @@
         <div class="kpi-content">
             <h3 class="kpi-title">{{ $title }}</h3>
             <div class="kpi-count">
-                @if($route)
-                    <a href="{{ $route }}" class="kpi-count-link">{{ number_format($count) }}</a>
-                @else
-                    <span class="kpi-count-number">{{ number_format($count) }}</span>
-                @endif
+                <span class="kpi-count-number">{{ number_format($count) }}</span>
             </div>
             @if($subtitle)
                 <p class="kpi-subtitle">{{ $subtitle }}</p>
@@ -35,7 +37,7 @@
         </div>
     </div>
     <div class="kpi-card-shine"></div>
-</div>
+</{{ $tag }}>
 
 <style>
 .kpi-card-modern {
@@ -47,13 +49,31 @@
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     overflow: hidden;
     border: 1px solid rgba(0, 0, 0, 0.05);
+    cursor: default;
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+.kpi-card-modern--link {
     cursor: pointer;
 }
 
-.kpi-card-modern:hover {
+.kpi-card-modern--link:hover {
     transform: translateY(-8px) scale(1.02);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
     border-color: rgba(0, 0, 0, 0.1);
+    color: inherit;
+    text-decoration: none;
+}
+
+.kpi-card-modern:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.kpi-card-modern--link:hover {
+    transform: translateY(-8px) scale(1.02);
 }
 
 .kpi-card-modern::before {
@@ -76,7 +96,11 @@
     background: linear-gradient(90deg, var(--success, #1e7a52), #155a3c);
 }
 
-.kpi-card-modern:hover::before {
+.kpi-card-modern--closed::before {
+    background: linear-gradient(90deg, #6c757d, #495057);
+}
+
+.kpi-card-modern--link:hover::before {
     opacity: 1;
 }
 
@@ -100,7 +124,7 @@
     transition: all 0.3s ease;
 }
 
-.kpi-card-modern:hover .kpi-icon-wrapper {
+.kpi-card-modern--link:hover .kpi-icon-wrapper {
     transform: scale(1.1) rotate(5deg);
 }
 
@@ -131,6 +155,13 @@
     color: var(--success, #1e7a52);
 }
 
+.kpi-icon-wrapper.icon-closed {
+    background: rgba(108, 117, 125, 0.12);
+}
+.kpi-icon-wrapper.icon-closed i {
+    color: #6c757d;
+}
+
 .kpi-content {
     width: 100%;
 }
@@ -148,19 +179,16 @@
     margin: 0;
 }
 
-.kpi-count-number,
-.kpi-count-link {
+.kpi-count-number {
     font-size: 2.2em;
     font-weight: 800;
     color: var(--text-dark, #1a2c40);
     line-height: 1;
     display: inline-block;
     transition: all 0.3s ease;
-    text-decoration: none;
 }
 
-.kpi-count-link:hover {
-    transform: scale(1.05);
+.kpi-card-modern--link:hover .kpi-count-number {
     color: var(--sidebar-active, #3a6fa8);
 }
 
@@ -189,7 +217,7 @@
     transition: transform 0.6s ease;
 }
 
-.kpi-card-modern:hover .kpi-card-shine {
+.kpi-card-modern--link:hover .kpi-card-shine {
     transform: translateX(100%);
 }
 
@@ -207,8 +235,7 @@
         font-size: 1.5em;
     }
     
-    .kpi-count-number,
-    .kpi-count-link {
+    .kpi-count-number {
         font-size: 1.8em;
     }
 }

@@ -55,10 +55,10 @@
                     <div class="info-card in-progress-section">
                         <div class="in-progress-single-line">
                             <h5 class="in-progress-title">
-                                @if(isset($workflowSelectedMatter->matter_status) && $workflowSelectedMatter->matter_status == 1)
-                                    Active
+                                @if(!empty($isClosedMatterView) || (isset($workflowSelectedMatter->matter_status) && $workflowSelectedMatter->matter_status != 1))
+                                    Closed
                                 @else
-                                    In-active
+                                    Active
                                 @endif
                             </h5>
                             <div class="current-stage-info">
@@ -97,6 +97,7 @@
                             </div>
                             <div class="deadline-section mt-3">
                                 <div class="form-group mb-0">
+                                    @if(empty($isClosedMatterView))
                                     <div class="custom-control custom-checkbox">
                                         <input type="checkbox" class="custom-control-input" id="workflow-set-deadline" data-matter-id="{{ $workflowSelectedMatter->id }}"
                                             {{ $workflowSelectedMatter->deadline ? 'checked' : '' }}>
@@ -110,6 +111,7 @@
                                             style="max-width: 180px;">
                                         <small class="form-text text-muted">Select the matter deadline date.</small>
                                     </div>
+                                    @endif
                                     @if($workflowSelectedMatter->deadline)
                                         <div class="mt-2">
                                             <span class="badge badge-info"><i class="fa-solid fa-calendar-days"></i> Deadline: {{ \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('d/m/Y') }}</span>
@@ -123,8 +125,11 @@
                                     $workflowIsDiscontinued = ($workflowSelectedMatter->matter_status ?? 1) == 0;
                                     $workflowCanReopen = ($workflowViewer instanceof \App\Models\Staff && ($workflowViewer->hasEffectiveSuperAdminPrivileges() || $workflowViewer->hasCrmModule('45')));
                                     $workflowCanDiscontinue = ($workflowViewer instanceof \App\Models\Staff && $workflowViewer->canCloseDiscontinueMatter());
+                                    $workflowIsReadOnly = !empty($isClosedMatterView);
                                 @endphp
-                                @if($workflowIsDiscontinued)
+                                @if($workflowIsReadOnly)
+                                    <span class="text-muted small"><i class="fa-solid fa-lock"></i> View only — this matter is closed.</span>
+                                @elseif($workflowIsDiscontinued)
                                     {{-- Discontinued matter: show Reopen (Admin only), Change Workflow --}}
                                     @if($workflowCanReopen)
                                     <button class="btn btn-primary btn-sm matter-detail-reopen-btn" id="workflow-tab-reopen" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Reopen Matter">

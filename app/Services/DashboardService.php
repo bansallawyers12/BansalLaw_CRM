@@ -38,6 +38,7 @@ class DashboardService
             'notesData' => $this->getNotesData($user),
             'cases_requiring_attention_data' => $this->getCasesRequiringAttention($user),
             'count_active_matter' => $this->getActiveMatterCount(),
+            'count_closed_matter' => $this->getClosedMatterCount(),
             'count_note_deadline' => $this->getNoteDeadlineCount($user),
             'count_cases_requiring_attention_data' => $this->getCasesRequiringAttentionCount($user),
             'filters' => [
@@ -257,6 +258,31 @@ class DashboardService
     {
         return Cache::remember('active_matter_count', 300, function () {
             return ClientMatter::where('matter_status', 1)->count();
+        });
+    }
+
+    /**
+     * Get closed matter count (mirrors closedmatterslist filters).
+     */
+    private function getClosedMatterCount(): int
+    {
+        return Cache::remember('closed_matter_count', 300, function () {
+            $closedStages = ClientMatter::closedWorkflowStageNames();
+
+            return (int) DB::table('client_matters as cm')
+                ->join('admins as ad', 'cm.client_id', '=', 'ad.id')
+                ->leftJoin('workflow_stages as ws', 'cm.workflow_stage_id', '=', 'ws.id')
+                ->where('ad.is_archived', '=', '0')
+                ->whereIn('ad.type', ['client', 'lead'])
+                ->whereNull('ad.is_deleted')
+                ->where(function ($q) use ($closedStages) {
+                    $q->where('cm.matter_status', '=', '0')
+                        ->orWhereRaw(
+                            'LOWER(TRIM(ws.name)) IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')',
+                            $closedStages
+                        );
+                })
+                ->count();
         });
     }
 

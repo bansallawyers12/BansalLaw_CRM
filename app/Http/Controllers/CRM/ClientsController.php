@@ -2227,6 +2227,19 @@ class ClientsController extends Controller
                 $__crmEditLeadType = (($fetchedData->type ?? null) === 1
                     || in_array(trim((string) ($fetchedData->type ?? '')), ['lead', 'l', '1'], true));
 
+                $selectedClientMatter = null;
+                $isClosedMatterView = false;
+                if ($id1 !== null && $id1 !== '') {
+                    $selectedClientMatter = ClientMatter::query()
+                        ->where('client_id', (int) $id)
+                        ->where('client_unique_matter_no', (string) $id1)
+                        ->with(['matter', 'workflowStage'])
+                        ->first();
+                    if ($selectedClientMatter) {
+                        $isClosedMatterView = ClientMatter::isClosed($selectedClientMatter);
+                    }
+                }
+
                 $conflictParties = \App\Models\ClientConflictParty::where('client_id', $id)
                     ->with(['phones', 'emails'])
                     ->orderBy('sort_order')
@@ -2245,6 +2258,7 @@ class ClientsController extends Controller
                     'visibleNomineeNominations', 'notPickedCallSmsDefault',
                     'assignableStaff', 'leadStageLabels', 'showGoogleReviewReminderModal',
                     'matterFormForLead', '__crmEditLeadType',
+                    'selectedClientMatter', 'isClosedMatterView',
                     'conflictParties', 'latestConflictCheck'
                 ));
             } else {
@@ -2772,10 +2786,10 @@ class ClientsController extends Controller
                     $matterResults = DB::table('admins')
                         ->join('client_matters', 'admins.id', '=', 'client_matters.client_id')
                         ->leftJoin('companies', 'companies.admin_id', '=', 'admins.id')
+                        ->leftJoin('workflow_stages as ws', 'client_matters.workflow_stage_id', '=', 'ws.id')
                         ->whereIn('admins.type', ['client', 'lead'])
                         ->whereNull('admins.is_deleted')
                         ->where('admins.is_archived', 0)
-                        ->where('client_matters.matter_status', 1)
                         ->whereRaw('LOWER(admins.client_id) LIKE ?', ["%{$clientIdPartLower}%"])
                         ->whereRaw('LOWER(client_matters.client_unique_matter_no) LIKE ?', ["%{$matterNoPartLower}%"])
                         ->tap(function ($q) {
@@ -2790,23 +2804,14 @@ class ClientsController extends Controller
                             'admins.is_archived',
                             'admins.type',
                             'companies.company_name',
-                            'client_matters.client_unique_matter_no'
+                            'client_matters.client_unique_matter_no',
+                            'client_matters.matter_status',
+                            'ws.name as workflow_stage_name'
                         )
                         ->get();
                     
                     foreach ($matterResults as $result) {
-                        $displayName = ($result->is_company && $result->company_name)
-                            ? $result->company_name
-                            : trim(($result->first_name ?? '') . ' ' . ($result->last_name ?? ''));
-                        $results[] = StaffClientVisibility::enrichGlobalSearchItem([
-                            'id' => base64_encode(convert_uuencode($result->client_id)) . '/Matter/' . $result->client_unique_matter_no,
-                            'name' => $displayName,
-                            'email' => $result->email,
-                            'status' => $result->is_archived ? 'Archived' : $result->type,
-                            'cid' => $result->client_id,
-                            'is_company' => (bool) $result->is_company,
-                            'record_type' => $result->type,
-                        ], (string) $result->type);
+                        $results[] = $this->mapGlobalSearchMatterRow($result);
                     }
                 }
             }
@@ -2828,10 +2833,10 @@ class ClientsController extends Controller
                             ->join('client_matters', 'admins.id', '=', 'client_matters.client_id')
                             ->join('matters', 'matters.id', '=', 'client_matters.sel_matter_id')
                             ->leftJoin('companies', 'companies.admin_id', '=', 'admins.id')
+                            ->leftJoin('workflow_stages as ws', 'client_matters.workflow_stage_id', '=', 'ws.id')
                             ->whereIn('admins.type', ['client', 'lead'])
                             ->whereNull('admins.is_deleted')
                             ->where('admins.is_archived', 0)
-                            ->where('client_matters.matter_status', 1)
                             ->whereRaw('LOWER(admins.client_id) LIKE ?', [$likeClient])
                             ->where(function ($q) use ($likeMatter) {
                                 $q->whereRaw('LOWER(client_matters.client_unique_matter_no) LIKE ?', [$likeMatter])
@@ -2850,23 +2855,14 @@ class ClientsController extends Controller
                                 'admins.is_archived',
                                 'admins.type',
                                 'companies.company_name',
-                                'client_matters.client_unique_matter_no'
+                                'client_matters.client_unique_matter_no',
+                                'client_matters.matter_status',
+                                'ws.name as workflow_stage_name'
                             )
                             ->get();
 
                         foreach ($slashResults as $result) {
-                            $displayName = ($result->is_company && $result->company_name)
-                                ? $result->company_name
-                                : trim(($result->first_name ?? '') . ' ' . ($result->last_name ?? ''));
-                            $results[] = StaffClientVisibility::enrichGlobalSearchItem([
-                                'id' => base64_encode(convert_uuencode($result->client_id)) . '/Matter/' . $result->client_unique_matter_no,
-                                'name' => $displayName,
-                                'email' => $result->email,
-                                'status' => $result->is_archived ? 'Archived' : $result->type,
-                                'cid' => $result->client_id,
-                                'is_company' => (bool) $result->is_company,
-                                'record_type' => $result->type,
-                            ], (string) $result->type);
+                            $results[] = $this->mapGlobalSearchMatterRow($result);
                         }
                     }
                 }
@@ -2880,10 +2876,10 @@ class ClientsController extends Controller
             $matterMatches = DB::table('client_matters')
                 ->join('admins', 'client_matters.client_id', '=', 'admins.id')
                 ->leftJoin('companies', 'companies.admin_id', '=', 'admins.id')
+                ->leftJoin('workflow_stages as ws', 'client_matters.workflow_stage_id', '=', 'ws.id')
                 ->whereIn('admins.type', ['client', 'lead'])
                 ->whereNull('admins.is_deleted')
                 ->where('admins.is_archived', 0)
-                ->where('client_matters.matter_status', 1)
                 ->tap(function ($q) {
                     StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
                 })
@@ -2897,7 +2893,9 @@ class ClientsController extends Controller
                     'admins.is_archived',
                     'admins.type',
                     'companies.company_name',
-                    'client_matters.client_unique_matter_no'
+                    'client_matters.client_unique_matter_no',
+                    'client_matters.matter_status',
+                    'ws.name as workflow_stage_name'
                 )
                 ->get();
             
@@ -2905,18 +2903,7 @@ class ClientsController extends Controller
             Log::info('Matter matches found: ' . count($matterMatches) . ' for query: ' . $squery);
 
             foreach ($matterMatches as $matter) {
-                $displayName = ($matter->is_company && $matter->company_name)
-                    ? $matter->company_name
-                    : trim(($matter->first_name ?? '') . ' ' . ($matter->last_name ?? ''));
-                $results[] = StaffClientVisibility::enrichGlobalSearchItem([
-                    'id' => base64_encode(convert_uuencode($matter->client_id)) . '/Matter/' . $matter->client_unique_matter_no,
-                    'name' => $displayName,
-                    'email' => $matter->email,
-                    'status' => $matter->is_archived ? 'Archived' : $matter->type,
-                    'cid' => $matter->client_id,
-                    'is_company' => (bool) $matter->is_company,
-                    'record_type' => $matter->type,
-                ], (string) $matter->type);
+                $results[] = $this->mapGlobalSearchMatterRow($matter);
             }
 
             /**
@@ -3039,23 +3026,28 @@ class ClientsController extends Controller
                     ->get()
                     ->groupBy('client_id');
                 
-                // Get latest matter for each client (optimized: get max IDs first, then fetch details)
-                $maxMatterIds = DB::table('client_matters')
-                    ->whereIn('client_id', $clientIds)
-                    ->where('matter_status', 1)
-                    ->select('client_id', DB::raw('MAX(id) as max_id'))
-                    ->groupBy('client_id')
-                    ->pluck('max_id', 'client_id')
-                    ->toArray();
-                
-                $latestMatters = [];
-                if (!empty($maxMatterIds)) {
-                    $latestMatters = DB::table('client_matters')
-                        ->whereIn('id', array_values($maxMatterIds))
-                        ->select('client_id', 'client_unique_matter_no')
-                        ->get()
-                        ->keyBy('client_id');
-                }
+                // All matters per matched client (active + closed) so client-ref search shows each matter.
+                $allClientMatters = DB::table('client_matters')
+                    ->join('admins', 'client_matters.client_id', '=', 'admins.id')
+                    ->leftJoin('companies', 'companies.admin_id', '=', 'admins.id')
+                    ->leftJoin('workflow_stages as ws', 'client_matters.workflow_stage_id', '=', 'ws.id')
+                    ->whereIn('client_matters.client_id', $clientIds)
+                    ->select(
+                        'admins.id as client_id',
+                        'admins.first_name',
+                        'admins.last_name',
+                        'admins.is_company',
+                        'admins.email',
+                        'admins.is_archived',
+                        'admins.type',
+                        'companies.company_name',
+                        'client_matters.client_unique_matter_no',
+                        'client_matters.matter_status',
+                        'ws.name as workflow_stage_name'
+                    )
+                    ->orderByDesc('client_matters.id')
+                    ->get()
+                    ->groupBy('client_id');
 
                 // Process results
                 foreach ($clientsQuery as $client) {
@@ -3082,38 +3074,41 @@ class ClientsController extends Controller
                             ->toArray();
                         $allEmails = implode(', ', $emails);
                     }
-                    
-                    // Get latest matter
-                    $latestMatterNo = isset($latestMatters[$client->id]) 
-                        ? $latestMatters[$client->id]->client_unique_matter_no 
-                        : null;
-                    
-                    $resultFinalId = $latestMatterNo
-                        ? base64_encode(convert_uuencode($client->id)) . '/Matter/' . $latestMatterNo
-                        : base64_encode(convert_uuencode($client->id)) . '/Client';
 
-                    $results[] = StaffClientVisibility::enrichGlobalSearchItem([
-                        'id' => $resultFinalId,
-                        'name' => $client->company_name_or_personal_name,
-                        'email' => $client->email,
-                        'status' => $client->is_archived ? 'Archived' : $client->type,
-                        'cid' => $client->id,
-                        'phones' => $allPhones,
-                        'emails' => $allEmails,
-                        'is_company' => (bool) $client->is_company,
-                        'record_type' => $client->type,
-                    ], (string) $client->type);
+                    $clientMatters = $allClientMatters->get($client->id, collect());
+
+                    if ($clientMatters->isNotEmpty()) {
+                        foreach ($clientMatters as $matterRow) {
+                            $item = $this->mapGlobalSearchMatterRow($matterRow);
+                            $item['phones'] = $allPhones;
+                            $item['emails'] = $allEmails;
+                            $results[] = $item;
+                        }
+                    } else {
+                        $results[] = StaffClientVisibility::enrichGlobalSearchItem([
+                            'id' => base64_encode(convert_uuencode($client->id)) . '/Client',
+                            'name' => $client->company_name_or_personal_name,
+                            'email' => $client->email,
+                            'status' => $client->is_archived ? 'Archived' : $client->type,
+                            'cid' => $client->id,
+                            'phones' => $allPhones,
+                            'emails' => $allEmails,
+                            'is_company' => (bool) $client->is_company,
+                            'record_type' => $client->type,
+                        ], (string) $client->type);
+                    }
                 }
             }
 
-            // Deduplicate by cid, keeping the first occurrence of each
-            $seenCids = [];
-            $results = array_values(array_filter($results, function ($r) use (&$seenCids) {
-                $cid = $r['cid'] ?? null;
-                if ($cid === null || isset($seenCids[$cid])) {
+            // Deduplicate by result id (matter-specific rows share cid but differ by matter ref).
+            $seenKeys = [];
+            $results = array_values(array_filter($results, function ($r) use (&$seenKeys) {
+                $key = (string) ($r['id'] ?? ('cid:' . ($r['cid'] ?? '')));
+                if ($key === '' || isset($seenKeys[$key])) {
                     return false;
                 }
-                $seenCids[$cid] = true;
+                $seenKeys[$key] = true;
+
                 return true;
             }));
 
@@ -3140,6 +3135,33 @@ class ClientsController extends Controller
         
         // Return empty array when query is empty
         return response()->json(['items' => []]);
+    }
+
+    /**
+     * Map a global-search matter row to a Tom Select item (includes closed matters).
+     *
+     * @return array<string, mixed>
+     */
+    private function mapGlobalSearchMatterRow(object $result): array
+    {
+        $displayName = ($result->is_company && $result->company_name)
+            ? $result->company_name
+            : trim(($result->first_name ?? '') . ' ' . ($result->last_name ?? ''));
+        $isClosed = ClientMatter::isClosedRow($result);
+        $status = $result->is_archived
+            ? 'Archived'
+            : ($isClosed ? 'Closed' : 'Active');
+
+        return StaffClientVisibility::enrichGlobalSearchItem([
+            'id' => base64_encode(convert_uuencode($result->client_id)) . '/Matter/' . $result->client_unique_matter_no,
+            'name' => $displayName,
+            'email' => $result->email,
+            'status' => $status,
+            'cid' => $result->client_id,
+            'is_company' => (bool) $result->is_company,
+            'record_type' => (string) $result->type,
+            'matter_closed' => $isClosed,
+        ], (string) $result->type);
     }
 
     /**
