@@ -514,7 +514,7 @@
             return { html: '<i class="fa-solid fa-sms"></i>', cls: 'feed-icon-sms' };
         }
         if (activityType === 'document') {
-            return { html: '<i class="fa-solid fa-file-alt"></i>', cls: '' };
+            return { html: '<i class="fa-solid fa-file-lines"></i>', cls: '' };
         }
         if (activityType === 'signature') {
             return { html: '<i class="fa-solid fa-file-signature"></i>', cls: 'feed-icon-signature' };
@@ -527,22 +527,22 @@
         }
         if (activityType === 'note') {
             var nt = getNoteTypeClass(subject);
-            var ic = (subject || '').toLowerCase().indexOf('call') !== -1 ? 'fa-phone' : (sl.indexOf('email') !== -1 ? 'fa-envelope' : (sl.indexOf('in-person') !== -1 ? 'fa-user-friends' : (sl.indexOf('attention') !== -1 ? 'fa-exclamation-triangle' : (sl.indexOf('others') !== -1 ? 'fa-ellipsis-h' : 'fa-sticky-note'))));
+            var ic = (subject || '').toLowerCase().indexOf('call') !== -1 ? 'fa-phone' : (sl.indexOf('email') !== -1 ? 'fa-envelope' : (sl.indexOf('in-person') !== -1 ? 'fa-user-group' : (sl.indexOf('attention') !== -1 ? 'fa-triangle-exclamation' : (sl.indexOf('others') !== -1 ? 'fa-ellipsis' : 'fa-note-sticky'))));
             return { html: '<i class="fa-solid ' + ic + '"></i>', cls: 'feed-icon-note' + nt.feedIcon };
         }
         if (activityType === 'activity') {
             return { html: '<i class="fa-solid fa-bolt"></i>', cls: 'feed-icon-activity' };
         }
         if (activityType === 'stage') {
-            return { html: '<i class="fa-solid fa-tasks" aria-hidden="true"></i>', cls: 'feed-icon-stage' };
+            return { html: '<i class="fa-solid fa-list-check" aria-hidden="true"></i>', cls: 'feed-icon-stage' };
         }
         if (sl.indexOf('invoice') !== -1 || sl.indexOf('receipt') !== -1 || sl.indexOf('ledger') !== -1 || sl.indexOf('payment') !== -1 || sl.indexOf('account') !== -1) {
             return { html: '<i class="fa-solid fa-dollar-sign"></i>', cls: '' };
         }
         if (sl.indexOf('document') !== -1) {
-            return { html: '<i class="fa-solid fa-file-alt"></i>', cls: '' };
+            return { html: '<i class="fa-solid fa-file-lines"></i>', cls: '' };
         }
-        return { html: '<i class="fa-solid fa-sticky-note"></i>', cls: '' };
+        return { html: '<i class="fa-solid fa-note-sticky"></i>', cls: '' };
     }
 
     /**

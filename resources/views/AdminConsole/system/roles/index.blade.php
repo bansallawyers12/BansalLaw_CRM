@@ -43,7 +43,7 @@
                                             <i class="fa-solid fa-search"></i>
                                         </button>
                                         <button type="button" id="roles-search-clear" class="btn btn-light border ms-1" aria-label="Clear search" title="Clear search">
-                                            <i class="fa-solid fa-times"></i>
+                                            <i class="fa-solid fa-xmark"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -149,7 +149,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" id="roles-edit-from-view">
-                    <i class="fa-solid fa-edit"></i> Edit role
+                    <i class="fa-solid fa-pen-to-square"></i> Edit role
                 </button>
             </div>
         </div>

@@ -99,12 +99,12 @@
       <section id="section-hearings-list" class="content-section" style="margin-top:1.5rem; margin-bottom: 20px; padding: 20px;">
         <section class="form-section" style="margin-bottom: 0;">
           <div class="section-header">
-            <h3><i class="fa-solid fa-calendar-alt"></i> Scheduled &amp; Past Hearings</h3>
+            <h3><i class="fa-solid fa-calendar-days"></i> Scheduled &amp; Past Hearings</h3>
           </div>
           <div id="hearingsListContainer">
             @if(($courtHearings ?? collect())->isEmpty())
               <div class="matter-tab-empty" style="padding:2rem;">
-                <div class="matter-tab-empty__icon"><i class="fa-solid fa-calendar-times" style="font-size:2.5rem;color:#adb5bd;"></i></div>
+                <div class="matter-tab-empty__icon"><i class="fa-solid fa-calendar-xmark" style="font-size:2.5rem;color:#adb5bd;"></i></div>
                 <p class="matter-tab-empty__title">No hearings recorded</p>
                 <p class="matter-tab-empty__hint text-muted">Add the first court date using the form above.</p>
               </div>

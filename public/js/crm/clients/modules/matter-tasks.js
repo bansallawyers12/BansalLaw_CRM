@@ -230,7 +230,7 @@
             html +=
                 '<a class="cdn-matter-task__action-link" href="' +
                 actionHref +
-                '" title="Open on Action page" aria-label="Open on Action page"><i class="fa-solid fa-external-link-alt" aria-hidden="true"></i><span class="cdn-matter-task__action-link-text">Action</span></a>';
+                '" title="Open on Action page" aria-label="Open on Action page"><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i><span class="cdn-matter-task__action-link-text">Action</span></a>';
         }
         html +=
             '<button type="button" class="cdn-matter-task__del" title="Delete task" aria-label="Delete task"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>';

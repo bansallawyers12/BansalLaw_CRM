@@ -20,11 +20,11 @@
                 <div class="btn-group ms-2" role="group">
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}" 
                        class="btn btn-sm {{ $type === 'ajay' ? 'btn-primary' : 'btn-outline-primary' }}">
-                        <i class="fa-solid fa-calendar-alt"></i> Ajay Calendar
+                        <i class="fa-solid fa-calendar-days"></i> Ajay Calendar
                     </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}" 
                        class="btn btn-sm {{ $type === 'kunal' ? 'btn-primary' : 'btn-outline-primary' }}">
-                        <i class="fa-solid fa-calendar-alt"></i> Michael
+                        <i class="fa-solid fa-calendar-days"></i> Michael
                     </a>
                 </div>
             </div>
@@ -32,7 +32,7 @@
             <div class="card">
                 <div class="card-header">
                     <h4>
-                        <i class="fa-solid fa-calendar-alt me-2"></i>
+                        <i class="fa-solid fa-calendar-days me-2"></i>
                         {{ $calendarTitle }}
                         <small class="text-muted">(Website Bookings - v6)</small>
                     </h4>
@@ -41,7 +41,7 @@
                             <i class="fa-solid fa-plus"></i> Add Important Event
                         </button>
                         <button type="button" onclick="location.reload()" class="btn btn-sm btn-primary booking-calendar-page__refresh">
-                            <i class="fa-solid fa-sync"></i> Refresh
+                            <i class="fa-solid fa-rotate"></i> Refresh
                         </button>
                     </div>
                 </div>
@@ -148,10 +148,10 @@
             <div class="modal-footer">
                 <a href="#" id="viewFullDetails" class="btn btn-primary" target="_blank">View Full Details</a>
                 <button type="button" id="courtHearingEditBtn" class="btn btn-outline-primary d-none">
-                    <i class="fa-solid fa-edit"></i> Edit Appointment
+                    <i class="fa-solid fa-pen-to-square"></i> Edit Appointment
                 </button>
                 <button type="button" id="courtHearingSaveBtn" class="btn btn-primary d-none">
-                    <i class="fa-solid fa-save"></i> Save
+                    <i class="fa-solid fa-floppy-disk"></i> Save
                 </button>
                 <button type="button" id="courtHearingCancelEditBtn" class="btn btn-secondary d-none">Cancel</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -261,7 +261,7 @@
                     </div>
                 </div>
                 <p class="text-muted small mb-0">
-                    <i class="fa-solid fa-info-circle"></i>
+                    <i class="fa-solid fa-circle-info"></i>
                     Court dates added on a <strong>client profile → Court Dates tab</strong> also appear here automatically.
                 </p>
             </div>
@@ -271,7 +271,7 @@
                 </button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="importantEventSaveBtn">
-                    <i class="fa-solid fa-save"></i> Save
+                    <i class="fa-solid fa-floppy-disk"></i> Save
                 </button>
             </div>
         </div>
@@ -305,7 +305,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-danger" id="confirmCancelBtn">
-                    <i class="fa-solid fa-times"></i> Confirm Cancellation
+                    <i class="fa-solid fa-xmark"></i> Confirm Cancellation
                 </button>
             </div>
         </div>
@@ -752,7 +752,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p><strong>Meeting Type:</strong> 
                                 <span id="meetingTypeDisplay-${slotKey}" class="booking-calendar-link booking-calendar-link--action" onclick="showMeetingTypeDropdown('${slotKey}', '${meetingTypeRaw}')" title="Click to change meeting type">
                                     ${meetingTypeDisplay}
-                                    <i class="fa-solid fa-edit ms-1" style="font-size: 0.8em;"></i>
+                                    <i class="fa-solid fa-pen-to-square ms-1" style="font-size: 0.8em;"></i>
                                 </span>
                                 <select id="meetingTypeSelect-${slotKey}" class="form-control form-control-sm d-none" style="max-width: 200px; display: inline-block;" onchange="updateAppointmentMeetingType(${manageId}, '${slotKey}', this.value)" data-is-paid="${props.is_paid}">
                                     <option value="in_person" ${props.meeting_type === 'in_person' ? 'selected' : ''}>In Person</option>
@@ -766,7 +766,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <hr>
                     <div class="row mb-3">
                         <div class="col-12">
-                            <h6><i class="fa-solid fa-calendar-alt"></i> Reschedule Date & Time</h6>
+                            <h6><i class="fa-solid fa-calendar-days"></i> Reschedule Date & Time</h6>
                             <div class="form-row">
                                 <div class="form-group col-md-4">
                                     <label for="rescheduleDate-${slotKey}" class="small">Appointment Date</label>
@@ -783,25 +783,25 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                                 <div class="form-group col-md-4 d-flex align-items-end">
                                     <button type="button" class="btn btn-sm btn-primary w-100" onclick="rescheduleAppointmentDateTime('${slotKey}', ${manageId}, '${props.meeting_type || 'in_person'}', '${props.preferred_language || 'English'}')">
-                                        <i class="fa-solid fa-save"></i> Update Date & Time
+                                        <i class="fa-solid fa-floppy-disk"></i> Update Date & Time
                                     </button>
                                 </div>
                             </div>
                             <small class="text-muted">
-                                <i class="fa-solid fa-info-circle"></i> Changes will sync with the public booking website if the appointment is linked.
+                                <i class="fa-solid fa-circle-info"></i> Changes will sync with the public booking website if the appointment is linked.
                             </small>
                         </div>
                     </div>
                     <hr>
                     <div class="row">
                         <div class="col-md-6">
-                            <h6><i class="fa-solid fa-edit"></i> Change Status</h6>
+                            <h6><i class="fa-solid fa-pen-to-square"></i> Change Status</h6>
                             <div class="btn-group-vertical w-100" role="group">
                                 <button type="button" class="btn btn-sm btn-outline-success" onclick="updateAppointmentStatus(${manageId}, 'confirmed')">
                                     <i class="fa-solid fa-check"></i> Mark as Confirmed
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-primary" onclick="updateAppointmentStatus(${manageId}, 'completed')">
-                                    <i class="fa-solid fa-check-circle"></i> Mark as Complete
+                                    <i class="fa-solid fa-circle-check"></i> Mark as Complete
                                 </button>
                                 ${props.final_amount && parseFloat(props.final_amount) > 0 ? `
                                 <button type="button" class="btn btn-sm btn-outline-info" onclick="updateAppointmentStatus(${manageId}, 'paid')">
@@ -812,7 +812,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </button>
                                 ` : ''}
                                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="updateAppointmentStatus(${manageId}, 'cancelled')">
-                                    <i class="fa-solid fa-times"></i> Mark as Cancelled
+                                    <i class="fa-solid fa-xmark"></i> Mark as Cancelled
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateAppointmentStatus(${manageId}, 'no_show')">
                                     <i class="fa-solid fa-user-times"></i> Mark as No Show
@@ -820,7 +820,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <h6><i class="fa-solid fa-exchange-alt"></i> Change Calendar Type</h6>
+                            <h6><i class="fa-solid fa-right-left"></i> Change Calendar Type</h6>
                             <div class="form-group">
                                 <select class="form-control form-control-sm" id="consultantSelect-${slotKey}" onchange="updateAppointmentConsultant(${manageId}, '${slotKey}', this.value)">
                                     <option value="">Select Consultant...</option>
@@ -844,7 +844,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             <div class="mt-2">
                                 <small class="text-muted">
-                                    <i class="fa-solid fa-info-circle"></i> Changing consultant will move this appointment to the selected calendar type.
+                                    <i class="fa-solid fa-circle-info"></i> Changing consultant will move this appointment to the selected calendar type.
                                 </small>
                             </div>
                         </div>
@@ -1160,7 +1160,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const parts = getCourtHearingMelbourneParts(props);
         const clientLink = buildCourtHearingClientLink(props);
         const smsSentHint = props.reminder_sms_sent_at
-            ? '<small class="text-success d-block mt-1"><i class="fa-solid fa-check-circle"></i> SMS sent ' +
+            ? '<small class="text-success d-block mt-1"><i class="fa-solid fa-circle-check"></i> SMS sent ' +
                 escapeHtml(formatCourtHearingReminderSentAt(props.reminder_sms_sent_at)) + '</small>'
             : '';
         return `
@@ -1921,7 +1921,7 @@ document.addEventListener('DOMContentLoaded', function() {
             progressBar: true,
             closeOnClick: false,
             buttons: [[
-                '<button><i class="fa-solid fa-times-circle"></i> Dismiss</button>',
+                '<button><i class="fa-solid fa-circle-xmark"></i> Dismiss</button>',
                 function (instance, toast) {
                     bookingCalReminderDismiss(evt.id);
                     instance.hide({ transitionOut: 'fadeOut' }, toast);
@@ -2455,7 +2455,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     ).join(' ');
                     
                     // Update display text
-                    display.innerHTML = `${newDisplay} <i class="fa-solid fa-edit ms-1" style="font-size: 0.8em;"></i>`;
+                    display.innerHTML = `${newDisplay} <i class="fa-solid fa-pen-to-square ms-1" style="font-size: 0.8em;"></i>`;
                     
                     // Update select value
                     select.value = newMeetingType;

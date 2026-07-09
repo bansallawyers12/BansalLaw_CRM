@@ -645,9 +645,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 return 'fa-file-image';
             }
             if (['zip', 'rar', '7z'].indexOf(ext) !== -1) {
-                return 'fa-file-archive';
+                return 'fa-file-zipper';
             }
-            return 'fa-file-alt';
+            return 'fa-file-lines';
         }
 
         function buildFolderOptionsHtml(storageType, selectedFolderId) {
@@ -1809,12 +1809,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return 'fa-file-image email-attachment-icon--image';
         }
         if (['zip', 'rar', '7z'].includes(ext)) {
-            return 'fa-file-archive';
+            return 'fa-file-zipper';
         }
         if (ext === 'msg') {
             return 'fa-envelope';
         }
-        return 'fa-file-alt';
+        return 'fa-file-lines';
     }
 
     function canPreviewEmailAttachment(att) {
@@ -1966,7 +1966,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const lines = items.slice(0, 3).map(function(item) {
-            return '<span class="email-item-attachment-line"><i class="fa-solid fa-file-alt"></i> ' + escapeHtml(item.name) + '</span>';
+            return '<span class="email-item-attachment-line"><i class="fa-solid fa-file-lines"></i> ' + escapeHtml(item.name) + '</span>';
         }).join('');
 
         const extra = items.length > 3

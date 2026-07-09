@@ -7,7 +7,7 @@
 
 <section id="section-address" class="form-section">
     <div class="section-header">
-        <h3><i class="fa-solid fa-home"></i> Current Address</h3>
+        <h3><i class="fa-solid fa-house"></i> Current Address</h3>
         <div class="section-actions">
             <button type="button" class="edit-section-btn" onclick="toggleEditMode('addressInfo')" title="Edit Address">
                 <i class="fa-solid fa-pen"></i>

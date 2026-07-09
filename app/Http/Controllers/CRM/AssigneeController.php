@@ -488,7 +488,7 @@ class AssigneeController extends Controller
                             // For personal actions, client_id will be null, so use empty string for encoded value
                             $encoded_client_id = $list->client_id ? base64_encode(convert_uuencode($list->client_id)) : '';
                             
-                            $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-actiondate="'.$current_date1.'" data-clientid="'.$encoded_client_id.'" class="btn btn-primary update_task" data-role="popover"><i class="fa-solid fa-edit" aria-hidden="true"></i></button>';
+                            $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-actiondate="'.$current_date1.'" data-clientid="'.$encoded_client_id.'" class="btn btn-primary update_task" data-role="popover"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>';
 
                             // Delete button removed from action tab
 

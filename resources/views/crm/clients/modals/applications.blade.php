@@ -247,7 +247,7 @@
 					<small class="form-text text-muted">Stage will be mapped by name; if no match, first stage is used.</small>
 				</div>
 				<button type="button" class="btn btn-primary" id="change-workflow-submit">
-					<i class="fa-solid fa-exchange-alt"></i> Change Workflow
+					<i class="fa-solid fa-right-left"></i> Change Workflow
 				</button>
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 			</div>

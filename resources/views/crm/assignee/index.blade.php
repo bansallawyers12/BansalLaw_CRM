@@ -284,13 +284,13 @@
                         placeholder="Enter any notes or feedback about completing this task..."
                     ></textarea>
                     <small class="form-text completion-notes-hint">
-                        <i class="fa-solid fa-info-circle"></i> These notes will be saved in the activity log.
+                        <i class="fa-solid fa-circle-info"></i> These notes will be saved in the activity log.
                     </small>
                 </div>
             </div>
             <div class="modal-footer completion-notes-modal-footer">
                 <button type="button" class="btn btn-cancel-complete" data-bs-dismiss="modal">
-                    <i class="fa-solid fa-times"></i> Cancel
+                    <i class="fa-solid fa-xmark"></i> Cancel
                 </button>
                 <button type="button" class="btn btn-complete-task-primary" id="confirmTaskCompletion">
                     <i class="fa-solid fa-check"></i> Complete Task

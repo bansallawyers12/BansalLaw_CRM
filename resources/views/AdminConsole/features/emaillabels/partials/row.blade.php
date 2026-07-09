@@ -44,10 +44,10 @@
                 aria-haspopup="true">Action</button>
             <ul class="dropdown-menu dropdown-menu-end email-labels-action-menu" aria-labelledby="actionBtn_{{ $list->id }}">
                 @if($list->type == 'system')
-                    <li><span class="dropdown-item-text text-muted small px-3 py-2 d-block"><i class="fa-regular fa-edit me-2"></i>System labels cannot be edited</span></li>
+                    <li><span class="dropdown-item-text text-muted small px-3 py-2 d-block"><i class="fa-regular fa-pen-to-square me-2"></i>System labels cannot be edited</span></li>
                     <li><span class="dropdown-item-text text-muted small px-3 py-2 d-block"><i class="fa-solid fa-trash me-2"></i>System labels cannot be deleted</span></li>
                 @else
-                    <li><a class="dropdown-item has-icon edit-email-label-btn" href="javascript:void(0);"><i class="fa-regular fa-edit"></i> Edit</a></li>
+                    <li><a class="dropdown-item has-icon edit-email-label-btn" href="javascript:void(0);"><i class="fa-regular fa-pen-to-square"></i> Edit</a></li>
                     <li><a class="dropdown-item has-icon delete-email-label-btn" href="javascript:void(0);"><i class="fa-solid fa-trash"></i> Delete</a></li>
                 @endif
             </ul>

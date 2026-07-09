@@ -521,7 +521,7 @@ function addPartnerRow(type) {
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove ${type.charAt(0).toUpperCase() + type.slice(1)}" onclick="removePartnerRow(this, '${type}')"><i class="fa-solid fa-times-circle"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove ${type.charAt(0).toUpperCase() + type.slice(1)}" onclick="removePartnerRow(this, '${type}')"><i class="fa-solid fa-circle-xmark"></i></button>
             <input type="hidden" name="${type}_id[${index}]" class="partner-id">
             <div class="content-grid">
                 <div class="form-group">
@@ -1412,7 +1412,7 @@ async function addExperience() {
 
     container.insertAdjacentHTML('beforeend', `
         <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Experience" onclick="removeExperienceField(this)"><i class="fa-solid fa-times-circle"></i></button>
+            <button type="button" class="remove-item-btn" title="Remove Experience" onclick="removeExperienceField(this)"><i class="fa-solid fa-circle-xmark"></i></button>
             <div class="content-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
                 <div class="form-group">
                     <label>Job Title</label>
@@ -1866,7 +1866,7 @@ window.savePhoneNumbers = function() {
                          </button>`;
                     } else {
                         verificationButton = `<span class="text-muted" style="font-size: 12px;" title="Save the phone first to enable verification">
-                            <i class="fa-solid fa-info-circle"></i> Save to verify
+                            <i class="fa-solid fa-circle-info"></i> Save to verify
                          </span>`;
                     }
                 }
@@ -1933,7 +1933,7 @@ window.saveEmailAddresses = function() {
                 let verificationButton = '';
                 if (email.is_verified) {
                     verificationButton = `<span class="verified-badge">
-                        <i class="fa-solid fa-check-circle"></i> Verified
+                        <i class="fa-solid fa-circle-check"></i> Verified
                      </span>`;
                 } else if (email.id && email.id > 0) {
                     // Use email.id from server response (guaranteed to be correct)
@@ -1942,7 +1942,7 @@ window.saveEmailAddresses = function() {
                      </button>`;
                 } else {
                     verificationButton = `<span class="text-muted" style="font-size: 12px;" title="Save the email first to enable verification">
-                        <i class="fa-solid fa-info-circle"></i> Save to verify
+                        <i class="fa-solid fa-circle-info"></i> Save to verify
                      </span>`;
                 }
                 
@@ -3366,11 +3366,11 @@ window.removeCharacterField = function(button) {
  */
 function showNotification(message, type = 'info') {
     // Determine icon based on notification type
-    let icon = 'info-circle';
+    let icon = 'circle-info';
     if (type === 'success') {
-        icon = 'check-circle';
+        icon = 'circle-check';
     } else if (type === 'error') {
-        icon = 'exclamation-circle';
+        icon = 'circle-exclamation';
     }
     
     // Create notification element
@@ -3382,7 +3382,7 @@ function showNotification(message, type = 'info') {
             <span>${message}</span>
         </div>
         <button class="notification-close" onclick="this.parentElement.remove()">
-            <i class="fa-solid fa-times"></i>
+            <i class="fa-solid fa-xmark"></i>
         </button>
     `;
     
@@ -3970,7 +3970,7 @@ $(document).ready(function() {
                 if (summaryItem) {
                     const verifiedBadge = document.createElement('span');
                     verifiedBadge.className = 'verified-badge';
-                    verifiedBadge.innerHTML = '<i class="fa-solid fa-check-circle"></i> Verified';
+                    verifiedBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Verified';
                     verifiedBadge.title = 'Verified on ' + new Date().toLocaleString();
                     
                     verifyBtn.replaceWith(verifiedBadge);
@@ -4289,7 +4289,7 @@ window.sendEmailVerification = function(emailId, emailAddress) {
             alert('Verification email sent successfully! Please ask the client to check their email and click the verification link.');
             
             // Update button to show resend option with polling indicator
-            button.innerHTML = '<i class="fa-solid fa-redo"></i> Resend <i class="fa-solid fa-spinner fa-spin" style="margin-left: 5px; font-size: 10px;"></i>';
+            button.innerHTML = '<i class="fa-solid fa-arrow-rotate-right"></i> Resend <i class="fa-solid fa-spinner fa-spin" style="margin-left: 5px; font-size: 10px;"></i>';
             button.onclick = function() { resendEmailVerification(emailId, emailAddress); };
             
             // Start polling for verification status
@@ -4365,7 +4365,7 @@ function updateEmailVerificationStatus(emailId, isVerified) {
             if (summaryItem) {
                 const verifiedBadge = document.createElement('span');
                 verifiedBadge.className = 'verified-badge';
-                verifiedBadge.innerHTML = '<i class="fa-solid fa-check-circle"></i> Verified';
+                verifiedBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Verified';
                 verifiedBadge.title = 'Verified on ' + new Date().toLocaleString();
                 
                 // Replace the verify button with verified badge
@@ -4394,7 +4394,7 @@ function updateDetailViewEmailIcons(emailId, isVerified) {
                 const iconElement = element.querySelector('i');
                 if (iconElement) {
                     if (isVerified) {
-                        iconElement.className = 'fa-solid fa-check-circle verified-icon fa-lg';
+                        iconElement.className = 'fa-solid fa-circle-check verified-icon fa-lg';
                         iconElement.style.color = '#28a745';
                         iconElement.title = 'Verified on ' + new Date().toLocaleString();
                     } else {
@@ -4454,7 +4454,7 @@ function checkEmailVerificationStatus(emailId) {
                 // Update UI to show error state
                 const verifyBtn = document.querySelector(`button[data-email-id="${emailId}"]`);
                 if (verifyBtn) {
-                    verifyBtn.innerHTML = '<i class="fa-solid fa-exclamation-triangle"></i> Email Not Found';
+                    verifyBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Email Not Found';
                     verifyBtn.disabled = true;
                     verifyBtn.style.opacity = '0.6';
                     verifyBtn.title = 'Email record not found. Please refresh the page.';

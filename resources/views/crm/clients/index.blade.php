@@ -436,7 +436,7 @@
                                 <div class="row">
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label for="date_filter_field"><i class="fa-solid fa-calendar-alt"></i> Date Field</label>
+                                            <label for="date_filter_field"><i class="fa-solid fa-calendar-days"></i> Date Field</label>
                                             <select name="date_filter_field" id="date_filter_field" class="form-control">
                                                 <option value="created_at" {{ request('date_filter_field', 'created_at') === 'created_at' ? 'selected' : '' }}>Created Date</option>
                                                 <option value="updated_at" {{ request('date_filter_field') === 'updated_at' ? 'selected' : '' }}>Last Updated</option>
@@ -557,7 +557,7 @@
                                                             <i class="fa-regular fa-envelope"></i> Email
                                                         </a>
                                                         <a class="dropdown-item has-icon" href="{{URL::to('/clients/edit/'.base64_encode(convert_uuencode(@$list->id)))}}">
-                                                            <i class="fa-regular fa-edit"></i> Edit
+                                                            <i class="fa-regular fa-pen-to-square"></i> Edit
                                                         </a>
                                                         <a class="dropdown-item has-icon" href="{{URL::to('/clients/export/'.base64_encode(convert_uuencode(@$list->id)))}}" title="Export Client Data">
                                                             <i class="fa-solid fa-download"></i> Export
@@ -565,7 +565,7 @@
                                                         <form action="{{ route('clients.archive', base64_encode(convert_uuencode(@$list->id))) }}" method="POST" class="archive-client-form" style="display: inline-block;">
                                                             @csrf
                                                             <a class="dropdown-item has-icon" href="javascript:;" onclick="archiveClientAction(event, '{{ @$list->first_name }} {{ @$list->last_name }}')">
-                                                                <i class="fa-solid fa-archive"></i> Archive
+                                                                <i class="fa-solid fa-box-archive"></i> Archive
                                                             </a>
                                                         </form>
                                                     </div>

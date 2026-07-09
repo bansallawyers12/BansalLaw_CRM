@@ -151,7 +151,7 @@
 }
 
 /* Personal details email verification styling */
-.fa-check-circle.verified-icon {
+.fa-circle-check.verified-icon {
     color: #28a745 !important;
 }
 

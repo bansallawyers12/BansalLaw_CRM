@@ -3,7 +3,7 @@
 
 <div class="repeatable-section">
     <button type="button" class="remove-item-btn" title="Remove Experience" onclick="removeExperienceField(this)">
-        <i class="fa-solid fa-times-circle"></i>
+        <i class="fa-solid fa-circle-xmark"></i>
     </button>
     
     <input type="hidden" name="experience_id[{{ $index }}]" value="{{ $experience->id ?? '' }}">

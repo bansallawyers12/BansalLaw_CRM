@@ -1183,7 +1183,7 @@ class ClientMatterHubController extends Controller
 				<div class="accordion-header collapsed <?php echo $stage1; ?> <?php if($currentStage->name == $stages->name && $clientMatter->matter_status == 1){ echo  'app_blue'; }  ?>" role="button" data-toggle="collapse" data-target="#<?php echo $stagname; ?>_accor" aria-expanded="false">
 					<h4><?php echo $stages->name; ?></h4>
 					<div class="accord_hover">
-						<a title="Add Note" class="openappnote" data-app-type="<?php echo $stages->name; ?>" data-id="<?php echo $clientMatter->id; ?>" href="javascript:;"><i class="fa-solid fa-file-alt"></i></a>
+						<a title="Add Note" class="openappnote" data-app-type="<?php echo $stages->name; ?>" data-id="<?php echo $clientMatter->id; ?>" href="javascript:;"><i class="fa-solid fa-file-lines"></i></a>
 						<!-- opendocnote REMOVED - workflow checklist upload flow dead (no modal, no handler) -->
 						<a data-app-type="<?php echo $stages->name; ?>" title="Email" data-id="<?php echo $clientMatter->id; ?>" data-email="" data-name="" class="openclientemail" title="Compose Mail" href="javascript:;"><i class="fa-solid fa-envelope"></i></a>
 					</div>

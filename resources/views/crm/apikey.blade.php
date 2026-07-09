@@ -23,7 +23,7 @@
 							@csrf
 							<div class="card-body">
 								<div class="alert alert-info">
-									<i class="fa-solid fa-info-circle"></i> You don't have an API key yet. Click the button below to generate one.
+									<i class="fa-solid fa-circle-info"></i> You don't have an API key yet. Click the button below to generate one.
 								</div>
 								<div class="form-group">
 									<button type="submit" class="btn btn-primary" onClick="customValidate('add-key')">
@@ -35,7 +35,7 @@
 						@else
 						<div class="card-body">
 							<div class="alert alert-success">
-								<i class="fa-solid fa-check-circle"></i> Your API key has been generated successfully.
+								<i class="fa-solid fa-circle-check"></i> Your API key has been generated successfully.
 							</div>
 							<div class="form-group">
 								<label>Your API Key:</label>

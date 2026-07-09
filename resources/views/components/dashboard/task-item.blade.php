@@ -98,7 +98,7 @@
         <span class="todo-task-due {{ $urgencyClass }}">
             @if($note->note_deadline)
                 @if($isOverdue)
-                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <i class="fa-solid fa-circle-exclamation"></i>
                 @else
                     <i class="fa-regular fa-calendar"></i>
                 @endif

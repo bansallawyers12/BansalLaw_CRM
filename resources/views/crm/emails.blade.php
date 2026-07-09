@@ -65,7 +65,7 @@
             <div class="upload-section-container">
                 <div id="upload-area" class="drag-drop-zone">
                     <div class="drag-drop-content">
-                        <i class="fa-solid fa-cloud-upload-alt drag-drop-icon"></i>
+                        <i class="fa-solid fa-cloud-arrow-up drag-drop-icon"></i>
                         <div class="drag-drop-text">Drag & drop Outlook email files ({{ $crmEmailUploadLabel }}) here</div>
                         <div class="drag-drop-subtext">or click to browse</div>
                         <div id="file-count" class="file-count-badge">0</div>

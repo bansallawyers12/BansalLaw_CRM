@@ -17,17 +17,17 @@
 <div class="card full-width account-tab-card">
     <div class="account-actions-bar">
         <a class="btn account-action-btn account-action-btn--trust createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="1" title="Record trust money received, paid or transferred">
-            <i class="fa-solid fa-university"></i> Trust Account Entry
+            <i class="fa-solid fa-building-columns"></i> Trust Account Entry
         </a>
         <a class="btn account-action-btn account-action-btn--office createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="2" title="Record money received directly into the office account">
-            <i class="fa-solid fa-hand-holding-usd"></i> Office Receipt
+            <i class="fa-solid fa-hand-holding-dollar"></i> Office Receipt
         </a>
         <a class="btn account-action-btn account-action-btn--invoice createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="3" title="Issue a tax invoice to the client">
             <i class="fa-solid fa-file-invoice-dollar"></i> Invoice
         </a>
         @if(!empty($__account_matter_id))
         <a class="btn account-action-btn account-action-btn--statement" href="{{ url('/clients/genTrustStatement') }}?client_id={{ $fetchedData->id }}&matter_id={{ $__account_matter_id }}" target="_blank" title="Rule 52 trust account statement for this matter">
-            <i class="fa-solid fa-file-alt"></i> Trust Statement
+            <i class="fa-solid fa-file-lines"></i> Trust Statement
         </a>
         @endif
     </div>
@@ -36,7 +36,7 @@
         <!-- Trust Account Ledger Section (LSBC Uniform Law Compliant) -->
         <section class="account-section client-account">
             <div class="account-section-header">
-                <h2><i class="fa-solid fa-university account-section-icon account-section-icon--trust"></i> Trust Account Ledger</h2>
+                <h2><i class="fa-solid fa-building-columns account-section-icon account-section-icon--trust"></i> Trust Account Ledger</h2>
                 <div class="balance-display">
                     <div class="balance-label">Trust Balance</div>
                     <div class="balance-amount funds-held">
@@ -183,7 +183,7 @@
                                     <?php
                                     if( isset($rec_val->validate_receipt) && $rec_val->validate_receipt == '1' )
                                     { ?>
-                                        <i class="fa-solid fa-check-circle" title="Verified Receipt" style="margin-right: 5px; color: #28a745;"></i>
+                                        <i class="fa-solid fa-circle-check" title="Verified Receipt" style="margin-right: 5px; color: #28a745;"></i>
                                     <?php
                                     } ?>
                                     <?php echo $rec_val->trans_date;?>
@@ -198,13 +198,13 @@
                                     $type_icon = 'fa-arrow-circle-down';
                                     $type_color = '#28a745';
                                 } else if($dbType == 'Fee Transfer' ){
-                                    $type_icon = 'fa-exchange-alt';
+                                    $type_icon = 'fa-right-left';
                                     $type_color = '#fd7e14';
                                 } else if($dbType == 'Disbursement' ){
                                     $type_icon = 'fa-arrow-circle-up';
                                     $type_color = '#dc3545';
                                 } else if($dbType == 'Refund' ){
-                                    $type_icon = 'fa-undo-alt';
+                                    $type_icon = 'fa-arrow-rotate-left';
                                     $type_color = '#6f42c1';
                                 } else {
                                     $type_icon = 'fa-arrow-circle-up';
@@ -265,7 +265,7 @@
                                                 $docUrl = url('/documents/preview/' . $uploadedDoc->id);
                                                 ?>
                                         <a class="dropdown-item" href="<?php echo $docUrl; ?>" target="_blank">
-                                            <i class="fa-solid fa-file-alt"></i> View Uploaded Receipt
+                                            <i class="fa-solid fa-file-lines"></i> View Uploaded Receipt
                                         </a>
                                         <?php } } ?>
                                         <a class="dropdown-item upload-clientreceipt-doc" href="javascript:;" 
@@ -295,7 +295,7 @@
                                             data-eft-account-name="<?php echo htmlspecialchars($rec_val->eft_account_name ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                             data-eft-bsb="<?php echo htmlspecialchars($rec_val->eft_bsb ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                             data-eft-account-number="<?php echo htmlspecialchars($rec_val->eft_account_number ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-                                            <i class="fa-solid fa-edit"></i> Edit Entry
+                                            <i class="fa-solid fa-pen-to-square"></i> Edit Entry
                                         </a>
                                         <?php } ?>
                                         <div class="dropdown-divider"></div>
@@ -311,7 +311,7 @@
                                         <div class="dropdown-divider"></div>
                                         <?php if($isAllocated) { ?>
                                         <a class="dropdown-item" href="javascript:;" style="color: #28a745; cursor: default;" onclick="return false;">
-                                            <i class="fa-solid fa-check-circle"></i> Already Allocated to <?php echo $rec_val->invoice_no; ?>
+                                            <i class="fa-solid fa-circle-check"></i> Already Allocated to <?php echo $rec_val->invoice_no; ?>
                                         </a>
                                         <a class="dropdown-item quick-allocate-ledger" href="javascript:;"
                                             data-receipt-id="<?php echo $rec_val->id; ?>"
@@ -319,7 +319,7 @@
                                             data-matter-id="<?php echo $rec_val->client_matter_id; ?>"
                                             data-client-id="<?php echo $fetchedData->id; ?>"
                                             style="padding-left: 2rem;">
-                                            <i class="fa-solid fa-sync-alt"></i> Re-allocate to Different Invoice
+                                            <i class="fa-solid fa-rotate"></i> Re-allocate to Different Invoice
                                         </a>
                                         <?php } else { ?>
                                         <a class="dropdown-item quick-allocate-ledger" href="javascript:;"
@@ -506,7 +506,7 @@
                                                 <?php } ?>
                                                 <?php if($inc_val->save_type == 'draft'){ ?>
                                                 <a class="dropdown-item updatedraftinvoice" href="javascript:;" data-receiptid="<?php echo $inc_val->receipt_id;?>">
-                                                    <i class="fa-solid fa-edit"></i> Edit Draft Invoice
+                                                    <i class="fa-solid fa-pen-to-square"></i> Edit Draft Invoice
                                                 </a>
                                                 <?php } ?>
                                                 <div class="dropdown-divider"></div>
@@ -528,7 +528,7 @@
                                                         Sent: <?php echo date('d/m/Y H:i', strtotime($hubdoc_sent_at)); ?>
                                                     </div>
                                                     <a class="dropdown-item refresh-hubdoc-status" href="javascript:;" data-invoice-id="<?php echo $inc_val->receipt_id; ?>">
-                                                        <i class="fa-solid fa-sync-alt"></i> Refresh Status
+                                                        <i class="fa-solid fa-rotate"></i> Refresh Status
                                                     </a>
                                                 <?php } else { ?>
                                                     <a class="dropdown-item send-to-hubdoc-btn" href="javascript:;" data-invoice-id="<?php echo $inc_val->receipt_id; ?>">
@@ -585,7 +585,7 @@
                     </tbody>
                 </table>
 
-                <h4 style="margin-top:25px; margin-bottom: 10px; font-weight: 600;"><i class="fa-solid fa-hand-holding-usd" style="color: #28a745;"></i> Office Receipts</h4>
+                <h4 style="margin-top:25px; margin-bottom: 10px; font-weight: 600;"><i class="fa-solid fa-hand-holding-dollar" style="color: #28a745;"></i> Office Receipts</h4>
                 <table class="transaction-table">
                     <thead>
                         <tr>
@@ -632,7 +632,7 @@
                                         <?php
                                         if( isset($off_val->validate_receipt) && $off_val->validate_receipt == '1' )
                                         { ?>
-                                            <i class="fa-solid fa-check-circle" title="Verified Receipt" style="margin-right: 5px; color: #28a745;"></i>
+                                            <i class="fa-solid fa-circle-check" title="Verified Receipt" style="margin-right: 5px; color: #28a745;"></i>
                                         <?php
                                         } ?>
                                         <?php echo $off_val->trans_date;?>
@@ -705,7 +705,7 @@
                                                     $docUrl = url('/documents/preview/' . $uploadedDoc->id);
                                                     ?>
                                             <a class="dropdown-item" href="<?php echo $docUrl; ?>" target="_blank">
-                                                <i class="fa-solid fa-file-alt"></i> View Uploaded Receipt
+                                                <i class="fa-solid fa-file-lines"></i> View Uploaded Receipt
                                             </a>
                                             <?php } } ?>
                                             <a class="dropdown-item upload-officereceipt-doc" href="javascript:;" 
@@ -732,7 +732,7 @@
                                                 data-matter-id="<?php echo $off_val->client_matter_id; ?>"
                                                 data-uploaded-doc-id="<?php echo $off_val->uploaded_doc_id ?? ''; ?>"
                                                 data-save-type="<?php echo htmlspecialchars($off_val->save_type ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-                                                <i class="fa-solid fa-edit"></i> <?php echo ($currentUserRole == 1 && isset($off_val->save_type) && $off_val->save_type == 'final') ? 'Edit Receipt' : 'Edit Draft Receipt'; ?>
+                                                <i class="fa-solid fa-pen-to-square"></i> <?php echo ($currentUserRole == 1 && isset($off_val->save_type) && $off_val->save_type == 'final') ? 'Edit Receipt' : 'Edit Draft Receipt'; ?>
                                             </a>
                                             <?php } ?>
                                             <div class="dropdown-divider"></div>
@@ -766,7 +766,7 @@
                                     ?>
                                     <br/>
                                     <small style="color: #dc3545; font-weight: 600;">
-                                        <i class="fa-solid fa-exclamation-circle"></i> Unallocated
+                                        <i class="fa-solid fa-circle-exclamation"></i> Unallocated
                                     </small>
                                     <?php } ?>
                                 </td>
@@ -816,8 +816,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update modal title based on receipt type
         const modalTitles = {
-            '1': '<i class="fa-solid fa-university" style="color: #28a745;"></i> Trust Account Entry &mdash; <small style="font-size:0.75em;color:#6c757d;">General Trust Account (LSBC Compliant)</small>',
-            '2': '<i class="fa-solid fa-hand-holding-usd" style="color: #007bff;"></i> Office Receipt &mdash; <small style="font-size:0.75em;color:#6c757d;">Money received directly (not trust)</small>',
+            '1': '<i class="fa-solid fa-building-columns" style="color: #28a745;"></i> Trust Account Entry &mdash; <small style="font-size:0.75em;color:#6c757d;">General Trust Account (LSBC Compliant)</small>',
+            '2': '<i class="fa-solid fa-hand-holding-dollar" style="color: #007bff;"></i> Office Receipt &mdash; <small style="font-size:0.75em;color:#6c757d;">Money received directly (not trust)</small>',
             '3': '<i class="fa-solid fa-file-invoice-dollar" style="color: #17a2b8;"></i> Tax Invoice'
         };
         
@@ -941,7 +941,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             }).catch(err => {
                 console.error('Failed to copy:', err);
-                $item.html('<i class="fa-solid fa-times"></i> Failed');
+                $item.html('<i class="fa-solid fa-xmark"></i> Failed');
                 $item.css({'background-color': '#f8d7da', 'color': '#721c24'});
                 setTimeout(() => {
                     $item.html(originalHtml);
@@ -969,7 +969,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             } catch(err) {
                 $temp.remove();
-                $item.html('<i class="fa-solid fa-times"></i> Failed');
+                $item.html('<i class="fa-solid fa-xmark"></i> Failed');
                 $item.css({'background-color': '#f8d7da', 'color': '#721c24'});
                 setTimeout(() => {
                     $item.html(originalHtml);
@@ -1568,7 +1568,7 @@ document.addEventListener('DOMContentLoaded', function() {
             '</div>' +
             '<div class="modal-body">' +
             '<div class="alert alert-info">' +
-            '<i class="fa-solid fa-info-circle"></i> Deposit Amount: <strong>$' + receiptAmount.toFixed(2) + '</strong>' +
+            '<i class="fa-solid fa-circle-info"></i> Deposit Amount: <strong>$' + receiptAmount.toFixed(2) + '</strong>' +
             '</div>' +
             buildLedgerRule42FieldsHtml();
 
@@ -1649,7 +1649,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // If no invoices in any category, show a message
         if (!exactMatch && closeMatches.length === 0 && otherInvoices.length === 0) {
             modalHtml += '<div class="alert alert-warning">' +
-                '<i class="fa-solid fa-exclamation-triangle"></i> No unpaid invoices found for this client/matter.' +
+                '<i class="fa-solid fa-triangle-exclamation"></i> No unpaid invoices found for this client/matter.' +
                 '</div>';
         }
         
@@ -1745,7 +1745,7 @@ document.addEventListener('DOMContentLoaded', function() {
             '</div>' +
             '<div class="modal-body">' +
             '<div class="alert alert-info">' +
-            '<i class="fa-solid fa-info-circle"></i> Receipt Amount: <strong>$' + receiptAmount.toFixed(2) + '</strong>' +
+            '<i class="fa-solid fa-circle-info"></i> Receipt Amount: <strong>$' + receiptAmount.toFixed(2) + '</strong>' +
             '</div>';
         
         if (exactMatch) {
@@ -1754,7 +1754,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const isOverpayment = excessAmount > 0.01;
             const warningHtml = isOverpayment ? 
                 '<div class="alert alert-warning mt-2" style="border-left: 4px solid #ffc107;">' +
-                '<i class="fa-solid fa-exclamation-triangle"></i> <strong>Note:</strong> Receipt amount ($' + receiptAmount.toFixed(2) + ') exceeds invoice balance ($' + invBalance.toFixed(2) + '). ' +
+                '<i class="fa-solid fa-triangle-exclamation"></i> <strong>Note:</strong> Receipt amount ($' + receiptAmount.toFixed(2) + ') exceeds invoice balance ($' + invBalance.toFixed(2) + '). ' +
                 'A residual receipt of $' + excessAmount.toFixed(2) + ' will be created.' +
                 '</div>' : '';
             
@@ -1783,7 +1783,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const invBalance = parseFloat(invoice.balance_amount);
                 const excessAmount = receiptAmount - invBalance;
                 const isOverpayment = excessAmount > 0.01;
-                const warningIcon = isOverpayment ? ' <i class="fa-solid fa-exclamation-triangle text-warning" title="Receipt exceeds invoice amount - will create residual receipt"></i>' : '';
+                const warningIcon = isOverpayment ? ' <i class="fa-solid fa-triangle-exclamation text-warning" title="Receipt exceeds invoice amount - will create residual receipt"></i>' : '';
                 
                 modalHtml += '<div class="list-group-item">' +
                     '<div class="d-flex justify-content-between align-items-center">' +
@@ -1792,7 +1792,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     '$' + invBalance.toFixed(2) + 
                     ' (' + invoice.status + ')' + warningIcon +
                     '<br/><small class="text-muted">' + invoice.description + '</small>' +
-                    (isOverpayment ? '<br/><small class="text-warning"><i class="fa-solid fa-info-circle"></i> Excess: $' + excessAmount.toFixed(2) + ' will create residual receipt</small>' : '') +
+                    (isOverpayment ? '<br/><small class="text-warning"><i class="fa-solid fa-circle-info"></i> Excess: $' + excessAmount.toFixed(2) + ' will create residual receipt</small>' : '') +
                     '</div>' +
                     '<button class="btn btn-sm btn-primary allocate-to-invoice-btn" ' +
                     'data-receipt-id="' + receiptId + '" ' +
@@ -1818,7 +1818,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const excessAmount = receiptAmount - invBalance;
                 const isOverpayment = excessAmount > 0.01;
                 const diffText = difference > 0 ? ' (diff: $' + difference.toFixed(2) + ')' : '';
-                const warningIcon = isOverpayment ? ' <i class="fa-solid fa-exclamation-triangle text-warning" title="Receipt exceeds invoice amount - will create residual receipt"></i>' : '';
+                const warningIcon = isOverpayment ? ' <i class="fa-solid fa-triangle-exclamation text-warning" title="Receipt exceeds invoice amount - will create residual receipt"></i>' : '';
                 
                 modalHtml += '<div class="list-group-item">' +
                     '<div class="d-flex justify-content-between align-items-center">' +
@@ -1826,7 +1826,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     '<strong>' + invoice.trans_no + '</strong> - ' +
                     '$' + invBalance.toFixed(2) + 
                     ' (' + invoice.status + ')' + diffText + warningIcon +
-                    (isOverpayment ? '<br/><small class="text-warning"><i class="fa-solid fa-info-circle"></i> Excess: $' + excessAmount.toFixed(2) + ' will create residual receipt</small>' : '') +
+                    (isOverpayment ? '<br/><small class="text-warning"><i class="fa-solid fa-circle-info"></i> Excess: $' + excessAmount.toFixed(2) + ' will create residual receipt</small>' : '') +
                     '</div>' +
                     '<button class="btn btn-sm btn-primary allocate-to-invoice-btn" ' +
                     'data-receipt-id="' + receiptId + '" ' +
@@ -1844,7 +1844,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // If no invoices in any category, show a message
         if (!exactMatch && closeMatches.length === 0 && otherInvoices.length === 0) {
             modalHtml += '<div class="alert alert-warning">' +
-                '<i class="fa-solid fa-exclamation-triangle"></i> No unpaid invoices found for this client/matter.' +
+                '<i class="fa-solid fa-triangle-exclamation"></i> No unpaid invoices found for this client/matter.' +
                 '</div>';
         }
         
@@ -2072,7 +2072,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Show success animation
                     const $successDiv = $('<div class="allocation-success">' +
                         '<div class="success-checkmark">' +
-                        '<i class="fa-solid fa-check-circle"></i>' +
+                        '<i class="fa-solid fa-circle-check"></i>' +
                         '</div>' +
                         '<p>✅ Receipt successfully allocated to ' + invoiceNo + '!</p>' +
                         '</div>');
@@ -2487,7 +2487,7 @@ tr.unallocated-receipt[draggable="true"]:hover::after {
                         <!-- NEW: Drag and Drop Zone -->
                         <div class="receipt-drag-drop-zone" id="receiptDragDropZone">
                             <div class="drag-zone-inner">
-                                <i class="fa-solid fa-cloud-upload-alt"></i>
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
                                 <div class="drag-zone-content">
                                     <p class="drag-zone-text">Drag file here or <strong>click to browse</strong></p>
                                     <small class="drag-zone-formats">Accepted: PDF, JPG, PNG, DOC, DOCX (Max 10MB)</small>
@@ -2502,17 +2502,17 @@ tr.unallocated-receipt[draggable="true"]:hover::after {
                         <!-- File name display (shown after selection) -->
                         <div id="selected-file-display" class="selected-file-display" style="display: none;">
                             <div class="file-info">
-                                <i class="fa-solid fa-file-alt text-success"></i>
+                                <i class="fa-solid fa-file-lines text-success"></i>
                                 <span id="selected-file-name" class="file-name"></span>
                                 <button type="button" class="btn btn-sm btn-link text-danger remove-file" title="Remove file">
-                                    <i class="fa-solid fa-times"></i>
+                                    <i class="fa-solid fa-xmark"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
                     
                     <div class="alert alert-info">
-                        <i class="fa-solid fa-info-circle"></i> This document will be attached to the selected receipt entry for verification purposes.
+                        <i class="fa-solid fa-circle-info"></i> This document will be attached to the selected receipt entry for verification purposes.
                     </div>
                 </div>
                 <div class="modal-footer">

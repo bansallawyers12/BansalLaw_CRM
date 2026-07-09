@@ -105,7 +105,7 @@
                 <p>The trust module is a single, integrated compliance workflow. Here is how the pieces fit together:</p>
 
                 <div class="guide-flow">
-                    <span class="guide-flow-item"><i class="fa-solid fa-university me-1"></i> Client trust entry</span>
+                    <span class="guide-flow-item"><i class="fa-solid fa-building-columns me-1"></i> Client trust entry</span>
                     <span class="guide-flow-arrow">→</span>
                     <span class="guide-flow-item">Trust ledger (per client/matter)</span>
                     <span class="guide-flow-arrow">→</span>
@@ -228,7 +228,7 @@
                     </div>
                     <div class="col-md-6">
                         <div class="guide-card">
-                            <h5><i class="fa-solid fa-exchange-alt me-2 text-warning"></i>Fee Transfer (trust → office)</h5>
+                            <h5><i class="fa-solid fa-right-left me-2 text-warning"></i>Fee Transfer (trust → office)</h5>
                             <ol class="small mb-0">
                                 <li>Click <strong>"Trust Account Entry"</strong> and select type
                                     <em>Fee Transfer</em>.</li>
@@ -262,7 +262,7 @@
                     </div>
                     <div class="col-md-6">
                         <div class="guide-card">
-                            <h5><i class="fa-solid fa-undo-alt me-2" style="color:#6f42c1;"></i>Refund to client</h5>
+                            <h5><i class="fa-solid fa-arrow-rotate-left me-2" style="color:#6f42c1;"></i>Refund to client</h5>
                             <ol class="small mb-0">
                                 <li>Select type <em>Refund to Client</em>.</li>
                                 <li>Enter the date and amount. The running balance will decrease.</li>
@@ -527,7 +527,7 @@
                 </div>
 
                 <div class="guide-card">
-                    <h5><i class="fa-solid fa-file-alt me-2 text-primary"></i>On-demand statement (any time)</h5>
+                    <h5><i class="fa-solid fa-file-lines me-2 text-primary"></i>On-demand statement (any time)</h5>
                     <ol class="small mb-0">
                         <li>From the client's Accounts tab, select the matter from the dropdown.</li>
                         <li>Click the <strong>Trust Statement</strong> button. A PDF opens in a new tab
@@ -540,7 +540,7 @@
                 </div>
 
                 <div class="guide-card">
-                    <h5><i class="fa-solid fa-calendar-alt me-2 text-warning"></i>30 June annual batch run</h5>
+                    <h5><i class="fa-solid fa-calendar-days me-2 text-warning"></i>30 June annual batch run</h5>
                     <ol class="small mb-0">
                         <li>Go to <a href="{{ route('trust-accounting.statements.annual') }}">Reports → Trust statements → 30 June batch</a>.</li>
                         <li>The page lists every matter with a non-zero trust balance as at 30 June this year.
@@ -578,7 +578,7 @@
                 </div>
 
                 <div class="guide-card">
-                    <h5><i class="fa-solid fa-archive me-2 text-secondary"></i>Creating a monthly archive</h5>
+                    <h5><i class="fa-solid fa-box-archive me-2 text-secondary"></i>Creating a monthly archive</h5>
                     <ol class="small mb-0">
                         <li>Go to <a href="{{ route('trust-accounting.archives.index') }}">Reports → Monthly archives</a>.</li>
                         <li>Enter the <strong>Year</strong> and <strong>Month</strong> to archive (e.g. 2026 / 5 for May 2026).
@@ -598,7 +598,7 @@
                 </div>
 
                 <div class="guide-card">
-                    <h5><i class="fa-solid fa-file-archive me-2 text-secondary"></i>Auditor's pack (ZIP download)</h5>
+                    <h5><i class="fa-solid fa-file-zipper me-2 text-secondary"></i>Auditor's pack (ZIP download)</h5>
                     <p class="small mb-1">
                         Go to <a href="{{ route('trust-accounting.reports.index') }}">Reports hub</a>
                         and use the <strong>Auditor's pack</strong> card. Enter a date range and click
@@ -653,21 +653,21 @@
                     </div>
                     <div class="col-md-3 mb-3">
                         <div class="guide-card h-100">
-                            <h5><i class="fa-solid fa-exclamation-triangle me-2 text-warning"></i>Overdrawn ledger</h5>
+                            <h5><i class="fa-solid fa-triangle-exclamation me-2 text-warning"></i>Overdrawn ledger</h5>
                             <p class="small mb-0">Rule 40 — any ledger rows with a negative running balance.
                             Must be cleared immediately and reported.</p>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
                         <div class="guide-card h-100">
-                            <h5><i class="fa-solid fa-file-alt me-2 text-primary"></i>Trust statements</h5>
+                            <h5><i class="fa-solid fa-file-lines me-2 text-primary"></i>Trust statements</h5>
                             <p class="small mb-0">Rule 52 — on-demand PDF or 30 June annual batch run
                             for all matters with funds held.</p>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
                         <div class="guide-card h-100">
-                            <h5><i class="fa-solid fa-archive me-2 text-secondary"></i>Monthly archives</h5>
+                            <h5><i class="fa-solid fa-box-archive me-2 text-secondary"></i>Monthly archives</h5>
                             <p class="small mb-0">Rule 38 — immutable month-end CSV copies of all three journals.
                             Download individual CSVs or the full auditor's pack ZIP.</p>
                         </div>

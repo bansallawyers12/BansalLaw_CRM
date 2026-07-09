@@ -94,7 +94,7 @@
                                         </button>
                                         <?php if ($isClientGenerated): ?>
                                             <div class="action-buttons" style="display: none; position: absolute; top: 0; right: -8px;">
-                                                <button class="btn btn-sm btn-warning update-nomination-cat-title" data-id="<?= $id ?>" style="padding: 2px 0px 2px 6px;"><i class="fa-solid fa-edit" aria-hidden="true"></i></button>
+                                                <button class="btn btn-sm btn-warning update-nomination-cat-title" data-id="<?= $id ?>" style="padding: 2px 0px 2px 6px;"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>
                                             </div>
                                         <?php endif; ?>
                                     </div>
@@ -121,7 +121,7 @@
                                 <div class="subtab6-pane <?= $isActive ?>" id="<?= $id ?>-subtab6">
                                     <div class="checklist-table-container" style="vertical-align: top; margin-top: 10px; width: 760px; overflow: visible;">
                                         <div class="subtab6-header" style="margin-left: 10px;">
-                                            <h3><i class="fa-solid fa-file-alt"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
+                                            <h3><i class="fa-solid fa-file-lines"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
                                             <div style="display: flex; gap: 10px;">
 <button type="button" class="btn add-checklist-btn add_nomination_doc" data-type="nomination" data-categoryid="<?= $id ?>">
                                                     <i class="fa-solid fa-plus"></i> Add Checklist
@@ -135,7 +135,7 @@
                                         <!-- Bulk Upload Dropzone for Visa (Hidden by default) -->
                                         <div class="bulk-upload-dropzone-container-nomination" id="bulk-upload-nomination-<?= $id ?>" style="display: none; margin: 15px 0; padding: 20px; border: 2px dashed #4a90e2; border-radius: 8px; background-color: #f8f9fa;">
                                             <div class="bulk-upload-dropzone-nomination" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" style="text-align: center; padding: 30px; cursor: pointer;">
-                                                <i class="fa-solid fa-cloud-upload-alt" style="font-size: 48px; color: #2563eb; margin-bottom: 15px;"></i>
+                                                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 48px; color: #2563eb; margin-bottom: 15px;"></i>
                                                 <p style="font-size: 16px; color: #374151; margin-bottom: 10px;">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
@@ -185,7 +185,7 @@
                                                                 <div class="checklist-actions" style="display: flex; gap: 5px;">
                                                                     <?php if (!$fetch->file_name): ?>
                                                                     <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
-                                                                        <i class="fa-solid fa-edit"></i>
+                                                                        <i class="fa-solid fa-pen-to-square"></i>
                                                                     </a>
                                                                     <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
                                                                         <i class="fa-solid fa-trash"></i>
@@ -216,7 +216,7 @@
                                                                         <input type="hidden" name="doccategory" value="<?= $catVal->title ?>">
                                                                         <div class="document-drag-drop-zone nomination-doc-drag-zone" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" data-formid="mig_upload_form_<?= $fetch->id ?>">
                                                                             <div class="drag-zone-inner">
-                                                                                <i class="fa-solid fa-cloud-upload-alt"></i>
+                                                                                <i class="fa-solid fa-cloud-arrow-up"></i>
                                                                                 <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                                             </div>
                                                                         </div>
@@ -253,10 +253,10 @@
                                                                     <i class="fa-solid fa-paper-plane me-1"></i> Send
                                                                 </button>
                                                                 <button type="button" class="btn btn-sm btn-outline-secondary visa-sig-revise-btn" data-doc-id="<?= $fetch->id ?>">
-                                                                    <i class="fa-solid fa-edit me-1"></i> Revise
+                                                                    <i class="fa-solid fa-pen-to-square me-1"></i> Revise
                                                                 </button>
                                                                 <button type="button" class="btn btn-sm btn-outline-danger visa-sig-remove-btn" data-doc-id="<?= $fetch->id ?>">
-                                                                    <i class="fa-solid fa-times me-1"></i> Remove
+                                                                    <i class="fa-solid fa-xmark me-1"></i> Remove
                                                                 </button>
                                                                 <?php if ($docStatus === 'sent' && $signingUrl && $signerId): ?>
                                                                 <button type="button" class="btn btn-sm btn-outline-info visa-sig-reminder-btn" data-doc-id="<?= $fetch->id ?>" data-signer-id="<?= $signerId ?>">
@@ -393,7 +393,7 @@
                     <i class="fa-solid fa-pen-fancy" style="margin-right: 8px;"></i> Send for Signature
                 </div>
                 <div class="context-menu-item" onclick="handleNominationContextAction('rename-checklist')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
-                    <i class="fa-solid fa-edit" style="margin-right: 8px;"></i> Rename Checklist
+                    <i class="fa-solid fa-pen-to-square" style="margin-right: 8px;"></i> Rename Checklist
                 </div>
                 <div class="context-menu-item" onclick="handleNominationContextAction('rename-doc')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
                     <i class="fa-solid fa-file-lines" style="margin-right: 8px;"></i> Rename File Name
@@ -1051,7 +1051,7 @@
                             window.hideBulkUploadModal();
                         }
                         dropzoneContainer.slideDown();
-                        $(this).html('<i class="fa-solid fa-times"></i> Close');
+                        $(this).html('<i class="fa-solid fa-xmark"></i> Close');
                         currentVisaCategoryId = categoryId;
                         currentVisaMatterId = matterId || null;
                     }

@@ -736,7 +736,7 @@
     <div class="association-info" style="background: #fff3cd; border-left: 4px solid #ffc107;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-                <strong><i class="fa-solid fa-exclamation-triangle" style="color: #ffc107;"></i> Not Associated</strong>
+                <strong><i class="fa-solid fa-triangle-exclamation" style="color: #ffc107;"></i> Not Associated</strong>
                 <p style="margin: 5px 0 0 0; font-size: 13px; color: #856404;">
                     This signed document is not associated with any client or lead
                 </p>
@@ -840,7 +840,7 @@
             <!-- Document Info Card -->
             <div class="main-content-card">
                 <h2 class="section-title">
-                    <i class="fa-solid fa-file-alt"></i>
+                    <i class="fa-solid fa-file-lines"></i>
                     Document Information
                 </h2>
 
@@ -902,9 +902,9 @@
                             </div>
                             <span class="signer-status {{ $signer->opened_at && $signer->status === 'pending' ? 'opened' : $signer->status }}">
                                 @if($signer->status === 'signed')
-                                    <i class="fa-solid fa-check-circle"></i> Signed
+                                    <i class="fa-solid fa-circle-check"></i> Signed
                                 @elseif($signer->status === 'cancelled')
-                                    <i class="fa-solid fa-times-circle"></i> Cancelled
+                                    <i class="fa-solid fa-circle-xmark"></i> Cancelled
                                 @elseif($signer->opened_at && $signer->status === 'pending')
                                     <i class="fa-solid fa-eye"></i> Opened - Not Signed
                                 @else
@@ -927,7 +927,7 @@
 
                         @if($signer->cancelled_at)
                         <div style="margin-top: 5px; font-size: 13px; color: #dc3545;">
-                            <i class="fa-solid fa-times"></i> Cancelled: {{ $signer->cancelled_at->format('M d, Y g:i A') }}
+                            <i class="fa-solid fa-xmark"></i> Cancelled: {{ $signer->cancelled_at->format('M d, Y g:i A') }}
                         </div>
                         @endif
 
@@ -951,7 +951,7 @@
                                 @csrf
                                 <input type="hidden" name="signer_id" value="{{ $signer->id }}">
                                 <button type="submit" class="btn btn-danger">
-                                    <i class="fa-solid fa-times"></i> Cancel Signature
+                                    <i class="fa-solid fa-xmark"></i> Cancel Signature
                                 </button>
                             </form>
                         </div>
@@ -962,7 +962,7 @@
                                 <strong>{{ $signer->last_reminder_sent_at->format('M d, Y g:i A') }}</strong>
                                 <span style="color: #9ca3af;">({{ $signer->last_reminder_sent_at->diffForHumans() }})</span>
                             @else
-                                <i class="fa-solid fa-info-circle"></i> No reminders sent yet
+                                <i class="fa-solid fa-circle-info"></i> No reminders sent yet
                             @endif
                         </div>
                         @endif
@@ -1008,13 +1008,13 @@
                     @endif
                     
                     <a href="{{ route('documents.edit', $document->id) }}" class="btn btn-primary btn-block">
-                        <i class="fa-solid fa-edit"></i> Edit Signature Placement
+                        <i class="fa-solid fa-pen-to-square"></i> Edit Signature Placement
                     </a>
                     
                     @if($document->signers()->where('status', 'pending')->count() > 0)
                         @if($document->status === 'sent')
                         <div style="display: flex; align-items: center; padding: 8px 16px; background: #e8f5e9; border-radius: 6px; color: #2e7d32; font-size: 14px; text-align: center;">
-                            <i class="fa-solid fa-check-circle" style="margin-right: 8px;"></i>
+                            <i class="fa-solid fa-circle-check" style="margin-right: 8px;"></i>
                             Document sent for signature
                         </div>
                         @else
@@ -1028,7 +1028,7 @@
                         @endif
                     @else
                     <div style="display: flex; align-items: center; padding: 8px 16px; background: #f8f9fa; border-radius: 6px; color: #6c757d; font-size: 14px; text-align: center;">
-                        <i class="fa-solid fa-info-circle" style="margin-right: 8px;"></i>
+                        <i class="fa-solid fa-circle-info" style="margin-right: 8px;"></i>
                         No pending signers to send to
                     </div>
                     @endif
@@ -1060,7 +1060,7 @@
                             $activities->push([
                                 'date' => $signatureFieldsDate,
                                 'text' => 'Signature fields placed',
-                                'icon' => 'fa-solid fa-edit',
+                                'icon' => 'fa-solid fa-pen-to-square',
                                 'type' => 'signature_placed'
                             ]);
                         }
@@ -1114,7 +1114,7 @@
                                 $activities->push([
                                     'date' => $signer->signed_at,
                                     'text' => "Signed by {$signer->name}",
-                                    'icon' => 'fa-solid fa-check-circle',
+                                    'icon' => 'fa-solid fa-circle-check',
                                     'type' => 'signed'
                                 ]);
                             }
@@ -1124,7 +1124,7 @@
                                 $activities->push([
                                     'date' => $signer->cancelled_at,
                                     'text' => "Signature cancelled for {$signer->name}",
-                                    'icon' => 'fa-solid fa-times-circle',
+                                    'icon' => 'fa-solid fa-circle-xmark',
                                     'type' => 'signature_cancelled'
                                 ]);
                             }
@@ -1150,7 +1150,7 @@
                                 $activities->push([
                                     'date' => $note->created_at,
                                     'text' => "Email failed to {$signerName}" . ($signerEmail ? " ({$signerEmail})" : ''),
-                                    'icon' => 'fa-solid fa-exclamation-triangle',
+                                    'icon' => 'fa-solid fa-triangle-exclamation',
                                     'type' => 'email_failed',
                                     'note' => $note,
                                     'error' => $error
@@ -1167,7 +1167,7 @@
                                 $activities->push([
                                     'date' => $note->created_at,
                                     'text' => $note->note ?? "Signature cancelled for {$signerName}",
-                                    'icon' => 'fa-solid fa-times-circle',
+                                    'icon' => 'fa-solid fa-circle-xmark',
                                     'type' => 'signature_cancelled',
                                     'note' => $note
                                 ]);
@@ -1251,7 +1251,7 @@
                         
                         <div id="noMatchesMessage" class="no-matches" style="display: none;">
                             <div class="alert alert-info">
-                                <i class="fa-solid fa-info-circle"></i> No existing clients or leads found with this email address.
+                                <i class="fa-solid fa-circle-info"></i> No existing clients or leads found with this email address.
                             </div>
                         </div>
                     </div>
@@ -1337,7 +1337,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-warning">
-                        <i class="fa-solid fa-exclamation-triangle"></i>
+                        <i class="fa-solid fa-triangle-exclamation"></i>
                         <strong>Are you sure?</strong>
                         <p style="margin: 10px 0 0 0;">This will remove the association between this document and the client/lead.</p>
                     </div>
@@ -1781,7 +1781,7 @@ function selectMatter(clientId, matterId, matterLabel) {
     if (confirmationDiv) {
         confirmationDiv.innerHTML = `
             <div class="alert alert-success" style="margin-top: 10px;">
-                <i class="fa-solid fa-check-circle"></i> Selected matter: <strong>${matterLabel}</strong>
+                <i class="fa-solid fa-circle-check"></i> Selected matter: <strong>${matterLabel}</strong>
             </div>
         `;
     }

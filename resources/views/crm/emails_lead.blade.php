@@ -33,7 +33,7 @@
         <!-- Left Email List Pane (no upload for leads - emails are from CRM send only) -->
         <div class="email-list-pane">
             <div class="upload-section-header lead-email-notice">
-                <span class="upload-title"><i class="fa-solid fa-info-circle"></i> Emails sent to this lead from the CRM</span>
+                <span class="upload-title"><i class="fa-solid fa-circle-info"></i> Emails sent to this lead from the CRM</span>
             </div>
             <div class="upload-section-container" style="display: none;">
                 <!-- Upload hidden for leads - no .msg upload support yet -->

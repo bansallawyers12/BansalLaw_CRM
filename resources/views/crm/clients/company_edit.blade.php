@@ -110,7 +110,7 @@
                         <span>Contact Person</span>
                     </button>
                     <button class="nav-item" onclick="scrollToSection('addressSection')">
-                        <i class="fa-solid fa-map-marker-alt"></i>
+                        <i class="fa-solid fa-location-dot"></i>
                         <span>Business Address</span>
                     </button>
                     <button class="nav-item" onclick="scrollToSection('contactsSection')">
@@ -278,7 +278,7 @@
                                         <div class="trading-name-row" style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;">
                                             <input type="text" name="trading_names[]" value="{{ old("trading_names.{$idx}", is_object($tn) ? $tn->trading_name : $tn) }}" placeholder="Trading name" style="flex: 1;">
                                             <label><input type="radio" name="trading_name_primary" value="{{ $idx }}" {{ ($tn->is_primary ?? ($idx === 0)) ? 'checked' : '' }}> Primary</label>
-                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTradingName(this)"><i class="fa-solid fa-times"></i></button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTradingName(this)"><i class="fa-solid fa-xmark"></i></button>
                                         </div>
                                         @endforeach
                                     </div>
@@ -504,7 +504,7 @@
                     <!-- Phone Numbers -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fa-solid fa-mobile-alt"></i> Phone Numbers</h3>
+                            <h3><i class="fa-solid fa-mobile-screen-button"></i> Phone Numbers</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('phoneNumbers')">
                                     <i class="fa-solid fa-pen"></i>
@@ -526,7 +526,7 @@
                                             @if($contact->canVerify())
                                                 @if($contact->is_verified)
                                                     <span class="verified-badge" title="Verified on {{ $contact->verified_at ? $contact->verified_at->format('M j, Y g:i A') : 'Unknown' }}">
-                                                        <i class="fa-solid fa-check-circle"></i> Verified
+                                                        <i class="fa-solid fa-circle-check"></i> Verified
                                                     </span>
                                                 @else
                                                     <button type="button" class="btn-verify-phone" onclick="sendOTP({{ $contact->id ?? 'null' }}, '{{ $contact->phone }}', '{{ $contact->country_code }}')" data-contact-id="{{ $contact->id ?? '' }}">
@@ -584,7 +584,7 @@
                                             <span class="summary-value">{{ $email->email }}</span>
                                             @if($email->is_verified)
                                                 <span class="verified-badge" title="Verified on {{ $email->verified_at ? $email->verified_at->format('M j, Y g:i A') : 'Unknown' }}">
-                                                    <i class="fa-solid fa-check-circle"></i> Verified
+                                                    <i class="fa-solid fa-circle-check"></i> Verified
                                                 </span>
                                             @else
                                                 <button type="button" class="btn-verify-email" onclick="sendEmailVerification({{ $email->id }}, '{{ $email->email }}')" data-email-id="{{ $email->id }}">
@@ -724,7 +724,7 @@
         const row = $('<div class="trading-name-row" style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;">' +
             '<input type="text" name="trading_names[]" placeholder="Trading name" style="flex: 1;">' +
             '<label><input type="radio" name="trading_name_primary" value="' + idx + '"> Primary</label>' +
-            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTradingName(this)"><i class="fa-solid fa-times"></i></button>' +
+            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTradingName(this)"><i class="fa-solid fa-xmark"></i></button>' +
             '</div>');
         container.append(row);
         // Update primary radio values

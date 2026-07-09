@@ -32,7 +32,7 @@
 
         <div class="email-delete-modal__step email-delete-modal__step--2" data-step="2" hidden>
             <div class="email-delete-modal__icon email-delete-modal__icon--danger" aria-hidden="true">
-                <i class="fa-solid fa-exclamation-triangle"></i>
+                <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
             <p class="email-delete-modal__step-label email-delete-modal__step-label--danger">Step 2 of 2 — Final confirmation</p>
             <h3 class="email-delete-modal__title">Permanently delete this email?</h3>

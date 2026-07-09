@@ -48,7 +48,7 @@
                                         <?php if ($isClientGenerated || $isSuperAdmin): ?>
                                             <div class="action-buttons pd-folder-tab-actions">
                                                 <?php if ($isClientGenerated): ?>
-                                                    <button type="button" class="btn btn-sm btn-warning update-personal-cat-title" data-id="<?= $id ?>" title="Rename folder"><i class="fa-solid fa-edit" aria-hidden="true"></i></button>
+                                                    <button type="button" class="btn btn-sm btn-warning update-personal-cat-title" data-id="<?= $id ?>" title="Rename folder"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>
                                                 <?php endif; ?>
                                                 <?php if ($isSuperAdmin): ?>
                                                     <button type="button" class="btn btn-sm btn-danger delete-personal-cat-title" data-id="<?= $id ?>" data-title="<?= htmlspecialchars($catVal->title) ?>" title="Delete folder"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
@@ -80,7 +80,7 @@
                                 <div class="subtab2-pane <?= $isActive ?>" id="<?= $id ?>-subtab2">
                                     <div class="checklist-table-container">
                                         <div class="subtab2-header pd-section-header">
-                                            <h3><i class="fa-solid fa-file-alt"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
+                                            <h3><i class="fa-solid fa-file-lines"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
                                             <div class="pd-section-actions">
                                                 <button type="button" class="btn pd-btn pd-btn-primary add-checklist-btn add_education_doc" data-type="personal" data-categoryid="<?= $id ?>">
                                                     <i class="fa-solid fa-plus"></i> Add Checklist
@@ -94,7 +94,7 @@
                                         <!-- Bulk Upload Dropzone (Hidden by default) -->
                                         <div class="bulk-upload-dropzone-container" id="bulk-upload-<?= $id ?>" style="display: none; margin: 15px 0; padding: 20px;">
                                             <div class="bulk-upload-dropzone" data-categoryid="<?= $id ?>" style="text-align: center; padding: 30px; cursor: pointer;">
-                                                <i class="fa-solid fa-cloud-upload-alt bulk-upload-icon"></i>
+                                                <i class="fa-solid fa-cloud-arrow-up bulk-upload-icon"></i>
                                                 <p class="bulk-upload-lead">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
@@ -143,7 +143,7 @@
                                                                 <div class="checklist-actions" style="display: flex; gap: 5px;">
                                                                     <?php if (!$fetch->file_name): ?>
                                                                     <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Edit Checklist Name">
-                                                                        <i class="fa-solid fa-edit"></i>
+                                                                        <i class="fa-solid fa-pen-to-square"></i>
                                                                     </a>
                                                                     <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Delete Checklist">
                                                                         <i class="fa-solid fa-trash"></i>
@@ -175,7 +175,7 @@
                                                                              data-doccategory="<?= $id ?>"
                                                                              data-formid="upload_form_<?= $fetch->id ?>">
                                                                             <div class="drag-zone-inner">
-                                                                                <i class="fa-solid fa-cloud-upload-alt"></i>
+                                                                                <i class="fa-solid fa-cloud-arrow-up"></i>
                                                                                 <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                                             </div>
                                                                         </div>
@@ -252,7 +252,7 @@
             <!-- Custom Context Menu -->
             <div id="fileContextMenu" class="context-menu personal-docs-context-menu" style="display: none; position: fixed; z-index: 10000; min-width: 180px;">
                 <div class="context-menu-item" onclick="handleContextAction('rename-checklist')" style="padding: 8px 12px; cursor: pointer;">
-                    <i class="fa-solid fa-edit" style="margin-right: 8px;"></i> Rename Checklist
+                    <i class="fa-solid fa-pen-to-square" style="margin-right: 8px;"></i> Rename Checklist
                 </div>
                 <div class="context-menu-item" onclick="handleContextAction('rename-doc')" style="padding: 8px 12px; cursor: pointer;">
                     <i class="fa-solid fa-file-lines" style="margin-right: 8px;"></i> Rename File Name
@@ -374,7 +374,7 @@
                     </div>
                     <ol class="pvu-timeline">
                         <li class="pvu-step" data-step="upload">
-                            <span class="pvu-step-marker"><i class="fa-solid fa-cloud-upload-alt"></i></span>
+                            <span class="pvu-step-marker"><i class="fa-solid fa-cloud-arrow-up"></i></span>
                             <span class="pvu-step-label">Upload</span>
                         </li>
                         <li class="pvu-step" data-step="queued">
@@ -382,7 +382,7 @@
                             <span class="pvu-step-label">Queued</span>
                         </li>
                         <li class="pvu-step" data-step="processing">
-                            <span class="pvu-step-marker"><i class="fa-solid fa-cog"></i></span>
+                            <span class="pvu-step-marker"><i class="fa-solid fa-gear"></i></span>
                             <span class="pvu-step-label">Processing</span>
                         </li>
                         <li class="pvu-step" data-step="complete">
@@ -1573,7 +1573,7 @@
                                 adjustClientDocumentsPanelHeight();
                             }
                         });
-                        $(this).html('<i class="fa-solid fa-times"></i> Close');
+                        $(this).html('<i class="fa-solid fa-xmark"></i> Close');
                         currentCategoryId = categoryId;
                     }
                 });

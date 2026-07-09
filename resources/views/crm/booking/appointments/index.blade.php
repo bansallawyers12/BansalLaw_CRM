@@ -365,10 +365,10 @@
                     <div class="card-header-action">
                         @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
                         <a href="{{ route('booking.sync.dashboard') }}" class="btn btn-sm btn-info">
-                            <i class="fa-solid fa-sync"></i> Sync Status
+                            <i class="fa-solid fa-rotate"></i> Sync Status
                         </a>
                         <button onclick="manualSync()" class="btn btn-sm btn-primary">
-                            <i class="fa-solid fa-sync-alt"></i> Manual Sync
+                            <i class="fa-solid fa-rotate"></i> Manual Sync
                         </button>
                         @endif
                     </div>
@@ -409,7 +409,7 @@
                         <div class="col-lg col-md-6 col-sm-6 col-12">
                             <div class="card card-statistic-1">
                                 <div class="card-icon bg-success">
-                                    <i class="fa-solid fa-check-circle"></i>
+                                    <i class="fa-solid fa-circle-check"></i>
                                 </div>
                                 <div class="card-wrap">
                                     <div class="card-header">
@@ -503,7 +503,7 @@
                                             <i class="fa-solid fa-filter"></i> Filter
                                         </button>
                                         <a href="{{ route('booking.appointments.index') }}" class="btn btn-secondary" style="width: calc(50% - 5px);">
-                                            <i class="fa-solid fa-redo"></i> Reset
+                                            <i class="fa-solid fa-arrow-rotate-right"></i> Reset
                                         </a>
                                     </div>
                                 </div>
@@ -674,8 +674,8 @@ function buildAppointmentRowHtml(row) {
         ? ('<a href="' + escapeHtml(showUrl) + '" class="btn btn-sm btn-primary" title="View in CRM"><i class="fa-solid fa-eye"></i></a>')
         : ('<button type="button" class="btn btn-sm btn-secondary" disabled title="Not synced to CRM yet"><i class="fa-solid fa-eye"></i></button>');
     const editBtn = editUrl
-        ? ('<a href="' + escapeHtml(editUrl) + '" class="btn btn-sm btn-warning" title="Edit in CRM"><i class="fa-solid fa-edit"></i></a>')
-        : ('<button type="button" class="btn btn-sm btn-secondary" disabled title="Not synced to CRM yet"><i class="fa-solid fa-edit"></i></button>');
+        ? ('<a href="' + escapeHtml(editUrl) + '" class="btn btn-sm btn-warning" title="Edit in CRM"><i class="fa-solid fa-pen-to-square"></i></a>')
+        : ('<button type="button" class="btn btn-sm btn-secondary" disabled title="Not synced to CRM yet"><i class="fa-solid fa-pen-to-square"></i></button>');
     const crmId = row.crm_appointment_id;
     const quickBtn = crmId
         ? ('<button type="button" class="btn btn-sm btn-info quick-action-btn" data-id="' + escapeHtml(String(crmId)) + '" title="Quick Actions"><i class="fa-solid fa-bolt"></i></button>')
@@ -687,7 +687,7 @@ function buildAppointmentRowHtml(row) {
         '<td>' + clientCell + '</td>' +
         '<td><strong>' + escapeHtml(row.appointment_date_label || '') + '</strong><br>' +
         '<small>' + timeLine + '</small><br>' +
-        '<small><i class="fa-solid fa-map-marker-alt"></i> ' + locLabel + '</small></td>' +
+        '<small><i class="fa-solid fa-location-dot"></i> ' + locLabel + '</small></td>' +
         '<td>' + serviceMain + '<br><small>' + serviceSub + '</small></td>' +
         '<td>' + consultantCell + '</td>' +
         '<td>' + descCell + '</td>' +
@@ -760,7 +760,7 @@ function loadAppointmentsList(page) {
         if (!rows.length) {
             $tbody.html(
                 '<tr><td colspan="9" class="text-center text-muted py-4">' +
-                '<i class="fa-solid fa-info-circle"></i> No appointments found.</td></tr>'
+                '<i class="fa-solid fa-circle-info"></i> No appointments found.</td></tr>'
             );
         } else {
             $tbody.html(rows.map(buildAppointmentRowHtml).join(''));

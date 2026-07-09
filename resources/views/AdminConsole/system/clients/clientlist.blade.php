@@ -54,7 +54,7 @@
 											<div class="dropdown d-inline">
 												<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 												<div class="dropdown-menu">
-													<a class="dropdown-item has-icon" href="{{route('adminconsole.system.clients.editclient', base64_encode(convert_uuencode(@$list->id)))}}"><i class="fa-regular fa-edit"></i> Edit</a>
+													<a class="dropdown-item has-icon" href="{{route('adminconsole.system.clients.editclient', base64_encode(convert_uuencode(@$list->id)))}}"><i class="fa-regular fa-pen-to-square"></i> Edit</a>
 													<a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'admins')"><i class="fa-solid fa-trash"></i> Delete</a>
 												</div>
 											</div>								  

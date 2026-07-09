@@ -19,7 +19,7 @@
     <td class="workflow-stage-matter-count-cell">{{ $countmatters }}</td>
     <td class="workflow-stage-actions-col">
         <div class="workflow-stage-cell-actions">
-            <button type="button" class="btn btn-sm btn-primary edit-workflow-stage-btn" title="{{ $stageFrozen ? 'View (protected — name cannot be changed)' : 'Edit stage name' }}"><i class="fa-regular fa-edit"></i> Edit</button>
+            <button type="button" class="btn btn-sm btn-primary edit-workflow-stage-btn" title="{{ $stageFrozen ? 'View (protected — name cannot be changed)' : 'Edit stage name' }}"><i class="fa-regular fa-pen-to-square"></i> Edit</button>
             <button type="button" class="btn btn-sm btn-info add-after-workflow-stage-btn" data-after-stage-id="{{ (int) $list->id }}" title="Insert a new stage immediately after this one"><i class="fa-solid fa-plus"></i> Add After</button>
             @if($stageFrozen)
             <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Protected stages cannot be deleted"><i class="fa-solid fa-trash"></i> Delete</button>

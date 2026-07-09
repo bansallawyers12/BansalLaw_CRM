@@ -81,10 +81,10 @@
                                 
                                 <div class="roles-form-actions">
                                     <button type="submit" class="btn btn-primary" id="saveBtn">
-                                        <i class="fa-solid fa-save me-1"></i> Create Template
+                                        <i class="fa-solid fa-floppy-disk me-1"></i> Create Template
                                     </button>
                                     <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-outline-secondary ms-2">
-                                        <i class="fa-solid fa-times me-1"></i> Cancel
+                                        <i class="fa-solid fa-xmark me-1"></i> Cancel
                                     </a>
                                 </div>
                             </form>
@@ -142,7 +142,7 @@ $(document).ready(function() {
                 }
             },
             complete: function() {
-                $('#saveBtn').prop('disabled', false).html('<i class="fa-solid fa-save me-1"></i> Create Template');
+                $('#saveBtn').prop('disabled', false).html('<i class="fa-solid fa-floppy-disk me-1"></i> Create Template');
             }
         });
     });

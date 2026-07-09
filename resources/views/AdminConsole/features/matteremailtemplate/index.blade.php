@@ -51,7 +51,7 @@
 													aria-haspopup="true"
 													aria-expanded="false">Action</button>
 												<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="matterEmailTplAction_{{ $list->id }}">
-													<li><a class="dropdown-item has-icon" href="{{route('adminconsole.features.matteremailtemplate.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="fa-regular fa-edit"></i> Edit</a></li>
+													<li><a class="dropdown-item has-icon" href="{{route('adminconsole.features.matteremailtemplate.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="fa-regular fa-pen-to-square"></i> Edit</a></li>
 													<li><a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'email_templates')"><i class="fa-solid fa-trash"></i> Delete</a></li>
 												</ul>
 											</div>

@@ -15,7 +15,7 @@
     <td class="text-nowrap">
         <div class="workflows-index-actions">
             <a class="btn btn-sm btn-primary" href="{{ $stagesUrl }}"><i class="fa-solid fa-list"></i> Manage Stages</a>
-            <button type="button" class="btn btn-sm btn-secondary edit-workflow-btn"><i class="fa-regular fa-edit"></i> Edit Workflow</button>
+            <button type="button" class="btn btn-sm btn-secondary edit-workflow-btn"><i class="fa-regular fa-pen-to-square"></i> Edit Workflow</button>
         </div>
     </td>
 </tr>

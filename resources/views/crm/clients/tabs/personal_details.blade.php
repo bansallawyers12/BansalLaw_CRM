@@ -38,7 +38,7 @@
                                     if ($detailHasDobVerifiedCol) {
                                         $verifiedDob = \App\Models\Admin::where('id', $fetchedData->id)->whereNotNull('dob_verified_date')->first();
                                         if ($verifiedDob) {
-                                            $verifiedDobTick = '<i class="fa-solid fa-check-circle verified-icon fa-lg"></i>';
+                                            $verifiedDobTick = '<i class="fa-solid fa-circle-check verified-icon fa-lg"></i>';
                                         }
                                     }
                                     
@@ -113,14 +113,14 @@
                                         if( isset($emailVal->email_type) && $emailVal->email_type != "" ){
                                             // Show verification status for ALL email types
                                             if ( $emailVal->is_verified ) {
-                                                $emailStr .= $emailVal->email.' <i class="fa-solid fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                                $emailStr .= $emailVal->email.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                             } else {
                                                 $emailStr .= $emailVal->email.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                             }
                                         } else {
                                             // For emails without type, still show verification status if available
                                             if ( isset($emailVal->is_verified) && $emailVal->is_verified ) {
-                                                $emailStr .= $emailVal->email.' <i class="fa-solid fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                                $emailStr .= $emailVal->email.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                             } else {
                                                 $emailStr .= $emailVal->email.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                             }
@@ -163,14 +163,14 @@
                                         if( isset($conVal->contact_type) && $conVal->contact_type != "" ){
                                             // Show verification status for ALL contact types
                                             if ( $conVal->is_verified ) {
-                                                $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                                $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                             } else {
                                                 $phonenoStr .= $formattedPhone.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                             }
                                         } else {
                                             // For phones without type, still show verification status if available
                                             if ( isset($conVal->is_verified) && $conVal->is_verified ) {
-                                                $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                                $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                             } else {
                                                 $phonenoStr .= $formattedPhone.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                             }
@@ -342,7 +342,7 @@
                                         if( $visa_Info && !empty($visa_Info->visa_expiry_date)){
                                             $verifiedVisa = \App\Models\Admin::where('id',$fetchedData->id)->whereNotNull('visa_expiry_verified_at')->first();
                                             if ( $verifiedVisa) {
-                                                $verifiedVisaTick = '<i class="fa-solid fa-check-circle verified-icon fa-lg"></i>';
+                                                $verifiedVisaTick = '<i class="fa-solid fa-circle-check verified-icon fa-lg"></i>';
                                             } else {
                                                 $verifiedVisaTick = '<i class="fa-regular fa-circle unverified-icon fa-lg"></i>';
                                             }
@@ -472,7 +472,7 @@
                     @if(!empty($clientQualification_Info) && $clientQualification_Info->count() > 0)
                     <div class="card">
                         <div class="qualification-section">
-                            <h3><i class="fa-solid fa-info-circle"></i> Qualification</h3>
+                            <h3><i class="fa-solid fa-circle-info"></i> Qualification</h3>
                             <div class="qualification-list" style="overflow-x: auto;">
                                 <table class="table eoi-table">
                                     <thead>
@@ -533,7 +533,7 @@
                     @if(!empty($clientExperience_Info) && $clientExperience_Info->count() > 0)
                     <div class="card">
                         <div class="experience-section">
-                            <h3><i class="fa-solid fa-info-circle"></i> Work Experience</h3>
+                            <h3><i class="fa-solid fa-circle-info"></i> Work Experience</h3>
                             <div class="experience-list" style="overflow-x: auto;">
                                 <table class="table eoi-table">
                                     <thead>
@@ -1032,7 +1032,7 @@
                             @if($redTagCount > 0)
                                 <div class="red-tags-section" style="display: none; margin-top: 10px;">
                                     <div style="margin-bottom: 5px; font-size: 11px; color: #dc3545; font-weight: bold;">
-                                        <i class="fa-solid fa-exclamation-triangle"></i> Red Tags:
+                                        <i class="fa-solid fa-triangle-exclamation"></i> Red Tags:
                                     </div>
                                     @foreach($redTags as $tagName)
                                         <span class="ui label tag-red ag-flex ag-align-center ag-space-between" style="display: inline-flex; margin: 5px 5px 5px 0; background-color: #dc3545; border: 1px solid #c82333;">

@@ -272,7 +272,7 @@ jQuery(document).ready(function($) {
 			'<td class="workflow-stage-name-cell"><span class="stage-name-text">' + escapeHtml(displayName) + '</span>' + protectedBadge + '</td>' +
 			'<td class="workflow-stage-matter-count-cell">' + (stage.matter_count || 0) + '</td>' +
 			'<td class="workflow-stage-actions-col"><div class="workflow-stage-cell-actions">' +
-			'<button type="button" class="btn btn-sm btn-primary edit-workflow-stage-btn" title="' + (isFrozen ? 'View (protected — name cannot be changed)' : 'Edit stage name') + '"><i class="fa-regular fa-edit"></i> Edit</button> ' +
+			'<button type="button" class="btn btn-sm btn-primary edit-workflow-stage-btn" title="' + (isFrozen ? 'View (protected — name cannot be changed)' : 'Edit stage name') + '"><i class="fa-regular fa-pen-to-square"></i> Edit</button> ' +
 			'<button type="button" class="btn btn-sm btn-info add-after-workflow-stage-btn" data-after-stage-id="' + stage.id + '" title="Insert a new stage immediately after this one"><i class="fa-solid fa-plus"></i> Add After</button> ' +
 			deleteBtn +
 			'</div></td></tr>';

@@ -1,6 +1,6 @@
 <!-- Enhanced Date Filter Section -->
 <div class="date-filter-section">
-    <h5><i class="fa-solid fa-calendar-alt"></i> Date Filter</h5>
+    <h5><i class="fa-solid fa-calendar-days"></i> Date Filter</h5>
     
     <!-- Hidden field to track filter type -->
     <input type="hidden" name="date_filter_type" id="date_filter_type" value="{{ request('date_filter_type', '') }}">
@@ -20,7 +20,7 @@
             <i class="fa-solid fa-calendar-check"></i> This Quarter
         </span>
         <span class="quick-filter-chip {{ request('date_filter_type') == 'this_year' ? 'active' : '' }}" data-filter="this_year">
-            <i class="fa-solid fa-calendar-alt"></i> This Year
+            <i class="fa-solid fa-calendar-days"></i> This Year
         </span>
         <span class="quick-filter-chip {{ request('date_filter_type') == 'last_month' ? 'active' : '' }}" data-filter="last_month">
             <i class="fa-solid fa-calendar-minus"></i> Last Month

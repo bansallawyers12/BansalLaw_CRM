@@ -50,7 +50,7 @@
 								</div>
 								<div class="col-12">
 									<div class="form-group float-right">
-										<button type="submit" class="btn btn-primary" onClick="customValidate('add-city')"><i class="fa-solid fa-save"></i> Save</button>
+										<button type="submit" class="btn btn-primary" onClick="customValidate('add-city')"><i class="fa-solid fa-floppy-disk"></i> Save</button>
 									</div> 
 								</div> 
 							</div> 

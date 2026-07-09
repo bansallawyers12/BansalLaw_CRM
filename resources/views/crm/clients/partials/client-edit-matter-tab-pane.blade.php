@@ -7,11 +7,11 @@
               'CIV'   => ['icon' => 'fa-balance-scale', 'color' => '#4a6fa5'],
               'CRM'   => ['icon' => 'fa-gavel',         'color' => '#c0392b'],
               'FAM'   => ['icon' => 'fa-heart',         'color' => '#e67e22'],
-              'PROP'  => ['icon' => 'fa-home',          'color' => '#27ae60'],
+              'PROP'  => ['icon' => 'fa-house',          'color' => '#27ae60'],
               'CORP'  => ['icon' => 'fa-building',      'color' => '#8e44ad'],
               'LAB'   => ['icon' => 'fa-briefcase',     'color' => '#2980b9'],
               'CONS'  => ['icon' => 'fa-shopping-cart', 'color' => '#16a085'],
-              'BANK'  => ['icon' => 'fa-university',    'color' => '#d35400'],
+              'BANK'  => ['icon' => 'fa-building-columns',    'color' => '#d35400'],
               'TAX'   => ['icon' => 'fa-calculator',   'color' => '#7f8c8d'],
               'IP'    => ['icon' => 'fa-lightbulb',     'color' => '#f39c12'],
               'CONST' => ['icon' => 'fa-scroll',        'color' => '#1a5276'],
@@ -68,7 +68,7 @@
               <i class="fa-solid fa-circle-plus"></i> Add this Matter
             </button>
             <button type="button" class="btn btn-secondary" onclick="resetMatterDropdown()" style="margin-left:8px;border-radius:8px;">
-              <i class="fa-solid fa-times"></i> Clear
+              <i class="fa-solid fa-xmark"></i> Clear
             </button>
           </div>
         </section>
@@ -80,7 +80,7 @@
           <div class="section-header" style="align-items:center;">
             <h3 id="matterDynamicFormTitle"><i class="fa-solid fa-folder-plus"></i> New Matter Details</h3>
             <button type="button" class="btn btn-sm btn-secondary" onclick="clearMatterTypeSelection()" style="margin-left:auto;">
-              <i class="fa-solid fa-times"></i> Cancel
+              <i class="fa-solid fa-xmark"></i> Cancel
             </button>
           </div>
 
@@ -197,7 +197,7 @@
                                           <i class="fa-solid fa-pen"></i>
                                       </button>
                                       <a href="{{ $detailUrl }}" class="btn btn-sm btn-secondary" title="View full matter details">
-                                          <i class="fa-solid fa-external-link-alt"></i>
+                                          <i class="fa-solid fa-up-right-from-square"></i>
                                       </a>
                                   </td>
                               </tr>
@@ -206,7 +206,7 @@
                   </table>
               </div>
               <p class="matter-tab-footer-link text-muted">
-                  <a href="{{ route('clients.clientsmatterslist', array_filter(['client_id' => $fetchedData->client_id])) }}"><i class="fa-solid fa-external-link-alt"></i> Full matter list</a>
+                  <a href="{{ route('clients.clientsmatterslist', array_filter(['client_id' => $fetchedData->client_id])) }}"><i class="fa-solid fa-up-right-from-square"></i> Full matter list</a>
                   @if($fetchedData->client_id)
                       <span> (filter: {{ $fetchedData->client_id }})</span>
                   @endif

@@ -54,7 +54,7 @@
                         if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
                             return 'fa-file-image';
                         }
-                        return 'fa-file-alt';
+                        return 'fa-file-lines';
                     };
                     ?>
 
@@ -192,7 +192,7 @@
 
                         <div class="preview-pane file-preview-container preview-container-notuseddocumnetlist not-used-preview-pane client-doc-preview-pane">
                             <div class="not-used-preview-placeholder">
-                                <i class="fa-solid fa-file-alt"></i>
+                                <i class="fa-solid fa-file-lines"></i>
                                 <p>Select a file to preview it here</p>
                             </div>
                         </div>

@@ -71,14 +71,14 @@ class EmailLabel extends Model
         $defaultIcons = [
             'inbox' => 'fa-solid fa-inbox',
             'sent' => 'fa-solid fa-paper-plane',
-            'draft' => 'fa-solid fa-edit',
+            'draft' => 'fa-solid fa-pen-to-square',
             'trash' => 'fa-solid fa-trash',
             'spam' => 'fa-solid fa-ban',
-            'archive' => 'fa-solid fa-archive',
+            'archive' => 'fa-solid fa-box-archive',
             'work' => 'fa-solid fa-briefcase',
             'personal' => 'fa-solid fa-user',
             'important' => 'fa-solid fa-star',
-            'urgent' => 'fa-solid fa-exclamation-triangle',
+            'urgent' => 'fa-solid fa-triangle-exclamation',
         ];
 
         $labelName = strtolower($this->name);

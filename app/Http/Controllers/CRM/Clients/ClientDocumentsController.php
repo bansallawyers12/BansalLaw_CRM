@@ -230,7 +230,7 @@ class ClientDocumentsController extends Controller
                                     <div class="checklist-actions" style="display: flex; gap: 5px;">
                                         <?php if (!$fetch->file_name): ?>
                                         <a href="javascript:;" class="edit-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
-                                            <i class="fa-solid fa-edit"></i>
+                                            <i class="fa-solid fa-pen-to-square"></i>
                                         </a>
                                         <a href="javascript:;" class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
                                             <i class="fa-solid fa-trash"></i>
@@ -266,7 +266,7 @@ class ClientDocumentsController extends Controller
                                                  data-doccategory="<?php echo $request->folder_name; ?>"
                                                  data-formid="upload_form_<?php echo $fetch->id; ?>">
                                                 <div class="drag-zone-inner">
-                                                    <i class="fa-solid fa-cloud-upload-alt"></i>
+                                                    <i class="fa-solid fa-cloud-arrow-up"></i>
                                                     <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                 </div>
                                             </div>
@@ -762,7 +762,7 @@ class ClientDocumentsController extends Controller
                                     <div class="checklist-actions" style="display: flex; gap: 5px;">
                                         <?php if (!$fetch->file_name): ?>
                                         <a href="javascript:;" class="edit-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
-                                            <i class="fa-solid fa-edit"></i>
+                                            <i class="fa-solid fa-pen-to-square"></i>
                                         </a>
                                         <a href="javascript:;" class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
                                             <i class="fa-solid fa-trash"></i>
@@ -799,7 +799,7 @@ class ClientDocumentsController extends Controller
                                                  data-doccategory="<?php echo $fetch->folder_name;?>"
                                                  data-formid="mig_upload_form_<?php echo $fetch->id;?>">
                                                 <div class="drag-zone-inner">
-                                                    <i class="fa-solid fa-cloud-upload-alt"></i>
+                                                    <i class="fa-solid fa-cloud-arrow-up"></i>
                                                     <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                 </div>
                                             </div>
@@ -995,7 +995,7 @@ class ClientDocumentsController extends Controller
                                     <div class="checklist-actions" style="display: flex; gap: 5px;">
                                         <?php if (!$fetch->file_name) { ?>
                                         <a href="javascript:;" class="edit-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
-                                            <i class="fa-solid fa-edit"></i>
+                                            <i class="fa-solid fa-pen-to-square"></i>
                                         </a>
                                         <a href="javascript:;" class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
                                             <i class="fa-solid fa-trash"></i>
@@ -1027,7 +1027,7 @@ class ClientDocumentsController extends Controller
                                                  data-doccategory="<?php echo $fetch->folder_name; ?>"
                                                  data-formid="mig_upload_form_<?php echo $fetch->id; ?>">
                                                 <div class="drag-zone-inner">
-                                                    <i class="fa-solid fa-cloud-upload-alt"></i>
+                                                    <i class="fa-solid fa-cloud-arrow-up"></i>
                                                     <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                 </div>
                                             </div>
@@ -2153,7 +2153,7 @@ class ClientDocumentsController extends Controller
                 // Only show edit/delete buttons if no file uploaded
                 if (!$doc->file_name) {
                     $html .= '<div class="checklist-actions" style="display: flex; gap: 5px;">';
-                    $html .= '<a href="javascript:;" class="edit-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . htmlspecialchars($checklist) . '" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;"><i class="fa-solid fa-edit"></i></a>';
+                    $html .= '<a href="javascript:;" class="edit-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . htmlspecialchars($checklist) . '" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;"><i class="fa-solid fa-pen-to-square"></i></a>';
                     $html .= '<a href="javascript:;" class="delete-checklist-btn" data-id="' . $doc->id . '" data-checklist="' . htmlspecialchars($checklist) . '" title="Delete Checklist" style="color: #dc3545; cursor: pointer;"><i class="fa-solid fa-trash"></i></a>';
                     $html .= '</div>';
                 }

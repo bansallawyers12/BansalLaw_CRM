@@ -307,13 +307,13 @@
                                                 @if($matter_office)
                                                     <span class="badge badge-info" style="font-size: 12px;"><i class="fa-solid fa-building"></i> {{ $matter_office->office_name }}</span>
                                                 @else
-                                                    <span class="badge badge-warning" style="font-size: 11px;"><i class="fa-solid fa-exclamation-triangle"></i> Not Assigned</span>
+                                                    <span class="badge badge-warning" style="font-size: 11px;"><i class="fa-solid fa-triangle-exclamation"></i> Not Assigned</span>
                                                 @endif
                                             </td>
                                             <td class="tdCls">
                                                 @if($isDiscontinued)
                                                     @if($_cmCanReopen)
-                                                    <button class="btn btn-primary btn-sm closed-matter-reopen" type="button" data-matter-id="{{ $list->id }}"><i class="fa-solid fa-redo"></i> Reopen</button>
+                                                    <button class="btn btn-primary btn-sm closed-matter-reopen" type="button" data-matter-id="{{ $list->id }}"><i class="fa-solid fa-arrow-rotate-right"></i> Reopen</button>
                                                     @else
                                                         @if($list->reopen_requested_by)
                                                             <button class="btn btn-secondary btn-sm" disabled type="button" title="Reopen Requested"><i class="fa-solid fa-clock"></i> Requested</button>
@@ -388,12 +388,12 @@ jQuery(document).ready(function($){
                     window.location.reload();
                 } else {
                     alert(resp.message || 'Failed to reopen matter.');
-                    $btn.prop('disabled', false).html('<i class="fa-solid fa-redo"></i> Reopen');
+                    $btn.prop('disabled', false).html('<i class="fa-solid fa-arrow-rotate-right"></i> Reopen');
                 }
             },
             error: function(){
                 alert('An error occurred. Please try again.');
-                $btn.prop('disabled', false).html('<i class="fa-solid fa-redo"></i> Reopen');
+                $btn.prop('disabled', false).html('<i class="fa-solid fa-arrow-rotate-right"></i> Reopen');
             }
         });
     });

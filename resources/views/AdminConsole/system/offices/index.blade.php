@@ -357,7 +357,7 @@ jQuery(document).ready(function($) {
 			'<button class="btn btn-primary dropdown-toggle" type="button" id="officeAction_' + office.id + '" data-bs-toggle="dropdown" data-bs-popper-config=\'{"strategy":"fixed"}\' aria-haspopup="true" aria-expanded="false">Action</button>' +
 			'<ul class="dropdown-menu dropdown-menu-end offices-action-menu" aria-labelledby="officeAction_' + office.id + '">' +
 			'<li><a class="dropdown-item has-icon" href="' + escapeHtml(office.view_url) + '"><i class="fa-regular fa-eye"></i> View</a></li>' +
-			'<li><a class="dropdown-item has-icon edit-office-btn" href="javascript:void(0);"><i class="fa-regular fa-edit"></i> Edit</a></li>' +
+			'<li><a class="dropdown-item has-icon edit-office-btn" href="javascript:void(0);"><i class="fa-regular fa-pen-to-square"></i> Edit</a></li>' +
 			'<li><a class="dropdown-item has-icon delete-office-btn" href="javascript:void(0);"><i class="fa-solid fa-trash"></i> Delete</a></li>' +
 			'</ul></div></td></tr>';
 	}

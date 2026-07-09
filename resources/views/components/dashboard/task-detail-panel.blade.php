@@ -5,7 +5,7 @@
     <div class="task-detail-content">
         <div class="task-detail-header">
             <button class="task-detail-close" onclick="closeTaskDetail()">
-                <i class="fa-solid fa-times"></i>
+                <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
         

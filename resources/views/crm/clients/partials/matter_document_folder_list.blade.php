@@ -12,7 +12,7 @@
                 <div class="checklist-actions">
                     @if (!$fetch->file_name)
                         <a href="javascript:;" class="edit-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ htmlspecialchars($fetch->checklist) }}" title="Edit Checklist Name">
-                            <i class="fa-solid fa-edit"></i>
+                            <i class="fa-solid fa-pen-to-square"></i>
                         </a>
                         <a href="javascript:;" class="delete-checklist-btn" data-id="{{ $fetch->id }}" data-checklist="{{ htmlspecialchars($fetch->checklist) }}" title="Delete Checklist">
                             <i class="fa-solid fa-trash"></i>
@@ -43,7 +43,7 @@
                              data-doccategory="{{ $fetch->folder_name }}"
                              data-formid="mig_upload_form_{{ $fetch->id }}">
                             <div class="drag-zone-inner">
-                                <i class="fa-solid fa-cloud-upload-alt"></i>
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
                                 <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                             </div>
                         </div>

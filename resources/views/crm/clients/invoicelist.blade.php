@@ -407,7 +407,7 @@
     }
 
     /* Modern Icons */
-    .listing-container .fas.fa-check-circle {
+    .listing-container .fa-solid.fa-circle-check {
         color: #10b981;
         font-size: 16px;
         margin-right: 6px;
@@ -828,7 +828,7 @@
                             </select>
                             <a href="javascript:;" class="btn btn-theme btn-theme-sm filter_btn"><i class="fa-solid fa-filter"></i> Filter</a>
                             <button type="button" class="btn btn-primary is_checked_client_void_invoice">
-                                <i class="fa-solid fa-check-circle"></i>
+                                <i class="fa-solid fa-circle-check"></i>
                                 Void Invoice
                             </button>
                         </div>
@@ -885,7 +885,7 @@
                              title="Click to filter Current invoices (0-30 days)">
                             <div class="aging-card-header">
                                 <div class="aging-icon">
-                                    <i class="fa-solid fa-check-circle"></i>
+                                    <i class="fa-solid fa-circle-check"></i>
                                 </div>
                                 <div class="aging-card-title">
                                     <h5>Current</h5>
@@ -902,7 +902,7 @@
                              title="Click to filter Warning invoices (30-60 days overdue)">
                             <div class="aging-card-header">
                                 <div class="aging-icon">
-                                    <i class="fa-solid fa-exclamation-triangle"></i>
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
                                 </div>
                                 <div class="aging-card-title">
                                     <h5>Warning</h5>
@@ -919,7 +919,7 @@
                              title="Click to filter Urgent invoices (60-90 days overdue)">
                             <div class="aging-card-header">
                                 <div class="aging-icon">
-                                    <i class="fa-solid fa-exclamation-circle"></i>
+                                    <i class="fa-solid fa-circle-exclamation"></i>
                                 </div>
                                 <div class="aging-card-title">
                                     <h5>Urgent</h5>
@@ -936,7 +936,7 @@
                              title="Click to filter Critical invoices (90+ days overdue)">
                             <div class="aging-card-header">
                                 <div class="aging-icon">
-                                    <i class="fa-solid fa-times-circle"></i>
+                                    <i class="fa-solid fa-circle-xmark"></i>
                                 </div>
                                 <div class="aging-card-title">
                                     <h5>Critical</h5>
@@ -1005,7 +1005,7 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="hubdoc_status" class="col-form-label" style="color:#4a5568 !important;">
-                                            <i class="fa-solid fa-cloud-upload-alt"></i> Hubdoc Status
+                                            <i class="fa-solid fa-cloud-arrow-up"></i> Hubdoc Status
                                         </label>
                                         <select name="hubdoc_status" id="hubdoc_status" class="form-control">
                                             <option value="">All Invoices</option>
@@ -1036,7 +1036,7 @@
 
                             <!-- Enhanced Date Filter Section -->
                             <div class="date-filter-section">
-                                <h5><i class="fa-solid fa-calendar-alt"></i> Date Filter</h5>
+                                <h5><i class="fa-solid fa-calendar-days"></i> Date Filter</h5>
                                 
                                 <!-- Hidden field to track filter type -->
                                 <input type="hidden" name="date_filter_type" id="date_filter_type" value="{{ request('date_filter_type', '') }}">
@@ -1056,7 +1056,7 @@
                                         <i class="fa-solid fa-calendar-check"></i> This Quarter
                                     </span>
                                     <span class="quick-filter-chip {{ request('date_filter_type') == 'this_year' ? 'active' : '' }}" data-filter="this_year">
-                                        <i class="fa-solid fa-calendar-alt"></i> This Year
+                                        <i class="fa-solid fa-calendar-days"></i> This Year
                                     </span>
                                     <span class="quick-filter-chip {{ request('date_filter_type') == 'last_month' ? 'active' : '' }}" data-filter="last_month">
                                         <i class="fa-solid fa-calendar-minus"></i> Last Month
@@ -1127,11 +1127,11 @@
                                             <i class="fa-solid fa-search"></i> Search
                                         </button>
                                         <a class="btn btn-info" href="{{URL::to('/clients/invoicelist')}}">
-                                            <i class="fa-solid fa-redo"></i> Reset All
+                                            <i class="fa-solid fa-arrow-rotate-right"></i> Reset All
                                         </a>
                                         @if(request()->hasAny(['client_id', 'client_matter_id', 'amount', 'hubdoc_status', 'aging_category', 'date_filter_type', 'from_date', 'to_date', 'financial_year']))
                                             <button type="button" class="clear-filter-btn ms-2" id="clearDateFilters">
-                                                <i class="fa-solid fa-times-circle"></i> Clear Date Filters
+                                                <i class="fa-solid fa-circle-xmark"></i> Clear Date Filters
                                             </button>
                                         @endif
                                     </div>
@@ -1193,7 +1193,7 @@
                                         </span>
                                     </th>
                                     <th class="sortable-header {{ request('sort_by') == 'hubdoc_status' ? (request('sort_order') == 'desc' ? 'sort-desc' : 'sort-asc') : '' }}" data-sort="hubdoc_status" style="text-align: center;">
-                                        <i class="fa-solid fa-cloud-upload-alt" style="color: var(--navy); margin-right: 4px;"></i>Hubdoc
+                                        <i class="fa-solid fa-cloud-arrow-up" style="color: var(--navy); margin-right: 4px;"></i>Hubdoc
                                         <span class="sort-icon">
                                             <i class="fa-solid fa-caret-up"></i>
                                             <i class="fa-solid fa-caret-down"></i>
@@ -1308,25 +1308,25 @@
                                                 } elseif ($isPaidInvoice) {
                                                     $agingClass = 'badge-paid';
                                                     $agingLabel = 'Paid';
-                                                    $agingIcon = 'fa-check-circle';
+                                                    $agingIcon = 'fa-circle-check';
                                                     $agingDays = null;
                                                 } else {
                                                     if ($daysOld <= 30) {
                                                         $agingClass = 'badge-current';
                                                         $agingLabel = 'Current';
-                                                        $agingIcon = 'fa-check-circle';
+                                                        $agingIcon = 'fa-circle-check';
                                                     } elseif ($daysOld <= 60) {
                                                         $agingClass = 'badge-warning';
                                                         $agingLabel = 'Warning';
-                                                        $agingIcon = 'fa-exclamation-triangle';
+                                                        $agingIcon = 'fa-triangle-exclamation';
                                                     } elseif ($daysOld <= 90) {
                                                         $agingClass = 'badge-urgent';
                                                         $agingLabel = 'Urgent';
-                                                        $agingIcon = 'fa-exclamation-circle';
+                                                        $agingIcon = 'fa-circle-exclamation';
                                                     } else {
                                                         $agingClass = 'badge-critical';
                                                         $agingLabel = 'Critical';
-                                                        $agingIcon = 'fa-times-circle';
+                                                        $agingIcon = 'fa-circle-xmark';
                                                     }
                                                     $agingDays = $daysOld . ' days';
                                                 }

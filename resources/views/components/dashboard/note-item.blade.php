@@ -52,7 +52,7 @@
             {{ $urgencyLabel }}
         </span>
         <span class="deadline-date {{ $daysLeftClass }}">
-            <i class="fa-solid fa-calendar-alt"></i>
+            <i class="fa-solid fa-calendar-days"></i>
             {{ $deadline->format('d M Y') }}
         </span>
     </div>
@@ -73,7 +73,7 @@
         </div>
         
         <div class="note-description">
-            <i class="fa-solid fa-sticky-note"></i>
+            <i class="fa-solid fa-note-sticky"></i>
             {{ Str::limit(strip_tags($note->description), 80) }}
         </div>
         

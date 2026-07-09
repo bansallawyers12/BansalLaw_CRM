@@ -2,7 +2,7 @@
             <div class="tab-pane" id="noteterm-tab">
                 <div class="card full-width notes-container">
                     <div class="notes-header">
-                        <h3><i class="fa-solid fa-file-alt"></i> Notes</h3>
+                        <h3><i class="fa-solid fa-file-lines"></i> Notes</h3>
                         <button class="btn btn-primary btn-sm create_note_d" datatype="note">
                             <i class="fa-solid fa-plus"></i> Add Note
                         </button>

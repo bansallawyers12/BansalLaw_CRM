@@ -166,7 +166,7 @@ class EmailLogAttachment extends Model
         }
         
         if ($this->isDocument()) {
-            return 'fa-solid fa-file-alt text-gray-500';
+            return 'fa-solid fa-file-lines text-gray-500';
         }
         
         return 'fa-solid fa-paperclip text-gray-400';

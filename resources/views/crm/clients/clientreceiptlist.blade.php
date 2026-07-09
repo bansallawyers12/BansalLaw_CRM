@@ -249,7 +249,7 @@
     }
 
     /* Modern Icons */
-    .listing-container .fas.fa-check-circle {
+    .listing-container .fa-solid.fa-circle-check {
         color: #10b981;
         font-size: 16px;
         margin-right: 6px;
@@ -478,7 +478,7 @@
                             @endif
 
                             <button type="button" class="btn btn-primary Validate_Receipt">
-                                <i class="fa-solid fa-check-circle"></i>
+                                <i class="fa-solid fa-circle-check"></i>
                                 Validate Receipt
                             </button>
                         </div>
@@ -565,11 +565,11 @@
                                             <i class="fa-solid fa-search"></i> Search
                                         </button>
                                         <a class="btn btn-info" href="{{URL::to('/clients/clientreceiptlist')}}">
-                                            <i class="fa-solid fa-redo"></i> Reset All
+                                            <i class="fa-solid fa-arrow-rotate-right"></i> Reset All
                                         </a>
                                         @if(request()->hasAny(['client_id', 'client_matter_id', 'amount', 'client_fund_ledger_type', 'receipt_validate', 'date_filter_type', 'from_date', 'to_date', 'financial_year']))
                                             <button type="button" class="clear-filter-btn ms-2" id="clearDateFilters">
-                                                <i class="fa-solid fa-times-circle"></i> Clear Date Filters
+                                                <i class="fa-solid fa-circle-xmark"></i> Clear Date Filters
                                             </button>
                                         @endif
                                     </div>
@@ -720,7 +720,7 @@
                                                     @if($receipt_validate == 'Yes')
                                                         <i class="fa-solid fa-check"></i>
                                                     @else
-                                                        <i class="fa-solid fa-times"></i>
+                                                        <i class="fa-solid fa-xmark"></i>
                                                     @endif
                                                     {{ $receipt_validate }}
                                                 </span>

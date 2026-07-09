@@ -445,12 +445,12 @@
                                         <td>
                                             <div class="action-buttons">
                                                 <a href="{{route('clients.edit', base64_encode(convert_uuencode(@$list->id)))}}" class="btn-edit-icon" title="Edit Lead">
-                                                    <i class="fa-solid fa-edit"></i>
+                                                    <i class="fa-solid fa-pen-to-square"></i>
                                                 </a>
                                                 <form action="{{ route('leads.archive', base64_encode(convert_uuencode(@$list->id))) }}" method="POST" class="archive-lead-form" style="display: inline-block;">
                                                     @csrf
                                                     <button type="button" class="btn-archive-icon" title="Archive Lead" onclick="confirmArchive(event, '{{ @$list->first_name }} {{ @$list->last_name }}');">
-                                                        <i class="fa-solid fa-archive"></i>
+                                                        <i class="fa-solid fa-box-archive"></i>
                                                     </button>
                                                 </form>
                                             </div>
@@ -506,7 +506,7 @@
     </div>
     <div class="modal-footer">
         <button type="submit" class="btn btn-primary" onClick='customValidate("add-assign")'>
-            <i class="fa-solid fa-save"></i> Assign Lead
+            <i class="fa-solid fa-floppy-disk"></i> Assign Lead
         </button>
     </div>
 </form>
@@ -529,7 +529,7 @@
             <div class="modal-body">
                 @if ($errors->has('import_file'))
                     <div class="alert alert-danger">
-                        <i class="fa-solid fa-exclamation-circle"></i>
+                        <i class="fa-solid fa-circle-exclamation"></i>
                         <strong>{{ $errors->first('import_file') }}</strong>
                     </div>
                 @endif
@@ -537,7 +537,7 @@
                 <form method="post" name="importLeadForm" action="{{ URL::to('/clients/import') }}" autocomplete="off" enctype="multipart/form-data">
                     @csrf
                     <div class="alert alert-info">
-                        <i class="fa-solid fa-info-circle"></i>
+                        <i class="fa-solid fa-circle-info"></i>
                         <strong>Instructions:</strong> Upload a JSON file from the lead form. A new lead will be created and the Notes field will be added as an activity note.
                     </div>
 

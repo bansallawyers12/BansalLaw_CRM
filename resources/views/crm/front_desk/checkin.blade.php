@@ -586,7 +586,7 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
                     <h5>Please speak with our receptionist</h5>
                     <p class="text-muted mb-4">Our front-desk team will be happy to help you locate your file.</p>
                     <button type="button" class="btn fd-btn-action" id="fdNotClientStartOver">
-                        <i class="fa-solid fa-redo me-2"></i>Start Over
+                        <i class="fa-solid fa-arrow-rotate-right me-2"></i>Start Over
                     </button>
                 </div>
             </div>
@@ -613,7 +613,7 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
                         <i class="fa-solid fa-calendar-check me-2" aria-hidden="true"></i>Yes, has appointment
                     </button>
                     <button type="button" class="fd-choice-btn fd-choice-no" id="fdHasApptNo">
-                        <i class="fa-solid fa-calendar-times me-2" aria-hidden="true"></i>No appointment
+                        <i class="fa-solid fa-calendar-xmark me-2" aria-hidden="true"></i>No appointment
                     </button>
                 </div>
 
@@ -674,11 +674,11 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
             {{-- ── SUCCESS ───────────────────────────────────────── --}}
             <div class="fd-wizard-step" id="fdStepSuccess">
                 <div class="fd-success">
-                    <i class="fa-solid fa-check-circle"></i>
+                    <i class="fa-solid fa-circle-check"></i>
                     <h5>Check-In Recorded!</h5>
                     <p id="fdSuccessMsg" class="mb-4"></p>
                     <button type="button" class="btn fd-btn-action" id="fdStartOver">
-                        <i class="fa-solid fa-redo me-2"></i>New Check-In
+                        <i class="fa-solid fa-arrow-rotate-right me-2"></i>New Check-In
                     </button>
                     <a href="{{ route('officevisits.waiting') }}" class="btn btn-outline-secondary ms-2">
                         <i class="fa-solid fa-list me-2"></i>Office Visits
@@ -875,7 +875,7 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
                     (m.is_company && m.company_name ? '<span class="text-muted small ms-1">(' + escHtml(m.company_name) + ')</span>' : '') +
                     '<br><small class="text-muted">' + escHtml(m.email || '—') + ' &bull; ' + escHtml(m.phone || '—') + '</small>' +
                 '</div>' +
-                '<i class="fa-solid fa-check-circle text-primary mt-1" style="display:none;" data-checkmark></i>' +
+                '<i class="fa-solid fa-circle-check text-primary mt-1" style="display:none;" data-checkmark></i>' +
                 '</div>';
 
             div.addEventListener('click', function () {
@@ -1081,7 +1081,7 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
 
         if (!state.adminId) {
             $('#fdApptList').innerHTML =
-                '<p class="text-muted"><i class="fa-solid fa-info-circle me-1"></i>' +
+                '<p class="text-muted"><i class="fa-solid fa-circle-info me-1"></i>' +
                 'Walk-in visitor — no CRM record to match an appointment against. ' +
                 'The visit will still be recorded.</p>';
             hide($('#fdApptSpinner'));
@@ -1140,7 +1140,7 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
                     ' <span class="badge badge-' + statusBadge + '">' + escHtml(a.status) + '</span>' +
                     '<br><small class="text-muted">Consultant: ' + escHtml(a.consultant || '—') + ' &bull; ' + escHtml(a.location || '—') + '</small>' +
                 '</div>' +
-                '<i class="fa-solid fa-check-circle text-info" style="display:none;" data-checkmark></i>' +
+                '<i class="fa-solid fa-circle-check text-info" style="display:none;" data-checkmark></i>' +
                 '</div>';
 
             div.addEventListener('click', function () {

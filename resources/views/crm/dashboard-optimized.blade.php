@@ -26,7 +26,7 @@
                     <i class="fa-solid fa-user-plus"></i> New client
                 </a>
                 <button type="button" class="action-btn action-btn-secondary" id="refreshDashboard" title="Refresh Dashboard (Alt+R)">
-                    <i class="fa-solid fa-sync-alt"></i> Refresh
+                    <i class="fa-solid fa-rotate"></i> Refresh
                 </button>
             </div>
         </header>
@@ -54,7 +54,7 @@
                 :title="'Cases Requiring Attention'" 
                 :count="$count_cases_requiring_attention_data"
                 subtitle="Matters that may need follow-up"
-                icon="fa-solid fa-exclamation-triangle"
+                icon="fa-solid fa-triangle-exclamation"
                 icon-class="icon-pending" 
             />
         </section>
@@ -68,7 +68,7 @@
                 <div class="todo-header">
                     <div class="todo-header-left">
                         <h3>
-                            <i class="fa-solid fa-tasks dashboard-theme-icon-primary"></i> 
+                            <i class="fa-solid fa-list-check dashboard-theme-icon-primary"></i> 
                             My Actions
                         </h3>
                         <span class="todo-count-badge">{{ count($notesData) }}</span>
@@ -156,7 +156,7 @@
                     @else
                         <div class="todo-empty-state">
                             <div class="todo-empty-icon">
-                                <i class="fa-solid fa-check-circle"></i>
+                                <i class="fa-solid fa-circle-check"></i>
                             </div>
                             <h4>All caught up!</h4>
                             <p>You have no actions at the moment.</p>
@@ -173,7 +173,7 @@
             <div class="focus-container">
                 <div class="focus-header">
                     <h3>
-                        <i class="fa-solid fa-exclamation-circle" style="color: var(--warning-color);"></i> 
+                        <i class="fa-solid fa-circle-exclamation" style="color: var(--warning-color);"></i> 
                         Cases Requiring Attention
                     </h3>
                     <span class="badge-count">{{ count($cases_requiring_attention_data) }}</span>
@@ -342,7 +342,7 @@
                                 <td class="matter-row-action">
                                     @if(!empty($clientDetailParams))
                                         <a href="{{ route('clients.detail', $clientDetailParams) }}" class="matter-row-open" title="Open matter">
-                                            <i class="fa-solid fa-external-link-alt" aria-hidden="true"></i>
+                                            <i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i>
                                         </a>
                                     @endif
                                 </td>
@@ -357,7 +357,7 @@
                                         <p>Try adjusting your filters or search criteria.</p>
                                         @if($dashboardFiltersActive)
                                             <a href="{{ route('dashboard') }}" class="btn btn-primary mt-3">
-                                                <i class="fa-solid fa-times"></i> Clear All Filters
+                                                <i class="fa-solid fa-xmark"></i> Clear All Filters
                                             </a>
                                         @endif
                                     </div>
@@ -1572,11 +1572,11 @@ window.showToast = function(message, type = 'info') {
     toast.className = `toast toast-${type}`;
     
     const icon = {
-        success: 'fa-check-circle',
-        error: 'fa-exclamation-circle',
-        warning: 'fa-exclamation-triangle',
-        info: 'fa-info-circle'
-    }[type] || 'fa-info-circle';
+        success: 'fa-circle-check',
+        error: 'fa-circle-exclamation',
+        warning: 'fa-triangle-exclamation',
+        info: 'fa-circle-info'
+    }[type] || 'fa-circle-info';
     
     toast.innerHTML = `
         <i class="fa-solid ${icon}"></i>

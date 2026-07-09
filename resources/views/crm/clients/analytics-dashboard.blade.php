@@ -14,7 +14,7 @@
         <h1><i class="fa-solid fa-chart-line"></i> Financial Analytics Dashboard</h1>
         <p class="analytics-header-lead">Comprehensive overview of your financial performance and key metrics</p>
         <p class="analytics-header-period">
-            <i class="fa-solid fa-calendar-alt"></i> Data period: {{ $startDate->format('M d, Y') }} - {{ $endDate->format('M d, Y') }}
+            <i class="fa-solid fa-calendar-days"></i> Data period: {{ $startDate->format('M d, Y') }} - {{ $endDate->format('M d, Y') }}
         </p>
         
         <!-- Date Range Selector -->
@@ -48,7 +48,7 @@
                 </div>
                 
                 <button type="submit" class="btn-apply">
-                    <i class="fa-solid fa-sync-alt"></i> Apply
+                    <i class="fa-solid fa-rotate"></i> Apply
                 </button>
             </form>
         </div>
@@ -97,7 +97,7 @@
 
     @unless($hasData)
     <div class="analytics-empty-alert" role="status">
-        <i class="fa-solid fa-info-circle" aria-hidden="true"></i>
+        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
         <div>
             <strong>No data available</strong>
             <p>
@@ -188,7 +188,7 @@
                     <div class="stat-card-subtitle">This period</div>
                 </div>
                 <div class="stat-card-icon green">
-                    <i class="fa-solid fa-exchange-alt"></i>
+                    <i class="fa-solid fa-right-left"></i>
                 </div>
             </div>
         </div>
@@ -226,7 +226,7 @@
                     <div class="stat-card-subtitle">Require attention</div>
                 </div>
                 <div class="stat-card-icon purple">
-                    <i class="fa-solid fa-exclamation-triangle"></i>
+                    <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
             </div>
             <span class="stat-card-trend neutral">
@@ -287,7 +287,7 @@
                     <div class="stat-card-subtitle">{{ number_format($dashboardStats['invoice_stats']['paid_invoices'], 0) }} of {{ number_format($dashboardStats['invoice_stats']['total_invoices'], 0) }} paid</div>
                 </div>
                 <div class="stat-card-icon green">
-                    <i class="fa-solid fa-check-circle"></i>
+                    <i class="fa-solid fa-circle-check"></i>
                 </div>
             </div>
         </div>
@@ -351,7 +351,7 @@
         <!-- Receipt Allocation Status -->
         <div class="chart-card">
             <h3 class="chart-card-title">
-                <i class="fa-solid fa-tasks"></i> Receipt Allocation
+                <i class="fa-solid fa-list-check"></i> Receipt Allocation
             </h3>
             <div class="chart-container">
                 <canvas id="allocationChart" role="img" aria-label="Pie chart showing allocated versus unallocated receipt ratio"></canvas>
@@ -457,7 +457,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!trendData || !trendData.months || trendData.months.length === 0) {
             document.getElementById('trendChart').parentElement.innerHTML =
-                '<p class="chart-placeholder-message"><i class="fa-solid fa-info-circle" aria-hidden="true"></i> No trend data available for the selected period</p>';
+                '<p class="chart-placeholder-message"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> No trend data available for the selected period</p>';
         } else {
             const trendCtx = document.getElementById('trendChart').getContext('2d');
             new Chart(trendCtx, {
@@ -523,7 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
         console.error('Error initializing trend chart:', error);
         document.getElementById('trendChart').parentElement.innerHTML =
-            '<p class="chart-placeholder-message chart-placeholder-message--error"><i class="fa-solid fa-exclamation-triangle" aria-hidden="true"></i> Error loading chart</p>';
+            '<p class="chart-placeholder-message chart-placeholder-message--error"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Error loading chart</p>';
     }
 
     // Payment Method Chart
@@ -532,7 +532,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!paymentMethods || paymentMethods.length === 0) {
             document.getElementById('paymentMethodChart').parentElement.innerHTML =
-                '<p class="chart-placeholder-message"><i class="fa-solid fa-info-circle" aria-hidden="true"></i> No payment method data for this period</p>';
+                '<p class="chart-placeholder-message"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> No payment method data for this period</p>';
         } else {
             const paymentMethodCtx = document.getElementById('paymentMethodChart').getContext('2d');
             new Chart(paymentMethodCtx, {
@@ -571,7 +571,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
         console.error('Error initializing payment method chart:', error);
         document.getElementById('paymentMethodChart').parentElement.innerHTML =
-            '<p class="chart-placeholder-message chart-placeholder-message--error"><i class="fa-solid fa-exclamation-triangle" aria-hidden="true"></i> Error loading chart</p>';
+            '<p class="chart-placeholder-message chart-placeholder-message--error"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Error loading chart</p>';
     }
 
     // Allocation Chart
@@ -580,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!receiptStats || ((parseInt(receiptStats.allocated_count) || 0) === 0 && (parseInt(receiptStats.unallocated_count) || 0) === 0)) {
             document.getElementById('allocationChart').parentElement.innerHTML =
-                '<p class="chart-placeholder-message"><i class="fa-solid fa-info-circle" aria-hidden="true"></i> No allocation data available</p>';
+                '<p class="chart-placeholder-message"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> No allocation data available</p>';
         } else {
             const allocationCtx = document.getElementById('allocationChart').getContext('2d');
             new Chart(allocationCtx, {
@@ -612,7 +612,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
         console.error('Error initializing allocation chart:', error);
         document.getElementById('allocationChart').parentElement.innerHTML =
-            '<p class="chart-placeholder-message chart-placeholder-message--error"><i class="fa-solid fa-exclamation-triangle" aria-hidden="true"></i> Error loading chart</p>';
+            '<p class="chart-placeholder-message chart-placeholder-message--error"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Error loading chart</p>';
     }
 });
 

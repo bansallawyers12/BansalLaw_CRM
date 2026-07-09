@@ -130,7 +130,7 @@
                         <span>Back</span>
                     </button>
                     <button type="submit" form="createLeadForm" class="nav-item save-btn">
-                        <i class="fa-solid fa-save"></i>
+                        <i class="fa-solid fa-floppy-disk"></i>
                         <span>Save Lead</span>
                     </button>
                 </div>
@@ -143,7 +143,7 @@
                 @if($errors->any())
                     <div class="alert alert-danger" style="margin: 20px 0; padding: 15px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px;">
                         <h4 style="margin: 0 0 10px 0; color: #721c24; font-size: 16px;">
-                            <i class="fa-solid fa-exclamation-triangle"></i> Please fix the following errors:
+                            <i class="fa-solid fa-triangle-exclamation"></i> Please fix the following errors:
                         </h4>
                         <ul style="margin: 0; padding-left: 20px;">
                             @foreach($errors->all() as $error)
@@ -156,7 +156,7 @@
                 @if(session('error'))
                     <div class="alert alert-danger" style="margin: 20px 0; padding: 15px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px;">
                         <h4 style="margin: 0; color: #721c24; font-size: 16px;">
-                            <i class="fa-solid fa-exclamation-circle"></i> {{ session('error') }}
+                            <i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}
                         </h4>
                     </div>
                 @endif
@@ -164,7 +164,7 @@
                 @if(session('success'))
                     <div class="alert alert-success" style="margin: 20px 0; padding: 15px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px;">
                         <h4 style="margin: 0; color: #155724; font-size: 16px;">
-                            <i class="fa-solid fa-check-circle"></i> {{ session('success') }}
+                            <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
                         </h4>
                     </div>
                 @endif
@@ -305,7 +305,7 @@
                                             <div class="trading-name-row" style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;">
                                                 <input type="text" name="trading_names[]" value="{{ is_string($tn) ? $tn : '' }}" placeholder="Trading name" class="company-field" style="flex: 1;">
                                                 <label><input type="radio" name="trading_name_primary" value="{{ $idx }}" {{ $idx === 0 ? 'checked' : '' }}> Primary</label>
-                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLeadTradingName(this)"><i class="fa-solid fa-times"></i></button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLeadTradingName(this)"><i class="fa-solid fa-xmark"></i></button>
                                             </div>
                                             @endforeach
                                         </div>
@@ -732,7 +732,7 @@
                         <!-- Address -->
                         <section class="form-section">
                             <div class="section-header">
-                                <h3><i class="fa-solid fa-map-marker-alt"></i> Address <small class="text-muted" style="font-weight:400;font-size:0.75em;">(optional)</small></h3>
+                                <h3><i class="fa-solid fa-location-dot"></i> Address <small class="text-muted" style="font-weight:400;font-size:0.75em;">(optional)</small></h3>
                             </div>
 
                             <div class="repeatable-section">
@@ -772,10 +772,10 @@
                     <!-- Form Actions (Hidden for floating button) -->
                     <div class="form-actions" style="margin-top: 30px; padding: 20px; background: white; border-radius: 8px; display: flex; gap: 15px; justify-content: flex-end; visibility: hidden;">
                         <button type="button" class="btn btn-secondary" onclick="window.history.back()">
-                            <i class="fa-solid fa-times"></i> Cancel
+                            <i class="fa-solid fa-xmark"></i> Cancel
                         </button>
                         <button type="submit" class="btn btn-primary" id="hiddenSubmitBtn">
-                            <i class="fa-solid fa-save"></i> Save Lead
+                            <i class="fa-solid fa-floppy-disk"></i> Save Lead
                         </button>
                     </div>
                     
@@ -788,11 +788,11 @@
     <div class="floating-save-container">
         <div class="floating-save-buttons">
             <button type="button" class="btn btn-floating btn-cancel" onclick="window.history.back()">
-                <i class="fa-solid fa-times"></i>
+                <i class="fa-solid fa-xmark"></i>
                 <span>Cancel</span>
             </button>
             <button type="button" class="btn btn-floating btn-save" id="floatingSaveBtn">
-                <i class="fa-solid fa-save"></i>
+                <i class="fa-solid fa-floppy-disk"></i>
                 <span>Save Lead</span>
             </button>
         </div>
@@ -1003,7 +1003,7 @@
         container.append('<div class="trading-name-row" style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;">' +
             '<input type="text" name="trading_names[]" placeholder="Trading name" class="company-field" style="flex: 1;">' +
             '<label><input type="radio" name="trading_name_primary" value="' + idx + '"> Primary</label>' +
-            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLeadTradingName(this)"><i class="fa-solid fa-times"></i></button></div>');
+            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLeadTradingName(this)"><i class="fa-solid fa-xmark"></i></button></div>');
         container.find('.trading-name-row').each(function(i) { $(this).find('input[name="trading_name_primary"]').val(i); });
     }
     function removeLeadTradingName(btn) {

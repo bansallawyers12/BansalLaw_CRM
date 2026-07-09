@@ -5,7 +5,7 @@
 @endphp
 <nav class="main-topbar">
     <button class="topbar-toggle" title="Show menu" aria-label="Toggle topbar">
-        <i class="fa-solid fa-ellipsis-h"></i>
+        <i class="fa-solid fa-ellipsis"></i>
     </button>
     <div class="topbar-left">
         <div class="icon-group">
@@ -27,15 +27,15 @@
                     </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}">
-                        <i class="fa-solid fa-calendar-alt me-2"></i> Ajay Calendar
+                        <i class="fa-solid fa-calendar-days me-2"></i> Ajay Calendar
                     </a>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}">
-                        <i class="fa-solid fa-calendar-alt me-2"></i> Michael
+                        <i class="fa-solid fa-calendar-days me-2"></i> Michael
                     </a>
                     @if($_crmTopAdminish)
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ route('booking.sync.dashboard') }}">
-                        <i class="fa-solid fa-sync me-2"></i> Sync Status
+                        <i class="fa-solid fa-rotate me-2"></i> Sync Status
                     </a>
                     @endif
                 </div>
@@ -44,7 +44,7 @@
             @if(Auth::user() instanceof \App\Models\Staff && Auth::user()->canAccessFrontDeskCheckIn())
             <a href="{{ route('front-desk.checkin.index') }}" class="icon-btn {{ str_starts_with(Route::currentRouteName() ?? '', 'front-desk.checkin') ? 'active' : '' }}" title="Front-Desk Check-In"><i class="fa-solid fa-clipboard-check"></i></a>
             @endif
-            <a href="{{route('assignee.action')}}" class="icon-btn" title="Action"><i class="fa-solid fa-tasks"></i></a>
+            <a href="{{route('assignee.action')}}" class="icon-btn" title="Action"><i class="fa-solid fa-list-check"></i></a>
             <div class="icon-dropdown js-dropdown">
                 <a href="{{route('clients.index')}}" class="icon-btn" title="Clients"><i class="fa-solid fa-users"></i></a>
                 <div class="icon-dropdown-menu">
@@ -123,13 +123,13 @@
                 </a>
                 @if($_crmTopAdminish)
                 <a href="{{route('adminconsole.features.matter.index')}}">
-                    <i class="fa-solid fa-cogs"></i> 
+                    <i class="fa-solid fa-gears"></i> 
                     <span>Admin Console</span>
                 </a>
                 @endif
                 <div class="dropdown-divider"></div>
                 <a href="javascript:void(0)" class="text-danger dropdown-item" data-logout="all">
-                    <i class="fa-solid fa-sign-out-alt"></i>
+                    <i class="fa-solid fa-right-from-bracket"></i>
                     <span>Log out everywhere</span>
                 </a>
             </div>

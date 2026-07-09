@@ -50,7 +50,7 @@ use App\Http\Controllers\Controller;
                 <p class="client-name">
                     {{ $fetchedData->company->company_name ?? 'Unnamed Company' }}
                     <a href="{{route('clients.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit" class="client-name-edit">
-                        <i class="fa-solid fa-edit"></i>
+                        <i class="fa-solid fa-pen-to-square"></i>
                     </a>
                 </p>
                 
@@ -76,7 +76,7 @@ use App\Http\Controllers\Controller;
                         <a href="javascript:;" class="create_note_d" datatype="note" title="Add Notes"><i class="fa-solid fa-plus"></i></a>
                         <a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{ $fetchedData->company->company_name ?? 'Unnamed Company' }}" class="clientemail" title="Compose Mail"><i class="fa-solid fa-envelope"></i></a>
                         <a href="javascript:;" class="send-sms-btn" data-client-id="{{@$fetchedData->id}}" data-client-name="{{ $fetchedData->company->company_name ?? 'Unnamed Company' }}" title="Send SMS"><i class="fa-solid fa-sms"></i></a>
-                        <a href="javascript:;" datatype="not_picked_call" class="not_picked_call" title="Not Picked Call"><i class="fa-solid fa-mobile-alt"></i></a>
+                        <a href="javascript:;" datatype="not_picked_call" class="not_picked_call" title="Not Picked Call"><i class="fa-solid fa-mobile-screen-button"></i></a>
                         <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#create_appoint" title="Add Appointment"><i class="fa-solid fa-calendar-plus"></i></a>
                     </div>
                     
@@ -279,7 +279,7 @@ use App\Http\Controllers\Controller;
                     <span>Activity</span>
                 </button>
                 <button class="client-nav-button" data-tab="noteterm">
-                    <i class="fa-solid fa-sticky-note"></i>
+                    <i class="fa-solid fa-note-sticky"></i>
                     <span>Notes</span>
                 </button>
                 <button class="client-nav-button" data-tab="personaldocuments">
@@ -299,7 +299,7 @@ use App\Http\Controllers\Controller;
                     <span>Emails</span>
                 </button>
                 <button class="client-nav-button" data-tab="workflow">
-                    <i class="fa-solid fa-stream"></i>
+                    <i class="fa-solid fa-bars-staggered"></i>
                     <span>Workflow</span>
                 </button>
                 <?php
@@ -327,7 +327,7 @@ use App\Http\Controllers\Controller;
                     <span>Activity</span>
                 </button>
                 <button class="client-nav-button" data-tab="noteterm">
-                    <i class="fa-solid fa-sticky-note"></i>
+                    <i class="fa-solid fa-note-sticky"></i>
                     <span>Notes</span>
                 </button>
                 <button class="client-nav-button" data-tab="personaldocuments">
@@ -599,7 +599,7 @@ use App\Http\Controllers\Controller;
 									<option value="">Select phone number...</option>
 								</select>
 								<small class="form-text text-muted">
-									<i class="fa-solid fa-info-circle"></i> 
+									<i class="fa-solid fa-circle-info"></i> 
 									Australian numbers will use Cellcast, international numbers will use Twilio
 								</small>
 							</div>
@@ -804,7 +804,7 @@ use App\Http\Controllers\Controller;
 				<input type="hidden" name="client_id" id="client_id" value="">
 				<input type="hidden" name="create_new_as_red" id="create_new_as_red" value="0">
 					<div id="tags_red_mode_hint" class="alert alert-warning py-2 mb-2" style="display: none;">
-						<i class="fa-solid fa-exclamation-triangle text-danger"></i> <strong>Red Tag mode:</strong> Any new tags you add will be created as Red tags (hidden by default).
+						<i class="fa-solid fa-triangle-exclamation text-danger"></i> <strong>Red Tag mode:</strong> Any new tags you add will be created as Red tags (hidden by default).
 					</div>
 					<div class="row">
 						<div class="col-12 col-md-12 col-lg-12">
@@ -898,7 +898,7 @@ use App\Http\Controllers\Controller;
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" onclick="customValidate('inbox-email-reassign-to-client-matter')">
-					<i class="fa-solid fa-save"></i> Re-assign Inbox Email
+					<i class="fa-solid fa-floppy-disk"></i> Re-assign Inbox Email
 				</button>
 			</div>
 			</form>
@@ -942,7 +942,7 @@ use App\Http\Controllers\Controller;
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" onclick="customValidate('sent-email-reassign-to-client-matter')">
-					<i class="fa-solid fa-save"></i> Re-assign Sent Email
+					<i class="fa-solid fa-floppy-disk"></i> Re-assign Sent Email
 				</button>
 			</div>
 			</form>

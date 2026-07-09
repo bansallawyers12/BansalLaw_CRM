@@ -786,7 +786,7 @@
         
         // Archives
         if (type.includes('zip') || type.includes('rar') || type.includes('archive')) {
-            return 'fa-solid fa-file-archive';
+            return 'fa-solid fa-file-zipper';
         }
         
         // Code files
@@ -1488,7 +1488,7 @@
         const attachmentNamesHtml = regularAttachments.length
             ? `<div class="email-item-attachments">${regularAttachments.slice(0, 3).map(function(att) {
                 const name = att.filename || att.display_name || att.file_name || 'Attachment';
-                return `<span class="email-item-attachment-line"><i class="fa-solid fa-file-alt"></i> ${escapeHtml(name)}</span>`;
+                return `<span class="email-item-attachment-line"><i class="fa-solid fa-file-lines"></i> ${escapeHtml(name)}</span>`;
             }).join('')}${regularAttachments.length > 3 ? `<span class="email-item-attachment-more">+${regularAttachments.length - 3} more</span>` : ''}</div>`
             : '';
 
@@ -1691,7 +1691,7 @@
         if (email.preview_url) {
             previewSection = `
                 <div class="gmail-original-download">
-                    <i class="fa-solid fa-file-alt"></i>
+                    <i class="fa-solid fa-file-lines"></i>
                     <a href="${escapeHtml(email.preview_url)}" target="_blank">Download Original .msg</a>
                 </div>
             `;

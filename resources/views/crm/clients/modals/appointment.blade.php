@@ -99,7 +99,7 @@
                                     @endforeach
                                 </select>
                                 <small class="form-text text-muted d-block mt-2">
-                                    <i class="fa-solid fa-info-circle"></i>
+                                    <i class="fa-solid fa-circle-info"></i>
                                     Optional. Choose who this booking belongs to; it uses that consultant&rsquo;s calendar. Leave empty to assign automatically.
                                 </small>
                             </div>
@@ -190,7 +190,7 @@
                                                                 
                                                                 <div class="no-slots-message" style="display: none;">
                                                                     <div class="no-slots-icon">
-                                                                        <i class="fa-solid fa-calendar-times"></i>
+                                                                        <i class="fa-solid fa-calendar-xmark"></i>
                                                                     </div>
                                                                     <div class="no-slots-text">
                                                                         <h6>No Available Slots</h6>
@@ -266,7 +266,7 @@
 								<i class="fa-solid fa-calendar-check me-2"></i>Schedule Appointment
 							</button>
 							<button type="button" class="btn btn-outline-secondary btn-lg px-4 ms-2" data-bs-dismiss="modal">
-								<i class="fa-solid fa-times me-2"></i>Cancel
+								<i class="fa-solid fa-xmark me-2"></i>Cancel
 							</button>
 						</div>
 					</div>

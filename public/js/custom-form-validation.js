@@ -3138,9 +3138,9 @@ function getallactivities(client_id){
 				subjectIcon = '<i class="fa-solid fa-dollar-sign"></i>';
 				iconClass = 'feed-icon-accounting';
 			} else if (v.subject && v.subject.toLowerCase().includes("document")) {
-				subjectIcon = '<i class="fa-solid fa-file-alt"></i>';
+				subjectIcon = '<i class="fa-solid fa-file-lines"></i>';
 			} else {
-				subjectIcon = '<i class="fa-solid fa-sticky-note"></i>';
+				subjectIcon = '<i class="fa-solid fa-note-sticky"></i>';
 			}
 
 			var subject = v.subject ?? '';

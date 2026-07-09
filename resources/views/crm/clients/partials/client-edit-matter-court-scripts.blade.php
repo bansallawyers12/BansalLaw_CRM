@@ -715,11 +715,11 @@
         'CIV':   { icon: 'fa-balance-scale', color: '#4a6fa5' },
         'CRM':   { icon: 'fa-gavel',         color: '#c0392b' },
         'FAM':   { icon: 'fa-heart',         color: '#e67e22' },
-        'PROP':  { icon: 'fa-home',          color: '#27ae60' },
+        'PROP':  { icon: 'fa-house',          color: '#27ae60' },
         'CORP':  { icon: 'fa-building',      color: '#8e44ad' },
         'LAB':   { icon: 'fa-briefcase',     color: '#2980b9' },
         'CONS':  { icon: 'fa-shopping-cart', color: '#16a085' },
-        'BANK':  { icon: 'fa-university',    color: '#d35400' },
+        'BANK':  { icon: 'fa-building-columns',    color: '#d35400' },
         'TAX':   { icon: 'fa-calculator',    color: '#7f8c8d' },
         'IP':    { icon: 'fa-lightbulb',     color: '#f39c12' },
         'CONST': { icon: 'fa-scroll',        color: '#1a5276' },
@@ -793,7 +793,7 @@
         var badge = document.getElementById('selectedMatterBadge');
         if (badge) {
             badge.innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px;background:#e8f0fe;color:#3b5bdb;padding:6px 14px;border-radius:20px;font-weight:600;font-size:0.9em;">' +
-                '<i class="fa-solid fa-check-circle"></i> ' + matterTitle + '</span>';
+                '<i class="fa-solid fa-circle-check"></i> ' + matterTitle + '</span>';
         }
 
         // Build matter-specific fields
@@ -828,7 +828,7 @@
 
         if (config.subType) {
             html += '<div style="background:#f0f4ff;border:1px solid #c5d4f5;border-radius:8px;padding:1rem 1.2rem;margin-bottom:1rem;">';
-            html += '<p style="font-weight:600;color:#3b5bdb;margin-bottom:0.8rem;font-size:0.95em;"><i class="fa-solid fa-info-circle"></i> ' + config.label + ' — Specific Details</p>';
+            html += '<p style="font-weight:600;color:#3b5bdb;margin-bottom:0.8rem;font-size:0.95em;"><i class="fa-solid fa-circle-info"></i> ' + config.label + ' — Specific Details</p>';
             html += '<div class="form-group" style="margin-bottom:0.5rem;">';
             html += '<label>' + config.subType.label;
             if (config.subType.required) html += ' <span class="dyn-required">*</span>';

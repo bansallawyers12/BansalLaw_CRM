@@ -19,7 +19,7 @@
             <i class="fa-regular fa-eye"></i> View
         </button>
         <button type="button" class="btn btn-sm btn-primary roles-edit-btn" data-role-id="{{ $list->id }}">
-            <i class="fa-solid fa-edit"></i> Edit
+            <i class="fa-solid fa-pen-to-square"></i> Edit
         </button>
     </td>
 </tr>

@@ -62,7 +62,7 @@ html, body {
                     <i class="fa-solid fa-arrow-left"></i> Back to List
                 </a>
                 <a href="{{ route('booking.sync.dashboard') }}" class="btn btn-sm btn-info">
-                    <i class="fa-solid fa-sync"></i> Sync Status
+                    <i class="fa-solid fa-rotate"></i> Sync Status
                 </a>
             </div>
 
@@ -139,7 +139,7 @@ html, body {
                                         <div class="row">
                                             <div class="col-12">
                                                 <a href="{{ route('clients.detail', $clientDetailParams) }}" class="btn btn-sm btn-info btn-block" target="_blank">
-                                                    <i class="fa-solid fa-external-link-alt"></i> View Client Profile
+                                                    <i class="fa-solid fa-up-right-from-square"></i> View Client Profile
                                                 </a>
                                             </div>
                                         </div>
@@ -312,7 +312,7 @@ html, body {
                             <!-- Admin Notes -->
                             <div class="card info-card">
                                 <div class="card-header bg-warning text-dark">
-                                    <i class="fa-solid fa-sticky-note"></i> Admin Notes
+                                    <i class="fa-solid fa-note-sticky"></i> Admin Notes
                                     <button class="btn btn-sm btn-light float-right" onclick="addNote()">
                                         <i class="fa-solid fa-plus"></i> Add
                                     </button>
@@ -346,7 +346,7 @@ html, body {
                             <!-- Sync Information -->
                             <div class="card info-card">
                                 <div class="card-header bg-light">
-                                    <i class="fa-solid fa-sync"></i> Sync Information
+                                    <i class="fa-solid fa-rotate"></i> Sync Information
                                 </div>
                                 <div class="card-body">
                                     <div class="info-row">
@@ -465,10 +465,10 @@ html, body {
                             
                             @if(in_array($appointment->status, ['pending', 'confirmed']))
                             <button class="btn btn-primary" onclick="markCompleteAppointment()">
-                                <i class="fa-solid fa-check-circle"></i> Mark Completed
+                                <i class="fa-solid fa-circle-check"></i> Mark Completed
                             </button>
                             <button class="btn btn-danger" onclick="cancelAppointment()">
-                                <i class="fa-solid fa-times"></i> Cancel
+                                <i class="fa-solid fa-xmark"></i> Cancel
                             </button>
                             @endif
                             

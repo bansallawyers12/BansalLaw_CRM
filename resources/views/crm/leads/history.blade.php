@@ -50,7 +50,7 @@
 								</div>
 								<div class="author-mail_sms">
 								<a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" class="clientemail" title="Compose Mail"><i class="fa-solid fa-envelope"></i></a>
-								<a href="{{route('leads.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit"><i class="fa-solid fa-edit"></i></a>								
+								<a href="{{route('leads.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>								
 							</div>
 							</div>
 							
@@ -309,7 +309,7 @@
 				</div>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-primary" onclick="return customValidate('add-note');"><i class="fa-solid fa-save"></i> Save</button>
+				<button type="button" class="btn btn-primary" onclick="return customValidate('add-note');"><i class="fa-solid fa-floppy-disk"></i> Save</button>
 			</div>
 			</form>
 		</div>

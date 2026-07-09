@@ -89,7 +89,7 @@
 						<span class="custom-error field-error" data-field="matter_id" role="alert"></span>
 					</div>
 					<div class="alert alert-info mb-0 mt-3" role="alert">
-						<i class="fa-solid fa-info-circle"></i>
+						<i class="fa-solid fa-circle-info"></i>
 						The new workflow will be pre-populated with all stages from the <strong>General</strong> workflow.
 						Use <strong>Manage Stages</strong> after creation to add, rename, or remove non-protected stages.
 					</div>
@@ -209,7 +209,7 @@ jQuery(document).ready(function($) {
 			'<td class="workflow-stages-count-cell">' + (workflow.stages_count || 0) + '</td>' +
 			'<td class="text-nowrap"><div class="workflows-index-actions">' +
 			'<a class="btn btn-sm btn-primary" href="' + escapeHtml(stagesUrl) + '"><i class="fa-solid fa-list"></i> Manage Stages</a> ' +
-			'<button type="button" class="btn btn-sm btn-secondary edit-workflow-btn"><i class="fa-regular fa-edit"></i> Edit Workflow</button>' +
+			'<button type="button" class="btn btn-sm btn-secondary edit-workflow-btn"><i class="fa-regular fa-pen-to-square"></i> Edit Workflow</button>' +
 			'</div></td></tr>';
 	}
 

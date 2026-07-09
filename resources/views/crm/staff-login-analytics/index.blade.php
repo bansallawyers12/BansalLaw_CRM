@@ -71,7 +71,7 @@
                 <div class="col-md-3">
                     <div class="card card-statistic-1">
                         <div class="card-icon bg-primary">
-                            <i class="fa-solid fa-sign-in-alt"></i>
+                            <i class="fa-solid fa-right-to-bracket"></i>
                         </div>
                         <div class="card-wrap">
                             <div class="card-header">
@@ -101,7 +101,7 @@
                 <div class="col-md-3">
                     <div class="card card-statistic-1">
                         <div class="card-icon bg-warning">
-                            <i class="fa-solid fa-exclamation-triangle"></i>
+                            <i class="fa-solid fa-triangle-exclamation"></i>
                         </div>
                         <div class="card-wrap">
                             <div class="card-header">

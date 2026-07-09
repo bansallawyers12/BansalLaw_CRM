@@ -7,7 +7,7 @@
                 <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
             </button>
             <button type="button" class="btn btn-sm btn-link p-0 activity-feed-refresh" id="activity-feed-refresh" title="Refresh">
-                <i class="fa-solid fa-sync-alt"></i>
+                <i class="fa-solid fa-rotate"></i>
             </button>
             <label for="increase-activity-feed-width">
                 <input type="checkbox" id="increase-activity-feed-width" title="Expand Width">
@@ -41,7 +41,7 @@
                 <i class="fa-solid fa-search"></i> Apply
             </button>
             <button type="button" class="btn btn-sm btn-outline-secondary activity-feed-reset" id="activity-feed-reset">
-                <i class="fa-solid fa-redo"></i> Reset
+                <i class="fa-solid fa-arrow-rotate-right"></i> Reset
             </button>
         </div>
     </div>
@@ -55,10 +55,10 @@
             <i class="fa-solid fa-bolt"></i> Activity
         </button>
         <button class="activity-filter-btn" data-filter="note">
-            <i class="fa-solid fa-sticky-note"></i> Notes
+            <i class="fa-solid fa-note-sticky"></i> Notes
         </button>
         <button class="activity-filter-btn" data-filter="document">
-            <i class="fa-solid fa-file-alt"></i> Documents
+            <i class="fa-solid fa-file-lines"></i> Documents
         </button>
         <button class="activity-filter-btn" data-filter="signature">
             <i class="fa-solid fa-file-signature"></i> Signatures

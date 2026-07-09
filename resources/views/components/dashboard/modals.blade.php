@@ -80,7 +80,7 @@
 
                     <div class="simple-form-group">
                         <label class="simple-form-label">
-                            <i class="fa-solid fa-calendar-alt text-primary"></i> Date <span class="text-danger">*</span>
+                            <i class="fa-solid fa-calendar-days text-primary"></i> Date <span class="text-danger">*</span>
                         </label>
                         <input type="date" id="dashboard_popoverdatetime" name="followup_datetime" class="simple-form-control" required value="{{ date('Y-m-d') }}">
                         <span class="custom-error date_error" role="alert" style="display: none;"></span>
@@ -594,13 +594,13 @@
                         placeholder="Add any notes or feedback about completing this task..."
                     ></textarea>
                     <small class="form-text">
-                        <i class="fa-solid fa-info-circle"></i> These notes will be saved in the activity log.
+                        <i class="fa-solid fa-circle-info"></i> These notes will be saved in the activity log.
                     </small>
                 </div>
             </div>
             <div class="modal-footer dashboard-completion-modal-footer">
                 <button type="button" class="btn btn-cancel-complete" data-bs-dismiss="modal">
-                    <i class="fa-solid fa-times"></i> Cancel
+                    <i class="fa-solid fa-xmark"></i> Cancel
                 </button>
                 <button type="button" class="btn btn-complete-task-primary" id="dashboardConfirmTaskCompletion">
                     <i class="fa-solid fa-check"></i> Complete Task

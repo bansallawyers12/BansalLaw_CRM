@@ -35,7 +35,7 @@
 
             @if($filtersActive)
                 <a href="{{ route('dashboard') }}" class="clear-filters">
-                    <i class="fa-solid fa-times"></i> Clear Filters
+                    <i class="fa-solid fa-xmark"></i> Clear Filters
                 </a>
             @endif
         </form>

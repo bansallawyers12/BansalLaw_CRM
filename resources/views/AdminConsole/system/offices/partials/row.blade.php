@@ -37,7 +37,7 @@
                 aria-expanded="false">Action</button>
             <ul class="dropdown-menu dropdown-menu-end offices-action-menu" aria-labelledby="officeAction_{{ $list->id }}">
                 <li><a class="dropdown-item has-icon" href="{{ $viewUrl }}"><i class="fa-regular fa-eye"></i> View</a></li>
-                <li><a class="dropdown-item has-icon edit-office-btn" href="javascript:void(0);"><i class="fa-regular fa-edit"></i> Edit</a></li>
+                <li><a class="dropdown-item has-icon edit-office-btn" href="javascript:void(0);"><i class="fa-regular fa-pen-to-square"></i> Edit</a></li>
                 <li><a class="dropdown-item has-icon delete-office-btn" href="javascript:void(0);"><i class="fa-solid fa-trash"></i> Delete</a></li>
             </ul>
         </div>

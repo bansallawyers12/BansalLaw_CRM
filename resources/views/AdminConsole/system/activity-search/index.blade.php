@@ -113,7 +113,7 @@
                                     <!-- Action Category Filter -->
                                     <div class="col-md-4 mb-3">
                                         <label for="task_group" class="form-label">
-                                            <i class="fa-solid fa-tasks"></i> Action Category
+                                            <i class="fa-solid fa-list-check"></i> Action Category
                                         </label>
                                         <select name="task_group" id="task_group" class="form-control crm-ts-activity-search">
                                             <option value="">All Categories</option>
@@ -129,7 +129,7 @@
                                     <!-- Action Status Filter -->
                                     <div class="col-md-4 mb-3">
                                         <label for="task_status" class="form-label">
-                                            <i class="fa-solid fa-check-circle"></i> Action Status
+                                            <i class="fa-solid fa-circle-check"></i> Action Status
                                         </label>
                                         <select name="task_status" id="task_status" class="form-control crm-ts-activity-search">
                                             <option value="">All Statuses</option>
@@ -172,7 +172,7 @@
                                 <div class="row">
                                     <div class="col-md-12 d-flex justify-content-end flex-wrap gap-2">
                                         <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
-                                            <i class="fa-solid fa-redo me-1"></i> Reset
+                                            <i class="fa-solid fa-arrow-rotate-right me-1"></i> Reset
                                         </button>
                                         <button type="submit" class="btn btn-primary">
                                             <i class="fa-solid fa-search me-1"></i> Search Activities
@@ -296,7 +296,7 @@
                                         </div>
                                     @else
                                         <div class="alert alert-info">
-                                            <i class="fa-solid fa-info-circle"></i> No activities found matching your search criteria. Try adjusting your filters.
+                                            <i class="fa-solid fa-circle-info"></i> No activities found matching your search criteria. Try adjusting your filters.
                                         </div>
                                     @endif
                                 </div>

@@ -80,7 +80,7 @@
     <!-- Drag & Drop Overlay -->
     <div id="dragDropOverlay" class="drag-drop-overlay" style="display: none;">
         <div class="drag-drop-content">
-            <i class="fa-solid fa-cloud-upload-alt" style="font-size: 48px; margin-bottom: 15px;"></i>
+            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 48px; margin-bottom: 15px;"></i>
             <h3>Drop Outlook email files here ({{ $crmEmailUploadLabel }})</h3>
         </div>
     </div>
@@ -96,7 +96,7 @@
                     <i class="fa-solid fa-paper-plane"></i> Sent Items
                 </button>
                 <button type="button" class="folder-item" data-folder="drafts" role="tab" aria-selected="false">
-                    <i class="fa-solid fa-file-alt"></i> Drafts
+                    <i class="fa-solid fa-file-lines"></i> Drafts
                 </button>
             </div>
             <button type="button" class="action-btn action-btn--upload" id="btnUploadEmail" title="Upload Outlook email ({{ $crmEmailUploadLabel }})" hidden>
@@ -107,7 +107,7 @@
         <div id="uploadStatus" class="upload-status" hidden></div>
 
         <div id="inlineDropZone" class="inline-drop-zone">
-            <i class="fa-solid fa-cloud-upload-alt"></i>
+            <i class="fa-solid fa-cloud-arrow-up"></i>
             <span>Drag & drop saved Outlook email files ({{ $crmEmailUploadLabel }}) here </span>
         </div>
 
@@ -222,7 +222,7 @@
             <i class="fa-solid fa-envelope compose-header-icon" aria-hidden="true"></i>
             <span class="compose-title" id="composeTitle">New Message</span>
         </div>
-        <button type="button" class="compose-close" id="closeModal" aria-label="Close"><i class="fa-solid fa-times"></i></button>
+        <button type="button" class="compose-close" id="closeModal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="compose-body">
         <div class="compose-field">

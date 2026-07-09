@@ -718,7 +718,7 @@
                     <div class="col-12">
                         <div class="form-group enhanced-form-group">
                             <label for="assignnote" class="form-label">
-                                <i class="fa-solid fa-sticky-note text-muted me-1"></i>
+                                <i class="fa-solid fa-note-sticky text-muted me-1"></i>
                                 Note <span class="text-danger">*</span>
                             </label>
                             <div class="input-group">
@@ -738,7 +738,7 @@
                             </label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
-                                    <span class="input-group-text"><i class="fa-solid fa-calendar-alt"></i></span>
+                                    <span class="input-group-text"><i class="fa-solid fa-calendar-days"></i></span>
                                 </div>
                                 <input type="date" class="form-control enhanced-input" placeholder="yyyy-mm-dd" id="popoverdatetime" value="{{ date('Y-m-d') }}" name="popoverdate">
                             </div>
@@ -798,7 +798,7 @@
                         <i class="fa-solid fa-user-plus me-2"></i>Assign Staff
                     </button>
                     <button type="button" class="btn btn-outline-secondary btn-lg" data-bs-dismiss="modal">
-                        <i class="fa-solid fa-times me-2"></i>Cancel
+                        <i class="fa-solid fa-xmark me-2"></i>Cancel
                     </button>
                 </div>
             </div>

@@ -15,7 +15,7 @@
                     </h5>
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-sm btn-light" id="crm-pending-refresh" title="Refresh">
-                            <i class="fa-solid fa-sync-alt"></i>
+                            <i class="fa-solid fa-rotate"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-light" id="crm-pending-toggle" data-collapsed="0" title="Collapse">
                             <i class="fa-solid fa-chevron-up"></i>
@@ -480,7 +480,7 @@
                 var items = data.items || [];
 
                 if (items.length === 0) {
-                    tb.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3"><i class="fa-solid fa-check-circle text-success me-1"></i>No pending requests.</td></tr>';
+                    tb.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3"><i class="fa-solid fa-circle-check text-success me-1"></i>No pending requests.</td></tr>';
                     return;
                 }
 

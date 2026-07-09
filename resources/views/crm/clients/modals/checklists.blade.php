@@ -228,7 +228,7 @@
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 				<button type="button" class="btn btn-success" id="sig-save-btn">
-					<i class="fa-solid fa-save me-1"></i>Save Signature Locations
+					<i class="fa-solid fa-floppy-disk me-1"></i>Save Signature Locations
 				</button>
 			</div>
 		</div>

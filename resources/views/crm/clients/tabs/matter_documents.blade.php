@@ -109,7 +109,7 @@
                                         </button>
                                         <?php if ($isClientGenerated): ?>
                                             <div class="action-buttons md-folder-tab-actions">
-                                                <button type="button" class="btn btn-sm btn-warning update-visa-cat-title" data-id="<?= $id ?>" title="Rename folder"><i class="fa-solid fa-edit" aria-hidden="true"></i></button>
+                                                <button type="button" class="btn btn-sm btn-warning update-visa-cat-title" data-id="<?= $id ?>" title="Rename folder"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>
                                             </div>
                                         <?php endif; ?>
                                     </div>
@@ -136,7 +136,7 @@
                                 <div class="subtab6-pane <?= $isActive ?>" id="<?= $id ?>-subtab6">
                                     <div class="checklist-table-container">
                                         <div class="subtab6-header md-section-header">
-                                            <h3><i class="fa-solid fa-file-alt"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
+                                            <h3><i class="fa-solid fa-file-lines"></i> <?= htmlspecialchars($catVal->title) ?> Documents</h3>
                                             <div class="md-section-actions">
                                                 <button type="button" class="btn md-btn md-btn-primary add-checklist-btn add_migration_doc" data-type="visa" data-categoryid="<?= $id ?>">
                                                     <i class="fa-solid fa-plus"></i> Add Checklist
@@ -150,7 +150,7 @@
                                         <!-- Bulk upload dropzone for matter documents (hidden by default) -->
                                         <div class="bulk-upload-dropzone-container-visa matter-bulk-dropzone" id="bulk-upload-visa-<?= $id ?>" style="display: none;">
                                             <div class="bulk-upload-dropzone-visa" data-categoryid="<?= $id ?>" data-matterid="<?= $client_selected_matter_id1 ?? '' ?>" style="text-align: center; padding: 30px; cursor: pointer;">
-                                                <i class="fa-solid fa-cloud-upload-alt matter-bulk-dropzone-icon"></i>
+                                                <i class="fa-solid fa-cloud-arrow-up matter-bulk-dropzone-icon"></i>
                                                 <p class="matter-bulk-dropzone-lead">
                                                     <strong>Drag and drop files here</strong> or <strong>click to browse</strong>
                                                 </p>
@@ -202,7 +202,7 @@
                                                                 <div class="checklist-actions">
                                                                     <?php if (!$fetch->file_name): ?>
                                                                     <a href="javascript:;" class="edit-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Edit Checklist Name">
-                                                                        <i class="fa-solid fa-edit"></i>
+                                                                        <i class="fa-solid fa-pen-to-square"></i>
                                                                     </a>
                                                                     <a href="javascript:;" class="delete-checklist-btn" data-id="<?= $fetch->id ?>" data-checklist="<?= htmlspecialchars($fetch->checklist) ?>" title="Delete Checklist">
                                                                         <i class="fa-solid fa-trash"></i>
@@ -233,7 +233,7 @@
                                                                         <input type="hidden" name="doccategory" value="<?= $catVal->title ?>">
                                                                         <div class="document-drag-drop-zone visa-doc-drag-zone" data-fileid="<?= $fetch->id ?>" data-doccategory="<?= $id ?>" data-formid="mig_upload_form_<?= $fetch->id ?>">
                                                                             <div class="drag-zone-inner">
-                                                                                <i class="fa-solid fa-cloud-upload-alt"></i>
+                                                                                <i class="fa-solid fa-cloud-arrow-up"></i>
                                                                                 <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                                             </div>
                                                                         </div>
@@ -270,10 +270,10 @@
                                                                     <i class="fa-solid fa-paper-plane me-1"></i> Send
                                                                 </button>
                                                                 <button type="button" class="btn btn-sm btn-outline-secondary visa-sig-revise-btn" data-doc-id="<?= $fetch->id ?>">
-                                                                    <i class="fa-solid fa-edit me-1"></i> Revise
+                                                                    <i class="fa-solid fa-pen-to-square me-1"></i> Revise
                                                                 </button>
                                                                 <button type="button" class="btn btn-sm btn-outline-danger visa-sig-remove-btn" data-doc-id="<?= $fetch->id ?>">
-                                                                    <i class="fa-solid fa-times me-1"></i> Remove
+                                                                    <i class="fa-solid fa-xmark me-1"></i> Remove
                                                                 </button>
                                                                 <?php if ($docStatus === 'sent' && $signingUrl && $signerId): ?>
                                                                 <button type="button" class="btn btn-sm btn-outline-info visa-sig-reminder-btn" data-doc-id="<?= $fetch->id ?>" data-signer-id="<?= $signerId ?>">
@@ -400,7 +400,7 @@
 
                                     <div class="preview-pane file-preview-container <?= $matterPreviewContainerId ?> matter-preview-pane client-doc-preview-pane">
                                         <div class="client-doc-preview-empty">
-                                            <i class="fa-solid fa-file-alt client-doc-preview-empty-icon" aria-hidden="true"></i>
+                                            <i class="fa-solid fa-file-lines client-doc-preview-empty-icon" aria-hidden="true"></i>
                                             <p class="preview-placeholder-text"><strong>Document Preview</strong></p>
                                             <p class="preview-placeholder-text">Select a file from the list to preview it here</p>
                                         </div>
@@ -418,7 +418,7 @@
                     <i class="fa-solid fa-pen-fancy"></i> Send for Signature
                 </div>
                 <div class="context-menu-item" onclick="handleVisaContextAction('rename-checklist')">
-                    <i class="fa-solid fa-edit"></i> Rename Checklist
+                    <i class="fa-solid fa-pen-to-square"></i> Rename Checklist
                 </div>
                 <div class="context-menu-item" onclick="handleVisaContextAction('rename-doc')">
                     <i class="fa-solid fa-file-lines"></i> Rename File Name
@@ -1058,7 +1058,7 @@
                                 adjustClientDocumentsPanelHeight();
                             }
                         });
-                        $(this).html('<i class="fa-solid fa-times"></i> Close');
+                        $(this).html('<i class="fa-solid fa-xmark"></i> Close');
                         currentVisaCategoryId = categoryId;
                         currentVisaMatterId = matterId || null;
                     }

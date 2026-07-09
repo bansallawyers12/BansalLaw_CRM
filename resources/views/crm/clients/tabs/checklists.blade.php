@@ -2,7 +2,7 @@
            <div class="tab-pane" id="checklists-tab">
                 <div class="card full-width checklists-container">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0"><i class="fa-solid fa-tasks me-2"></i>Checklists</h4>
+                        <h4 class="mb-0"><i class="fa-solid fa-list-check me-2"></i>Checklists</h4>
                         <div class="checklist-add-wrapper position-relative">
                             <button type="button" class="btn btn-primary btn-add-checklist" id="btn-add-checklist">
                                 <i class="fa-solid fa-plus me-2"></i>Create Checklist
@@ -118,7 +118,7 @@
                                 ?>
                                 @if($checklist_forms->isEmpty())
                                     <div class="alert alert-info" id="checklists-empty-state">
-                                        <i class="fa-solid fa-info-circle me-2"></i>
+                                        <i class="fa-solid fa-circle-info me-2"></i>
                                         No checklists yet. Click <strong>Create Checklist</strong> to add one. You'll select matter, assign Legal Practitioner and team, complete cost assignment, and create cost agreement.
                                     </div>
                                     <div id="checklists-list" style="display: none;"></div>
@@ -231,7 +231,7 @@
                                                                 </div>
                                                                 <div class="cost-breakdown-edit mt-2">
                                                                     <button type="button" class="btn btn-outline-secondary btn-sm btn-amend-checklist" data-id="{{ $form->id }}" data-client-id="{{ $fetchedData->id ?? '' }}" data-client-matter-id="{{ $form->client_matter_id }}" title="Amend Cost Assignment">
-                                                                        <i class="fa-solid fa-edit me-1"></i>Edit
+                                                                        <i class="fa-solid fa-pen-to-square me-1"></i>Edit
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -268,7 +268,7 @@
                                                             @if($agreementDoc && $agreementDoc->status === 'signed' && $agreementDoc->signed_doc_link)
                                                             <!-- Document Signed - Download Section -->
                                                             <div class="signature-section mt-3 p-3 rounded border border-success" style="background-color: rgba(40, 167, 69, 0.1);">
-                                                                <h6 class="font-weight-bold mb-2 text-success"><i class="fa-solid fa-check-circle me-2"></i>Document Signed</h6>
+                                                                <h6 class="font-weight-bold mb-2 text-success"><i class="fa-solid fa-circle-check me-2"></i>Document Signed</h6>
                                                                 <p class="mb-2 small text-muted">The client has signed the cost agreement. Download the signed copy below.</p>
                                                                 <a href="{{ route('documents.download.signed', $agreementDoc->id) }}" target="_blank" class="btn btn-success btn-sm">
                                                                     <i class="fa-solid fa-download me-1"></i>Download Signed Document
@@ -301,7 +301,7 @@
                                                                             <i class="fa-solid fa-copy"></i> Copy
                                                                         </button>
                                                                         <a href="{{ $signingUrl }}" target="_blank" class="btn btn-outline-primary">
-                                                                            <i class="fa-solid fa-external-link-alt"></i> View
+                                                                            <i class="fa-solid fa-up-right-from-square"></i> View
                                                                         </a>
                                                                         <button type="button" class="btn btn-info btn-send-signature-email" title="Send Email with Signature Link"
                                                                             data-signing-url="{{ $signingUrl }}"
@@ -326,27 +326,27 @@
                                                                     </div>
                                                                 </div>
                                                                 <small class="text-muted d-block mt-2">
-                                                                    <i class="fa-solid fa-info-circle"></i> Share this link with the client to sign the agreement
+                                                                    <i class="fa-solid fa-circle-info"></i> Share this link with the client to sign the agreement
                                                                 </small>
                                                                 @if($primarySigner)
                                                                 <small class="text-muted d-block mt-1">
                                                                     @if($primarySigner->last_reminder_sent_at)
                                                                         <i class="fa-solid fa-clock"></i> Last reminder: {{ $primarySigner->last_reminder_sent_at->format('M d, Y g:i A') }}
                                                                     @else
-                                                                        <i class="fa-solid fa-info-circle"></i> No reminders sent yet
+                                                                        <i class="fa-solid fa-circle-info"></i> No reminders sent yet
                                                                     @endif
                                                                 </small>
                                                                 @endif
                                                                 @else
                                                                 <div class="alert alert-warning mb-0">
-                                                                    <i class="fa-solid fa-exclamation-triangle"></i> Signature link data is invalid. Please try placing signature fields again.
+                                                                    <i class="fa-solid fa-triangle-exclamation"></i> Signature link data is invalid. Please try placing signature fields again.
                                                                 </div>
                                                                 @endif
                                                             </div>
                                                             @elseif($agreementDoc)
                                                             <!-- Document Uploaded - Awaiting Signature Setup -->
                                                             <div class="signature-section mt-3 p-3 bg-warning-light rounded border border-warning">
-                                                                <h6 class="font-weight-bold mb-2"><i class="fa-solid fa-exclamation-triangle me-2 text-warning"></i>Signature Setup Required</h6>
+                                                                <h6 class="font-weight-bold mb-2"><i class="fa-solid fa-triangle-exclamation me-2 text-warning"></i>Signature Setup Required</h6>
                                                                 <p class="mb-2 small">The agreement has been uploaded but signature fields haven't been placed yet.</p>
                                                                 <button type="button" class="btn btn-warning btn-sm btn-place-signature-fields" data-document-id="{{ $agreementDoc->id }}" title="Place signature fields inline">
                                                                     <i class="fa-solid fa-pen-nib me-1"></i>Place Signature Fields
@@ -1368,7 +1368,7 @@
                     else if (xhr.responseText && xhr.responseText.length < 200) msg = xhr.responseText;
                     alert(msg);
                 }).always(function() {
-                    $btn.prop('disabled', false).html('<i class="fa-solid fa-save me-1"></i>Save Signature Locations');
+                    $btn.prop('disabled', false).html('<i class="fa-solid fa-floppy-disk me-1"></i>Save Signature Locations');
                 });
             });
         }

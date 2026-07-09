@@ -87,7 +87,7 @@
 									</div>
 								</div>
 								<div class="roles-form-actions">
-									<button type="submit" class="btn btn-primary"><i class="fa-solid fa-save me-1"></i> Save</button>
+									<button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i> Save</button>
 								</div> 
 							</div>
 						</div>	
@@ -131,7 +131,7 @@
 															@endif
 															<td>{{ @$list->name == "" ? config('constants.empty') : Str::limit(@$list->name, '50', '...') }}</td> 	
 															<td>
-																<a href="{{URL::to('/public/checklists/'.$list->file)}}" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener"><i class="fa-solid fa-file-download me-1"></i> File</a>
+																<a href="{{URL::to('/public/checklists/'.$list->file)}}" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener"><i class="fa-solid fa-file-arrow-down me-1"></i> File</a>
 															</td>
 															<td>
 																<a href="javascript:;" class="btn btn-sm btn-outline-danger" onClick="deleteAction({{@$list->id}}, 'matter_checklists')"><i class="fa-solid fa-trash me-1"></i> Delete</a>

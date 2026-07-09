@@ -16,7 +16,7 @@
                 
                 <div class="modal-body">
                     <div class="alert alert-info">
-                        <i class="fa-solid fa-info-circle"></i>
+                        <i class="fa-solid fa-circle-info"></i>
                         <strong>Matter Details:</strong>
                         <div id="matter_details" class="mt-2"></div>
                     </div>
@@ -53,10 +53,10 @@
                 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fa-solid fa-times"></i> Cancel
+                        <i class="fa-solid fa-xmark"></i> Cancel
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fa-solid fa-save"></i> Save Office Assignment
+                        <i class="fa-solid fa-floppy-disk"></i> Save Office Assignment
                     </button>
                 </div>
             </form>

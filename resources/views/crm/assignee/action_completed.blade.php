@@ -323,7 +323,7 @@
                                         <a href="{{URL::to('/action_completed?group_type=Urgent')}}" id="Urgent" class="group_type {{ $task_group == 'Urgent' ? 'active' : '' }}"><i class="fa-solid fa-flag" aria-hidden="true"></i> Urgent <span class="countAction">{{ $taskGroupCounts['Urgent'] }}</span></a>
                                     </button>
                                     <button type="button">
-                                        <a href="{{URL::to('/action_completed?group_type=Personal Action')}}" id="Personal Action" class="group_type {{ $task_group == 'Personal Action' ? 'active' : '' }}"><i class="fa-solid fa-tasks" aria-hidden="true"></i> Personal Action <span class="countAction">{{ $taskGroupCounts['Personal Action'] }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Personal Action')}}" id="Personal Action" class="group_type {{ $task_group == 'Personal Action' ? 'active' : '' }}"><i class="fa-solid fa-list-check" aria-hidden="true"></i> Personal Action <span class="countAction">{{ $taskGroupCounts['Personal Action'] }}</span></a>
                                     </button>
                                     <button type="button">
                                         <a href="{{URL::to('/action_completed?group_type=Follow Up')}}" id="Follow Up" class="group_type {{ $task_group == 'Follow Up' ? 'active' : '' }}"><i class="fa-solid fa-calendar-check-o" aria-hidden="true"></i> Follow up <span class="countAction">{{ $taskGroupCounts['Follow Up'] ?? 0 }}</span></a>
@@ -443,7 +443,7 @@
                                                                         </div>
                                                                     </div>
                                                                 </div>">
-                                                                    <i class="fa-solid fa-edit" aria-hidden="true"></i>
+                                                                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                                                                 </button>
                                                             @endif
 

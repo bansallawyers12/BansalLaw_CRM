@@ -72,7 +72,7 @@
                                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                     <div class="card card-statistic-1">
                                         <div class="card-icon bg-warning">
-                                            <i class="fa-solid fa-exclamation-triangle"></i>
+                                            <i class="fa-solid fa-triangle-exclamation"></i>
                                         </div>
                                         <div class="card-wrap">
                                             <div class="card-header">
@@ -107,7 +107,7 @@
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                                                     <a href="{{ route('adminconsole.features.sms.templates.index') }}" class="btn btn-outline-primary w-100">
-                                                        <i class="fa-solid fa-file-alt me-1"></i> Manage Templates
+                                                        <i class="fa-solid fa-file-lines me-1"></i> Manage Templates
                                                     </a>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">

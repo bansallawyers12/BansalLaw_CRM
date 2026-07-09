@@ -819,7 +819,7 @@ $(document).ready(function() {
                 </div>
                 <div class="client-doc-preview-header-actions">
                     <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary client-doc-preview-open-btn">
-                        <i class="fa-solid fa-external-link-alt"></i> Open
+                        <i class="fa-solid fa-up-right-from-square"></i> Open
                     </a>
                     <a href="${downloadUrl}" class="btn btn-sm btn-outline-secondary client-doc-preview-download-btn">
                         <i class="fa-solid fa-download"></i> Download
@@ -1029,7 +1029,7 @@ $(document).ready(function() {
                 <div class="preview-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
                     ${previewHeaderHtml}
                     <div class="preview-error-body" style="flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-                        <i class="fa-solid fa-exclamation-circle fa-3x" style="color: #dc3545; margin-bottom: 15px;"></i>
+                        <i class="fa-solid fa-circle-exclamation fa-3x" style="color: #dc3545; margin-bottom: 15px;"></i>
                         <p style="margin-bottom: 15px;">Unable to load preview.</p>
                         <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-primary">Open File</a>
                     </div>
@@ -2387,7 +2387,7 @@ success: function(response) {
 
 
 
-                                //var trRows_office = '<tr class="'+rowCls+'"><td><input name="id[]" type="hidden" value="'+subArray.id+'" /><input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="'+subArray.trans_date+'" /></td><td><input data-valid="required" class="form-control report_date_fields_invoice" name="entry_date[]" type="text" value="'+subArray.entry_date+'" /></td><td><select class="form-control gst_included_cls" name="gst_included[]"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td><td><select class="form-control payment_type_cls" name="payment_type[]"><option value="">Select</option><option value="Professional Fee">Professional Fee</option><option value="Department Charges">Department Charges</option><option value="Surcharge">Surcharge</option><option value="Disbursements">Disbursements</option><option value="Other Cost">Other Cost</option></select></td><td><input data-valid="required" class="form-control" name="description[]" type="text" value="'+subArray.description+'" /></td><td><span class="currencyinput">$</span><input data-valid="required" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" value="'+subArray.withdraw_amount+'" /></td><td><a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-times"></i></a></td></tr>';
+                                //var trRows_office = '<tr class="'+rowCls+'"><td><input name="id[]" type="hidden" value="'+subArray.id+'" /><input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="'+subArray.trans_date+'" /></td><td><input data-valid="required" class="form-control report_date_fields_invoice" name="entry_date[]" type="text" value="'+subArray.entry_date+'" /></td><td><select class="form-control gst_included_cls" name="gst_included[]"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td><td><select class="form-control payment_type_cls" name="payment_type[]"><option value="">Select</option><option value="Professional Fee">Professional Fee</option><option value="Department Charges">Department Charges</option><option value="Surcharge">Surcharge</option><option value="Disbursements">Disbursements</option><option value="Other Cost">Other Cost</option></select></td><td><input data-valid="required" class="form-control" name="description[]" type="text" value="'+subArray.description+'" /></td><td><span class="currencyinput">$</span><input data-valid="required" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" value="'+subArray.withdraw_amount+'" /></td><td><a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-xmark"></i></a></td></tr>';
 
                                 var trRows_office = `<tr class="${rowCls}">
 
@@ -2459,7 +2459,7 @@ success: function(response) {
 
                                     <td>
 
-                                        <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-times"></i></a>
+                                        <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-xmark"></i></a>
 
                                     </td>
 
@@ -2645,7 +2645,7 @@ success: function(response) {
 
                                     <td>
 
-                                        <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-times"></i></a>
+                                        <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-xmark"></i></a>
 
                                     </td>
 
@@ -3048,7 +3048,7 @@ success: function(response) {
 
                         <td>
 
-                            <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-times"></i></a>
+                            <a class="removeitems_invoice" href="javascript:;"><i class="fa-solid fa-xmark"></i></a>
 
                         </td>>`;
 
@@ -4318,7 +4318,7 @@ success: function(response) {
                         '<input type="number" name="disbursements[' + idx + '][amount]" class="form-control form-control-sm disbursement-amount-input" placeholder="0.00" step="0.01" min="0" value="' + amount + '">' +
                     '</div>' +
                     '<div class="col-md-1 col-2 text-right">' +
-                        '<button type="button" class="btn btn-outline-danger btn-sm btn-remove-disbursement-row"><i class="fa-solid fa-times"></i></button>' +
+                        '<button type="button" class="btn btn-outline-danger btn-sm btn-remove-disbursement-row"><i class="fa-solid fa-xmark"></i></button>' +
                     '</div>' +
                 '</div>'
             );

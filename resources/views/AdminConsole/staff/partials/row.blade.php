@@ -49,7 +49,7 @@
         </button>
         @if($canEdit)
             <button type="button" class="btn btn-sm btn-primary staff-edit-btn" data-staff-id="{{ $list->id }}">
-                <i class="fa-solid fa-edit"></i> Edit
+                <i class="fa-solid fa-pen-to-square"></i> Edit
             </button>
         @endif
     </td>

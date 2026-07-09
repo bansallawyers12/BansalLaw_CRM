@@ -661,14 +661,14 @@
                 Broadcast Message
             </h5>
             <button type="button" class="broadcast-banner__close-btn" data-action="dismiss" aria-label="Close">
-                <i class="fa-solid fa-times"></i>
+                <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
         <div class="broadcast-banner__content">
             <div class="broadcast-banner__title" data-broadcast-title></div>
             <div class="broadcast-banner__message" data-broadcast-message></div>
             <div class="broadcast-banner__meta" data-broadcast-meta>
-                <i class="fa-solid fa-info-circle"></i>
+                <i class="fa-solid fa-circle-info"></i>
                 <span data-broadcast-meta-text></span>
             </div>
             <div class="broadcast-banner__actions">
@@ -1313,7 +1313,7 @@
                                     <i class="fa-solid fa-minus"></i>
                                 </button>
                                 <button class="teams-notification-btn" onclick="closeNotification(${notification.id})">
-                                    <i class="fa-solid fa-times"></i>
+                                    <i class="fa-solid fa-xmark"></i>
                                 </button>
                             </div>
                         </div>

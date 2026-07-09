@@ -7,7 +7,7 @@
                 <h3><i class="fa-solid fa-building"></i> Company Information</h3>
                 <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}" 
                    class="btn btn-sm btn-primary">
-                    <i class="fa-solid fa-edit"></i> Edit
+                    <i class="fa-solid fa-pen-to-square"></i> Edit
                 </a>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
@@ -248,13 +248,13 @@
 
                                 if( isset($conVal->contact_type) && $conVal->contact_type != "" ){
                                     if ( $conVal->is_verified ) {
-                                        $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                        $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                     } else {
                                         $phonenoStr .= $formattedPhone.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                     }
                                 } else {
                                     if ( isset($conVal->is_verified) && $conVal->is_verified ) {
-                                        $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                        $phonenoStr .= $formattedPhone.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($conVal->verified_at ? $conVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                     } else {
                                         $phonenoStr .= $formattedPhone.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                     }
@@ -291,13 +291,13 @@
                                 $check_verified_email = $emailVal->email_type."".$emailVal->email;
                                 if( isset($emailVal->email_type) && $emailVal->email_type != "" ){
                                     if ( $emailVal->is_verified ) {
-                                        $emailStr .= $emailVal->email.' <i class="fa-solid fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                        $emailStr .= $emailVal->email.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                     } else {
                                         $emailStr .= $emailVal->email.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                     }
                                 } else {
                                     if ( isset($emailVal->is_verified) && $emailVal->is_verified ) {
-                                        $emailStr .= $emailVal->email.' <i class="fa-solid fa-check-circle verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
+                                        $emailStr .= $emailVal->email.' <i class="fa-solid fa-circle-check verified-icon fa-lg" style="color: #28a745;" title="Verified on ' . ($emailVal->verified_at ? $emailVal->verified_at->format('M j, Y g:i A') : 'Unknown') . '"></i> <br/>';
                                     } else {
                                         $emailStr .= $emailVal->email.' <i class="fa-regular fa-circle unverified-icon fa-lg" style="color: #6c757d;" title="Not verified"></i> <br/>';
                                     }
@@ -319,7 +319,7 @@
                     <h3><i class="fa-solid fa-user-tie"></i> Primary Contact Person</h3>
                     <a href="{{ route('clients.detail', base64_encode(convert_uuencode($fetchedData->company->contactPerson->id))) }}" 
                        class="btn btn-sm btn-outline-primary">
-                        <i class="fa-solid fa-external-link-alt"></i> View Profile
+                        <i class="fa-solid fa-up-right-from-square"></i> View Profile
                     </a>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
@@ -370,7 +370,7 @@
                 <span class="float-right text-muted" style="margin-left:180px;">
                 <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-primary opentagspopup btn-sm">Add Tag</a>
                 <a href="javascript:;" data-id="{{$fetchedData->id}}" class="btn btn-outline-danger openredtagspopup btn-sm ms-1" title="Add Tag (hidden by default)">
-                    <i class="fa-solid fa-exclamation-triangle"></i> Add Tag
+                    <i class="fa-solid fa-triangle-exclamation"></i> Add Tag
                 </a>
                 </span>
             </h3>
@@ -390,7 +390,7 @@
                 @if($redTagCount > 0)
                     <div class="red-tags-section" style="display: none; margin-top: 10px;">
                         <div style="margin-bottom: 5px; font-size: 11px; color: #dc3545; font-weight: bold;">
-                            <i class="fa-solid fa-exclamation-triangle"></i> Red Tags:
+                            <i class="fa-solid fa-triangle-exclamation"></i> Red Tags:
                         </div>
                         @foreach($redTags as $tagName)
                             <span class="ui label tag-red ag-flex ag-align-center ag-space-between" style="display: inline-flex; margin: 5px 5px 5px 0; background-color: #dc3545; border: 1px solid #c82333;">

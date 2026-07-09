@@ -741,7 +741,7 @@ function calculateExistingTestScoreLevels() {
             displayElement.style.color = proficiencyLevel.color;
             displayElement.style.border = `2px solid ${proficiencyLevel.color}`;
         } else {
-            displayElement.innerHTML = '<i class="fa-solid fa-question-circle"></i> Unable to Calculate';
+            displayElement.innerHTML = '<i class="fa-solid fa-circle-question"></i> Unable to Calculate';
             displayElement.style.backgroundColor = '#f8d7da';
             displayElement.style.color = '#721c24';
             displayElement.style.border = '1px solid #f5c6cb';
@@ -779,7 +779,7 @@ function showIncompleteData(displayElement, storedLevel = null, storedPoints = n
         : '';
     
     displayElement.innerHTML = `
-        <div><i class="fa-solid fa-exclamation-triangle"></i> Incomplete Data</div>
+        <div><i class="fa-solid fa-triangle-exclamation"></i> Incomplete Data</div>
         ${storedInfo}
     `;
     displayElement.style.backgroundColor = '#f8d7da';

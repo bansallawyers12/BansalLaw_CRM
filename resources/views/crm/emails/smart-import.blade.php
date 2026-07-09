@@ -214,7 +214,7 @@
                     <div id="smart-import-upload-panel">
                         <div class="smart-import-dropzone" id="smart-import-dropzone">
                             <input type="file" id="smart-import-files" accept="{{ $crmEmailUploadAccept }}" multiple>
-                            <i class="fa-solid fa-cloud-upload-alt fa-2x mb-2" style="color: var(--navy, #1e3d60);"></i>
+                            <i class="fa-solid fa-cloud-arrow-up fa-2x mb-2" style="color: var(--navy, #1e3d60);"></i>
                             <p class="mb-1"><strong>Drop Outlook email files ({{ $crmEmailUploadLabel }}) here</strong> or click to browse</p>
                             <small class="text-muted">Up to 10 files, max {{ (int) config('crm.email_upload_max_kb', 30720) / 1024 }}MB each</small>
                         </div>
@@ -261,7 +261,7 @@
                                 <i class="fa-solid fa-check me-1"></i> Confirm Selected
                             </button>
                             <button type="button" class="btn btn-outline-secondary" id="smart-import-reset-btn">
-                                <i class="fa-solid fa-redo me-1"></i> Upload More
+                                <i class="fa-solid fa-arrow-rotate-right me-1"></i> Upload More
                             </button>
                         </div>
                         <div class="smart-import-status mt-2" id="smart-import-confirm-status"></div>

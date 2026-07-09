@@ -618,7 +618,7 @@
                 <i class="fa-solid fa-link"></i> Link Document
             </button>
             <button type="button" class="btn-match-dismiss" onclick="dismissMatch()">
-                <i class="fa-solid fa-times"></i> Dismiss
+                <i class="fa-solid fa-xmark"></i> Dismiss
             </button>
         </div>
     </div>
@@ -655,7 +655,7 @@
                 
                 <div id="noMatchesMessage" class="no-matches" style="display: none;">
                     <div class="alert alert-info">
-                        <i class="fa-solid fa-info-circle"></i> No existing clients or leads found with this email address.
+                        <i class="fa-solid fa-circle-info"></i> No existing clients or leads found with this email address.
                     </div>
                 </div>
             </div>
@@ -904,7 +904,7 @@ function selectMatter(clientId, matterId, matterLabel) {
     if (confirmationDiv) {
         confirmationDiv.innerHTML = `
             <div class="alert alert-success" style="margin-top: 10px;">
-                <i class="fa-solid fa-check-circle"></i> Selected matter: <strong>${matterLabel}</strong>
+                <i class="fa-solid fa-circle-check"></i> Selected matter: <strong>${matterLabel}</strong>
             </div>
         `;
     }
@@ -1077,7 +1077,7 @@ function previewEmail() {
         } else {
             document.getElementById('emailPreviewContent').innerHTML = `
                 <div style="text-align: center; padding: 40px; color: #dc3545;">
-                    <i class="fa-solid fa-exclamation-triangle fa-2x"></i>
+                    <i class="fa-solid fa-triangle-exclamation fa-2x"></i>
                     <p style="margin-top: 15px;">Failed to load preview</p>
                     <small>${data.error || 'Unknown error'}</small>
                 </div>
@@ -1087,7 +1087,7 @@ function previewEmail() {
     .catch(error => {
         document.getElementById('emailPreviewContent').innerHTML = `
             <div style="text-align: center; padding: 40px; color: #dc3545;">
-                <i class="fa-solid fa-exclamation-triangle fa-2x"></i>
+                <i class="fa-solid fa-triangle-exclamation fa-2x"></i>
                 <p style="margin-top: 15px;">Failed to load preview</p>
                 <small>${error.message}</small>
             </div>

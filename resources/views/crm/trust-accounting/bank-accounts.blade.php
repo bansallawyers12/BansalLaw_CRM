@@ -9,7 +9,7 @@
 
             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                 <div>
-                    <h4 class="mb-1"><i class="fa-solid fa-university text-secondary me-2"></i>Trust bank accounts</h4>
+                    <h4 class="mb-1"><i class="fa-solid fa-building-columns text-secondary me-2"></i>Trust bank accounts</h4>
                     <p class="text-muted small mb-0">Practice trust accounts at your ADI (Rule 57 disclosure support). Use these records when reconciling bank statements to the trust cash book.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-1">

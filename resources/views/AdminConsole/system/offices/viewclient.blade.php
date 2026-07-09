@@ -49,7 +49,7 @@
 						<div class="card-header">
 							<h4>Office Information</h4>
 							<div class="card-header-action">
-								<a href="{{route('adminconsole.system.offices.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" class="btn btn-primary"><i class="fa-regular fa-edit"></i> Edit office</a>
+								<a href="{{route('adminconsole.system.offices.edit', base64_encode(convert_uuencode(@$fetchedData->id)))}}" class="btn btn-primary"><i class="fa-regular fa-pen-to-square"></i> Edit office</a>
 							</div>
 						</div>
 						<div class="card-body">

@@ -81,7 +81,7 @@ html, body {
                     <i class="fa-solid fa-arrow-left"></i> Back to Appointments
                 </a>
                 <button onclick="location.reload()" class="btn btn-sm btn-info">
-                    <i class="fa-solid fa-sync"></i> Refresh
+                    <i class="fa-solid fa-rotate"></i> Refresh
                 </button>
             </div>
 
@@ -89,13 +89,13 @@ html, body {
             <div class="card">
                 <div class="card-header">
                     <h4>
-                        <i class="fa-solid fa-sync-alt me-2"></i>
+                        <i class="fa-solid fa-rotate me-2"></i>
                         Appointment Sync Dashboard
                     </h4>
                     <div class="card-header-action">
                         @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
                         <button onclick="triggerManualSync()" class="btn btn-primary">
-                            <i class="fa-solid fa-sync-alt"></i> Manual Sync Now
+                            <i class="fa-solid fa-rotate"></i> Manual Sync Now
                         </button>
                         <button onclick="testConnection()" class="btn btn-info">
                             <i class="fa-solid fa-plug"></i> Test Connection
@@ -177,7 +177,7 @@ html, body {
                 <div class="col-lg-3 col-md-6">
                     <div class="card">
                         <div class="card-body metric-card">
-                            <i class="fa-solid fa-exclamation-triangle text-warning" style="font-size: 2rem;"></i>
+                            <i class="fa-solid fa-triangle-exclamation text-warning" style="font-size: 2rem;"></i>
                             <h2 class="text-warning">{{ $stats['failed'] ?? 0 }}</h2>
                             <p>Failed Syncs</p>
                         </div>
@@ -186,7 +186,7 @@ html, body {
                 <div class="col-lg-3 col-md-6">
                     <div class="card">
                         <div class="card-body metric-card">
-                            <i class="fa-solid fa-check-circle text-info" style="font-size: 2rem;"></i>
+                            <i class="fa-solid fa-circle-check text-info" style="font-size: 2rem;"></i>
                             <h2 class="text-info">{{ $stats['success_rate'] ?? 100 }}%</h2>
                             <p>Success Rate</p>
                         </div>
@@ -248,7 +248,7 @@ html, body {
                                     <td>
                                         @if($log->error_message)
                                             <button class="btn btn-sm btn-outline-danger" onclick="showError('{{ addslashes($log->error_message) }}')">
-                                                <i class="fa-solid fa-exclamation-circle"></i> Error
+                                                <i class="fa-solid fa-circle-exclamation"></i> Error
                                             </button>
                                         @else
                                             <span class="text-muted">-</span>
@@ -277,7 +277,7 @@ html, body {
             <!-- API Configuration -->
             <div class="card">
                 <div class="card-header">
-                    <h4><i class="fa-solid fa-cog me-2"></i>API Configuration</h4>
+                    <h4><i class="fa-solid fa-gear me-2"></i>API Configuration</h4>
                 </div>
                 <div class="card-body">
                     <div class="row">

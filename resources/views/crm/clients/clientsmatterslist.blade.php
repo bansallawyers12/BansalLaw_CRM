@@ -540,11 +540,11 @@
                                                        data-matter-title="{{ $list->title }}"
                                                        data-office-id="{{ $list->office_id }}"
                                                        title="Change Office">
-                                                        <i class="fa-solid fa-edit"></i> Change
+                                                        <i class="fa-solid fa-pen-to-square"></i> Change
                                                     </a>
                                                 @else
                                                     <span class="badge badge-warning" style="font-size: 11px;">
-                                                        <i class="fa-solid fa-exclamation-triangle"></i> Not Assigned
+                                                        <i class="fa-solid fa-triangle-exclamation"></i> Not Assigned
                                                     </span>
                                                     <br>
                                                     <a href="javascript:;" class="btn btn-sm btn-success mt-1 assign-office-btn" 

@@ -334,7 +334,7 @@
                     <!-- Contact Information -->
                     <section id="section-phone-numbers" class="form-section">
                         <div class="section-header">
-                            <h3><i class="fa-solid fa-mobile-alt"></i> Phone Numbers</h3>
+                            <h3><i class="fa-solid fa-mobile-screen-button"></i> Phone Numbers</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('phoneNumbers')">
                                     <i class="fa-solid fa-pen"></i>
@@ -357,7 +357,7 @@
                                             @if($contact->canVerify())
                                                 @if($contact->is_verified)
                                                     <span class="verified-badge" title="Verified on {{ $contact->verified_at ? $contact->verified_at->format('M j, Y g:i A') : 'Unknown' }}">
-                                                        <i class="fa-solid fa-check-circle"></i> Verified
+                                                        <i class="fa-solid fa-circle-check"></i> Verified
                                                     </span>
                                                 @else
                                                     <button type="button" class="btn-verify-phone" onclick="sendOTP({{ $contact->id ?? 'null' }}, '{{ $contact->phone }}', '{{ $contact->country_code }}')" data-contact-id="{{ $contact->id ?? '' }}">
@@ -416,7 +416,7 @@
                                             <!-- Verification Button/Badge -->
                                             @if($email->is_verified)
                                                 <span class="verified-badge" title="Verified on {{ $email->verified_at ? $email->verified_at->format('M j, Y g:i A') : 'Unknown' }}">
-                                                    <i class="fa-solid fa-check-circle"></i> Verified
+                                                    <i class="fa-solid fa-circle-check"></i> Verified
                                                 </span>
                                             @else
                                                 <button type="button" class="btn-verify-email" onclick="sendEmailVerification({{ $email->id }}, '{{ $email->email }}')" data-email-id="{{ $email->id }}">
@@ -515,14 +515,14 @@
                 <section class="content-section" style="margin-bottom: 1.25rem;">
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fa-solid fa-user-friends"></i> Refer by</h3>
+                            <h3><i class="fa-solid fa-user-group"></i> Refer by</h3>
                         </div>
                         <p class="text-muted" style="margin-top: 0;">Who referred this {{ $__crmEditLeadType ? 'lead' : 'client' }} (optional).</p>
                         <div class="form-group">
                             <label for="client_refer_by">Refer by</label>
                             <input type="text" class="form-control" id="client_refer_by" name="refer_by" value="{{ old('refer_by', $fetchedData->refer_by ?? '') }}" maxlength="500" placeholder="e.g. name, staff member, campaign">
                         </div>
-                        <button type="button" class="btn btn-primary" onclick="saveReferByInfo()"><i class="fa-solid fa-save"></i> Save</button>
+                        <button type="button" class="btn btn-primary" onclick="saveReferByInfo()"><i class="fa-solid fa-floppy-disk"></i> Save</button>
                         <span id="referBySaveMsg" class="text-muted small" style="margin-left: 10px;" role="status"></span>
                     </section>
                 </section>
@@ -838,7 +838,7 @@
                                                 <div class="summary-item-inline" style="grid-column: 1 / -1;">
                                                     <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">RELEVANT:</span>
                                                     <span class="summary-value" style="color: #28a745; font-weight: 500;">
-                                                        <i class="fa-solid fa-check-circle"></i> Yes
+                                                        <i class="fa-solid fa-circle-check"></i> Yes
                                                     </span>
                                                 </div>
                                                 @endif
@@ -868,10 +868,10 @@
                             <button type="button" class="add-item-btn" onclick="addQualification()"><i class="fa-solid fa-circle-plus"></i> Add Qualification</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveQualificationsInfo()">
-                                    <i class="fa-solid fa-save"></i> Save
+                                    <i class="fa-solid fa-floppy-disk"></i> Save
                                 </button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('qualificationsInfo')">
-                                    <i class="fa-solid fa-times"></i> Cancel
+                                    <i class="fa-solid fa-xmark"></i> Cancel
                                 </button>
                             </div>
                         </div>
@@ -968,7 +968,7 @@
                     <!-- Occupation & Skills Section -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fa-solid fa-cogs"></i> Occupation & Skills</h3>
+                            <h3><i class="fa-solid fa-gears"></i> Occupation & Skills</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('occupationInfo')">
                                     <i class="fa-solid fa-pen"></i>
@@ -1156,7 +1156,7 @@
                 <section id="otherInformationSection" class="content-section" style="display:none">
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fa-solid fa-info-circle"></i> Additional Information</h3>
+                            <h3><i class="fa-solid fa-circle-info"></i> Additional Information</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('additionalInfo')">
                                     <i class="fa-solid fa-pen"></i>
@@ -1280,7 +1280,7 @@
                     <!-- Character Section -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fa-solid fa-shield-alt"></i> Character&History</h3>
+                            <h3><i class="fa-solid fa-shield-halved"></i> Character&History</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('characterInfo')">
                                     <i class="fa-solid fa-pen"></i>
@@ -1445,7 +1445,7 @@
                                     </div>
                                 @else
                                     <div class="alert alert-info">
-                                        <i class="fa-solid fa-info-circle"></i> Related Files are only available for clients with visa types other than Citizen or PR.
+                                        <i class="fa-solid fa-circle-info"></i> Related Files are only available for clients with visa types other than Citizen or PR.
                                     </div>
                                 @endif
                             </div>
@@ -1619,7 +1619,7 @@
                     <!-- Parents Section -->
                     <section class="form-section">
                         <div class="section-header">
-                            <h3><i class="fa-solid fa-user-friends"></i> Parents</h3>
+                            <h3><i class="fa-solid fa-user-group"></i> Parents</h3>
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('parentsInfo')">
                                     <i class="fa-solid fa-pen"></i>
@@ -2169,7 +2169,7 @@
             var data = await res.json().catch(function(){ return {}; });
             if (res.ok && data.success) {
                 if (msgEl) {
-                    msgEl.innerHTML = '<i class="fa-solid fa-check-circle" style="color:#188038;"></i> <span style="color:#188038;">Saved</span>';
+                    msgEl.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#188038;"></i> <span style="color:#188038;">Saved</span>';
                     setTimeout(function(){ msgEl.innerHTML = ''; }, 2500);
                 }
                 return;

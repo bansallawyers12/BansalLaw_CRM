@@ -140,7 +140,7 @@
          aria-label="Edit lead pipeline"
          aria-hidden="true">
         <div class="lead-pipeline-edit-banner">
-            <span id="leadPipelineEditHeading"><i class="fa-solid fa-edit text-primary me-1"></i>Editing pipeline</span>
+            <span id="leadPipelineEditHeading"><i class="fa-solid fa-pen-to-square text-primary me-1"></i>Editing pipeline</span>
             <button type="button"
                     class="btn btn-link btn-sm p-0 lead-pipeline-open-edit"
                     aria-expanded="false"

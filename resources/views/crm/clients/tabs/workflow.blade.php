@@ -112,7 +112,7 @@
                                     </div>
                                     @if($workflowSelectedMatter->deadline)
                                         <div class="mt-2">
-                                            <span class="badge badge-info"><i class="fa-solid fa-calendar-alt"></i> Deadline: {{ \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('d/m/Y') }}</span>
+                                            <span class="badge badge-info"><i class="fa-solid fa-calendar-days"></i> Deadline: {{ \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('d/m/Y') }}</span>
                                         </div>
                                     @endif
                                 </div>
@@ -128,7 +128,7 @@
                                     {{-- Discontinued matter: show Reopen (Admin only), Change Workflow --}}
                                     @if($workflowCanReopen)
                                     <button class="btn btn-primary btn-sm matter-detail-reopen-btn" id="workflow-tab-reopen" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Reopen Matter">
-                                        <i class="fa-solid fa-redo"></i> Reopen
+                                        <i class="fa-solid fa-arrow-rotate-right"></i> Reopen
                                     </button>
                                     @else
                                         @if($workflowSelectedMatter->reopen_requested_by ?? null)
@@ -142,7 +142,7 @@
                                         @endif
                                     @endif
                                     <button class="btn btn-outline-secondary btn-sm" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}" title="Change workflow for this matter">
-                                        <i class="fa-solid fa-exchange-alt"></i> Change Workflow
+                                        <i class="fa-solid fa-right-left"></i> Change Workflow
                                     </button>
                                 @else
                                     {{-- Active matter: show normal workflow buttons --}}
@@ -181,7 +181,7 @@
                                     </button>
                                     @endif
                                     <button class="btn btn-outline-secondary btn-sm" id="workflow-tab-change-workflow" data-matter-id="{{ $workflowSelectedMatter->id }}" data-current-workflow-id="{{ $workflowSelectedMatter->workflow_id ?? '' }}" title="Change workflow for this matter">
-                                        <i class="fa-solid fa-exchange-alt"></i> Change Workflow
+                                        <i class="fa-solid fa-right-left"></i> Change Workflow
                                     </button>
                                 @endif
                             </div>

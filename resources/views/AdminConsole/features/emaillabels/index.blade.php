@@ -340,9 +340,9 @@ jQuery(document).ready(function($) {
 			? '<span class="badge badge-success">Active</span>'
 			: '<span class="badge badge-danger">Inactive</span>';
 		var actionMenu = label.type === 'system'
-			? '<li><span class="dropdown-item-text text-muted small px-3 py-2 d-block"><i class="fa-regular fa-edit me-2"></i>System labels cannot be edited</span></li>' +
+			? '<li><span class="dropdown-item-text text-muted small px-3 py-2 d-block"><i class="fa-regular fa-pen-to-square me-2"></i>System labels cannot be edited</span></li>' +
 			  '<li><span class="dropdown-item-text text-muted small px-3 py-2 d-block"><i class="fa-solid fa-trash me-2"></i>System labels cannot be deleted</span></li>'
-			: '<li><a class="dropdown-item has-icon edit-email-label-btn" href="javascript:void(0);"><i class="fa-regular fa-edit"></i> Edit</a></li>' +
+			: '<li><a class="dropdown-item has-icon edit-email-label-btn" href="javascript:void(0);"><i class="fa-regular fa-pen-to-square"></i> Edit</a></li>' +
 			  '<li><a class="dropdown-item has-icon delete-email-label-btn" href="javascript:void(0);"><i class="fa-solid fa-trash"></i> Delete</a></li>';
 
 		return '<tr id="id_' + label.id + '"' +

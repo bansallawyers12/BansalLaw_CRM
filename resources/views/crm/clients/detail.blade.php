@@ -161,7 +161,7 @@ use App\Http\Controllers\Controller;
                                    class="cdn-client-hero__name-edit"
                                    title="{{ $__crmIsLeadType ? 'Edit Lead' : 'Edit Client' }}"
                                    aria-label="{{ $__crmIsLeadType ? 'Edit Lead' : 'Edit Client' }}">
-                                    <i class="fa-solid fa-edit" aria-hidden="true"></i>
+                                    <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                                 </a>
                             @endif
                         </div>
@@ -389,7 +389,7 @@ use App\Http\Controllers\Controller;
             {  //if client unique reference id is present in url
             ?>
                 <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button active" data-tab="personaldetails" aria-selected="true" aria-controls="personaldetails-tab">
-                    <i class="fa-solid fa-th-large" aria-hidden="true"></i>
+                    <i class="fa-solid fa-table-cells-large" aria-hidden="true"></i>
                     <span>Overview</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-activityfeed" class="client-nav-button" data-tab="activityfeed" aria-selected="false" aria-controls="activityfeed-tab">
@@ -397,11 +397,11 @@ use App\Http\Controllers\Controller;
                     <span>Timeline</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-clientaction" class="client-nav-button" data-tab="clientaction" aria-selected="false" aria-controls="clientaction-tab">
-                    <i class="fa-solid fa-tasks" aria-hidden="true"></i>
+                    <i class="fa-solid fa-list-check" aria-hidden="true"></i>
                     <span>Tasks</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-noteterm" class="client-nav-button" data-tab="noteterm" aria-selected="false" aria-controls="noteterm-tab">
-                    <i class="fa-solid fa-sticky-note" aria-hidden="true"></i>
+                    <i class="fa-solid fa-note-sticky" aria-hidden="true"></i>
                     <span>Notes</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-personaldocuments" class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments" aria-selected="false" aria-controls="personaldocuments-tab">
@@ -433,7 +433,7 @@ use App\Http\Controllers\Controller;
                 $cdnShowMattersDocSubtab = false;
             ?>
                 <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button active" data-tab="personaldetails" aria-selected="true" aria-controls="personaldetails-tab">
-                    <i class="fa-solid fa-th-large" aria-hidden="true"></i>
+                    <i class="fa-solid fa-table-cells-large" aria-hidden="true"></i>
                     <span>Overview</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-activityfeed" class="client-nav-button" data-tab="activityfeed" aria-selected="false" aria-controls="activityfeed-tab">
@@ -441,11 +441,11 @@ use App\Http\Controllers\Controller;
                     <span>Timeline</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-clientaction" class="client-nav-button" data-tab="clientaction" aria-selected="false" aria-controls="clientaction-tab">
-                    <i class="fa-solid fa-tasks" aria-hidden="true"></i>
+                    <i class="fa-solid fa-list-check" aria-hidden="true"></i>
                     <span>Tasks</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-noteterm" class="client-nav-button" data-tab="noteterm" aria-selected="false" aria-controls="noteterm-tab">
-                    <i class="fa-solid fa-sticky-note" aria-hidden="true"></i>
+                    <i class="fa-solid fa-note-sticky" aria-hidden="true"></i>
                     <span>Notes</span>
                 </button>
                 <button type="button" role="tab" id="cdn-tab-personaldocuments" class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments" aria-selected="false" aria-controls="personaldocuments-tab">
@@ -777,7 +777,7 @@ use App\Http\Controllers\Controller;
 									<option value="">Select phone number...</option>
 								</select>
 								<small class="form-text text-muted">
-									<i class="fa-solid fa-info-circle"></i> 
+									<i class="fa-solid fa-circle-info"></i> 
 									Australian numbers will use Cellcast, international numbers will use Twilio
 								</small>
 							</div>
@@ -971,7 +971,7 @@ use App\Http\Controllers\Controller;
 				<input type="hidden" name="client_id" id="client_id" value="">
 				<input type="hidden" name="create_new_as_red" id="create_new_as_red" value="0">
 					<div id="tags_red_mode_hint" class="alert alert-warning py-2 mb-2" style="display: none;">
-						<i class="fa-solid fa-exclamation-triangle text-danger"></i> <strong>Red Tag mode:</strong> Any new tags you add will be created as Red tags (hidden by default).
+						<i class="fa-solid fa-triangle-exclamation text-danger"></i> <strong>Red Tag mode:</strong> Any new tags you add will be created as Red tags (hidden by default).
 					</div>
 					<div class="row">
 						<div class="col-12 col-md-12 col-lg-12">
@@ -1066,7 +1066,7 @@ use App\Http\Controllers\Controller;
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" onclick="customValidate('inbox-email-reassign-to-client-matter')">
-					<i class="fa-solid fa-save"></i> Re-assign Inbox Email
+					<i class="fa-solid fa-floppy-disk"></i> Re-assign Inbox Email
 				</button>
 			</div>
 			</form>
@@ -1110,7 +1110,7 @@ use App\Http\Controllers\Controller;
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" onclick="customValidate('sent-email-reassign-to-client-matter')">
-					<i class="fa-solid fa-save"></i> Re-assign Sent Email
+					<i class="fa-solid fa-floppy-disk"></i> Re-assign Sent Email
 				</button>
 		</div>
 		</form>

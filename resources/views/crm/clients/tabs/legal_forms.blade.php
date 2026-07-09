@@ -219,7 +219,7 @@
                         {{-- Payment Arrangements --}}
                         <div class="card mb-3">
                             <div class="card-header" style="background: #f0f4f8; cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#paymentCollapse">
-                                <strong><i class="fa-solid fa-university"></i> Payment Arrangements</strong>
+                                <strong><i class="fa-solid fa-building-columns"></i> Payment Arrangements</strong>
                                 <i class="fa-solid fa-chevron-down float-end mt-1"></i>
                             </div>
                             <div class="collapse" id="paymentCollapse">
@@ -267,7 +267,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="saveLegalFormBtn" onclick="saveLegalForm()">
-                    <i class="fa-solid fa-save"></i> Create Form & Generate Word Document
+                    <i class="fa-solid fa-floppy-disk"></i> Create Form & Generate Word Document
                 </button>
             </div>
         </div>
@@ -417,7 +417,7 @@
             },
             complete: function() {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-save"></i> Create Form & Generate Word Document';
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Create Form & Generate Word Document';
             }
         });
     };
@@ -439,7 +439,7 @@
                 if (response.success && response.forms) {
                     renderLegalFormsList(response.forms);
                 } else {
-                    listEl.innerHTML = '<div class="text-center py-4 text-muted"><i class="fa-solid fa-file-alt"></i><br>No forms found.</div>';
+                    listEl.innerHTML = '<div class="text-center py-4 text-muted"><i class="fa-solid fa-file-lines"></i><br>No forms found.</div>';
                 }
             },
             error: function() {

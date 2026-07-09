@@ -172,7 +172,7 @@
          aria-label="Edit other parties"
          aria-hidden="true">
         <div class="cp-card-header">
-            <span><i class="fa-solid fa-edit text-primary me-1"></i>Editing other parties</span>
+            <span><i class="fa-solid fa-pen-to-square text-primary me-1"></i>Editing other parties</span>
             <button type="button" class="btn btn-link btn-sm p-0 cp-open-edit" aria-label="Close editor">Close</button>
         </div>
 
@@ -311,7 +311,7 @@
             return '<option value="' + c + '"' + (cc === c ? ' selected' : '') + '>' + c + '</option>';
         }).join('');
         return '<div class="cp-repeat-item cp-phone-item">' +
-            '<button type="button" class="cp-remove-mini cp-remove-phone" title="Remove phone"><i class="fa-solid fa-times"></i></button>' +
+            '<button type="button" class="cp-remove-mini cp-remove-phone" title="Remove phone"><i class="fa-solid fa-xmark"></i></button>' +
             '<div class="cp-fields-grid">' +
             '<div><label class="small">Type</label><select class="form-control form-control-sm cp-ph-type">' +
             '<option' + (data.contact_type === 'Mobile' ? ' selected' : '') + '>Mobile</option>' +
@@ -328,7 +328,7 @@
     function emailRow(data) {
         data = data || {};
         return '<div class="cp-repeat-item cp-email-item">' +
-            '<button type="button" class="cp-remove-mini cp-remove-email" title="Remove email"><i class="fa-solid fa-times"></i></button>' +
+            '<button type="button" class="cp-remove-mini cp-remove-email" title="Remove email"><i class="fa-solid fa-xmark"></i></button>' +
             '<div class="cp-fields-grid">' +
             '<div><label class="small">Type</label><select class="form-control form-control-sm cp-em-type">' +
             '<option' + (data.email_type === 'Personal' ? ' selected' : '') + '>Personal</option>' +
@@ -342,7 +342,7 @@
     function aliasInput(val) {
         return '<div class="cp-repeat-item cp-alias-item d-flex gap-1 align-items-center">' +
             '<input type="text" class="form-control form-control-sm cp-alias-val flex-grow-1" value="' + esc(val || '') + '" placeholder="Former / maiden name">' +
-            '<button type="button" class="btn btn-link btn-sm text-danger p-0 cp-remove-alias" title="Remove"><i class="fa-solid fa-times"></i></button>' +
+            '<button type="button" class="btn btn-link btn-sm text-danger p-0 cp-remove-alias" title="Remove"><i class="fa-solid fa-xmark"></i></button>' +
             '</div>';
     }
 

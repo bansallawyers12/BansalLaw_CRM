@@ -3,7 +3,7 @@
         || str_contains(strtolower($activity->subject ?? ''), 'lead converted');
 
     $noteTypeClass = '';
-    $noteIcon = 'fa-sticky-note';
+    $noteIcon = 'fa-note-sticky';
     if ($activity->activity_type === 'note' && ! $isLeadConverted) {
         $subject = strtolower($activity->subject ?? '');
         if (str_contains($subject, 'call')) {
@@ -14,16 +14,16 @@
             $noteIcon = 'fa-envelope';
         } elseif (str_contains($subject, 'in-person')) {
             $noteTypeClass = 'activity-type-note-in-person';
-            $noteIcon = 'fa-user-friends';
+            $noteIcon = 'fa-user-group';
         } elseif (str_contains($subject, 'attention')) {
             $noteTypeClass = 'activity-type-note-attention';
-            $noteIcon = 'fa-exclamation-triangle';
+            $noteIcon = 'fa-triangle-exclamation';
         } elseif (str_contains($subject, 'others')) {
             $noteTypeClass = 'activity-type-note-others';
-            $noteIcon = 'fa-ellipsis-h';
+            $noteIcon = 'fa-ellipsis';
         } else {
             $noteTypeClass = 'activity-type-note';
-            $noteIcon = 'fa-sticky-note';
+            $noteIcon = 'fa-note-sticky';
         }
     }
 
@@ -76,13 +76,13 @@
         @elseif($activity->activity_type === 'activity')
             <i class="fa-solid fa-bolt"></i>
         @elseif($activity->activity_type === 'stage')
-            <i class="fa-solid fa-tasks" aria-hidden="true"></i>
+            <i class="fa-solid fa-list-check" aria-hidden="true"></i>
         @elseif($activity->activity_type === 'financial')
             <i class="fa-solid fa-dollar-sign"></i>
         @elseif($activity->activity_type === 'signature')
             <i class="fa-solid fa-file-signature"></i>
         @elseif($activity->activity_type === 'document')
-            <i class="fa-solid fa-file-alt"></i>
+            <i class="fa-solid fa-file-lines"></i>
         @elseif(str_contains(strtolower($activity->subject ?? ''), "invoice") ||
                 str_contains(strtolower($activity->subject ?? ''), "receipt") ||
                 str_contains(strtolower($activity->subject ?? ''), "ledger") ||
@@ -90,9 +90,9 @@
                 str_contains(strtolower($activity->subject ?? ''), "account"))
             <i class="fa-solid fa-dollar-sign"></i>
         @elseif(str_contains($activity->subject ?? '', "document"))
-            <i class="fa-solid fa-file-alt"></i>
+            <i class="fa-solid fa-file-lines"></i>
         @else
-            <i class="fa-solid fa-sticky-note"></i>
+            <i class="fa-solid fa-note-sticky"></i>
         @endif
     </span>
     <div class="feed-content">

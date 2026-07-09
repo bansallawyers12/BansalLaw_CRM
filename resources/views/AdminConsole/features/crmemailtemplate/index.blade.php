@@ -328,7 +328,7 @@ jQuery(document).ready(function($) {
 			'<td class="text-nowrap"><div class="dropdown d-inline-block">' +
 			'<button class="btn btn-primary dropdown-toggle" type="button" id="crmTplAction_' + template.id + '" data-bs-toggle="dropdown" data-bs-popper-config=\'{"strategy":"fixed"}\' aria-haspopup="true" aria-expanded="false">Action</button>' +
 			'<ul class="dropdown-menu dropdown-menu-end crm-email-template-action-menu" aria-labelledby="crmTplAction_' + template.id + '">' +
-			'<li><a class="dropdown-item has-icon edit-crm-email-template-btn" href="javascript:void(0);"><i class="fa-regular fa-edit"></i> Edit</a></li>' +
+			'<li><a class="dropdown-item has-icon edit-crm-email-template-btn" href="javascript:void(0);"><i class="fa-regular fa-pen-to-square"></i> Edit</a></li>' +
 			'<li><a class="dropdown-item has-icon delete-crm-email-template-btn" href="javascript:void(0);"><i class="fa-solid fa-trash"></i> Delete</a></li>' +
 			'</ul></div></td></tr>';
 	}

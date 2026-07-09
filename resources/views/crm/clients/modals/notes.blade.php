@@ -78,7 +78,7 @@
 		<div class="modal-content create-note-modal">
 			<div class="modal-header create-note-header">
 				<div class="modal-title-section">
-					<i class="fa-solid fa-sticky-note create-note-header__icon me-2" aria-hidden="true"></i>
+					<i class="fa-solid fa-note-sticky create-note-header__icon me-2" aria-hidden="true"></i>
 					<h5 class="modal-title mb-0" id="appliationModalLabel">Create Note</h5>
 				</div>
 				<div class="modal-actions">
@@ -184,13 +184,13 @@
                         <div class="col-12">
 							<div class="modal-footer-buttons">
 								<button type="button" class="btn btn-primary btn-lg btn-create-action" data-container="body" data-role="popover" data-placement="bottom" data-html="true">
-									<i class="fa-solid fa-cog me-2"></i>Create Task
+									<i class="fa-solid fa-gear me-2"></i>Create Task
 								</button>
 								<button onclick="customValidate('notetermform_n')" type="button" class="btn btn-primary btn-lg btn-create-note">
-									<i class="fa-solid fa-save me-2"></i>Create Note
+									<i class="fa-solid fa-floppy-disk me-2"></i>Create Note
 								</button>
 								<button type="button" class="btn btn-outline-secondary btn-lg" data-bs-dismiss="modal">
-									<i class="fa-solid fa-times me-2"></i>Cancel
+									<i class="fa-solid fa-xmark me-2"></i>Cancel
 								</button>
 							</div>
                         </div>

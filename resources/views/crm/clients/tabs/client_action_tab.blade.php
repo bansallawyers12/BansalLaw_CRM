@@ -3,7 +3,7 @@
     <div class="card full-width cdn-tasks-tab-card">
         <div class="card-body cdn-tasks-tab-card__body">
             <h2 class="cdn-tasks-tab-title">
-                <span class="cdn-tasks-tab-title__icon" aria-hidden="true"><i class="fa-solid fa-tasks"></i></span>
+                <span class="cdn-tasks-tab-title__icon" aria-hidden="true"><i class="fa-solid fa-list-check"></i></span>
                 <span>Tasks</span>
                 <span id="cdn-matter-task-stats" class="cdn-tasks-tab-stats" aria-live="polite"></span>
             </h2>
