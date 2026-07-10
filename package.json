@@ -16,6 +16,7 @@
         "copy:bootstrap": "node -e \"const fs=require('fs');const p='node_modules/bootstrap/dist/';fs.copyFileSync(p+'css/bootstrap.min.css','public/css/bootstrap.min.css');fs.copyFileSync(p+'js/bootstrap.bundle.min.js','public/js/bootstrap.bundle.min.js')\"",
         "copy:chartjs": "node -e \"const fs=require('fs');fs.copyFileSync('node_modules/chart.js/dist/chart.umd.min.js','public/js/chart.umd.min.js')\"",
         "copy:datatables": "node -e \"const fs=require('fs');fs.copyFileSync('node_modules/datatables.net/js/dataTables.min.js','public/js/datatables.min.js');fs.copyFileSync('node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.js','public/js/dataTables.bootstrap5.min.js');fs.copyFileSync('node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css','public/css/dataTables.bootstrap5.min.css')\"",
+        "copy:inputmask": "node -e \"const fs=require('fs');const p='node_modules/inputmask/dist/';fs.copyFileSync(p+'jquery.inputmask.min.js','public/js/jquery.inputmask.min.js');fs.copyFileSync(p+'inputmask.min.js','public/js/inputmask.min.js')\"",
         "copy:tinymce": "node -e \"const fs=require('fs');const p='node_modules/tinymce/';fs.cpSync(p,'public/js/tinymce/js/tinymce/',{recursive:true})\"",
         "strip:app-min-jquery": "node scripts/strip-app-min-jquery.cjs",
         "strip:app-min-bootstrap-css": "node scripts/strip-app-min-bootstrap-css.cjs",
@@ -26,7 +27,7 @@
         "verify:sweetalert2": "node scripts/verify-sweetalert2.cjs",
         "verify:chartjs": "node scripts/verify-chartjs.cjs",
         "verify:upgraded-libs": "node scripts/verify-upgraded-libs.cjs",
-        "postinstall": "npm run copy:flatpickr && npm run copy:intl-tel-input && npm run copy:sweetalert2 && npm run copy:bootstrap && npm run copy:chartjs && npm run copy:tinymce && npm run copy:datatables && npm run strip:app-min-jquery && npm run strip:app-min-bootstrap-css"
+        "postinstall": "npm run copy:flatpickr && npm run copy:intl-tel-input && npm run copy:sweetalert2 && npm run copy:bootstrap && npm run copy:chartjs && npm run copy:tinymce && npm run copy:datatables && npm run copy:inputmask && npm run strip:app-min-jquery && npm run strip:app-min-bootstrap-css"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.11",
@@ -51,6 +52,7 @@
         "datatables.net": "^2.3.8",
         "datatables.net-bs5": "^2.3.8",
         "flatpickr": "^4.6.13",
+        "inputmask": "^5.0.9",
         "intl-tel-input": "^29.1.2",
         "signature_pad": "^5.1.1",
         "sweetalert2": "^11.26.25",
