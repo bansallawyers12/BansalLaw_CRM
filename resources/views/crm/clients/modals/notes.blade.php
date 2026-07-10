@@ -73,19 +73,21 @@
 
 {{-- 2. Create Note with Matter Selection --}}
 <!-- Enhanced Create note Modal -->
-<div class="modal fade custom_modal" id="create_note_d" tabindex="-1" role="dialog" aria-labelledby="create_noteModalLabel" aria-hidden="true">
+<div class="modal fade" id="create_note_d" tabindex="-1" role="dialog" aria-labelledby="create_noteModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content create-note-modal">
 			<div class="modal-header create-note-header">
 				<div class="modal-title-section">
-					<i class="fa-solid fa-note-sticky create-note-header__icon me-2" aria-hidden="true"></i>
+					<div class="icon-wrapper">
+						<i class="fa-solid fa-note-sticky create-note-header__icon" aria-hidden="true"></i>
+					</div>
 					<h5 class="modal-title mb-0" id="appliationModalLabel">Create Note</h5>
 				</div>
 				<div class="modal-actions">
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
+					<button type="button" class="btn-close-modern" data-bs-dismiss="modal" aria-label="Close">
+						<i class="fa-solid fa-xmark"></i>
+					</button>
+				</div>
 			</div>
 			<div class="modal-body create-note-body">
 				<form method="post" action="{{URL::to('/create-note')}}" name="notetermform_n" autocomplete="off" id="notetermform_n" enctype="multipart/form-data">
@@ -98,13 +100,10 @@
                         <div class="col-12 col-md-6">
 							<div class="form-group enhanced-form-group">
 								<label for="matter_id" class="form-label">
-									<i class="fa-solid fa-folder-open text-muted me-1"></i>
 									Select Matter
 								</label>
-								<div class="input-group">
-									<div class="input-group-prepend">
-										<span class="input-group-text"><i class="fa-solid fa-list-ul"></i></span>
-                                        </div>
+								<div class="input-wrapper">
+									<i class="fa-solid fa-folder-open text-muted input-icon"></i>
 									<select name="matter_id" id="matter_id" class="form-control enhanced-select">
 								    <option value="">Select Client Matters</option>
                                     <?php
@@ -141,13 +140,10 @@
                         <div class="col-12 col-md-6">
 							<div class="form-group enhanced-form-group">
 								<label for="task_group" class="form-label">
-									<i class="fa-solid fa-tag text-muted me-1"></i>
 									Type <span class="text-danger">*</span>
 								</label>
-								<div class="input-group">
-									<div class="input-group-prepend">
-										<span class="input-group-text"><i class="fa-solid fa-list"></i></span>
-									</div>
+								<div class="input-wrapper">
+									<i class="fa-solid fa-tag text-muted input-icon"></i>
 									<select name="task_group" class="form-control enhanced-select" data-valid="required" id="noteTypeEnhanced">
                                     <option value="">Please Select</option>
 	                                    <option value="Call">📞 Call</option>
@@ -169,7 +165,6 @@
 						<div class="col-12">
 							<div class="form-group enhanced-form-group">
 								<label for="description" class="form-label">
-									<i class="fa-solid fa-align-left text-muted me-1"></i>
 									Description <span class="text-danger">*</span>
 								</label>
 								<div class="rich-text-container">
@@ -286,19 +281,20 @@
 
 {{-- Enhanced CSS Styles for Create Note Modal --}}
 <style>
-/* Enhanced Create Note Modal Styles */
+/* Premium Create Note Modal Styles */
 .create-note-modal {
-    border-radius: 12px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0,0,0,0.05);
     border: none;
     overflow: hidden;
+    background: #ffffff;
 }
 
 .create-note-header {
-    background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
-    color: white;
-    border-bottom: none;
-    padding: 20px 25px;
+    background: #ffffff !important;
+    border: none !important;
+    border-bottom: none !important;
+    padding: 32px 32px 16px 32px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -307,168 +303,222 @@
 .modal-title-section {
     display: flex;
     align-items: center;
+    gap: 16px;
+}
+
+.icon-wrapper {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2563eb;
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1);
+}
+
+.icon-wrapper i {
+    font-size: 1.25rem;
 }
 
 .modal-title-section .modal-title {
-    font-weight: 600;
-    font-size: 1.4rem;
-    /* Theme: header uses navy gradient; title must stay light (overridden by body.sidebar-mini h5 in crm-theme) */
-    color: #fff !important;
-}
-
-.create-note-header .create-note-header__icon {
-    color: rgba(255, 255, 255, 0.95) !important;
-    font-size: 1.15rem;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: #0f172a !important;
+    letter-spacing: -0.025em;
 }
 
 .modal-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
 }
 
-.modal-actions .btn {
-    border-radius: 8px;
-    font-weight: 500;
-    padding: 8px 16px;
+.btn-close-modern {
+    background: transparent;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 1.2rem;
 }
 
-.modal-actions .close {
-    color: white;
-    opacity: 0.8;
-    font-size: 1.5rem;
-    padding: 0;
-    margin: 0;
-}
-
-.modal-actions .close:hover {
-    opacity: 1;
+.btn-close-modern:hover {
+    background: #f1f5f9;
+    color: #ef4444;
+    transform: rotate(90deg);
 }
 
 .create-note-body {
-    padding: 30px 25px;
-    background: #fafbfc;
+    padding: 16px 32px 32px 32px;
+    background: #ffffff;
 }
 
 .enhanced-form-group {
-    margin-bottom: 25px;
+    margin-bottom: 28px;
 }
 
 .form-label {
     font-weight: 600;
-    color: #2d3748;
-    margin-bottom: 8px;
+    color: #334155;
+    margin-bottom: 10px;
     font-size: 0.95rem;
+    letter-spacing: 0.01em;
 }
 
 .form-label i {
     font-size: 0.9rem;
 }
 
-.input-group-text {
-    background: #f7fafc;
-    border-color: #e2e8f0;
-    color: #718096;
-    border-radius: 8px 0 0 8px;
-    padding: 12px 15px;
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 18px;
+    color: #94a3b8;
+    z-index: 10;
+    font-size: 1.1rem;
+    transition: color 0.3s ease;
 }
 
 .enhanced-select {
-    border-radius: 0 8px 8px 0;
-    border-color: #e2e8f0;
-    padding: 12px 15px;
-    font-size: 0.95rem;
+    padding: 12px 16px 12px 48px !important;
+    height: auto !important;
+    min-height: 48px;
+    border-radius: 14px;
+    border: 2px solid transparent;
+    background: #f8fafc;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #1e293b;
     transition: all 0.3s ease;
-    background: white;
+    width: 100%;
+    appearance: none;
+}
+
+.enhanced-select:hover {
+    background: #f1f5f9;
+}
+
+.input-wrapper:focus-within .input-icon {
+    color: #2563eb;
 }
 
 .enhanced-select:focus {
-    border-color: var(--navy);
-    box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.1);
+    background: #ffffff;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
     outline: none;
 }
 
 .rich-text-container {
-    border-radius: 8px;
+    border-radius: 14px;
     overflow: hidden;
-    border: 1px solid #e2e8f0;
-    background: white;
+    border: 2px solid #e2e8f0;
+    background: #f8fafc;
+    transition: all 0.3s ease;
+}
+
+.rich-text-container:focus-within {
+    background: #ffffff;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+
+.rich-text-container .tox-tinymce {
+    border: none !important;
+    border-radius: 12px !important;
 }
 
 .enhanced-textarea {
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border: none;
     min-height: 120px;
+    width: 100%;
 }
 
 .modal-footer-buttons {
     display: flex;
     justify-content: flex-end;
-    gap: 15px;
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #e2e8f0;
+    gap: 16px;
+    margin-top: 36px;
+    padding-top: 24px;
+    border-top: 1px solid #f1f5f9;
 }
 
 .btn-create-note,
 .btn-create-action {
-    background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
-    border: none;
-    border-radius: 8px;
-    padding: 12px 30px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 999px !important;
+    padding: 12px 28px !important;
     font-weight: 600;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(30, 61, 96, 0.3);
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
 }
 
 .btn-create-note:hover,
 .btn-create-action:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(30, 61, 96, 0.4);
+    box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.4);
+    color: white;
 }
 
 .btn-outline-secondary {
-    border-radius: 8px;
-    padding: 12px 30px;
+    border-radius: 999px !important;
+    padding: 12px 28px !important;
     font-weight: 600;
-    font-size: 1rem;
-    border-width: 2px;
+    font-size: 0.95rem;
+    border: 2px solid #e2e8f0 !important;
+    color: #475569 !important;
+    background: transparent !important;
     transition: all 0.3s ease;
 }
 
 .btn-outline-secondary:hover {
-    background-color: #6c757d;
-    border-color: #6c757d;
-    transform: translateY(-1px);
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
 }
 
 /* Custom Error Styling */
 .custom-error {
-    color: #e53e3e;
+    color: #ef4444;
     font-size: 0.85rem;
-    margin-top: 5px;
+    margin-top: 6px;
     font-weight: 500;
+    display: block;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
     .modal-dialog.modal-lg {
-        margin: 10px;
-        max-width: calc(100% - 20px);
+        margin: 16px;
+        max-width: calc(100% - 32px);
     }
     
     .create-note-header {
-        padding: 15px 20px;
+        padding: 24px 24px 12px 24px;
     }
     
     .create-note-body {
-        padding: 20px 15px;
+        padding: 12px 24px 24px 24px;
     }
     
     .modal-footer-buttons {
         flex-direction: column;
-        gap: 10px;
+        gap: 12px;
     }
     
     .modal-footer-buttons .btn {
@@ -478,20 +528,14 @@
 
 /* Animation for modal appearance */
 .modal.fade .modal-dialog {
-    transform: scale(0.8) translateY(-50px);
-    transition: all 0.3s ease;
+    transform: scale(0.95) translateY(-20px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal.show .modal-dialog {
     transform: scale(1) translateY(0);
-}
-
-/* Enhanced focus states */
-.enhanced-select:focus,
-.enhanced-textarea:focus {
-    border-color: var(--navy);
-    box-shadow: 0 0 0 3px rgba(30, 61, 96, 0.1);
-    outline: none;
+    opacity: 1;
 }
 
 /* Loading state for buttons */
@@ -501,5 +545,4 @@
     cursor: not-allowed;
     transform: none;
 }
-
 </style>
