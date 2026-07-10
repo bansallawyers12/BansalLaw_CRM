@@ -3,9 +3,15 @@
                 <div class="card full-width notes-container">
                     <div class="notes-header">
                         <h3><i class="fa-solid fa-file-lines"></i> Notes</h3>
-                        <button class="btn btn-primary btn-sm create_note_d" datatype="note">
-                            <i class="fa-solid fa-plus"></i> Add Note
-                        </button>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <select id="notesSortOrder" style="padding: 6px 12px; border: 1px solid #c7d7fa; border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: #334155; background: #fff; cursor: pointer; outline: none;" aria-label="Sort notes by date">
+                                <option value="desc" selected>Newest First</option>
+                                <option value="asc">Oldest First</option>
+                            </select>
+                            <button class="btn btn-primary btn-sm create_note_d" datatype="note">
+                                <i class="fa-solid fa-plus"></i> Add Note
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Search Filter -->
@@ -250,7 +256,7 @@
 
                             //$desc = strip_tags($list->description);
                         ?>
-                        <div class="note-card-redesign <?php if($list->pin == 1) echo 'pinned'; ?>" data-matterid="{{ $list->matter_id }}" id="note_id_{{$list->id}}" data-id="{{$list->id}}" data-type="{{ $typeLabel }}">
+                        <div class="note-card-redesign <?php if($list->pin == 1) echo 'pinned'; ?>" data-matterid="{{ $list->matter_id }}" id="note_id_{{$list->id}}" data-id="{{$list->id}}" data-type="{{ $typeLabel }}" data-note-date="{{ $list->updated_at }}">
                             <?php if($list->pin == 1) { ?>
                                 <div class="pined_note">
                                     <i class="fa-solid fa-thumbtack" aria-hidden="true"></i>
@@ -343,7 +349,36 @@
                     });
                 };
             
+            window.sortNotesByDate = function(order) {
+                var listRoot = document.querySelector('#noteterm-tab .note_term_list');
+                if (!listRoot) return;
+                var cards = Array.from(listRoot.querySelectorAll('.note-card-redesign'));
+                if (cards.length < 2) return;
+
+                // Separate pinned and unpinned
+                var pinned = cards.filter(function(c) { return c.classList.contains('pinned'); });
+                var unpinned = cards.filter(function(c) { return !c.classList.contains('pinned'); });
+
+                unpinned.sort(function(a, b) {
+                    var dateA = new Date(a.getAttribute('data-note-date') || 0);
+                    var dateB = new Date(b.getAttribute('data-note-date') || 0);
+                    return order === 'asc' ? dateA - dateB : dateB - dateA;
+                });
+
+                // Re-append: pinned first (keep their order), then sorted unpinned
+                pinned.forEach(function(c) { listRoot.appendChild(c); });
+                unpinned.forEach(function(c) { listRoot.appendChild(c); });
+            };
+
             document.addEventListener('DOMContentLoaded', function() {
+                // Sort dropdown event listener
+                var notesSortOrder = document.getElementById('notesSortOrder');
+                if (notesSortOrder) {
+                    notesSortOrder.addEventListener('change', function() {
+                        window.sortNotesByDate(this.value);
+                    });
+                }
+
                 // Search input event listener
                 const searchInput = document.getElementById('notes-search-input');
                 if (searchInput) {

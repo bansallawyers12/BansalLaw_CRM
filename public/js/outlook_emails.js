@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
     const labelFilter = document.getElementById('labelFilter');
     const senderFilter = document.getElementById('senderFilter');
+    const sortOrder = document.getElementById('sortOrder');
     const pageInfo = document.getElementById('pageInfo');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
@@ -145,6 +146,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (senderFilter) {
         senderFilter.addEventListener('change', () => {
+            currentPage = 1;
+            loadEmails();
+        });
+    }
+
+    if (sortOrder) {
+        sortOrder.addEventListener('change', () => {
             currentPage = 1;
             loadEmails();
         });
@@ -1680,6 +1688,7 @@ document.addEventListener('DOMContentLoaded', function() {
             url.searchParams.append('search', query);
             url.searchParams.append('label_id', label);
             url.searchParams.append('sender_filter', sender);
+            url.searchParams.append('sort_order', sortOrder ? sortOrder.value : 'desc');
             
             if (clientId) url.searchParams.append('client_id', clientId);
             if (matterId) url.searchParams.append('client_matter_id', matterId);

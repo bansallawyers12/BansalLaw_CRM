@@ -155,6 +155,10 @@
                         @endforeach
                     @endif
                 </select>
+                <select id="sortOrder" class="list-filter-select" aria-label="Sort order">
+                    <option value="desc" selected>Newest First</option>
+                    <option value="asc">Oldest First</option>
+                </select>
             </div>
         </div>
         

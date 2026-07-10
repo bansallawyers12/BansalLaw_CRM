@@ -433,6 +433,9 @@ use App\Http\Controllers\Controller;
             if( $isMatterIdInUrl || $matter_cnt > 0 || $crmShowMatterDocsForConvertedLead )
             {  //if client unique reference id is present in url
             ?>
+                <a href="{{ route('clients.index') }}" style="display: inline-block; border-radius: 9px; padding: 8px 18px; font-size: 13px; font-weight: 600; color: #334155; background: #fff; border: 1px solid #c7d7fa; text-decoration: none; text-align: center; margin-right: 4px; box-shadow: none; vertical-align: top;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#bfd7ff';" onmouseout="this.style.background='#fff'; this.style.borderColor='#c7d7fa';" title="Back to Client List">
+                    <i class="fa-solid fa-arrow-left" style="margin-right: 5px;"></i> Back
+                </a>
                 <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button active" data-tab="personaldetails" aria-selected="true" aria-controls="personaldetails-tab">
                     <i class="fa-solid fa-table-cells-large" aria-hidden="true"></i>
                     <span>Overview</span>
@@ -477,6 +480,9 @@ use App\Http\Controllers\Controller;
             {  //If no matter is exist
                 $cdnShowMattersDocSubtab = false;
             ?>
+                <a href="{{ route('clients.index') }}" style="display: inline-block; border-radius: 9px; padding: 8px 18px; font-size: 13px; font-weight: 600; color: #334155; background: #fff; border: 1px solid #c7d7fa; text-decoration: none; text-align: center; margin-right: 4px; box-shadow: none; vertical-align: top;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#bfd7ff';" onmouseout="this.style.background='#fff'; this.style.borderColor='#c7d7fa';" title="Back to Client List">
+                    <i class="fa-solid fa-arrow-left" style="margin-right: 5px;"></i> Back
+                </a>
                 <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button active" data-tab="personaldetails" aria-selected="true" aria-controls="personaldetails-tab">
                     <i class="fa-solid fa-table-cells-large" aria-hidden="true"></i>
                     <span>Overview</span>

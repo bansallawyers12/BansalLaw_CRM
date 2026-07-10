@@ -8179,8 +8179,9 @@ class ClientsController extends Controller
             });
         }
 
-        // Sort latest first
-        $query->orderBy('created_at', 'desc');
+        // Sort by actual email sent time, user-selectable direction (default: newest first)
+        $sortDirection = strtolower($request->input('sort_order', 'desc')) === 'asc' ? 'ASC' : 'DESC';
+        $query->orderByRaw('COALESCE(fetch_mail_sent_time, created_at) ' . $sortDirection);
 
         // Paginate
         $emails = $query->paginate($perPage);
