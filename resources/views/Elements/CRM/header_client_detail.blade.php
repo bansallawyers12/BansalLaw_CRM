@@ -104,13 +104,56 @@
         @if(Auth::user())
             @php
                 $notifUnread = \App\Models\Notification::where('receiver_id', Auth::user()->id)->where('receiver_status', 0)->count();
+                $recentNotifs = \App\Models\Notification::where('receiver_id', Auth::user()->id)
+                                    ->orderBy('id', 'DESC')
+                                    ->take(5)
+                                    ->get();
             @endphp
-            <a href="{{ route('crm.all-notifications') }}" class="icon-btn notification-toggle" title="Notifications">
-                <span class="notification-bell-inner">
-                    <i class="fa-solid fa-bell" aria-hidden="true"></i>
-                    <span class="countbell" id="countbell_notification" aria-live="polite">{{ $notifUnread > 0 ? $notifUnread : '' }}</span>
-                </span>
-            </a>
+            <div class="dropdown d-inline-block align-middle me-1">
+                <a href="javascript:;" class="icon-btn notification-toggle" title="Notifications" data-bs-toggle="dropdown" aria-expanded="false" style="position: relative;">
+                    <span class="notification-bell-inner">
+                        <i class="fa-solid fa-bell" aria-hidden="true"></i>
+                        @if($notifUnread > 0)
+                            <span class="countbell" id="countbell_notification" aria-live="polite">{{ $notifUnread }}</span>
+                        @endif
+                    </span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end shadow-sm" style="width: 350px; padding: 0; border: 1px solid #e2e8f0; border-radius: 12px; margin-top: 8px; z-index: 1050;">
+                    <div class="dropdown-header d-flex justify-content-between align-items-center" style="background: #f8fafc; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; border-radius: 12px 12px 0 0;">
+                        <h6 class="m-0" style="font-weight: 600; color: #1e293b;">Notifications</h6>
+                        @if($notifUnread > 0)
+                            <span class="badge" style="background: #ef4444; color: white; border-radius: 999px;">{{ $notifUnread }} New</span>
+                        @endif
+                    </div>
+                    <div style="max-height: 360px; overflow-y: auto;">
+                        @if($recentNotifs->count() > 0)
+                            @foreach($recentNotifs as $notif)
+                                <a href="{{ $notif->url }}?t={{ $notif->id }}" class="dropdown-item d-flex align-items-start py-3 px-3" style="border-bottom: 1px solid #f1f5f9; white-space: normal; background: {{ ($notif->receiver_status ?? 0) == 0 ? '#eff6ff' : 'transparent' }};">
+                                    <div class="me-3 mt-1">
+                                        @if(($notif->receiver_status ?? 0) == 0)
+                                            <div style="width: 8px; height: 8px; background: #3b82f6; border-radius: 50%; box-shadow: 0 0 0 2px #bfdbfe;"></div>
+                                        @else
+                                            <div style="width: 8px; height: 8px; background: #cbd5e1; border-radius: 50%;"></div>
+                                        @endif
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <p class="m-0" style="font-size: 0.85rem; color: #334155; line-height: 1.4; text-wrap: wrap;">{{ $notif->message }}</p>
+                                        <small style="font-size: 0.75rem; color: #64748b; margin-top: 4px; display: block;">{{ date('d M Y, h:i A', strtotime($notif->created_at)) }}</small>
+                                    </div>
+                                </a>
+                            @endforeach
+                        @else
+                            <div class="text-center py-5">
+                                <i class="fa-regular fa-bell" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 12px;"></i>
+                                <p class="m-0" style="color: #64748b; font-size: 0.9rem;">No recent notifications</p>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="text-center" style="background: #f8fafc; border-top: 1px solid #e2e8f0; border-radius: 0 0 12px 12px;">
+                        <a href="{{ route('crm.all-notifications') }}" class="d-block py-2" style="font-size: 0.85rem; font-weight: 600; color: #3b82f6; text-decoration: none;">View All Notifications</a>
+                    </div>
+                </div>
+            </div>
         @endif
         <div class="profile-dropdown js-dropdown-right">
             <a href="#" class="profile-trigger" id="profile-trigger">
