@@ -8,7 +8,7 @@ return new class extends Migration
 {
     /**
      * Legacy stub migrations created `emails` with only id/timestamps.
-     * Outbound SendGrid / CRM code expects these columns.
+     * Outbound CRM email code expects these columns.
      */
     public function up(): void
     {

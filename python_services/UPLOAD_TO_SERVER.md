@@ -444,10 +444,10 @@ sudo systemctl restart migration-python-services
 
 ## Need More Help?
 
-- **[LINUX_START_HERE.md](LINUX_START_HERE.md)** - Documentation index
-- **[DEPLOYMENT_SUMMARY.md](DEPLOYMENT_SUMMARY.md)** - Quick overview
-- **[LINUX_DEPLOYMENT.md](LINUX_DEPLOYMENT.md)** - Complete deployment guide
-- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Command reference
+- **[README.md](README.md)** — Main documentation
+- **[LINUX_DEPLOYMENT.md](LINUX_DEPLOYMENT.md)** — Complete deployment guide
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** — Command reference
+- **[UPLOAD_TO_SERVER.md](UPLOAD_TO_SERVER.md)** — Server upload steps
 
 ---
 

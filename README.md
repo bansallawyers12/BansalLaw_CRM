@@ -948,6 +948,15 @@ CRM_ACCESS_SUPERVISOR_GRANT_HOURS=24
 
 Full behaviour documented in `docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md`.
 
+### Documentation
+
+See [`docs/README.md`](docs/README.md) for the full documentation index. Key guides:
+
+- **Email (AWS SES + Zoho):** `docs/AWS_SES_CRM_EMAIL_INSTRUCTIONS.md`
+- **Sent email S3 storage:** `docs/CRM_EMAIL_S3_IMPLEMENTATION.md`
+- **Cross-access / grants:** `docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md`
+- **Python services:** `python_services/README.md`
+
 ---
 
 ## Project Structure

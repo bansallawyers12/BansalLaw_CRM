@@ -1,6 +1,8 @@
 # CRM Email S3 Storage Implementation
 
-This document describes the implementation of S3 storage for CRM-sent emails (full HTML snapshot + attachments). It enables consistent archival with uploaded `.msg` emails and attachment download in the Email tab.
+This document describes S3 storage for CRM-sent emails (full HTML snapshot + attachments). It enables consistent archival with uploaded `.msg` emails and attachment download in the Email tab.
+
+> **Related:** Outbound sending uses AWS SES + Zoho — see [AWS_SES_CRM_EMAIL_INSTRUCTIONS.md](AWS_SES_CRM_EMAIL_INSTRUCTIONS.md).
 
 ---
 
@@ -33,7 +35,7 @@ This document describes the implementation of S3 storage for CRM-sent emails (fu
 ### Send Flow (CRMUtilityController)
 
 1. Create `EmailLog`, save
-2. Send email via `EmailService::sendEmail()`
+2. Send email via `EmailService::sendEmail()` → `MailRoutingService` (SES or Zoho)
 3. Build `attachmentTuples` from `$attachments`
 4. Call `CrmSentEmailS3Service::storeToS3($obj, $subject, $message, $attachmentTuples)`
 5. S3 failure is caught/logged; send still succeeds
@@ -45,7 +47,9 @@ This document describes the implementation of S3 storage for CRM-sent emails (fu
 
 ---
 
-## bansalcrm2
+## Historical: bansalcrm2 fork
+
+The sections below document a parallel implementation in an older CRM codebase (`bansalcrm2`). They are kept for reference if porting fixes between repos.
 
 ### Files Created/Modified
 
@@ -54,30 +58,6 @@ This document describes the implementation of S3 storage for CRM-sent emails (fu
 | `app/Services/CrmSentEmailS3Service.php` | **Created** – Service for `MailReport` / `MailReportAttachment` |
 | `app/Http/Controllers/Admin/AdminController.php` | Injected service; set `client_id`, `client_matter_id` on MailReport; call `storeToS3()` after send |
 | `app/Http/Controllers/CRM/EmailQueryV2Controller.php` | Updated `filterSentEmails` for S3 preview fallback |
-| `resources/views/Admin/clients/detail.blade.php` | Added hidden `client_id`, `type`, `compose_client_matter_id` to sendmail form |
-| `resources/views/Admin/partners/detail.blade.php` | Added hidden `client_id` to sendmail form |
-
-### CrmSentEmailS3Service (bansalcrm2)
-
-- **Models:** `MailReport`, `MailReportAttachment`, `Document`, `Admin`, `Partner`
-- **S3 path:** Same as Bansal Law CRM
-- **`resolveClientUniqueId()`:** Handles `partner` type → Partner id; else Admin `client_id` or `'client_' . $entityId`
-- **Document:** Omits `client_matter_id` (not in bansalcrm2 Document fillable)
-
-### AdminController sendmail
-
-- Sets `obj->client_id` = `$requestData['client_id'] ?? $requestData['email_to'][0] ?? null`
-- Sets `obj->client_matter_id` = `$requestData['compose_client_matter_id'] ?? null`
-- After `sendEmail()` success: builds `attachmentTuples`, calls `storeToS3($obj, $subject, $message, $attachmentTuples)`
-
-### Form Hidden Inputs
-
-- **Client detail:** `client_id`, `type`, `compose_client_matter_id`
-- **Partner detail:** `client_id` (type already present)
-
-### Attachment Download
-
-- `MailReportAttachmentController` already uses `s3_key` – no changes needed
 
 ---
 
@@ -85,31 +65,27 @@ This document describes the implementation of S3 storage for CRM-sent emails (fu
 
 ### Sent emails not appearing in Email tab
 
-- Ensure `client_id` (and `client_matter_id` when matter-scoped) is set on the email log/mail report.
-- For Bansal Law CRM client Sent tab: `compose_client_matter_id` must be set when composing.
+- Ensure `client_id` (and `client_matter_id` when matter-scoped) is set on the email log.
+- For client Sent tab: `compose_client_matter_id` must be set when composing.
 - Check `filterSentEmails` / `filterLeadEmails` query (client_id, type, mail_type, conversion_type).
 
 ### Preview URL 404 or blank
 
 - Verify Document has `myfile_key` and `myfile` (full S3 URL) for `crm_sent` docs.
-- If using legacy path: check `clientRef` resolves correctly (Admin/Partner lookup).
+- If using legacy path: check `clientRef` resolves correctly (Admin lookup).
 - Confirm S3 bucket, region, and CORS allow reads.
 
 ### Attachment download fails
 
-- Check `EmailLogAttachment` / `MailReportAttachment` has `s3_key` populated.
+- Check `EmailLogAttachment` has `s3_key` populated.
 - Verify file exists at `Storage::disk('s3')->exists($s3_key)`.
 - Ensure S3 config (key, secret, bucket, region) is correct.
 
 ### S3 upload fails silently
 
 - S3 errors are logged; email send still succeeds.
-- Check `config('filesystems.disks.s3.key')` and `config('filesystems.disks.s3.bucket')` – service skips if not set.
+- Check `config('filesystems.disks.s3.key')` and `config('filesystems.disks.s3.bucket')` — service skips if not set.
 - Review logs for `CrmSentEmailS3Service` messages.
-
-### Duplicate attachment keys (collision)
-
-- Both implementations use `time() . '_' . substr(uniqid(), -6)` (or similar) in attachment S3 keys to reduce collisions.
 
 ---
 
@@ -120,9 +96,3 @@ This document describes the implementation of S3 storage for CRM-sent emails (fu
 - `email_logs`: `client_id`, `client_matter_id`, `uploaded_doc_id`, `type`
 - `email_log_attachments`: `s3_key`, `file_path`, `filename`, etc.
 - `documents`: `doc_type`, `myfile`, `myfile_key`, `mail_type`, `client_id`, `client_matter_id`
-
-**bansalcrm2:**
-
-- `mail_reports`: `client_id`, `client_matter_id`, `uploaded_doc_id`, `type`
-- `mail_report_attachments`: `s3_key`, `file_path`, `filename`, etc.
-- `documents`: `doc_type`, `myfile`, `myfile_key`, `mail_type`, `client_id`

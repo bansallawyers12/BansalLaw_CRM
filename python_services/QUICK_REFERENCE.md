@@ -421,10 +421,10 @@ netsh advfirewall firewall delete rule name="Python Services"
 
 ### Documentation Files
 
-- **[README.md](README.md)** - Main documentation
-- **[LINUX_DEPLOYMENT.md](LINUX_DEPLOYMENT.md)** - Linux production deployment
-- **[PYTHON_SERVICES_START_HERE.md](../PYTHON_SERVICES_START_HERE.md)** - Getting started guide
-- **[PYTHON_SERVICES_MASTER_GUIDE.md](../PYTHON_SERVICES_MASTER_GUIDE.md)** - Complete guide
+- **[README.md](README.md)** — Main Python services documentation
+- **[LINUX_DEPLOYMENT.md](LINUX_DEPLOYMENT.md)** — Linux production deployment
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** — Command reference
+- **[UPLOAD_TO_SERVER.md](UPLOAD_TO_SERVER.md)** — Upload checklist for servers
 
 ### Common Issues
 

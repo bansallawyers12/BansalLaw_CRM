@@ -8,7 +8,7 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * Remove SMTP and password columns from emails table (SendGrid migration cleanup).
+     * Remove SMTP and password columns from emails table (legacy cleanup).
      */
     public function up(): void
     {
