@@ -4,7 +4,14 @@
 (function (global) {
     'use strict';
 
-    function partyRoleOptionsHtml(stream) {
+    function partyRoleOptionsHtml(stream, customRoles) {
+        if (customRoles && typeof customRoles === 'object' && Object.keys(customRoles).length) {
+            var html = '<option value="">— Select role —</option>';
+            Object.keys(customRoles).forEach(function (k) {
+                html += '<option value="' + k + '">' + customRoles[k] + '</option>';
+            });
+            return html;
+        }
         var map = global.MATTER_PARTY_ROLES_BY_STREAM || {};
         var roles = map[stream] || map.general || {};
         var html = '<option value="">— Select role —</option>';
@@ -14,7 +21,7 @@
         return html;
     }
 
-    function initOtherPartyTomSelect(selectEl, searchUrl) {
+    function initOtherPartyTomSelect(selectEl, searchUrl, excludeId) {
         if (selectEl && typeof global.destroyTS === 'function') {
             global.destroyTS(selectEl);
         }
@@ -24,7 +31,8 @@
         var cfg = global.buildContactPersonSearchTomSelectConfig({
             url: searchUrl,
             placeholder: 'Search other party (name, phone, email, ID)...',
-            dropdownParent: 'body'
+            dropdownParent: 'body',
+            excludeId: excludeId
         });
         global.initTS(selectEl, cfg);
     }
@@ -38,6 +46,9 @@
      * @param {string} opts.searchUrl
      * @param {string} opts.stream - matter stream for role dropdown
      * @param {object} [opts.data] - prefill { opposing_lead_id, name, party_role, rep_* }
+     * @param {object} [opts.roles] - custom role map { value: label }
+     * @param {string|number} [opts.excludeId] - exclude this admin id from search
+     * @param {string} [opts.repSectionTitle] - optional heading above manual solicitor fields
      */
     function appendOtherPartyRow(container, opts) {
         opts = opts || {};
@@ -47,10 +58,18 @@
         var rowClass = opts.rowClass || 'opp-party-row';
         var data = opts.data || {};
         var stream = opts.stream || 'general';
+        var customRoles = opts.roles || null;
+        var repSectionTitle = opts.repSectionTitle || '';
 
         var row = document.createElement('div');
         row.className = rowClass + ' opp-party-row border rounded p-2 mb-2';
         row.style.background = '#fff';
+
+        var repHeading = repSectionTitle
+            ? '<div class="small fw-semibold text-muted mt-2 mb-1 opp-party-rep-heading">' +
+                String(repSectionTitle).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;') +
+              '</div>'
+            : '';
 
         row.innerHTML =
             '<div class="row g-2 align-items-end">' +
@@ -62,13 +81,14 @@
             '</div>' +
             '<div class="col-md-3">' +
             '<label class="small mb-0 d-block">Their role <span class="text-danger">*</span></label>' +
-            '<select class="form-control opp-party-role-select">' + partyRoleOptionsHtml(stream) + '</select>' +
+            '<select class="form-control opp-party-role-select">' + partyRoleOptionsHtml(stream, customRoles) + '</select>' +
             '</div>' +
             '<div class="col-md-2">' +
             '<label class="small mb-0 d-block">&nbsp;</label>' +
             '<button type="button" class="btn btn-sm btn-outline-danger w-100 opp-party-remove">Remove</button>' +
             '</div>' +
             '</div>' +
+            repHeading +
             '<div class="row g-2 mt-1 opp-party-rep-row">' +
             '<div class="col-md-3"><label class="small mb-0">Solicitor firm</label><input type="text" class="form-control form-control-sm opp-party-rep-firm" maxlength="255" placeholder="Firm name"></div>' +
             '<div class="col-md-3"><label class="small mb-0">Solicitor name</label><input type="text" class="form-control form-control-sm opp-party-rep-name" maxlength="255"></div>' +
@@ -97,13 +117,13 @@
                     '<input type="hidden" class="opp-party-name" value="' + legacyName + '">';
             }
         } else if (opts.searchUrl && leadSelect) {
-            initOtherPartyTomSelect(leadSelect, opts.searchUrl);
+            initOtherPartyTomSelect(leadSelect, opts.searchUrl, opts.excludeId);
             if (data.opposing_lead_id) {
                 var ts = leadSelect.tomselect;
                 var label = data.name || ('Other party #' + data.opposing_lead_id);
                 if (ts) {
                     ts.addOption({ id: data.opposing_lead_id, text: label });
-                    ts.setValue(String(data.opposing_lead_id));
+                    ts.setValue(String(data.opposing_lead_id), true);
                 }
                 row.querySelector('.opp-party-lead-id').value = String(data.opposing_lead_id);
                 row.querySelector('.opp-party-name').value = data.name || '';

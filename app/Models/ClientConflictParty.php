@@ -11,7 +11,7 @@ class ClientConflictParty extends Model
     protected $table = 'client_conflict_parties';
 
     protected $fillable = [
-        'client_id', 'party_type', 'party_role',
+        'client_id', 'opposing_lead_id', 'party_type', 'party_role',
         'first_name', 'last_name', 'aliases', 'dob',
         'company_name', 'trading_name', 'abn', 'acn',
         'address', 'suburb', 'state', 'postcode', 'country',
@@ -27,6 +27,11 @@ class ClientConflictParty extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'client_id');
+    }
+
+    public function opposingLead(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'opposing_lead_id');
     }
 
     public function phones(): HasMany

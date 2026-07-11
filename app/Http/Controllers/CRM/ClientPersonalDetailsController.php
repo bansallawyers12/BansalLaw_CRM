@@ -2547,10 +2547,11 @@ class ClientPersonalDetailsController extends Controller
     private function saveConflictPartiesSection(Request $request, Admin $client)
     {
         $raw = $request->input('conflict_parties_json', '[]');
-        $parties = json_decode((string) $raw, true);
 
-        if (! is_array($parties)) {
-            return response()->json(['success' => false, 'message' => 'Invalid data format.'], 422);
+        try {
+            $parties = \App\Support\OpposingPartyHelper::parseJsonPayload((string) $raw);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
 
         try {
@@ -2558,72 +2559,62 @@ class ClientPersonalDetailsController extends Controller
                 ClientConflictParty::where('client_id', $client->id)->delete();
 
                 foreach ($parties as $i => $p) {
-                    $firstName   = trim((string) ($p['first_name'] ?? ''));
-                    $companyName = trim((string) ($p['company_name'] ?? ''));
+                    $leadId = isset($p['opposing_lead_id']) ? (int) $p['opposing_lead_id'] : 0;
+                    $lead = ($leadId > 0) ? Admin::query()->find($leadId) : null;
 
-                    if ($firstName === '' && $companyName === '') {
-                        continue;
+                    $data = [
+                        'client_id'     => $client->id,
+                        'party_role'    => $p['party_role'],
+                        'sort_order'    => $i,
+                        'created_by'    => Auth::id(),
+                        'rep_firm_name' => ($p['rep_firm'] ?? '') !== '' ? $p['rep_firm'] : null,
+                        'rep_name'      => ($p['rep_name'] ?? '') !== '' ? $p['rep_name'] : null,
+                        'rep_email'     => ($p['rep_email'] ?? '') !== '' ? $p['rep_email'] : null,
+                        'rep_phone'     => ($p['rep_phone'] ?? '') !== '' ? $p['rep_phone'] : null,
+                        'notes'         => ($p['rep_notes'] ?? '') !== '' ? $p['rep_notes'] : null,
+                        'country'       => 'Australia',
+                    ];
+
+                    if (Schema::hasColumn('client_conflict_parties', 'opposing_lead_id')) {
+                        $data['opposing_lead_id'] = ($leadId > 0) ? $leadId : null;
                     }
 
-                    $dobFormatted = null;
-                    if (! empty($p['dob']) && $p['dob'] !== 'dd/mm/yyyy') {
-                        try {
-                            $dobFormatted = Carbon::createFromFormat('d/m/Y', $p['dob'])->format('Y-m-d');
-                        } catch (\Exception $e) {
-                            $dobFormatted = null;
+                    if ($lead) {
+                        if ((bool) ($lead->is_company ?? false)) {
+                            $data['party_type'] = 'company';
+                            $data['company_name'] = trim((string) ($lead->company_name ?? ''))
+                                ?: trim($lead->first_name . ' ' . $lead->last_name)
+                                ?: null;
+                        } else {
+                            $data['party_type'] = 'individual';
+                            $data['first_name'] = $lead->first_name;
+                            $data['last_name'] = $lead->last_name;
                         }
+                    } else {
+                        $name = trim((string) ($p['name'] ?? ''));
+                        $parts = preg_split('/\s+/', $name, 2);
+                        $data['party_type'] = 'individual';
+                        $data['first_name'] = $parts[0] ?? null;
+                        $data['last_name'] = $parts[1] ?? null;
                     }
 
-                    $party = ClientConflictParty::create([
-                        'client_id'        => $client->id,
-                        'party_type'       => $p['party_type'] ?? 'individual',
-                        'party_role'       => $p['party_role'] ?? null,
-                        'first_name'       => $firstName ?: null,
-                        'last_name'        => trim((string) ($p['last_name'] ?? '')) ?: null,
-                        'aliases'          => ! empty($p['aliases']) && is_array($p['aliases'])
-                            ? array_values(array_filter($p['aliases']))
-                            : null,
-                        'dob'              => $dobFormatted,
-                        'company_name'     => $companyName ?: null,
-                        'trading_name'     => trim((string) ($p['trading_name'] ?? '')) ?: null,
-                        'abn'              => trim((string) ($p['abn'] ?? '')) ?: null,
-                        'acn'              => trim((string) ($p['acn'] ?? '')) ?: null,
-                        'address'          => trim((string) ($p['address'] ?? '')) ?: null,
-                        'suburb'           => trim((string) ($p['suburb'] ?? '')) ?: null,
-                        'state'            => trim((string) ($p['state'] ?? '')) ?: null,
-                        'postcode'         => trim((string) ($p['postcode'] ?? '')) ?: null,
-                        'country'          => trim((string) ($p['country'] ?? 'Australia')) ?: 'Australia',
-                        'rep_firm_name'    => trim((string) ($p['rep_firm_name'] ?? '')) ?: null,
-                        'rep_name'         => trim((string) ($p['rep_name'] ?? '')) ?: null,
-                        'rep_email'        => trim((string) ($p['rep_email'] ?? '')) ?: null,
-                        'rep_phone'        => trim((string) ($p['rep_phone'] ?? '')) ?: null,
-                        'rep_country_code' => trim((string) ($p['rep_country_code'] ?? '')) ?: null,
-                        'notes'            => trim((string) ($p['notes'] ?? '')) ?: null,
-                        'sort_order'       => $i,
-                        'created_by'       => Auth::id(),
-                    ]);
+                    $party = ClientConflictParty::create($data);
 
-                    foreach ($p['phones'] ?? [] as $ph) {
-                        $num = trim((string) ($ph['phone'] ?? ''));
-                        if ($num !== '') {
-                            ConflictPartyContact::create([
-                                'conflict_party_id' => $party->id,
-                                'contact_type'      => $ph['contact_type'] ?? 'Mobile',
-                                'country_code'      => $ph['country_code'] ?? '+61',
-                                'phone'             => $num,
-                            ]);
-                        }
+                    if ($lead && $lead->phone) {
+                        ConflictPartyContact::create([
+                            'conflict_party_id' => $party->id,
+                            'contact_type'      => 'Mobile',
+                            'country_code'      => '+61',
+                            'phone'             => $lead->phone,
+                        ]);
                     }
 
-                    foreach ($p['emails'] ?? [] as $em) {
-                        $addr = trim((string) ($em['email'] ?? ''));
-                        if ($addr !== '') {
-                            ConflictPartyEmail::create([
-                                'conflict_party_id' => $party->id,
-                                'email_type'        => $em['email_type'] ?? 'Personal',
-                                'email'             => $addr,
-                            ]);
-                        }
+                    if ($lead && $lead->email && ! str_ends_with((string) $lead->email, '@lead.internal')) {
+                        ConflictPartyEmail::create([
+                            'conflict_party_id' => $party->id,
+                            'email_type'        => 'Personal',
+                            'email'             => $lead->email,
+                        ]);
                     }
                 }
             });

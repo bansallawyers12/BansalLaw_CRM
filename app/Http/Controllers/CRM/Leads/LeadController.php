@@ -1176,7 +1176,7 @@ class LeadController extends Controller
         ];
 
         $conflictParties = \App\Models\ClientConflictParty::where('client_id', $id)
-            ->with(['phones', 'emails'])
+            ->with(['phones', 'emails', 'opposingLead'])
             ->orderBy('sort_order')
             ->get();
 

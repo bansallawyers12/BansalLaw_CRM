@@ -2241,7 +2241,7 @@ class ClientsController extends Controller
                 }
 
                 $conflictParties = \App\Models\ClientConflictParty::where('client_id', $id)
-                    ->with(['phones', 'emails'])
+                    ->with(['phones', 'emails', 'opposingLead'])
                     ->orderBy('sort_order')
                     ->get();
 
@@ -7878,6 +7878,10 @@ class ClientsController extends Controller
                 ->orWhere('last_name', $likeOperator, "%{$query}%")
                 ->orWhere('client_id', $likeOperator, "%{$query}%");
 
+            if (Schema::hasColumn('admins', 'company_name')) {
+                $q->orWhere('company_name', $likeOperator, "%{$query}%");
+            }
+
             if (DB::getDriverName() === 'pgsql') {
                 $q->orWhereRaw("CONCAT(first_name, ' ', last_name) ILIKE ?", ["%{$query}%"]);
             } else {
@@ -7885,17 +7889,20 @@ class ClientsController extends Controller
             }
         })
             ->whereIn('type', ['client', 'lead'])
-            ->where('is_other_party', true)
+            ->where('is_other_party', '=', true)
             ->whereNull('is_deleted')
             ->when($excludeId, function ($q) use ($excludeId) {
                 $q->where('id', '!=', $excludeId);
             })
-            ->select('id', 'first_name', 'last_name', 'email', 'phone', 'client_id', 'type')
+            ->select('id', 'first_name', 'last_name', 'email', 'phone', 'client_id', 'type', 'is_company', 'company_name')
             ->limit(20)
             ->get()
             ->map(function ($person) {
                 $fullName = trim($person->first_name . ' ' . $person->last_name);
-                $displayText = $fullName;
+                if ($fullName === '' && ! empty($person->company_name)) {
+                    $fullName = trim((string) $person->company_name);
+                }
+                $displayText = $fullName !== '' ? $fullName : 'Other party';
                 if ($person->email) {
                     $displayText .= " ({$person->email})";
                 }
