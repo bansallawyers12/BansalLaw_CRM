@@ -242,6 +242,9 @@
                         <li class="nav-item is_checked_clientn">
                             <a class="nav-link active" id="lead-tab"  href="{{URL::to('/leads')}}" >Leads</a>
                         </li>
+                        <li class="nav-item is_checked_clientn">
+                            <a class="nav-link" id="other-parties-tab" href="{{ route('leads.other_parties.index') }}">Other Parties</a>
+                        </li>
                     </ul>
 
                     @php

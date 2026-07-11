@@ -47,6 +47,8 @@ class Admin extends Authenticatable
         'lead_status', 'followup_date', 'user_id',
         // Company Lead/Client Flag (company data stored in companies table)
         'is_company',
+        // Other party flag (appears in Other Parties list, not sales pipeline)
+        'is_other_party',
         // API/Service Tokens
         'service_token', 'token_generated_at',
         // Study / additional qualification flags (admins table)

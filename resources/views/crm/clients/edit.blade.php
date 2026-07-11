@@ -1967,6 +1967,7 @@
         window.ClientDetailConfig.urls = window.ClientDetailConfig.urls || {};
         window.ClientDetailConfig.urls.fetchClientMatterAssignee = @json(url('/clients/fetchClientMatterAssignee'));
     </script>
+    <script src="{{ asset('js/crm/clients/other-party-picker.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ time() }}"></script>
     <script>
         // Pass countries data to JavaScript

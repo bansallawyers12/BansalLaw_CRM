@@ -99,6 +99,24 @@ class Lead extends Admin
     {
         return $query->where('source', $source);
     }
+
+    /**
+     * Exclude other-party-flagged records from the normal leads pipeline.
+     */
+    public function scopeExcludingOtherParties(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q) {
+            $q->where('is_other_party', false)->orWhereNull('is_other_party');
+        });
+    }
+
+    /**
+     * Only other-party-flagged records.
+     */
+    public function scopeOnlyOtherParties(Builder $query): Builder
+    {
+        return $query->where('is_other_party', true);
+    }
     
     /**
      * Get the staff member assigned to this lead

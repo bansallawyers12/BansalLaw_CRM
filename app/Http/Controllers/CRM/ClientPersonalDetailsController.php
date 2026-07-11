@@ -769,7 +769,7 @@ class ClientPersonalDetailsController extends Controller
                     ->where('client_matter_id', $cmId)
                     ->orderBy('sort_order')
                     ->orderBy('id')
-                    ->get(['id', 'name', 'party_role', 'sort_order'])
+                    ->get(\App\Support\OpposingPartyHelper::opposingPartySelectColumns())
                     ->toArray();
             }
             $selMatterId = (int) ($matter_info->sel_matter_id ?? 0);
@@ -895,23 +895,29 @@ class ClientPersonalDetailsController extends Controller
             $stream = $matterForStream && $matterForStream->stream
                 ? (string) $matterForStream->stream
                 : 'general';
-            if ($ourRole !== '' && ! MatterStreamHelper::isValidPartyRole($stream, $ourRole)) {
+            if ($ourRole === '') {
+                $response['message'] = 'Our client\'s role is required.';
+
+                return response()->json($response, 422);
+            }
+            if (! MatterStreamHelper::isValidPartyRole($stream, $ourRole)) {
                 $response['message'] = 'Invalid party role for this matter stream.';
 
                 return response()->json($response, 422);
             }
-            $obj->our_party_role = $ourRole !== '' ? $ourRole : null;
+            $obj->our_party_role = $ourRole;
         }
 
         $decodedOpposing = [];
         if (Schema::hasTable('client_matter_opposing_parties')) {
             $rawOpp = isset($requstData['opposing_parties_json']) ? trim((string) $requstData['opposing_parties_json']) : '';
             if ($rawOpp !== '') {
-                $decodedOpposing = json_decode($rawOpp, true);
-                if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decodedOpposing)) {
+                try {
+                    $decodedOpposing = \App\Support\OpposingPartyHelper::parseJsonPayload($rawOpp);
+                } catch (\InvalidArgumentException $e) {
                     return response()->json([
                         'status' => false,
-                        'message' => 'Other parties data must be valid JSON.',
+                        'message' => $e->getMessage(),
                     ], 422);
                 }
             }
@@ -921,32 +927,7 @@ class ClientPersonalDetailsController extends Controller
         try {
             DB::transaction(function () use ($obj, $decodedOpposing) {
                 $obj->save();
-                if (! Schema::hasTable('client_matter_opposing_parties')) {
-                    return;
-                }
-                ClientMatterOpposingParty::query()->where('client_matter_id', $obj->id)->delete();
-                $i = 0;
-                foreach ($decodedOpposing as $row) {
-                    if (! is_array($row)) {
-                        continue;
-                    }
-                    $n = isset($row['name']) ? trim((string) $row['name']) : '';
-                    if ($n === '') {
-                        continue;
-                    }
-                    ClientMatterOpposingParty::create([
-                        'client_matter_id' => $obj->id,
-                        'name' => $n,
-                        'party_role' => isset($row['party_role']) && trim((string) $row['party_role']) !== ''
-                            ? trim((string) $row['party_role'])
-                            : null,
-                        'sort_order' => $i,
-                    ]);
-                    $i++;
-                    if ($i >= 20) {
-                        break;
-                    }
-                }
+                \App\Support\OpposingPartyHelper::syncForMatter((int) $obj->id, $decodedOpposing);
             });
             $saved = true;
         } catch (\Throwable $e) {

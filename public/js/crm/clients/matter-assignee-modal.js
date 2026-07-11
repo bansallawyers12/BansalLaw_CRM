@@ -1,11 +1,15 @@
 /**
  * Edit matter details modal: opposing parties, party role by stream, fetch + open.
- * Loaded before detail-main.js on client/company detail; also on clients/edit Matter tab.
  */
 (function ($) {
     'use strict';
 
-    /** Open Bootstrap 5 matter modal; move node to body so no ancestor transform/overflow hides it. */
+    function getChangeMatterStream() {
+        var opt = $('#change_sel_matter_id').find('option:selected');
+        var s = opt.attr('data-stream');
+        return (s && String(s).trim() !== '') ? String(s).trim() : 'general';
+    }
+
     function showChangeMatterAssigneeModal() {
         var el = document.getElementById('changeMatterAssigneeModal');
         if (!el) {
@@ -21,46 +25,68 @@
         }
     }
 
-    window.changeMatterAppendOpposingRow = function (name, role) {
-        var $c = $('#change_matter_opposing_parties_container');
-        if (!$c.length) { return; }
-        var $row = $('<div class="row mb-2 cm-opp-row align-items-end"></div>');
-        var $n = $('<input type="text" class="form-control cm-opp-name" maxlength="500">').val(name || '');
-        var $r = $('<input type="text" class="form-control cm-opp-role" maxlength="255" placeholder="Role (e.g. co-defendant)">').val(role || '');
-        $row.append($('<div class="col-md-5"/>').append('<label class="small mb-0 d-block">Name</label>').append($n));
-        $row.append($('<div class="col-md-5"/>').append('<label class="small mb-0 d-block">Their role</label>').append($r));
-        var $rm = $('<button type="button" class="btn btn-sm btn-outline-danger w-100">Remove</button>');
-        $rm.on('click', function () { $row.remove(); });
-        $row.append($('<div class="col-md-2"/>').append('<label class="small mb-0 d-block">&nbsp;</label>').append($rm));
-        $c.append($row);
+    window.changeMatterAppendOpposingRow = function (data) {
+        if (!window.OtherPartyPicker) {
+            return;
+        }
+        var prefill = {};
+        if (typeof data === 'string') {
+            prefill = { name: data, party_role: arguments[1] || '' };
+        } else if (data && typeof data === 'object') {
+            prefill = {
+                opposing_lead_id: data.opposing_lead_id || data.id || null,
+                name: data.name || '',
+                party_role: data.party_role || '',
+                rep_firm: data.rep_firm || '',
+                rep_name: data.rep_name || '',
+                rep_email: data.rep_email || '',
+                rep_phone: data.rep_phone || '',
+                rep_notes: data.rep_notes || ''
+            };
+        }
+        window.OtherPartyPicker.appendRow('#change_matter_opposing_parties_container', {
+            rowClass: 'cm-opp-row opp-party-row',
+            searchUrl: window.OTHER_PARTY_SEARCH_URL,
+            stream: getChangeMatterStream(),
+            data: prefill
+        });
     };
 
     window.changeMatterRebuildPartyRoleSelect = function () {
-        var $mt = $('#change_sel_matter_id');
-        var opt = $mt.find('option:selected');
-        var stream = (opt.attr('data-stream') || 'general').toString();
+        var stream = getChangeMatterStream();
         var map = window.MATTER_PARTY_ROLES_BY_STREAM || {};
         var roles = map[stream] || map.general || {};
         var $pr = $('#change_matter_our_party_role');
         if (!$pr.length) { return; }
         var cur = $pr.val();
-        $pr.empty().append($('<option/>').val('').text('\u2014'));
+        $pr.empty().append($('<option/>').val('').text('— Select role —'));
         Object.keys(roles).forEach(function (k) {
             $pr.append($('<option/>').val(k).text(roles[k]));
         });
         if (cur) {
             $pr.val(cur);
         }
+        if (window.OtherPartyPicker) {
+            window.OtherPartyPicker.rebuildRoleSelects('#change_matter_opposing_parties_container', stream);
+        }
     };
 
     window.prepareChangeMatterAssigneeSubmit = function () {
-        var rows = [];
-        $('#change_matter_opposing_parties_container .cm-opp-row').each(function () {
-            var name = $.trim($(this).find('.cm-opp-name').val() || '');
-            var party_role = $.trim($(this).find('.cm-opp-role').val() || '');
-            if (name !== '') { rows.push({ name: name, party_role: party_role }); }
-        });
+        var ourRole = $.trim($('#change_matter_our_party_role').val() || '');
+        if ($('#change_matter_our_party_role').length && ourRole === '') {
+            if (typeof iziToast !== 'undefined' && iziToast.warning) {
+                iziToast.warning({ title: 'Required', message: 'Our client\'s role is required.', position: 'topRight' });
+            } else {
+                alert('Our client\'s role is required.');
+            }
+            return;
+        }
+
+        var rows = window.OtherPartyPicker
+            ? window.OtherPartyPicker.collectRows('#change_matter_opposing_parties_container')
+            : [];
         $('#change_matter_opposing_parties_json').val(JSON.stringify(rows));
+
         var init = $('#change_matter_initial_sel_matter_id').val();
         var now = $('#change_sel_matter_id').val();
         if (init && now && String(init) !== String(now)) {
@@ -80,7 +106,7 @@
     $(document).on('click', '#change_matter_add_opposing_btn', function (e) {
         e.preventDefault();
         if (typeof window.changeMatterAppendOpposingRow === 'function') {
-            window.changeMatterAppendOpposingRow('', '');
+            window.changeMatterAppendOpposingRow({});
         }
     });
 
@@ -226,13 +252,11 @@
                 if ($oppC.length) {
                     $oppC.empty();
                     if (opp.length === 0) {
-                        if (typeof window.changeMatterAppendOpposingRow === 'function') {
-                            window.changeMatterAppendOpposingRow('', '');
-                        }
+                        // no default row
                     } else {
                         opp.forEach(function (p) {
                             if (typeof window.changeMatterAppendOpposingRow === 'function') {
-                                window.changeMatterAppendOpposingRow(p.name || '', p.party_role || '');
+                                window.changeMatterAppendOpposingRow(p);
                             }
                         });
                     }
@@ -267,6 +291,9 @@
 
     $(document).on('hidden.bs.modal', '#changeMatterAssigneeModal', function () {
         $('#change_sel_legal_practitioner_id, #change_sel_person_responsible_id, #change_sel_person_assisting_id, #change_office_id').each(function () {
+            if (typeof destroyTS === 'function') destroyTS(this);
+        });
+        $('#change_matter_opposing_parties_container .opp-party-lead-select').each(function () {
             if (typeof destroyTS === 'function') destroyTS(this);
         });
     });

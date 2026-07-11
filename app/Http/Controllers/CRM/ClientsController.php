@@ -5585,7 +5585,7 @@ class ClientsController extends Controller
             'case_detail' => 'nullable|string|max:5000',
             'date_of_incidence' => 'nullable|date',
             'incidence_type' => 'nullable|string|max:255',
-            'our_party_role' => 'nullable|string|max:64',
+            'our_party_role' => 'required|string|max:64',
             'opposing_parties_json' => 'nullable|string|max:65535',
         ]);
 
@@ -5617,8 +5617,14 @@ class ClientsController extends Controller
             ? (string) $matterRow->stream
             : 'general';
 
-        $ourRole = isset($validated['our_party_role']) ? trim((string) $validated['our_party_role']) : '';
-        if ($ourRole !== '' && ! MatterStreamHelper::isValidPartyRole($stream, $ourRole)) {
+        $ourRole = trim((string) $validated['our_party_role']);
+        if ($ourRole === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Our client\'s role is required.',
+            ], 422);
+        }
+        if (! MatterStreamHelper::isValidPartyRole($stream, $ourRole)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid party role for this matter stream.',
@@ -5627,28 +5633,13 @@ class ClientsController extends Controller
 
         $opposingParties = [];
         if (! empty($validated['opposing_parties_json'])) {
-            $decoded = json_decode((string) $validated['opposing_parties_json'], true);
-            if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded)) {
+            try {
+                $opposingParties = \App\Support\OpposingPartyHelper::parseJsonPayload((string) $validated['opposing_parties_json']);
+            } catch (\InvalidArgumentException $e) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Other parties data must be valid JSON.',
+                    'message' => $e->getMessage(),
                 ], 422);
-            }
-            foreach ($decoded as $row) {
-                if (! is_array($row)) {
-                    continue;
-                }
-                $n = isset($row['name']) ? trim((string) $row['name']) : '';
-                if ($n === '') {
-                    continue;
-                }
-                $opposingParties[] = [
-                    'name' => $n,
-                    'party_role' => isset($row['party_role']) ? trim((string) $row['party_role']) : '',
-                ];
-                if (count($opposingParties) >= 20) {
-                    break;
-                }
             }
         }
 
@@ -5666,7 +5657,7 @@ class ClientsController extends Controller
         $incidenceType = isset($validated['incidence_type']) ? trim((string) $validated['incidence_type']) : '';
         $row->incidence_type = $incidenceType !== '' ? $incidenceType : null;
         if (Schema::hasColumn('client_matters', 'our_party_role')) {
-            $row->our_party_role = $ourRole !== '' ? $ourRole : null;
+            $row->our_party_role = $ourRole;
         }
 
         $countForType = DB::table('client_matters')
@@ -5707,19 +5698,7 @@ class ClientsController extends Controller
         try {
             DB::transaction(function () use ($row, $opposingParties, $admin) {
                 $row->save();
-                if (! Schema::hasTable('client_matter_opposing_parties') || $opposingParties === []) {
-                    \App\Services\LeadMatterAssignedConversion::applyForAdminId((int) $admin->id);
-
-                    return;
-                }
-                foreach ($opposingParties as $i => $party) {
-                    ClientMatterOpposingParty::create([
-                        'client_matter_id' => $row->id,
-                        'name' => $party['name'],
-                        'party_role' => $party['party_role'] !== '' ? $party['party_role'] : null,
-                        'sort_order' => $i,
-                    ]);
-                }
+                \App\Support\OpposingPartyHelper::syncForMatter((int) $row->id, $opposingParties);
                 \App\Services\LeadMatterAssignedConversion::applyForAdminId((int) $admin->id);
             });
         } catch (\Throwable $e) {
@@ -7865,6 +7844,72 @@ class ClientsController extends Controller
                 ];
             });
         
+        return response()->json(['results' => $results]);
+    }
+
+    /**
+     * Search other-party leads for matter picker (is_other_party = true).
+     */
+    public function searchOtherParty(Request $request)
+    {
+        if (! Schema::hasColumn('admins', 'is_other_party')) {
+            return response()->json(['results' => []]);
+        }
+
+        $query = $request->input('q', '');
+        $excludeId = $request->input('exclude_id');
+
+        if (strlen($query) < 2) {
+            return response()->json(['results' => []]);
+        }
+
+        $likeOperator = DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+
+        $results = Admin::where(function ($q) use ($query, $likeOperator) {
+            $q->where('phone', $likeOperator, "%{$query}%")
+                ->orWhere('email', $likeOperator, "%{$query}%")
+                ->orWhere('first_name', $likeOperator, "%{$query}%")
+                ->orWhere('last_name', $likeOperator, "%{$query}%")
+                ->orWhere('client_id', $likeOperator, "%{$query}%");
+
+            if (DB::getDriverName() === 'pgsql') {
+                $q->orWhereRaw("CONCAT(first_name, ' ', last_name) ILIKE ?", ["%{$query}%"]);
+            } else {
+                $q->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$query}%"]);
+            }
+        })
+            ->whereIn('type', ['client', 'lead'])
+            ->where('is_other_party', true)
+            ->whereNull('is_deleted')
+            ->when($excludeId, function ($q) use ($excludeId) {
+                $q->where('id', '!=', $excludeId);
+            })
+            ->select('id', 'first_name', 'last_name', 'email', 'phone', 'client_id', 'type')
+            ->limit(20)
+            ->get()
+            ->map(function ($person) {
+                $fullName = trim($person->first_name . ' ' . $person->last_name);
+                $displayText = $fullName;
+                if ($person->email) {
+                    $displayText .= " ({$person->email})";
+                }
+                if ($person->phone) {
+                    $displayText .= " - {$person->phone}";
+                }
+                $displayText .= " - {$person->client_id}";
+
+                return [
+                    'id' => $person->id,
+                    'text' => $displayText,
+                    'first_name' => $person->first_name,
+                    'last_name' => $person->last_name,
+                    'email' => $person->email,
+                    'phone' => $person->phone,
+                    'client_id' => $person->client_id,
+                    'type' => $person->type,
+                ];
+            });
+
         return response()->json(['results' => $results]);
     }
 

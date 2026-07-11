@@ -733,6 +733,12 @@
                             if ($__sch::hasColumn('client_matters', 'case_detail')) {
                                 $matterAssigneeCols[] = 'case_detail';
                             }
+                            if ($__sch::hasColumn('client_matters', 'our_party_role')) {
+                                $matterAssigneeCols[] = 'our_party_role';
+                            }
+                            if ($__sch::hasColumn('client_matters', 'sel_matter_id')) {
+                                $matterAssigneeCols[] = 'sel_matter_id';
+                            }
                             if ($matterAssigneeCols !== []) {
                                 if ($id1) {
                                     $matter_dis_ref_info_arr = \App\Models\ClientMatter::select($matterAssigneeCols)
@@ -830,6 +836,25 @@
                             <h3><i class="fa-solid fa-briefcase"></i> Matter Details</h3>
                             @php
                                 $mdRows = [];
+                                if ($matter_dis_ref_info_arr && $__sch::hasColumn('client_matters', 'our_party_role')) {
+                                    $ourRoleVal = trim((string) ($matter_dis_ref_info_arr->our_party_role ?? ''));
+                                    if ($ourRoleVal !== '') {
+                                        $matterStream = 'general';
+                                        if (! empty($matter_dis_ref_info_arr->sel_matter_id)) {
+                                            $matterStream = (string) (\App\Models\Matter::query()->whereKey($matter_dis_ref_info_arr->sel_matter_id)->value('stream') ?? 'general');
+                                        }
+                                        $roleLabels = \App\Support\MatterStreamHelper::partyRolesForStream($matterStream);
+                                        $mdRows[] = ['label' => 'Our client\'s role', 'value' => $roleLabels[$ourRoleVal] ?? $ourRoleVal];
+                                    }
+                                }
+                                $linkedOtherParties = collect();
+                                if ($matter_dis_ref_info_arr && $__sch::hasTable('client_matter_opposing_parties')) {
+                                    $linkedOtherParties = \App\Models\ClientMatterOpposingParty::query()
+                                        ->where('client_matter_id', (int) $matter_dis_ref_info_arr->id)
+                                        ->orderBy('sort_order')
+                                        ->orderBy('id')
+                                        ->get();
+                                }
                                 if ($matter_dis_ref_info_arr && $__sch::hasColumn('client_matters', 'incidence_type')) {
                                     $subtype = trim((string) ($matter_dis_ref_info_arr->incidence_type ?? ''));
                                     if ($subtype !== '') {
@@ -872,6 +897,41 @@
                             @empty
                             <p class="text-muted mb-0" style="font-size:0.9rem;">No matter details recorded yet. Use <strong>Edit details</strong> on Matter assignee to add subtype, dates, or case notes.</p>
                             @endforelse
+                            @if($linkedOtherParties->isNotEmpty())
+                                <div class="field-group" style="margin-top:0.75rem;">
+                                    <span class="field-label">Other parties</span>
+                                    <div class="field-value">
+                                        <ul class="mb-0 ps-3" style="font-size:0.9rem;">
+                                            @foreach($linkedOtherParties as $opp)
+                                                @php
+                                                    $oppRoleLabel = $opp->party_role;
+                                                    if ($matter_dis_ref_info_arr && ! empty($matter_dis_ref_info_arr->sel_matter_id)) {
+                                                        $oppStream = (string) (\App\Models\Matter::query()->whereKey($matter_dis_ref_info_arr->sel_matter_id)->value('stream') ?? 'general');
+                                                        $oppRoleLabels = \App\Support\MatterStreamHelper::partyRolesForStream($oppStream);
+                                                        $oppRoleLabel = $oppRoleLabels[$opp->party_role] ?? $opp->party_role;
+                                                    }
+                                                    $repParts = array_filter([
+                                                        $opp->rep_firm ?? null,
+                                                        $opp->rep_name ?? null,
+                                                        $opp->rep_email ?? null,
+                                                        $opp->rep_phone ?? null,
+                                                    ]);
+                                                @endphp
+                                                <li class="mb-1">
+                                                    <strong>{{ $opp->name }}</strong>
+                                                    @if($oppRoleLabel)<span class="text-muted"> — {{ $oppRoleLabel }}</span>@endif
+                                                    @if($repParts !== [])
+                                                        <br><small class="text-muted">Rep: {{ implode(' · ', $repParts) }}</small>
+                                                    @endif
+                                                    @if(! empty($opp->rep_notes))
+                                                        <br><small class="text-muted">{{ $opp->rep_notes }}</small>
+                                                    @endif
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     <?php
                     } ?>

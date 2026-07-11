@@ -85,9 +85,9 @@
                         @if(\Illuminate\Support\Facades\Schema::hasColumn('client_matters', 'our_party_role'))
                         <div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
-                                <label for="change_matter_our_party_role">Our client&rsquo;s role</label>
-                                <select class="form-select" name="our_party_role" id="change_matter_our_party_role">
-                                    <option value="">—</option>
+                                <label for="change_matter_our_party_role">Our client&rsquo;s role <span class="text-danger">*</span></label>
+                                <select class="form-select" name="our_party_role" id="change_matter_our_party_role" data-valid="required">
+                                    <option value="">— Select role —</option>
                                 </select>
                             </div>
                         </div>
@@ -95,6 +95,7 @@
 
                         <div class="col-12">
                             <label>Other parties <small class="text-muted">(optional)</small></label>
+                            <p class="text-muted small mb-1"><i class="fa-solid fa-circle-info"></i> Remember to run conflict check on Personal Details.</p>
                             <div id="change_matter_opposing_parties_container" class="mb-2"></div>
                             <button type="button" class="btn btn-sm btn-outline-secondary" id="change_matter_add_opposing_btn">
                                 <i class="fa-solid fa-plus"></i> Add other party
@@ -140,4 +141,5 @@
 
 <script>
 window.MATTER_PARTY_ROLES_BY_STREAM = @json(config('matter_streams.party_roles_by_stream', []));
+window.OTHER_PARTY_SEARCH_URL = @json(route('api.search.other.party'));
 </script>

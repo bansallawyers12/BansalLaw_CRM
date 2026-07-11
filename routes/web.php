@@ -190,6 +190,8 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::prefix('leads')->name('leads.')->group(function () {
         // List & Detail
         Route::get('/', [LeadController::class, 'index'])->name('index');
+        Route::get('/other-parties', [LeadController::class, 'otherPartiesIndex'])->name('other_parties.index');
+        Route::post('/store-other-party-mini', [LeadController::class, 'storeOtherPartyMini'])->name('store.other_party.mini');
         Route::get('/detail/{id}', [LeadController::class, 'detail'])->name('detail');
         Route::get('/history/{id}', [LeadController::class, 'history'])->name('history');
 

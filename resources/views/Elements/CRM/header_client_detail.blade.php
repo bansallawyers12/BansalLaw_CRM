@@ -53,7 +53,9 @@
                     <a class="dropdown-item" href="{{ route('emails.smart-import.index') }}"><i class="fa-solid fa-file-import me-2"></i> Smart Email Import</a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{route('leads.index')}}"><i class="fa-solid fa-list-alt me-2"></i> Lead List</a>
+                    <a class="dropdown-item" href="{{route('leads.other_parties.index')}}"><i class="fa-solid fa-user-tag me-2"></i> Other Parties</a>
                     <a class="dropdown-item" href="{{route('leads.create')}}"><i class="fa-solid fa-circle-plus me-2"></i> Add Lead</a>
+                    <a class="dropdown-item" href="{{route('leads.create', ['other_party' => 1])}}"><i class="fa-solid fa-user-plus me-2"></i> Add Other Party</a>
                 </div>
             </div>
             <div class="icon-dropdown js-dropdown">

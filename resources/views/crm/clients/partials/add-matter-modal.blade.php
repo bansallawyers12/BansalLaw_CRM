@@ -12,10 +12,10 @@
                     <div class="col-md-6 add-matter-modal__field">
                         <div class="form-group">
                             <label for="edit_add_matter_matter_id">Matter type <span class="text-danger">*</span></label>
-                            <select class="form-control" id="edit_add_matter_matter_id">
+                            <select class="form-control" id="edit_add_matter_matter_id" onchange="if(typeof rebuildQuickAddPartyRole==='function')rebuildQuickAddPartyRole()">
                                 <option value="">Select matter</option>
                                 @foreach($matterFormForLead['mattersForAdd'] as $m)
-                                    <option value="{{ $m->id }}">{{ $m->title }}</option>
+                                    <option value="{{ $m->id }}" data-stream="{{ $m->stream ?? 'general' }}">{{ $m->title }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -76,6 +76,24 @@
                             <input type="text" class="form-control" id="edit_add_matter_incidence_type" name="incidence_type" maxlength="255" placeholder="e.g. parenting application, money recovery">
                         </div>
                     </div>
+                </div>
+                <div class="row add-matter-modal__grid">
+                    <div class="col-md-6 add-matter-modal__field">
+                        <div class="form-group">
+                            <label for="edit_add_matter_our_party_role">Our client&rsquo;s role <span class="text-danger">*</span></label>
+                            <select class="form-control" id="edit_add_matter_our_party_role" required>
+                                <option value="">— Select role —</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="add-matter-modal__field">
+                    <label class="fw-semibold">Other parties <small class="text-muted">(optional)</small></label>
+                    <p class="text-muted small"><i class="fa-solid fa-circle-info"></i> Remember to run conflict check on Personal Details.</p>
+                    <div id="quick_add_opposing_parties_wrap"></div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-1" id="quick_add_opposing_party_btn">
+                        <i class="fa-solid fa-plus"></i> Add other party
+                    </button>
                 </div>
                 <div class="row add-matter-modal__grid add-matter-modal__case-row">
                     <div class="col-md-12 add-matter-modal__field">

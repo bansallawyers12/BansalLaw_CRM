@@ -81,7 +81,7 @@ class LeadController extends Controller
         $perPage = 20;
         if ($this->staffRoleCanOpenLeadList($module_access)) { //dd('yes');
             // Using Lead model - automatically filters by type='lead' and is_deleted=null
-            $query = Lead::where('is_archived', 0);
+            $query = Lead::where('is_archived', 0)->excludingOtherParties();
             StaffClientVisibility::restrictLeadListQuery($query);
 
             // Apply filters using modern syntax
@@ -183,6 +183,140 @@ class LeadController extends Controller
         }
         
         return view('crm.leads.index', compact('lists', 'totalData', 'perPage', 'leadStageLabels'));
+    }
+
+    /**
+     * Other Parties list (is_other_party = true).
+     */
+    public function otherPartiesIndex(Request $request)
+    {
+        $roles = \App\Models\UserRole::find(Auth::user()->role);
+        $module_access = $this->decodeRoleModuleAccess($roles?->module_access);
+
+        $perPage = 20;
+        if ($this->staffRoleCanOpenLeadList($module_access)) {
+            $query = Lead::where('is_archived', 0)->onlyOtherParties();
+            StaffClientVisibility::restrictLeadListQuery($query);
+
+            $query->when($request->filled('client_id'), function ($q) use ($request) {
+                return $q->where('client_id', $request->input('client_id'));
+            });
+
+            $query->when($request->filled('name'), function ($q) use ($request) {
+                $nameLower = strtolower($request->input('name'));
+
+                return $q->whereRaw('LOWER(first_name) LIKE ?', ['%' . $nameLower . '%']);
+            });
+
+            $query->when($request->filled('email'), function ($q) use ($request) {
+                return $q->where('email', $request->input('email'));
+            });
+
+            $query->when($request->filled('phone'), function ($q) use ($request) {
+                return $q->where('phone', 'LIKE', '%' . $request->input('phone') . '%');
+            });
+
+            $totalData = (clone $query)->count();
+
+            $allowedPerPage = [10, 20, 50, 100, 200];
+            $perPage = (int) $request->get('per_page', 20);
+            if (! in_array($perPage, $allowedPerPage, true)) {
+                $perPage = 20;
+            }
+
+            $lists = $query->sortable(['id' => 'desc'])
+                ->paginate($perPage)
+                ->appends($request->except('page'));
+        } else {
+            $lists = Lead::whereNull('id')->whereNotNull('id')->sortable(['id' => 'desc'])->paginate($perPage);
+            $totalData = 0;
+        }
+
+        $leadStageLabels = [];
+
+        return view('crm.leads.other-parties-index', compact('lists', 'totalData', 'perPage', 'leadStageLabels'));
+    }
+
+    /**
+     * Mini-create an other party from matter form (JSON).
+     */
+    public function storeOtherPartyMini(Request $request)
+    {
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+        ]);
+
+        if (trim((string) ($validated['phone'] ?? '')) === '' && trim((string) ($validated['email'] ?? '')) === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Phone or email is required.',
+            ], 422);
+        }
+
+        $referenceService = app(\App\Services\ClientReferenceService::class);
+        $reference = $referenceService->generateClientReference(trim($validated['first_name'] . ' ' . $validated['last_name']));
+        $adminData = [
+            'password' => Hash::make('LEAD_PLACEHOLDER'),
+            'client_counter' => $reference['client_counter'],
+            'client_id' => $reference['client_id'],
+            'status' => 1,
+            'lead_status' => 'new',
+            'followup_date' => null,
+            'type' => 'lead',
+            'is_archived' => 0,
+            'is_deleted' => null,
+            'is_other_party' => 1,
+            'is_company' => 0,
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'phone' => $validated['phone'] ?? null,
+            'email' => $validated['email'] ?? ('other_party_' . time() . '@lead.internal'),
+            'australian_study' => 0,
+            'specialist_education' => 0,
+            'regional_study' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+
+        $this->applyLeadAssigneeToAdminRow($adminData, (int) Auth::id());
+        $this->pruneAdminInsertData($adminData);
+
+        try {
+            $adminId = DB::table('admins')->insertGetId($adminData);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not create other party.',
+            ], 500);
+        }
+
+        $fullName = trim($validated['first_name'] . ' ' . $validated['last_name']);
+        $text = $fullName;
+        if (! empty($validated['email'])) {
+            $text .= ' (' . $validated['email'] . ')';
+        }
+        if (! empty($validated['phone'])) {
+            $text .= ' — ' . $validated['phone'];
+        }
+        $text .= ' — ' . $reference['client_id'];
+
+        return response()->json([
+            'success' => true,
+            'party' => [
+                'id' => $adminId,
+                'text' => $text,
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+                'email' => $validated['email'] ?? null,
+                'phone' => $validated['phone'] ?? null,
+                'client_id' => $reference['client_id'],
+            ],
+        ]);
     }
 
     /**
@@ -751,6 +885,7 @@ class LeadController extends Controller
                     
                     // Company flag
                     'is_company' => $isCompany ? 1 : 0,
+                    'is_other_party' => $request->boolean('is_other_party') ? 1 : 0,
                     
                     // Conditional field assignment
                     ...($isCompany ? [
@@ -1342,6 +1477,10 @@ class LeadController extends Controller
             $lead->zip = $requestData['zip'] ?? null;
             $lead->country = $requestData['country'] ?? null;
             $lead->total_points = $requestData['total_points'] ?? null;
+
+            if (Schema::hasColumn('admins', 'is_other_party')) {
+                $lead->is_other_party = $request->boolean('is_other_party') ? 1 : 0;
+            }
 
             $lead->save();
 

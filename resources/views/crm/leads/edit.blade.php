@@ -282,6 +282,13 @@
                                             <span class="text-danger">{{ $message }}</span>
                                         @enderror
                                     </div>
+                                    <div class="form-group">
+                                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                            <input type="checkbox" name="is_other_party" value="1"
+                                                {{ old('is_other_party', $fetchedData->is_other_party ?? false) ? 'checked' : '' }}>
+                                            <span>Other party <small class="text-muted">(appears in Other Parties list, not sales pipeline)</small></span>
+                                        </label>
+                                    </div>
                                 @endif
 													</div>
                             <div class="edit-actions">

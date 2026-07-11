@@ -93,15 +93,34 @@
           <div id="matterSpecificFields"></div>
 
           <div id="dynLegalPartySection" class="form-group" style="margin-top:1rem;padding:1rem;background:#fafbfc;border:1px solid #e9ecef;border-radius:8px;">
-            <label for="dyn_our_party_role" style="font-weight:600;">Our client&rsquo;s role <small class="text-muted">(optional)</small></label>
-            <select class="form-control" id="dyn_our_party_role" style="max-width:420px;">
-              <option value="">—</option>
+            <label for="dyn_our_party_role" style="font-weight:600;">Our client&rsquo;s role <span class="text-danger">*</span></label>
+            <select class="form-control" id="dyn_our_party_role" style="max-width:420px;" required>
+              <option value="">— Select role —</option>
             </select>
             <label style="margin-top:0.9rem;font-weight:600;">Other parties <small class="text-muted">(optional)</small></label>
+            <p class="text-muted small mb-1"><i class="fa-solid fa-circle-info"></i> Remember to run conflict check on Personal Details.</p>
             <div id="dyn_opposing_parties_wrap"></div>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="dyn_add_opposing_party_btn" style="margin-top:6px;">
-              <i class="fa-solid fa-plus"></i> Add other party
-            </button>
+            <div class="d-flex flex-wrap gap-2 mt-1">
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="dyn_add_opposing_party_btn">
+                <i class="fa-solid fa-plus"></i> Add other party
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-primary" id="dyn_create_other_party_btn">
+                <i class="fa-solid fa-user-plus"></i> Create other party
+              </button>
+            </div>
+            <div id="dyn_mini_create_other_party" class="border rounded p-2 mt-2" style="display:none;background:#fff;">
+              <p class="small fw-semibold mb-2">Quick create other party</p>
+              <div class="row g-2">
+                <div class="col-md-3"><input type="text" class="form-control form-control-sm" id="dyn_mini_op_first" placeholder="First name *"></div>
+                <div class="col-md-3"><input type="text" class="form-control form-control-sm" id="dyn_mini_op_last" placeholder="Last name *"></div>
+                <div class="col-md-3"><input type="text" class="form-control form-control-sm" id="dyn_mini_op_phone" placeholder="Phone"></div>
+                <div class="col-md-3"><input type="email" class="form-control form-control-sm" id="dyn_mini_op_email" placeholder="Email"></div>
+              </div>
+              <div class="mt-2">
+                <button type="button" class="btn btn-sm btn-primary" id="dyn_mini_op_save">Save &amp; select</button>
+                <button type="button" class="btn btn-sm btn-link" id="dyn_mini_op_cancel">Cancel</button>
+              </div>
+            </div>
           </div>
 
           {{-- Case detail (common) --}}

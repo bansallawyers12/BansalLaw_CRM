@@ -1621,6 +1621,11 @@ $(document).ready(function() {
 })();
 </script>
 {{-- Edit matter details modal (must load before detail-main.js) --}}
+<script src="{{ URL::asset('js/crm/clients/other-party-picker.js') }}?v={{ time() }}"></script>
+<script>
+    window.MATTER_PARTY_ROLES_BY_STREAM = @json(config('matter_streams.party_roles_by_stream', []));
+    window.OTHER_PARTY_SEARCH_URL = @json(route('api.search.other.party'));
+</script>
 <script src="{{ URL::asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ time() }}"></script>
 @if(is_array($matterFormForLead ?? null))
 <script>
@@ -1634,12 +1639,6 @@ $(document).ready(function() {
     });
     window.currentClientId = @json((string) ($fetchedData->id ?? ''));
     window.storeLeadMatterFromEditUrl = @json(route('clients.storeLeadMatterFromEdit'));
-    function openAddMatterModal() {
-        var el = document.getElementById('addMatterModal');
-        if (!el) return;
-        el.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-    }
     function closeAddMatterModal() {
         var el = document.getElementById('addMatterModal');
         if (!el) return;
@@ -1653,6 +1652,55 @@ $(document).ready(function() {
         if (doi) doi.value = '';
         var it = document.getElementById('edit_add_matter_incidence_type');
         if (it) it.value = '';
+        var opr = document.getElementById('edit_add_matter_our_party_role');
+        if (opr) opr.value = '';
+        var oppWrap = document.getElementById('quick_add_opposing_parties_wrap');
+        if (oppWrap) oppWrap.innerHTML = '';
+    }
+    function getQuickAddMatterStream() {
+        var sel = document.getElementById('edit_add_matter_matter_id');
+        if (!sel) return 'general';
+        var opt = sel.options[sel.selectedIndex];
+        return opt && opt.getAttribute('data-stream') ? opt.getAttribute('data-stream') : 'general';
+    }
+    window.rebuildQuickAddPartyRole = function () {
+        var map = window.MATTER_PARTY_ROLES_BY_STREAM || {};
+        var stream = getQuickAddMatterStream();
+        var roles = map[stream] || map.general || {};
+        var pr = document.getElementById('edit_add_matter_our_party_role');
+        if (!pr) return;
+        var cur = pr.value;
+        pr.innerHTML = '<option value="">— Select role —</option>';
+        Object.keys(roles).forEach(function (k) {
+            var o = document.createElement('option');
+            o.value = k;
+            o.textContent = roles[k];
+            pr.appendChild(o);
+        });
+        if (cur) pr.value = cur;
+        if (window.OtherPartyPicker) {
+            window.OtherPartyPicker.rebuildRoleSelects('#quick_add_opposing_parties_wrap', stream);
+        }
+    };
+    document.addEventListener('click', function (e) {
+        if (e.target && e.target.id === 'quick_add_opposing_party_btn') {
+            e.preventDefault();
+            if (window.OtherPartyPicker) {
+                window.OtherPartyPicker.appendRow('#quick_add_opposing_parties_wrap', {
+                    rowClass: 'quick-opp-row opp-party-row',
+                    searchUrl: window.OTHER_PARTY_SEARCH_URL,
+                    stream: getQuickAddMatterStream(),
+                    data: {}
+                });
+            }
+        }
+    });
+    function openAddMatterModal() {
+        var el = document.getElementById('addMatterModal');
+        if (!el) return;
+        el.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        if (typeof window.rebuildQuickAddPartyRole === 'function') window.rebuildQuickAddPartyRole();
     }
     function addMatterModalBackdropClick(e) {
         if (e.target && e.target.id === 'addMatterModal') {
@@ -1676,6 +1724,11 @@ $(document).ready(function() {
             msgEl.innerHTML = '<div class="alert alert-warning">Select a matter type and legal practitioner.</div>';
             return;
         }
+        var ourRoleEl = document.getElementById('edit_add_matter_our_party_role');
+        if (!ourRoleEl || !ourRoleEl.value) {
+            msgEl.innerHTML = '<div class="alert alert-warning">Our client&rsquo;s role is required.</div>';
+            return;
+        }
         var fd = new FormData();
         fd.append('_token', window.editClientConfig.csrfToken);
         var matterClientPk = (window.currentClientId != null && String(window.currentClientId).trim() !== '')
@@ -1684,6 +1737,11 @@ $(document).ready(function() {
         fd.append('client_id', matterClientPk);
         fd.append('matter_id', matterId.value);
         fd.append('legal_practitioner', agentId.value);
+        fd.append('our_party_role', ourRoleEl.value);
+        var oppRows = window.OtherPartyPicker
+            ? window.OtherPartyPicker.collectRows('#quick_add_opposing_parties_wrap')
+            : [];
+        fd.append('opposing_parties_json', JSON.stringify(oppRows));
         var office = document.getElementById('edit_add_matter_office_id');
         if (office && office.value) fd.append('office_id', office.value);
         var pr = document.getElementById('edit_add_matter_person_responsible');

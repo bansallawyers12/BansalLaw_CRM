@@ -204,6 +204,13 @@
                                         <span class="text-danger">{{ $message }}</span>
                                     @enderror
                                 </div>
+                                <div class="form-group full-width">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600;">
+                                        <input type="checkbox" name="is_other_party" value="1"
+                                            {{ old('is_other_party', request('other_party')) ? 'checked' : '' }}>
+                                        <span>Other party <small class="text-muted" style="font-weight: normal;">(not a sales lead — appears in Other Parties list)</small></span>
+                                    </label>
+                                </div>
                             </div>
                         </section>
 

@@ -360,6 +360,8 @@ Route::post('/merge_records', [ClientsController::class, 'merge_records'])->name
 /*---------- Contact Person Search (for Company Leads) ----------*/
 Route::get('/api/search-contact-person', [ClientsController::class, 'searchContactPerson'])
     ->name('api.search.contact.person');
+Route::get('/api/search-other-party', [ClientsController::class, 'searchOtherParty'])
+    ->name('api.search.other.party');
 
 /*---------- CRM cross-access grants ----------*/
 Route::prefix('crm/access')->name('crm.access.')->group(function () {

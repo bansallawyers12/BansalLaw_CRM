@@ -2,8 +2,27 @@
     // Matter Type Selector — Dynamic Form
     // =====================================================
     window.MATTER_PARTY_ROLES_BY_STREAM = @json(config('matter_streams.party_roles_by_stream', []));
+    window.OTHER_PARTY_SEARCH_URL = @json(route('api.search.other.party'));
+    window.STORE_OTHER_PARTY_MINI_URL = @json(route('leads.store.other_party.mini'));
     var selectedMatterTypeId = null;
     var selectedMatterTypeNick = null;
+
+    function filterFieldsList(fields) {
+        if (window.OtherPartyPicker && typeof window.OtherPartyPicker.filterDynFields === 'function') {
+            return window.OtherPartyPicker.filterDynFields(fields);
+        }
+        return (fields || []).filter(function (f) { return f && f.id !== 'dyn_opposing_party'; });
+    }
+
+    function dynAppendOpposingRow(prefill) {
+        if (!window.OtherPartyPicker) return;
+        window.OtherPartyPicker.appendRow('#dyn_opposing_parties_wrap', {
+            rowClass: 'dyn-opp-row opp-party-row',
+            searchUrl: window.OTHER_PARTY_SEARCH_URL,
+            stream: getDynMatterStream(),
+            data: prefill || {}
+        });
+    }
 
     function getDynMatterStream() {
         var sel = document.getElementById('matterTypeDropdown');
@@ -23,7 +42,7 @@
         pr.innerHTML = '';
         var o0 = document.createElement('option');
         o0.value = '';
-        o0.textContent = '\u2014';
+        o0.textContent = '— Select role —';
         pr.appendChild(o0);
         Object.keys(roles).forEach(function (k) {
             var o = document.createElement('option');
@@ -32,33 +51,72 @@
             pr.appendChild(o);
         });
         if (cur) { pr.value = cur; }
-    }
-
-    function dynAppendOpposingRow(name, role) {
-        var wrap = document.getElementById('dyn_opposing_parties_wrap');
-        if (!wrap) return;
-        var row = document.createElement('div');
-        row.className = 'row mb-2 dyn-opp-row';
-        row.style.alignItems = 'flex-end';
-        row.innerHTML =
-            '<div class="col-md-5"><label class="small mb-0 d-block">Name</label>' +
-            '<input type="text" class="form-control dyn-opp-name" maxlength="500" value=""></div>' +
-            '<div class="col-md-5"><label class="small mb-0 d-block">Their role</label>' +
-            '<input type="text" class="form-control dyn-opp-role" maxlength="255" placeholder="e.g. co-defendant" value=""></div>' +
-            '<div class="col-md-2"><label class="small mb-0 d-block">&nbsp;</label>' +
-            '<button type="button" class="btn btn-sm btn-outline-danger w-100 dyn-opp-remove">Remove</button></div>';
-        row.querySelector('.dyn-opp-name').value = name || '';
-        row.querySelector('.dyn-opp-role').value = role || '';
-        row.querySelector('.dyn-opp-remove').addEventListener('click', function () { row.remove(); });
-        wrap.appendChild(row);
+        if (window.OtherPartyPicker) {
+            window.OtherPartyPicker.rebuildRoleSelects('#dyn_opposing_parties_wrap', stream);
+        }
     }
 
     document.addEventListener('click', function (e) {
         if (e.target && e.target.id === 'dyn_add_opposing_party_btn') {
             e.preventDefault();
-            dynAppendOpposingRow('', '');
+            dynAppendOpposingRow({});
+        }
+        if (e.target && e.target.id === 'dyn_create_other_party_btn') {
+            e.preventDefault();
+            var box = document.getElementById('dyn_mini_create_other_party');
+            if (box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
+        }
+        if (e.target && e.target.id === 'dyn_mini_op_cancel') {
+            e.preventDefault();
+            var box = document.getElementById('dyn_mini_create_other_party');
+            if (box) box.style.display = 'none';
+        }
+        if (e.target && e.target.id === 'dyn_mini_op_save') {
+            e.preventDefault();
+            dynSaveMiniOtherParty();
         }
     });
+
+    async function dynSaveMiniOtherParty() {
+        var fn = document.getElementById('dyn_mini_op_first');
+        var ln = document.getElementById('dyn_mini_op_last');
+        var ph = document.getElementById('dyn_mini_op_phone');
+        var em = document.getElementById('dyn_mini_op_email');
+        var msgEl = document.getElementById('editAddMatterMsg2');
+        if (!fn || !ln || !window.STORE_OTHER_PARTY_MINI_URL) return;
+        if (!fn.value.trim() || !ln.value.trim()) {
+            if (msgEl) msgEl.innerHTML = '<div class="alert alert-warning">First and last name are required.</div>';
+            return;
+        }
+        var fd = new FormData();
+        fd.append('_token', window.editClientConfig.csrfToken);
+        fd.append('first_name', fn.value.trim());
+        fd.append('last_name', ln.value.trim());
+        if (ph && ph.value.trim()) fd.append('phone', ph.value.trim());
+        if (em && em.value.trim()) fd.append('email', em.value.trim());
+        try {
+            var res = await fetch(window.STORE_OTHER_PARTY_MINI_URL, {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': window.editClientConfig.csrfToken },
+                body: fd
+            });
+            var data = await res.json().catch(function () { return {}; });
+            if (!res.ok || !data.success) {
+                if (msgEl) msgEl.innerHTML = '<div class="alert alert-danger">' + (data.message || 'Could not create other party.') + '</div>';
+                return;
+            }
+            dynAppendOpposingRow({
+                opposing_lead_id: data.party.id,
+                name: (data.party.first_name + ' ' + data.party.last_name).trim()
+            });
+            var box = document.getElementById('dyn_mini_create_other_party');
+            if (box) box.style.display = 'none';
+            fn.value = ''; ln.value = ''; if (ph) ph.value = ''; if (em) em.value = '';
+            if (msgEl) msgEl.innerHTML = '';
+        } catch (err) {
+            if (msgEl) msgEl.innerHTML = '<div class="alert alert-danger">Network error.</div>';
+        }
+    }
 
     var matterSpecificFieldsConfig = {
         'CIV': {
@@ -802,7 +860,6 @@
         var wrap = document.getElementById('dyn_opposing_parties_wrap');
         if (wrap) {
             wrap.innerHTML = '';
-            dynAppendOpposingRow('', '');
         }
         rebuildDynOurPartyRole();
 
@@ -844,7 +901,7 @@
 
         if (config.commonFields && config.commonFields.length > 0) {
             html += '<div class="row">';
-            config.commonFields.forEach(function(f) {
+            filterFieldsList(config.commonFields).forEach(function(f) {
                 html += '<div class="col-md-6"><div class="form-group"><label>' + f.label + '</label>';
                 if (f.type === 'select') {
                     html += '<select class="form-control dyn-select" id="' + f.id + '"><option value="">— Select —</option>';
@@ -873,7 +930,7 @@
         var subTypeEl = document.getElementById('dyn_sub_type');
         if (!subTypeEl || !subTypeEl.value) return;
 
-        var fields = config.subTypeFields[subTypeEl.value];
+        var fields = filterFieldsList(config.subTypeFields[subTypeEl.value]);
         if (!fields || fields.length === 0) return;
 
         var html = '<div style="background:#fff9f0;border:1px solid #f0d9b5;border-radius:8px;padding:1rem 1.2rem;margin-top:0.5rem;margin-bottom:0.5rem;">';
@@ -927,18 +984,20 @@
             }
         }
 
+        var ourRoleEl = document.getElementById('dyn_our_party_role');
+        if (!ourRoleEl || !ourRoleEl.value) {
+            msgEl.innerHTML = '<div class="alert alert-warning">Our client&rsquo;s role is required.</div>';
+            if (ourRoleEl) ourRoleEl.focus();
+            return;
+        }
+
         var lpEl = document.getElementById('dyn_legal_practitioner');
 
         var baseCaseDetail = document.getElementById('dyn_case_detail') ? document.getElementById('dyn_case_detail').value.trim() : '';
 
-        var oppRows = [];
-        document.querySelectorAll('#dyn_opposing_parties_wrap .dyn-opp-row').forEach(function (row) {
-            var n = row.querySelector('.dyn-opp-name');
-            var r = row.querySelector('.dyn-opp-role');
-            var name = n ? n.value.trim() : '';
-            var prole = r ? r.value.trim() : '';
-            if (name !== '') oppRows.push({ name: name, party_role: prole });
-        });
+        var oppRows = window.OtherPartyPicker
+            ? window.OtherPartyPicker.collectRows('#dyn_opposing_parties_wrap')
+            : [];
 
         var fd = new FormData();
         fd.append('_token', window.editClientConfig.csrfToken);
@@ -952,6 +1011,7 @@
         if (baseCaseDetail) fd.append('case_detail', baseCaseDetail);
         var opr = document.getElementById('dyn_our_party_role');
         if (opr && opr.value) fd.append('our_party_role', opr.value);
+        else fd.append('our_party_role', '');
         fd.append('opposing_parties_json', JSON.stringify(oppRows));
 
         btn.disabled = true;
