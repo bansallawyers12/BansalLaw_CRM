@@ -19,6 +19,9 @@
     // Get company data
     $company = $fetchedData->company;
     $contactPerson = $company && $company->contact_person_id ? \App\Models\Admin::find($company->contact_person_id) : null;
+    $directorEmailService = app(\App\Services\CompanyDirectorEmailService::class);
+    $companyPrimaryEmail = $directorEmailService->resolveCompanyPrimaryEmail($fetchedData);
+    $companyDirectors = $company ? $company->directors->sortBy('sort_order')->values() : collect();
     $isTrusteeBusinessType = $company && $company->isTrusteeBusiness();
     $companyTypeForForm = old('company_type', $company ? $company->company_type : '');
     $showTrusteeFieldsInitial = \App\Models\Company::isTrusteeBusinessType($companyTypeForForm);
@@ -109,6 +112,10 @@
                         <i class="fa-solid fa-user-tie"></i>
                         <span>Contact Person</span>
                     </button>
+                    <button class="nav-item" onclick="scrollToSection('directorsSection')">
+                        <i class="fa-solid fa-users-cog"></i>
+                        <span>Directors</span>
+                    </button>
                     <button class="nav-item" onclick="scrollToSection('addressSection')">
                         <i class="fa-solid fa-location-dot"></i>
                         <span>Business Address</span>
@@ -143,6 +150,36 @@
                 window.currentClientId = '{{ $fetchedData->id }}';
                 window.currentClientType = @json($fetchedData->type);
                 window.latestClientMatterRef = @json($latestMatterRefNo);
+                window.companyPrimaryEmail = @json($companyPrimaryEmail);
+                window.initialCompanyDirectors = @json($companyDirectors->map(function ($dir) use ($directorEmailService, $fetchedData) {
+                    if ($dir->directorClient) {
+                        $emailMeta = $directorEmailService->resolveDirectorDisplayEmail($dir->directorClient, (int) $fetchedData->id);
+                        return [
+                            'mode' => 'link',
+                            'director_client_id' => $dir->director_client_id,
+                            'first_name' => $dir->directorClient->first_name,
+                            'last_name' => $dir->directorClient->last_name,
+                            'director_name' => trim($dir->directorClient->first_name . ' ' . $dir->directorClient->last_name),
+                            'email' => $emailMeta['email'] ?? null,
+                            'is_shared' => $emailMeta['is_shared'] ?? false,
+                            'director_dob' => $dir->director_dob ? $dir->director_dob->format('Y-m-d') : null,
+                            'director_role' => $dir->director_role,
+                            'is_primary' => (bool) $dir->is_primary,
+                        ];
+                    }
+                    return [
+                        'mode' => 'name_only',
+                        'director_client_id' => null,
+                        'first_name' => '',
+                        'last_name' => '',
+                        'director_name' => $dir->director_name,
+                        'email' => null,
+                        'is_shared' => false,
+                        'director_dob' => $dir->director_dob ? $dir->director_dob->format('Y-m-d') : null,
+                        'director_role' => $dir->director_role,
+                        'is_primary' => (bool) $dir->is_primary,
+                    ];
+                })->values()->all());
 
                 function showCompanyMatterTab(tabId) {
                     if (!window.jQuery) return;
@@ -489,6 +526,80 @@
                     </section>
                 </section>
 
+                <!-- Directors Section -->
+                <section id="directorsSection" class="content-section">
+                    <section class="form-section">
+                        <div class="section-header">
+                            <h3><i class="fa-solid fa-users-cog"></i> Directors</h3>
+                            <div class="section-actions">
+                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('directorsInfo')">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button type="button" class="add-section-btn" onclick="openDirectorsEditorAndAddRow()" title="Add Director">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="directorsInfoSummary" class="summary-view">
+                            @if($companyDirectors->isNotEmpty())
+                                <div class="summary-grid">
+                                    @foreach($companyDirectors as $dir)
+                                        @php
+                                            $dirName = $dir->directorClient
+                                                ? trim($dir->directorClient->first_name . ' ' . $dir->directorClient->last_name)
+                                                : ($dir->director_name ?? '');
+                                            $dirEmailMeta = $dir->directorClient
+                                                ? $directorEmailService->resolveDirectorDisplayEmail($dir->directorClient, (int) $fetchedData->id)
+                                                : null;
+                                        @endphp
+                                        <div class="summary-item" style="grid-column: 1 / -1;">
+                                            <span class="summary-label">{{ $dirName ?: 'Unnamed director' }}</span>
+                                            <span class="summary-value">
+                                                {{ $dir->director_role ?: 'Director' }}
+                                                @if($dir->director_dob)
+                                                    — DOB: {{ $dir->director_dob->format('d/m/Y') }}
+                                                @endif
+                                                @if($dir->is_primary)
+                                                    <span class="badge bg-primary" style="margin-left:6px;">Primary</span>
+                                                @endif
+                                                @if($dirEmailMeta)
+                                                    — {{ $dirEmailMeta['email'] }}
+                                                    @if($dirEmailMeta['is_shared'])
+                                                        <span class="badge bg-secondary" style="margin-left:4px;">Company email</span>
+                                                    @endif
+                                                @elseif($dir->directorClient)
+                                                    <span class="text-muted"> — No email on file</span>
+                                                @else
+                                                    <span class="text-muted"> — Name only</span>
+                                                @endif
+                                            </span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="empty-state">
+                                    <p>No directors recorded yet.</p>
+                                </div>
+                            @endif
+                        </div>
+
+                        <div id="directorsInfoEdit" class="edit-view hidden">
+                            <p class="text-muted small mb-2">
+                                <i class="fa-solid fa-circle-info"></i>
+                                When you do not have a director's personal email, choose <strong>Use company email</strong>.
+                                Use <strong>Name only</strong> for ASIC/conflict details without creating a contact record.
+                            </p>
+                            <div id="directorsContainer"></div>
+                            <button type="button" class="add-item-btn" onclick="addDirectorRow()"><i class="fa-solid fa-circle-plus"></i> Add Director</button>
+                            <div class="edit-actions">
+                                <button type="button" class="btn btn-primary" onclick="saveDirectorsInfo()">Save</button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('directorsInfo')">Cancel</button>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+
                 <!-- Business Address Section -->
                 <section id="addressSection" class="content-section">
                     <x-client-edit.address-section 
@@ -771,6 +882,320 @@
             window.location.reload();
         });
     }
+
+    var directorRowCounter = 0;
+
+    function escDirectorHtml(s) {
+        if (s == null) return '';
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    }
+
+    function destroyDirectorTomSelects(container) {
+        if (!container) return;
+        container.querySelectorAll('.director-link-select').forEach(function (sel) {
+            if (typeof window.destroyTS === 'function') window.destroyTS(sel);
+        });
+    }
+
+    function initDirectorLinkSelect(selectEl, prefill) {
+        if (!selectEl || typeof window.initTS !== 'function' || typeof window.buildContactPersonSearchTomSelectConfig !== 'function') {
+            return;
+        }
+        if (typeof window.destroyTS === 'function') window.destroyTS(selectEl);
+        var cfg = window.buildContactPersonSearchTomSelectConfig({
+            url: window.editClientConfig.searchContactPersonRoute,
+            excludeId: window.currentClientId,
+            dropdownParent: 'body',
+            placeholder: 'Search director by phone, email, name, or ID...'
+        });
+        window.initTS(selectEl, cfg);
+        if (prefill && prefill.director_client_id) {
+            var ts = selectEl.tomselect;
+            var label = prefill.director_name || ('Director #' + prefill.director_client_id);
+            if (ts) {
+                ts.addOption({ id: prefill.director_client_id, text: label });
+                ts.setValue(String(prefill.director_client_id), true);
+            }
+        }
+    }
+
+    function toggleDirectorRowMode(row, mode) {
+        var linkWrap = row.querySelector('.director-link-wrap');
+        var newWrap = row.querySelector('.director-new-wrap');
+        var nameOnlyWrap = row.querySelector('.director-name-only-wrap');
+        var emailWrap = row.querySelector('.director-email-wrap');
+        var modeInput = row.querySelector('.director-mode-input');
+        if (modeInput) modeInput.value = mode;
+
+        if (linkWrap) linkWrap.style.display = mode === 'link' ? '' : 'none';
+        if (newWrap) newWrap.style.display = (mode === 'company_email' || mode === 'personal') ? '' : 'none';
+        if (nameOnlyWrap) nameOnlyWrap.style.display = mode === 'name_only' ? '' : 'none';
+        if (emailWrap) emailWrap.style.display = mode === 'personal' ? '' : 'none';
+
+        var companyEmailDisplay = row.querySelector('.director-company-email-display');
+        if (companyEmailDisplay) {
+            companyEmailDisplay.style.display = mode === 'company_email' ? '' : 'none';
+        }
+    }
+
+    function addDirectorRow(prefill) {
+        prefill = prefill || {};
+        var container = document.getElementById('directorsContainer');
+        if (!container) return;
+
+        var idx = directorRowCounter++;
+        var row = document.createElement('div');
+        row.className = 'director-row border rounded p-3 mb-3';
+        row.style.background = '#fff';
+        row.dataset.rowIndex = String(idx);
+
+        var companyEmail = window.companyPrimaryEmail || '';
+        var defaultMode = prefill.mode || (companyEmail ? 'company_email' : 'name_only');
+
+        row.innerHTML =
+            '<div class="d-flex justify-content-between align-items-center mb-2">' +
+                '<strong>Director</strong>' +
+                '<button type="button" class="btn btn-sm btn-outline-danger director-remove-btn">Remove</button>' +
+            '</div>' +
+            '<input type="hidden" class="director-mode-input" name="director_modes[]" value="' + escDirectorHtml(defaultMode) + '">' +
+            '<div class="row g-2 mb-2">' +
+                '<div class="col-md-4">' +
+                    '<label class="small mb-1">How to add</label>' +
+                    '<select class="form-control form-control-sm director-type-select">' +
+                        '<option value="link"' + (defaultMode === 'link' ? ' selected' : '') + '>Link existing person</option>' +
+                        '<option value="company_email"' + (defaultMode === 'company_email' ? ' selected' : '') + '>Add new — use company email</option>' +
+                        '<option value="personal"' + (defaultMode === 'personal' ? ' selected' : '') + '>Add new — personal email</option>' +
+                        '<option value="name_only"' + (defaultMode === 'name_only' ? ' selected' : '') + '>Name only (no record)</option>' +
+                    '</select>' +
+                '</div>' +
+                '<div class="col-md-3">' +
+                    '<label class="small mb-1">Role</label>' +
+                    '<input type="text" class="form-control form-control-sm director-role-input" maxlength="100" placeholder="Director" value="' + escDirectorHtml(prefill.director_role || '') + '">' +
+                '</div>' +
+                '<div class="col-md-3">' +
+                    '<label class="small mb-1">Date of birth</label>' +
+                    '<input type="date" class="form-control form-control-sm director-dob-input" value="' + escDirectorHtml(prefill.director_dob || '') + '">' +
+                '</div>' +
+                '<div class="col-md-2 d-flex align-items-end">' +
+                    '<label class="small mb-1 d-flex align-items-center gap-1">' +
+                        '<input type="radio" name="director_primary" value="' + idx + '"' + (prefill.is_primary ? ' checked' : '') + '> Primary' +
+                    '</label>' +
+                '</div>' +
+            '</div>' +
+            '<div class="director-link-wrap" style="display:none;">' +
+                '<label class="small mb-1">Search person</label>' +
+                '<select class="form-control director-link-select" data-placeholder="Search director..."></select>' +
+                '<input type="hidden" name="director_client_ids[]" class="director-client-id-input" value="' + escDirectorHtml(prefill.director_client_id || '') + '">' +
+            '</div>' +
+            '<div class="director-new-wrap" style="display:none;">' +
+                '<div class="row g-2">' +
+                    '<div class="col-md-6">' +
+                        '<label class="small mb-1">First name</label>' +
+                        '<input type="text" class="form-control form-control-sm director-first-name-input" maxlength="255" value="' + escDirectorHtml(prefill.first_name || '') + '">' +
+                    '</div>' +
+                    '<div class="col-md-6">' +
+                        '<label class="small mb-1">Last name</label>' +
+                        '<input type="text" class="form-control form-control-sm director-last-name-input" maxlength="255" value="' + escDirectorHtml(prefill.last_name || '') + '">' +
+                    '</div>' +
+                '</div>' +
+                '<div class="director-company-email-display mt-2" style="display:none;">' +
+                    '<label class="small mb-1">Company email</label>' +
+                    '<input type="text" class="form-control form-control-sm" readonly value="' + escDirectorHtml(companyEmail) + '">' +
+                    (companyEmail ? '' : '<small class="text-danger">Add a company email in Contacts first.</small>') +
+                '</div>' +
+            '</div>' +
+            '<div class="director-email-wrap mt-2" style="display:none;">' +
+                '<label class="small mb-1">Personal email</label>' +
+                '<input type="email" class="form-control form-control-sm director-personal-email-input" maxlength="255" value="' + escDirectorHtml((defaultMode === 'personal' ? (prefill.email || '') : '')) + '">' +
+            '</div>' +
+            '<div class="director-name-only-wrap" style="display:none;">' +
+                '<label class="small mb-1">Full name</label>' +
+                '<input type="text" class="form-control form-control-sm director-name-only-input" maxlength="255" value="' + escDirectorHtml(prefill.director_name || '') + '">' +
+            '</div>';
+
+        container.appendChild(row);
+
+        var typeSelect = row.querySelector('.director-type-select');
+        var linkSelect = row.querySelector('.director-link-select');
+        var clientIdInput = row.querySelector('.director-client-id-input');
+
+        typeSelect.value = defaultMode;
+        toggleDirectorRowMode(row, defaultMode);
+
+        typeSelect.addEventListener('change', function () {
+            var mode = typeSelect.value;
+            toggleDirectorRowMode(row, mode);
+            if (row.querySelector('.director-mode-input')) {
+                row.querySelector('.director-mode-input').value = mode;
+            }
+            if (mode === 'link') {
+                var linkSelectEl = row.querySelector('.director-link-select');
+                if (linkSelectEl && !linkSelectEl.tomselect) {
+                    initDirectorLinkSelect(linkSelectEl, {});
+                    linkSelectEl.addEventListener('change', function () {
+                        var ts = linkSelectEl.tomselect;
+                        var val = ts ? ts.getValue() : linkSelectEl.value;
+                        if (clientIdInput) clientIdInput.value = val || '';
+                    });
+                }
+            }
+        });
+
+        row.querySelector('.director-remove-btn').addEventListener('click', function () {
+            if (linkSelect && typeof window.destroyTS === 'function') window.destroyTS(linkSelect);
+            row.remove();
+            reindexDirectorPrimaryRadios();
+        });
+
+        if (defaultMode === 'link') {
+            initDirectorLinkSelect(linkSelect, prefill);
+            if (linkSelect) {
+                linkSelect.addEventListener('change', function () {
+                    var ts = linkSelect.tomselect;
+                    var val = ts ? ts.getValue() : linkSelect.value;
+                    if (clientIdInput) clientIdInput.value = val || '';
+                });
+            }
+        }
+
+        return row;
+    }
+
+    function openDirectorsEditorAndAddRow() {
+        var editEl = document.getElementById('directorsInfoEdit');
+        if (!editEl || editEl.classList.contains('hidden')) {
+            toggleEditMode('directorsInfo');
+        } else if (!document.querySelector('#directorsContainer .director-row')) {
+            initDirectorsEditor();
+        }
+        addDirectorRow();
+    }
+
+    function reindexDirectorPrimaryRadios() {
+        var rows = document.querySelectorAll('#directorsContainer .director-row');
+        rows.forEach(function (row, i) {
+            var radio = row.querySelector('input[name="director_primary"]');
+            if (radio) radio.value = String(i);
+        });
+    }
+
+    function initDirectorsEditor() {
+        var container = document.getElementById('directorsContainer');
+        if (!container) return;
+        destroyDirectorTomSelects(container);
+        container.innerHTML = '';
+        directorRowCounter = 0;
+        var rows = window.initialCompanyDirectors || [];
+        if (rows.length) {
+            rows.forEach(function (row) { addDirectorRow(row); });
+        }
+    }
+
+    function collectDirectorsFormData() {
+        var formData = new FormData();
+        var form = document.getElementById('editCompanyForm');
+        if (!form) return formData;
+
+        formData.append('id', form.querySelector('input[name="id"]')?.value || '');
+        formData.append('type', form.querySelector('input[name="type"]')?.value || '');
+        formData.append('section', 'directors');
+
+        document.querySelectorAll('#directorsContainer .director-row').forEach(function (row) {
+            var mode = row.querySelector('.director-type-select')?.value
+                || row.querySelector('.director-mode-input')?.value
+                || 'name_only';
+            if (row.querySelector('.director-mode-input')) {
+                row.querySelector('.director-mode-input').value = mode;
+            }
+            formData.append('director_modes[]', mode);
+
+            var role = row.querySelector('.director-role-input');
+            var dob = row.querySelector('.director-dob-input');
+            formData.append('director_roles[]', role ? role.value : '');
+            formData.append('director_dobs[]', dob ? dob.value : '');
+
+            if (mode === 'link') {
+                var clientId = row.querySelector('.director-client-id-input')?.value
+                    || (row.querySelector('.director-link-select')?.tomselect?.getValue() || '');
+                formData.append('director_client_ids[]', clientId);
+                formData.append('director_names[]', '');
+                formData.append('director_first_names[]', '');
+                formData.append('director_last_names[]', '');
+                formData.append('director_emails[]', '');
+            } else if (mode === 'name_only') {
+                formData.append('director_client_ids[]', '');
+                formData.append('director_names[]', row.querySelector('.director-name-only-input')?.value || '');
+                formData.append('director_first_names[]', '');
+                formData.append('director_last_names[]', '');
+                formData.append('director_emails[]', '');
+            } else {
+                formData.append('director_client_ids[]', '');
+                formData.append('director_names[]', '');
+                formData.append('director_first_names[]', row.querySelector('.director-first-name-input')?.value || '');
+                formData.append('director_last_names[]', row.querySelector('.director-last-name-input')?.value || '');
+                formData.append('director_emails[]', mode === 'personal' ? (row.querySelector('.director-personal-email-input')?.value || '') : '');
+            }
+        });
+
+        var primary = document.querySelector('#directorsContainer input[name="director_primary"]:checked');
+        formData.append('director_primary', primary ? primary.value : '0');
+
+        return formData;
+    }
+
+    function saveDirectorsInfo() {
+        var invalidMessage = '';
+        document.querySelectorAll('#directorsContainer .director-row').forEach(function (row, index) {
+            if (invalidMessage) return;
+            var mode = row.querySelector('.director-type-select')?.value || '';
+            if (mode === 'link') {
+                var clientId = row.querySelector('.director-client-id-input')?.value
+                    || (row.querySelector('.director-link-select')?.tomselect?.getValue() || '');
+                if (!clientId) invalidMessage = 'Director ' + (index + 1) + ': select an existing person or remove the row.';
+            } else if (mode === 'name_only') {
+                if (!(row.querySelector('.director-name-only-input')?.value || '').trim()) {
+                    invalidMessage = 'Director ' + (index + 1) + ': enter a name or remove the row.';
+                }
+            } else if (mode === 'company_email' || mode === 'personal') {
+                var fn = (row.querySelector('.director-first-name-input')?.value || '').trim();
+                var ln = (row.querySelector('.director-last-name-input')?.value || '').trim();
+                if (!fn && !ln) invalidMessage = 'Director ' + (index + 1) + ': first or last name is required.';
+                if (!invalidMessage && mode === 'personal' && !(row.querySelector('.director-personal-email-input')?.value || '').trim()) {
+                    invalidMessage = 'Director ' + (index + 1) + ': personal email is required.';
+                }
+                if (!invalidMessage && mode === 'company_email' && !window.companyPrimaryEmail) {
+                    invalidMessage = 'Director ' + (index + 1) + ': add a company email under Contacts first, or choose another option.';
+                }
+            }
+        });
+        if (invalidMessage) {
+            if (typeof showNotification === 'function') showNotification(invalidMessage, 'error');
+            else alert(invalidMessage);
+            return;
+        }
+
+        var formData = collectDirectorsFormData();
+        saveSectionData('directors', formData, function () {
+            toggleEditMode('directorsInfo');
+            window.location.reload();
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var originalToggle = window.toggleEditMode;
+        if (typeof originalToggle === 'function') {
+            window.toggleEditMode = function (sectionKey) {
+                if (sectionKey === 'directorsInfo') {
+                    var editEl = document.getElementById('directorsInfoEdit');
+                    var isOpening = editEl && editEl.classList.contains('hidden');
+                    originalToggle(sectionKey);
+                    if (isOpening) initDirectorsEditor();
+                    return;
+                }
+                originalToggle(sectionKey);
+            };
+        }
+    });
 
     (function () {
         var tabMap = { matter_case: 'menu2', hearings: 'menu4', court: 'menu4' };

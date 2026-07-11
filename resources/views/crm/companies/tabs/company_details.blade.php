@@ -105,8 +105,29 @@
             <h3><i class="fa-solid fa-users-cog"></i> Directors</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
                 @foreach($comp->directors as $dir)
-                @php $dirName = $dir->directorClient ? trim($dir->directorClient->first_name.' '.$dir->directorClient->last_name) : ($dir->director_name ?? ''); @endphp
-                <div class="field-group"><span class="field-label">{{ $dirName }}</span><span class="field-value">{{ $dir->director_role ?? '' }}@if($dir->director_dob) (DOB: {{ $dir->director_dob->format('d/m/Y') }})@endif</span></div>
+                @php
+                    $dirName = $dir->directorClient ? trim($dir->directorClient->first_name.' '.$dir->directorClient->last_name) : ($dir->director_name ?? '');
+                    $dirEmailMeta = $dir->directorClient
+                        ? app(\App\Services\CompanyDirectorEmailService::class)->resolveDirectorDisplayEmail($dir->directorClient, (int) $fetchedData->id)
+                        : null;
+                @endphp
+                <div class="field-group">
+                    <span class="field-label">{{ $dirName }}</span>
+                    <span class="field-value">
+                        {{ $dir->director_role ?? '' }}
+                        @if($dir->director_dob) (DOB: {{ $dir->director_dob->format('d/m/Y') }})@endif
+                        @if($dirEmailMeta)
+                            — {{ $dirEmailMeta['email'] }}
+                            @if($dirEmailMeta['is_shared'])
+                                <span class="badge bg-secondary">Company email</span>
+                            @endif
+                        @elseif($dir->directorClient)
+                            <span class="text-muted"> — No email</span>
+                        @else
+                            <span class="text-muted"> — Name only</span>
+                        @endif
+                    </span>
+                </div>
                 @endforeach
             </div>
         </div>

@@ -11,6 +11,7 @@ class ClientEmail extends Model
         'admin_id',
 		'client_id',
         'email_type',
+        'is_shared_company_email',
         'email',
         'is_verified',
         'verified_at',
@@ -21,6 +22,7 @@ class ClientEmail extends Model
     ];
 
     protected $casts = [
+        'is_shared_company_email' => 'boolean',
         'is_verified' => 'boolean',
         'verified_at' => 'datetime',
         'token_expires_at' => 'datetime',

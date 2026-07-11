@@ -45,6 +45,7 @@ use App\Models\ActivitiesLog;
 use App\Models\Lead;
 use App\Models\Staff;
 use App\Services\LeadFollowUpNoteService;
+use App\Services\CompanyDirectorEmailService;
 use App\Traits\LogsClientActivity;
 
 /**
@@ -2210,56 +2211,125 @@ class ClientPersonalDetailsController extends Controller
             return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
         }
         $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
+        $modes = $request->input('director_modes', []);
         $clientIds = $request->input('director_client_ids', []);
         $names = $request->input('director_names', []);
+        $firstNames = $request->input('director_first_names', []);
+        $lastNames = $request->input('director_last_names', []);
+        $emails = $request->input('director_emails', []);
         $dobs = $request->input('director_dobs', []);
         $roles = $request->input('director_roles', []);
         $primaryIdx = (int) $request->input('director_primary', 0);
-        $company->directors()->delete();
-        $count = max(count($clientIds), count($names), 1);
-        for ($i = 0; $i < $count; $i++) {
-            $clientId = $clientIds[$i] ?? null;
-            $name = trim($names[$i] ?? '');
-            if ($clientId && $name) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Director " . ($i + 1) . ": Provide either a searchable client/lead OR a name (not in system), not both.",
-                    'errors' => ['director_client_ids' => ['Cannot have both linked director and manual name.']]
-                ], 422);
-            }
-            if (!$clientId && !$name) {
-                continue;
-            }
-            $directorClient = null;
-            if ($clientId) {
-                $directorClient = Admin::where('id', $clientId)
-                    ->whereIn('type', ['client', 'lead'])
-                    ->where('is_company', false)
-                    ->first();
-                if (!$directorClient) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => "Director " . ($i + 1) . ": Selected person not found or invalid (must be client/lead, not company).",
-                        'errors' => ['director_client_ids' => ['Invalid or non-existent client/lead selected.']]
-                    ], 422);
+        $emailService = app(CompanyDirectorEmailService::class);
+
+        $count = max(count($modes), count($clientIds), count($names), count($firstNames));
+
+        try {
+            DB::transaction(function () use ($company, $count, $modes, $clientIds, $names, $firstNames, $lastNames, $emails, $dobs, $roles, $primaryIdx, $client, $emailService) {
+                $company->directors()->delete();
+
+                for ($i = 0; $i < $count; $i++) {
+                    $mode = strtolower(trim((string) ($modes[$i] ?? 'name_only')));
+                    $clientId = $clientIds[$i] ?? null;
+                    $name = trim((string) ($names[$i] ?? ''));
+                    $firstName = trim((string) ($firstNames[$i] ?? ''));
+                    $lastName = trim((string) ($lastNames[$i] ?? ''));
+                    $personalEmail = trim((string) ($emails[$i] ?? ''));
+
+                    if ($mode === '' && $clientId) {
+                        $mode = 'link';
+                    }
+                    if ($mode === '' && ($firstName !== '' || $lastName !== '')) {
+                        $mode = $emailService->resolveCompanyPrimaryEmail($client) ? 'company_email' : 'name_only';
+                    }
+                    if ($mode === '' && $name !== '') {
+                        $mode = 'name_only';
+                    }
+                    if ($mode === '' || ($mode === 'name_only' && $name === '' && $firstName === '' && $lastName === '' && ! $clientId)) {
+                        continue;
+                    }
+
+                    $directorClient = null;
+
+                    if ($mode === 'link') {
+                        if (! $clientId) {
+                            throw new \InvalidArgumentException('Director ' . ($i + 1) . ': Select an existing person or choose another option.');
+                        }
+                        if ($name !== '' || $firstName !== '' || $lastName !== '') {
+                            throw new \InvalidArgumentException('Director ' . ($i + 1) . ': Provide either a searchable client/lead OR a new/name-only director, not both.');
+                        }
+                        $directorClient = Admin::where('id', $clientId)
+                            ->whereIn('type', ['client', 'lead'])
+                            ->where('is_company', false)
+                            ->first();
+                        if (! $directorClient) {
+                            throw new \InvalidArgumentException('Director ' . ($i + 1) . ': Selected person not found or invalid (must be client/lead, not company).');
+                        }
+                    } elseif ($mode === 'name_only') {
+                        if ($clientId) {
+                            throw new \InvalidArgumentException('Director ' . ($i + 1) . ': Name-only directors cannot also be linked to an existing record.');
+                        }
+                        if ($name === '' && $firstName === '' && $lastName === '') {
+                            continue;
+                        }
+                        if ($name === '') {
+                            $name = trim($firstName . ' ' . $lastName);
+                        }
+                    } elseif (in_array($mode, ['company_email', 'personal'], true)) {
+                        if ($clientId) {
+                            throw new \InvalidArgumentException('Director ' . ($i + 1) . ': Cannot link and create a new director in the same row.');
+                        }
+                        if ($firstName === '' && $lastName === '' && $name !== '') {
+                            $parts = preg_split('/\s+/', $name, 2);
+                            $firstName = $parts[0] ?? '';
+                            $lastName = $parts[1] ?? '';
+                        }
+                        $directorClient = $emailService->createDirectorPerson(
+                            $client,
+                            $firstName,
+                            $lastName,
+                            $mode,
+                            $mode === 'personal' ? $personalEmail : null
+                        );
+                    } else {
+                        throw new \InvalidArgumentException('Director ' . ($i + 1) . ': Invalid director contact option.');
+                    }
+
+                    $linkedDob = $directorClient && $directorClient->dob
+                        ? Carbon::parse($directorClient->dob)->format('Y-m-d')
+                        : null;
+                    $directorDob = ! empty($dobs[$i]) ? $dobs[$i] : $linkedDob;
+
+                    $company->directors()->create([
+                        'director_client_id' => $directorClient ? $directorClient->id : null,
+                        'director_name' => $directorClient ? null : $name,
+                        'director_dob' => $directorDob,
+                        'director_role' => $roles[$i] ?? null,
+                        'is_primary' => ($i === $primaryIdx),
+                        'sort_order' => $i,
+                    ]);
                 }
-            }
-            $linkedDob = $directorClient && $directorClient->dob ? \Carbon\Carbon::parse($directorClient->dob)->format('Y-m-d') : null;
-            $directorDob = !empty($dobs[$i]) ? $dobs[$i] : $linkedDob;
-            $company->directors()->create([
-                'director_client_id' => $directorClient ? $directorClient->id : null,
-                'director_name' => $clientId ? null : $name,
-                'director_dob' => $directorDob,
-                'director_role' => $roles[$i] ?? null,
-                'is_primary' => ($i === $primaryIdx),
-                'sort_order' => $i,
-            ]);
+            });
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => ['director_emails' => [$e->getMessage()]],
+            ], 422);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not save directors. Please try again.',
+            ], 500);
         }
-        // Ensure at least one director is primary when we have directors
+
         $directors = $company->directors()->orderBy('sort_order')->get();
-        if ($directors->isNotEmpty() && !$directors->contains('is_primary', true)) {
+        if ($directors->isNotEmpty() && ! $directors->contains('is_primary', true)) {
             $directors->first()->update(['is_primary' => true]);
         }
+
         return response()->json(['success' => true, 'message' => 'Directors updated successfully']);
     }
 
@@ -3189,10 +3259,18 @@ class ClientPersonalDetailsController extends Controller
                         
                         // Only error if duplicate is in a different client
                         if (!$duplicateInSameClient) {
-                            return response()->json([
-                                'success' => false,
-                                'message' => "Email address '{$emailData['email']}' is already registered for another client."
-                            ], 422);
+                            $allowSharedCompanyEmail = $client->is_company
+                                && app(CompanyDirectorEmailService::class)->canReuseEmailForCompanyDirector(
+                                    $email,
+                                    (int) $client->id,
+                                    (int) $client->id
+                                );
+                            if (! $allowSharedCompanyEmail) {
+                                return response()->json([
+                                    'success' => false,
+                                    'message' => "Email address '{$emailData['email']}' is already registered for another client."
+                                ], 422);
+                            }
                         }
                     }
                     
