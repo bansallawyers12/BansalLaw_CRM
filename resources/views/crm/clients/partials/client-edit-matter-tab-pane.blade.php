@@ -98,7 +98,7 @@
               <option value="">— Select role —</option>
             </select>
             <label style="margin-top:0.9rem;font-weight:600;">Other parties <small class="text-muted">(optional)</small></label>
-            <p class="text-muted small mb-1"><i class="fa-solid fa-circle-info"></i> Remember to run conflict check on Personal Details.</p>
+            <p class="text-muted small mb-1"><i class="fa-solid fa-circle-info"></i> Run conflict check on Personal Details before engaging.</p>
             <div id="dyn_opposing_parties_wrap"></div>
             <div class="d-flex flex-wrap gap-2 mt-1">
               <button type="button" class="btn btn-sm btn-outline-secondary" id="dyn_add_opposing_party_btn">

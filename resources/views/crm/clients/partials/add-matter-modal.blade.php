@@ -89,7 +89,7 @@
                 </div>
                 <div class="add-matter-modal__field">
                     <label class="fw-semibold">Other parties <small class="text-muted">(optional)</small></label>
-                    <p class="text-muted small"><i class="fa-solid fa-circle-info"></i> Remember to run conflict check on Personal Details.</p>
+                    <p class="text-muted small"><i class="fa-solid fa-circle-info"></i> Run conflict check on Personal Details (Other Parties &amp; Conflict Check) before engaging.</p>
                     <div id="quick_add_opposing_parties_wrap"></div>
                     <button type="button" class="btn btn-sm btn-outline-secondary mt-1" id="quick_add_opposing_party_btn">
                         <i class="fa-solid fa-plus"></i> Add other party

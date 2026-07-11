@@ -146,6 +146,14 @@
             var data = await res.json().catch(function () { return {}; });
             if (res.ok && data.success) {
                 msgEl.innerHTML = '<div class="alert alert-success">' + (data.message || 'Matter created.') + '</div>';
+                if (data.conflict_warning && typeof iziToast !== 'undefined' && iziToast.show) {
+                    iziToast.show({
+                        message: data.conflict_warning,
+                        color: 'orange',
+                        position: 'topRight',
+                        timeout: 8000
+                    });
+                }
                 window.setTimeout(function () {
                     closeAddMatterModal();
                     window.location.reload();

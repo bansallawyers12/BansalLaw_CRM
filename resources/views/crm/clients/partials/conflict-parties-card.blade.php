@@ -49,6 +49,7 @@
     $latestCheckedAt = ($latestConflictCheck && $latestConflictCheck->checked_at)
         ? $latestConflictCheck->checked_at->format('d M Y H:i')
         : null;
+    $conflictCheckHistory = $conflictCheckHistory ?? collect();
 @endphp
 
 <style>
@@ -71,6 +72,35 @@
         font-size: 12px;
         font-weight: 600;
         color: #fff;
+    }
+    #conflictPartiesCard .cp-match-list {
+        max-height: 220px;
+        overflow-y: auto;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        background: #fafbfc;
+        padding: 8px;
+        margin-bottom: 10px;
+    }
+    #conflictPartiesCard .cp-match-item {
+        padding: 6px 0;
+        border-bottom: 1px solid #eee;
+        font-size: 12px;
+    }
+    #conflictPartiesCard .cp-match-item:last-child { border-bottom: 0; }
+    #conflictPartiesCard .cp-match-name { font-weight: 600; color: #212529; }
+    #conflictPartiesCard .cp-match-meta { color: #666; }
+    #conflictPartiesCard .cp-history-list { font-size: 12px; color: #555; margin-top: 8px; }
+    #conflictPartiesCard .cp-history-item { padding: 3px 0; }
+    #conflictPartiesCard .cp-stale-hint {
+        display: none;
+        font-size: 12px;
+        color: #856404;
+        background: #fff3cd;
+        border: 1px solid #ffeeba;
+        border-radius: 4px;
+        padding: 6px 8px;
+        margin-bottom: 8px;
     }
 </style>
 
@@ -163,6 +193,23 @@
                     Last check: Not checked yet
                 @endif
             </p>
+
+            <div class="cp-stale-hint" id="cpStaleHint">
+                Parties were updated after the last Clear/Waived check. Re-run the conflict search before saving a new outcome.
+            </div>
+
+            <div class="d-flex gap-2 align-items-center mb-2 flex-wrap">
+                <button type="button" class="btn btn-outline-success btn-sm" id="cpRunCheckBtn">
+                    <i class="fa-solid fa-magnifying-glass"></i> Run conflict check
+                </button>
+                <span class="text-muted small" id="cpRunCheckStatus"></span>
+            </div>
+
+            <div id="cpMatchesPanel" style="display:none;">
+                <div class="small fw-semibold mb-1" id="cpMatchesHeading">Matches</div>
+                <div class="cp-match-list" id="cpMatchesList"></div>
+            </div>
+
             <div class="form-group mb-2">
                 <label for="cpOutcomeSelect">Outcome</label>
                 <select id="cpOutcomeSelect" class="form-control form-control-sm">
@@ -173,18 +220,42 @@
             </div>
             <div class="form-group mb-2">
                 <label for="cpOutcomeNotes">Notes</label>
-                <textarea id="cpOutcomeNotes" class="form-control form-control-sm" rows="2"></textarea>
+                <textarea id="cpOutcomeNotes" class="form-control form-control-sm" rows="2">{{ $latestConflictCheck?->outcome_notes ?? '' }}</textarea>
             </div>
             <div class="form-group mb-2">
                 <label class="d-flex align-items-center gap-2">
-                    <input type="checkbox" id="cpConsentObtained"> Consent obtained
+                    <input type="checkbox" id="cpConsentObtained" @checked($latestConflictCheck?->consent_obtained ?? false)> Consent obtained
                 </label>
             </div>
             <div class="form-group mb-2">
                 <label for="cpConsentNotes">Consent notes</label>
-                <input type="text" id="cpConsentNotes" class="form-control form-control-sm" placeholder="Who gave consent, form used, etc.">
+                <input type="text" id="cpConsentNotes" class="form-control form-control-sm"
+                       placeholder="Who gave consent, form used, etc."
+                       value="{{ $latestConflictCheck?->consent_notes ?? '' }}">
             </div>
             <button type="button" class="btn btn-success btn-sm" id="cpSaveOutcomeBtn">Save outcome</button>
+
+            @if($conflictCheckHistory->isNotEmpty())
+                <div class="cp-history-list" id="cpHistoryList">
+                    <div class="fw-semibold mb-1" style="margin-top:10px;">Recent checks</div>
+                    @foreach($conflictCheckHistory as $hist)
+                        @php
+                            $hLabel = $outcomeLabels[$hist->outcome] ?? $hist->outcome;
+                            $hAt = $hist->checked_at ? $hist->checked_at->format('d M Y H:i') : '—';
+                            $hMatches = is_array($hist->matches) ? count($hist->matches) : 0;
+                        @endphp
+                        <div class="cp-history-item">
+                            {{ $hAt }} —
+                            <span class="cp-outcome-badge" style="background:{{ $outcomeBadgeColors[$hist->outcome] ?? '#555' }};">{{ $hLabel }}</span>
+                            @if($hMatches > 0)
+                                <span class="text-muted">({{ $hMatches }} match{{ $hMatches === 1 ? '' : 'es' }})</span>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="cp-history-list" id="cpHistoryList" style="display:none;"></div>
+            @endif
         </div>
     </div>
 </div>
@@ -202,13 +273,19 @@
     var savePartiesBtn = document.getElementById('cpSavePartiesBtn');
     var addPartyBtn = document.getElementById('cpAddPartyBtn');
     var saveOutcomeBtn = document.getElementById('cpSaveOutcomeBtn');
+    var runCheckBtn = document.getElementById('cpRunCheckBtn');
 
     var partyRoles = @json($partyRoles);
     var initialParties = @json($initialParties);
     var outcomeLabels = @json($outcomeLabels);
     var outcomeBadgeColors = @json($outcomeBadgeColors);
     var searchUrl = window.OTHER_PARTY_SEARCH_URL || @json(route('api.search.other.party'));
+    var runCheckUrl = @json(route('clients.conflictCheck.run'));
     var clientId = card.getAttribute('data-client-id');
+    var latestOutcome = @json($latestOutcome);
+    var lastSearchTerms = null;
+    var lastMatches = null;
+    var searchWasRun = false;
 
     function toast(msg, ok) {
         if (typeof iziToast !== 'undefined' && iziToast.show) {
@@ -319,6 +396,69 @@
             el.innerHTML = esc(checkedAt) + ' — <span class="cp-outcome-badge" style="background:' + color + ';">' + esc(label) + '</span>';
         }
         if (hint) hint.textContent = 'Last check: ' + checkedAt + ' — ' + label;
+        latestOutcome = outcome;
+        var stale = document.getElementById('cpStaleHint');
+        if (stale) stale.style.display = 'none';
+    }
+
+    function prependHistory(outcome, checkedAt, matchCount) {
+        var list = document.getElementById('cpHistoryList');
+        if (!list) return;
+        list.style.display = '';
+        var label = outcomeLabels[outcome] || outcome;
+        var color = outcomeBadgeColors[outcome] || '#555';
+        var item = document.createElement('div');
+        item.className = 'cp-history-item';
+        item.innerHTML = esc(checkedAt) + ' — <span class="cp-outcome-badge" style="background:' + color + ';">' + esc(label) + '</span>' +
+            (matchCount > 0 ? ' <span class="text-muted">(' + matchCount + ' match' + (matchCount === 1 ? '' : 'es') + ')</span>' : '');
+        var title = list.querySelector('.fw-semibold');
+        if (!title) {
+            title = document.createElement('div');
+            title.className = 'fw-semibold mb-1';
+            title.style.marginTop = '10px';
+            title.textContent = 'Recent checks';
+            list.appendChild(title);
+        }
+        if (title.nextSibling) {
+            list.insertBefore(item, title.nextSibling);
+        } else {
+            list.appendChild(item);
+        }
+    }
+
+    function renderMatches(matches) {
+        var panel = document.getElementById('cpMatchesPanel');
+        var list = document.getElementById('cpMatchesList');
+        var heading = document.getElementById('cpMatchesHeading');
+        if (!panel || !list) return;
+
+        list.innerHTML = '';
+        if (!matches || !matches.length) {
+            panel.style.display = '';
+            if (heading) heading.textContent = 'No matches found';
+            list.innerHTML = '<div class="text-muted">Automated search found no potential conflicts in the CRM.</div>';
+            return;
+        }
+
+        panel.style.display = '';
+        if (heading) heading.textContent = matches.length + ' potential match' + (matches.length === 1 ? '' : 'es');
+        matches.forEach(function (m) {
+            var div = document.createElement('div');
+            div.className = 'cp-match-item';
+            var link = '';
+            if (m.detail_url) {
+                link = ' <a href="' + esc(m.detail_url) + '" target="_blank" rel="noopener">Open</a>';
+            } else if (m.client_id) {
+                link = ' <a href="/clients/detail/' + encodeURIComponent(m.client_id) + '" target="_blank" rel="noopener">Open</a>';
+            }
+            div.innerHTML =
+                '<div class="cp-match-name">' + esc(m.name || 'Unknown') + link + '</div>' +
+                '<div class="cp-match-meta">' + esc(m.context || '') +
+                (m.matched_on ? ' · Matched on ' + esc(m.matched_on) : '') +
+                (m.party_role ? ' · ' + esc(m.party_role) : '') +
+                '</div>';
+            list.appendChild(div);
+        });
     }
 
     if (savePartiesBtn) {
@@ -348,6 +488,13 @@
                         toast(res.data.message || 'Saved', true);
                         initialParties = parties;
                         refreshViewSummary(parties, res.data.count);
+                        searchWasRun = false;
+                        lastSearchTerms = null;
+                        lastMatches = null;
+                        if (latestOutcome === 'clear' || latestOutcome === 'waived') {
+                            var stale = document.getElementById('cpStaleHint');
+                            if (stale) stale.style.display = '';
+                        }
                         setEditMode(false);
                     } else {
                         toast((res.data && res.data.message) || 'Save failed', false);
@@ -360,17 +507,101 @@
         });
     }
 
+    if (runCheckBtn) {
+        runCheckBtn.addEventListener('click', function () {
+            var token = document.querySelector('meta[name="csrf-token"]');
+            var statusEl = document.getElementById('cpRunCheckStatus');
+            var fd = new FormData();
+            fd.append('_token', token ? token.getAttribute('content') : '');
+            fd.append('id', clientId);
+            runCheckBtn.disabled = true;
+            if (statusEl) statusEl.textContent = 'Searching…';
+            fetch(runCheckUrl, {
+                method: 'POST',
+                body: fd,
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            })
+                .then(function (r) {
+                    return r.text().then(function (text) {
+                        try { return { ok: r.ok, data: text ? JSON.parse(text) : {} }; }
+                        catch (e) { return { ok: false, data: { message: 'Invalid server response' } }; }
+                    });
+                })
+                .then(function (res) {
+                    runCheckBtn.disabled = false;
+                    if (res.ok && res.data.success) {
+                        searchWasRun = true;
+                        lastSearchTerms = res.data.search_terms || null;
+                        lastMatches = res.data.matches || [];
+                        renderMatches(lastMatches);
+                        if (statusEl) {
+                            statusEl.textContent = (res.data.match_count || 0) + ' match(es)';
+                        }
+                        var select = document.getElementById('cpOutcomeSelect');
+                        if (select && res.data.suggested_outcome && (!select.value || select.value === 'pending')) {
+                            select.value = res.data.suggested_outcome;
+                        }
+                        var notes = document.getElementById('cpOutcomeNotes');
+                        if (notes && !(notes.value || '').trim()) {
+                            var count = res.data.match_count || 0;
+                            notes.value = count === 0
+                                ? 'Automated CRM search completed — no matches found.'
+                                : 'Automated CRM search found ' + count + ' potential match(es). Review listed matches before deciding.';
+                        }
+                        toast(res.data.message || 'Search complete', true);
+                    } else {
+                        if (statusEl) statusEl.textContent = '';
+                        toast((res.data && res.data.message) || 'Search failed', false);
+                    }
+                })
+                .catch(function () {
+                    runCheckBtn.disabled = false;
+                    if (statusEl) statusEl.textContent = '';
+                    toast('Network error', false);
+                });
+        });
+    }
+
     if (saveOutcomeBtn) {
         saveOutcomeBtn.addEventListener('click', function () {
+            var outcome = (document.getElementById('cpOutcomeSelect') || {}).value || 'pending';
+            var notes = ((document.getElementById('cpOutcomeNotes') || {}).value || '').trim();
+            var consent = !!(document.getElementById('cpConsentObtained') || {}).checked;
+            var consentNotes = ((document.getElementById('cpConsentNotes') || {}).value || '').trim();
+
+            if (outcome === 'waived') {
+                if (!consent) {
+                    toast('Tick Consent obtained when outcome is Waived with consent.', false);
+                    return;
+                }
+                if (!consentNotes) {
+                    toast('Consent notes are required for Waived with consent.', false);
+                    return;
+                }
+            }
+            if (outcome === 'conflict_found' && !notes) {
+                toast('Notes are required when recording Conflict found.', false);
+                return;
+            }
+            if (outcome === 'clear' && lastMatches && lastMatches.length > 0) {
+                if (!window.confirm('Automated search found ' + lastMatches.length + ' potential match(es). Save outcome as Clear anyway?')) {
+                    return;
+                }
+            }
+
             var token = document.querySelector('meta[name="csrf-token"]');
             var fd = new FormData();
             fd.append('_token', token ? token.getAttribute('content') : '');
             fd.append('id', clientId);
             fd.append('section', 'conflictCheckOutcome');
-            fd.append('outcome', (document.getElementById('cpOutcomeSelect') || {}).value || 'pending');
-            fd.append('outcome_notes', (document.getElementById('cpOutcomeNotes') || {}).value || '');
-            fd.append('consent_obtained', (document.getElementById('cpConsentObtained') || {}).checked ? '1' : '0');
-            fd.append('consent_notes', (document.getElementById('cpConsentNotes') || {}).value || '');
+            fd.append('outcome', outcome);
+            fd.append('outcome_notes', notes);
+            fd.append('consent_obtained', consent ? '1' : '0');
+            fd.append('consent_notes', consentNotes);
+            if (searchWasRun) {
+                fd.append('search_terms', JSON.stringify(lastSearchTerms || {}));
+                fd.append('matches', JSON.stringify(lastMatches || []));
+            }
             saveOutcomeBtn.disabled = true;
             fetch('{{ url('/clients/save-section') }}', {
                 method: 'POST',
@@ -389,6 +620,7 @@
                         toast(res.data.message || 'Outcome saved', true);
                         if (res.data.outcome && res.data.checked_at) {
                             updateOutcomeDisplay(res.data.outcome, res.data.checked_at);
+                            prependHistory(res.data.outcome, res.data.checked_at, res.data.match_count || 0);
                         }
                     } else {
                         toast((res.data && res.data.message) || 'Save failed', false);

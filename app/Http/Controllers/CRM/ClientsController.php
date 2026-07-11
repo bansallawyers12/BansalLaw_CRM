@@ -2249,6 +2249,11 @@ class ClientsController extends Controller
                     ->orderByDesc('checked_at')
                     ->first();
 
+                $conflictCheckHistory = \App\Models\ClientConflictCheck::where('client_id', $id)
+                    ->orderByDesc('checked_at')
+                    ->limit(5)
+                    ->get();
+
                 // Align with overview: URL matter if present, else latest active matter.
                 // Do not fall back when a matter ref was in the URL but not found.
                 $otherMatterParties = collect();
@@ -2287,7 +2292,7 @@ class ClientsController extends Controller
                     'assignableStaff', 'leadStageLabels', 'showGoogleReviewReminderModal',
                     'matterFormForLead', '__crmEditLeadType',
                     'selectedClientMatter', 'isClosedMatterView',
-                    'conflictParties', 'latestConflictCheck', 'otherMatterParties'
+                    'conflictParties', 'latestConflictCheck', 'conflictCheckHistory', 'otherMatterParties'
                 ));
             } else {
                 return redirect()->route('clients.index')->with('error', 'Clients Not Exist');
@@ -5723,7 +5728,34 @@ class ClientsController extends Controller
                 'id' => $row->id,
                 'client_unique_matter_no' => $row->client_unique_matter_no,
             ],
+            'conflict_warning' => $this->conflictCheckWarningForClient((int) $admin->id),
         ]);
+    }
+
+    /**
+     * Soft warning when client has no Clear/Waived conflict check (or latest is pending/conflict).
+     */
+    private function conflictCheckWarningForClient(int $clientId): ?string
+    {
+        $hasClearOrWaived = \App\Models\ClientConflictCheck::where('client_id', $clientId)
+            ->whereIn('outcome', ['clear', 'waived'])
+            ->exists();
+
+        if (! $hasClearOrWaived) {
+            return 'Remember: no conflict check has been recorded as Clear or Waived. Complete it on Personal Details.';
+        }
+
+        $latest = \App\Models\ClientConflictCheck::where('client_id', $clientId)
+            ->orderByDesc('checked_at')
+            ->first();
+
+        if ($latest && in_array($latest->outcome, ['pending', 'conflict_found'], true)) {
+            return 'Remember: the latest conflict check is "'
+                . str_replace('_', ' ', $latest->outcome)
+                . '". Review on Personal Details.';
+        }
+
+        return null;
     }
 
     //Store Cost Assignment Form Values of Lead

@@ -1063,9 +1063,10 @@
                     @endif
 
                     @include('crm.clients.partials.conflict-parties-card', [
-                        'fetchedData'         => $fetchedData,
-                        'conflictParties'     => $conflictParties ?? collect(),
-                        'latestConflictCheck' => $latestConflictCheck ?? null,
+                        'fetchedData'           => $fetchedData,
+                        'conflictParties'       => $conflictParties ?? collect(),
+                        'latestConflictCheck'   => $latestConflictCheck ?? null,
+                        'conflictCheckHistory'  => $conflictCheckHistory ?? collect(),
                     ])
 
                     @include('crm.clients.partials.other-matter-parties-card', [

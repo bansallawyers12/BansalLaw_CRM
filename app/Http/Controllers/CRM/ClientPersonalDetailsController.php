@@ -39,6 +39,7 @@ use App\Models\ClientConflictCheck;
 use App\Models\Matter;
 use App\Support\MatterStreamHelper;
 use App\Models\Company;
+use App\Services\ConflictCheckService;
 use App\Models\CompanyDirector;
 use App\Models\CompanyNomination;
 use App\Models\ActivitiesLog;
@@ -2541,7 +2542,16 @@ class ClientPersonalDetailsController extends Controller
                 ->whereIn('outcome', ['clear', 'waived'])
                 ->exists();
             if (! $hasCheck) {
-                $conflictWarning = 'Warning: No conflict check has been recorded as Clear or Waived for this client.';
+                $conflictWarning = 'Warning: No conflict check has been recorded as Clear or Waived for this client. Complete the conflict check on Personal Details before engaging/retaining.';
+            } else {
+                $latest = ClientConflictCheck::where('client_id', $client->id)
+                    ->orderByDesc('checked_at')
+                    ->first();
+                if ($latest && in_array($latest->outcome, ['pending', 'conflict_found'], true)) {
+                    $conflictWarning = 'Warning: The latest conflict check outcome is "'
+                        . str_replace('_', ' ', $latest->outcome)
+                        . '". Confirm Clear or Waived with consent before engaging/retaining.';
+                }
             }
         }
 
@@ -2710,17 +2720,48 @@ class ClientPersonalDetailsController extends Controller
             return response()->json(['success' => false, 'message' => 'Invalid outcome value.'], 422);
         }
 
+        $outcomeNotes = trim((string) ($request->input('outcome_notes', '')));
+        $consentObtained = filter_var($request->input('consent_obtained', false), FILTER_VALIDATE_BOOLEAN)
+            || $request->input('consent_obtained') === '1'
+            || $request->input('consent_obtained') === 1;
+        $consentNotes = trim((string) ($request->input('consent_notes', '')));
+
+        if ($outcome === 'waived') {
+            if (! $consentObtained) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Consent obtained must be checked when outcome is Waived with consent.',
+                ], 422);
+            }
+            if ($consentNotes === '') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Consent notes are required when outcome is Waived with consent (who consented, form used, etc.).',
+                ], 422);
+            }
+        }
+
+        if ($outcome === 'conflict_found' && $outcomeNotes === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Notes are required when recording a conflict found outcome.',
+            ], 422);
+        }
+
+        $searchTerms = $this->decodeJsonField($request->input('search_terms'));
+        $matches = $this->decodeJsonField($request->input('matches'));
+
         try {
             $check = ClientConflictCheck::create([
                 'client_id'        => $client->id,
                 'checked_by'       => Auth::id(),
                 'checked_at'       => now(),
-                'search_terms'     => $request->input('search_terms') ?? null,
-                'matches'          => $request->input('matches') ?? null,
+                'search_terms'     => $searchTerms,
+                'matches'          => $matches,
                 'outcome'          => $outcome,
-                'outcome_notes'    => trim((string) ($request->input('outcome_notes', ''))) ?: null,
-                'consent_obtained' => (bool) $request->input('consent_obtained', false),
-                'consent_notes'    => trim((string) ($request->input('consent_notes', ''))) ?: null,
+                'outcome_notes'    => $outcomeNotes !== '' ? $outcomeNotes : null,
+                'consent_obtained' => $consentObtained,
+                'consent_notes'    => $consentNotes !== '' ? $consentNotes : null,
             ]);
 
             $outcomeLabels = [
@@ -2730,23 +2771,103 @@ class ClientPersonalDetailsController extends Controller
                 'pending'        => 'Pending',
             ];
 
+            $matchCount = is_array($matches) ? count($matches) : 0;
+            $detail = 'Outcome: ' . ($outcomeLabels[$outcome] ?? $outcome);
+            if ($matchCount > 0) {
+                $detail .= ' · ' . $matchCount . ' match' . ($matchCount === 1 ? '' : 'es') . ' recorded';
+            }
+
             $this->logClientActivity(
                 $client->id,
                 'conflict check recorded',
-                'Outcome: ' . ($outcomeLabels[$outcome] ?? $outcome),
+                $detail,
                 'activity'
             );
 
             return response()->json([
-                'success'    => true,
-                'message'    => 'Conflict check outcome saved.',
-                'check_id'   => $check->id,
-                'outcome'    => $outcome,
-                'checked_at' => $check->checked_at->format('d M Y H:i'),
+                'success'          => true,
+                'message'          => 'Conflict check outcome saved.',
+                'check_id'         => $check->id,
+                'outcome'          => $outcome,
+                'checked_at'       => $check->checked_at->format('d M Y H:i'),
+                'outcome_notes'    => $check->outcome_notes,
+                'consent_obtained' => (bool) $check->consent_obtained,
+                'consent_notes'    => $check->consent_notes,
+                'match_count'      => $matchCount,
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error saving outcome: ' . $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Run automated conflict search and return candidate matches (solicitor still decides outcome).
+     */
+    public function runConflictCheck(Request $request, ConflictCheckService $service)
+    {
+        $clientId = (int) $request->input('id', $request->route('id'));
+        $client = Admin::find($clientId);
+
+        if (! $client || ! $client->isCrmClientOrLeadSubject()) {
+            return response()->json(['success' => false, 'message' => 'Invalid client.'], 422);
+        }
+
+        if (! \App\Support\StaffClientVisibility::canAccessClientOrLead((int) $client->id, Auth::user())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $client->loadMissing('company');
+            $result = $service->run($client);
+
+            $this->logClientActivity(
+                $client->id,
+                'conflict check search run',
+                $result['match_count'] === 0
+                    ? 'Automated search completed — no matches'
+                    : 'Automated search completed — ' . $result['match_count'] . ' match(es)',
+                'activity'
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => $result['match_count'] === 0
+                    ? 'No potential conflicts found. Review and save outcome as Clear if appropriate.'
+                    : $result['match_count'] . ' potential match(es) found. Review carefully before saving an outcome.',
+                'search_terms' => $result['search_terms'],
+                'matches' => $result['matches'],
+                'suggested_outcome' => $result['suggested_outcome'],
+                'match_count' => $result['match_count'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Conflict search failed: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Decode JSON array/object from request (FormData may send a JSON string).
+     */
+    private function decodeJsonField(mixed $value): ?array
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return null;
     }
 
     private function saveBasicInfoSection($request, $client)

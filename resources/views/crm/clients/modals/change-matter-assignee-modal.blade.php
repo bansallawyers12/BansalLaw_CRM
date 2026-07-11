@@ -95,7 +95,7 @@
 
                         <div class="col-12">
                             <label>Other parties <small class="text-muted">(optional)</small></label>
-                            <p class="text-muted small mb-1"><i class="fa-solid fa-circle-info"></i> Remember to run conflict check on Personal Details.</p>
+                            <p class="text-muted small mb-1"><i class="fa-solid fa-circle-info"></i> Run conflict check on Personal Details before engaging.</p>
                             <div id="change_matter_opposing_parties_container" class="mb-2"></div>
                             <button type="button" class="btn btn-sm btn-outline-secondary" id="change_matter_add_opposing_btn">
                                 <i class="fa-solid fa-plus"></i> Add other party

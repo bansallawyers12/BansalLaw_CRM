@@ -43,6 +43,7 @@ Route::post('/clients/edit', [ClientsController::class, 'edit'])->name('clients.
 Route::get('/clients/export/{id}', [ClientsController::class, 'export'])->name('clients.export');
 Route::post('/clients/import', [ClientsController::class, 'import'])->name('clients.import');
 Route::post('/clients/save-section', [ClientPersonalDetailsController::class, 'saveSection'])->name('clients.saveSection');
+Route::post('/clients/conflict-check/run', [ClientPersonalDetailsController::class, 'runConflictCheck'])->name('clients.conflictCheck.run');
 Route::post('/edit-test-scores', [ClientsController::class, 'editTestScores'])->name('clients.editTestScores');
 /*---------- Phone & Email Verification ----------*/
 Route::prefix('clients/phone')->name('clients.phone.')->group(function () {
