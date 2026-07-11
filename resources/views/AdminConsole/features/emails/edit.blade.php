@@ -146,3 +146,7 @@
 </div>
 
 @endsection
+
+@push('scripts')
+@include('partials.admin-email-provider-script')
+@endpush

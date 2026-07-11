@@ -17,11 +17,11 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     *
+     * Note: cannot distinguish rows originally created as SES vs migrated from SendGrid.
      */
     public function down(): void
     {
-        DB::table('emails')
-            ->where('mail_provider', 'ses')
-            ->update(['mail_provider' => 'sendgrid']);
+        // Intentionally left blank.
     }
 };

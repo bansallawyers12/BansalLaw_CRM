@@ -153,6 +153,8 @@ class SignatureService
                 $attachments = $options['attachments'];
             }
 
+            $mailerName = $this->mailRouting->resolveMailerName($from['from_address'] ?? null);
+
             $this->mailRouting->sendClosure($template, $templateData, function (Message $mail) use ($signer, $subject, $from, $attachments) {
                 $mail->to($signer->email, $signer->name)
                     ->subject($subject)
@@ -191,15 +193,17 @@ class SignatureService
                     'signer_email' => $signer->email,
                     'signer_name' => $signer->name,
                     'subject' => $subject,
-                    'status' => 'sent_via_ses',
+                    'mailer' => $mailerName,
+                    'status' => 'sent_via_'.$mailerName,
                     'email_account' => $from['from_address'],
                 ]
             ]);
 
-            Log::info('Signing email sent via SES mailer', [
+            Log::info('Signing email sent', [
                 'document_id' => $document->id,
                 'signer_email' => $signer->email,
                 'template' => $template,
+                'mailer' => $mailerName,
                 'email_account' => $from['from_address'],
             ]);
         } catch (\Exception $e) {
@@ -274,6 +278,8 @@ class SignatureService
                 'emailSignature' => $from['email_signature'] ?? '',
             ];
 
+            $mailerName = $this->mailRouting->resolveMailerName($from['from_address'] ?? null);
+
             $this->mailRouting->sendClosure('emails.signature.reminder', $templateData, function (Message $mail) use ($signer, $from) {
                 $mail->to($signer->email, $signer->name)
                     ->subject('Reminder: Please Sign Your Document - ' . config('app.name'))
@@ -297,13 +303,15 @@ class SignatureService
                     'signer_email' => $signer->email,
                     'signer_name' => $signer->name,
                     'reminder_number' => $signer->reminder_count,
-                    'status' => 'sent_via_ses',
+                    'mailer' => $mailerName,
+                    'status' => 'sent_via_'.$mailerName,
                 ]
             ]);
 
-            Log::info('Reminder sent via SES mailer', [
+            Log::info('Reminder sent', [
                 'signer_id' => $signer->id,
                 'reminder_count' => $signer->reminder_count,
+                'mailer' => $mailerName,
                 'email_account' => $from['from_address']
             ]);
 

@@ -94,7 +94,7 @@ class EmailController extends Controller
 			$obj->email	 =	@$requestData['email'];
 			$obj->email_signature	=	@$requestData['email_signature'];
 			$obj->display_name	=	@$requestData['display_name'];
-			$obj->mail_provider = @$requestData['mail_provider'] ?: 'zoho';
+			$obj->mail_provider = $this->normalizeMailProvider(@$requestData['mail_provider'] ?: 'zoho');
 			$obj->smtp_host = @$requestData['smtp_host'] ?: 'smtp.zoho.com';
 			$obj->smtp_port = @$requestData['smtp_port'] ?: 587;
 			$obj->smtp_encryption = @$requestData['smtp_encryption'] ?: 'tls';
@@ -162,7 +162,7 @@ class EmailController extends Controller
 		$obj->email = @$requestData['email'];
 		$obj->email_signature = @$requestData['email_signature'];
 		$obj->display_name = @$requestData['display_name'];
-		$obj->mail_provider = @$requestData['mail_provider'] ?: 'zoho';
+		$obj->mail_provider = $this->normalizeMailProvider(@$requestData['mail_provider'] ?: 'zoho');
 		$obj->smtp_host = @$requestData['smtp_host'] ?: 'smtp.zoho.com';
 		$obj->smtp_port = @$requestData['smtp_port'] ?: 587;
 		$obj->smtp_encryption = @$requestData['smtp_encryption'] ?: 'tls';
@@ -181,6 +181,17 @@ class EmailController extends Controller
 		{
 			return redirect()->route('adminconsole.features.emails.index')->with('success', 'Email Updated Successfully');
 		}
+	}
+
+	private function normalizeMailProvider(?string $provider): string
+	{
+		$provider = strtolower(trim((string) $provider));
+
+		if ($provider === 'sendgrid') {
+			return 'ses';
+		}
+
+		return in_array($provider, ['ses', 'zoho'], true) ? $provider : 'zoho';
 	}
 }
 

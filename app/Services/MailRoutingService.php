@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Mail;
 class MailRoutingService
 {
     /** @var list<string> Legacy mail_provider values that use the system (SES) mailer. */
-    private const SYSTEM_MAIL_PROVIDERS = ['ses', 'sendgrid'];
+    private const SYSTEM_MAIL_PROVIDERS = Email::SYSTEM_MAIL_PROVIDERS;
 
     public function systemMailerName(): string
     {

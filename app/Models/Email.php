@@ -10,6 +10,14 @@ class Email extends Authenticatable
 {
     use HasFactory, Notifiable;
 	use Sortable; 
+
+    /** @var list<string> Mail providers routed through AWS SES. */
+    public const SYSTEM_MAIL_PROVIDERS = ['ses', 'sendgrid'];
+
+    public function usesSystemMailer(): bool
+    {
+        return in_array((string) $this->mail_provider, self::SYSTEM_MAIL_PROVIDERS, true);
+    }
 	
     /** 
      * The attributes that are mass assignable.

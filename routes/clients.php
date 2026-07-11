@@ -77,6 +77,7 @@ Route::get('/clients/change_assignee', [ClientsController::class, 'change_assign
 Route::get('/get-templates', [CRMUtilityController::class, 'gettemplates'])->name('clients.gettemplates');
 Route::get('/get-compose-defaults', [CRMUtilityController::class, 'getComposeDefaults'])->name('clients.getComposeDefaults');
 Route::get('/crm/compose-senders', [ComposeSendersController::class, 'senders'])->name('crm.compose.senders');
+Route::get('/crm/sendgrid-senders', [ComposeSendersController::class, 'senders'])->name('crm.sendgrid.senders');
 Route::get('/crm/staff-email-signature', [ComposeSendersController::class, 'staffSignature'])->name('crm.staff.email-signature');
 Route::post('/sendmail', [CRMUtilityController::class, 'sendmail'])->name('clients.sendmail');
 

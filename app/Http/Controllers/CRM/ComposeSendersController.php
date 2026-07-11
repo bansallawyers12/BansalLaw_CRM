@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Schema;
 class ComposeSendersController extends Controller
 {
     /** @var list<string> */
-    private const SYSTEM_MAIL_PROVIDERS = ['ses', 'sendgrid'];
+    private const SYSTEM_MAIL_PROVIDERS = Email::SYSTEM_MAIL_PROVIDERS;
 
     /**
      * GET /crm/compose-senders
