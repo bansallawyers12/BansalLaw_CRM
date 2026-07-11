@@ -1068,6 +1068,11 @@
                         'latestConflictCheck' => $latestConflictCheck ?? null,
                     ])
 
+                    @include('crm.clients.partials.other-matter-parties-card', [
+                        'fetchedData'        => $fetchedData,
+                        'otherMatterParties' => $otherMatterParties ?? collect(),
+                    ])
+
                     @unless($suppressPersonalDetailsTagCard ?? false)
                     <div class="card">
                         <div style="display: flex; justify-content: space-between; align-items: center;">

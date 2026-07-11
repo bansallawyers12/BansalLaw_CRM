@@ -2249,6 +2249,34 @@ class ClientsController extends Controller
                     ->orderByDesc('checked_at')
                     ->first();
 
+                // Align with overview: URL matter if present, else latest active matter.
+                // Do not fall back when a matter ref was in the URL but not found.
+                $otherMatterParties = collect();
+                $currentClientMatter = $selectedClientMatter;
+                if (! $currentClientMatter && ($id1 === null || $id1 === '')) {
+                    $currentClientMatter = ClientMatter::query()
+                        ->where('client_id', (int) $id)
+                        ->where('matter_status', 1)
+                        ->orderByDesc('id')
+                        ->first();
+                }
+                if ($currentClientMatter && Schema::hasTable('client_matter_opposing_parties')) {
+                    $otherMatterIds = ClientMatter::query()
+                        ->where('client_id', (int) $id)
+                        ->where('id', '!=', (int) $currentClientMatter->id)
+                        ->pluck('id');
+
+                    if ($otherMatterIds->isNotEmpty()) {
+                        $otherMatterParties = ClientMatterOpposingParty::query()
+                            ->whereIn('client_matter_id', $otherMatterIds)
+                            ->with(['clientMatter.matter'])
+                            ->orderBy('client_matter_id')
+                            ->orderBy('sort_order')
+                            ->orderBy('id')
+                            ->get();
+                    }
+                }
+
                 //Return the view with all data
                 return view('crm.clients.detail', compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
@@ -2259,7 +2287,7 @@ class ClientsController extends Controller
                     'assignableStaff', 'leadStageLabels', 'showGoogleReviewReminderModal',
                     'matterFormForLead', '__crmEditLeadType',
                     'selectedClientMatter', 'isClosedMatterView',
-                    'conflictParties', 'latestConflictCheck'
+                    'conflictParties', 'latestConflictCheck', 'otherMatterParties'
                 ));
             } else {
                 return redirect()->route('clients.index')->with('error', 'Clients Not Exist');
