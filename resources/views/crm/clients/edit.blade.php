@@ -1968,108 +1968,17 @@
         window.ClientDetailConfig.urls.fetchClientMatterAssignee = @json(url('/clients/fetchClientMatterAssignee'));
     </script>
     <script src="{{ asset('js/crm/clients/other-party-picker.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ time() }}"></script>
     <script>
-        // Pass countries data to JavaScript
+        window.MATTER_PARTY_ROLES_BY_STREAM = @json(config('matter_streams.party_roles_by_stream', []));
+        window.OTHER_PARTY_SEARCH_URL = @json(route('api.search.other.party'));
         window.countriesData = @json($countries);
         window.storeLeadMatterFromEditUrl = @json(route('clients.storeLeadMatterFromEdit'));
-        function openAddMatterModal() {
-            var el = document.getElementById('addMatterModal');
-            if (!el) return;
-            el.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-        function closeAddMatterModal() {
-            var el = document.getElementById('addMatterModal');
-            if (!el) return;
-            el.style.display = 'none';
-            document.body.style.overflow = '';
-            var msg = document.getElementById('editAddMatterMsg');
-            if (msg) msg.innerHTML = '';
-            var caseDetail = document.getElementById('edit_add_matter_case_detail');
-            if (caseDetail) caseDetail.value = '';
-            var doi = document.getElementById('edit_add_matter_date_of_incidence');
-            if (doi) doi.value = '';
-            var it = document.getElementById('edit_add_matter_incidence_type');
-            if (it) it.value = '';
-        }
-        function addMatterModalBackdropClick(e) {
-            if (e.target && e.target.id === 'addMatterModal') {
-                closeAddMatterModal();
-            }
-        }
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') {
-                var m = document.getElementById('addMatterModal');
-                if (m && m.style.display === 'flex') closeAddMatterModal();
-            }
-        });
-        async function submitLeadMatterFromEdit() {
-            var msgEl = document.getElementById('editAddMatterMsg');
-            var btn = document.getElementById('editAddMatterSubmitBtn');
-            if (!msgEl || !window.storeLeadMatterFromEditUrl || !window.editClientConfig) return;
-            msgEl.innerHTML = '';
-            var matterId = document.getElementById('edit_add_matter_matter_id');
-            var agentId = document.getElementById('edit_add_matter_legal_practitioner');
-            if (!matterId.value || !agentId.value) {
-                msgEl.innerHTML = '<div class="alert alert-warning">Select a matter type and legal practitioner.</div>';
-                return;
-            }
-            var fd = new FormData();
-            fd.append('_token', window.editClientConfig.csrfToken);
-            var matterClientPk = (window.currentClientId != null && String(window.currentClientId).trim() !== '')
-                ? String(window.currentClientId).trim()
-                : String({{ (int) $fetchedData->id }});
-            fd.append('client_id', matterClientPk);
-            fd.append('matter_id', matterId.value);
-            fd.append('legal_practitioner', agentId.value);
-            var office = document.getElementById('edit_add_matter_office_id');
-            if (office && office.value) fd.append('office_id', office.value);
-            var pr = document.getElementById('edit_add_matter_person_responsible');
-            if (pr && pr.value) fd.append('person_responsible', pr.value);
-            var pa = document.getElementById('edit_add_matter_person_assisting');
-            if (pa && pa.value) fd.append('person_assisting', pa.value);
-            var caseDetailEl = document.getElementById('edit_add_matter_case_detail');
-            if (caseDetailEl && caseDetailEl.value.trim() !== '') {
-                fd.append('case_detail', caseDetailEl.value.trim());
-            }
-            var doiEl = document.getElementById('edit_add_matter_date_of_incidence');
-            if (doiEl && doiEl.value) fd.append('date_of_incidence', doiEl.value);
-            var itEl = document.getElementById('edit_add_matter_incidence_type');
-            if (itEl && itEl.value.trim() !== '') fd.append('incidence_type', itEl.value.trim());
-            btn.disabled = true;
-            try {
-                var res = await fetch(window.storeLeadMatterFromEditUrl, {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': window.editClientConfig.csrfToken
-                    },
-                    body: fd
-                });
-                var data = await res.json().catch(function () { return {}; });
-                if (res.ok && data.success) {
-                    msgEl.innerHTML = '<div class="alert alert-success">' + (data.message || 'Matter created.') + '</div>';
-                    window.setTimeout(function () {
-                        closeAddMatterModal();
-                        window.location.reload();
-                    }, 600);
-                    return;
-                }
-                var errText = data.message || 'Could not create matter.';
-                if (data.errors) {
-                    errText += ' ' + Object.values(data.errors).flat().join(' ');
-                }
-                msgEl.innerHTML = '<div class="alert alert-danger">' + errText + '</div>';
-            } catch (e) {
-                msgEl.innerHTML = '<div class="alert alert-danger">Network error. Try again.</div>';
-            } finally {
-                btn.disabled = false;
-            }
-        }
+        window.currentClientId = @json((string) ($fetchedData->id ?? ''));
     </script>
+    <script src="{{ asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ time() }}"></script>
+    @if(is_array($matterFormForLead ?? null))
+        @include('crm.clients.partials.quick-add-matter-scripts')
+    @endif
     <script src="{{ asset('js/clients/edit-client.js') }}?v={{ file_exists(public_path('js/clients/edit-client.js')) ? filemtime(public_path('js/clients/edit-client.js')) : 1 }}"></script>
     <script src="{{ asset('js/clients/address-delete.js') }}?v={{ file_exists(public_path('js/clients/address-delete.js')) ? filemtime(public_path('js/clients/address-delete.js')) : 1 }}"></script>
     <script>

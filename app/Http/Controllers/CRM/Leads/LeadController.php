@@ -885,7 +885,6 @@ class LeadController extends Controller
                     
                     // Company flag
                     'is_company' => $isCompany ? 1 : 0,
-                    'is_other_party' => $request->boolean('is_other_party') ? 1 : 0,
                     
                     // Conditional field assignment
                     ...($isCompany ? [
@@ -919,6 +918,9 @@ class LeadController extends Controller
                 ];
 
                 $this->applyLeadAssigneeToAdminRow($adminData, $assignUserId);
+                if (Schema::hasColumn('admins', 'is_other_party')) {
+                    $adminData['is_other_party'] = $request->boolean('is_other_party') ? 1 : 0;
+                }
                 $this->pruneAdminInsertData($adminData);
 
                 Log::info('Attempting to insert lead into database');

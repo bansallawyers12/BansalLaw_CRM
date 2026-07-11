@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\Builder;
 use App\Models\Staff;
 use Database\Factories\LeadFactory;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Schema;
 use Kyslik\ColumnSortable\Sortable;
 
 class Lead extends Admin
@@ -105,6 +106,10 @@ class Lead extends Admin
      */
     public function scopeExcludingOtherParties(Builder $query): Builder
     {
+        if (! Schema::hasColumn('admins', 'is_other_party')) {
+            return $query;
+        }
+
         return $query->where(function (Builder $q) {
             $q->where('is_other_party', false)->orWhereNull('is_other_party');
         });
@@ -115,6 +120,10 @@ class Lead extends Admin
      */
     public function scopeOnlyOtherParties(Builder $query): Builder
     {
+        if (! Schema::hasColumn('admins', 'is_other_party')) {
+            return $query->whereRaw('1 = 0');
+        }
+
         return $query->where('is_other_party', true);
     }
     

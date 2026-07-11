@@ -1352,6 +1352,11 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/modules/subtabs.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/ledger-dragdrop.js') }}"></script>
 {{-- Edit matter details modal (must load before detail-main.js) --}}
+<script src="{{ URL::asset('js/crm/clients/other-party-picker.js') }}?v={{ time() }}"></script>
+<script>
+    window.MATTER_PARTY_ROLES_BY_STREAM = @json(config('matter_streams.party_roles_by_stream', []));
+    window.OTHER_PARTY_SEARCH_URL = @json(route('api.search.other.party'));
+</script>
 <script src="{{ URL::asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ time() }}"></script>
 {{-- Main detail page JavaScript --}}
 <script src="{{ URL::asset('js/crm/clients/detail-main.js') }}?v={{ time() }}"></script>

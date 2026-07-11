@@ -638,6 +638,11 @@
         window.ClientDetailConfig.urls = window.ClientDetailConfig.urls || {};
         window.ClientDetailConfig.urls.fetchClientMatterAssignee = @json(url('/clients/fetchClientMatterAssignee'));
     </script>
+    <script src="{{ asset('js/crm/clients/other-party-picker.js') }}?v={{ time() }}"></script>
+    <script>
+        window.MATTER_PARTY_ROLES_BY_STREAM = @json(config('matter_streams.party_roles_by_stream', []));
+        window.OTHER_PARTY_SEARCH_URL = @json(route('api.search.other.party'));
+    </script>
     <script src="{{ asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ time() }}"></script>
     <script>
         window.countriesData = @json($countries ?? []);

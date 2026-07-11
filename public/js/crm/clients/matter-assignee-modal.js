@@ -34,7 +34,7 @@
             prefill = { name: data, party_role: arguments[1] || '' };
         } else if (data && typeof data === 'object') {
             prefill = {
-                opposing_lead_id: data.opposing_lead_id || data.id || null,
+                opposing_lead_id: data.opposing_lead_id || null,
                 name: data.name || '',
                 party_role: data.party_role || '',
                 rep_firm: data.rep_firm || '',
