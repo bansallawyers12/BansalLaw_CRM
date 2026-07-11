@@ -3653,28 +3653,6 @@ class ClientsController extends Controller
         echo json_encode($response);
     }
 
-    //address_auto_populate
-    public function address_auto_populate(Request $request){
-        $address = $request->address;
-        if( isset($address) && $address != ""){
-            $result = app('geocoder')->geocode($address)->get(); //dd($result[0]);
-            $postalCode = $result[0]->getPostalCode();
-            $locality = $result[0]->getLocality();
-            if( !empty($result) ){
-                $response['status'] 	= 	1;
-                $response['postal_code'] = 	$postalCode;
-                $response['locality'] 	= 	$locality;
-                $response['message']	=	"address is success.";
-            } else {
-                $response['status'] 	= 	0;
-                $response['postal_code'] = 	"";
-                $response['locality']    = 	"";
-                $response['message']	=	"address is wrong.";
-            }
-            echo json_encode($response);
-        }
-    }
-
     //not picked call button click
     public function notpickedcall(Request $request){
         $data = $request->all(); //dd($data);

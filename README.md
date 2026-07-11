@@ -212,7 +212,6 @@ Staff searches client not in their allocation
 | `symfony/postmark-mailer` | ^7.0 | Postmark mail transport |
 | `pusher/pusher-php-server` | ^7.2 | Push notifications |
 | `ezyang/htmlpurifier` | ^4.19 | HTML sanitization |
-| `salmanzafar/laravel-geocode` | ^1.0 | Geocoding |
 
 ### Frontend (npm)
 

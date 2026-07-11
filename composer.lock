@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f0a7222d1603077e4300d8640b530300",
+    "content-hash": "9f450c0a4b47c7d68b53d94daad3a984",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -4298,90 +4298,6 @@
                 "source": "https://github.com/MyIntervals/PHP-CSS-Parser/tree/v9.4.0"
             },
             "time": "2026-06-18T15:10:53+00:00"
-        },
-        {
-            "name": "salmanzafar/laravel-geocode",
-            "version": "v1.0.4",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/salmanzafar949/laravel-geocode.git",
-                "reference": "b922bb1588948cc305817169ee959f41891a3240"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/salmanzafar949/laravel-geocode/zipball/b922bb1588948cc305817169ee959f41891a3240",
-                "reference": "b922bb1588948cc305817169ee959f41891a3240",
-                "shasum": ""
-            },
-            "require": {
-                "laravel/framework": ">=8.0.0",
-                "php": ">=7.3.0"
-            },
-            "require-dev": {
-                "ext-curl": "*"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "aliases": {
-                        "GeoCode": "Salman\\GeoCode\\Facades\\GeoCode"
-                    },
-                    "providers": [
-                        "Salman\\GeoCode\\GeoCodeServiceProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "files": [
-                    "src/Helper/Helpers.php"
-                ],
-                "psr-4": {
-                    "Salman\\GeoCode\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Salman Zafar",
-                    "email": "salmanzafar949@gmail.com"
-                }
-            ],
-            "description": "A Laravel Package to find Lat and Long of a given Specific Address",
-            "keywords": [
-                "geocode-laravel",
-                "google maps laravel geocode",
-                "google maps laravel geocoder",
-                "laravel",
-                "laravel-geocode",
-                "laravel5",
-                "laravel6",
-                "laravel7",
-                "laravel8",
-                "php",
-                "php 7.0",
-                "php 7.1",
-                "php 7.2",
-                "php 7.3",
-                "php 7.4"
-            ],
-            "support": {
-                "issues": "https://github.com/salmanzafar949/laravel-geocode/issues",
-                "source": "https://github.com/salmanzafar949/laravel-geocode/tree/v1.0.4"
-            },
-            "funding": [
-                {
-                    "url": "https://www.buymeacoffee.com/salmanzafar949",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://www.patreon.com/salmanzafar949",
-                    "type": "patreon"
-                }
-            ],
-            "time": "2020-10-07T11:43:01+00:00"
         },
         {
             "name": "spatie/laravel-package-tools",

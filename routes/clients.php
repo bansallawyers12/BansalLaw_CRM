@@ -274,7 +274,6 @@ Route::post('/clients/upload-journalreceipt-document', [ClientAccountsController
 Route::post('/clients/update-address', [ClientPersonalDetailsController::class, 'updateAddress'])->name('clients.updateAddress');
 Route::post('/clients/search-address-full', [ClientPersonalDetailsController::class, 'searchAddressFull'])->name('clients.searchAddressFull');
 Route::post('/clients/get-place-details', [ClientPersonalDetailsController::class, 'getPlaceDetails'])->name('clients.getPlaceDetails');
-Route::post('/address_auto_populate', [ClientsController::class, 'address_auto_populate']);
 
 Route::post('/clients/fetchClientContactNo', [ClientPersonalDetailsController::class, 'fetchClientContactNo']);
 Route::post('/clients/clientdetailsinfo/{id}', [ClientPersonalDetailsController::class, 'clientdetailsinfo'])->name('clients.clientdetailsinfo');
