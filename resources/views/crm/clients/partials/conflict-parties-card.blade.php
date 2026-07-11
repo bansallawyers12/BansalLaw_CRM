@@ -204,6 +204,10 @@
                 </button>
                 <span class="text-muted small" id="cpRunCheckStatus"></span>
             </div>
+            <p class="text-muted small mb-2">
+                Searches saved client details and saved other parties. If you have added parties above, click <strong>Save parties</strong> before running the check.
+            </p>
+            <div id="cpRunCheckWarnings" class="small text-warning mb-2" style="display:none;"></div>
 
             <div id="cpMatchesPanel" style="display:none;">
                 <div class="small fw-semibold mb-1" id="cpMatchesHeading">Matches</div>
@@ -507,6 +511,31 @@
         });
     }
 
+    function renderWarnings(warnings) {
+        var el = document.getElementById('cpRunCheckWarnings');
+        if (!el) return;
+        if (!warnings || !warnings.length) {
+            el.style.display = 'none';
+            el.innerHTML = '';
+            return;
+        }
+        el.style.display = '';
+        el.innerHTML = warnings.map(function (w) {
+            return '<div><i class="fa-solid fa-triangle-exclamation"></i> ' + esc(w) + '</div>';
+        }).join('');
+    }
+
+    function showRunCheckError(message, errorType) {
+        var statusEl = document.getElementById('cpRunCheckStatus');
+        if (statusEl) statusEl.textContent = '';
+        renderWarnings([]);
+        var display = message || 'Search failed';
+        if (errorType === 'validation') {
+            display = message;
+        }
+        toast(display, false);
+    }
+
     if (runCheckBtn) {
         runCheckBtn.addEventListener('click', function () {
             var token = document.querySelector('meta[name="csrf-token"]');
@@ -515,6 +544,7 @@
             fd.append('_token', token ? token.getAttribute('content') : '');
             fd.append('id', clientId);
             runCheckBtn.disabled = true;
+            renderWarnings([]);
             if (statusEl) statusEl.textContent = 'Searching…';
             fetch(runCheckUrl, {
                 method: 'POST',
@@ -523,8 +553,8 @@
             })
                 .then(function (r) {
                     return r.text().then(function (text) {
-                        try { return { ok: r.ok, data: text ? JSON.parse(text) : {} }; }
-                        catch (e) { return { ok: false, data: { message: 'Invalid server response' } }; }
+                        try { return { ok: r.ok, status: r.status, data: text ? JSON.parse(text) : {} }; }
+                        catch (e) { return { ok: false, status: r.status, data: { message: 'Invalid server response' } }; }
                     });
                 })
                 .then(function (res) {
@@ -534,8 +564,13 @@
                         lastSearchTerms = res.data.search_terms || null;
                         lastMatches = res.data.matches || [];
                         renderMatches(lastMatches);
+                        renderWarnings(res.data.warnings || []);
                         if (statusEl) {
-                            statusEl.textContent = (res.data.match_count || 0) + ' match(es)';
+                            var statusText = (res.data.match_count || 0) + ' match(es)';
+                            if ((res.data.party_count || 0) === 0) {
+                                statusText += ' · subject only';
+                            }
+                            statusEl.textContent = statusText;
                         }
                         var select = document.getElementById('cpOutcomeSelect');
                         if (select && res.data.suggested_outcome && (!select.value || select.value === 'pending')) {
@@ -550,14 +585,15 @@
                         }
                         toast(res.data.message || 'Search complete', true);
                     } else {
-                        if (statusEl) statusEl.textContent = '';
-                        toast((res.data && res.data.message) || 'Search failed', false);
+                        showRunCheckError(
+                            (res.data && res.data.message) || 'Search failed',
+                            res.data && res.data.error_type
+                        );
                     }
                 })
                 .catch(function () {
                     runCheckBtn.disabled = false;
-                    if (statusEl) statusEl.textContent = '';
-                    toast('Network error', false);
+                    showRunCheckError('Network error. Check your connection and try again.', 'network');
                 });
         });
     }

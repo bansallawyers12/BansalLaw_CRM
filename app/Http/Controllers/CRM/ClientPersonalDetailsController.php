@@ -5,6 +5,7 @@ namespace App\Http\Controllers\CRM;
 use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -2796,7 +2797,15 @@ class ClientPersonalDetailsController extends Controller
                 'match_count'      => $matchCount,
             ]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error saving outcome: ' . $e->getMessage()], 500);
+            Log::error('Conflict check outcome save failed', [
+                'client_id' => $client->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not save conflict check outcome. Please try again.',
+            ], 500);
         }
     }
 
@@ -2820,29 +2829,62 @@ class ClientPersonalDetailsController extends Controller
             $client->loadMissing('company');
             $result = $service->run($client);
 
+            $activityDetail = $result['match_count'] === 0
+                ? 'Automated search completed — no matches'
+                : 'Automated search completed — ' . $result['match_count'] . ' match(es)';
+            if (! empty($result['warnings'])) {
+                $activityDetail .= ' · ' . count($result['warnings']) . ' note(s)';
+            }
+
             $this->logClientActivity(
                 $client->id,
                 'conflict check search run',
-                $result['match_count'] === 0
-                    ? 'Automated search completed — no matches'
-                    : 'Automated search completed — ' . $result['match_count'] . ' match(es)',
+                $activityDetail,
                 'activity'
             );
 
+            $message = $result['match_count'] === 0
+                ? 'No potential conflicts found. Review and save outcome as Clear if appropriate.'
+                : $result['match_count'] . ' potential match(es) found. Review carefully before saving an outcome.';
+
             return response()->json([
                 'success' => true,
-                'message' => $result['match_count'] === 0
-                    ? 'No potential conflicts found. Review and save outcome as Clear if appropriate.'
-                    : $result['match_count'] . ' potential match(es) found. Review carefully before saving an outcome.',
+                'message' => $message,
                 'search_terms' => $result['search_terms'],
                 'matches' => $result['matches'],
                 'suggested_outcome' => $result['suggested_outcome'],
                 'match_count' => $result['match_count'],
+                'warnings' => $result['warnings'] ?? [],
+                'party_count' => $result['party_count'] ?? 0,
             ]);
-        } catch (\Exception $e) {
+        } catch (\InvalidArgumentException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Conflict search failed: ' . $e->getMessage(),
+                'message' => $e->getMessage(),
+                'error_type' => 'validation',
+            ], 422);
+        } catch (QueryException $e) {
+            Log::error('Conflict check database error', [
+                'client_id' => $client->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Conflict search could not complete due to a database error. Please try again or contact support if this continues.',
+                'error_type' => 'database',
+            ], 500);
+        } catch (\Exception $e) {
+            Log::error('Conflict check failed', [
+                'client_id' => $client->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Conflict search could not be completed. Please try again.',
+                'error_type' => 'general',
             ], 500);
         }
     }

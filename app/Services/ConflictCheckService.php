@@ -18,16 +18,33 @@ class ConflictCheckService
     /**
      * Run an automated conflict search for a client/lead.
      *
-     * @return array{search_terms: array, matches: list<array>, suggested_outcome: string, match_count: int}
+     * @return array{
+     *     search_terms: array,
+     *     matches: list<array>,
+     *     suggested_outcome: string,
+     *     match_count: int,
+     *     warnings: list<string>,
+     *     party_count: int
+     * }
      */
     public function run(Admin $client): array
     {
+        $client->loadMissing('company');
+
         $parties = ClientConflictParty::where('client_id', $client->id)
             ->with(['phones', 'emails', 'opposingLead'])
             ->orderBy('sort_order')
             ->get();
 
         $searchTerms = $this->buildSearchTerms($client, $parties);
+
+        if (! $this->hasSearchableTerms($searchTerms)) {
+            throw new \InvalidArgumentException(
+                'Not enough information to run a conflict search. Ensure the client has a name, email, phone, or company details, or save at least one other party first.'
+            );
+        }
+
+        $warnings = $this->buildWarnings($parties, $searchTerms);
         $matches = [];
 
         $this->searchAdmins($client, $searchTerms, $matches);
@@ -43,7 +60,98 @@ class ConflictCheckService
             'matches' => $matches,
             'suggested_outcome' => $matchCount === 0 ? 'clear' : 'pending',
             'match_count' => $matchCount,
+            'warnings' => $warnings,
+            'party_count' => $parties->count(),
         ];
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, ClientConflictParty>  $parties
+     * @return list<string>
+     */
+    private function buildWarnings($parties, array $searchTerms): array
+    {
+        $warnings = [];
+
+        if ($parties->isEmpty()) {
+            $warnings[] = 'No opposing parties are saved for this client. The search ran on this client\'s details only. Save other parties first for a fuller check.';
+        }
+
+        $partyTerms = $searchTerms['parties'] ?? [];
+        $incompleteParties = 0;
+        foreach ($partyTerms as $pt) {
+            $hasLead = ! empty($pt['opposing_lead_id']);
+            $hasName = trim((string) ($pt['name'] ?? '')) !== '' && strtolower(trim($pt['name'])) !== 'unnamed';
+            if (! $hasLead && ! $hasName) {
+                $incompleteParties++;
+            }
+        }
+        if ($incompleteParties > 0) {
+            $warnings[] = $incompleteParties . ' saved party row(s) have no other party selected — only complete rows were included.';
+        }
+
+        return $warnings;
+    }
+
+    private function hasSearchableTerms(array $searchTerms): bool
+    {
+        $subject = $searchTerms['subject'] ?? [];
+        if ($this->isMeaningfulName($subject['name'] ?? null)
+            || ! empty($subject['emails'])
+            || ! empty($subject['phones'])
+            || $this->isMeaningfulName($subject['company_name'] ?? null)
+            || ! empty($subject['abn'])
+            || ! empty($subject['acn'])) {
+            return true;
+        }
+
+        foreach ($searchTerms['parties'] ?? [] as $party) {
+            if ($this->isMeaningfulName($party['name'] ?? null)
+                || ! empty($party['emails'])
+                || ! empty($party['phones'])
+                || $this->isMeaningfulName($party['company_name'] ?? null)
+                || $this->isMeaningfulName($party['trading_name'] ?? null)
+                || ! empty($party['abn'])
+                || ! empty($party['acn'])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isMeaningfulName(?string $value): bool
+    {
+        $value = strtolower(trim((string) $value));
+        if ($value === '' || strlen($value) < 2) {
+            return false;
+        }
+
+        $placeholders = [
+            'unnamed',
+            'unnamed company',
+            'record #',
+        ];
+
+        foreach ($placeholders as $placeholder) {
+            if ($value === $placeholder || str_starts_with($value, 'record #')) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Quote a column identifier for raw SQL (PostgreSQL mixed-case columns need quotes).
+     */
+    private function sqlColumn(string $column): string
+    {
+        if (DB::getDriverName() === 'pgsql') {
+            return '"' . str_replace('"', '""', $column) . '"';
+        }
+
+        return $column;
     }
 
     /**
@@ -63,9 +171,6 @@ class ConflictCheckService
             'dob' => $client->dob ? $client->dob->format('Y-m-d') : null,
         ];
 
-        if ($client->is_company && $client->relationLoaded('company') === false) {
-            $client->load('company');
-        }
         if ($client->company) {
             $subject['abn'] = $this->digitsOnly($client->company->ABN_number ?? null);
             $subject['acn'] = $this->digitsOnly($client->company->ACN ?? null);
@@ -437,15 +542,24 @@ class ConflictCheckService
         $query = Company::query()
             ->where('admin_id', '!=', $subject->id)
             ->where(function ($q) use ($companyNames, $abns, $acns, $like) {
+                $abnCol = $this->sqlColumn('ABN_number');
+                $acnCol = $this->sqlColumn('ACN');
+
                 foreach ($companyNames as $cn) {
                     $q->orWhere('company_name', $like, '%' . $cn . '%')
                         ->orWhere('trading_name', $like, '%' . $cn . '%');
                 }
                 foreach ($abns as $abn) {
-                    $q->orWhereRaw("REPLACE(REPLACE(COALESCE(ABN_number,''), ' ', ''), '-', '') = ?", [$abn]);
+                    $q->orWhereRaw(
+                        "REPLACE(REPLACE(COALESCE({$abnCol}, ''), ' ', ''), '-', '') = ?",
+                        [$abn]
+                    );
                 }
                 foreach ($acns as $acn) {
-                    $q->orWhereRaw("REPLACE(REPLACE(COALESCE(ACN,''), ' ', ''), '-', '') = ?", [$acn]);
+                    $q->orWhereRaw(
+                        "REPLACE(REPLACE(COALESCE({$acnCol}, ''), ' ', ''), '-', '') = ?",
+                        [$acn]
+                    );
                 }
             })
             ->limit(30);
@@ -622,6 +736,9 @@ class ConflictCheckService
         if ($value === '' || strlen($value) < 2) {
             return;
         }
+        if ($this->isMeaningfulName($value) === false && ! preg_match('/^\d{8,}$/', $value)) {
+            return;
+        }
         $flat[] = $value;
     }
 
@@ -667,9 +784,13 @@ class ConflictCheckService
     private function collectNameCandidates(array $searchTerms): array
     {
         $out = [];
-        $this->pushTerm($out, $searchTerms['subject']['name'] ?? null);
+        if ($this->isMeaningfulName($searchTerms['subject']['name'] ?? null)) {
+            $this->pushTerm($out, $searchTerms['subject']['name'] ?? null);
+        }
         foreach ($searchTerms['parties'] as $p) {
-            $this->pushTerm($out, $p['name'] ?? null);
+            if ($this->isMeaningfulName($p['name'] ?? null)) {
+                $this->pushTerm($out, $p['name'] ?? null);
+            }
         }
 
         return array_values(array_unique(array_map(fn ($n) => strtolower($n), $out)));
