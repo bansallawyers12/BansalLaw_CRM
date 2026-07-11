@@ -19,7 +19,7 @@ class NotificationService
     }
 
     /**
-     * Appointment confirmations are system emails (SendGrid / no-reply).
+     * Appointment confirmations are system emails (AWS SES / no-reply).
      */
     protected function appointmentMailer()
     {
@@ -63,7 +63,7 @@ class NotificationService
             Log::info('Sent detailed confirmation email', [
                 'appointment_id' => $appointment->id,
                 'email' => $appointment->client_email,
-                'mailer' => 'sendgrid',
+                'mailer' => config('mail_routing.system_mailer', 'ses'),
             ]);
 
             return true;
@@ -101,7 +101,7 @@ class NotificationService
             Log::info('Sent cancellation confirmation email', [
                 'appointment_id' => $appointment->id,
                 'email' => $appointment->client_email,
-                'mailer' => 'sendgrid',
+                'mailer' => config('mail_routing.system_mailer', 'ses'),
             ]);
 
             return true;

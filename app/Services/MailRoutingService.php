@@ -8,13 +8,16 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 /**
- * Routes CRM outbound mail: Zoho SMTP for staff/personal senders, SendGrid for system mail.
+ * Routes CRM outbound mail: Zoho SMTP for staff/personal senders, AWS SES for system mail.
  */
 class MailRoutingService
 {
+    /** @var list<string> Legacy mail_provider values that use the system (SES) mailer. */
+    private const SYSTEM_MAIL_PROVIDERS = ['ses', 'sendgrid'];
+
     public function systemMailerName(): string
     {
-        return (string) config('mail_routing.system_mailer', 'sendgrid');
+        return (string) config('mail_routing.system_mailer', 'ses');
     }
 
     public function personalMailerName(): string
@@ -23,11 +26,11 @@ class MailRoutingService
     }
 
     /**
-     * Default From address for automated / system emails (SendGrid).
+     * Default From address for automated / system emails (AWS SES).
      */
     public function systemFromAddress(): string
     {
-        return (string) (config('services.sendgrid.from_email') ?: config('mail.from.address'));
+        return (string) config('mail.from.address');
     }
 
     public function systemFromName(): string
@@ -53,7 +56,7 @@ class MailRoutingService
         $account = Email::whereRaw('LOWER(email) = ?', [$fromAddress])->first();
 
         if ($account) {
-            if ($account->mail_provider === 'sendgrid') {
+            if ($this->isSystemMailProvider($account->mail_provider)) {
                 return $this->systemMailerName();
             }
 
@@ -87,10 +90,10 @@ class MailRoutingService
             }
         }
 
-        $sendgridDefault = strtolower(trim($this->systemFromAddress()));
-        if ($sendgridDefault !== '' && $fromAddress === $sendgridDefault) {
+        $systemDefault = strtolower(trim($this->systemFromAddress()));
+        if ($systemDefault !== '' && $fromAddress === $systemDefault) {
             $account = Email::whereRaw('LOWER(email) = ?', [$fromAddress])->first();
-            if (! $account || $account->mail_provider === 'sendgrid') {
+            if (! $account || $this->isSystemMailProvider($account->mail_provider)) {
                 return true;
             }
         }
@@ -188,5 +191,10 @@ class MailRoutingService
     public function sendClosure(string $view, array $data, \Closure $callback, ?string $fromAddress = null, bool $forceSystem = false): void
     {
         $this->mailer($fromAddress, $forceSystem)->send($view, $data, $callback);
+    }
+
+    private function isSystemMailProvider(?string $provider): bool
+    {
+        return in_array((string) $provider, self::SYSTEM_MAIL_PROVIDERS, true);
     }
 }

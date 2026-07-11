@@ -28,14 +28,7 @@ return [
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
-        'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
-    ],
-
-    'sendgrid' => [
-        'api_key' => env('SENDGRID_API_KEY'),
-        'base_url' => env('SENDGRID_BASE_URL', 'https://api.sendgrid.com'),
-        'from_email' => env('SENDGRID_FROM_EMAIL', ''),
-        'senders' => env('SENDGRID_SENDERS', ''),
+        'region' => env('AWS_DEFAULT_REGION', 'ap-southeast-2'),
     ],
 
     /*

@@ -73,7 +73,7 @@ class EmailConfigService
     }
 
     /**
-     * Deprecated: Keep for backward compatibility. SendGrid mailer is fixed.
+     * Deprecated: Keep for backward compatibility. SES mailer is fixed.
      *
      * @param array $config Configuration array from forAccount()
      * @return void
@@ -81,7 +81,7 @@ class EmailConfigService
     public function applyConfig(array $config): void
     {
         config([
-            'mail.default' => 'sendgrid',
+            'mail.default' => config('mail_routing.system_mailer', 'ses'),
             'mail.from.address' => $config['from_address'],
             'mail.from.name' => $config['from_name'],
         ]);

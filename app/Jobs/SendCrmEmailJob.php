@@ -11,7 +11,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * Queued CRM email with correct Zoho/SendGrid mailer applied at execution time.
+ * Queued CRM email with correct Zoho/SES mailer applied at execution time.
  */
 class SendCrmEmailJob implements ShouldQueue
 {

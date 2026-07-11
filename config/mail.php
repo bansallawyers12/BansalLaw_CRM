@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'smtp'),
+    'default' => env('MAIL_MAILER', 'ses'),
 
     /*
     |--------------------------------------------------------------------------
@@ -36,17 +36,6 @@ return [
     */
 
     'mailers' => [
-
-        'sendgrid' => [
-            'transport' => 'smtp',
-            'host' => 'smtp.sendgrid.net',
-            'port' => 587,
-            'username' => 'apikey',
-            'password' => env('SENDGRID_API_KEY'),
-            'encryption' => 'tls',
-            'timeout' => null,
-            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
-        ],
 
         'zoho' => [
             'transport' => 'smtp',

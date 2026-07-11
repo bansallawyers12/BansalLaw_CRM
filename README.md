@@ -237,7 +237,7 @@ Staff searches client not in their allocation
 | **Database** | PostgreSQL (primary); MySQL/SQLite supported for dev/migration |
 | **File Storage** | Local disk default; AWS S3 optional |
 | **Queue** | Database or Redis (`QUEUE_CONNECTION`) |
-| **Mail** | SendGrid, SMTP, Mailgun, Postmark |
+| **Mail** | AWS SES (system), Zoho SMTP (staff), Mailgun, Postmark |
 | **Real-time** | Laravel Reverb + Echo (optional) |
 | **Python Services** | `python_services/` — DOCX→PDF conversion, email upload parsing |
 | **Build** | Vite; run `npm run copy:flatpickr` after install |
@@ -908,9 +908,14 @@ After seeding, check `database/seeders/SuperAdminBootstrapSeeder.php` for the bo
 APP_NAME="Bansal Law CRM"
 APP_URL=http://localhost:8000
 
-# Mail (SendGrid example)
-MAIL_MAILER=sendgrid
-SENDGRID_API_KEY=SG.xxxx
+# Mail (AWS SES for system mail, Zoho for staff compose)
+CRM_SYSTEM_MAILER=ses
+CRM_PERSONAL_MAILER=zoho
+MAIL_FROM_ADDRESS=noreply@bansallawyers.com.au
+MAIL_FROM_NAME="Bansal Lawyers"
+AWS_ACCESS_KEY_ID=AKIAxxxx
+AWS_SECRET_ACCESS_KEY=xxxx
+AWS_DEFAULT_REGION=ap-southeast-2
 
 # Payments
 STRIPE_KEY=pk_live_xxx

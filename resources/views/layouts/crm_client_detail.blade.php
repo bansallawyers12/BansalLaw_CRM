@@ -2707,7 +2707,7 @@
     @vite(['resources/js/app.js'])
     <script src="{{ asset('js/broadcasts.js') }}" defer></script>
 
-    @include('partials.email-from-sendgrid-script')
+    @include('partials.email-from-compose-script')
     @yield('scripts')
 </body>
 </html>

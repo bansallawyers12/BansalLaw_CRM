@@ -1,11 +1,11 @@
-{{-- Populate Compose Email From dropdown (Zoho staff senders + SendGrid system senders) --}}
+{{-- Populate Compose Email From dropdown (Zoho staff senders + AWS SES system senders) --}}
 @include('partials.staff-signature-script')
 <script>
 (function() {
-	var sendersUrl = '{{ route("crm.sendgrid.senders") }}';
+	var sendersUrl = '{{ route("crm.compose.senders") }}';
 
 	function refreshEmailFromSenders() {
-		var selects = document.querySelectorAll('.email-from-sendgrid');
+		var selects = document.querySelectorAll('.email-from-compose');
 		if (selects.length === 0) return;
 		fetch(sendersUrl, {
 			headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },

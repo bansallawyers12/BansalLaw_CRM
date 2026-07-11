@@ -59,7 +59,7 @@
 														<label for="mail_provider">Mail Provider</label>
 														<select name="mail_provider" class="form-control">
 															<option value="zoho" selected>Zoho SMTP (staff / personal)</option>
-															<option value="sendgrid">SendGrid (system / no-reply)</option>
+															<option value="ses">AWS SES (system / no-reply)</option>
 														</select>
 													</div>
 												</div>

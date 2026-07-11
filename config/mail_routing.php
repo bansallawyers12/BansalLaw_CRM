@@ -4,14 +4,14 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | System mailer (SendGrid)
+    | System mailer (AWS SES)
     |--------------------------------------------------------------------------
     |
     | Used for automated / no-reply emails: verification, appointments,
-    | hubdoc, etc.
+    | hubdoc, signatures, invoices, etc.
     |
     */
-    'system_mailer' => env('CRM_SYSTEM_MAILER', 'sendgrid'),
+    'system_mailer' => env('CRM_SYSTEM_MAILER', 'ses'),
 
     /*
     |--------------------------------------------------------------------------

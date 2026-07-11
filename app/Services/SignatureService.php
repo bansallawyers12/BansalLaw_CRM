@@ -119,7 +119,7 @@ class SignatureService
     }
 
     /**
-     * Send signing email to a signer using SendGrid mailer.
+     * Send signing email to a signer using AWS SES mailer.
      */
     protected function sendSigningEmail(Document $document, Signer $signer, array $options = []): void
     {
@@ -191,12 +191,12 @@ class SignatureService
                     'signer_email' => $signer->email,
                     'signer_name' => $signer->name,
                     'subject' => $subject,
-                    'status' => 'sent_via_sendgrid',
+                    'status' => 'sent_via_ses',
                     'email_account' => $from['from_address'],
                 ]
             ]);
 
-            Log::info('Signing email sent via SendGrid mailer', [
+            Log::info('Signing email sent via SES mailer', [
                 'document_id' => $document->id,
                 'signer_email' => $signer->email,
                 'template' => $template,
@@ -236,7 +236,7 @@ class SignatureService
     }
 
     /**
-     * Send reminder to a signer using SendGrid mailer.
+     * Send reminder to a signer using AWS SES mailer.
      */
     public function remind(Signer $signer, array $options = []): bool
     {
@@ -297,11 +297,11 @@ class SignatureService
                     'signer_email' => $signer->email,
                     'signer_name' => $signer->name,
                     'reminder_number' => $signer->reminder_count,
-                    'status' => 'sent_via_sendgrid',
+                    'status' => 'sent_via_ses',
                 ]
             ]);
 
-            Log::info('Reminder sent via SendGrid mailer', [
+            Log::info('Reminder sent via SES mailer', [
                 'signer_id' => $signer->id,
                 'reminder_count' => $signer->reminder_count,
                 'email_account' => $from['from_address']

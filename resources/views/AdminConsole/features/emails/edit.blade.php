@@ -59,7 +59,7 @@
 														@php $provider = $fetchedData->mail_provider ?? 'zoho'; @endphp
 														<select name="mail_provider" class="form-control">
 															<option value="zoho" @selected($provider === 'zoho')>Zoho SMTP (staff / personal)</option>
-															<option value="sendgrid" @selected($provider === 'sendgrid')>SendGrid (system / no-reply)</option>
+															<option value="ses" @selected(in_array($provider, ['ses', 'sendgrid'], true))>AWS SES (system / no-reply)</option>
 														</select>
 													</div>
 												</div>

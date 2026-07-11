@@ -29,7 +29,7 @@ class AppointmentDetailedConfirmation extends Mailable
     {
         return new Envelope(
             from: new Address(
-                config('services.sendgrid.from_email') ?: config('mail.from.address'),
+                config('mail.from.address'),
                 config('mail.from.name', config('app.name'))
             ),
             subject: 'Appointment Confirmation - ' . config('app.name'),

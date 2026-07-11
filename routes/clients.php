@@ -16,7 +16,7 @@ use App\Http\Controllers\CRM\EmailLabelController;
 use App\Http\Controllers\CRM\EmailLogAttachmentController;
 use App\Http\Controllers\CRM\ClientMatterHubController;
 use App\Http\Controllers\CRM\UploadChecklistController;
-use App\Http\Controllers\CRM\SendGridSendersController;
+use App\Http\Controllers\CRM\ComposeSendersController;
 use App\Http\Controllers\CRM\AccessGrantController;
 
 /*
@@ -76,8 +76,8 @@ Route::get('/clients/get-allclients', [ClientsController::class, 'getallclients'
 Route::get('/clients/change_assignee', [ClientsController::class, 'change_assignee']);
 Route::get('/get-templates', [CRMUtilityController::class, 'gettemplates'])->name('clients.gettemplates');
 Route::get('/get-compose-defaults', [CRMUtilityController::class, 'getComposeDefaults'])->name('clients.getComposeDefaults');
-Route::get('/crm/sendgrid-senders', [SendGridSendersController::class, 'senders'])->name('crm.sendgrid.senders');
-Route::get('/crm/staff-email-signature', [SendGridSendersController::class, 'staffSignature'])->name('crm.staff.email-signature');
+Route::get('/crm/compose-senders', [ComposeSendersController::class, 'senders'])->name('crm.compose.senders');
+Route::get('/crm/staff-email-signature', [ComposeSendersController::class, 'staffSignature'])->name('crm.staff.email-signature');
 Route::post('/sendmail', [CRMUtilityController::class, 'sendmail'])->name('clients.sendmail');
 
 Route::post('/upload-mail', [ClientsController::class, 'uploadmail']);

@@ -1965,7 +1965,7 @@
      * Resolve From email for compose modal signature lookup.
      */
     function getComposeFromEmail() {
-        const fromSelect = document.querySelector('#emailmodal select.email-from-sendgrid, form[name="sendmail"] select.email-from-sendgrid');
+        const fromSelect = document.querySelector('#emailmodal select.email-from-compose, form[name="sendmail"] select.email-from-compose');
         let fromEmail = (fromSelect && fromSelect.value) ? fromSelect.value.trim() : '';
         if (!fromEmail && window.__crmDefaultFromEmail) {
             fromEmail = window.__crmDefaultFromEmail.trim();

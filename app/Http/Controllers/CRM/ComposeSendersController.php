@@ -6,28 +6,29 @@ use App\Http\Controllers\Controller;
 use App\Models\Email;
 use App\Models\Staff;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 /**
  * Returns compose "From" addresses for the CRM email UI.
  * Staff/personal senders come from the emails table (Zoho SMTP).
- * SendGrid verified senders are included only when marked mail_provider=sendgrid.
+ * System senders (AWS SES) come from emails marked mail_provider=ses.
  */
-class SendGridSendersController extends Controller
+class ComposeSendersController extends Controller
 {
+    /** @var list<string> */
+    private const SYSTEM_MAIL_PROVIDERS = ['ses', 'sendgrid'];
+
     /**
-     * GET /crm/sendgrid-senders
+     * GET /crm/compose-senders
      */
     public function senders(Request $request)
     {
         $zohoSenders = $this->getZohoComposeSenders();
-        $sendgridSenders = $this->getSendGridVerifiedSenders();
+        $systemSenders = $this->getSystemComposeSenders();
         $signaturesByEmail = $this->getStaffSignaturesByEmail();
 
         $list = collect($zohoSenders)
-            ->merge($sendgridSenders)
+            ->merge($systemSenders)
             ->unique('email')
             ->values()
             ->map(function (array $sender) use ($signaturesByEmail) {
@@ -115,53 +116,31 @@ class SendGridSendersController extends Controller
             ->all();
     }
 
-    private function getSendGridVerifiedSenders(): array
+    private function getSystemComposeSenders(): array
     {
-        $apiKey = config('services.sendgrid.api_key');
-        $baseUrl = rtrim(config('services.sendgrid.base_url', 'https://api.sendgrid.com'), '/');
-        $senders = [];
-
-        $explicitSendgrid = Email::query()
+        $senders = Email::query()
             ->where('status', true)
-            ->where('mail_provider', 'sendgrid')
+            ->whereIn('mail_provider', self::SYSTEM_MAIL_PROVIDERS)
             ->orderBy('email')
-            ->get();
+            ->get()
+            ->map(function (Email $account) {
+                return [
+                    'email' => $account->email,
+                    'name' => $account->display_name ?: $account->email,
+                    'nickname' => '',
+                    'provider' => 'ses',
+                ];
+            })
+            ->all();
 
-        foreach ($explicitSendgrid as $account) {
+        $defaultFrom = strtolower(trim((string) config('mail.from.address', '')));
+        if ($defaultFrom !== '' && ! collect($senders)->contains(fn ($s) => strcasecmp($s['email'], $defaultFrom) === 0)) {
             $senders[] = [
-                'email' => $account->email,
-                'name' => $account->display_name ?: $account->email,
+                'email' => config('mail.from.address'),
+                'name' => config('mail.from.name', config('app.name')),
                 'nickname' => '',
-                'provider' => 'sendgrid',
+                'provider' => 'ses',
             ];
-        }
-
-        if (empty($apiKey)) {
-            return $senders;
-        }
-
-        try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $apiKey,
-            ])->timeout(10)->get($baseUrl . '/v3/verified_senders');
-
-            if ($response->successful()) {
-                foreach (($response->json()['results'] ?? []) as $sender) {
-                    if (! empty($sender['from_email']) && (isset($sender['verified']) ? $sender['verified'] : true)) {
-                        $email = $sender['from_email'];
-                        if (! collect($senders)->contains(fn ($s) => strcasecmp($s['email'], $email) === 0)) {
-                            $senders[] = [
-                                'email' => $email,
-                                'name' => $sender['from_name'] ?? $sender['nickname'] ?? $email,
-                                'nickname' => $sender['nickname'] ?? '',
-                                'provider' => 'sendgrid',
-                            ];
-                        }
-                    }
-                }
-            }
-        } catch (\Exception $e) {
-            Log::error('SendGrid verified senders fetch failed: ' . $e->getMessage());
         }
 
         return $senders;
@@ -185,9 +164,9 @@ class SendGridSendersController extends Controller
             return $zohoEmails[0];
         }
 
-        $preferred = config('services.sendgrid.from_email', '');
+        $preferred = (string) config('mail.from.address', '');
         if (blank($preferred)) {
-            $preferred = $authEmail ?? config('mail.from.address', '');
+            $preferred = $authEmail ?? '';
         }
 
         $emails = array_column($list, 'email');
@@ -195,7 +174,7 @@ class SendGridSendersController extends Controller
             return $emails[0];
         }
 
-        return (string) $preferred;
+        return $preferred;
     }
 
     /**

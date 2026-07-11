@@ -30,31 +30,42 @@ class MailRoutingServiceTest extends TestCase
         $this->assertSame('zoho', $this->service->resolveMailerName('michael@example.com'));
     }
 
-    public function test_it_routes_no_reply_addresses_to_sendgrid(): void
+    public function test_it_routes_no_reply_addresses_to_ses(): void
     {
-        $this->assertSame('sendgrid', $this->service->resolveMailerName('noreply@example.com'));
-        $this->assertSame('sendgrid', $this->service->resolveMailerName('no-reply@example.com'));
+        $this->assertSame('ses', $this->service->resolveMailerName('noreply@example.com'));
+        $this->assertSame('ses', $this->service->resolveMailerName('no-reply@example.com'));
     }
 
-    public function test_it_routes_explicit_sendgrid_accounts_to_sendgrid(): void
+    public function test_it_routes_explicit_ses_accounts_to_ses(): void
     {
         Email::factory()->create([
             'email' => 'notifications@example.com',
+            'mail_provider' => 'ses',
+            'status' => true,
+        ]);
+
+        $this->assertSame('ses', $this->service->resolveMailerName('notifications@example.com'));
+    }
+
+    public function test_it_routes_legacy_sendgrid_accounts_to_ses(): void
+    {
+        Email::factory()->create([
+            'email' => 'legacy@example.com',
             'mail_provider' => 'sendgrid',
             'status' => true,
         ]);
 
-        $this->assertSame('sendgrid', $this->service->resolveMailerName('notifications@example.com'));
+        $this->assertSame('ses', $this->service->resolveMailerName('legacy@example.com'));
     }
 
-    public function test_it_routes_inactive_zoho_accounts_to_sendgrid(): void
+    public function test_it_routes_inactive_zoho_accounts_to_ses(): void
     {
         Email::factory()->inactive()->create([
             'email' => 'inactive@example.com',
             'mail_provider' => 'zoho',
         ]);
 
-        $this->assertSame('sendgrid', $this->service->resolveMailerName('inactive@example.com'));
+        $this->assertSame('ses', $this->service->resolveMailerName('inactive@example.com'));
     }
 
     public function test_it_forces_system_mailer_when_requested(): void
@@ -65,12 +76,12 @@ class MailRoutingServiceTest extends TestCase
             'status' => true,
         ]);
 
-        $this->assertSame('sendgrid', $this->service->resolveMailerName('admin@example.com', true));
+        $this->assertSame('ses', $this->service->resolveMailerName('admin@example.com', true));
     }
 
-    public function test_it_defaults_empty_from_to_sendgrid(): void
+    public function test_it_defaults_empty_from_to_ses(): void
     {
-        $this->assertSame('sendgrid', $this->service->resolveMailerName(null));
-        $this->assertSame('sendgrid', $this->service->resolveMailerName(''));
+        $this->assertSame('ses', $this->service->resolveMailerName(null));
+        $this->assertSame('ses', $this->service->resolveMailerName(''));
     }
 }

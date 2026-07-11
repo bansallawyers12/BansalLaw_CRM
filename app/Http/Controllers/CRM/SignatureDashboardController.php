@@ -530,7 +530,7 @@ class SignatureDashboardController extends Controller
                             'signer_email' => $signer->email,
                             'signer_name' => $signer->name,
                             'subject' => $subject,
-                            'status' => 'sent_via_sendgrid',
+                            'status' => 'sent_via_ses',
                         ]
                     ]);
                 } catch (\Exception $emailException) {
