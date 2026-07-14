@@ -12,18 +12,13 @@
 		<title>Tour Planner | Exception</title>
     
 		<!-- Icons-->
-			<link rel="stylesheet" type="text/css" href="{{asset('public/icons/@coreui/icons/css/coreui-icons.min.css')}}" />
-			<link rel="stylesheet" type="text/css" href="{{asset('public/icons/flag-icon-css/css/flag-icon.min.css')}}" />
 			@include('components.font-awesome')
-			<link rel="stylesheet" type="text/css" href="{{asset('public/icons/simple-line-icons/css/simple-line-icons.css')}}" />
 		
 		<!-- Main styles for this application-->
 			@include('components.bootstrap5-assets')
 			<link rel="stylesheet" type="text/css" href="{{asset('public/css/style.css')}}" />
-			<link rel="stylesheet" type="text/css" href="{{asset('public/css/pace.min.css')}}" />
-			<link rel="stylesheet" type="text/css" href="{{asset('public/css/admin.css')}}" />
 	</head>
-	<body class="app flex-row align-items-center">
+	<body class="d-flex min-vh-100 flex-row align-items-center bg-light">
 		<div id="loader">
 			<div class="loading_image">
 				<div class="valid">
@@ -66,12 +61,8 @@
 		</div>
 		
 		<!-- Apnamentor necessary plugins-->
-			<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-			<script src="{{asset('public/js/popper.js/js/popper.min.js')}}"></script>
+			<script src="{{ asset('js/jquery.min.js') }}"></script>
 			@include('components.bootstrap5-scripts')
-			<script src="{{asset('public/js/pace-progress/js/pace.min.js')}}"></script>
-			<script src="{{asset('public/js/perfect-scrollbar/js/perfect-scrollbar.min.js')}}"></script>
-			<script src="{{asset('public/icons/@coreui/coreui-pro/js/coreui.min.js')}}"></script>
 			<script src="{{asset('public/js/custom-form-validation.js')}}"></script>
 	</body>
 </html>

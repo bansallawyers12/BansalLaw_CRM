@@ -44,7 +44,7 @@
 	<script type="text/javascript">
 		var site_url = "<?php echo URL::to('/'); ?>";
 	</script>
-	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+	<script src="{{ asset('js/jquery.min.js') }}"></script>
 	{{-- app.min.js: legacy Popper/Bootstrap/moment bundle (jQuery stripped; CDN 3.7.1 above must load first) --}}
 	<script src="{{asset('js/app.min.js')}}"></script>
 	@include('components.bootstrap5-scripts')

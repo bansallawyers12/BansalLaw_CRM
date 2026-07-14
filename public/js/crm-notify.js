@@ -1,6 +1,6 @@
 /**
  * CRM toast facade — prefer window.crmNotify for user-visible notifications.
- * Backed by iziToast (loaded immediately before this file in CRM layouts).
+ * Backed by Toastify-js.
  */
 (function (global) {
     'use strict';

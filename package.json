@@ -16,7 +16,6 @@
         "copy:bootstrap": "node -e \"const fs=require('fs');const p='node_modules/bootstrap/dist/';fs.copyFileSync(p+'css/bootstrap.min.css','public/css/bootstrap.min.css');fs.copyFileSync(p+'js/bootstrap.bundle.min.js','public/js/bootstrap.bundle.min.js')\"",
         "copy:chartjs": "node -e \"const fs=require('fs');fs.copyFileSync('node_modules/chart.js/dist/chart.umd.min.js','public/js/chart.umd.min.js')\"",
         "copy:datatables": "node -e \"const fs=require('fs');fs.copyFileSync('node_modules/datatables.net/js/dataTables.min.js','public/js/datatables.min.js');fs.copyFileSync('node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.js','public/js/dataTables.bootstrap5.min.js');fs.copyFileSync('node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css','public/css/dataTables.bootstrap5.min.css')\"",
-        "copy:inputmask": "node -e \"const fs=require('fs');const p='node_modules/inputmask/dist/';fs.copyFileSync(p+'jquery.inputmask.min.js','public/js/jquery.inputmask.min.js');fs.copyFileSync(p+'inputmask.min.js','public/js/inputmask.min.js')\"",
         "copy:tinymce": "node -e \"const fs=require('fs');const p='node_modules/tinymce/';fs.cpSync(p,'public/js/tinymce/js/tinymce/',{recursive:true})\"",
         "strip:app-min-jquery": "node scripts/strip-app-min-jquery.cjs",
         "strip:app-min-bootstrap-css": "node scripts/strip-app-min-bootstrap-css.cjs",
@@ -27,21 +26,26 @@
         "verify:sweetalert2": "node scripts/verify-sweetalert2.cjs",
         "verify:chartjs": "node scripts/verify-chartjs.cjs",
         "verify:upgraded-libs": "node scripts/verify-upgraded-libs.cjs",
-        "postinstall": "npm run copy:flatpickr && npm run copy:intl-tel-input && npm run copy:sweetalert2 && npm run copy:bootstrap && npm run copy:chartjs && npm run copy:tinymce && npm run copy:datatables && npm run copy:inputmask && npm run strip:app-min-jquery && npm run strip:app-min-bootstrap-css"
+        "copy:tom-select": "node -e \"const fs=require('fs');const p='node_modules/tom-select/dist/';fs.copyFileSync(p+'js/tom-select.complete.min.js','public/js/tom-select.complete.min.js');fs.copyFileSync(p+'css/tom-select.bootstrap5.min.css','public/css/tom-select.bootstrap5.min.css')\"",
+        "copy:jquery": "node -e \"const fs=require('fs');const p='node_modules/jquery/dist/';fs.copyFileSync(p+'jquery.min.js','public/js/jquery.min.js')\"",
+        "copy:toastify": "node -e \"const fs=require('fs');const p='node_modules/toastify-js/src/';fs.copyFileSync(p+'toastify.js','public/js/toastify.js');fs.copyFileSync(p+'toastify.css','public/css/toastify.css')\"",
+        "copy:fontawesome": "node -e \"const fs=require('fs');const p='node_modules/@fortawesome/fontawesome-free/';fs.copyFileSync(p+'css/all.min.css','public/css/fontawesome.min.css');fs.cpSync(p+'webfonts','public/webfonts',{recursive:true})\"",
+        "postinstall": "npm run copy:flatpickr && npm run copy:intl-tel-input && npm run copy:sweetalert2 && npm run copy:bootstrap && npm run copy:chartjs && npm run copy:tinymce && npm run copy:datatables && npm run copy:tom-select && npm run copy:jquery && npm run copy:toastify && npm run copy:fontawesome && npm run strip:app-min-jquery && npm run strip:app-min-bootstrap-css",
+        "update": "npm update && npm run postinstall"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.11",
+        "@tailwindcss/vite": "^4.3.2",
         "alpinejs": "^3.15.3",
-        "autoprefixer": "^10.5.0",
         "axios": "^1.11.0",
         "jquery": "^3.7.1",
         "jsdom": "^29.1.1",
         "laravel-vite-plugin": "^3.1.0",
-        "postcss": "^8.4.31",
-        "tailwindcss": "^3.4.0",
+        "tailwindcss": "^4.3.2",
         "vite": "^8.0.16"
     },
     "dependencies": {
+        "@fortawesome/fontawesome-free": "^7.3.0",
         "@fullcalendar/core": "^6.1.20",
         "@fullcalendar/daygrid": "^6.1.20",
         "@fullcalendar/interaction": "^6.1.20",
@@ -52,10 +56,11 @@
         "datatables.net": "^2.3.8",
         "datatables.net-bs5": "^2.3.8",
         "flatpickr": "^4.6.13",
-        "inputmask": "^5.0.9",
         "intl-tel-input": "^29.1.2",
         "signature_pad": "^5.1.1",
         "sweetalert2": "^11.26.25",
-        "tinymce": "^8.7.0"
+        "tinymce": "^8.7.0",
+        "toastify-js": "^1.12.0",
+        "tom-select": "^2.6.2"
     }
 }

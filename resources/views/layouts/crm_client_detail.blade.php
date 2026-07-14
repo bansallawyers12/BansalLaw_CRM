@@ -13,7 +13,7 @@
     <link rel="icon" type="image/png" href="{{asset('img/favicon.png')}}">
     @include('components.bootstrap5-assets')
     <link rel="stylesheet" href="{{asset('css/app.min.css')}}">
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <link rel="stylesheet" type="text/css" href="{{asset('css/toastify.css')}}">
     @include('components.sweetalert2-assets')
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     @include('components.flatpickr-assets')
@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="{{asset('css/custom.css')}}">
     @stack('datatables-styles')
     @include('components.font-awesome')
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="{{ asset('js/jquery.min.js') }}"></script>
     <script>window.__CRM_APP_NAME__=@json(config('app.name'));</script>
     <script>window.__CRM_BROADCAST_BASE__=@json(rtrim(url('/notifications/broadcasts'), '/'));</script>
     <script src="{{ asset('js/datetime-display.js') }}"></script>
@@ -1714,7 +1714,7 @@
     @include('components.bootstrap5-scripts')
     <script src="{{asset('js/bootstrap5-jquery-compat.js')}}"></script>
     <script src="{{asset('js/scripts.js')}}"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script type="text/javascript" src="{{asset('js/toastify.js')}}"></script>
     <script>
         window.iziToast = {
             success: function(opts) {

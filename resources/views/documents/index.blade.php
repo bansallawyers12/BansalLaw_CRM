@@ -328,7 +328,7 @@
     <link rel="stylesheet" href="{{asset('css/tom-select.bootstrap5.min.css')}}">
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <link rel="stylesheet" href="{{asset('css/dataTables.bootstrap5.min.css')}}">
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="{{ asset('js/jquery.min.js') }}"></script>
     @include('components.bootstrap5-scripts')
     <script src="{{asset('js/bootstrap5-jquery-compat.js')}}"></script>
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
