@@ -818,6 +818,9 @@ $(document).ready(function() {
                     <span class="client-doc-preview-filename" title="${safeLabel}">${safeLabel}</span>
                 </div>
                 <div class="client-doc-preview-header-actions">
+                    <button type="button" class="btn btn-sm btn-outline-secondary client-doc-preview-toggle-list-btn" title="Toggle Document List" onclick="$(this).closest('.subtab6-pane, .subtab2-pane, .subtab-pane, .not-used-layout, .tab-pane').toggleClass('hide-list-view'); $(this).find('i').toggleClass('fa-arrows-left-right-to-line fa-list');">
+                        <i class="fa-solid fa-arrows-left-right-to-line"></i> Toggle List
+                    </button>
                     <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary client-doc-preview-open-btn">
                         <i class="fa-solid fa-up-right-from-square"></i> Open
                     </a>

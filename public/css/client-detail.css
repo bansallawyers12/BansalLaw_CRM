@@ -4590,3 +4590,7 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   opacity: 1 !important;
 }
 
+
+.hide-list-view .checklist-table-container { display: none !important; }
+.hide-list-view .preview-pane { flex: 0 0 100% !important; max-width: 100% !important; }
+.hide-list-view .grid_data { display: none !important; }
