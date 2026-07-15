@@ -1000,6 +1000,19 @@ $(document).ready(function() {
             }
         }
 
+        const docId = extractDocumentIdFromPreviewUrl(fileUrl);
+        if (docId) {
+            const tabContainer = container.closest('.subtab6-pane, .subtab2-pane, .subtab-pane, .not-used-layout, .tab-pane');
+            if (tabContainer.length) {
+                tabContainer.find('.drow, .grid_list').removeClass('active-preview-doc');
+                tabContainer.find('#id_' + docId + ', #gid_' + docId).addClass('active-preview-doc');
+            } else {
+                $('.drow, .grid_list').removeClass('active-preview-doc');
+                $('#id_' + docId + ', #gid_' + docId).addClass('active-preview-doc');
+            }
+        }
+
+
         const embeddedPreviewUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'embed=1';
         const normalizedType = (fileType || '').toLowerCase();
         const isOfficePreview = normalizedType.match(/^(docx?|xlsx?|pptx?|rtf|odt|ods|odp)$/);

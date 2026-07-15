@@ -144,10 +144,9 @@
                 return;
             }
 
-            var listOuterHeight = $listPanel.outerHeight();
-            if (listOuterHeight > 0) {
-                $preview.css('height', listOuterHeight + 'px');
-            }
+            $pane.css('height', '100%');
+            $preview.css('height', '100%');
+            $listPanel.css('height', '100%');
         });
     }
 
