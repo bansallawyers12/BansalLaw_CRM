@@ -1394,12 +1394,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     );
                 }
             } catch (previewError) {
-                console.warn('Attachment preview failed, continuing upload:', previewError);
-                showUploadErrorAlert(
-                    (previewError && previewError.message)
-                        ? previewError.message
-                        : 'Could not preview attachments for this email. Upload will continue with default attachment storage.'
-                );
+                hideEmailUploadLoading();
+                console.warn('Attachment preview failed:', previewError);
+                const previewMessage = (previewError && previewError.message)
+                    ? previewError.message
+                    : 'Could not preview attachments for this email. Ensure the Python email service is running, then try again.';
+                showUploadErrorAlert(previewMessage, 'Attachment preview failed');
+                return {
+                    uploaded: 0,
+                    failed: 1,
+                    rejected: 0,
+                    errors: [{ filename: file.name, error: previewMessage }]
+                };
             }
 
             updateEmailUploadLoading(

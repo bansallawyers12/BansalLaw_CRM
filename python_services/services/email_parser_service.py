@@ -141,22 +141,16 @@ class EmailParserService:
         content_type: str = '',
     ) -> bool:
         disposition = str(disposition or '').lower()
-        content_type = str(content_type or '').lower()
 
         if 'attachment' in disposition:
             return False
 
         content_id = str(content_id or '').strip().strip('<>')
-        if content_id and combined_body:
-            cid_ref = f"cid:{content_id}".lower()
-            if cid_ref in str(combined_body).lower():
-                return True
+        if not content_id or not combined_body:
+            return False
 
-        if 'inline' in disposition:
-            # Outlook .eml exports often mark real file attachments as inline.
-            return content_type.startswith('image/')
-
-        return False
+        cid_ref = f"cid:{content_id}".lower()
+        return cid_ref in str(combined_body).lower()
 
     def _decode_eml_header_value(self, value: Optional[str]) -> str:
         if not value:
@@ -228,6 +222,9 @@ class EmailParserService:
         if part.get_content_maintype() == 'multipart':
             return False
 
+        if self._get_eml_part_filename(part):
+            return True
+
         disposition = str(part.get('Content-Disposition', '') or '').lower()
         if 'attachment' in disposition:
             return True
@@ -235,9 +232,6 @@ class EmailParserService:
         content_type = (part.get_content_type() or '').lower()
         if content_type in ('text/plain', 'text/html'):
             return False
-
-        if self._get_eml_part_filename(part):
-            return True
 
         maintype = part.get_content_maintype()
         if maintype in ('application', 'image', 'audio', 'video'):
@@ -482,6 +476,24 @@ class EmailParserService:
         text_content = ''
         attachment_parts: List[Message] = []
 
+        def _get_part_text(part: Message) -> str:
+            try:
+                content = part.get_content()
+                if isinstance(content, str):
+                    return content
+                if isinstance(content, bytes):
+                    return content.decode('utf-8', errors='ignore')
+            except Exception as e:
+                logger.warning(f"Error extracting EML text content: {str(e)}")
+            
+            try:
+                payload = part.get_payload(decode=True)
+                if isinstance(payload, bytes):
+                    return payload.decode('utf-8', errors='ignore')
+            except Exception as e:
+                logger.warning(f"Error in EML text payload fallback: {str(e)}")
+            return ''
+
         if msg.is_multipart():
             for part in msg.walk():
                 if part.get_content_maintype() == 'multipart':
@@ -493,17 +505,17 @@ class EmailParserService:
 
                 content_type = part.get_content_type()
                 if content_type == 'text/html' and not html_content:
-                    html_content = self._safe_get(part.get_content(), '')
+                    html_content = self._safe_get(_get_part_text(part), '')
                 elif content_type == 'text/plain' and not text_content:
-                    text_content = self._safe_get(part.get_content(), '')
+                    text_content = self._safe_get(_get_part_text(part), '')
         else:
             content_type = msg.get_content_type()
             if content_type == 'text/html':
-                html_content = self._safe_get(msg.get_content(), '')
+                html_content = self._safe_get(_get_part_text(msg), '')
             elif self._is_eml_attachment_candidate(msg):
                 attachment_parts.append(msg)
             else:
-                text_content = self._safe_get(msg.get_content(), '')
+                text_content = self._safe_get(_get_part_text(msg), '')
 
         combined_body = f"{text_content}{html_content}"
         attachments = []

@@ -1833,13 +1833,8 @@ class EmailUploadController extends Controller
             return true;
         }
 
-        $contentType = strtolower((string) ($attachmentData['content_type'] ?? ''));
-        if ($contentType !== ''
-            && ! str_starts_with($contentType, 'image/')
-            && ! in_array($contentType, ['text/plain', 'text/html'], true)) {
-            return true;
-        }
-
+        // Only skip parts embedded in the email body (cid: references). Outlook .eml
+        // exports often mark real file attachments as Content-Disposition: inline.
         return empty($attachmentData['is_inline']);
     }
 
