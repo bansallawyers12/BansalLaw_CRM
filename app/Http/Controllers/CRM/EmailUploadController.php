@@ -1827,13 +1827,20 @@ class EmailUploadController extends Controller
      */
     protected function shouldPromptAttachmentStorage(array $attachmentData): bool
     {
-        if (empty($attachmentData['is_inline'])) {
+        $disposition = strtolower((string) ($attachmentData['content_disposition'] ?? ''));
+
+        if (str_contains($disposition, 'attachment')) {
             return true;
         }
 
-        $disposition = strtolower((string) ($attachmentData['content_disposition'] ?? ''));
+        $contentType = strtolower((string) ($attachmentData['content_type'] ?? ''));
+        if ($contentType !== ''
+            && ! str_starts_with($contentType, 'image/')
+            && ! in_array($contentType, ['text/plain', 'text/html'], true)) {
+            return true;
+        }
 
-        return str_contains($disposition, 'attachment');
+        return empty($attachmentData['is_inline']);
     }
 
     /**

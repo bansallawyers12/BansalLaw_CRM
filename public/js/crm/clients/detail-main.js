@@ -6931,7 +6931,8 @@ success: function(response) {
         $(document).on('dragover', function(e) {
             // Allow drop zones to handle their own dragover events
             if ($(e.target).closest('.personal-doc-drag-zone, .visa-doc-drag-zone, .nomination-doc-drag-zone, .bulk-upload-dropzone, .bulk-upload-dropzone-visa, .bulk-upload-dropzone-nomination, .outlook-container, .inline-drop-zone, #dragDropOverlay').length) {
-                return; // Let the drop zone handler take over
+                e.preventDefault();
+                return;
             }
             // For other areas, prevent default to allow file drops
             e.preventDefault();

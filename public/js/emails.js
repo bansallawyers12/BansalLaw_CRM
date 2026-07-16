@@ -918,20 +918,24 @@
             e.preventDefault();
             e.stopPropagation();
 
+            const snapshot = (typeof window.crmCaptureEmailUploadDropSnapshot === 'function')
+                ? window.crmCaptureEmailUploadDropSnapshot(e.dataTransfer)
+                : e.dataTransfer;
+
             let rawFiles = [];
             let files = [];
 
             if (typeof window.crmResolveEmailUploadDrop === 'function') {
-                const dropResult = await window.crmResolveEmailUploadDrop(e.dataTransfer);
+                const dropResult = await window.crmResolveEmailUploadDrop(snapshot);
                 rawFiles = dropResult.rawFiles || [];
                 files = dropResult.files || [];
             } else if (typeof window.crmResolveEmailUploadDropFiles === 'function') {
-                files = await window.crmResolveEmailUploadDropFiles(e.dataTransfer);
+                files = await window.crmResolveEmailUploadDropFiles(snapshot);
                 rawFiles = (typeof window.crmGetFilesFromDataTransfer === 'function')
-                    ? await window.crmGetFilesFromDataTransfer(e.dataTransfer)
-                    : Array.from(e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : []);
+                    ? await window.crmGetFilesFromDataTransfer(snapshot)
+                    : (snapshot && snapshot.files ? Array.from(snapshot.files) : []);
             } else {
-                rawFiles = Array.from(e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : []);
+                rawFiles = snapshot && snapshot.files ? Array.from(snapshot.files) : [];
                 files = rawFiles;
             }
 

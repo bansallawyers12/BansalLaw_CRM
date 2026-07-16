@@ -160,78 +160,135 @@
         });
     }
 
+    function isEmailUploadDropSnapshot(value) {
+        return !!(value && Array.isArray(value.files) && Array.isArray(value.entries));
+    }
+
+    /**
+     * Capture drag payload synchronously during the drop event.
+     * dataTransfer is cleared once the drop handler finishes, so async reads fail.
+     */
+    function captureEmailUploadDropSnapshot(dataTransfer) {
+        var snapshot = {
+            files: [],
+            entries: [],
+            types: []
+        };
+
+        if (!dataTransfer) {
+            return snapshot;
+        }
+
+        if (dataTransfer.types && dataTransfer.types.length) {
+            snapshot.types = Array.prototype.slice.call(dataTransfer.types);
+        }
+
+        if (dataTransfer.files && dataTransfer.files.length) {
+            for (var i = 0; i < dataTransfer.files.length; i++) {
+                snapshot.files.push(dataTransfer.files[i]);
+            }
+        }
+
+        if (dataTransfer.items && dataTransfer.items.length) {
+            for (var j = 0; j < dataTransfer.items.length; j++) {
+                var item = dataTransfer.items[j];
+                if (!item || item.kind !== 'file') {
+                    continue;
+                }
+
+                var directFile = item.getAsFile ? item.getAsFile() : null;
+                var entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+
+                snapshot.entries.push({
+                    file: directFile,
+                    entry: entry,
+                    type: item.type || ''
+                });
+
+                if (directFile) {
+                    var alreadyCaptured = snapshot.files.some(function (existing) {
+                        return existing === directFile;
+                    });
+                    if (!alreadyCaptured) {
+                        snapshot.files.push(directFile);
+                    }
+                }
+            }
+        }
+
+        return snapshot;
+    }
+
+    function filesAreEquivalent(left, right) {
+        if (!left || !right) {
+            return false;
+        }
+        return left === right
+            || (left.name === right.name
+                && left.size === right.size
+                && left.lastModified === right.lastModified
+                && left.type === right.type);
+    }
+
+    function appendUniqueEmailUploadFile(target, file) {
+        if (!file) {
+            return;
+        }
+        var exists = target.some(function (existing) {
+            return filesAreEquivalent(existing, file);
+        });
+        if (!exists) {
+            target.push(file);
+        }
+    }
+
+    function hydrateEmailUploadDropSnapshot(snapshot) {
+        snapshot = snapshot || { files: [], entries: [], types: [] };
+        var collected = Array.isArray(snapshot.files) ? snapshot.files.slice() : [];
+        var pending = [];
+
+        (snapshot.entries || []).forEach(function (entry) {
+            if (entry && entry.entry && entry.entry.isFile && typeof entry.entry.file === 'function') {
+                pending.push(new Promise(function (resolve) {
+                    entry.entry.file(function (file) {
+                        resolve(file || entry.file || null);
+                    }, function () {
+                        resolve(entry.file || null);
+                    });
+                }));
+                return;
+            }
+
+            appendUniqueEmailUploadFile(collected, entry ? entry.file : null);
+        });
+
+        if (!pending.length) {
+            return Promise.resolve(collected);
+        }
+
+        return Promise.all(pending).then(function (entryFiles) {
+            entryFiles.forEach(function (file) {
+                appendUniqueEmailUploadFile(collected, file);
+            });
+            return collected;
+        }).catch(function () {
+            return collected;
+        });
+    }
+
+    function getFilesFromDropSnapshot(snapshot) {
+        return hydrateEmailUploadDropSnapshot(snapshot);
+    }
+
     /**
      * Resolve dropped files via DataTransferItem / FileSystem API when available.
      * Outlook and some browsers expose 0-byte File objects on dataTransfer.files alone.
      */
-    function getFilesFromDataTransfer(dataTransfer) {
-        return new Promise(function (resolve) {
-            if (!dataTransfer) {
-                resolve([]);
-                return;
-            }
-
-            var collected = [];
-            var pending = [];
-            var items = dataTransfer.items;
-
-            if (items && items.length) {
-                for (var i = 0; i < items.length; i++) {
-                    (function (item) {
-                        if (item.kind !== 'file') {
-                            return;
-                        }
-
-                        var entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
-                        if (entry && entry.isFile) {
-                            pending.push(new Promise(function (res) {
-                                entry.file(function (file) {
-                                    res(file || null);
-                                }, function () {
-                                    res(item.getAsFile());
-                                });
-                            }));
-                            return;
-                        }
-
-                        var directFile = item.getAsFile();
-                        if (directFile) {
-                            collected.push(directFile);
-                        }
-                    })(items[i]);
-                }
-            }
-
-            if (!pending.length && !collected.length && dataTransfer.files && dataTransfer.files.length) {
-                resolve(Array.from(dataTransfer.files));
-                return;
-            }
-
-            if (!pending.length) {
-                resolve(collected);
-                return;
-            }
-
-            Promise.all(pending).then(function (entryFiles) {
-                entryFiles.forEach(function (file) {
-                    if (file) {
-                        collected.push(file);
-                    }
-                });
-
-                if (!collected.length && dataTransfer.files && dataTransfer.files.length) {
-                    collected = Array.from(dataTransfer.files);
-                }
-
-                resolve(collected);
-            }).catch(function () {
-                if (dataTransfer.files && dataTransfer.files.length) {
-                    resolve(Array.from(dataTransfer.files));
-                } else {
-                    resolve(collected);
-                }
-            });
-        });
+    function getFilesFromDataTransfer(dataTransferOrSnapshot) {
+        var snapshot = isEmailUploadDropSnapshot(dataTransferOrSnapshot)
+            ? dataTransferOrSnapshot
+            : captureEmailUploadDropSnapshot(dataTransferOrSnapshot);
+        return getFilesFromDropSnapshot(snapshot);
     }
 
     function ensureEmailUploadFileContent(file) {
@@ -374,8 +431,8 @@
         return null;
     }
 
-    function resolveEmailUploadDrop(dataTransfer) {
-        return getFilesFromDataTransfer(dataTransfer).then(function (rawFiles) {
+    function resolveEmailUploadDrop(dataTransferOrSnapshot) {
+        return getFilesFromDataTransfer(dataTransferOrSnapshot).then(function (rawFiles) {
             return normalizeEmailUploadFiles(rawFiles).then(function (normalizedFiles) {
                 return {
                     rawFiles: rawFiles,
@@ -385,8 +442,8 @@
         });
     }
 
-    function resolveEmailUploadDropFiles(dataTransfer) {
-        return resolveEmailUploadDrop(dataTransfer).then(function (result) {
+    function resolveEmailUploadDropFiles(dataTransferOrSnapshot) {
+        return resolveEmailUploadDrop(dataTransferOrSnapshot).then(function (result) {
             return result.files;
         });
     }
@@ -759,6 +816,9 @@
     global.crmDetectEmailUploadExtensionFromBytes = detectEmailUploadExtensionFromBytes;
     global.crmEnsureEmailUploadFileExtension = ensureEmailUploadFileExtension;
     global.crmFilterAllowedEmailUploadFiles = filterAllowedEmailUploadFiles;
+    global.crmCaptureEmailUploadDropSnapshot = captureEmailUploadDropSnapshot;
+    global.crmHydrateEmailUploadDropSnapshot = hydrateEmailUploadDropSnapshot;
+    global.crmGetFilesFromDropSnapshot = getFilesFromDropSnapshot;
     global.crmGetFilesFromDataTransfer = getFilesFromDataTransfer;
     global.crmEnsureEmailUploadFileContent = ensureEmailUploadFileContent;
     global.crmNormalizeEmailUploadFiles = normalizeEmailUploadFiles;

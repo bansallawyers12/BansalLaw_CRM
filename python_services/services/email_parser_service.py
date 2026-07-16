@@ -133,19 +133,30 @@ class EmailParserService:
 
         return attachment_data
 
-    def _is_inline_attachment(self, content_id: str, combined_body: str, disposition: str = '') -> bool:
+    def _is_inline_attachment(
+        self,
+        content_id: str,
+        combined_body: str,
+        disposition: str = '',
+        content_type: str = '',
+    ) -> bool:
         disposition = str(disposition or '').lower()
+        content_type = str(content_type or '').lower()
+
         if 'attachment' in disposition:
             return False
-        if 'inline' in disposition:
-            return True
 
         content_id = str(content_id or '').strip().strip('<>')
-        if not content_id or not combined_body:
-            return False
+        if content_id and combined_body:
+            cid_ref = f"cid:{content_id}".lower()
+            if cid_ref in str(combined_body).lower():
+                return True
 
-        cid_ref = f"cid:{content_id}".lower()
-        return cid_ref in str(combined_body).lower()
+        if 'inline' in disposition:
+            # Outlook .eml exports often mark real file attachments as inline.
+            return content_type.startswith('image/')
+
+        return False
 
     def _decode_eml_header_value(self, value: Optional[str]) -> str:
         if not value:
@@ -510,7 +521,12 @@ class EmailParserService:
             content_id = self._safe_get(part.get('Content-ID', ''), '')
             disposition = str(part.get('Content-Disposition', '') or '').lower()
             content_type = self._safe_get(part.get_content_type(), 'application/octet-stream')
-            is_inline = self._is_inline_attachment(content_id, combined_body, disposition)
+            is_inline = self._is_inline_attachment(
+                content_id,
+                combined_body,
+                disposition,
+                content_type,
+            )
 
             return self._build_attachment_record(
                 filename,
@@ -753,12 +769,17 @@ class EmailParserService:
                 try:
                     content_id = self._safe_get(getattr(attachment, 'contentId', ''), '')
                     disposition = self._safe_get(getattr(attachment, 'contentDisposition', ''), '')
-                    is_inline = self._is_inline_attachment(content_id, combined_body, disposition)
-                    payload = self._read_msg_attachment_bytes(attachment)
                     content_type = self._safe_get(
                         getattr(attachment, 'contentType', 'application/octet-stream'),
                         'application/octet-stream',
                     )
+                    is_inline = self._is_inline_attachment(
+                        content_id,
+                        combined_body,
+                        disposition,
+                        content_type,
+                    )
+                    payload = self._read_msg_attachment_bytes(attachment)
                     filename = self._safe_get(
                         attachment.longFilename or attachment.shortFilename,
                         'Unknown',
