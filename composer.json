@@ -27,7 +27,7 @@
         "laravel/pint": "^1.0",
         "laravel/sail": "^1.43",
         "mockery/mockery": "^1.4.4",
-        "phpunit/phpunit": "^13.0",
+        "phpunit/phpunit": "^12.0",
         "spatie/laravel-ignition": "^2.0"
     },
     "autoload": {
@@ -60,12 +60,16 @@
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
-        ]
+        ],
+        "audit:php83": "php scripts/audit-php83-compat.php"
     },
     "config": {
         "preferred-install": "dist",
         "sort-packages": true,
         "optimize-autoloader": true,
+        "platform": {
+            "php": "8.3.31"
+        },
         "allow-plugins": {
             "kylekatarnls/update-helper": true,
             "php-http/discovery": true
