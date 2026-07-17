@@ -23,7 +23,7 @@
 							</div>
 						</div>
 						<div class="card-body">
-							<p class="small mb-3 text-muted"><strong>Manage stages</strong> for this workflow below. Use <strong>Add Stage</strong> (top right) to add rows. Stages marked <span class="badge badge-secondary">Protected</span> cannot be renamed or removed — <strong>Edit</strong> still opens the stage (read-only); <strong>Delete</strong> is disabled.</p>
+							<p class="small mb-3 text-muted"><strong>Manage stages</strong> for this workflow below. Use <strong>Add Stage</strong> (top right) to add rows. Stages marked <span class="badge bg-secondary">Protected</span> cannot be renamed or removed — <strong>Edit</strong> still opens the stage (read-only); <strong>Delete</strong> is disabled.</p>
 							<div class="table-responsive common_table">
 								<table class="table text_wrap workflow-stages-table">
 									<thead>
@@ -257,7 +257,7 @@ jQuery(document).ready(function($) {
 		var displayName = stageDisplayName(stage.name);
 		var encodedId = stage.encoded_id || '';
 		var protectedBadge = isFrozen
-			? ' <span class="badge badge-secondary ms-1 align-middle stage-protected-badge" title="This stage cannot be renamed or deleted">Protected</span>'
+			? ' <span class="badge bg-secondary ms-1 align-middle stage-protected-badge" title="This stage cannot be renamed or deleted">Protected</span>'
 			: '';
 		var deleteBtn = isFrozen
 			? '<button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Protected stages cannot be deleted"><i class="fa-solid fa-trash"></i> Delete</button>'

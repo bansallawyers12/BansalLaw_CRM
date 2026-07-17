@@ -26,7 +26,7 @@
         flex-wrap: wrap;
         margin-bottom: 16px;
     }
-    .smart-import-summary .badge-pill {
+    .smart-import-summary .rounded-pill {
         padding: 8px 14px;
         border-radius: 999px;
         font-size: 13px;
@@ -207,7 +207,7 @@
 @endphp
                         <small class="text-muted">Upload Outlook email files ({{ $crmEmailUploadLabel }}), review suggestions, then manually pick client/matter or confirm matches before import.</small>
                     </div>
-                    <span id="python-service-status" class="badge badge-secondary">Checking service...</span>
+                    <span id="python-service-status" class="badge bg-secondary">Checking service...</span>
                 </div>
 
                 <div class="card-body">

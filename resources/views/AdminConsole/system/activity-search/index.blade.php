@@ -188,7 +188,7 @@
                                 <div class="mt-4">
                                     <h5 class="mb-3">
                                         <i class="fa-solid fa-list-alt"></i> Search Results 
-                                        <span class="badge badge-primary">{{ $totalActivities }} activities found</span>
+                                        <span class="badge bg-primary">{{ $totalActivities }} activities found</span>
                                     </h5>
                                     
                                     @if($activities->count() > 0)
@@ -246,7 +246,7 @@
                                                                     ];
                                                                     $typeInfo = $typeLabels[$activity->activity_type] ?? ['label' => ucfirst($activity->activity_type ?? 'N/A'), 'class' => 'secondary'];
                                                                 @endphp
-                                                                <span class="badge badge-{{ $typeInfo['class'] }}">{{ $typeInfo['label'] }}</span>
+                                                                <span class="badge bg-{{ $typeInfo['class'] }}">{{ $typeInfo['label'] }}</span>
                                                                 @if($activity->task_group)
                                                                     <br><small class="text-muted">{{ $activity->task_group }}</small>
                                                                 @endif
@@ -260,9 +260,9 @@
                                                             <td>
                                                                 @if($activity->task_group)
                                                                     @if($activity->task_status == 1)
-                                                                        <span class="badge badge-success"><i class="fa-solid fa-check"></i> Complete</span>
+                                                                        <span class="badge bg-success"><i class="fa-solid fa-check"></i> Complete</span>
                                                                     @else
-                                                                        <span class="badge badge-warning"><i class="fa-solid fa-clock"></i> Pending</span>
+                                                                        <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock"></i> Pending</span>
                                                                     @endif
                                                                 @else
                                                                     <span class="text-muted">-</span>

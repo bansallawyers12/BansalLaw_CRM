@@ -866,8 +866,8 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
             div.setAttribute('data-phone', m.phone || '');
 
             var badge = m.type === 'client'
-                ? '<span class="badge badge-success">Client</span>'
-                : '<span class="badge badge-warning">Lead</span>';
+                ? '<span class="badge bg-success">Client</span>'
+                : '<span class="badge bg-warning text-dark">Lead</span>';
 
             div.innerHTML = '<div class="d-flex justify-content-between align-items-start">' +
                 '<div>' +
@@ -1137,7 +1137,7 @@ body.sidebar-mini .front-desk-checkin-page .btn.btn-outline-secondary:focus,
             div.innerHTML = '<div class="d-flex justify-content-between align-items-center">' +
                 '<div>' +
                     '<strong>' + escHtml(a.datetime || '—') + '</strong>' +
-                    ' <span class="badge badge-' + statusBadge + '">' + escHtml(a.status) + '</span>' +
+                    ' <span class="badge bg-' + statusBadge + '">' + escHtml(a.status) + '</span>' +
                     '<br><small class="text-muted">Consultant: ' + escHtml(a.consultant || '—') + ' &bull; ' + escHtml(a.location || '—') + '</small>' +
                 '</div>' +
                 '<i class="fa-solid fa-circle-check text-info" style="display:none;" data-checkmark></i>' +

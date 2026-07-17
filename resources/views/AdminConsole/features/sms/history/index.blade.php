@@ -49,12 +49,12 @@
                                                 </div>
                                             </td>
                                             <td>
-                                                <span class="badge badge-{{ $sms->status === 'sent' ? 'success' : ($sms->status === 'failed' ? 'danger' : 'warning') }}">
+                                                <span class="badge bg-{{ $sms->status === 'sent' ? 'success' : ($sms->status === 'failed' ? 'danger' : 'warning') }}">
                                                     {{ ucfirst($sms->status) }}
                                                 </span>
                                             </td>
                                             <td>
-                                                <span class="badge badge-{{ $sms->provider === 'cellcast' ? 'danger' : 'info' }}">
+                                                <span class="badge bg-{{ $sms->provider === 'cellcast' ? 'danger' : 'info' }}">
                                                     {{ strtoupper($sms->provider) }}
                                                 </span>
                                             </td>

@@ -19,7 +19,10 @@ function assert(condition, message) {
 
 const appMinCss = read('public/css/app.min.css');
 assert(!appMinCss.includes('Bootstrap v4.3.1'), 'app.min.css still contains Bootstrap v4.3.1 CSS');
-assert(appMinCss.includes('Font Awesome Free 5.8.1'), 'app.min.css missing Font Awesome 5.8.1 block');
+assert(!appMinCss.includes('Font Awesome Free 5.8.1'), 'app.min.css still contains Font Awesome 5 CSS — use fontawesome.min.css');
+
+const fontAwesomeCss = read('public/css/fontawesome.min.css');
+assert(fontAwesomeCss.includes('Font Awesome'), 'public/css/fontawesome.min.css missing Font Awesome bundle');
 
 const bootstrapCss = read('public/css/bootstrap.min.css');
 assert(/Bootstrap\s+v5\.3/.test(bootstrapCss), 'public/css/bootstrap.min.css is not Bootstrap 5.3.x');
@@ -41,6 +44,10 @@ layoutFiles.forEach((relPath) => {
     assert(
         content.includes("components.bootstrap5-assets") || content.includes("asset('css/bootstrap.min.css')"),
         `${relPath} missing Bootstrap 5 CSS include`
+    );
+    assert(
+        content.includes("components.font-awesome") || content.includes("css/fontawesome.min.css"),
+        `${relPath} missing Font Awesome 7 CSS include`
     );
     assert(
         content.includes("components.bootstrap5-scripts") || content.includes("asset('js/bootstrap.bundle.min.js')"),

@@ -38,9 +38,9 @@
                             <thead>
                                 <tr>
                                     <th class="text-center">
-                                        <div class="custom-checkbox custom-checkbox-table custom-control">
-                                            <input type="checkbox" data-checkboxes="mygroup" data-checkbox-role="dad" class="custom-control-input" id="checkbox-all">
-                                            <label for="checkbox-all" class="custom-control-label">&nbsp;</label>
+                                        <div class="form-check custom-checkbox-table">
+                                            <input type="checkbox" data-checkboxes="mygroup" data-checkbox-role="dad" class="form-check-input" id="checkbox-all">
+                                            <label for="checkbox-all" class="form-check-label">&nbsp;</label>
                                         </div>
                                     </th>
                                     <th>Name</th>
@@ -60,9 +60,9 @@
                                     @foreach (@$lists as $list)
                                     <tr id="id_{{$list->id}}">
                                         <td style="white-space: initial;" class="text-center">
-                                            <div class="custom-checkbox custom-control">
-                                                <input type="checkbox" data-checkboxes="mygroup" class="custom-control-input" id="checkbox-{{$i}}">
-                                                <label for="checkbox-{{$i}}" class="custom-control-label">&nbsp;</label>
+                                            <div class="form-check">
+                                                <input type="checkbox" data-checkboxes="mygroup" class="form-check-input" id="checkbox-{{$i}}">
+                                                <label for="checkbox-{{$i}}" class="form-check-label">&nbsp;</label>
                                             </div>
                                         </td>
                                         <td style="white-space: initial;"> {{ @$list->first_name == "" ? config('constants.empty') : Str::limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : Str::limit(@$list->last_name, '50', '...') }}</td>

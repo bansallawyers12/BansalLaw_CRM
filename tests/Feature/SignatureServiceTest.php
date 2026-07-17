@@ -30,10 +30,8 @@ class SignatureServiceTest extends TestCase
 
         $this->emailConfigService = new EmailConfigService();
 
-        // Mock MailRoutingService so sendClosure() is a no-op in tests.
-        // Mail::fake() only intercepts Mailable-based sends, not the closure-based
-        // API used by MailRoutingService::sendClosure(), so we stub it out directly.
-        $this->mockMailRouting = $this->createMock(MailRoutingService::class);
+        // Stub MailRoutingService; tests that assert on sendClosure swap in a mock.
+        $this->mockMailRouting = $this->createStub(MailRoutingService::class);
 
         $this->signatureService = new SignatureService($this->emailConfigService, $this->mockMailRouting);
 
@@ -61,9 +59,11 @@ class SignatureServiceTest extends TestCase
         ];
 
         // Assert MailRoutingService::sendClosure is invoked once per signer
+        $this->mockMailRouting = $this->createMock(MailRoutingService::class);
         $this->mockMailRouting
             ->expects($this->exactly(2))
             ->method('sendClosure');
+        $this->signatureService = new SignatureService($this->emailConfigService, $this->mockMailRouting);
 
         // Send document for signature
         $result = $this->signatureService->send($document, $signers, $options);

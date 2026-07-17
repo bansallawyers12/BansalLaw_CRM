@@ -21,17 +21,17 @@
     <td class="email-label-name-cell">{{ $displayName }}</td>
     <td class="email-label-type-cell">
         @if($list->type == 'system')
-            <span class="badge badge-info">System</span>
+            <span class="badge bg-info text-dark">System</span>
         @else
-            <span class="badge badge-secondary">Custom</span>
+            <span class="badge bg-secondary">Custom</span>
         @endif
     </td>
     <td class="email-label-created-by-cell">{{ $createdBy }}</td>
     <td class="email-label-status-cell">
         @if($list->is_active)
-            <span class="badge badge-success">Active</span>
+            <span class="badge bg-success">Active</span>
         @else
-            <span class="badge badge-danger">Inactive</span>
+            <span class="badge bg-danger">Inactive</span>
         @endif
     </td>
     <td class="email-label-updated-cell">{{ $updatedAt }}</td>

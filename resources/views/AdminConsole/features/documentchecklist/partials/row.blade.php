@@ -16,7 +16,7 @@
             <strong>{{ $list->name ?: config('constants.empty') }}</strong>
         </button>
     </td>
-    <td><span class="badge badge-light border">{{ $docTypeLabel }}</span></td>
+    <td><span class="badge bg-light text-dark border">{{ $docTypeLabel }}</span></td>
     <td class="text-nowrap">
         <button type="button" class="btn btn-sm btn-outline-primary dcl-view-btn" data-dcl-id="{{ $list->id }}">
             <i class="fa-regular fa-eye"></i> View

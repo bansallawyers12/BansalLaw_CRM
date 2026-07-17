@@ -98,10 +98,10 @@
                             <div class="deadline-section mt-3">
                                 <div class="form-group mb-0">
                                     @if(empty($isClosedMatterView))
-                                    <div class="custom-control custom-checkbox">
-                                        <input type="checkbox" class="custom-control-input" id="workflow-set-deadline" data-matter-id="{{ $workflowSelectedMatter->id }}"
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="workflow-set-deadline" data-matter-id="{{ $workflowSelectedMatter->id }}"
                                             {{ $workflowSelectedMatter->deadline ? 'checked' : '' }}>
-                                        <label class="custom-control-label" for="workflow-set-deadline">Set Deadline</label>
+                                        <label class="form-check-label" for="workflow-set-deadline">Set Deadline</label>
                                     </div>
                                     <div class="workflow-deadline-date-wrapper mt-2" style="{{ $workflowSelectedMatter->deadline ? '' : 'display: none;' }}">
                                         <label for="workflow-deadline-date" class="sr-only">Deadline Date</label>
@@ -114,7 +114,7 @@
                                     @endif
                                     @if($workflowSelectedMatter->deadline)
                                         <div class="mt-2">
-                                            <span class="badge badge-info"><i class="fa-solid fa-calendar-days"></i> Deadline: {{ \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('d/m/Y') }}</span>
+                                            <span class="badge bg-info text-dark"><i class="fa-solid fa-calendar-days"></i> Deadline: {{ \Carbon\Carbon::parse($workflowSelectedMatter->deadline)->format('d/m/Y') }}</span>
                                         </div>
                                     @endif
                                 </div>

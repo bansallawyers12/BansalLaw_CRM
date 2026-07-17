@@ -184,7 +184,7 @@
                     <td>#{{ $doc->id }}</td>
                     <td>{{ Str::limit($doc->display_title, 30) }}</td>
                     <td>
-                        <span class="badge badge-{{ $doc->status }}">
+                        <span class="badge bg-{{ $doc->status }}">
                             {{ ucfirst($doc->status) }}
                         </span>
                     </td>
@@ -230,7 +230,7 @@
             <tr>
                 <td style="border: none;"><strong>Status:</strong></td>
                 <td style="border: none;">
-                    <span class="badge badge-{{ $doc->status }}">{{ ucfirst($doc->status) }}</span>
+                    <span class="badge bg-{{ $doc->status }}">{{ ucfirst($doc->status) }}</span>
                 </td>
                 <td style="border: none;"><strong>Type:</strong></td>
                 <td style="border: none;">General</td>
@@ -267,7 +267,7 @@
             @foreach($doc->signers as $signer)
             <li>
                 <strong>{{ $signer->name }}</strong> ({{ $signer->email }}) - 
-                <span class="badge badge-{{ $signer->status }}">{{ ucfirst($signer->status) }}</span>
+                <span class="badge bg-{{ $signer->status }}">{{ ucfirst($signer->status) }}</span>
                 @if($signer->signed_at)
                     - Signed: {{ $signer->signed_at->format('M d, Y g:i A') }}
                 @endif

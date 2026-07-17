@@ -165,10 +165,10 @@
                                                                 <i class="fa-solid fa-user-check me-1"></i> Convert to Client
                                                             </button>
                                                             @endif
-                                                            <span class="badge badge-info me-2">
+                                                            <span class="badge bg-info text-dark me-2">
                                                                 <i class="fa-solid fa-users"></i> {{ $office ? $office->office_name : 'No Office' }}
                                                             </span>
-                                                            <span class="badge badge-success">
+                                                            <span class="badge bg-success">
                                                                 <i class="fa-solid fa-dollar-sign"></i> ${{ number_format($totalOurCost + $totalDisbursements, 2) }}
                                                             </span>
                                                         </div>

@@ -417,9 +417,9 @@ body.sidebar-mini .office-visits-page .card .card-body table.table tbody tr td:l
 																<a href="javascript:;" data-id="{{@$list->id}}" data-waitingtype="{{@$list->wait_type}}" class="btn btn-danger attendsessionforclient">Waiting</a>
 															<?php }
 														} elseif ($list->status == 2) { ?>
-															<span class="badge badge-info" style="font-size: 0.9em;">Attending</span>
+															<span class="badge bg-info text-dark" style="font-size: 0.9em;">Attending</span>
 														<?php } elseif ($list->status == 1) { ?>
-															<span class="badge badge-secondary" style="font-size: 0.9em;">Completed</span>
+															<span class="badge bg-secondary" style="font-size: 0.9em;">Completed</span>
 														<?php } ?>
 														<input type="hidden" value="0-6h:0-24m:0-7s" id="lwaitcountdata{{@$list->id}}">
 													</td>

@@ -55,7 +55,7 @@
 						<div class="card-body">
 							<div class="row">
 								<div class="col-md-6">
-									<h4 class="office-view-title mb-0">{{ $fetchedData->office_name }} <span class="badge badge-success align-middle">Active</span></h4>
+									<h4 class="office-view-title mb-0">{{ $fetchedData->office_name }} <span class="badge bg-success align-middle">Active</span></h4>
 								</div>
 							</div>
 							<div class="row">
@@ -145,7 +145,7 @@
 													
 													<td>{{ @$alist->usertype->name == "" ? config('constants.empty') : Str::limit(@$alist->usertype->name, '50', '...') }}</td>
 													
-													<td>@if($alist->status == 1)<span class="badge badge-success">Active</span>@else<span class="badge badge-secondary">Inactive</span>@endif</td> 
+													<td>@if($alist->status == 1)<span class="badge bg-success">Active</span>@else<span class="badge bg-secondary">Inactive</span>@endif</td> 
 													
 												</tr>
 												<?php

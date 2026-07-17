@@ -37,7 +37,7 @@
                                     <div class="form-group">
                                         <label><strong>Status:</strong></label>
                                         <p>
-                                            <span class="badge badge-{{ $smsLog->status === 'sent' ? 'success' : ($smsLog->status === 'failed' ? 'danger' : 'warning') }}">
+                                            <span class="badge bg-{{ $smsLog->status === 'sent' ? 'success' : ($smsLog->status === 'failed' ? 'danger' : 'warning') }}">
                                                 {{ ucfirst($smsLog->status) }}
                                             </span>
                                         </p>
@@ -47,7 +47,7 @@
                                     <div class="form-group">
                                         <label><strong>Provider:</strong></label>
                                         <p>
-                                            <span class="badge badge-{{ $smsLog->provider === 'cellcast' ? 'danger' : 'info' }}">
+                                            <span class="badge bg-{{ $smsLog->provider === 'cellcast' ? 'danger' : 'info' }}">
                                                 {{ strtoupper($smsLog->provider) }}
                                             </span>
                                         </p>

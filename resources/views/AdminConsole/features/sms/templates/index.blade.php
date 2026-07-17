@@ -50,7 +50,7 @@
                                             </td>
                                             <td>
                                                 @if($template->category)
-                                                <span class="badge badge-info">{{ $template->category }}</span>
+                                                <span class="badge bg-info text-dark">{{ $template->category }}</span>
                                                 @else
                                                 <span class="text-muted">-</span>
                                                 @endif
@@ -61,12 +61,12 @@
                                                 </div>
                                             </td>
                                             <td>
-                                                <span class="badge badge-{{ $template->is_active ? 'success' : 'secondary' }}">
+                                                <span class="badge bg-{{ $template->is_active ? 'success' : 'secondary' }}">
                                                     {{ $template->is_active ? 'Active' : 'Inactive' }}
                                                 </span>
                                             </td>
                                             <td>
-                                                <span class="badge badge-primary">{{ $template->usage_count ?? 0 }}</span>
+                                                <span class="badge bg-primary">{{ $template->usage_count ?? 0 }}</span>
                                             </td>
                                             <td>
                                                 <small>{{ $template->created_at->format('M d, Y') }}</small>

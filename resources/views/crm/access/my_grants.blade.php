@@ -50,7 +50,7 @@
             rejected: 'danger',
         };
         var cls = map[status] || 'light';
-        return '<span class="badge badge-' + cls + '">' + status + '</span>';
+        return '<span class="badge bg-' + cls + '">' + status + '</span>';
     }
 
     function row(g) {

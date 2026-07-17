@@ -225,13 +225,13 @@ html, body {
                                     </td>
                                     <td>
                                         @if($log->status === 'success')
-                                            <span class="badge badge-success">Success</span>
+                                            <span class="badge bg-success">Success</span>
                                         @elseif($log->status === 'failed')
-                                            <span class="badge badge-danger">Failed</span>
+                                            <span class="badge bg-danger">Failed</span>
                                         @elseif($log->status === 'running')
-                                            <span class="badge badge-info">Running</span>
+                                            <span class="badge bg-info text-dark">Running</span>
                                         @else
-                                            <span class="badge badge-secondary">{{ ucfirst($log->status) }}</span>
+                                            <span class="badge bg-secondary">{{ ucfirst($log->status) }}</span>
                                         @endif
                                     </td>
                                     <td>{{ $log->appointments_fetched ?? 0 }}</td>

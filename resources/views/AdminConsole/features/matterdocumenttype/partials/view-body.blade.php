@@ -26,9 +26,9 @@
             <dt>Status</dt>
             <dd>
                 @if((int) ($fetchedData->status ?? 0) === 1)
-                    <span class="badge badge-success">Active</span>
+                    <span class="badge bg-success">Active</span>
                 @else
-                    <span class="badge badge-secondary">Inactive</span>
+                    <span class="badge bg-secondary">Inactive</span>
                 @endif
             </dd>
         </div>

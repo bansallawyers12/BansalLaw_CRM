@@ -43,9 +43,9 @@
 								<label><strong>Account Status</strong></label>
 								<p class="form-control-plaintext">
 									@if(($fetchedData->status ?? 1) == 1)
-										<span class="badge badge-success">Active — can log in</span>
+										<span class="badge bg-success">Active — can log in</span>
 									@else
-										<span class="badge badge-danger">Inactive — login disabled</span>
+										<span class="badge bg-danger">Inactive — login disabled</span>
 									@endif
 								</p>
 							</div>
@@ -104,14 +104,14 @@
 										}
 										?>
 										<div><strong>Notes:</strong> 
-											@if(in_array(1, $permission_arr)) <span class="badge badge-success">View</span> @endif
-											@if(in_array(2, $permission_arr)) <span class="badge badge-success">Add/Edit</span> @endif
-											@if(in_array(3, $permission_arr)) <span class="badge badge-success">Delete</span> @endif
+											@if(in_array(1, $permission_arr)) <span class="badge bg-success">View</span> @endif
+											@if(in_array(2, $permission_arr)) <span class="badge bg-success">Add/Edit</span> @endif
+											@if(in_array(3, $permission_arr)) <span class="badge bg-success">Delete</span> @endif
 										</div>
 										<div class="mt-2"><strong>Documents:</strong> 
-											@if(in_array(4, $permission_arr)) <span class="badge badge-info">View</span> @endif
-											@if(in_array(5, $permission_arr)) <span class="badge badge-info">Add/Edit</span> @endif
-											@if(in_array(6, $permission_arr)) <span class="badge badge-info">Delete</span> @endif
+											@if(in_array(4, $permission_arr)) <span class="badge bg-info text-dark">View</span> @endif
+											@if(in_array(5, $permission_arr)) <span class="badge bg-info text-dark">Add/Edit</span> @endif
+											@if(in_array(6, $permission_arr)) <span class="badge bg-info text-dark">Delete</span> @endif
 										</div>
 									<?php
 									}
@@ -128,9 +128,9 @@
 								<label for="show_dashboard_per"><strong>Dashboard View Permission</strong></label>
 								<p class="form-control-plaintext">
 									@if($fetchedData->show_dashboard_per == 1)
-										<span class="badge badge-success">Can view dashboard</span>
+										<span class="badge bg-success">Can view dashboard</span>
 									@else
-										<span class="badge badge-secondary">Cannot view dashboard</span>
+										<span class="badge bg-secondary">Cannot view dashboard</span>
 									@endif
 								</p>
 							</div>

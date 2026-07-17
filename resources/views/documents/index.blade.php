@@ -324,6 +324,7 @@
         </div>
     </div>
 
+    @include('components.font-awesome')
     @include('components.bootstrap5-assets')
     <link rel="stylesheet" href="{{asset('css/tom-select.bootstrap5.min.css')}}">
     <!-- TinyMCE is self-hosted and loaded per page as needed -->

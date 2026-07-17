@@ -326,9 +326,9 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label class="d-block">&nbsp;</label>
-                                        <div class="custom-control custom-checkbox">
-                                            <input type="checkbox" class="custom-control-input" name="include_inactive" id="include_inactive" value="1" {{ request('include_inactive') ? 'checked' : '' }}>
-                                            <label class="custom-control-label" for="include_inactive">Include inactive (Not qualified / Hostile)</label>
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" name="include_inactive" id="include_inactive" value="1" {{ request('include_inactive') ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="include_inactive">Include inactive (Not qualified / Hostile)</label>
                                         </div>
                                     </div>
                                 </div>
@@ -397,9 +397,9 @@
                             <thead>
                                 <tr>
                                     <th class="text-center">
-                                        <div class="custom-checkbox custom-checkbox-table custom-control">
-                                            <input type="checkbox" data-checkboxes="mygroup" data-checkbox-role="dad" class="custom-control-input" id="checkbox-all">
-                                            <label for="checkbox-all" class="custom-control-label">&nbsp;</label>
+                                        <div class="form-check custom-checkbox-table">
+                                            <input type="checkbox" data-checkboxes="mygroup" data-checkbox-role="dad" class="form-check-input" id="checkbox-all">
+                                            <label for="checkbox-all" class="form-check-label">&nbsp;</label>
                                         </div>
                                     </th>
                                     <th class="sortable-header">@sortablelink('first_name', 'Name')</th>
@@ -418,9 +418,9 @@
                                     ?>
                                     <tr id="id_{{@$list->id}}">
                                         <td style="white-space: initial;" class="text-center">
-                                            <div class="custom-checkbox custom-control">
-                                                <input data-id="{{@$list->id}}" data-email="{{@$list->email}}" data-name="{{@$list->first_name}} {{@$list->last_name}}" data-clientid="{{@$list->client_id}}" type="checkbox" data-checkboxes="mygroup" class="cb-element custom-control-input  your-checkbox" id="checkbox-{{$i}}">
-                                                <label for="checkbox-{{$i}}" class="custom-control-label">&nbsp;</label>
+                                            <div class="form-check">
+                                                <input data-id="{{@$list->id}}" data-email="{{@$list->email}}" data-name="{{@$list->first_name}} {{@$list->last_name}}" data-clientid="{{@$list->client_id}}" type="checkbox" data-checkboxes="mygroup" class="cb-element form-check-input  your-checkbox" id="checkbox-{{$i}}">
+                                                <label for="checkbox-{{$i}}" class="form-check-label">&nbsp;</label>
                                             </div>
                                         </td>
                                         <td style="white-space: initial;">

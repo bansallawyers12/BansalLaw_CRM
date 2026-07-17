@@ -38,11 +38,11 @@
 											<td>{{$list->id}}</td>
 											<td>
 												@if($list->level == 'info')
-													<span class="badge badge-success">Info</span>
+													<span class="badge bg-success">Info</span>
 												@elseif($list->level == 'critical')
-													<span class="badge badge-danger">Critical</span>
+													<span class="badge bg-danger">Critical</span>
 												@elseif($list->level == 'warning')
-													<span class="badge badge-warning">Warning</span>
+													<span class="badge bg-warning text-dark">Warning</span>
 												@endif
 											</td>
 											<td>{{date('d/m/Y', strtotime($list->created_at))}}</td>

@@ -84,7 +84,7 @@ html, body {
                                 default => 'secondary'
                             };
                         @endphp
-                        <span class="badge badge-{{ $statusClass }} badge-lg">
+                        <span class="badge bg-{{ $statusClass }} badge-lg">
                             {{ ucfirst($appointment->status) }}
                         </span>
                     </div>
@@ -255,7 +255,7 @@ html, body {
                                         <div class="row">
                                             <div class="col-4 info-label">Status:</div>
                                             <div class="col-8 info-value">
-                                                <span class="badge badge-success">Paid</span>
+                                                <span class="badge bg-success">Paid</span>
                                             </div>
                                         </div>
                                     </div>
@@ -286,7 +286,7 @@ html, body {
                                         <div class="row">
                                             <div class="col-4 info-label">Promo Code:</div>
                                             <div class="col-8 info-value">
-                                                <span class="badge badge-info">{{ $appointment->promo_code }}</span>
+                                                <span class="badge bg-info text-dark">{{ $appointment->promo_code }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -407,7 +407,7 @@ html, body {
                                                             $syncStatusClass = 'secondary';
                                                     }
                                                 @endphp
-                                                <span class="badge badge-{{ $syncStatusClass }}">{{ $syncStatusText }}</span>
+                                                <span class="badge bg-{{ $syncStatusClass }}">{{ $syncStatusText }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -425,10 +425,10 @@ html, body {
                                             <div class="col-6 info-label">Confirmation Email:</div>
                                             <div class="col-6 info-value">
                                                 @if($appointment->confirmation_email_sent)
-                                                    <span class="badge badge-success">Sent</span><br>
+                                                    <span class="badge bg-success">Sent</span><br>
                                                     <small>{{ $appointment->confirmation_email_sent_at?->format('d M Y') }}</small>
                                                 @else
-                                                    <span class="badge badge-secondary">Not Sent</span>
+                                                    <span class="badge bg-secondary">Not Sent</span>
                                                 @endif
                                             </div>
                                         </div>
@@ -438,10 +438,10 @@ html, body {
                                             <div class="col-6 info-label">Reminder SMS:</div>
                                             <div class="col-6 info-value">
                                                 @if($appointment->reminder_sms_sent)
-                                                    <span class="badge badge-success">Sent</span><br>
+                                                    <span class="badge bg-success">Sent</span><br>
                                                     <small>{{ $appointment->reminder_sms_sent_at?->format('d M Y') }}</small>
                                                 @else
-                                                    <span class="badge badge-secondary">Not Sent</span>
+                                                    <span class="badge bg-secondary">Not Sent</span>
                                                 @endif
                                             </div>
                                         </div>

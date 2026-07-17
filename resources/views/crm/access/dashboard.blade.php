@@ -54,7 +54,7 @@
                     <a href="{{ route('dashboard') }}" class="btn btn-sm btn-outline-secondary">Main dashboard</a>
                 </div>
                 <div class="card-body">
-                    <form id="crm-access-dash-filters" class="form-row align-items-end mb-3">
+                    <form id="crm-access-dash-filters" class="row g-3 align-items-end mb-3">
                         <div class="form-group col-md-2 col-sm-6">
                             <label class="small" for="crm-access-filter-staff">Staff ID</label>
                             <input type="number" name="staff_id" id="crm-access-filter-staff" class="form-control form-control-sm" min="1" placeholder="Staff #">
@@ -574,7 +574,7 @@
     function statusBadge(status) {
         var map = { pending: 'warning', active: 'success', expired: 'secondary', revoked: 'dark', rejected: 'danger' };
         var cls = map[status] || 'secondary';
-        return '<span class="badge badge-' + cls + '">' + status + '</span>';
+        return '<span class="badge bg-' + cls + '">' + status + '</span>';
     }
 
     form.addEventListener('submit', function (e) {

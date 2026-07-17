@@ -662,7 +662,7 @@ function buildAppointmentRowHtml(row) {
     const payText = escapeHtml(row.payment_status != null && String(row.payment_status).trim() !== ''
         ? String(row.payment_status)
         : (row.is_paid ? 'Paid' : 'Free'));
-    let paymentCell = '<span class="badge badge-' + payBadge + '">' + payText + '</span>';
+    let paymentCell = '<span class="badge bg-' + payBadge + '">' + payText + '</span>';
     if (row.is_paid && amt > 0) {
         paymentCell += '<br><small><strong>Amount:</strong> $' + escapeHtml(amt.toFixed(2)) + '</small>';
     }
@@ -691,7 +691,7 @@ function buildAppointmentRowHtml(row) {
         '<td>' + serviceMain + '<br><small>' + serviceSub + '</small></td>' +
         '<td>' + consultantCell + '</td>' +
         '<td>' + descCell + '</td>' +
-        '<td><span class="badge badge-' + badgeClass + '">' + statusLabel + '</span></td>' +
+        '<td><span class="badge bg-' + badgeClass + '">' + statusLabel + '</span></td>' +
         '<td>' + paymentCell + '</td>' +
         '<td>' + viewBtn + ' ' + editBtn + ' ' + quickBtn + '</td>' +
         '</tr>'

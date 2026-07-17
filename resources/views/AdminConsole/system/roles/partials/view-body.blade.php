@@ -37,7 +37,7 @@
         </div>
         <div class="col-md-6">
             <dt>Permissions enabled</dt>
-            <dd><span class="badge badge-primary">{{ count($moduleAccess) }}</span></dd>
+            <dd><span class="badge bg-primary">{{ count($moduleAccess) }}</span></dd>
         </div>
         <div class="col-12">
             <dt>Description</dt>
@@ -57,7 +57,7 @@
             @php $anyGroup = true; @endphp
             <div class="roles-view-perm-group">
                 <strong>{{ $groupName }}</strong>
-                <span class="badge badge-light border ms-1">{{ count($enabled) }}</span>
+                <span class="badge bg-light text-dark border ms-1">{{ count($enabled) }}</span>
             </div>
         @endif
     @endforeach

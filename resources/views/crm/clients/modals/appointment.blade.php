@@ -65,7 +65,7 @@
 														<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Promo — free consultation</h6>
 														<small style="color: #6c757d; font-size: 13px;">15 minutes</small>
 													</div>
-													<span class="badge badge-success font-weight-bold ms-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">Free</span>
+													<span class="badge bg-success font-weight-bold ms-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">Free</span>
 												</div>
 											</div>
 										</div>
@@ -79,7 +79,7 @@
 														<h6 class="mb-1 font-weight-bold" style="color: #212529; font-size: 15px;">Paid consultation</h6>
 														<small style="color: #6c757d; font-size: 13px;">30 minutes</small>
 													</div>
-													<span class="badge badge-success font-weight-bold ms-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">$150</span>
+													<span class="badge bg-success font-weight-bold ms-2" style="white-space: nowrap; padding: 6px 10px; font-size: 13px;">$150</span>
 												</div>
 											</div>
 										</div>
@@ -205,16 +205,16 @@
 
                                             <!-- Slot Overwrite at Bottom -->
                                             <div class="slot-overwrite-section mt-3">
-                                                <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input" name="slot_overwrite" id="slot_overwrite" value="0">
-                                                    <label class="custom-control-label" for="slot_overwrite">
+                                                <div class="form-check">
+                                                    <input type="checkbox" class="form-check-input" name="slot_overwrite" id="slot_overwrite" value="0">
+                                                    <label class="form-check-label" for="slot_overwrite">
                                                         <i class="fa-solid fa-unlock-alt me-2"></i>Slot Overwrite
                                                     </label>
                                                     <input type="hidden" name="slot_overwrite_hidden" id="slot_overwrite_hidden" value="0">
                                                 </div>
-                                                <div class="custom-control custom-checkbox mt-2">
-                                                    <input type="checkbox" class="custom-control-input" name="send_confirmation_email" id="send_confirmation_email" value="1" checked>
-                                                    <label class="custom-control-label" for="send_confirmation_email">
+                                                <div class="form-check mt-2">
+                                                    <input type="checkbox" class="form-check-input" name="send_confirmation_email" id="send_confirmation_email" value="1" checked>
+                                                    <label class="form-check-label" for="send_confirmation_email">
                                                         <i class="fa-solid fa-envelope me-2"></i>Send confirmation email to client
                                                     </label>
                                                 </div>
@@ -665,18 +665,18 @@
 	margin-top: 14px;
 }
 
-.slot-overwrite-section .custom-control-label {
+.slot-overwrite-section .form-check-label {
 	cursor: pointer;
 	color: #495057;
 	font-weight: 500;
 }
 
-.slot-overwrite-section .custom-control-label i {
+.slot-overwrite-section .form-check-label i {
 	color: #0056b3;
 	margin-right: 6px;
 }
 
-.slot-overwrite-section .custom-control-input:checked ~ .custom-control-label {
+.slot-overwrite-section .form-check-input:checked ~ .form-check-label {
 	color: #0056b3;
 	font-weight: 700;
 }

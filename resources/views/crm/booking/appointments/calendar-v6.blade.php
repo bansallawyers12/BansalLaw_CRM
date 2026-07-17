@@ -48,83 +48,100 @@
                 <div class="card-body">
                     <!-- Stats -->
                     <div class="calendar-stats">
-                        <div class="stat-box" data-calendar-stat="this_month">
+                        <div class="stat-box stat-box--this-month" data-calendar-stat="this_month">
+                            <div class="stat-box__icon"><i class="fa-solid fa-calendar"></i></div>
                             <h3>{{ $stats['this_month'] ?? 0 }}</h3>
                             <p>This Month</p>
                         </div>
-                        <div class="stat-box" data-calendar-stat="today">
+                        <div class="stat-box stat-box--today" data-calendar-stat="today">
+                            <div class="stat-box__icon"><i class="fa-solid fa-sun"></i></div>
                             <h3>{{ $stats['today'] ?? 0 }}</h3>
                             <p>Today</p>
                         </div>
-                        <div class="stat-box" data-calendar-stat="upcoming">
+                        <div class="stat-box stat-box--upcoming" data-calendar-stat="upcoming">
+                            <div class="stat-box__icon"><i class="fa-solid fa-clock"></i></div>
                             <h3>{{ $stats['upcoming'] ?? 0 }}</h3>
                             <p>Upcoming</p>
                         </div>
-                        <div class="stat-box" data-calendar-stat="pending">
+                        <div class="stat-box stat-box--pending" data-calendar-stat="pending">
+                            <div class="stat-box__icon"><i class="fa-solid fa-hourglass-half"></i></div>
                             <h3>{{ $stats['pending'] ?? 0 }}</h3>
                             <p>Payment Pending</p>
                         </div>
-                        <div class="stat-box" data-calendar-stat="paid">
+                        <div class="stat-box stat-box--paid" data-calendar-stat="paid">
+                            <div class="stat-box__icon"><i class="fa-solid fa-circle-check"></i></div>
                             <h3>{{ $stats['paid'] ?? 0 }}</h3>
                             <p>Paid</p>
                         </div>
-                        <div class="stat-box" data-calendar-stat="no_show">
+                        <div class="stat-box stat-box--no-show" data-calendar-stat="no_show">
+                            <div class="stat-box__icon"><i class="fa-solid fa-user-slash"></i></div>
                             <h3>{{ $stats['no_show'] ?? 0 }}</h3>
                             <p>No Show</p>
                         </div>
                     </div>
 
                     <!-- Legend -->
-                    <div class="calendar-legend">
-                        <div class="legend-item">
-                            <div class="legend-color event-pending"></div>
-                            <span>Payment Pending</span>
+                    <div class="calendar-legend-panel">
+                        <div class="calendar-legend-group">
+                            <span class="calendar-legend-group__label">Bookings</span>
+                            <div class="calendar-legend">
+                                <div class="legend-item">
+                                    <div class="legend-color event-pending"></div>
+                                    <span>Payment Pending</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color event-paid"></div>
+                                    <span>Paid</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color event-confirmed"></div>
+                                    <span>Confirmed</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color event-completed"></div>
+                                    <span>Completed</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color event-cancelled"></div>
+                                    <span>Cancelled</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color event-no-show"></div>
+                                    <span>No Show</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="legend-item">
-                            <div class="legend-color event-paid"></div>
-                            <span>Paid</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color event-confirmed"></div>
-                            <span>Confirmed</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color event-completed"></div>
-                            <span>Completed</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color event-cancelled"></div>
-                            <span>Cancelled</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color event-no-show"></div>
-                            <span>No Show</span>
-                        </div>
-                        <div class="legend-item legend-item--divider"></div>
-                        <div class="legend-item">
-                            <div class="legend-color event-court"></div>
-                            <span>Court / Hearing</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color event-meeting"></div>
-                            <span>Meeting</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color event-deadline"></div>
-                            <span>Deadline</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color event-reminder"></div>
-                            <span>Reminder</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color event-other"></div>
-                            <span>Other</span>
+                        <div class="calendar-legend-group">
+                            <span class="calendar-legend-group__label">Important Events</span>
+                            <div class="calendar-legend">
+                                <div class="legend-item">
+                                    <div class="legend-color event-court"></div>
+                                    <span>Court / Hearing</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color event-meeting"></div>
+                                    <span>Meeting</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color event-deadline"></div>
+                                    <span>Deadline</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color event-reminder"></div>
+                                    <span>Reminder</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color event-other"></div>
+                                    <span>Other</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Calendar -->
-                    <div id="calendar" class="calendar-v6-container"></div>
+                    <div class="calendar-v6-wrapper">
+                        <div id="calendar" class="calendar-v6-container"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -133,146 +150,183 @@
 </div>
 
 <!-- Event Detail Modal (scoped styles: .booking-calendar-modal — portaled next to body) -->
-<div class="modal fade booking-calendar-modal" id="eventModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" id="eventModalDialog" role="document">
+<div class="modal fade booking-calendar-modal appointment-detail-modal" id="eventModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" id="eventModalDialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Appointment Details</h5>
-                <button type="button" class="close" data-bs-dismiss="modal">
-                    <span>&times;</span>
-                </button>
+                <div class="appointment-detail-modal__heading">
+                    <span class="appointment-detail-modal__icon" id="eventModalIcon" aria-hidden="true">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </span>
+                    <div>
+                        <h5 class="modal-title mb-0" id="eventModalTitle">Appointment Details</h5>
+                        <p class="appointment-detail-modal__subtitle mb-0 d-none" id="eventModalSubtitle"></p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="eventModalBody">
                 <!-- Content will be loaded dynamically -->
             </div>
-            <div class="modal-footer">
-                <a href="#" id="viewFullDetails" class="btn btn-primary" target="_blank">View Full Details</a>
+            <div class="modal-footer appointment-detail-modal__footer">
                 <button type="button" id="courtHearingEditBtn" class="btn btn-outline-primary d-none">
                     <i class="fa-solid fa-pen-to-square"></i> Edit Appointment
                 </button>
-                <button type="button" id="courtHearingSaveBtn" class="btn btn-primary d-none">
-                    <i class="fa-solid fa-floppy-disk"></i> Save
-                </button>
-                <button type="button" id="courtHearingCancelEditBtn" class="btn btn-secondary d-none">Cancel</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <div class="appointment-detail-modal__footer-actions ms-auto">
+                    <button type="button" id="courtHearingCancelEditBtn" class="btn btn-secondary d-none">Cancel</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" id="courtHearingSaveBtn" class="btn btn-primary d-none">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                    </button>
+                    <a href="#" id="viewFullDetails" class="btn btn-primary d-none" target="_blank">
+                        <i class="fa-solid fa-user"></i> Open Client
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Important event create / edit -->
-<div class="modal fade booking-calendar-modal" id="importantEventModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
+<div class="modal fade booking-calendar-modal important-event-modal" id="importantEventModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="importantEventModalTitle">Add Important Event</h5>
-                <button type="button" class="close" data-bs-dismiss="modal"><span>&times;</span></button>
+                <div class="important-event-modal__heading">
+                    <span class="important-event-modal__icon" id="importantEventTypeSwatch" aria-hidden="true">
+                        <i class="fa-solid fa-calendar-plus"></i>
+                    </span>
+                    <div>
+                        <h5 class="modal-title mb-0" id="importantEventModalTitle">Add Important Event</h5>
+                        <p class="important-event-modal__subtitle mb-0">Court dates, meetings, deadlines &amp; reminders</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="importantEventId" value="">
-                {{-- row 1: title + type --}}
-                <div class="form-row">
-                    <div class="form-group col-md-8">
-                        <label for="importantEventTitle">Title <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="importantEventTitle" maxlength="255"
-                               placeholder="e.g. Federal Court mention, team meeting">
+
+                <section class="important-event-section">
+                    <h6 class="important-event-section__title">
+                        <i class="fa-solid fa-pen-to-square"></i> Event details
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label" for="importantEventTitle">Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="importantEventTitle" maxlength="255"
+                                   placeholder="e.g. Federal Court mention, team meeting">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="importantEventType">Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="importantEventType">
+                                <option value="court">Court / Hearing</option>
+                                <option value="meeting">Meeting</option>
+                                <option value="deadline">Deadline</option>
+                                <option value="reminder">Reminder</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group col-md-4">
-                        <label for="importantEventType">Type <span class="text-danger">*</span></label>
-                        <select class="form-control" id="importantEventType">
-                            <option value="court">Court / Hearing</option>
-                            <option value="meeting">Meeting</option>
-                            <option value="deadline">Deadline</option>
-                            <option value="reminder">Reminder</option>
-                            <option value="other">Other</option>
-                        </select>
+                </section>
+
+                <section class="important-event-section">
+                    <h6 class="important-event-section__title">
+                        <i class="fa-solid fa-clock"></i> Schedule
+                    </h6>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-sm-6 col-lg-4">
+                            <label class="form-label" for="importantEventDate">Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="importantEventDate">
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <label class="form-label" for="importantEventStartTime">Start time</label>
+                            <input type="time" class="form-control" id="importantEventStartTime">
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <label class="form-label" for="importantEventEndTime">End time</label>
+                            <input type="time" class="form-control" id="importantEventEndTime">
+                        </div>
+                        <div class="col-sm-12 col-lg-2">
+                            <div class="form-check important-event-all-day">
+                                <input type="checkbox" class="form-check-input" id="importantEventAllDay">
+                                <label class="form-check-label" for="importantEventAllDay">All day</label>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                {{-- row 2: date / times --}}
-                <div class="form-row">
-                    <div class="form-group col-md-4">
-                        <label for="importantEventDate">Date <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="importantEventDate">
+                </section>
+
+                <section class="important-event-section">
+                    <h6 class="important-event-section__title">
+                        <i class="fa-solid fa-location-dot"></i> People &amp; place
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label" for="importantEventClientSelect">
+                                Link to client <span class="text-muted fw-normal">(optional)</span>
+                            </label>
+                            <input type="hidden" id="importantEventClientId" value="">
+                            <input type="hidden" id="importantEventClientEncoded" value="">
+                            <select id="importantEventClientSelect" class="form-control important-event-client-select"></select>
+                            <div class="form-text">Type name, email, phone or ref to search</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="importantEventLocation">Location</label>
+                            <input type="text" class="form-control" id="importantEventLocation" maxlength="255"
+                                   placeholder="Court name, room, or address">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="importantEventCalendarScope">Show on calendar</label>
+                            <select class="form-select" id="importantEventCalendarScope">
+                                <option value="{{ $type }}">This calendar only ({{ $calendarTitle }})</option>
+                                <option value="">Both Ajay &amp; Michael calendars</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group col-md-4">
-                        <label for="importantEventStartTime">Start time</label>
-                        <input type="time" class="form-control" id="importantEventStartTime">
+                </section>
+
+                <section class="important-event-section important-event-section--last">
+                    <h6 class="important-event-section__title">
+                        <i class="fa-solid fa-bell"></i> Reminder &amp; notes
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="importantEventReminder">Pop-up reminder</label>
+                            <select class="form-select" id="importantEventReminder">
+                                <option value="">No reminder</option>
+                                <option value="10">10 minutes before</option>
+                                <option value="15">15 minutes before</option>
+                                <option value="30">30 minutes before</option>
+                                <option value="60">1 hour before</option>
+                                <option value="120">2 hours before</option>
+                                <option value="1440">1 day before</option>
+                                <option value="2880">2 days before</option>
+                                <option value="10080">1 week before</option>
+                            </select>
+                            <div class="form-text">A banner will pop up on screen when the reminder is due</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="importantEventNotes">Notes</label>
+                            <textarea class="form-control" id="importantEventNotes" rows="3" maxlength="5000"
+                                      placeholder="Optional details"></textarea>
+                        </div>
                     </div>
-                    <div class="form-group col-md-4">
-                        <label for="importantEventEndTime">End time</label>
-                        <input type="time" class="form-control" id="importantEventEndTime">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="importantEventAllDay">
-                        <label class="custom-control-label" for="importantEventAllDay">All day</label>
-                    </div>
-                </div>
-                {{-- row 3: client search --}}
-                <div class="form-group">
-                    <label for="importantEventClientSelect">
-                        <i class="fa-solid fa-user me-1"></i>Link to client
-                        <small class="text-muted">(optional)</small>
-                    </label>
-                    <input type="hidden" id="importantEventClientId" value="">
-                    <input type="hidden" id="importantEventClientEncoded" value="">
-                    <select id="importantEventClientSelect" class="form-control" style="width:100%"></select>
-                    <small class="text-muted">Type name, email, phone or ref to search</small>
-                </div>
-                {{-- row 4: location + calendar scope --}}
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label for="importantEventLocation">Location</label>
-                        <input type="text" class="form-control" id="importantEventLocation" maxlength="255"
-                               placeholder="Court name, room, or address">
-                    </div>
-                    <div class="form-group col-md-6">
-                        <label for="importantEventCalendarScope">Show on calendar</label>
-                        <select class="form-control" id="importantEventCalendarScope">
-                            <option value="{{ $type }}">This calendar only ({{ $calendarTitle }})</option>
-                            <option value="">Both Ajay &amp; Michael calendars</option>
-                        </select>
-                    </div>
-                </div>
-                {{-- row 5: reminder --}}
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label for="importantEventReminder">
-                            <i class="fa-solid fa-bell me-1 text-warning"></i>Pop-up reminder
-                        </label>
-                        <select class="form-control" id="importantEventReminder">
-                            <option value="">No reminder</option>
-                            <option value="10">10 minutes before</option>
-                            <option value="15">15 minutes before</option>
-                            <option value="30">30 minutes before</option>
-                            <option value="60">1 hour before</option>
-                            <option value="120">2 hours before</option>
-                            <option value="1440">1 day before</option>
-                            <option value="2880">2 days before</option>
-                            <option value="10080">1 week before</option>
-                        </select>
-                        <small class="text-muted">A banner will pop up on screen when the reminder is due</small>
-                    </div>
-                    <div class="form-group col-md-6">
-                        <label for="importantEventNotes">Notes</label>
-                        <textarea class="form-control" id="importantEventNotes" rows="2" maxlength="5000"
-                                  placeholder="Optional details"></textarea>
-                    </div>
-                </div>
-                <p class="text-muted small mb-0">
+                </section>
+
+                <div class="important-event-tip">
                     <i class="fa-solid fa-circle-info"></i>
-                    Court dates added on a <strong>client profile → Court Dates tab</strong> also appear here automatically.
-                </p>
+                    <span>Court dates added on a <strong>client profile → Court Dates tab</strong> also appear here automatically.</span>
+                </div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer important-event-modal__footer">
                 <button type="button" class="btn btn-danger d-none" id="importantEventDeleteBtn">
                     <i class="fa-solid fa-trash"></i> Delete
                 </button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="importantEventSaveBtn">
-                    <i class="fa-solid fa-floppy-disk"></i> Save
-                </button>
+                <div class="important-event-modal__footer-actions ms-auto">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="importantEventSaveBtn">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Event
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -280,26 +334,22 @@
 
 <!-- Cancellation Confirmation Modal -->
 <div class="modal fade booking-calendar-modal" id="cancellationConfirmModal" tabindex="-1" role="dialog" data-backdrop="static">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Confirm Cancellation</h5>
-                <button type="button" class="close" data-bs-dismiss="modal">
-                    <span>&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p class="mb-3">Are you sure you want to change the status to <strong>cancelled</strong>?</p>
-                <div class="form-group">
-                    <label for="cancelReasonInput">Cancellation reason <span class="text-danger">*</span></label>
+                <div class="mb-3">
+                    <label class="form-label" for="cancelReasonInput">Cancellation reason <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="cancelReasonInput" placeholder="Enter cancellation reason" required>
-                    <small class="text-danger d-none" id="cancelReasonError">Cancellation reason is required.</small>
+                    <div class="text-danger small d-none" id="cancelReasonError">Cancellation reason is required.</div>
                 </div>
-                <div class="form-group mb-0">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="sendCancellationEmailCheck" checked>
-                        <label class="custom-control-label" for="sendCancellationEmailCheck">Send cancellation confirmation to client</label>
-                    </div>
+                <div class="form-check mb-0">
+                    <input type="checkbox" class="form-check-input" id="sendCancellationEmailCheck" checked>
+                    <label class="form-check-label" for="sendCancellationEmailCheck">Send cancellation confirmation to client</label>
                 </div>
             </div>
             <div class="modal-footer">
@@ -747,83 +797,66 @@ document.addEventListener('DOMContentLoaded', function() {
                 hour: '2-digit',
                 minute: '2-digit'
             });
-            
-            const meetingTypeRow = canManage ? `
-                            <p><strong>Meeting Type:</strong> 
-                                <span id="meetingTypeDisplay-${slotKey}" class="booking-calendar-link booking-calendar-link--action" onclick="showMeetingTypeDropdown('${slotKey}', '${meetingTypeRaw}')" title="Click to change meeting type">
-                                    ${meetingTypeDisplay}
-                                    <i class="fa-solid fa-pen-to-square ms-1" style="font-size: 0.8em;"></i>
-                                </span>
-                                <select id="meetingTypeSelect-${slotKey}" class="form-control form-control-sm d-none" style="max-width: 200px; display: inline-block;" onchange="updateAppointmentMeetingType(${manageId}, '${slotKey}', this.value)" data-is-paid="${props.is_paid}">
-                                    <option value="in_person" ${props.meeting_type === 'in_person' ? 'selected' : ''}>In Person</option>
-                                    <option value="phone" ${props.meeting_type === 'phone' ? 'selected' : ''}>Phone</option>
-                                    ${props.is_paid ? `<option value="video" ${props.meeting_type === 'video' ? 'selected' : ''}>Video</option>` : ''}
-                                </select>
-                            </p>` : `
-                            <p><strong>Meeting Type:</strong> ${meetingTypeDisplay}</p>`;
-            
+
             const managementSection = canManage ? `
-                    <hr>
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <h6><i class="fa-solid fa-calendar-days"></i> Reschedule Date & Time</h6>
-                            <div class="form-row">
-                                <div class="form-group col-md-4">
-                                    <label for="rescheduleDate-${slotKey}" class="small">Appointment Date</label>
-                                    <input type="date" class="form-control form-control-sm" id="rescheduleDate-${slotKey}" 
-                                           value="${melbourneDate}" 
-                                           data-original-date="${melbourneDate}"
-                                           onchange="validateWeekendDate(this, '${slotKey}')">
-                                </div>
-                                <div class="form-group col-md-4">
-                                    <label for="rescheduleTime-${slotKey}" class="small">Appointment Time</label>
-                                    <input type="time" class="form-control form-control-sm" id="rescheduleTime-${slotKey}" 
-                                           value="${melbourneTime}" 
-                                           data-original-time="${melbourneTime}">
-                                </div>
-                                <div class="form-group col-md-4 d-flex align-items-end">
-                                    <button type="button" class="btn btn-sm btn-primary w-100" onclick="rescheduleAppointmentDateTime('${slotKey}', ${manageId}, '${props.meeting_type || 'in_person'}', '${props.preferred_language || 'English'}')">
-                                        <i class="fa-solid fa-floppy-disk"></i> Update Date & Time
+                    <section class="appt-detail-section appt-detail-section--actions">
+                        <h6 class="appt-detail-section__title"><i class="fa-solid fa-calendar-days"></i> Reschedule</h6>
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label" for="rescheduleDate-${slotKey}">Appointment date</label>
+                                <input type="date" class="form-control" id="rescheduleDate-${slotKey}"
+                                       value="${melbourneDate}"
+                                       data-original-date="${melbourneDate}"
+                                       onchange="validateWeekendDate(this, '${slotKey}')">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="rescheduleTime-${slotKey}">Appointment time</label>
+                                <input type="time" class="form-control" id="rescheduleTime-${slotKey}"
+                                       value="${melbourneTime}"
+                                       data-original-time="${melbourneTime}">
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-primary w-100" onclick="rescheduleAppointmentDateTime('${slotKey}', ${manageId}, '${props.meeting_type || 'in_person'}', '${props.preferred_language || 'English'}')">
+                                    <i class="fa-solid fa-floppy-disk"></i> Update Date &amp; Time
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-text"><i class="fa-solid fa-circle-info"></i> Changes sync with the public booking website when linked.</div>
+                    </section>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <section class="appt-detail-section appt-detail-section--actions h-100">
+                                <h6 class="appt-detail-section__title"><i class="fa-solid fa-pen-to-square"></i> Change status</h6>
+                                <div class="appt-action-buttons">
+                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="updateAppointmentStatus(${manageId}, 'confirmed')">
+                                        <i class="fa-solid fa-check"></i> Confirmed
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="updateAppointmentStatus(${manageId}, 'completed')">
+                                        <i class="fa-solid fa-circle-check"></i> Complete
+                                    </button>
+                                    ${props.final_amount && parseFloat(props.final_amount) > 0 ? `
+                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="updateAppointmentStatus(${manageId}, 'paid')">
+                                        <i class="fa-solid fa-dollar-sign"></i> Payment done
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="updateAppointmentStatus(${manageId}, 'pending')">
+                                        <i class="fa-solid fa-clock"></i> Payment pending
+                                    </button>
+                                    ` : ''}
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="updateAppointmentStatus(${manageId}, 'cancelled')">
+                                        <i class="fa-solid fa-xmark"></i> Cancelled
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateAppointmentStatus(${manageId}, 'no_show')">
+                                        <i class="fa-solid fa-user-times"></i> No show
                                     </button>
                                 </div>
-                            </div>
-                            <small class="text-muted">
-                                <i class="fa-solid fa-circle-info"></i> Changes will sync with the public booking website if the appointment is linked.
-                            </small>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6><i class="fa-solid fa-pen-to-square"></i> Change Status</h6>
-                            <div class="btn-group-vertical w-100" role="group">
-                                <button type="button" class="btn btn-sm btn-outline-success" onclick="updateAppointmentStatus(${manageId}, 'confirmed')">
-                                    <i class="fa-solid fa-check"></i> Mark as Confirmed
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="updateAppointmentStatus(${manageId}, 'completed')">
-                                    <i class="fa-solid fa-circle-check"></i> Mark as Complete
-                                </button>
-                                ${props.final_amount && parseFloat(props.final_amount) > 0 ? `
-                                <button type="button" class="btn btn-sm btn-outline-info" onclick="updateAppointmentStatus(${manageId}, 'paid')">
-                                    <i class="fa-solid fa-dollar-sign"></i> Mark As Payment Done
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="updateAppointmentStatus(${manageId}, 'pending')">
-                                    <i class="fa-solid fa-clock"></i> Mark As Payment Pending
-                                </button>
-                                ` : ''}
-                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="updateAppointmentStatus(${manageId}, 'cancelled')">
-                                    <i class="fa-solid fa-xmark"></i> Mark as Cancelled
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateAppointmentStatus(${manageId}, 'no_show')">
-                                    <i class="fa-solid fa-user-times"></i> Mark as No Show
-                                </button>
-                            </div>
+                            </section>
                         </div>
                         <div class="col-md-6">
-                            <h6><i class="fa-solid fa-right-left"></i> Change Calendar Type</h6>
-                            <div class="form-group">
-                                <select class="form-control form-control-sm" id="consultantSelect-${slotKey}" onchange="updateAppointmentConsultant(${manageId}, '${slotKey}', this.value)">
-                                    <option value="">Select Consultant...</option>
+                            <section class="appt-detail-section appt-detail-section--actions h-100">
+                                <h6 class="appt-detail-section__title"><i class="fa-solid fa-right-left"></i> Change calendar</h6>
+                                <label class="form-label" for="consultantSelect-${slotKey}">Consultant</label>
+                                <select class="form-select" id="consultantSelect-${slotKey}" onchange="updateAppointmentConsultant(${manageId}, '${slotKey}', this.value)">
+                                    <option value="">Select consultant…</option>
                                     ${(() => {
                                         const uniqueConsultants = [];
                                         const seenIds = new Set();
@@ -841,55 +874,81 @@ document.addEventListener('DOMContentLoaded', function() {
                                         }).join('');
                                     })()}
                                 </select>
-                            </div>
-                            <div class="mt-2">
-                                <small class="text-muted">
-                                    <i class="fa-solid fa-circle-info"></i> Changing consultant will move this appointment to the selected calendar type.
-                                </small>
-                            </div>
+                                <div class="form-text"><i class="fa-solid fa-circle-info"></i> Moves this appointment to the selected calendar.</div>
+                            </section>
                         </div>
                     </div>` : `
-                    <hr>
-                    <div class="alert alert-info mb-0">
-                        This appointment is shown from the public Bansal Lawyers booking API. CRM actions appear after the booking exists in BansalLaw CRM (synced row).
+                    <div class="appt-detail-tip">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>This appointment is from the public booking API. CRM actions appear after it syncs to BansalLaw CRM.</span>
                     </div>`;
             
             const modalBody = `
-                <div class="appointment-details">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Client:</strong> ${clientNameDisplay}</p>
-                            <p><strong>Email:</strong> ${formatCalendarDetail(props.client_email)}</p>
-                            <p><strong>Phone:</strong> ${formatCalendarDetail(props.client_phone)}</p>
-                            <p><strong>Service:</strong> ${formatCalendarDetail(props.service_type)}</p>
-                            <p><strong>Date & Time:</strong> ${formattedDate}</p>
-                            <p><strong>Duration:</strong> ${duration} minutes</p>
+                <div class="appt-detail-view">
+                    <div class="appt-detail-hero appt-detail-hero--booking">
+                        <div class="appt-detail-hero__main">
+                            <div class="appt-detail-hero__client">${clientNameDisplay}</div>
+                            <div class="appt-detail-hero__when">
+                                <i class="fa-solid fa-clock"></i>
+                                ${escapeHtml(formattedDate)} · ${duration} min
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <p><strong>Location:</strong> ${props.location ? props.location.charAt(0).toUpperCase() + props.location.slice(1) : 'N/A'}</p>
-                            ${meetingTypeRow}
-                            <p><strong>Preferred Language:</strong> ${props.preferred_language ? props.preferred_language.charAt(0).toUpperCase() + props.preferred_language.slice(1).toLowerCase() : 'English'}</p>
-                            <p><strong>Consultant:</strong> ${props.consultant}</p>
-                            <p><strong>Status:</strong> <span class="badge badge-${getStatusClass(props.status)}" id="statusBadge">${formatCalendarDetail(props.status_label) !== 'N/A' ? props.status_label : (props.status || '').toString().toUpperCase()}</span></p>
-                            <p><strong>Payment:</strong> <span class="badge badge-${props.is_paid ? 'success' : 'secondary'}">${formatCalendarDetail(props.payment_status)}</span></p>
-                            ${props.is_paid ? `<p><strong>Amount:</strong> $${props.final_amount ? parseFloat(props.final_amount).toFixed(2) : '0.00'}</p>` : ''}
+                        <div class="appt-detail-hero__meta">
+                            ${renderApptStatusPill(props.status, formatCalendarDetail(props.status_label) !== 'N/A' ? props.status_label : (props.status || '').toString().toUpperCase(), 'statusBadge')}
+                            <span class="appt-status-pill appt-status-pill--payment appt-status-pill--${props.is_paid ? 'paid' : 'unpaid'}">${escapeHtml(formatCalendarDetail(props.payment_status))}</span>
                         </div>
                     </div>
+
+                    <div class="appt-detail-grid">
+                        ${renderApptDetailItem('fa-envelope', 'Email', escapeHtml(formatCalendarDetail(props.client_email)))}
+                        ${renderApptDetailItem('fa-phone', 'Phone', escapeHtml(formatCalendarDetail(props.client_phone)))}
+                        ${renderApptDetailItem('fa-briefcase', 'Service', escapeHtml(formatCalendarDetail(props.service_type)))}
+                        ${renderApptDetailItem('fa-location-dot', 'Location', escapeHtml(props.location ? props.location.charAt(0).toUpperCase() + props.location.slice(1) : 'N/A'))}
+                        ${canManage
+                            ? `<div class="appt-detail-item appt-detail-item--editable">
+                                <div class="appt-detail-item__icon"><i class="fa-solid fa-video"></i></div>
+                                <div class="appt-detail-item__content">
+                                    <span class="appt-detail-item__label">Meeting type</span>
+                                    <div class="appt-detail-item__value">
+                                        <span id="meetingTypeDisplay-${slotKey}" class="booking-calendar-link booking-calendar-link--action" onclick="showMeetingTypeDropdown('${slotKey}', '${meetingTypeRaw}')" title="Click to change meeting type">
+                                            ${escapeHtml(meetingTypeDisplay)}
+                                            <i class="fa-solid fa-pen-to-square ms-1" style="font-size: 0.8em;"></i>
+                                        </span>
+                                        <select id="meetingTypeSelect-${slotKey}" class="form-select form-select-sm d-none mt-1" style="max-width: 220px;" onchange="updateAppointmentMeetingType(${manageId}, '${slotKey}', this.value)" data-is-paid="${props.is_paid}">
+                                            <option value="in_person" ${props.meeting_type === 'in_person' ? 'selected' : ''}>In Person</option>
+                                            <option value="phone" ${props.meeting_type === 'phone' ? 'selected' : ''}>Phone</option>
+                                            ${props.is_paid ? `<option value="video" ${props.meeting_type === 'video' ? 'selected' : ''}>Video</option>` : ''}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>`
+                            : renderApptDetailItem('fa-video', 'Meeting type', escapeHtml(meetingTypeDisplay))}
+                        ${renderApptDetailItem('fa-language', 'Language', escapeHtml(props.preferred_language ? props.preferred_language.charAt(0).toUpperCase() + props.preferred_language.slice(1).toLowerCase() : 'English'))}
+                        ${renderApptDetailItem('fa-user-tie', 'Consultant', escapeHtml(props.consultant))}
+                        ${props.is_paid ? renderApptDetailItem('fa-dollar-sign', 'Amount', '$' + (props.final_amount ? parseFloat(props.final_amount).toFixed(2) : '0.00')) : ''}
+                    </div>
+
                     ${managementSection}
                 </div>
             `;
             
             document.getElementById('eventModalBody').innerHTML = modalBody;
+            setEventModalHeader({
+                title: 'Appointment Details',
+                subtitle: formatCalendarDetail(props.service_type) !== 'N/A' ? formatCalendarDetail(props.service_type) : props.client_name,
+                iconHtml: '<i class="fa-solid fa-calendar-check"></i>',
+                iconBg: '#1e3d60',
+                iconColor: '#fff'
+            });
             const vfd = document.getElementById('viewFullDetails');
             setEventModalCourtHearingFooter('hidden');
-            vfd.textContent = 'View Full Details';
+            vfd.innerHTML = '<i class="fa-solid fa-arrow-up-right-from-square"></i> View Full Details';
             if (canManage) {
                 vfd.classList.remove('d-none');
                 vfd.href = BOOKING_WEB_BASE + '/appointments/' + manageId;
             } else {
                 vfd.classList.add('d-none');
             }
-            document.getElementById('eventModalDialog').classList.remove('modal-lg');
             $('#eventModal').modal('show');
         },
         
@@ -979,12 +1038,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function getStatusClass(status) {
         const classes = {
-            'pending': 'warning',
-            'paid': 'info',
+            'pending': 'warning text-dark',
+            'paid': 'info text-dark',
             'confirmed': 'success',
-            'completed': 'info',
+            'completed': 'info text-dark',
             'cancelled': 'danger',
-            'no_show': 'dark',
+            'no_show': 'secondary',
             'rescheduled': 'primary'
         };
         return classes[status] || 'secondary';
@@ -1014,9 +1073,6 @@ document.addEventListener('DOMContentLoaded', function() {
             editBtn.classList.remove('d-none');
             saveBtn.classList.add('d-none');
             cancelBtn.classList.add('d-none');
-            if (vfd) {
-                vfd.classList.remove('d-none');
-            }
         } else if (mode === 'edit') {
             editBtn.classList.add('d-none');
             saveBtn.classList.remove('d-none');
@@ -1156,38 +1212,121 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function calendarDetailHasValue(val) {
+        if (val == null || val === '') {
+            return false;
+        }
+        const s = String(val).trim();
+        return s !== '' && s.toLowerCase() !== 'n/a' && s.toLowerCase() !== 'null' && s.toLowerCase() !== 'undefined';
+    }
+
+    function setEventModalHeader(opts) {
+        const titleEl = document.getElementById('eventModalTitle');
+        const subtitleEl = document.getElementById('eventModalSubtitle');
+        const iconEl = document.getElementById('eventModalIcon');
+        if (titleEl && opts.title != null) {
+            titleEl.textContent = opts.title;
+        }
+        if (subtitleEl) {
+            subtitleEl.textContent = opts.subtitle || '';
+            subtitleEl.classList.toggle('d-none', !opts.subtitle);
+        }
+        if (iconEl) {
+            iconEl.innerHTML = opts.iconHtml || '<i class="fa-solid fa-calendar-check"></i>';
+            iconEl.style.backgroundColor = opts.iconBg || '#1e3d60';
+            iconEl.style.color = opts.iconColor || '#fff';
+        }
+    }
+
+    function renderApptDetailItem(icon, label, valueHtml) {
+        return `
+            <div class="appt-detail-item">
+                <div class="appt-detail-item__icon"><i class="fa-solid ${icon}"></i></div>
+                <div class="appt-detail-item__content">
+                    <span class="appt-detail-item__label">${escapeHtml(label)}</span>
+                    <div class="appt-detail-item__value">${valueHtml}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderApptStatusPill(status, label, elementId) {
+        const key = String(status || 'default').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        const text = label || status || 'Unknown';
+        const idAttr = elementId ? ' id="' + escapeHtml(elementId) + '"' : '';
+        return `<span class="appt-status-pill appt-status-pill--${escapeHtml(key)}"${idAttr}>${escapeHtml(text)}</span>`;
+    }
+
+    function renderCourtHearingStatusPill(status) {
+        const text = formatCalendarDetail(status);
+        const key = String(status || 'scheduled').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        return `<span class="appt-status-pill appt-status-pill--hearing appt-status-pill--${escapeHtml(key)}">${escapeHtml(text)}</span>`;
+    }
+
     function renderCourtHearingViewBody(props) {
         const parts = getCourtHearingMelbourneParts(props);
         const clientLink = buildCourtHearingClientLink(props);
+        const hearingType = formatCalendarDetail(props.hearing_type);
+        const status = props.hearing_status || props.status_label;
         const smsSentHint = props.reminder_sms_sent_at
-            ? '<small class="text-success d-block mt-1"><i class="fa-solid fa-circle-check"></i> SMS sent ' +
-                escapeHtml(formatCourtHearingReminderSentAt(props.reminder_sms_sent_at)) + '</small>'
+            ? '<div class="appt-detail-reminder-sent"><i class="fa-solid fa-circle-check"></i> SMS sent ' +
+                escapeHtml(formatCourtHearingReminderSentAt(props.reminder_sms_sent_at)) + '</div>'
             : '';
+
+        const detailItems = [];
+        if (calendarDetailHasValue(props.court_name)) {
+            detailItems.push(renderApptDetailItem('fa-landmark', 'Court', escapeHtml(formatCalendarDetail(props.court_name))));
+        }
+        if (calendarDetailHasValue(props.case_number)) {
+            detailItems.push(renderApptDetailItem('fa-hashtag', 'Case number', escapeHtml(formatCalendarDetail(props.case_number))));
+        }
+        if (calendarDetailHasValue(props.judge_name)) {
+            detailItems.push(renderApptDetailItem('fa-user-tie', 'Judge', escapeHtml(formatCalendarDetail(props.judge_name))));
+        }
+
+        const detailsGrid = detailItems.length
+            ? `<div class="appt-detail-grid appt-detail-grid--compact">${detailItems.join('')}</div>`
+            : '';
+
+        const notesBlock = calendarDetailHasValue(props.notes)
+            ? `
+                <section class="appt-detail-section">
+                    <h6 class="appt-detail-section__title"><i class="fa-solid fa-note-sticky"></i> Notes</h6>
+                    <div class="appt-detail-notes">${escapeHtml(formatCalendarDetail(props.notes))}</div>
+                </section>
+            `
+            : '';
+
         return `
-            <div class="court-hearing-details">
-                <p><strong>Client:</strong> ${clientLink}</p>
-                <p><strong>When:</strong> ${escapeHtml(parts.formattedDate)}</p>
-                <p><strong>Hearing type:</strong> ${escapeHtml(formatCalendarDetail(props.hearing_type))}</p>
-                <p><strong>Court:</strong> ${escapeHtml(formatCalendarDetail(props.court_name))}</p>
-                <p><strong>Case number:</strong> ${escapeHtml(formatCalendarDetail(props.case_number))}</p>
-                <p><strong>Judge:</strong> ${escapeHtml(formatCalendarDetail(props.judge_name))}</p>
-                <p><strong>Status:</strong> ${escapeHtml(formatCalendarDetail(props.hearing_status || props.status_label))}</p>
-                <div class="form-group mb-2 court-hearing-view-reminder">
-                    <div class="form-row align-items-center">
-                        <div class="col-auto">
-                            <label for="courtHearingViewReminder" class="mb-0">
-                                <i class="fa-solid fa-bell me-1 text-warning"></i>Reminder before
-                            </label>
-                        </div>
-                        <div class="col">
-                            <select class="form-control" id="courtHearingViewReminder">${buildCourtHearingReminderOptions(props.reminder_minutes)}</select>
+            <div class="appt-detail-view">
+                <div class="appt-detail-hero appt-detail-hero--court">
+                    <div class="appt-detail-hero__main">
+                        <div class="appt-detail-hero__client">${clientLink}</div>
+                        <div class="appt-detail-hero__when">
+                            <i class="fa-solid fa-clock"></i>
+                            ${escapeHtml(parts.formattedDate)}
                         </div>
                     </div>
-                    <small class="text-muted">SMS reminder is sent to the client at their phone number on file.</small>
-                    <small id="courtHearingViewReminderStatus" class="d-none"></small>
-                    ${smsSentHint}
+                    <div class="appt-detail-hero__meta">
+                        <span class="appt-type-pill appt-type-pill--court">${escapeHtml(hearingType)}</span>
+                        ${renderCourtHearingStatusPill(status)}
+                    </div>
                 </div>
-                <p><strong>Notes:</strong> ${escapeHtml(formatCalendarDetail(props.notes))}</p>
+
+                ${detailsGrid}
+
+                <section class="appt-detail-section">
+                    <h6 class="appt-detail-section__title"><i class="fa-solid fa-bell"></i> Reminder</h6>
+                    <div class="appt-detail-reminder">
+                        <label class="form-label" for="courtHearingViewReminder">Reminder before</label>
+                        <select class="form-select" id="courtHearingViewReminder">${buildCourtHearingReminderOptions(props.reminder_minutes)}</select>
+                        <div class="form-text">SMS reminder is sent to the client at their phone number on file.</div>
+                        <div id="courtHearingViewReminderStatus" class="appt-detail-reminder-status d-none"></div>
+                        ${smsSentHint}
+                    </div>
+                </section>
+
+                ${notesBlock}
             </div>
         `;
     }
@@ -1216,70 +1355,82 @@ document.addEventListener('DOMContentLoaded', function() {
         const parts = getCourtHearingMelbourneParts(props);
         const clientLink = buildCourtHearingClientLink(props);
         return `
-            <div class="court-hearing-edit">
+            <div class="appt-detail-edit">
                 <div id="courtHearingEditError" class="alert alert-danger d-none"></div>
-                <p><strong>Client:</strong> ${clientLink}</p>
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label for="courtHearingEditDate">Hearing date <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="courtHearingEditDate" value="${escapeHtml(parts.date)}" required>
-                    </div>
-                    <div class="form-group col-md-6">
-                        <label for="courtHearingEditTime">Hearing time <small class="text-muted">(optional)</small></label>
-                        <input type="time" class="form-control" id="courtHearingEditTime" value="${escapeHtml(parts.time)}">
+
+                <div class="appt-detail-hero appt-detail-hero--court appt-detail-hero--compact">
+                    <div class="appt-detail-hero__main">
+                        <div class="appt-detail-hero__client">${clientLink}</div>
+                        <div class="appt-detail-hero__when"><i class="fa-solid fa-pen-to-square"></i> Editing appointment</div>
                     </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label for="courtHearingEditType">Hearing type</label>
-                        <select class="form-control" id="courtHearingEditType">${buildCourtHearingTypeOptions(props.hearing_type)}</select>
-                    </div>
-                    <div class="form-group col-md-6">
-                        <label for="courtHearingEditStatus">Status</label>
-                        <select class="form-control" id="courtHearingEditStatus">${buildCourtHearingStatusOptions(props.hearing_status || props.status_label)}</select>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="form-row align-items-center">
-                        <div class="col-auto">
-                            <label for="courtHearingEditReminder" class="mb-0">
-                                <i class="fa-solid fa-bell me-1 text-warning"></i>Reminder before
-                            </label>
+
+                <section class="appt-detail-section">
+                    <h6 class="appt-detail-section__title"><i class="fa-solid fa-clock"></i> Schedule</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="courtHearingEditDate">Hearing date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="courtHearingEditDate" value="${escapeHtml(parts.date)}" required>
                         </div>
-                        <div class="col">
-                            <select class="form-control" id="courtHearingEditReminder">${buildCourtHearingReminderOptions(props.reminder_minutes)}</select>
+                        <div class="col-md-6">
+                            <label class="form-label" for="courtHearingEditTime">Hearing time <span class="text-muted fw-normal">(optional)</span></label>
+                            <input type="time" class="form-control" id="courtHearingEditTime" value="${escapeHtml(parts.time)}">
                         </div>
                     </div>
-                    <small class="text-muted">SMS reminder is sent to the client at their phone number on file.</small>
-                </div>
-                <div class="form-group">
-                    <label for="courtHearingEditCourt">Court</label>
-                    <input type="text" class="form-control" id="courtHearingEditCourt" maxlength="255"
-                           value="${escapeHtml(formatCalendarDetail(props.court_name) === 'N/A' ? '' : props.court_name)}">
-                </div>
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label for="courtHearingEditCaseNumber">Case number</label>
-                        <input type="text" class="form-control" id="courtHearingEditCaseNumber" maxlength="100"
-                               value="${escapeHtml(formatCalendarDetail(props.case_number) === 'N/A' ? '' : props.case_number)}">
+                </section>
+
+                <section class="appt-detail-section">
+                    <h6 class="appt-detail-section__title"><i class="fa-solid fa-gavel"></i> Hearing details</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="courtHearingEditType">Hearing type</label>
+                            <select class="form-select" id="courtHearingEditType">${buildCourtHearingTypeOptions(props.hearing_type)}</select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="courtHearingEditStatus">Status</label>
+                            <select class="form-select" id="courtHearingEditStatus">${buildCourtHearingStatusOptions(props.hearing_status || props.status_label)}</select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="courtHearingEditCourt">Court</label>
+                            <input type="text" class="form-control" id="courtHearingEditCourt" maxlength="255"
+                                   placeholder="Court name or location"
+                                   value="${escapeHtml(formatCalendarDetail(props.court_name) === 'N/A' ? '' : props.court_name)}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="courtHearingEditCaseNumber">Case number</label>
+                            <input type="text" class="form-control" id="courtHearingEditCaseNumber" maxlength="100"
+                                   value="${escapeHtml(formatCalendarDetail(props.case_number) === 'N/A' ? '' : props.case_number)}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="courtHearingEditJudge">Judge / bench</label>
+                            <input type="text" class="form-control" id="courtHearingEditJudge" maxlength="150"
+                                   value="${escapeHtml(formatCalendarDetail(props.judge_name) === 'N/A' ? '' : props.judge_name)}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="courtHearingEditMatter">Linked matter <span class="text-muted fw-normal">(optional)</span></label>
+                            <select class="form-select" id="courtHearingEditMatter">
+                                <option value="">— Not linked to a specific matter —</option>
+                                ${matterOptionsHtml || ''}
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group col-md-6">
-                        <label for="courtHearingEditJudge">Judge / bench</label>
-                        <input type="text" class="form-control" id="courtHearingEditJudge" maxlength="150"
-                               value="${escapeHtml(formatCalendarDetail(props.judge_name) === 'N/A' ? '' : props.judge_name)}">
+                </section>
+
+                <section class="appt-detail-section">
+                    <h6 class="appt-detail-section__title"><i class="fa-solid fa-bell"></i> Reminder &amp; notes</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="courtHearingEditReminder">Reminder before</label>
+                            <select class="form-select" id="courtHearingEditReminder">${buildCourtHearingReminderOptions(props.reminder_minutes)}</select>
+                            <div class="form-text">SMS reminder is sent to the client at their phone number on file.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="courtHearingEditNotes">Notes</label>
+                            <textarea class="form-control" id="courtHearingEditNotes" rows="3" maxlength="5000"
+                                      placeholder="Optional details">${escapeHtml(formatCalendarDetail(props.notes) === 'N/A' ? '' : props.notes)}</textarea>
+                        </div>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label for="courtHearingEditMatter">Linked matter <small class="text-muted">(optional)</small></label>
-                    <select class="form-control" id="courtHearingEditMatter">
-                        <option value="">— Not linked to a specific matter —</option>
-                        ${matterOptionsHtml || ''}
-                    </select>
-                </div>
-                <div class="form-group mb-0">
-                    <label for="courtHearingEditNotes">Notes</label>
-                    <textarea class="form-control" id="courtHearingEditNotes" rows="3" maxlength="5000">${escapeHtml(formatCalendarDetail(props.notes) === 'N/A' ? '' : props.notes)}</textarea>
-                </div>
+                </section>
             </div>
         `;
     }
@@ -1316,13 +1467,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         const props = _activeCourtHearingState.props;
         document.getElementById('eventModalBody').innerHTML = renderCourtHearingViewBody(props);
-        document.querySelector('#eventModal .modal-title').textContent = 'Appointment Details';
-        document.getElementById('eventModalDialog').classList.remove('modal-lg');
+        setEventModalHeader({
+            title: 'Appointment Details',
+            subtitle: calendarDetailHasValue(props.hearing_type) ? formatCalendarDetail(props.hearing_type) : 'Court hearing',
+            iconHtml: '<i class="fa-solid fa-gavel"></i>',
+            iconBg: '#5c3d8f',
+            iconColor: '#fff'
+        });
         const vfd = document.getElementById('viewFullDetails');
         if (props.client_id_encoded) {
             vfd.classList.remove('d-none');
             vfd.href = '/clients/detail/' + props.client_id_encoded;
-            vfd.textContent = 'Open Client';
+            vfd.innerHTML = '<i class="fa-solid fa-user"></i> Open Client';
         } else {
             vfd.classList.add('d-none');
         }
@@ -1337,8 +1493,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const props = _activeCourtHearingState.props;
         const matterOptionsHtml = await fetchCourtHearingMatterOptions(props.client_id, props.client_matter_id);
         document.getElementById('eventModalBody').innerHTML = renderCourtHearingEditBody(props, matterOptionsHtml);
-        document.querySelector('#eventModal .modal-title').textContent = 'Edit Appointment';
-        document.getElementById('eventModalDialog').classList.add('modal-lg');
+        setEventModalHeader({
+            title: 'Edit Appointment',
+            subtitle: formatCalendarDetail(props.client_name),
+            iconHtml: '<i class="fa-solid fa-pen-to-square"></i>',
+            iconBg: '#5c3d8f',
+            iconColor: '#fff'
+        });
         setEventModalCourtHearingFooter('edit');
         _activeCourtHearingState.editMode = true;
     }
@@ -1603,16 +1764,21 @@ document.addEventListener('DOMContentLoaded', function() {
     function showCourtHearingEventModal(event, props) {
         _activeCourtHearingState = { event: event, props: cloneCourtHearingProps(props), editMode: false };
         document.getElementById('eventModalBody').innerHTML = renderCourtHearingViewBody(_activeCourtHearingState.props);
+        setEventModalHeader({
+            title: 'Appointment Details',
+            subtitle: calendarDetailHasValue(props.hearing_type) ? formatCalendarDetail(props.hearing_type) : 'Court hearing',
+            iconHtml: '<i class="fa-solid fa-gavel"></i>',
+            iconBg: '#5c3d8f',
+            iconColor: '#fff'
+        });
         const vfd = document.getElementById('viewFullDetails');
         if (props.client_id_encoded) {
             vfd.classList.remove('d-none');
             vfd.href = '/clients/detail/' + props.client_id_encoded;
-            vfd.textContent = 'Open Client';
+            vfd.innerHTML = '<i class="fa-solid fa-user"></i> Open Client';
         } else {
             vfd.classList.add('d-none');
         }
-        document.querySelector('#eventModal .modal-title').textContent = 'Appointment Details';
-        document.getElementById('eventModalDialog').classList.remove('modal-lg');
         setEventModalCourtHearingFooter(getCourtHearingId(props) ? 'view' : 'hidden');
         $('#eventModal').modal('show');
     }
@@ -1969,6 +2135,19 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('importantEventEndTime').disabled = disabled;
     });
 
+    function updateImportantEventTypeSwatch() {
+        const swatch = document.getElementById('importantEventTypeSwatch');
+        const typeEl = document.getElementById('importantEventType');
+        if (!swatch || !typeEl) return;
+        const style = getImportantEventStyle(typeEl.value);
+        swatch.style.backgroundColor = style.bg;
+        swatch.style.color = style.text;
+        swatch.style.borderColor = style.border;
+    }
+
+    document.getElementById('importantEventType').addEventListener('change', updateImportantEventTypeSwatch);
+    document.getElementById('importantEventModal').addEventListener('shown.bs.modal', updateImportantEventTypeSwatch);
+
     document.getElementById('eventModalBody').addEventListener('change', function (e) {
         if (e.target && e.target.id === 'courtHearingViewReminder') {
             saveCourtHearingReminderFromView(e.target);
@@ -1987,14 +2166,17 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('eventModal').addEventListener('hidden.bs.modal', function () {
         _activeCourtHearingState = null;
         setEventModalCourtHearingFooter('hidden');
-        document.getElementById('eventModalDialog').classList.remove('modal-lg');
-        const titleEl = document.querySelector('#eventModal .modal-title');
-        if (titleEl) {
-            titleEl.textContent = 'Appointment Details';
-        }
+        setEventModalHeader({
+            title: 'Appointment Details',
+            subtitle: '',
+            iconHtml: '<i class="fa-solid fa-calendar-check"></i>',
+            iconBg: '#1e3d60',
+            iconColor: '#fff'
+        });
         const vfd = document.getElementById('viewFullDetails');
         if (vfd) {
-            vfd.textContent = 'View Full Details';
+            vfd.innerHTML = '<i class="fa-solid fa-user"></i> Open Client';
+            vfd.classList.add('d-none');
         }
     });
     
@@ -2087,7 +2269,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 var statusBadge = document.getElementById('statusBadge');
                 if (statusBadge) {
                     statusBadge.textContent = newStatus.toUpperCase();
-                    statusBadge.className = 'badge badge-' + getStatusClass(newStatus);
+                    statusBadge.className = 'appt-status-pill appt-status-pill--' +
+                        String(newStatus).toLowerCase().replace(/[^a-z0-9]+/g, '_');
                 }
                 $('#eventModal').modal('hide');
                 calendar.refetchEvents();
@@ -2645,6 +2828,19 @@ document.addEventListener('DOMContentLoaded', function() {
     border-color: var(--sidebar-active) !important;
 }
 
+.booking-calendar-page .btn-success {
+    background-color: var(--success) !important;
+    border-color: var(--success) !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+}
+
+.booking-calendar-page .btn-success:hover,
+.booking-calendar-page .btn-success:focus {
+    filter: brightness(0.95);
+    color: #fff !important;
+}
+
 .booking-calendar-link {
     color: var(--sidebar-active) !important;
     text-decoration: underline;
@@ -2656,59 +2852,115 @@ document.addEventListener('DOMContentLoaded', function() {
 
 /* theme.md KPI Cards */
 .calendar-stats {
-    display: flex;
-    justify-content: space-around;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
     margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 10px;
 }
 
 .stat-box {
+    position: relative;
     text-align: center;
-    padding: 15px;
+    padding: 16px 12px 14px;
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 10px;
-    min-width: 120px;
     box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
+
+.stat-box:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(30, 61, 96, 0.1);
+}
+
+.stat-box__icon {
+    width: 32px;
+    height: 32px;
+    margin: 0 auto 8px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.stat-box--this-month .stat-box__icon { background: rgba(30, 61, 96, 0.1); color: var(--navy); }
+.stat-box--today .stat-box__icon { background: rgba(40, 167, 69, 0.12); color: var(--success); }
+.stat-box--upcoming .stat-box__icon { background: rgba(58, 111, 168, 0.12); color: var(--sidebar-active); }
+.stat-box--pending .stat-box__icon { background: rgba(200, 153, 42, 0.15); color: var(--accent-gold, #c8992a); }
+.stat-box--paid .stat-box__icon { background: rgba(30, 61, 96, 0.1); color: var(--navy); }
+.stat-box--no-show .stat-box__icon { background: rgba(94, 122, 144, 0.12); color: var(--text-muted); }
 
 .stat-box h3 {
     margin: 0;
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 700;
     color: var(--text-dark);
+    line-height: 1.1;
 }
 
 .stat-box p {
-    margin: 5px 0 0 0;
+    margin: 6px 0 0;
     color: var(--text-muted);
     font-weight: 600;
-    font-size: 11.5px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.6px;
+}
+
+.calendar-legend-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 14px 16px;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.calendar-legend-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+}
+
+.calendar-legend-group__label {
+    flex: 0 0 auto;
+    min-width: 110px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--text-muted);
 }
 
 .calendar-legend {
     display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin-bottom: 20px;
     flex-wrap: wrap;
+    gap: 8px 14px;
+    flex: 1 1 auto;
     color: var(--text-dark);
 }
 
 .legend-item {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 5px;
-    font-size: 13px;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 500;
+    padding: 4px 10px 4px 6px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
 }
 
 .legend-color {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
     flex-shrink: 0;
 }
 
@@ -2737,15 +2989,6 @@ document.addEventListener('DOMContentLoaded', function() {
     background-color: var(--text-muted);
 }
 
-.legend-item--divider {
-    width: 1px;
-    min-width: 1px;
-    height: 24px;
-    background: var(--border);
-    margin: 0 4px;
-    padding: 0;
-}
-
 .legend-color.event-court {
     background-color: #5c3d8f;
 }
@@ -2766,19 +3009,32 @@ document.addEventListener('DOMContentLoaded', function() {
     background-color: #5e7a90;
 }
 
-/* Modals — same title treatment as page header (theme.md Top Bar) */
-.booking-calendar-modal .modal-content {
+.calendar-v6-wrapper {
+    padding: 4px;
+    background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+}
+
+.calendar-v6-wrapper .calendar-v6-container {
+    padding: 8px 12px 12px;
+}
+
+/* Modals — same title treatment as page header (theme.md Top Bar) */
+.booking-calendar-modal .modal-content {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(30, 61, 96, 0.14);
 }
 
 .booking-calendar-modal .modal-header {
     background: var(--header-bg) !important;
     color: var(--navy) !important;
     border-bottom: 1px solid var(--border) !important;
-    padding: 14px 18px !important;
+    padding: 16px 20px !important;
+    align-items: flex-start;
 }
 
 .booking-calendar-modal .modal-title {
@@ -2802,9 +3058,183 @@ document.addEventListener('DOMContentLoaded', function() {
     color: var(--navy) !important;
 }
 
+.booking-calendar-modal .modal-header .btn-close {
+    opacity: 0.55;
+    margin-top: 2px;
+}
+
+.booking-calendar-modal .modal-header .btn-close:hover,
+.booking-calendar-modal .modal-header .btn-close:focus {
+    opacity: 1;
+}
+
 .booking-calendar-modal .modal-body {
     color: var(--text-dark);
     background: var(--card-bg);
+    padding: 20px 22px;
+}
+
+.booking-calendar-modal .form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 6px;
+}
+
+.booking-calendar-modal .form-control,
+.booking-calendar-modal .form-select {
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9375rem;
+    color: var(--text-dark);
+    background-color: var(--card-bg);
+}
+
+.booking-calendar-modal .form-control:focus,
+.booking-calendar-modal .form-select:focus {
+    border-color: var(--sidebar-active);
+    box-shadow: 0 0 0 3px rgba(58, 111, 168, 0.15);
+}
+
+.booking-calendar-modal .form-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.booking-calendar-modal .modal-footer {
+    background: var(--page-bg);
+    border-top: 1px solid var(--border);
+    padding: 14px 20px;
+}
+
+/* Important event modal */
+.important-event-modal__heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.important-event-modal__icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    background: #0d6efd;
+    color: #fff;
+    border: 2px solid transparent;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.important-event-modal__subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-weight: 500;
+}
+
+.important-event-section {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.important-event-section--last {
+    margin-bottom: 16px;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.important-event-section__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.important-event-section__title i {
+    color: var(--sidebar-active);
+    font-size: 13px;
+}
+
+.important-event-all-day {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    margin-bottom: 0;
+}
+
+.important-event-all-day .form-check-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.important-event-tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(58, 111, 168, 0.08);
+    border: 1px solid rgba(58, 111, 168, 0.18);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-dark);
+    line-height: 1.45;
+}
+
+.important-event-tip i {
+    color: var(--sidebar-active);
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.important-event-modal__footer {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.important-event-modal__footer-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.important-event-client-select + .ts-wrapper,
+.important-event-client-select + .ts-wrapper .ts-control {
+    width: 100% !important;
+}
+
+@media (max-width: 576px) {
+    .calendar-legend-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .calendar-legend-group__label {
+        min-width: 0;
+    }
+
+    .important-event-modal__footer-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .important-event-modal__footer-actions .btn {
+        flex: 1 1 auto;
+    }
 }
 
 .booking-calendar-modal .modal-footer .btn-primary {
@@ -2845,6 +3275,313 @@ document.addEventListener('DOMContentLoaded', function() {
 .booking-calendar-modal .modal-footer .btn-secondary:focus {
     background: var(--sidebar-bg) !important;
     color: var(--navy) !important;
+}
+
+/* Appointment detail modal */
+.appointment-detail-modal__heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.appointment-detail-modal__icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    background: var(--navy);
+    color: #fff;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.appointment-detail-modal__subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-weight: 500;
+}
+
+.appointment-detail-modal__footer {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.appointment-detail-modal__footer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.appt-detail-hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px 16px;
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    border: 1px solid var(--border);
+}
+
+.appt-detail-hero--court {
+    background: linear-gradient(135deg, rgba(92, 61, 143, 0.1) 0%, rgba(92, 61, 143, 0.04) 100%);
+    border-color: rgba(92, 61, 143, 0.2);
+}
+
+.appt-detail-hero--booking {
+    background: linear-gradient(135deg, rgba(30, 61, 96, 0.08) 0%, rgba(58, 111, 168, 0.05) 100%);
+    border-color: rgba(30, 61, 96, 0.15);
+}
+
+.appt-detail-hero--compact {
+    margin-bottom: 16px;
+    padding: 14px 16px;
+}
+
+.appt-detail-hero__client {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1.3;
+}
+
+.appt-detail-hero__client a {
+    color: var(--sidebar-active);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.appt-detail-hero__client a:hover {
+    text-decoration: underline;
+}
+
+.appt-detail-hero__when {
+    margin-top: 6px;
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.appt-detail-hero__when i {
+    color: var(--sidebar-active);
+    font-size: 13px;
+}
+
+.appt-detail-hero__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.appt-type-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.appt-type-pill--court {
+    background: rgba(92, 61, 143, 0.14);
+    color: #5c3d8f;
+    border: 1px solid rgba(92, 61, 143, 0.25);
+}
+
+.appt-status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--page-bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+.appt-status-pill--pending { background: rgba(200, 153, 42, 0.15); color: #8a6918; border-color: rgba(200, 153, 42, 0.35); }
+.appt-status-pill--paid,
+.appt-status-pill--payment.appt-status-pill--paid { background: rgba(30, 61, 96, 0.12); color: var(--navy); border-color: rgba(30, 61, 96, 0.25); }
+.appt-status-pill--confirmed { background: rgba(30, 122, 82, 0.12); color: #1e7a52; border-color: rgba(30, 122, 82, 0.28); }
+.appt-status-pill--completed { background: rgba(58, 111, 168, 0.12); color: var(--sidebar-active); border-color: rgba(58, 111, 168, 0.28); }
+.appt-status-pill--cancelled { background: rgba(168, 48, 32, 0.1); color: var(--danger); border-color: rgba(168, 48, 32, 0.25); }
+.appt-status-pill--no_show { background: rgba(94, 122, 144, 0.12); color: var(--text-muted); border-color: var(--border); }
+.appt-status-pill--scheduled { background: rgba(58, 111, 168, 0.12); color: var(--sidebar-active); border-color: rgba(58, 111, 168, 0.28); }
+.appt-status-pill--adjourned { background: rgba(200, 153, 42, 0.12); color: #8a6918; border-color: rgba(200, 153, 42, 0.28); }
+.appt-status-pill--payment.appt-status-pill--unpaid { background: rgba(94, 122, 144, 0.1); color: var(--text-muted); border-color: var(--border); }
+
+.appt-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.appt-detail-grid--compact {
+    margin-bottom: 16px;
+}
+
+.appt-detail-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    min-height: 100%;
+}
+
+.appt-detail-item__icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sidebar-active);
+    font-size: 13px;
+}
+
+.appt-detail-item__label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 3px;
+}
+
+.appt-detail-item__value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.appt-detail-section {
+    margin-bottom: 16px;
+    padding-top: 4px;
+}
+
+.appt-detail-section--actions {
+    padding: 14px 16px;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 12px;
+}
+
+.appt-detail-section__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.appt-detail-section__title i {
+    color: var(--sidebar-active);
+    font-size: 13px;
+}
+
+.appt-detail-reminder {
+    padding: 14px 16px;
+    background: rgba(217, 119, 6, 0.06);
+    border: 1px solid rgba(217, 119, 6, 0.18);
+    border-radius: 8px;
+}
+
+.appt-detail-reminder-sent {
+    margin-top: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--success);
+}
+
+.appt-detail-reminder-status {
+    margin-top: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.appt-detail-notes {
+    padding: 12px 14px;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-dark);
+    white-space: pre-wrap;
+}
+
+.appt-detail-tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(58, 111, 168, 0.08);
+    border: 1px solid rgba(58, 111, 168, 0.18);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-dark);
+    line-height: 1.45;
+    margin-top: 8px;
+}
+
+.appt-detail-tip i {
+    color: var(--sidebar-active);
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.appt-action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.appt-action-buttons .btn {
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .appt-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .appointment-detail-modal__footer-actions {
+        width: 100%;
+    }
+
+    .appointment-detail-modal__footer-actions .btn {
+        flex: 1 1 auto;
+    }
 }
 </style>
 

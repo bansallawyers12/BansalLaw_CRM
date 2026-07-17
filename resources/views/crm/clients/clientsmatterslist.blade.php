@@ -530,7 +530,7 @@
                                             <td class="tdCls">{{date('d/m/Y', strtotime($list->created_at))}}</td>
                                             <td class="tdCls">
                                                 @if($matter_office)
-                                                    <span class="badge badge-info" style="font-size: 12px;">
+                                                    <span class="badge bg-info text-dark" style="font-size: 12px;">
                                                         <i class="fa-solid fa-building"></i> {{ $matter_office->office_name }}
                                                     </span>
                                                     <br>
@@ -543,7 +543,7 @@
                                                         <i class="fa-solid fa-pen-to-square"></i> Change
                                                     </a>
                                                 @else
-                                                    <span class="badge badge-warning" style="font-size: 11px;">
+                                                    <span class="badge bg-warning text-dark" style="font-size: 11px;">
                                                         <i class="fa-solid fa-triangle-exclamation"></i> Not Assigned
                                                     </span>
                                                     <br>

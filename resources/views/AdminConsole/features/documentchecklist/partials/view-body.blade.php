@@ -20,15 +20,15 @@
         </div>
         <div class="col-md-6">
             <dt>Document type</dt>
-            <dd><span class="badge badge-light border">{{ $docTypeLabel }}</span></dd>
+            <dd><span class="badge bg-light text-dark border">{{ $docTypeLabel }}</span></dd>
         </div>
         <div class="col-md-6">
             <dt>Status</dt>
             <dd>
                 @if((int) ($fetchedData->status ?? 0) === 1)
-                    <span class="badge badge-success">Active</span>
+                    <span class="badge bg-success">Active</span>
                 @else
-                    <span class="badge badge-secondary">Inactive</span>
+                    <span class="badge bg-secondary">Inactive</span>
                 @endif
             </dd>
         </div>

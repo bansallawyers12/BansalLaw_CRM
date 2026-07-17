@@ -37,7 +37,7 @@ class AdminConsoleRoutesTest extends TestCase
     {
         $this->actingAs($this->admin, 'admin')
              ->get('/adminconsole/features/matter/create')
-             ->assertStatus(200);
+             ->assertRedirect(route('adminconsole.features.matter.index', ['action' => 'create']));
     }
 
     #[Test]

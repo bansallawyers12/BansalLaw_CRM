@@ -895,20 +895,20 @@ class BookingAppointmentsController extends Controller
             })
             ->addColumn('consultant_info', function ($appointment) {
                 return $appointment->consultant
-                    ? '<span class="badge badge-info">' . e($appointment->consultant->name) . '</span>'
-                    : '<span class="badge badge-secondary">Unassigned</span>';
+                    ? '<span class="badge bg-info text-dark">' . e($appointment->consultant->name) . '</span>'
+                    : '<span class="badge bg-secondary">Unassigned</span>';
             })
             ->addColumn('status_badge', function ($appointment) {
                 $color = $appointment->status_badge;
                 $label = ucfirst(str_replace('_', ' ', $appointment->status));
-                return '<span class="badge badge-' . $color . '">' . $label . '</span>';
+                return '<span class="badge bg-' . $color . '">' . $label . '</span>';
             })
             ->addColumn('payment_info', function ($appointment) {
                 if ($appointment->is_paid) {
-                    return '<span class="badge badge-success">Paid</span><br>' .
+                    return '<span class="badge bg-success">Paid</span><br>' .
                         '<small>$' . number_format($appointment->final_amount, 2) . '</small>';
                 }
-                return '<span class="badge badge-secondary">Free</span>';
+                return '<span class="badge bg-secondary">Free</span>';
             })
             ->addColumn('actions', function ($appointment) {
                 return '<a href="' . route('booking.appointments.show', $appointment->id) . '" class="btn btn-sm btn-primary">' .

@@ -74,9 +74,9 @@
 					<div class="row">
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
-								<div class="custom-control custom-checkbox">
-									<input type="checkbox" class="custom-control-input" id="verification-confirm-checkbox" name="verification_confirm" required>
-									<label class="custom-control-label" for="verification-confirm-checkbox">I have verified Payment, Service Agreement, and Forms for this matter <span class="span_req">*</span></label>
+								<div class="form-check">
+									<input type="checkbox" class="form-check-input" id="verification-confirm-checkbox" name="verification_confirm" required>
+									<label class="form-check-label" for="verification-confirm-checkbox">I have verified Payment, Service Agreement, and Forms for this matter <span class="span_req">*</span></label>
 								</div>
 								<span class="custom-error verification-confirm-error" role="alert"><strong></strong></span>
 							</div>

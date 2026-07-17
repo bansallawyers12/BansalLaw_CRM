@@ -55,7 +55,7 @@
 						<div class="card-body">
 							<div class="row">
 								<div class="col-md-6">
-									<h4 class="office-view-title mb-0">{{ $fetchedData->office_name }} <span class="badge badge-success align-middle">Active</span></h4>
+									<h4 class="office-view-title mb-0">{{ $fetchedData->office_name }} <span class="badge bg-success align-middle">Active</span></h4>
 								</div>
 							</div>
 							<div class="row">

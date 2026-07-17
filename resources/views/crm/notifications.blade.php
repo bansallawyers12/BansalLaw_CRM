@@ -189,7 +189,7 @@
 						<div class="card-header">
 							<h4>Notifications</h4>
 							<div class="card-header-action">
-								<span class="badge badge-primary">{{ $lists->total() }} Total</span>
+								<span class="badge bg-primary">{{ $lists->total() }} Total</span>
 							</div>
 						</div>
 						<div class="card-body">

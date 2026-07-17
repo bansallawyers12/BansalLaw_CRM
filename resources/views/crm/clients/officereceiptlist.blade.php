@@ -252,7 +252,7 @@
     }
 
     /* Modern Checkbox */
-    .listing-container .custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
+    .listing-container .custom-checkbox .form-check-input:checked ~ .form-check-label::before {
         background: linear-gradient(135deg, var(--navy) 0%, var(--sidebar-active) 100%);
         border-color: var(--navy);
     }
@@ -554,9 +554,9 @@
                             <thead>
                                 <tr>
                                     <th class="text-center">
-                                        <div class="custom-checkbox custom-checkbox-table custom-control">
-                                            <input type="checkbox" data-checkboxes="mygroup" data-checkbox-role="dad" class="custom-control-input" id="checkbox-all">
-                                            <label for="checkbox-all" class="custom-control-label"></label>
+                                        <div class="form-check custom-checkbox-table">
+                                            <input type="checkbox" data-checkboxes="mygroup" data-checkbox-role="dad" class="form-check-input" id="checkbox-all">
+                                            <label for="checkbox-all" class="form-check-label"></label>
                                         </div>
                                     </th>
                                     <!--<th>SNo.</th>-->
@@ -666,9 +666,9 @@
 
                                         <tr id="id_{{@$list->id}}">
                                             <td class="text-center">
-                                                <div class="custom-checkbox custom-control">
-                                                    <input data-id="{{@$list->id}}" data-receiptid="{{@$list->receipt_id}}" data-email="{{@$list->email}}" data-name="{{@$list->first_name}} {{@$list->last_name}}" data-clientid="{{@$list->client_id}}" type="checkbox" data-checkboxes="mygroup" class="cb-element custom-control-input  your-checkbox" id="checkbox-{{$i}}">
-                                                    <label for="checkbox-{{$i}}" class="custom-control-label">&nbsp;</label>
+                                                <div class="form-check">
+                                                    <input data-id="{{@$list->id}}" data-receiptid="{{@$list->receipt_id}}" data-email="{{@$list->email}}" data-name="{{@$list->first_name}} {{@$list->last_name}}" data-clientid="{{@$list->client_id}}" type="checkbox" data-checkboxes="mygroup" class="cb-element form-check-input  your-checkbox" id="checkbox-{{$i}}">
+                                                    <label for="checkbox-{{$i}}" class="form-check-label">&nbsp;</label>
                                                 </div>
                                             </td>
 
@@ -847,7 +847,7 @@ jQuery(document).ready(function($){
                             //console.log('subArray=='+subArray.id);
                             $('.listing-container #validate_' + subArray.id +' span')
                                 .removeClass('badge-danger')
-                                .addClass('modern-badge badge-success')
+                                .addClass('modern-badge bg-success')
                                 .html('<i class="fa-solid fa-check"></i> Yes');
                             if(subArray.first_name != ""){
                                 var validateby_full_name = subArray.first_name+" "+subArray.last_name;

@@ -345,9 +345,9 @@
                     <td>{{ number_format($agent['completed_followups']) }}</td>
                     <td>
                         @if($agent['overdue_followups'] > 0)
-                            <span class="badge badge-danger">{{ $agent['overdue_followups'] }}</span>
+                            <span class="badge bg-danger">{{ $agent['overdue_followups'] }}</span>
                         @else
-                            <span class="badge badge-success">0</span>
+                            <span class="badge bg-success">0</span>
                         @endif
                     </td>
                     <td>{{ $agent['avg_response_time_hours'] }}h</td>

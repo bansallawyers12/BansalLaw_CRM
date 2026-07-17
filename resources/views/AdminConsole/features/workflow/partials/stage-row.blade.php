@@ -13,7 +13,7 @@
     <td class="workflow-stage-name-cell">
         <span class="stage-name-text">{{ $displayName }}</span>
         @if($stageFrozen)
-        <span class="badge badge-secondary ms-1 align-middle stage-protected-badge" title="This stage cannot be renamed or deleted">Protected</span>
+        <span class="badge bg-secondary ms-1 align-middle stage-protected-badge" title="This stage cannot be renamed or deleted">Protected</span>
         @endif
     </td>
     <td class="workflow-stage-matter-count-cell">{{ $countmatters }}</td>

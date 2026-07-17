@@ -19,6 +19,8 @@
         "copy:tinymce": "node -e \"const fs=require('fs');const p='node_modules/tinymce/';fs.cpSync(p,'public/js/tinymce/js/tinymce/',{recursive:true})\"",
         "strip:app-min-jquery": "node scripts/strip-app-min-jquery.cjs",
         "strip:app-min-bootstrap-css": "node scripts/strip-app-min-bootstrap-css.cjs",
+        "strip:app-min-fontawesome": "node scripts/strip-app-min-fontawesome.cjs",
+        "migrate:bs4-blade-classes": "node scripts/migrate-bs4-blade-classes.cjs",
         "verify:bootstrap5": "node scripts/verify-bootstrap5.cjs",
         "verify:bootstrap-compat": "node scripts/verify-bootstrap-compat.cjs",
         "verify:intl-tel-input": "node scripts/verify-intl-tel-input.cjs",
@@ -30,7 +32,7 @@
         "copy:jquery": "node -e \"const fs=require('fs');const p='node_modules/jquery/dist/';fs.copyFileSync(p+'jquery.min.js','public/js/jquery.min.js')\"",
         "copy:toastify": "node -e \"const fs=require('fs');const p='node_modules/toastify-js/src/';fs.copyFileSync(p+'toastify.js','public/js/toastify.js');fs.copyFileSync(p+'toastify.css','public/css/toastify.css')\"",
         "copy:fontawesome": "node -e \"const fs=require('fs');const p='node_modules/@fortawesome/fontawesome-free/';fs.copyFileSync(p+'css/all.min.css','public/css/fontawesome.min.css');fs.cpSync(p+'webfonts','public/webfonts',{recursive:true})\"",
-        "postinstall": "npm run copy:flatpickr && npm run copy:intl-tel-input && npm run copy:sweetalert2 && npm run copy:bootstrap && npm run copy:chartjs && npm run copy:tinymce && npm run copy:datatables && npm run copy:tom-select && npm run copy:jquery && npm run copy:toastify && npm run copy:fontawesome && npm run strip:app-min-jquery && npm run strip:app-min-bootstrap-css",
+        "postinstall": "npm run copy:flatpickr && npm run copy:intl-tel-input && npm run copy:sweetalert2 && npm run copy:bootstrap && npm run copy:chartjs && npm run copy:tinymce && npm run copy:datatables && npm run copy:tom-select && npm run copy:jquery && npm run copy:toastify && npm run copy:fontawesome && npm run strip:app-min-jquery && npm run strip:app-min-bootstrap-css && npm run strip:app-min-fontawesome",
         "update": "npm update && npm run postinstall"
     },
     "devDependencies": {
@@ -38,7 +40,7 @@
         "@tailwindcss/vite": "^4.3.2",
         "alpinejs": "^3.15.3",
         "axios": "^1.11.0",
-        "jquery": "^3.7.1",
+        "jquery": "3.7.1",
         "jsdom": "^29.1.1",
         "laravel-vite-plugin": "^3.1.0",
         "tailwindcss": "^4.3.2",

@@ -334,11 +334,11 @@ jQuery(document).ready(function($) {
 		var color = label.color || defaultColor;
 		var icon = label.icon || 'fa-solid fa-tag';
 		var typeBadge = label.type === 'system'
-			? '<span class="badge badge-info">System</span>'
-			: '<span class="badge badge-secondary">Custom</span>';
+			? '<span class="badge bg-info text-dark">System</span>'
+			: '<span class="badge bg-secondary">Custom</span>';
 		var statusBadge = label.is_active
-			? '<span class="badge badge-success">Active</span>'
-			: '<span class="badge badge-danger">Inactive</span>';
+			? '<span class="badge bg-success">Active</span>'
+			: '<span class="badge bg-danger">Inactive</span>';
 		var actionMenu = label.type === 'system'
 			? '<li><span class="dropdown-item-text text-muted small px-3 py-2 d-block"><i class="fa-regular fa-pen-to-square me-2"></i>System labels cannot be edited</span></li>' +
 			  '<li><span class="dropdown-item-text text-muted small px-3 py-2 d-block"><i class="fa-solid fa-trash me-2"></i>System labels cannot be deleted</span></li>'

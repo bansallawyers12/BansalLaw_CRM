@@ -1131,7 +1131,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add a badge to indicate this is from Quick Receipt
         // FIX: Remove ALL existing badges first to prevent duplication
         $modal.find('.modal-header .badge').remove();
-        $modal.find('.modal-header').prepend('<span class="badge badge-success" style="margin-right: 10px;"><i class="fa-solid fa-bolt"></i> QUICK RECEIPT</span>');
+        $modal.find('.modal-header').prepend('<span class="badge bg-success" style="margin-right: 10px;"><i class="fa-solid fa-bolt"></i> QUICK RECEIPT</span>');
         
         // SOLUTION 5: Validate modal is available before opening
         if (typeof $modal.modal !== 'function') {

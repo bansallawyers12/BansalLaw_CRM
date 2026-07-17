@@ -121,15 +121,7 @@ class EmailConfigService
                 return $this->buildConfig($emailConfig);
             }
 
-            // Fallback to environment defaults
-            if (env('MAIL_FROM_ADDRESS')) {
-                return [
-                    'from_address' => env('MAIL_FROM_ADDRESS'),
-                    'from_name' => env('MAIL_FROM_NAME', config('app.name')),
-                ];
-            }
-
-            return null;
+            return $this->mailFromFallback();
         } catch (\Exception $e) {
             Log::error('Failed to get default email account', [
                 'error' => $e->getMessage()
@@ -147,20 +139,30 @@ class EmailConfigService
     public function getEnvAccount(): ?array
     {
         try {
-            if (env('MAIL_FROM_ADDRESS')) {
-                return [
-                    'from_address' => env('MAIL_FROM_ADDRESS'),
-                    'from_name' => env('MAIL_FROM_NAME', config('app.name')),
-                ];
-            }
-
-            return null;
+            return $this->mailFromFallback();
         } catch (\Exception $e) {
             Log::error('Failed to get .env email configuration', [
                 'error' => $e->getMessage()
             ]);
             return null;
         }
+    }
+
+    /**
+     * Fallback sender from config/mail.php (cached in production via config:cache).
+     */
+    protected function mailFromFallback(): ?array
+    {
+        $address = config('mail.from.address');
+
+        if (empty($address)) {
+            return null;
+        }
+
+        return [
+            'from_address' => $address,
+            'from_name' => config('mail.from.name', config('app.name')),
+        ];
     }
 
     /**

@@ -117,8 +117,10 @@ class EmailConfigServiceTest extends TestCase
             'status' => false
         ]);
 
-        // Clear environment variables
-        putenv('MAIL_FROM_ADDRESS');
+        config([
+            'mail.from.address' => null,
+            'mail.from.name' => null,
+        ]);
 
         $config = $this->service->getDefaultAccount();
 
@@ -128,17 +130,16 @@ class EmailConfigServiceTest extends TestCase
     #[Test]
     public function it_falls_back_to_environment_config_when_no_active_accounts()
     {
-        putenv('MAIL_FROM_ADDRESS=env@example.com');
-        putenv('MAIL_FROM_NAME=Environment Sender');
+        config([
+            'mail.from.address' => 'env@example.com',
+            'mail.from.name' => 'Environment Sender',
+        ]);
 
         $config = $this->service->getDefaultAccount();
 
         $this->assertNotNull($config);
         $this->assertEquals('env@example.com', $config['from_address']);
         $this->assertEquals('Environment Sender', $config['from_name']);
-
-        putenv('MAIL_FROM_ADDRESS');
-        putenv('MAIL_FROM_NAME');
     }
 
     #[Test]
@@ -167,16 +168,15 @@ class EmailConfigServiceTest extends TestCase
     #[Test]
     public function get_default_account_falls_back_to_mail_from_address_env_var()
     {
-        putenv('MAIL_FROM_ADDRESS=fallback@example.com');
-        putenv('MAIL_FROM_NAME=Fallback Sender');
+        config([
+            'mail.from.address' => 'fallback@example.com',
+            'mail.from.name' => 'Fallback Sender',
+        ]);
 
         $config = $this->service->getDefaultAccount();
 
         $this->assertNotNull($config);
         $this->assertEquals('fallback@example.com', $config['from_address']);
         $this->assertEquals('Fallback Sender', $config['from_name']);
-
-        putenv('MAIL_FROM_ADDRESS');
-        putenv('MAIL_FROM_NAME');
     }
 }

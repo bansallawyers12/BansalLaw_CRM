@@ -59,7 +59,7 @@
                     <form method="POST" action="{{ route('booking.appointments.update', $appointment->id) }}" class="needs-validation" novalidate>
                         @csrf
                         @method('PUT')
-                        <div class="form-row">
+                        <div class="row g-3">
                             <div class="form-group col-md-4">
                                 <label for="appointment-date">Appointment Date</label>
                                 <input type="date" class="form-control" id="appointment-date" name="appointment_date" value="{{ old('appointment_date', $appointment->appointment_datetime->format('Y-m-d')) }}" required onchange="validateWeekendDate(this)" data-original-date="{{ $appointment->appointment_datetime->format('Y-m-d') }}">
@@ -75,7 +75,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="form-row">
+                        <div class="row g-3">
                             <div class="form-group col-md-4">
                                 <label class="font-weight-bold">Client</label>
                                 <p class="mb-1">{{ $appointment->client_name }} <small class="text-muted">({{ $appointment->client_email }})</small></p>
@@ -91,7 +91,7 @@
                                 <p class="mb-0">{{ $appointment->client_timezone ?? config('app.timezone') }}</p>
                             </div>
                         </div>
-                        <div class="form-row">
+                        <div class="row g-3">
                             <div class="form-group col-md-4">
                                 <label class="font-weight-bold">Location</label>
                                 <p class="mb-0">
@@ -131,7 +131,7 @@
                                 </p>
                             </div>
                         </div>
-                        <div class="form-row">
+                        <div class="row g-3">
                             <div class="form-group col-md-4">
                                 <label class="font-weight-bold">Website booking ID</label>
                                 <p class="mb-0">
@@ -167,14 +167,14 @@
                                                 $syncStatusClass = 'secondary';
                                         }
                                     @endphp
-                                    <span class="badge badge-{{ $syncStatusClass }}">{{ $syncStatusText }}</span>
+                                    <span class="badge bg-{{ $syncStatusClass }}">{{ $syncStatusText }}</span>
                                     @if($appointment->sync_error)
                                         <br><small class="text-danger mt-1">{{ Str::limit($appointment->sync_error, 50) }}</small>
                                     @endif
                                 </p>
                             </div>
                         </div>
-                        <div class="form-row">
+                        <div class="row g-3">
                             <div class="form-group col-md-4">
                                 <label for="meeting-type">Meeting Type <span class="text-danger">*</span></label>
                                 <select class="form-control form-control-sm" id="meeting-type" name="meeting_type" required style="max-width: 250px;">

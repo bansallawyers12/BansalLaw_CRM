@@ -345,10 +345,10 @@ class UnifiedSmsManager
     {
         $messageContent = trim($data['message_content']); // Complete message, not truncated
         $statusBadge = $data['status'] === 'sent' 
-            ? '<span class="badge badge-success">Sent</span>' 
-            : '<span class="badge badge-danger">Failed</span>';
+            ? '<span class="badge bg-success">Sent</span>' 
+            : '<span class="badge bg-danger">Failed</span>';
         
-        $providerBadge = '<span class="badge badge-info">' . strtoupper($data['provider']) . '</span>';
+        $providerBadge = '<span class="badge bg-info text-dark">' . strtoupper($data['provider']) . '</span>';
         
         $errorSection = '';
         if ($data['error_message']) {

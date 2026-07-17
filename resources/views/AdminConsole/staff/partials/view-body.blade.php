@@ -24,9 +24,9 @@
                 <dt>Status</dt>
                 <dd>
                     @if((int) ($fetchedData->status ?? 1) === 1)
-                        <span class="badge badge-success">Active — can log in</span>
+                        <span class="badge bg-success">Active — can log in</span>
                     @else
-                        <span class="badge badge-secondary">Inactive — login disabled</span>
+                        <span class="badge bg-secondary">Inactive — login disabled</span>
                     @endif
                 </dd>
                 <dt>Phone</dt>
@@ -59,7 +59,7 @@
             <div class="d-flex flex-wrap gap-2">
                 @foreach(['1' => 'Notes: View', '2' => 'Notes: Add/Edit', '3' => 'Notes: Delete', '4' => 'Documents: View', '5' => 'Documents: Add/Edit', '6' => 'Documents: Delete'] as $perm => $label)
                     @if(in_array((string) $perm, $permissionArr, true) || in_array((int) $perm, $permissionArr, true))
-                        <span class="badge badge-light border">{{ $label }}</span>
+                        <span class="badge bg-light text-dark border">{{ $label }}</span>
                     @endif
                 @endforeach
             </div>

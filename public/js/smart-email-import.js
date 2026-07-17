@@ -394,9 +394,9 @@
 
         var summary = $('smart-import-summary');
         summary.innerHTML =
-            '<span class="badge badge-light badge-pill">' + state.items.length + ' ready</span>' +
-            '<span class="badge badge-success badge-pill">' + (data.high_confidence_count || 0) + ' high confidence</span>' +
-            '<span class="badge badge-warning badge-pill">' + (data.unmatched_count || 0) + ' need assignment</span>';
+            '<span class="badge bg-light text-dark rounded-pill">' + state.items.length + ' ready</span>' +
+            '<span class="badge bg-success rounded-pill">' + (data.high_confidence_count || 0) + ' high confidence</span>' +
+            '<span class="badge bg-warning text-dark rounded-pill">' + (data.unmatched_count || 0) + ' need assignment</span>';
 
         if (Array.isArray(data.failed) && data.failed.length) {
             summary.innerHTML +=
@@ -907,14 +907,14 @@
             var response = await fetch(config.urls.checkService, { headers: { 'Accept': 'application/json' } });
             var data = await response.json();
             if (data.status) {
-                badge.className = 'badge badge-success';
+                badge.className = 'badge bg-success';
                 badge.textContent = 'Parser online';
             } else {
-                badge.className = 'badge badge-danger';
+                badge.className = 'badge bg-danger';
                 badge.textContent = 'Parser offline';
             }
         } catch (error) {
-            badge.className = 'badge badge-danger';
+            badge.className = 'badge bg-danger';
             badge.textContent = 'Parser offline';
         }
     }

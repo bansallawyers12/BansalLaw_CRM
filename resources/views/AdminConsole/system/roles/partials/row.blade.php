@@ -13,7 +13,7 @@
         </button>
     </td>
     <td>{{ $list->description ? Str::limit($list->description, 80, '...') : config('constants.empty') }}</td>
-    <td><span class="badge badge-primary">{{ $permCount }}</span></td>
+    <td><span class="badge bg-primary">{{ $permCount }}</span></td>
     <td class="text-nowrap">
         <button type="button" class="btn btn-sm btn-outline-primary roles-view-btn" data-role-id="{{ $list->id }}">
             <i class="fa-regular fa-eye"></i> View

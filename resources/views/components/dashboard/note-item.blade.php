@@ -47,7 +47,7 @@
 
 <li class="note-item-enhanced urgency-{{ $urgencyBadge }}">
     <div class="note-item-header">
-        <span class="urgency-badge badge-{{ $urgencyBadge }}">
+        <span class="urgency-badge bg-{{ $urgencyBadge }}">
             <i class="fa-solid fa-{{ $isOverdue ? 'exclamation-triangle' : 'clock' }}"></i>
             {{ $urgencyLabel }}
         </span>
