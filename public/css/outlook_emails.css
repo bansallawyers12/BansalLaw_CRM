@@ -158,6 +158,7 @@ body, html {
 
 .list-header-filters {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
 }
 
@@ -175,6 +176,70 @@ body, html {
 .list-filter-select:focus {
     outline: none;
     border-color: var(--outlook-blue);
+}
+
+.list-filter-date {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 8px;
+    border: 1px solid var(--outlook-border);
+    border-radius: 6px;
+    font-size: 12px;
+    background: #fff;
+    color: var(--outlook-text);
+}
+
+.list-filter-date:focus {
+    outline: none;
+    border-color: var(--outlook-blue);
+}
+
+.email-status-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    vertical-align: middle;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.email-status-badge--sent {
+    background: #dff6dd;
+    color: #107c10;
+}
+
+.email-status-badge--failed {
+    background: #fde7e9;
+    color: #a4262c;
+}
+
+.email-status-badge--pending {
+    background: #fff4ce;
+    color: #8a6116;
+}
+
+.email-send-error {
+    margin: 12px 24px 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #fde7e9;
+    border: 1px solid #f1bbbc;
+    color: #a4262c;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.action-btn--warning {
+    color: #8a6116;
+    border-color: #f1bbbc;
+    background: #fff4ce;
+}
+
+.action-btn--warning:hover {
+    background: #ffe58f;
 }
 
 .search-box {
@@ -614,6 +679,12 @@ body, html {
     font-size: 14px;
     font-family: inherit;
     min-width: 0;
+}
+
+.compose-field input[readonly] {
+    color: var(--outlook-text-muted, #605e5c);
+    background: transparent;
+    cursor: default;
 }
 
 .compose-message-stack {

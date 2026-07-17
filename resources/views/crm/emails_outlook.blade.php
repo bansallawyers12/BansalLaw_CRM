@@ -60,6 +60,11 @@
     $authStaff = auth()->guard('admin')->user();
     $canDeleteEmail = $authStaff instanceof \App\Models\Staff
         && $authStaff->canDeleteEmailWithAttachments();
+    $crmMailboxAddresses = \App\Models\Email::where('status', true)
+        ->orderBy('email')
+        ->pluck('email')
+        ->values()
+        ->all();
 @endphp
 
 <!-- Outlook CSS -->
@@ -71,6 +76,7 @@
     data-client-id="{{ $clientData->id ?? '' }}"
     data-matter-id="{{ $matterId ?? '' }}"
     data-auth-email="{{ auth()->user()->email ?? '' }}"
+    data-mailbox-addresses='@json($crmMailboxAddresses)'
     data-staff-signature-url="{{ route('crm.staff.email-signature') }}"
     data-staff-id="{{ auth()->id() }}"
     data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}"
@@ -95,8 +101,8 @@
                 <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
                     <i class="fa-solid fa-paper-plane"></i> Sent Items
                 </button>
-                <button type="button" class="folder-item" data-folder="drafts" role="tab" aria-selected="false">
-                    <i class="fa-solid fa-file-lines"></i> Drafts
+                <button type="button" class="folder-item" data-folder="outbox" role="tab" aria-selected="false">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Email Log
                 </button>
             </div>
             <button type="button" class="action-btn action-btn--upload" id="btnUploadEmail" title="Upload Outlook email ({{ $crmEmailUploadLabel }})" hidden>
@@ -159,6 +165,13 @@
                     <option value="desc" selected>Newest First</option>
                     <option value="asc">Oldest First</option>
                 </select>
+                <select id="sendStatusFilter" class="list-filter-select list-filter-outbox" aria-label="Filter by send status" hidden>
+                    <option value="">All Status</option>
+                    <option value="sent">Sent</option>
+                    <option value="failed">Failed</option>
+                </select>
+                <input type="date" id="dateFromFilter" class="list-filter-date list-filter-outbox" aria-label="From date" title="From date" hidden>
+                <input type="date" id="dateToFilter" class="list-filter-date list-filter-outbox" aria-label="To date" title="To date" hidden>
             </div>
         </div>
         
@@ -190,6 +203,9 @@
                     <button class="action-btn" id="btnReply"><i class="fa-solid fa-reply"></i> Reply</button>
                     <button class="action-btn" id="btnReplyAll"><i class="fa-solid fa-reply-all"></i> Reply All</button>
                     <button class="action-btn" id="btnForward"><i class="fa-solid fa-share"></i> Forward</button>
+                    <button type="button" class="action-btn action-btn--warning" id="btnResend" hidden>
+                        <i class="fa-solid fa-rotate-right"></i> Resend
+                    </button>
                     @if($canDeleteEmail)
                     <button type="button" class="action-btn action-btn--danger" id="btnDeleteEmail" title="Delete email and attachments">
                         <i class="fa-solid fa-trash"></i> Delete
@@ -205,9 +221,11 @@
                         <div class="meta-sender" id="readSender">Loading...</div>
                         <div class="meta-recipients" id="readTo">Loading...</div>
                         <div class="meta-recipients meta-cc" id="readCc" hidden></div>
+                        <div class="meta-recipients meta-bcc" id="readBcc" hidden></div>
                     </div>
                     <div class="meta-date" id="readDate"></div>
                 </div>
+                <div class="email-send-error" id="readSendError" hidden></div>
             </div>
 
             <div id="attachmentsContainer" class="email-attachments-container reading-attachments" hidden></div>
@@ -230,8 +248,20 @@
     </div>
     <div class="compose-body">
         <div class="compose-field">
+            <label for="composeFrom">From</label>
+            <input type="email" id="composeFrom" autocomplete="off" placeholder="Sender email address">
+        </div>
+        <div class="compose-field">
             <label for="composeTo">To</label>
             <input type="text" id="composeTo" autocomplete="off">
+        </div>
+        <div class="compose-field">
+            <label for="composeCc">Cc</label>
+            <input type="text" id="composeCc" autocomplete="off" placeholder="Optional — separate multiple with commas">
+        </div>
+        <div class="compose-field">
+            <label for="composeBcc">Bcc</label>
+            <input type="text" id="composeBcc" autocomplete="off" placeholder="Optional — separate multiple with commas">
         </div>
         <div class="compose-field">
             <label for="composeSubject">Subject</label>

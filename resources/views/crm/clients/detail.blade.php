@@ -637,7 +637,7 @@ use App\Http\Controllers\Controller;
 				@csrf
                     <input type="hidden" name="client_id" value="{{$fetchedData->id}}">
                     <input type="hidden" name="type" value="client">
-                    <input type="hidden" name="mail_type" value="1">
+                    <input type="hidden" name="mail_type" value="2">
                     <input type="hidden" name="mail_body_type" value="sent">
                     <input type="hidden" name="compose_client_matter_id" id="compose_client_matter_id" value="">
 					<div class="row">
@@ -672,6 +672,18 @@ use App\Http\Controllers\Controller;
 								@if ($errors->has('email_cc'))
 									<span class="custom-error" role="alert">
 										<strong>{{ @$errors->first('email_cc') }}</strong>
+									</span>
+								@endif
+							</div>
+						</div>
+						<div class="col-12 col-md-6 col-lg-6">
+							<div class="form-group">
+								<label for="email_bcc">BCC </label>
+								<select multiple data-valid="" class="js-data-example-ajaxbcc" name="email_bcc[]"></select>
+
+								@if ($errors->has('email_bcc'))
+									<span class="custom-error" role="alert">
+										<strong>{{ @$errors->first('email_bcc') }}</strong>
 									</span>
 								@endif
 							</div>

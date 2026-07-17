@@ -2158,6 +2158,75 @@
     }
 
     /**
+     * Parse comma/semicolon-separated recipients into email addresses.
+     */
+    function parseRecipientEmails(recipientString) {
+        if (!recipientString) {
+            return [];
+        }
+
+        return recipientString
+            .split(/[,;]/)
+            .map(function (part) {
+                return extractEmailAddress(part.trim());
+            })
+            .filter(function (addr) {
+                return !!addr;
+            });
+    }
+
+    /**
+     * Populate a compose modal multi-select (To/Cc/Bcc) with email addresses.
+     */
+    function setComposeRecipientField(selectName, emails) {
+        const select = document.querySelector('#emailmodal select[name="' + selectName + '"]');
+        if (!select) {
+            return;
+        }
+
+        const addresses = (emails || [])
+            .map(function (email) {
+                return extractEmailAddress(email);
+            })
+            .filter(function (addr) {
+                return !!addr;
+            });
+
+        const applyValues = function () {
+            const ts = select.tomselect;
+            if (ts) {
+                ts.clear(true);
+                addresses.forEach(function (addr) {
+                    const key = String(addr);
+                    if (!ts.options[key]) {
+                        ts.addOption({ id: key, name: key, email: key });
+                    }
+                    ts.addItem(key, true);
+                });
+                return;
+            }
+
+            if (typeof jQuery !== 'undefined') {
+                jQuery(select).val(null).trigger('change');
+                addresses.forEach(function (addr) {
+                    let option = Array.from(select.options).find(function (opt) {
+                        return opt.value === addr || opt.text === addr;
+                    });
+                    if (!option) {
+                        option = new Option(addr, addr, true, true);
+                        select.add(option);
+                    } else {
+                        option.selected = true;
+                    }
+                });
+                jQuery(select).val(addresses).trigger('change');
+            }
+        };
+
+        setTimeout(applyValues, 200);
+    }
+
+    /**
      * Open compose modal and populate fields
      */
     function openComposeModal(data) {
@@ -2168,6 +2237,10 @@
         }
 
         modal.dataset.signaturePrefill = (data.message && String(data.message).trim()) ? 'skip' : 'allow';
+
+        // Reset Cc/Bcc unless explicitly provided (compose / reply / forward)
+        setComposeRecipientField('email_cc[]', data.cc || []);
+        setComposeRecipientField('email_bcc[]', data.bcc || []);
 
         // Always set matter ID - use provided one or get from dropdown
         const matterIdInput = document.getElementById('compose_client_matter_id');
@@ -2304,9 +2377,13 @@
         // Format message with quoted original and fresh staff signature
         const replyMessage = await prependStaffSignatureToMessageAsync(formatQuotedMessage(email, false));
 
+        // Pre-fill Cc with original Cc recipients (user can edit before send)
+        const replyCc = parseRecipientEmails(email.cc);
+
         // Open compose modal with reply data
         openComposeModal({
             to: [senderEmail],
+            cc: replyCc,
             subject: replySubject,
             message: replyMessage,
             matterId: matterId
@@ -2333,9 +2410,11 @@
         // Format message with forwarded content and fresh staff signature
         const forwardMessage = await prependStaffSignatureToMessageAsync(formatQuotedMessage(email, true));
 
-        // Open compose modal with forward data (no "To" pre-filled)
+        // Open compose modal with forward data (no "To" pre-filled; Cc/Bcc available to add)
         openComposeModal({
             to: [],
+            cc: [],
+            bcc: [],
             subject: forwardSubject,
             message: forwardMessage,
             matterId: matterId

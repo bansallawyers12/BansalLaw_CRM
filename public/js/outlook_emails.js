@@ -48,7 +48,7 @@ function crmOutlookEmailUpload403Message(responseText, status) {
 
 document.addEventListener('DOMContentLoaded', function() {
     let currentPage = 1;
-    let currentFolder = 'inbox'; // inbox, sent, drafts
+    let currentFolder = 'inbox'; // inbox, sent, outbox
     let emails = [];
     let selectedEmailId = null;
 
@@ -63,6 +63,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const labelFilter = document.getElementById('labelFilter');
     const senderFilter = document.getElementById('senderFilter');
     const sortOrder = document.getElementById('sortOrder');
+    const sendStatusFilter = document.getElementById('sendStatusFilter');
+    const dateFromFilter = document.getElementById('dateFromFilter');
+    const dateToFilter = document.getElementById('dateToFilter');
     const pageInfo = document.getElementById('pageInfo');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
@@ -71,6 +74,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const composeModal = document.getElementById('composeModal');
     const composeTitle = document.getElementById('composeTitle');
     const toInput = document.getElementById('composeTo');
+    const ccInput = document.getElementById('composeCc');
+    const bccInput = document.getElementById('composeBcc');
     const subjectInput = document.getElementById('composeSubject');
     const composeReplyInput = document.getElementById('composeReplyInput');
     const composeQuoteWrap = document.getElementById('composeQuoteWrap');
@@ -81,6 +86,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const composeSignatureWrap = document.getElementById('composeSignatureWrap');
     const composeSignatureFrame = document.getElementById('composeSignatureFrame');
     const composeFormatBar = document.getElementById('composeFormatBar');
+    const btnSendEl = document.getElementById('btnSend');
+    const btnResend = document.getElementById('btnResend');
 
     let composeQuoteHtml = '';
     let composeSignatureHtml = '';
@@ -90,6 +97,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const clientId = outlookContainer ? outlookContainer.getAttribute('data-client-id') : '';
     const matterId = outlookContainer ? outlookContainer.getAttribute('data-matter-id') : '';
     const authEmail = outlookContainer ? outlookContainer.getAttribute('data-auth-email') : '';
+    let composeFromEmail = authEmail;
+    let composeReplyToEmailId = null;
+    let composeResendLogId = null;
     const staffSignatureUrl = outlookContainer ? (outlookContainer.getAttribute('data-staff-signature-url') || '') : '';
     const personalFolders = outlookContainer
         ? JSON.parse(outlookContainer.getAttribute('data-personal-folders') || '[]')
@@ -113,6 +123,37 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     loadEmails();
+    updateOutboxFiltersVisibility();
+
+    function updateOutboxFiltersVisibility() {
+        const isOutbox = currentFolder === 'outbox';
+        document.querySelectorAll('.list-filter-outbox').forEach(function (el) {
+            el.hidden = !isOutbox;
+        });
+        if (labelFilter) {
+            labelFilter.hidden = isOutbox;
+        }
+        if (senderFilter) {
+            senderFilter.hidden = isOutbox;
+        }
+    }
+
+    function resetComposeContext() {
+        composeReplyToEmailId = null;
+        composeResendLogId = null;
+        if (btnSendEl) {
+            btnSendEl.innerHTML = '<i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Send';
+        }
+    }
+
+    function renderSendStatusBadge(email) {
+        const status = (email && email.send_status) ? String(email.send_status) : 'sent';
+        if (currentFolder !== 'outbox' && status === 'sent') {
+            return '';
+        }
+        const label = status.charAt(0).toUpperCase() + status.slice(1);
+        return '<span class="email-status-badge email-status-badge--' + escapeHtml(status) + '">' + escapeHtml(label) + '</span>';
+    }
 
     // Event Listeners
     folderItems.forEach(item => {
@@ -126,6 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
             target.setAttribute('aria-selected', 'true');
             currentFolder = target.dataset.folder;
             currentPage = 1;
+            updateOutboxFiltersVisibility();
             loadEmails();
         });
     });
@@ -153,6 +195,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (sortOrder) {
         sortOrder.addEventListener('change', () => {
+            currentPage = 1;
+            loadEmails();
+        });
+    }
+
+    if (sendStatusFilter) {
+        sendStatusFilter.addEventListener('change', () => {
+            currentPage = 1;
+            loadEmails();
+        });
+    }
+
+    if (dateFromFilter) {
+        dateFromFilter.addEventListener('change', () => {
+            currentPage = 1;
+            loadEmails();
+        });
+    }
+
+    if (dateToFilter) {
+        dateToFilter.addEventListener('change', () => {
             currentPage = 1;
             loadEmails();
         });
@@ -195,16 +258,74 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Close Modal
     document.getElementById('closeModal').addEventListener('click', () => {
+        resetComposeContext();
         composeModal.classList.remove('active');
     });
 
     document.getElementById('btnDiscard').addEventListener('click', () => {
+        resetComposeContext();
         composeModal.classList.remove('active');
     });
 
+    function parseRecipientField(value) {
+        if (!value || !String(value).trim()) {
+            return [];
+        }
+        return String(value)
+            .split(/[,;]/)
+            .map(function (part) {
+                const trimmed = part.trim();
+                const match = trimmed.match(/<([^>]+)>/);
+                return match ? match[1].trim() : trimmed;
+            })
+            .filter(function (addr) {
+                return addr && addr.includes('@');
+            });
+    }
+
+    function getDefaultComposeFromAddress() {
+        return authEmail || '';
+    }
+
+    function getComposeFromInputValue() {
+        const composeFromEl = document.getElementById('composeFrom');
+        const raw = composeFromEl ? composeFromEl.value.trim() : '';
+        if (!raw) {
+            return getDefaultComposeFromAddress();
+        }
+        const parsed = parseRecipientField(raw);
+        return parsed.length ? parsed[0] : raw;
+    }
+
+    function setComposeFromField(value) {
+        composeFromEmail = value || getDefaultComposeFromAddress();
+        const composeFromEl = document.getElementById('composeFrom');
+        if (composeFromEl) {
+            composeFromEl.value = composeFromEmail;
+        }
+    }
+
+    function appendRecipientFields(formData, fieldName, value) {
+        parseRecipientField(value).forEach(function (addr) {
+            formData.append(fieldName + '[]', addr);
+        });
+    }
+
+    function switchToFolder(folder) {
+        folderItems.forEach(function (f) {
+            const isActive = f.dataset.folder === folder;
+            f.classList.toggle('active', isActive);
+            f.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        currentFolder = folder;
+        currentPage = 1;
+    }
+
     // Send Mail
-    document.getElementById('btnSend').addEventListener('click', async () => {
+    if (btnSendEl) btnSendEl.addEventListener('click', async () => {
         const to = toInput.value.trim();
+        const cc = ccInput ? ccInput.value.trim() : '';
+        const bcc = bccInput ? bccInput.value.trim() : '';
         const subject = subjectInput.value.trim();
         const message = getComposeMessageHtml();
 
@@ -213,20 +334,37 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const btnSend = document.getElementById('btnSend');
-        const originalText = btnSend.textContent;
-        btnSend.textContent = 'Sending...';
+        composeFromEmail = getComposeFromInputValue();
+        if (!composeFromEmail || !composeFromEmail.includes('@')) {
+            alert('Please enter a valid From email address.');
+            return;
+        }
+
+        const btnSend = btnSendEl;
+        const originalHtml = btnSend.innerHTML;
+        btnSend.innerHTML = composeResendLogId ? 'Resending...' : 'Sending...';
         btnSend.disabled = true;
 
         const formData = new FormData();
         if (clientId) formData.append('client_id', clientId);
         if (matterId) formData.append('compose_client_matter_id', matterId);
-        formData.append('email_from', authEmail);
-        formData.append('email_to', to);
+        formData.append('email_from', composeFromEmail);
+        appendRecipientFields(formData, 'email_to', to);
+        if (cc) {
+            appendRecipientFields(formData, 'email_cc', cc);
+        }
+        if (bcc) {
+            appendRecipientFields(formData, 'email_bcc', bcc);
+        }
         formData.append('subject', subject);
         formData.append('message', message);
         formData.append('type', 'client');
         formData.append('mail_type', 2);
+        if (composeResendLogId) {
+            formData.append('resend_email_log_id', composeResendLogId);
+        } else if (composeReplyToEmailId) {
+            formData.append('reply_to_email_id', composeReplyToEmailId);
+        }
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
 
         try {
@@ -238,23 +376,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: formData
             });
-            const result = await response.json();
+            const result = await response.json().catch(function () { return {}; });
             
             if (result.success || response.ok) {
-                alert('Email sent successfully!');
+                const wasResend = !!composeResendLogId;
+                alert(wasResend ? 'Email resent successfully!' : 'Email sent successfully!');
                 composeModal.classList.remove('active');
-                // Refresh sent folder if we are currently in it
-                if (currentFolder === 'sent') {
-                    loadEmails();
+                resetComposeContext();
+                switchToFolder(wasResend ? 'outbox' : 'sent');
+                updateOutboxFiltersVisibility();
+                if (result.email_log_id) {
+                    selectedEmailId = parseInt(result.email_log_id, 10) || null;
                 }
+                loadEmails();
             } else {
                 alert(result.message || 'Failed to send email.');
+                if (result.send_status === 'failed' || result.email_log_id) {
+                    resetComposeContext();
+                    composeModal.classList.remove('active');
+                    switchToFolder('outbox');
+                    updateOutboxFiltersVisibility();
+                    if (result.email_log_id) {
+                        selectedEmailId = parseInt(result.email_log_id, 10) || null;
+                    }
+                    loadEmails();
+                }
             }
         } catch (error) {
             console.error('Error sending email:', error);
             alert('An error occurred while sending the email.');
         } finally {
-            btnSend.textContent = originalText;
+            btnSend.innerHTML = originalHtml;
             btnSend.disabled = false;
         }
     });
@@ -268,6 +420,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const btnForward = document.getElementById('btnForward');
     if (btnForward) btnForward.addEventListener('click', () => openCompose('forward'));
+
+    if (btnResend) {
+        btnResend.addEventListener('click', () => openComposeResend());
+    }
 
     const canDeleteEmail = outlookContainer && outlookContainer.dataset.canDeleteEmail === '1';
     const btnDeleteEmail = document.getElementById('btnDeleteEmail');
@@ -1717,6 +1873,17 @@ document.addEventListener('DOMContentLoaded', function() {
             url.searchParams.append('label_id', label);
             url.searchParams.append('sender_filter', sender);
             url.searchParams.append('sort_order', sortOrder ? sortOrder.value : 'desc');
+            if (currentFolder === 'outbox') {
+                if (sendStatusFilter && sendStatusFilter.value) {
+                    url.searchParams.append('send_status', sendStatusFilter.value);
+                }
+                if (dateFromFilter && dateFromFilter.value) {
+                    url.searchParams.append('date_from', dateFromFilter.value);
+                }
+                if (dateToFilter && dateToFilter.value) {
+                    url.searchParams.append('date_to', dateToFilter.value);
+                }
+            }
             
             if (clientId) url.searchParams.append('client_id', clientId);
             if (matterId) url.searchParams.append('client_matter_id', matterId);
@@ -1808,7 +1975,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!email) {
             return null;
         }
-        return email.fetch_mail_sent_time_display || email.fetch_mail_sent_time || email.received_date || email.created_at || null;
+        return email.sent_at || email.failed_at || email.fetch_mail_sent_time_display || email.fetch_mail_sent_time || email.received_date || email.created_at || null;
     }
 
     function formatFileSize(bytes) {
@@ -2096,10 +2263,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const attachmentSummary = renderEmailAttachmentListSummary(email);
 
             let dateStr = formatEmailDate(getEmailDate(email));
+            const statusBadge = renderSendStatusBadge(email);
 
             el.innerHTML = `
                 <div class="email-item-header">
-                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}</div>
+                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${statusBadge}</div>
                 </div>
                 <div class="email-subject">${escapeHtml(subject)}</div>
                 <div class="email-preview">${escapeHtml(preview)}</div>
@@ -2141,6 +2309,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 readCcEl.textContent = '';
                 readCcEl.hidden = true;
             }
+        }
+
+        const readBccEl = document.getElementById('readBcc');
+        if (readBccEl) {
+            const bccLine = formatRecipientLine('Bcc', email.bcc);
+            if (bccLine) {
+                readBccEl.textContent = bccLine;
+                readBccEl.hidden = false;
+            } else {
+                readBccEl.textContent = '';
+                readBccEl.hidden = true;
+            }
+        }
+
+        const readSendErrorEl = document.getElementById('readSendError');
+        if (readSendErrorEl) {
+            if (email.send_status === 'failed' && email.send_error) {
+                readSendErrorEl.hidden = false;
+                readSendErrorEl.innerHTML = '<strong>Send failed:</strong> ' + escapeHtml(email.send_error);
+            } else {
+                readSendErrorEl.hidden = true;
+                readSendErrorEl.textContent = '';
+            }
+        }
+
+        if (btnResend) {
+            btnResend.hidden = email.send_status !== 'failed' || parseInt(email.mail_type, 10) !== 2;
         }
         
         document.getElementById('readDate').textContent = formatEmailDate(getEmailDate(email));
@@ -2221,6 +2416,18 @@ document.addEventListener('DOMContentLoaded', function() {
         composeSignatureHtml = '';
         if (composeReplyInput) {
             composeReplyInput.innerHTML = '';
+        }
+        if (toInput) {
+            toInput.value = '';
+        }
+        if (ccInput) {
+            ccInput.value = '';
+        }
+        if (bccInput) {
+            bccInput.value = '';
+        }
+        if (subjectInput) {
+            subjectInput.value = '';
         }
         if (composeQuoteWrap) {
             composeQuoteWrap.hidden = true;
@@ -2346,9 +2553,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return 'Fwd: ' + value;
     }
 
-    async function fetchLoggedInStaffSignature() {
+    async function fetchLoggedInStaffSignature(fromEmail) {
         if (typeof window.crmFetchStaffSignature === 'function') {
-            return (await window.crmFetchStaffSignature()).trim();
+            return (await window.crmFetchStaffSignature(fromEmail || '')).trim();
         }
         if (window.__crmCurrentUserSignature) {
             return String(window.__crmCurrentUserSignature).trim();
@@ -2378,6 +2585,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         composeModal.classList.add('active');
         resetComposeEditor();
+        composeResendLogId = null;
+        if (btnSendEl) {
+            btnSendEl.innerHTML = '<i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Send';
+        }
+
+        composeFromEmail = getDefaultComposeFromAddress();
+        composeReplyToEmailId = email.id || null;
+        setComposeFromField(composeFromEmail);
 
         let emailHtml = '';
         if (email.html_content) {
@@ -2392,27 +2607,76 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (action === 'reply') {
             composeTitle.textContent = 'Reply';
-            toInput.value = email.from_mail || '';
+            const sender = parseRecipientField(email.from_mail);
+            toInput.value = sender.length ? sender[0] : (email.from_mail || '');
+            if (ccInput) {
+                ccInput.value = cleanRecipients(email.cc) || '';
+            }
             subjectInput.value = formatReplySubject(email.subject);
         } else if (action === 'replyAll') {
             composeTitle.textContent = 'Reply All';
-            const toParts = [email.from_mail || '', cleanRecipients(email.to_mail), cleanRecipients(email.cc)]
+            const toParts = [email.from_mail || '', cleanRecipients(email.to_mail)]
                 .filter(function(part) { return part; });
             toInput.value = toParts.join(', ');
+            if (ccInput) {
+                ccInput.value = cleanRecipients(email.cc) || '';
+            }
             subjectInput.value = formatReplySubject(email.subject);
         } else if (action === 'forward') {
             composeTitle.textContent = 'Forward';
             toInput.value = '';
+            if (ccInput) {
+                ccInput.value = '';
+            }
+            if (bccInput) {
+                bccInput.value = '';
+            }
             subjectInput.value = formatForwardSubject(email.subject);
         }
 
         setComposeQuote(buildQuoteHtml(email, action, emailHtml));
 
         try {
-            const signatureHtml = await fetchLoggedInStaffSignature();
+            const signatureHtml = await fetchLoggedInStaffSignature(composeFromEmail);
             setComposeSignature(signatureHtml);
         } catch (e) {
             setComposeSignature('');
+        }
+
+        focusComposeReply();
+    }
+
+    async function openComposeResend() {
+        if (!selectedEmailId) return;
+        const email = emails.find(function (e) { return e.id === selectedEmailId; });
+        if (!email || email.send_status !== 'failed') return;
+
+        composeModal.classList.add('active');
+        resetComposeEditor();
+        composeReplyToEmailId = null;
+        composeResendLogId = email.id;
+        setComposeFromField(email.from_mail || getDefaultComposeFromAddress());
+
+        composeTitle.textContent = 'Resend Email';
+        if (btnSendEl) {
+            btnSendEl.innerHTML = '<i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Resend';
+        }
+
+        toInput.value = cleanRecipients(email.to_mail) || email.to_mail || '';
+        if (ccInput) {
+            ccInput.value = cleanRecipients(email.cc) || email.cc || '';
+        }
+        if (bccInput) {
+            bccInput.value = cleanRecipients(email.bcc) || email.bcc || '';
+        }
+        subjectInput.value = email.subject || '';
+
+        setComposeQuote('');
+        setComposeSignature('');
+
+        const messageHtml = email.message || email.html_content || email.text_content || '';
+        if (composeReplyInput) {
+            composeReplyInput.innerHTML = messageHtml.includes('<') ? messageHtml : escapeHtml(messageHtml).replace(/\n/g, '<br>');
         }
 
         focusComposeReply();

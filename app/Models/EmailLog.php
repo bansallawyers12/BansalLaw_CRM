@@ -13,6 +13,12 @@ class EmailLog extends Authenticatable
     use Notifiable;
 	use Sortable;
 
+    public const SEND_STATUS_PENDING = 'pending';
+
+    public const SEND_STATUS_SENT = 'sent';
+
+    public const SEND_STATUS_FAILED = 'failed';
+
 	protected $table = 'email_logs';
 
 	protected $fillable = [
@@ -21,6 +27,7 @@ class EmailLog extends Authenticatable
         'from_mail',
         'to_mail',
         'cc',
+        'bcc',
         'template_id',
         'subject',
         'message',
@@ -28,6 +35,13 @@ class EmailLog extends Authenticatable
         'reciept_id',
         'attachments',
         'mail_type',
+        'mail_body_type',
+        'send_status',
+        'send_error',
+        'sent_at',
+        'failed_at',
+        'retry_count',
+        'resend_of_id',
         'client_id',
         'client_matter_id',
         'conversion_type',
@@ -66,6 +80,8 @@ class EmailLog extends Authenticatable
         'thread_info' => 'array',
         'processed_at' => 'datetime',
         'fetch_mail_sent_time' => 'datetime',
+        'sent_at' => 'datetime',
+        'failed_at' => 'datetime',
         'received_date' => 'datetime',
         'last_accessed_at' => 'datetime',
         'mail_is_read' => 'boolean',

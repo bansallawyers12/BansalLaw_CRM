@@ -8217,13 +8217,17 @@ class ClientsController extends Controller
      */
     public function fetchAllOutlookEmails(Request $request)
     {
-        $folder = $request->input('folder', 'inbox'); // inbox, sent, drafts, deleted
+        $folder = $request->input('folder', 'inbox'); // inbox, sent, outbox, deleted
         $search = $request->input('search');
         $clientId = $request->input('client_id');
         $clientMatterId = $request->input('client_matter_id');
         $labelId = $request->input('label_id');
         $senderFilter = $request->input('sender_filter');
+        $sendStatusFilter = $request->input('send_status', '');
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
         $perPage = 15;
+        $hasSendStatus = \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'send_status');
 
         // Base query with attachments
         $query = \App\Models\EmailLog::with('attachments');
@@ -8249,11 +8253,49 @@ class ClientsController extends Controller
         }
 
         // Apply folder logic
-        // 1 = Inbox/Received, 2 = Sent
+        // Inbox = received uploads; Sent = CRM compose (mail_type 2) + uploaded sent items
         if ($folder === 'inbox') {
-            $query->where('mail_type', 1);
+            $query->where('mail_type', 1)
+                ->where(function ($q) {
+                    $q->where('mail_body_type', 'inbox')
+                      ->orWhereNull('mail_body_type');
+                });
         } elseif ($folder === 'sent') {
+            $query->where(function ($q) use ($hasSendStatus) {
+                $q->where(function ($crm) use ($hasSendStatus) {
+                    $crm->where('mail_type', 2);
+                    if ($hasSendStatus) {
+                        $crm->where(function ($status) {
+                            $status->where('send_status', \App\Models\EmailLog::SEND_STATUS_SENT)
+                                ->orWhereNull('send_status')
+                                ->orWhere('send_status', \App\Models\EmailLog::SEND_STATUS_PENDING);
+                        });
+                    }
+                })->orWhere(function ($sub) {
+                    $sub->where('mail_type', 1)
+                        ->where('mail_body_type', 'sent');
+                });
+            });
+        } elseif ($folder === 'outbox') {
             $query->where('mail_type', 2);
+            if ($hasSendStatus) {
+                if ($sendStatusFilter === \App\Models\EmailLog::SEND_STATUS_SENT
+                    || $sendStatusFilter === \App\Models\EmailLog::SEND_STATUS_FAILED) {
+                    $query->where('send_status', $sendStatusFilter);
+                } else {
+                    $query->whereIn('send_status', [
+                        \App\Models\EmailLog::SEND_STATUS_SENT,
+                        \App\Models\EmailLog::SEND_STATUS_FAILED,
+                        \App\Models\EmailLog::SEND_STATUS_PENDING,
+                    ]);
+                }
+            }
+            if (! empty($dateFrom)) {
+                $query->whereRaw('DATE(COALESCE(sent_at, failed_at, fetch_mail_sent_time, created_at)) >= ?', [$dateFrom]);
+            }
+            if (! empty($dateTo)) {
+                $query->whereRaw('DATE(COALESCE(sent_at, failed_at, fetch_mail_sent_time, created_at)) <= ?', [$dateTo]);
+            }
         } elseif ($folder === 'deleted') {
             // No easy way to fetch deleted items if they are permanently deleted
             $query->where('id', '<', 0); // Return empty for now
@@ -8271,7 +8313,11 @@ class ClientsController extends Controller
 
         // Sort by actual email sent time, user-selectable direction (default: newest first)
         $sortDirection = strtolower($request->input('sort_order', 'desc')) === 'asc' ? 'ASC' : 'DESC';
-        $query->orderByRaw('COALESCE(fetch_mail_sent_time, created_at) ' . $sortDirection);
+        if ($folder === 'outbox' && $hasSendStatus) {
+            $query->orderByRaw('COALESCE(sent_at, failed_at, fetch_mail_sent_time, created_at) ' . $sortDirection);
+        } else {
+            $query->orderByRaw('COALESCE(fetch_mail_sent_time, created_at) ' . $sortDirection);
+        }
 
         // Paginate
         $emails = $query->paginate($perPage);
@@ -8283,6 +8329,9 @@ class ClientsController extends Controller
 
             $email->to_mail = \App\Models\EmailLog::resolveRecipientDisplay($email->to_mail ?? '', $email->type ?? null);
             $email->cc = $email->cc ?? '';
+            $email->bcc = $email->bcc ?? '';
+            $email->send_status = $email->send_status ?? \App\Models\EmailLog::SEND_STATUS_SENT;
+            $email->send_error = $email->send_error ?? '';
 
             $appTimezone = config('app.timezone', 'Australia/Melbourne');
             if ($email->fetch_mail_sent_time) {

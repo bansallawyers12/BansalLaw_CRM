@@ -6594,6 +6594,12 @@ success: function(response) {
 
         });
 
+        $('.js-data-example-ajaxbcc').each(function () {
+
+            initTS(this, crmDetailRecipientTomSelectOptions('#emailmodal', true));
+
+        });
+
 
 
         /* $(".table-2").dataTable({

@@ -34,20 +34,24 @@ class EmailService
      * @return bool
      * @throws \Exception
      */
-    public function sendEmail($view, $data, $to, $subject, $fromEmailId, $attachments = [], $cc = [])
+    public function sendEmail($view, $data, $to, $subject, $fromEmailId, $attachments = [], $cc = [], $bcc = [])
     {
         try {
             $emailConfig = Email::where('email', $fromEmailId)->first();
             $fromAddress = $emailConfig?->email ?? $fromEmailId;
             $fromName = $emailConfig?->display_name ?? config('mail.from.name');
 
-            $this->mailRouting->sendClosure($view, $data, function (Message $message) use ($to, $subject, $fromAddress, $fromName, $attachments, $cc) {
+            $this->mailRouting->sendClosure($view, $data, function (Message $message) use ($to, $subject, $fromAddress, $fromName, $attachments, $cc, $bcc) {
                 $message->to($to)
                     ->subject($subject)
                     ->from($fromAddress, $fromName);
 
                 if (!empty($cc)) {
                     $message->cc($cc);
+                }
+
+                if (!empty($bcc)) {
+                    $message->bcc($bcc);
                 }
 
                 if (!empty($attachments)) {

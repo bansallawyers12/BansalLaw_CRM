@@ -1156,6 +1156,102 @@ public function getChapters(Request $request)
 		}, $html);
 	}
 
+	/**
+	 * Normalize compose recipient input (array, comma-separated string, or single value).
+	 *
+	 * @return list<string|int>
+	 */
+	protected function normalizeComposeRecipientInput(mixed $value): array
+	{
+		if ($value === null || $value === '') {
+			return [];
+		}
+
+		if (is_array($value)) {
+			return array_values(array_filter(array_map('trim', $value), static fn ($v) => $v !== ''));
+		}
+
+		return array_values(array_filter(
+			array_map('trim', preg_split('/[,;]/', (string) $value)),
+			static fn ($v) => $v !== ''
+		));
+	}
+
+	/**
+	 * Resolve compose To/Cc/Bcc values (Admin/Agent IDs or raw email addresses) to email strings.
+	 *
+	 * @param  array<int|string>  $values
+	 * @return list<string>
+	 */
+	protected function resolveComposeRecipientEmails(array $values, string $type = 'client'): array
+	{
+		$emails = [];
+
+		foreach ($values as $value) {
+			if ($value === '' || $value === null) {
+				continue;
+			}
+
+			if (filter_var($value, FILTER_VALIDATE_EMAIL)) {
+				$emails[] = $value;
+				continue;
+			}
+
+			if ($type === 'agent') {
+				$row = \App\Models\AgentDetails::where('id', $value)->first();
+				$address = $row ? ($row->email ?: $row->business_email) : null;
+			} else {
+				$row = \App\Models\Admin::where('id', $value)->first();
+				$address = $row->email ?? null;
+			}
+
+			if (! empty($address)) {
+				$emails[] = $address;
+			}
+		}
+
+		return array_values(array_unique($emails));
+	}
+
+	/**
+	 * Normalize a compose From header to a single email address.
+	 */
+	protected function normalizeComposeFromAddress(mixed $value): ?string
+	{
+		if (! is_string($value) || trim($value) === '') {
+			return null;
+		}
+
+		$from = trim($value);
+		if (preg_match('/<([^>]+)>/', $from, $matches)) {
+			$from = trim($matches[1]);
+		}
+
+		return filter_var($from, FILTER_VALIDATE_EMAIL) ? $from : null;
+	}
+
+	/**
+	 * Whether the given address may be used as compose From (active CRM mailbox or system sender).
+	 */
+	protected function isAllowedComposeFromAddress(string $fromAddress): bool
+	{
+		$fromAddress = strtolower(trim($fromAddress));
+		$routing = app(\App\Services\MailRoutingService::class);
+
+		if ($routing->isSystemFromAddress($fromAddress)) {
+			return true;
+		}
+
+		$userEmail = strtolower(trim((string) (Auth::user()->email ?? '')));
+		if ($userEmail !== '' && $fromAddress === $userEmail) {
+			return true;
+		}
+
+		return \App\Models\Email::whereRaw('LOWER(email) = ?', [$fromAddress])
+			->where('status', true)
+			->exists();
+	}
+
     public function sendmail(Request $request){
 		$requestData = $request->all();
 		// Restore & in subject (front-end sends __AMP__ to avoid WAF 403 on special characters)
@@ -1168,17 +1264,54 @@ public function getChapters(Request $request)
 			$this->ensureCrmRecordAccess((int) $associatedAdminId);
 		}
 
+		$fromAddress = $this->normalizeComposeFromAddress($requestData['email_from'] ?? null);
+		if (! $fromAddress || ! $this->isAllowedComposeFromAddress($fromAddress)) {
+            $message = 'Invalid sender address. Use your login email or a configured CRM mailbox.';
+			if ($request->ajax() || $request->wantsJson()) {
+				return response()->json([
+					'status' => false,
+					'success' => false,
+					'message' => $message,
+				], 422);
+			}
+
+			return redirect()->back()->with('error', $message);
+		}
+		$requestData['email_from'] = $fromAddress;
+
 		$user_id = @Auth::user()->id;
 		$reciept_id = null;
 		$array = array();
 
-		$obj = new \App\Models\EmailLog;
-		$obj->user_id 		=  $user_id;
+		$resendLogId = (int) ($requestData['resend_email_log_id'] ?? 0);
+		$isResend = $resendLogId > 0;
+
+		if ($isResend) {
+			$obj = \App\Models\EmailLog::find($resendLogId);
+			if (! $obj || (string) ($obj->send_status ?? '') !== \App\Models\EmailLog::SEND_STATUS_FAILED) {
+				$message = 'Only failed emails can be resent.';
+				if ($request->ajax() || $request->wantsJson()) {
+					return response()->json([
+						'status' => false,
+						'success' => false,
+						'message' => $message,
+					], 422);
+				}
+
+				return redirect()->back()->with('error', $message);
+			}
+			if ($obj->client_id) {
+				$this->ensureCrmRecordAccess((int) $obj->client_id);
+			}
+			$obj->retry_count = (int) ($obj->retry_count ?? 0) + 1;
+		} else {
+			$obj = new \App\Models\EmailLog;
+			$obj->user_id = $user_id;
+		}
+
 		$obj->from_mail 	=  $requestData['email_from'];
 		// email_to / email_cc are Admin or Agent row IDs from the compose UI — store actual addresses
-		$emailToList = isset($requestData['email_to']) && is_array($requestData['email_to'])
-			? $requestData['email_to']
-			: array_filter([(string) ($requestData['email_to'] ?? '')]);
+		$emailToList = $this->normalizeComposeRecipientInput($requestData['email_to'] ?? null);
 		$resolvedTo = [];
 		foreach ($emailToList as $recipientId) {
 			if ($recipientId === '' || $recipientId === null) {
@@ -1206,15 +1339,25 @@ public function getChapters(Request $request)
 		$obj->to_mail = $resolvedTo !== []
 			? implode(',', array_unique($resolvedTo))
 			: implode(',', $emailToList);
-		if (isset($requestData['email_cc']) && ! empty($requestData['email_cc'])) {
-			$ccEmails = [];
-			foreach ($requestData['email_cc'] as $ccId) {
-				$ccRow = \App\Models\Admin::where('id', $ccId)->first();
-				if ($ccRow && ! empty($ccRow->email)) {
-					$ccEmails[] = $ccRow->email;
-				}
+		if (! empty($requestData['email_cc'])) {
+			$ccEmails = $this->resolveComposeRecipientEmails(
+				$this->normalizeComposeRecipientInput($requestData['email_cc']),
+				(string) ($requestData['type'] ?? 'client')
+			);
+			if ($ccEmails !== []) {
+				$obj->cc = implode(',', $ccEmails);
 			}
-			$obj->cc = implode(',', array_unique($ccEmails));
+		}
+		if (! empty($requestData['email_bcc'])) {
+			$bccEmails = $this->resolveComposeRecipientEmails(
+				$this->normalizeComposeRecipientInput($requestData['email_bcc']),
+				(string) ($requestData['type'] ?? 'client')
+			);
+			if ($bccEmails !== []) {
+				$obj->bcc = implode(',', $bccEmails);
+			}
+		} else {
+			$obj->bcc = null;
 		}
         $obj->template_id 	=  $requestData['template'] ?? null;
 		$obj->reciept_id 	=  $reciept_id;
@@ -1223,9 +1366,46 @@ public function getChapters(Request $request)
 		    $obj->type 			=  @$requestData['type'];
 		}
 		$obj->message		 =  $requestData['message'];
-        $obj->mail_type		 =  $requestData['mail_type'] ?? 1;
-        $obj->client_id		 =  $requestData['client_id'] ?? $requestData['lead_id'] ?? null;
-        $obj->client_matter_id	=  $requestData['compose_client_matter_id'] ?? null;
+        $obj->mail_type      =  2;
+        $obj->mail_body_type =  'sent';
+        $obj->fetch_mail_sent_time = now();
+        $plainPreview = trim(strip_tags($requestData['message'] ?? ''));
+        if ($plainPreview !== '') {
+            $obj->text_preview = mb_substr($plainPreview, 0, 200);
+        }
+        if (! empty($requestData['reply_to_email_id'])) {
+            $parentId = (int) $requestData['reply_to_email_id'];
+            $parent = \App\Models\EmailLog::find($parentId);
+            if ($parent) {
+                $obj->thread_info = array_filter([
+                    'parent_email_log_id' => $parentId,
+                    'in_reply_to' => $parent->message_id ?? null,
+                    'is_reply' => true,
+                ]);
+            }
+        }
+        $obj->client_id      =  $requestData['client_id'] ?? $requestData['lead_id'] ?? null;
+        $obj->client_matter_id =  $requestData['compose_client_matter_id'] ?? null;
+        $obj->send_status = \App\Models\EmailLog::SEND_STATUS_PENDING;
+        $obj->send_error = null;
+        $obj->sent_at = null;
+        $obj->failed_at = null;
+        if (! $isResend) {
+            $obj->user_id = $user_id;
+        }
+
+        if ($emailToList === []) {
+            $message = 'At least one recipient is required.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status' => false,
+                    'success' => false,
+                    'message' => $message,
+                ], 422);
+            }
+
+            return redirect()->back()->with('error', $message)->withInput();
+        }
 
 		$attachments = array();
 		if(isset($requestData['checklistfile'])){
@@ -1423,15 +1603,21 @@ public function getChapters(Request $request)
                 }
 
                 $ccarray = [];
-                if(isset($requestData['email_cc']) && !empty($requestData['email_cc'])){
-                    foreach($requestData['email_cc'] as $cc){
-                        $clientcc = \App\Models\Admin::Where('id', $cc)->first();
-                        if($clientcc) {
-                            $ccarray[] = $clientcc->email;
-                        }
-                    }
+                if (! empty($requestData['email_cc'])) {
+                    $ccarray = $this->resolveComposeRecipientEmails(
+                        $this->normalizeComposeRecipientInput($requestData['email_cc']),
+                        (string) ($requestData['type'] ?? 'client')
+                    );
                 }
-                //dd($attachments);
+
+                $bccarray = [];
+                if (! empty($requestData['email_bcc'])) {
+                    $bccarray = $this->resolveComposeRecipientEmails(
+                        $this->normalizeComposeRecipientInput($requestData['email_bcc']),
+                        (string) ($requestData['type'] ?? 'client')
+                    );
+                }
+
                 $this->emailService->sendEmail(
                     'emails.template',
                     ['content' => $message],
@@ -1439,7 +1625,8 @@ public function getChapters(Request $request)
                     $subject,
                     $requestData['email_from'],
                     $attachments,
-                    $ccarray
+                    $ccarray,
+                    $bccarray
                 );
 
                 // Store full email to S3 for archival (HTML snapshot + attachments)
@@ -1455,22 +1642,45 @@ public function getChapters(Request $request)
                     \Log::warning('CRM sent email S3 storage failed (email still sent)', ['error' => $s3Ex->getMessage()]);
                 }
 
+                $obj->send_status = \App\Models\EmailLog::SEND_STATUS_SENT;
+                $obj->send_error = null;
+                $obj->sent_at = now();
+                $obj->failed_at = null;
+                $obj->fetch_mail_sent_time = now();
+                $obj->save();
+
                 // Return JSON response for AJAX requests, redirect for regular form submissions
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
                         'status' => true,
                         'success' => true,
-                        'message' => 'Email sent successfully!'
+                        'message' => 'Email sent successfully!',
+                        'email_log_id' => $obj->id,
                     ]);
                 }
                 return redirect()->back()->with('success', 'Email sent successfully!');
             } catch (\Exception $e) {
+                if (isset($obj) && $obj->exists) {
+                    $obj->send_status = \App\Models\EmailLog::SEND_STATUS_FAILED;
+                    $obj->send_error = mb_substr($e->getMessage(), 0, 2000);
+                    $obj->failed_at = now();
+                    try {
+                        $obj->save();
+                    } catch (\Exception $saveEx) {
+                        \Log::warning('Failed to persist failed email log', [
+                            'email_log_id' => $obj->id ?? null,
+                            'error' => $saveEx->getMessage(),
+                        ]);
+                    }
+                }
                 // Return JSON response for AJAX requests, redirect for regular form submissions
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
                         'status' => false,
                         'success' => false,
-                        'message' => 'Failed to send email: ' . $e->getMessage()
+                        'message' => 'Failed to send email: ' . $e->getMessage(),
+                        'email_log_id' => isset($obj) && $obj->exists ? $obj->id : null,
+                        'send_status' => \App\Models\EmailLog::SEND_STATUS_FAILED,
                     ], 422);
                 }
                 return redirect()->back()->with('error', 'Failed to send email: ' . $e->getMessage())->withInput();
@@ -1495,7 +1705,8 @@ public function getChapters(Request $request)
                 return response()->json([
                     'status' => true,
                     'success' => true,
-                    'message' => 'Email Sent Successfully'
+                    'message' => 'Email Sent Successfully',
+                    'email_log_id' => $obj->id,
                 ]);
             }
             return redirect()->back()->with('success', 'Email Sent Successfully');
