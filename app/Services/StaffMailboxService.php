@@ -25,7 +25,9 @@ class StaffMailboxService
         $account = $this->findMailboxForStaff($staff, $previousEmail) ?? new Email;
         $account->email = $email;
         $account->display_name = trim(($staff->first_name ?? '') . ' ' . ($staff->last_name ?? '')) ?: $email;
-        $account->mail_provider = 'zoho';
+        if (! $account->exists || blank($account->mail_provider)) {
+            $account->mail_provider = (string) config('mail_routing.personal_mailer', 'zoho');
+        }
 
         if (Schema::hasColumn('emails', 'smtp_host')) {
             $account->smtp_host = $account->smtp_host ?: 'smtp.zoho.com';
