@@ -1528,13 +1528,6 @@ public function getChapters(Request $request)
 			}
 
 			$message = str_replace('{Company Name}', optional(Auth::user())->company_name ?? '', $message);
-			$ccarray = array();
-			if(isset($requestData['email_cc']) && !empty($requestData['email_cc'])){
-				foreach($requestData['email_cc'] as $cc){
-					$clientcc = \App\Models\Admin::Where('id', $cc)->first();
-					$ccarray[] = $clientcc;
-				}
-			}
 
 			if(isset($requestData['checklistfile'])){
     		    if(!empty($requestData['checklistfile'])){
