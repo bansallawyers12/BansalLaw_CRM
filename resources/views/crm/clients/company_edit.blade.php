@@ -22,6 +22,37 @@
     $directorEmailService = app(\App\Services\CompanyDirectorEmailService::class);
     $companyPrimaryEmail = $directorEmailService->resolveCompanyPrimaryEmail($fetchedData);
     $companyDirectors = $company ? $company->directors->sortBy('sort_order')->values() : collect();
+    $initialCompanyDirectors = $companyDirectors->map(function ($dir) use ($directorEmailService, $fetchedData) {
+        if ($dir->directorClient) {
+            $emailMeta = $directorEmailService->resolveDirectorDisplayEmail($dir->directorClient, (int) $fetchedData->id);
+
+            return [
+                'mode' => 'link',
+                'director_client_id' => $dir->director_client_id,
+                'first_name' => $dir->directorClient->first_name,
+                'last_name' => $dir->directorClient->last_name,
+                'director_name' => trim($dir->directorClient->first_name . ' ' . $dir->directorClient->last_name),
+                'email' => $emailMeta['email'] ?? null,
+                'is_shared' => $emailMeta['is_shared'] ?? false,
+                'director_dob' => $dir->director_dob ? $dir->director_dob->format('Y-m-d') : null,
+                'director_role' => $dir->director_role,
+                'is_primary' => (bool) $dir->is_primary,
+            ];
+        }
+
+        return [
+            'mode' => 'name_only',
+            'director_client_id' => null,
+            'first_name' => '',
+            'last_name' => '',
+            'director_name' => $dir->director_name,
+            'email' => null,
+            'is_shared' => false,
+            'director_dob' => $dir->director_dob ? $dir->director_dob->format('Y-m-d') : null,
+            'director_role' => $dir->director_role,
+            'is_primary' => (bool) $dir->is_primary,
+        ];
+    })->values()->all();
     $isTrusteeBusinessType = $company && $company->isTrusteeBusiness();
     $companyTypeForForm = old('company_type', $company ? $company->company_type : '');
     $showTrusteeFieldsInitial = \App\Models\Company::isTrusteeBusinessType($companyTypeForForm);
@@ -151,35 +182,7 @@
                 window.currentClientType = @json($fetchedData->type);
                 window.latestClientMatterRef = @json($latestMatterRefNo);
                 window.companyPrimaryEmail = @json($companyPrimaryEmail);
-                window.initialCompanyDirectors = @json($companyDirectors->map(function ($dir) use ($directorEmailService, $fetchedData) {
-                    if ($dir->directorClient) {
-                        $emailMeta = $directorEmailService->resolveDirectorDisplayEmail($dir->directorClient, (int) $fetchedData->id);
-                        return [
-                            'mode' => 'link',
-                            'director_client_id' => $dir->director_client_id,
-                            'first_name' => $dir->directorClient->first_name,
-                            'last_name' => $dir->directorClient->last_name,
-                            'director_name' => trim($dir->directorClient->first_name . ' ' . $dir->directorClient->last_name),
-                            'email' => $emailMeta['email'] ?? null,
-                            'is_shared' => $emailMeta['is_shared'] ?? false,
-                            'director_dob' => $dir->director_dob ? $dir->director_dob->format('Y-m-d') : null,
-                            'director_role' => $dir->director_role,
-                            'is_primary' => (bool) $dir->is_primary,
-                        ];
-                    }
-                    return [
-                        'mode' => 'name_only',
-                        'director_client_id' => null,
-                        'first_name' => '',
-                        'last_name' => '',
-                        'director_name' => $dir->director_name,
-                        'email' => null,
-                        'is_shared' => false,
-                        'director_dob' => $dir->director_dob ? $dir->director_dob->format('Y-m-d') : null,
-                        'director_role' => $dir->director_role,
-                        'is_primary' => (bool) $dir->is_primary,
-                    ];
-                })->values()->all());
+                window.initialCompanyDirectors = @json($initialCompanyDirectors);
 
                 function showCompanyMatterTab(tabId) {
                     if (!window.jQuery) return;
