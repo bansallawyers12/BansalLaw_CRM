@@ -64,6 +64,12 @@ function crmBuildEmailUploadFailureMessage(response) {
     return message;
 }
 
+function crmSendMailNotify(message, type, title) {
+    if (typeof crmToast === 'function') {
+        crmToast(message, type, title);
+    }
+}
+
 function crmShowEmailUploadModalError(response) {
     $('.popuploader').hide();
     var message = crmBuildEmailUploadFailureMessage(response);
@@ -331,7 +337,7 @@ function customValidate(formName, savetype = '')
 					obj = (typeof response === 'string') ? JSON.parse(response) : response;
 				} catch (error) {
 					console.error('Unable to parse adjust invoice response', response, error);
-					alert('Unexpected server response. Please try again.');
+					crmToast('Unexpected server response. Please try again.', 'error');
 					return;
 				}
 								// createnote returns { status: true }; legacy may use success
@@ -1031,7 +1037,7 @@ function customValidate(formName, savetype = '')
                                     //Fetch All Activities - handled after page reload via localStorage mechanism
                                     $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
 								}else{
-									alert(obj.message);
+									crmToast(obj.message, obj.status ? 'success' : 'error');
 									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
 								}
 							}
@@ -1057,17 +1063,17 @@ function customValidate(formName, savetype = '')
 										obj = $.parseJSON(response);
 									} catch (error) {
 										console.error('Unable to parse invoice response', response, error);
-										alert('Unexpected server response. Please try again.');
+										crmToast('Unexpected server response. Please try again.', 'error');
 										return;
 									}
 								}
 								if (!obj || obj.status !== true) {
 									var failMsg = (obj && obj.message) ? obj.message : 'Could not save the invoice. Please try again.';
-									alert(failMsg);
+									crmToast(failMsg, 'error');
 									$('.custom-error-msg').html('<span class="alert alert-danger">' + failMsg + '</span>');
 									return;
 								}
-								alert('Invoice No - '+ obj.invoice_no + ' is generated');
+								crmToast('Invoice No - ' + obj.invoice_no + ' is generated', 'success');
 								$('#createreceiptmodal').modal('hide');
                                 localStorage.setItem('activeTab', 'accounts');
                                 
@@ -1305,7 +1311,7 @@ function customValidate(formName, savetype = '')
 								if (xhr.responseJSON && xhr.responseJSON.message) {
 									msg = xhr.responseJSON.message;
 								}
-								alert(msg);
+								crmToast(msg, 'error');
 								$('.custom-error-msg').html('<span class="alert alert-danger">' + msg + '</span>');
 							}
 						});
@@ -2077,7 +2083,7 @@ function customValidate(formName, savetype = '')
 
 									$('.matter_ownership').attr('data-ration',obj.ratio);
 								}else{
-									alert(obj.message);
+									crmToast(obj.message, obj.status ? 'success' : 'error');
 
 								}
 							}
@@ -2111,7 +2117,7 @@ function customValidate(formName, savetype = '')
 									$('.appsaleforcast .netrevenue').html(t);
 									$('.app_sale_forcast').html(t+ 'AUD');
 								}else{
-									alert(obj.message);
+									crmToast(obj.message, obj.status ? 'success' : 'error');
 
 								}
 							}
@@ -2295,19 +2301,9 @@ function customValidate(formName, savetype = '')
 
 								if(obj.status){
 									$('#matteremailmodal').modal('hide');
-									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-									// Show prominent success alert so user sees confirmation
-									var successMsg = obj.message || 'Email successfully sent.';
-									if (typeof iziToast !== 'undefined' && iziToast.success) {
-										iziToast.success({
-											title: 'Success',
-											message: successMsg,
-											position: 'topRight',
-											timeout: 4000
-										});
-									} else {
-										alert(successMsg);
-									}
+									$('.custom-error-msg').html('');
+									var successMsg = obj.message || 'Email sent successfully!';
+									crmSendMailNotify(successMsg, 'success');
 									$.ajax({
 										url: site_url+'/get-appointments',
 										type:'GET',
@@ -2329,7 +2325,8 @@ function customValidate(formName, savetype = '')
 									});
 
 								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
+									$('.custom-error-msg').html('');
+									crmSendMailNotify(obj.message || 'Failed to send email.', 'error');
 
 								}
 							}
@@ -2665,30 +2662,23 @@ function customValidate(formName, savetype = '')
 								
 								if(obj.status || (response.success !== undefined && response.success)){
 									$('#emailmodal').modal('hide');
-									$('.custom-error-msg').html('<span class="alert alert-success">'+(obj.message || response.message || 'Email sent successfully!')+'</span>');
+									$('.custom-error-msg').html('');
+									var successMsg = obj.message || response.message || 'Email sent successfully!';
+									crmSendMailNotify(successMsg, 'success');
 									// On reload: switch to Emails tab and Sent view (for client detail page)
 									try {
 										localStorage.setItem('activeTab', 'emails');
 										localStorage.setItem('emailTabSwitchToSent', '1');
 									} catch (e) {}
-									// Show prominent success alert so user sees confirmation
-									var successMsg = obj.message || response.message || 'Email successfully sent.';
-									if (typeof iziToast !== 'undefined' && iziToast.success) {
-										iziToast.success({
-											title: 'Success',
-											message: successMsg,
-											position: 'topRight',
-											timeout: 4000
-										});
-									} else {
-										alert(successMsg);
-									}
-									// Reload page or refresh email list if needed
 									setTimeout(function(){
 										location.reload();
 									}, 1500);
 								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+(obj.message || response.message || 'Failed to send email. Please try again.')+'</span>');
+									$('.custom-error-msg').html('');
+									crmSendMailNotify(
+										obj.message || response.message || 'Failed to send email. Please try again.',
+										'error'
+									);
 								}
 							},
 							error: function(xhr, status, error){
@@ -2697,19 +2687,22 @@ function customValidate(formName, savetype = '')
 								
 								// JSON parse error (server returned non-JSON e.g. HTML)
 								if (status === 'parsererror') {
-									$('.custom-error-msg').html('<span class="alert alert-danger">Invalid server response. Please refresh the page and try again.</span>');
+									$('.custom-error-msg').html('');
+									crmSendMailNotify('Invalid server response. Please refresh the page and try again.', 'error');
 									return;
 								}
 								
 								// 401 Unauthenticated - session expired
 								if(xhr.status === 401){
-									$('.custom-error-msg').html('<span class="alert alert-warning">Your session has expired. Refreshing page...</span>');
+									$('.custom-error-msg').html('');
+									crmSendMailNotify('Your session has expired. Refreshing page...', 'warning');
 									setTimeout(function(){ location.reload(); }, 1500);
 									return;
 								}
 								// 419 CSRF token mismatch - token expired (modal open too long)
 								if(xhr.status === 419){
-									$('.custom-error-msg').html('<span class="alert alert-warning">Security token expired. Refreshing page...</span>');
+									$('.custom-error-msg').html('');
+									crmSendMailNotify('Security token expired. Refreshing page...', 'warning');
 									setTimeout(function(){ location.reload(); }, 1500);
 									return;
 								}
@@ -2721,27 +2714,29 @@ function customValidate(formName, savetype = '')
 										(responseJSON.message && (responseJSON.message.includes('CSRF') || responseJSON.message.includes('csrf')));
 									var msg = isCsrf
 										? 'Security token expired. Refresh the page and try again.'
-										: '555Access denied. If you are logged in, refresh the page and try again111.';
-									$('.custom-error-msg').html('<span class="alert alert-warning">' + msg + '</span>');
+										: 'Access denied. If you are logged in, refresh the page and try again.';
+									$('.custom-error-msg').html('');
+									crmSendMailNotify(msg, 'warning');
 									return;
 								}
 								if(xhr.status === 422){
 									var errors = xhr.responseJSON && xhr.responseJSON.errors ? xhr.responseJSON.errors : {};
-									var errorHtml = '<span class="alert alert-danger">Validation errors:<ul>';
+									var errorLines = [];
 									for(var field in errors){
 										if(errors.hasOwnProperty(field)){
-											errorHtml += '<li>'+errors[field][0]+'</li>';
+											errorLines.push(errors[field][0]);
 										}
 									}
-									errorHtml += '</ul></span>';
-									$('.custom-error-msg').html(errorHtml);
+									$('.custom-error-msg').html('');
+									crmSendMailNotify(errorLines.length ? errorLines.join('\n') : 'Validation failed.', 'error', 'Validation error');
 									return;
 								}
 								if(xhr.responseJSON && xhr.responseJSON.message){
 									errorMessage = xhr.responseJSON.message;
 								}
 								
-								$('.custom-error-msg').html('<span class="alert alert-danger">'+errorMessage+'</span>');
+								$('.custom-error-msg').html('');
+								crmSendMailNotify(errorMessage, 'error');
 							}
 						});
 					}
@@ -2756,7 +2751,7 @@ function customValidate(formName, savetype = '')
 							if(contactField.length) {
 								contactField.after('<span class="custom-error" role="alert"><strong>Please select a contact to set the contact type.</strong></span>');
 							} else {
-								alert('Please select a contact before submitting.');
+								crmToast('Please select a contact before submitting.', 'warning');
 							}
 							$('html, body').animate({scrollTop:0}, 'slow');
 							return false;

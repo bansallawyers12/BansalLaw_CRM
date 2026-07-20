@@ -376,13 +376,19 @@ window.closeNotesDeadlineAction = function(noteid, noteuniqueid) {
 }
 
 function showNotification(message, type = 'info') {
-    // Simple notification - can be enhanced with toast library
-    if (type === 'error') {
-        alert('Error: ' + message);
-    } else if (type === 'success') {
-        alert('Success: ' + message);
-    } else {
-        alert(message);
+    if (typeof crmToast === 'function') {
+        crmToast(message, type);
+        return;
+    }
+    if (typeof crmNotify !== 'undefined') {
+        var opts = { message: message, position: 'topRight' };
+        if (type === 'error') {
+            crmNotify.error(opts);
+        } else if (type === 'success') {
+            crmNotify.success(opts);
+        } else {
+            crmNotify.info(opts);
+        }
     }
 }
 

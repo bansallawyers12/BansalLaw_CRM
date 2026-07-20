@@ -629,6 +629,10 @@
      * Show notification message
      */
     function showNotification(message, type = 'info', title) {
+        if (typeof crmToast === 'function') {
+            crmToast(message, type, title);
+            return;
+        }
         if (typeof crmNotify !== 'undefined') {
             // Replace newlines with <br> to preserve formatting in iziToast
             const formattedMessage = message.replace(/\n/g, '<br>');
