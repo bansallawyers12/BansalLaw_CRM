@@ -386,3 +386,5 @@ Route::get('/email-logs/{id}/preview-html', [\App\Http\Controllers\CRM\ClientsCo
 // Outlook style email
 Route::get('/clients/outlook-emails', [\App\Http\Controllers\CRM\ClientsController::class, 'outlookEmails'])->name('clients.outlook.emails');
 Route::get('/clients/outlook/fetch-all', [\App\Http\Controllers\CRM\ClientsController::class, 'fetchAllOutlookEmails'])->name('clients.outlook.fetchAll');
+Route::post('/clients/synced-emails/assign', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'assignToClient'])->name('clients.synced-emails.assign');
+Route::post('/clients/synced-emails/sync-now', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'syncNow'])->name('clients.synced-emails.sync-now');

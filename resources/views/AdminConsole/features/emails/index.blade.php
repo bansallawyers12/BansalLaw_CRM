@@ -20,6 +20,14 @@
 					<div class="card">
 						<div class="card-header">
 							<h4>All Emails</h4>
+							<div class="card-header-action">
+								<form method="POST" action="{{ route('adminconsole.features.emails.sync-now') }}" class="d-inline">
+									@csrf
+									<button type="submit" class="btn btn-primary btn-sm">
+										<i class="fa-solid fa-rotate"></i> Sync All Inboxes Now
+									</button>
+								</form>
+							</div>
 						</div>
 						<div class="card-body">
 							<div class="table-responsive common_table">
@@ -31,6 +39,8 @@
 										<th>Email Signature</th>
 										<th>User Sharing</th>
 										<th>Status</th>
+										<th>Inbox Sync</th>
+										<th>Last Synced</th>
 									</tr>
 								</thead>
 								@if(@$totalData !== 0)
@@ -48,13 +58,26 @@
 											<span class="text-danger">Inactive</span>
 										@endif
 										</td>
+										<td>
+										@if(($list->sync_enabled ?? 1) == 1)
+											<span class="text-success">On</span>
+										@else
+											<span class="text-muted">Off</span>
+										@endif
+										</td>
+										<td>
+											{{ @$list->last_synced_at }}
+											@if(!empty($list->last_sync_error))
+												<br><small class="text-danger" title="{{ $list->last_sync_error }}">Sync error</small>
+											@endif
+										</td>
 									</tr>
 								@endforeach
 								</tbody>
 								@else
 								<tbody>
 									<tr>
-										<td class="text-center" colspan="5">
+										<td class="text-center" colspan="7">
 											No Record found
 										</td>
 									</tr>

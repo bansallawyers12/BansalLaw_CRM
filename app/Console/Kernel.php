@@ -59,6 +59,8 @@ class Kernel extends ConsoleKernel
 
         '\App\Console\Commands\BackfillEmailPdfPreviews',
 
+        '\App\Console\Commands\SyncInboxEmails',
+
         // Font Awesome FA6 migration (one-time DB icon class updates)
         '\App\Console\Commands\MigrateFontAwesomeDbIcons',
     ];
@@ -125,6 +127,14 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('access:expire-grants')->hourly();
         $schedule->command('access:cache-grant-stats')->hourly();
+
+        if (config('imap_sync.enabled', true)) {
+            $minutes = max(1, (int) config('imap_sync.schedule_minutes', 5));
+            $schedule->command('emails:sync-inbox')
+                ->cron('*/' . $minutes . ' * * * *')
+                ->withoutOverlapping(10)
+                ->appendOutputTo(storage_path('logs/email-inbox-sync.log'));
+        }
     }
 
     /**
