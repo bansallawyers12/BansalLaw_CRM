@@ -714,7 +714,7 @@ class EmailUploadController extends Controller
                             $clientUniqueId,
                             $storageConfig,
                             $request,
-                            (int) $clientId,
+                            $clientId !== null ? (int) $clientId : null,
                             $document->client_matter_id
                         );
                         if ($attachmentWarning !== null) {
@@ -970,7 +970,7 @@ class EmailUploadController extends Controller
         string $docType,
         string $mailType,
         string $uniqueFileName,
-        int $clientId,
+        ?int $clientId,
         Request $request,
         $clientMatterId,
         ?string &$warning = null
@@ -1018,7 +1018,7 @@ class EmailUploadController extends Controller
             $pdfDocument = new Document();
             $pdfDocument->file_name = pathinfo($fileName, PATHINFO_FILENAME);
             $pdfDocument->filetype = 'pdf';
-            $pdfDocument->user_id = Auth::user()->id;
+            $pdfDocument->user_id = Auth::id();
             $pdfDocument->myfile = $pdfFileUrl;
             $pdfDocument->myfile_key = $pdfUniqueFileName;
             $pdfDocument->client_id = $clientId;
