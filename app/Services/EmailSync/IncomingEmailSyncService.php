@@ -38,12 +38,7 @@ class IncomingEmailSyncService
 
         $query = Email::query()
             ->where('status', true)
-            ->where('sync_enabled', true)
-            ->where(function ($q) {
-                $q->where('mail_provider', 'zoho')
-                    ->orWhereNull('mail_provider')
-                    ->orWhere('mail_provider', '');
-            });
+            ->where('sync_enabled', true);
 
         if ($mailboxFilter !== null && $mailboxFilter !== '') {
             $query->whereRaw('LOWER(email) = ?', [strtolower(trim($mailboxFilter))]);
