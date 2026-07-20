@@ -54,7 +54,12 @@ class SyncedEmailController extends Controller
 
         $email = trim((string) $request->input('email', ''));
 
-        $summary = $syncService->syncAll($email !== '' ? $email : null);
+        $since = null;
+        if ($request->boolean('today')) {
+            $since = now((string) config('app.timezone', 'UTC'))->startOfDay();
+        }
+
+        $summary = $syncService->syncAll($email !== '' ? $email : null, $since);
 
         return response()->json($summary);
     }
