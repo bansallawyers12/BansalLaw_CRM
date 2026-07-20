@@ -24,6 +24,9 @@
     }
     $permValues = array_map('strval', (array) old('permission', $permissionArr));
     $isSolicitorChecked = old('is_solicitor', $isEdit ? ($fetchedData->is_solicitor ?? 0) : 0);
+    $mailboxPasswordConfigured = $isEdit && $fetchedData
+        ? app(\App\Services\StaffMailboxService::class)->mailboxPasswordConfigured($fetchedData)
+        : false;
 @endphp
 
 <div class="staff-modal-accordion" id="{{ $accordionId }}">
@@ -302,15 +305,38 @@
         </div>
     </div>
 
-    {{-- 5. Email signature --}}
+    {{-- 5. Email & mailbox --}}
     <div class="accordion mb-0">
         <div class="accordion-header collapsed" role="button" data-bs-toggle="collapse" data-bs-target="#{{ $fieldPrefix }}_signature" aria-expanded="false" aria-controls="{{ $fieldPrefix }}_signature">
-            <h4>Email signature</h4>
+            <h4>Email & mailbox</h4>
         </div>
         <div class="accordion-body collapse" id="{{ $fieldPrefix }}_signature" data-bs-parent="#{{ $accordionId }}">
-            <p class="text-muted small">Added automatically when this staff member sends email from the CRM.</p>
-            <textarea class="form-control tinymce-editor-full staff-email-signature" name="email_signature" id="{{ $fieldPrefix }}_email_signature">{{ old('email_signature', $isEdit ? ($fetchedData->email_signature ?? '') : '') }}</textarea>
-            <span class="field-error text-danger small" data-field="email_signature"></span>
+            <div class="row g-3">
+                <div class="col-12">
+                    <div class="form-group mb-0">
+                        <label for="{{ $fieldPrefix }}_zoho_app_password">Zoho app password</label>
+                        <input type="password" id="{{ $fieldPrefix }}_zoho_app_password" name="zoho_app_password" class="form-control" autocomplete="new-password" placeholder="{{ $isEdit ? 'Leave blank to keep existing password' : 'Required to send email from CRM' }}">
+                        @if($isEdit)
+                            <p class="text-muted small mb-0 mt-1">
+                                @if($mailboxPasswordConfigured)
+                                    <span class="text-success"><i class="fa-solid fa-circle-check"></i> App password is saved for this mailbox.</span>
+                                @else
+                                    <span class="text-warning"><i class="fa-solid fa-triangle-exclamation"></i> No app password saved yet — staff cannot send email from the CRM until one is set.</span>
+                                @endif
+                            </p>
+                        @else
+                            <p class="text-muted small mb-0 mt-1">Generate this in Zoho Mail → Security → App Passwords. It is stored for SMTP sending and is separate from the CRM login password above.</p>
+                        @endif
+                        <span class="field-error text-danger small" data-field="zoho_app_password"></span>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label for="{{ $fieldPrefix }}_email_signature">Email signature</label>
+                    <p class="text-muted small">Added automatically when this staff member sends email from the CRM.</p>
+                    <textarea class="form-control tinymce-editor-full staff-email-signature" name="email_signature" id="{{ $fieldPrefix }}_email_signature">{{ old('email_signature', $isEdit ? ($fetchedData->email_signature ?? '') : '') }}</textarea>
+                    <span class="field-error text-danger small" data-field="email_signature"></span>
+                </div>
+            </div>
         </div>
     </div>
 </div>

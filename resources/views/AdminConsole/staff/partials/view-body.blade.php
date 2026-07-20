@@ -31,6 +31,14 @@
                 </dd>
                 <dt>Phone</dt>
                 <dd>{{ trim(($fetchedData->country_code ?? '') . ' ' . ($fetchedData->phone ?? '')) ?: 'N/A' }}</dd>
+                <dt>Zoho mailbox</dt>
+                <dd>
+                    @if(app(\App\Services\StaffMailboxService::class)->mailboxPasswordConfigured($fetchedData))
+                        <span class="badge bg-success">App password configured</span>
+                    @else
+                        <span class="badge bg-warning text-dark">App password not set</span>
+                    @endif
+                </dd>
             </dl>
         </div>
     </div>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Staff;
 use App\Models\UserRole;
 use App\Services\CrmAccess\CrmAccessService;
+use App\Services\StaffMailboxService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -131,6 +132,11 @@ class StaffController extends Controller
                 throw new \RuntimeException(config('constants.server_error'));
             }
 
+            app(StaffMailboxService::class)->syncFromStaff(
+                $obj->fresh(),
+                $requestData['zoho_app_password'] ?? null
+            );
+
             $loginUrl = url('/login');
             $message = "Staff added successfully. They can sign in at {$loginUrl} using this email address and the password you set.";
 
@@ -218,10 +224,19 @@ class StaffController extends Controller
 
             $prevQuickEnabled = (bool) ($staff->quick_access_enabled ?? false);
             $prevStatus = (int) ($staff->status ?? 1);
+            $previousEmail = $staff->email;
 
             $this->fillStaffFromRequest($staff, $requestData, $request, isCreate: false);
 
             $saved = $staff->save();
+
+            if ($saved) {
+                app(StaffMailboxService::class)->syncFromStaff(
+                    $staff->fresh(),
+                    $requestData['zoho_app_password'] ?? null,
+                    $previousEmail
+                );
+            }
 
             if ($saved && $prevStatus === 1 && (int) $staff->status === 0) {
                 $crmAccess->revokeGrantsForStaff((int) $staff->id, 'Staff account deactivated');
