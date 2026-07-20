@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Redirect;
 use App\Models\Admin;
 use App\Models\Email;
 use App\Models\Staff;
+use App\Services\StaffMailboxService;
 
 use Auth;
 
@@ -58,12 +59,23 @@ class EmailController extends Controller
 				}
 			}
 
+			$syncLabel = 'Not synced yet';
+			if ($account->last_synced_at) {
+				$syncLabel = $account->last_synced_at->timezone(config('app.timezone'))->format('d/m/Y h:i a');
+				if (! empty($account->last_sync_error)) {
+					$syncLabel .= ' (error)';
+				}
+			}
+
 			return (object) [
 				'email' => $account->email,
 				'display_name' => $account->display_name ?? '',
 				'email_signature' => $account->email_signature ?? '',
 				'status' => (int) $account->status,
 				'user_sharing' => implode(', ', $userNames),
+				'sync_enabled' => (int) ($account->sync_enabled ?? 1),
+				'last_synced_at' => $syncLabel,
+				'last_sync_error' => $account->last_sync_error ?? '',
 			];
 		})->all();
 
@@ -99,9 +111,11 @@ class EmailController extends Controller
 			$obj->smtp_port = @$requestData['smtp_port'] ?: 587;
 			$obj->smtp_encryption = @$requestData['smtp_encryption'] ?: 'tls';
 			if (! empty($requestData['password'])) {
-				$obj->password = $requestData['password'];
+				$obj->password = app(StaffMailboxService::class)->encryptMailboxPassword($requestData['password']);
 			}
 			$obj->status	=	! empty($requestData['status']) ? 1 : 0;
+			$obj->sync_enabled = ! empty($requestData['sync_enabled']) ? 1 : 0;
+			$obj->sync_sent_enabled = ! empty($requestData['sync_sent_enabled']) ? 1 : 0;
 			$obj->user_id	=	json_encode(@$requestData['users']);
             $saved			=	$obj->save();
 
@@ -167,9 +181,11 @@ class EmailController extends Controller
 		$obj->smtp_port = @$requestData['smtp_port'] ?: 587;
 		$obj->smtp_encryption = @$requestData['smtp_encryption'] ?: 'tls';
 		if (! empty($requestData['password'])) {
-			$obj->password = $requestData['password'];
+			$obj->password = app(StaffMailboxService::class)->encryptMailboxPassword($requestData['password']);
 		}
 		$obj->status = ! empty($requestData['status']) ? 1 : 0;
+		$obj->sync_enabled = ! empty($requestData['sync_enabled']) ? 1 : 0;
+		$obj->sync_sent_enabled = ! empty($requestData['sync_sent_enabled']) ? 1 : 0;
 		$obj->user_id = json_encode(@$requestData['users']);
 		$saved = $obj->save();
 
@@ -192,6 +208,25 @@ class EmailController extends Controller
 		}
 
 		return in_array($provider, ['ses', 'zoho'], true) ? $provider : 'zoho';
+	}
+
+	public function syncNow(Request $request, \App\Services\EmailSync\IncomingEmailSyncService $syncService)
+	{
+		$email = trim((string) $request->input('email', ''));
+		$summary = $syncService->syncAll($email !== '' ? $email : null);
+
+		if ($request->expectsJson()) {
+			return response()->json($summary);
+		}
+
+		$message = sprintf(
+			'Sync complete. Imported: %d, Skipped: %d, Failed: %d',
+			(int) ($summary['total_imported'] ?? 0),
+			(int) ($summary['total_skipped'] ?? 0),
+			(int) ($summary['total_failed'] ?? 0)
+		);
+
+		return redirect()->route('adminconsole.features.emails.index')->with('success', $message);
 	}
 }
 

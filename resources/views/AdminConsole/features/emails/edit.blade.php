@@ -65,6 +65,18 @@
 												</div>
 												<div class="col-12 col-md-12 col-lg-12 zoho-smtp-fields">
 													<div class="form-group">
+														<label for="sync_enabled">Automatic Inbox Sync</label><br>
+														<label><input <?php if(($fetchedData->sync_enabled ?? 1) == 1){ echo 'checked'; } ?> type="checkbox" name="sync_enabled" value="1"> Fetch incoming mail automatically from Zoho IMAP</label>
+													</div>
+												</div>
+												<div class="col-12 col-md-12 col-lg-12 zoho-smtp-fields">
+													<div class="form-group">
+														<label for="sync_sent_enabled">Sync Sent Folder</label><br>
+														<label><input <?php if(($fetchedData->sync_sent_enabled ?? 0) == 1){ echo 'checked'; } ?> type="checkbox" name="sync_sent_enabled" value="1"> Also fetch sent mail from Zoho (Sent folder)</label>
+													</div>
+												</div>
+												<div class="col-12 col-md-12 col-lg-12 zoho-smtp-fields">
+													<div class="form-group">
 														<label for="password">Zoho App Password</label>
 														<input type="password" name="password" value="" class="form-control" autocomplete="new-password" placeholder="Leave blank to keep existing password">
 													</div>

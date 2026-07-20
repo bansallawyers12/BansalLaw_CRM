@@ -468,11 +468,14 @@ class EmailUploadController extends Controller
      * @param string $clientUniqueId
      * @param string $mailType (inbox|sent)
      * @param Request $request
+     * @param array<string, mixed>|null $syncMeta
      * @return array
      */
-    protected function processEmailFile($file, $clientId, $clientUniqueId, $mailType, $request)
+    protected function processEmailFile($file, $clientId, $clientUniqueId, $mailType, $request, ?array $syncMeta = null)
     {
         try {
+            $clientId = $clientId > 0 ? (int) $clientId : null;
+            $actingUserId = (int) ($syncMeta['staff_user_id'] ?? Auth::id());
             $fileName = $this->sanitizedUploadFilename($file);
             $fileSize = $file->getSize();
 
@@ -512,9 +515,9 @@ class EmailUploadController extends Controller
                 : $request->upload_inbox_mail_client_matter_id;
             $matterId = empty($matterId) ? null : (int) $matterId;
 
-            if (!$request->boolean('force_upload')) {
+            if (!$request->boolean('force_upload') && empty($syncMeta)) {
                 $existing = $this->findExistingEmailLog(
-                    (int) $clientId,
+                    (int) ($clientId ?? 0),
                     $matterId,
                     $mailType,
                     $request->type ?? 'client',
@@ -592,7 +595,7 @@ class EmailUploadController extends Controller
             $document = new Document();
             $document->file_name = pathinfo($fileName, PATHINFO_FILENAME);
             $document->filetype = pathinfo($fileName, PATHINFO_EXTENSION);
-            $document->user_id = Auth::user()->id;
+            $document->user_id = $actingUserId;
             $document->myfile = $fileUrl;
             $document->myfile_key = $uniqueFileName;
             $document->client_id = $clientId;
@@ -629,7 +632,7 @@ class EmailUploadController extends Controller
 
             // 4. Save to EmailLog
             $mailReport = new EmailLog();
-            $mailReport->user_id = Auth::user()->id;
+            $mailReport->user_id = $actingUserId;
             $mailReport->from_mail = $parsedData['sender_email'] ?? '';
             $mailReport->to_mail = $this->formatParsedRecipientList($parsedData, 'to_recipients', 'recipients');
             $mailReport->cc = $this->formatParsedRecipientList($parsedData, 'cc_recipients');
@@ -681,6 +684,13 @@ class EmailUploadController extends Controller
             }
             
             $mailReport->file_hash = $fileHash;
+
+            if (! empty($syncMeta)) {
+                $mailReport->mailbox_email = $syncMeta['mailbox_email'] ?? null;
+                $mailReport->synced_email_id = $syncMeta['synced_email_id'] ?? null;
+                $mailReport->sync_assignment_status = $syncMeta['sync_assignment_status'] ?? null;
+                $mailReport->imap_uid = $syncMeta['imap_uid'] ?? null;
+            }
             
             try {
                 $mailReport->save();
@@ -743,7 +753,7 @@ class EmailUploadController extends Controller
             }
 
             // 6. Create activity log
-            if ($request->type == 'client') {
+            if ($clientId && $request->type == 'client') {
                 // Get matter reference
                 $matterReference = '';
                 if ($matterId) {
@@ -1949,6 +1959,56 @@ class EmailUploadController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Parse an email file for IMAP sync (no HTTP request required).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function parseEmailFileForSync($file): ?array
+    {
+        return $this->parseEmailWithPython($file);
+    }
+
+    /**
+     * Import a synced IMAP message using the same pipeline as manual upload.
+     *
+     * @param array<string, mixed> $syncMeta
+     * @return array<string, mixed>
+     */
+    public function importFromSync(
+        $file,
+        ?int $clientId,
+        ?int $clientMatterId,
+        string $recordType,
+        string $mailType,
+        int $staffUserId,
+        string $clientUniqueId,
+        array $syncMeta
+    ): array {
+        $payload = [
+            'type' => $recordType,
+            'force_upload' => false,
+        ];
+
+        if ($mailType === 'sent') {
+            $payload['upload_sent_mail_client_matter_id'] = $clientMatterId;
+        } else {
+            $payload['upload_inbox_mail_client_matter_id'] = $clientMatterId;
+        }
+
+        $request = Request::create('/', 'POST', $payload);
+        $syncMeta['staff_user_id'] = $staffUserId;
+
+        return $this->processEmailFile(
+            $file,
+            $clientId ?? 0,
+            $clientUniqueId,
+            $mailType,
+            $request,
+            $syncMeta
+        );
     }
 }
 
