@@ -26,7 +26,7 @@ class IncomingEmailSyncService
     /**
      * @return array<string, mixed>
      */
-    public function syncAll(?string $mailboxFilter = null): array
+    public function syncAll(?string $mailboxFilter = null, ?\DateTimeInterface $since = null): array
     {
         if (! config('imap_sync.enabled', true)) {
             return [
@@ -54,7 +54,7 @@ class IncomingEmailSyncService
         ];
 
         foreach ($mailboxes as $mailbox) {
-            $summary['mailboxes'][$mailbox->email] = $this->syncMailbox($mailbox);
+            $summary['mailboxes'][$mailbox->email] = $this->syncMailbox($mailbox, $since);
             $summary['total_imported'] += (int) ($summary['mailboxes'][$mailbox->email]['imported'] ?? 0);
             $summary['total_skipped'] += (int) ($summary['mailboxes'][$mailbox->email]['skipped'] ?? 0);
             $summary['total_failed'] += (int) ($summary['mailboxes'][$mailbox->email]['failed'] ?? 0);
@@ -66,7 +66,7 @@ class IncomingEmailSyncService
     /**
      * @return array<string, mixed>
      */
-    public function syncMailbox(Email $mailbox): array
+    public function syncMailbox(Email $mailbox, ?\DateTimeInterface $since = null): array
     {
         $staffUserId = $mailbox->resolveOwnerStaffId();
         if (! $staffUserId) {
@@ -88,7 +88,8 @@ class IncomingEmailSyncService
             $staffUserId,
             (array) config('imap_sync.folders', ['INBOX']),
             (int) ($mailbox->last_imap_uid ?? 0),
-            'inbox'
+            'inbox',
+            $since
         );
 
         $combined = $inboxResult;
@@ -101,7 +102,8 @@ class IncomingEmailSyncService
                 $staffUserId,
                 (array) config('imap_sync.sent_folders', ['Sent']),
                 (int) ($mailbox->last_imap_uid_sent ?? 0),
-                'sent'
+                'sent',
+                $since
             );
 
             $combined['imported'] += $sentResult['imported'];
@@ -127,7 +129,8 @@ class IncomingEmailSyncService
         int $staffUserId,
         array $folders,
         int $afterUid,
-        string $defaultMailType
+        string $defaultMailType,
+        ?\DateTimeInterface $since = null
     ): array {
         $result = [
             'mailbox' => $mailbox->email,
@@ -140,12 +143,12 @@ class IncomingEmailSyncService
         ];
 
         $limit = (int) config('imap_sync.max_messages_per_mailbox', 25);
-        if ($afterUid <= 0) {
+        if ($since === null && $afterUid <= 0) {
             $limit *= max(1, (int) config('imap_sync.initial_backfill_multiplier', 4));
         }
 
         try {
-            $messages = $this->imapFetcher->fetchFromFolders($mailbox, $afterUid, $limit, $folders);
+            $messages = $this->imapFetcher->fetchFromFolders($mailbox, $afterUid, $limit, $folders, $since);
         } catch (Throwable $e) {
             $result['errors'][] = strtoupper($defaultMailType) . ': ' . $e->getMessage();
             Log::error('IMAP sync failed', [

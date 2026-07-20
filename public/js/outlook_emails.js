@@ -2971,7 +2971,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         'X-CSRF-TOKEN': getCsrfToken(),
                         'X-Requested-With': 'XMLHttpRequest'
                     },
-                    body: JSON.stringify({})
+                    body: JSON.stringify({ today: true })
                 });
                 const data = await response.json();
                 loadEmails();

@@ -22,8 +22,13 @@ class ZohoImapFetcher
     /**
      * @return list<array{uid: int, raw_eml: string, subject: string}>
      */
-    public function fetchFromFolders(Email $mailbox, int $afterUid, int $limit, array $folders): array
-    {
+    public function fetchFromFolders(
+        Email $mailbox,
+        int $afterUid,
+        int $limit,
+        array $folders,
+        ?\DateTimeInterface $since = null
+    ): array {
         $password = $this->resolvePassword($mailbox);
         if ($password === '') {
             throw new \RuntimeException('Zoho app password is missing for ' . $mailbox->email);
@@ -43,13 +48,17 @@ class ZohoImapFetcher
                     continue;
                 }
 
-                $query = $afterUid > 0
-                    ? $folder->query()->where('UID', ($afterUid + 1) . ':*')->limit($limit)
-                    : $folder->messages()->all()->limit($limit)->setFetchOrderDesc();
+                if ($since !== null) {
+                    $query = $folder->query()->since($since)->limit($limit);
+                } elseif ($afterUid > 0) {
+                    $query = $folder->query()->where('UID', ($afterUid + 1) . ':*')->limit($limit);
+                } else {
+                    $query = $folder->messages()->all()->limit($limit)->setFetchOrderDesc();
+                }
 
                 /** @var \Webklex\PHPIMAP\Support\MessageCollection $messages */
                 $messages = $query->get();
-                if ($afterUid <= 0) {
+                if ($since === null && $afterUid <= 0) {
                     $messages = $messages->reverse();
                 }
 

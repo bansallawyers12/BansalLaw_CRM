@@ -10,9 +10,10 @@ class SyncInboxEmails extends Command
 {
     protected $signature = 'emails:sync-inbox
                             {email? : Optional mailbox address to sync}
-                            {--full : Reset UID tracking and re-fetch recent mail (backfill)}';
+                            {--today : Fetch only today\'s incoming mail (app timezone)}
+                            {--full : Reset UID tracking and re-fetch recent mail (backfill history)}';
 
-    protected $description = 'Fetch new incoming mail from Zoho IMAP for all active CRM mailboxes';
+    protected $description = 'Fetch incoming mail from Zoho IMAP for active CRM mailboxes';
 
     public function handle(IncomingEmailSyncService $syncService): int
     {
@@ -23,6 +24,12 @@ class SyncInboxEmails extends Command
         }
 
         $email = $this->argument('email');
+
+        if ($this->option('full') && $this->option('today')) {
+            $this->error('Use either --today or --full, not both.');
+
+            return self::FAILURE;
+        }
 
         if ($this->option('full')) {
             $query = Email::query()->where('status', true)->where('sync_enabled', true);
@@ -36,9 +43,16 @@ class SyncInboxEmails extends Command
             $this->warn('UID tracking reset for selected mailbox(es). Running backfill sync...');
         }
 
+        $since = null;
+        if ($this->option('today')) {
+            $timezone = (string) config('app.timezone', 'UTC');
+            $since = now($timezone)->startOfDay();
+            $this->info('Fetching mail since ' . $since->format('d/m/Y') . ' (' . $timezone . ') only.');
+        }
+
         $this->info('Starting inbox sync' . ($email ? " for {$email}" : ' for all mailboxes') . '...');
 
-        $summary = $syncService->syncAll($email);
+        $summary = $syncService->syncAll($email, $since);
 
         foreach ($summary['mailboxes'] as $mailboxEmail => $result) {
             $imported = (int) ($result['imported'] ?? 0);
