@@ -330,13 +330,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const message = getComposeMessageHtml();
 
         if (!to || !subject || !message) {
-            alert('Please fill in To, Subject, and Message fields.');
+            crmToast('Please fill in To, Subject, and Message fields.', 'warning', 'Required');
             return;
         }
 
         composeFromEmail = getComposeFromInputValue();
         if (!composeFromEmail || !composeFromEmail.includes('@')) {
-            alert('Please enter a valid From email address.');
+            crmToast('Please enter a valid From email address.', 'warning', 'Invalid sender');
             return;
         }
 
@@ -380,7 +380,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (result.success || response.ok) {
                 const wasResend = !!composeResendLogId;
-                alert(wasResend ? 'Email resent successfully!' : 'Email sent successfully!');
+                crmToast(
+                    result.message || (wasResend ? 'Email resent successfully!' : 'Email sent successfully!'),
+                    'success'
+                );
                 composeModal.classList.remove('active');
                 resetComposeContext();
                 switchToFolder(wasResend ? 'outbox' : 'sent');
@@ -390,7 +393,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 loadEmails();
             } else {
-                alert(result.message || 'Failed to send email.');
+                const errMsg = result.message
+                    || (result.errors ? Object.values(result.errors).flat().join('\n') : '')
+                    || ('Failed to send email.' + (response.status ? ' (HTTP ' + response.status + ')' : ''));
+                crmToast(errMsg, 'error');
                 if (result.send_status === 'failed' || result.email_log_id) {
                     resetComposeContext();
                     composeModal.classList.remove('active');
@@ -404,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error sending email:', error);
-            alert('An error occurred while sending the email.');
+            crmToast('An error occurred while sending the email.', 'error');
         } finally {
             btnSend.innerHTML = originalHtml;
             btnSend.disabled = false;
@@ -605,7 +611,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
 
-            window.alert((title || 'Upload') + '\n\n' + (message || ''));
+            if (typeof window.crmToast === 'function') {
+                window.crmToast((title ? title + ': ' : '') + (message || ''), type === 'error' ? 'error' : type === 'success' ? 'success' : 'info', title || 'Upload');
+                return Promise.resolve();
+            }
+
             return Promise.resolve();
         }
 
@@ -2684,13 +2694,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function handleDeleteEmail() {
         if (!selectedEmailId) {
-            alert('No email selected for delete.');
+            crmToast('No email selected for delete.', 'warning');
             return;
         }
 
         const email = emails.find(function(e) { return e.id === selectedEmailId; });
         if (!email) {
-            alert('No email selected for delete.');
+            crmToast('No email selected for delete.', 'warning');
             return;
         }
 
@@ -2737,9 +2747,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            alert(data.message || ('Failed to delete email (' + response.status + ')'));
+            crmToast(data.message || ('Failed to delete email (' + response.status + ')'), 'error');
         } catch (error) {
-            alert('Failed to delete email: ' + (error && error.message ? error.message : 'Unknown error'));
+            crmToast('Failed to delete email: ' + (error && error.message ? error.message : 'Unknown error'), 'error');
         }
     }
 

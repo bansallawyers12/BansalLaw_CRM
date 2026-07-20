@@ -693,7 +693,10 @@
         var details = options.details || '';
 
         if (!overlay || !iconEl || !titleEl || !messageEl) {
-            window.alert(title + '\n\n' + message + (details ? '\n\n' + details : ''));
+            if (typeof window.crmToast === 'function') {
+                var toastType = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+                window.crmToast(message + (details ? '\n\n' + details : ''), toastType, title);
+            }
             return Promise.resolve();
         }
 
