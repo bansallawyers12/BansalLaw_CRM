@@ -113,7 +113,8 @@ class MailRoutingService
         $port = (int) ($account?->smtp_port ?: config('mail.mailers.zoho.port', 587));
         $encryption = $account?->smtp_encryption ?: config('mail.mailers.zoho.encryption', 'tls');
         $username = $account?->email ?: $fromAddress;
-        $password = $account?->password ?: config('mail.mailers.zoho.password');
+        $password = $this->resolveMailboxPassword($account?->password)
+            ?: config('mail.mailers.zoho.password');
 
         if (blank($password)) {
             Log::warning('Zoho SMTP password missing for sender', ['from' => $fromAddress]);
@@ -196,5 +197,22 @@ class MailRoutingService
     private function isSystemMailProvider(?string $provider): bool
     {
         return in_array((string) $provider, self::SYSTEM_MAIL_PROVIDERS, true);
+    }
+
+    /**
+     * Decrypt mailbox passwords stored via Admin Console (plain text kept as-is).
+     */
+    private function resolveMailboxPassword(?string $password): ?string
+    {
+        $password = trim((string) $password);
+        if ($password === '') {
+            return null;
+        }
+
+        try {
+            return (string) decrypt($password);
+        } catch (\Throwable) {
+            return $password;
+        }
     }
 }
