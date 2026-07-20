@@ -60,6 +60,8 @@
     $authStaff = auth()->guard('admin')->user();
     $canDeleteEmail = $authStaff instanceof \App\Models\Staff
         && $authStaff->canDeleteEmailWithAttachments();
+    $canSyncInbox = $authStaff instanceof \App\Models\Staff
+        && $authStaff->canSyncInboxEmails();
     $crmMailboxAddresses = \App\Models\Email::where('status', true)
         ->orderBy('email')
         ->pluck('email')
@@ -77,6 +79,12 @@
     data-matter-id="{{ $matterId ?? '' }}"
     data-auth-email="{{ auth()->user()->email ?? '' }}"
     data-mailbox-addresses='@json($crmMailboxAddresses)'
+    @if($canSyncInbox)
+    data-assign-email-url="{{ url('/clients/synced-emails/assign') }}"
+    data-sync-inbox-url="{{ url('/clients/synced-emails/sync-now') }}"
+    @endif
+    data-can-sync-inbox="{{ $canSyncInbox ? '1' : '0' }}"
+    data-matters-url="{{ url('/listAllMattersWRTSelClient') }}"
     data-staff-signature-url="{{ route('crm.staff.email-signature') }}"
     data-staff-id="{{ auth()->id() }}"
     data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}"
@@ -98,6 +106,11 @@
                 <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
                     <i class="fa-solid fa-inbox"></i> Inbox
                 </button>
+                @if($canSyncInbox)
+                <button type="button" class="folder-item" data-folder="unassigned" role="tab" aria-selected="false">
+                    <i class="fa-solid fa-user-clock"></i> Unassigned
+                </button>
+                @endif
                 <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
                     <i class="fa-solid fa-paper-plane"></i> Sent Items
                 </button>
@@ -105,6 +118,11 @@
                     <i class="fa-solid fa-clock-rotate-left"></i> Email Log
                 </button>
             </div>
+            @if($canSyncInbox)
+            <button type="button" class="action-btn action-btn--upload" id="btnSyncInbox" title="Fetch new mail from Zoho now">
+                <i class="fa-solid fa-rotate"></i> Sync
+            </button>
+            @endif
             <button type="button" class="action-btn action-btn--upload" id="btnUploadEmail" title="Upload Outlook email ({{ $crmEmailUploadLabel }})" hidden>
                 <i class="fa-solid fa-upload"></i> Upload
             </button>
@@ -206,6 +224,11 @@
                     <button type="button" class="action-btn action-btn--warning" id="btnResend" hidden>
                         <i class="fa-solid fa-rotate-right"></i> Resend
                     </button>
+                    @if($canSyncInbox)
+                    <button type="button" class="action-btn action-btn--primary" id="btnAssignToClient" hidden title="Assign this email to a client matter">
+                        <i class="fa-solid fa-user-plus"></i> Assign to Client
+                    </button>
+                    @endif
                     @if($canDeleteEmail)
                     <button type="button" class="action-btn action-btn--danger" id="btnDeleteEmail" title="Delete email and attachments">
                         <i class="fa-solid fa-trash"></i> Delete
@@ -407,6 +430,52 @@
         </div>
     </div>
 </div>
+
+@if($canSyncInbox)
+<div class="modal fade" id="assignSyncedEmailModal" tabindex="-1" role="dialog" aria-labelledby="assignSyncedEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignSyncedEmailModalLabel">Assign Email to Client</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="assignEmailLogId" value="">
+                <div class="form-group">
+                    <label for="assignClientId">Client</label>
+                    <select id="assignClientId" class="form-control crm-ts-plain" style="width:100%;">
+                        <option value="">Select client</option>
+                        @if(!empty($clientData))
+                            <option value="{{ $clientData->id }}" selected>
+                                {{ $clientData->first_name }} {{ $clientData->last_name }} ({{ $clientData->client_id }})
+                            </option>
+                        @else
+                            @foreach(\App\Models\Admin::whereIn('type', ['client', 'lead'])->orderBy('first_name')->limit(500)->get() as $clientItem)
+                                <option value="{{ $clientItem->id }}">{{ $clientItem->first_name }} {{ $clientItem->last_name }} ({{ $clientItem->client_id }})</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="assignClientMatterId">Matter</label>
+                    <select id="assignClientMatterId" class="form-control crm-ts-plain" style="width:100%;" disabled>
+                        <option value="">Select matter</option>
+                    </select>
+                </div>
+                <div id="assignEmailStatus" class="small text-muted" hidden></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="assignEmailConfirmBtn">
+                    <i class="fa-solid fa-floppy-disk"></i> Assign Email
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 
 @include('partials.staff-signature-script')
 <script>
