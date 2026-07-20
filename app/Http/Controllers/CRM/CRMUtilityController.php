@@ -1256,6 +1256,15 @@ public function getChapters(Request $request)
 		$requestData = $request->all();
 		// Restore & in subject (front-end sends __AMP__ to avoid WAF 403 on special characters)
 		$requestData['subject'] = str_replace('__AMP__', '&', $requestData['subject'] ?? '');
+		if (($requestData['message_encoding'] ?? '') === 'b64') {
+			$encodedMessage = $requestData['message'] ?? '';
+			if (is_string($encodedMessage) && $encodedMessage !== '') {
+				$decodedMessage = base64_decode($encodedMessage, true);
+				if ($decodedMessage !== false) {
+					$requestData['message'] = $decodedMessage;
+				}
+			}
+		}
 		//echo '<pre>'; print_r($requestData); die;
 
 		// Gate on the associated client or lead record

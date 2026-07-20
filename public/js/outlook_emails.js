@@ -356,8 +356,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (bcc) {
             appendRecipientFields(formData, 'email_bcc', bcc);
         }
-        formData.append('subject', subject);
-        formData.append('message', message);
+        formData.append('subject', typeof crmWafSafeEmailSubject === 'function' ? crmWafSafeEmailSubject(subject) : subject.replace(/&/g, '__AMP__'));
+        if (typeof crmEncodeSendmailMessage === 'function') {
+            formData.append('message', crmEncodeSendmailMessage(message));
+            formData.append('message_encoding', 'b64');
+        } else {
+            formData.append('message', message);
+        }
         formData.append('type', 'client');
         formData.append('mail_type', 2);
         if (composeResendLogId) {
@@ -367,8 +372,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
 
+        const sendmailPath = typeof crmResolveSameOriginUrl === 'function'
+            ? crmResolveSameOriginUrl((baseUrl || '') + '/sendmail')
+            : ((baseUrl || '') + '/sendmail');
+
         try {
-            const response = await fetch(`${baseUrl}/sendmail`, {
+            const response = await fetch(sendmailPath, {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -376,7 +385,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: formData
             });
-            const result = await response.json().catch(function () { return {}; });
+            const responseText = await response.text();
+            let result = {};
+            try {
+                result = responseText ? JSON.parse(responseText) : {};
+            } catch (parseErr) {
+                result = {};
+            }
+
+            if (response.status === 403) {
+                const wafMsg = typeof crmSendmail403Message === 'function'
+                    ? crmSendmail403Message(responseText, response.status)
+                    : (typeof crmEmailUpload403Message === 'function'
+                        ? crmEmailUpload403Message(responseText, response.status)
+                        : null);
+                crmToast(wafMsg || 'The server blocked this email (HTTP 403). Try a shorter plain reply.', 'error');
+                return;
+            }
             
             if (result.success || response.ok) {
                 const wasResend = !!composeResendLogId;
