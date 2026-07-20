@@ -4316,19 +4316,33 @@ class ClientsController extends Controller
                 ], 400);
             }
 
-            // Base query for sent mail - FILTER BY MATTER ID instead of client_id
+            // Base query for sent mail - CRM compose/reply (mail_type 2) + uploaded sent items
+            $hasSendStatus = \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'send_status');
             $query = \App\Models\EmailLog::where('client_matter_id', $client_matter_id)
                 ->where('type', 'client')
-                ->where('mail_type', 1)
-                ->where(function ($query) {
-                    $query->whereNull('conversion_type')
-                        ->orWhere(function ($subQuery) {
-                            $subQuery->where('conversion_type', 'conversion_email_fetch')
-                                ->where('mail_body_type', 'sent');
-                        });
+                ->where(function ($q) use ($hasSendStatus) {
+                    $q->where(function ($crm) use ($hasSendStatus) {
+                        $crm->where('mail_type', 2);
+                        if ($hasSendStatus) {
+                            $crm->where(function ($status) {
+                                $status->where('send_status', \App\Models\EmailLog::SEND_STATUS_SENT)
+                                    ->orWhereNull('send_status')
+                                    ->orWhere('send_status', \App\Models\EmailLog::SEND_STATUS_PENDING);
+                            });
+                        }
+                    })->orWhere(function ($uploaded) {
+                        $uploaded->where('mail_type', 1)
+                            ->where(function ($query) {
+                                $query->whereNull('conversion_type')
+                                    ->orWhere(function ($subQuery) {
+                                        $subQuery->where('conversion_type', 'conversion_email_fetch')
+                                            ->where('mail_body_type', 'sent');
+                                    });
+                            });
+                    });
                 })
                 ->with(['labels', 'attachments', 'pdfDocument'])
-                ->orderBy('created_at', 'DESC');
+                ->orderByRaw('COALESCE(sent_at, fetch_mail_sent_time, created_at) DESC');
 
             // Filter by type
             if ($type !== '') {
@@ -4455,18 +4469,32 @@ class ClientsController extends Controller
                 ], 400);
             }
 
+            $hasSendStatus = \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'send_status');
             $query = \App\Models\EmailLog::where('client_id', $client_id)
                 ->where('type', 'lead')
-                ->where('mail_type', 1)
-                ->where(function ($q) {
-                    $q->whereNull('conversion_type')
-                        ->orWhere(function ($subQuery) {
-                            $subQuery->where('conversion_type', 'conversion_email_fetch')
-                                ->where('mail_body_type', 'sent');
-                        });
+                ->where(function ($q) use ($hasSendStatus) {
+                    $q->where(function ($crm) use ($hasSendStatus) {
+                        $crm->where('mail_type', 2);
+                        if ($hasSendStatus) {
+                            $crm->where(function ($status) {
+                                $status->where('send_status', \App\Models\EmailLog::SEND_STATUS_SENT)
+                                    ->orWhereNull('send_status')
+                                    ->orWhere('send_status', \App\Models\EmailLog::SEND_STATUS_PENDING);
+                            });
+                        }
+                    })->orWhere(function ($uploaded) {
+                        $uploaded->where('mail_type', 1)
+                            ->where(function ($q) {
+                                $q->whereNull('conversion_type')
+                                    ->orWhere(function ($subQuery) {
+                                        $subQuery->where('conversion_type', 'conversion_email_fetch')
+                                            ->where('mail_body_type', 'sent');
+                                    });
+                            });
+                    });
                 })
                 ->with(['labels', 'attachments', 'pdfDocument'])
-                ->orderBy('created_at', 'DESC');
+                ->orderByRaw('COALESCE(sent_at, fetch_mail_sent_time, created_at) DESC');
 
             if ($status !== null && $status !== '') {
                 if ($status == 1) {
