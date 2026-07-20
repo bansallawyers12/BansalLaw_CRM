@@ -18,6 +18,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Staff roles that may use/grant Zoho inbox sync (Super Admin + Admin)
+    |--------------------------------------------------------------------------
+    |
+    | Other staff need {@see Staff::can_sync_inbox_emails} on their profile.
+    |
+    */
+    'inbox_sync_grant_role_ids' => array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_INBOX_SYNC_GRANT_ROLE_IDS', '1,17'))
+    ), static fn (int $id) => $id > 0)),
+
+    /*
+    |--------------------------------------------------------------------------
     | Staff roles that may close/discontinue matters and grant per-user flag
     |--------------------------------------------------------------------------
     |

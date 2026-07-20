@@ -39,6 +39,14 @@
                         <span class="badge bg-warning text-dark">App password not set</span>
                     @endif
                 </dd>
+                <dt>Inbox sync access</dt>
+                <dd>
+                    @if($fetchedData->canSyncInboxEmails())
+                        <span class="badge bg-success">Can sync inbox from Zoho</span>
+                    @else
+                        <span class="badge bg-secondary">No inbox sync access</span>
+                    @endif
+                </dd>
             </dl>
         </div>
     </div>

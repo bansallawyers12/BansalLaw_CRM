@@ -59,6 +59,7 @@ class Staff extends Authenticatable
         'quick_access_enabled',
         'grant_super_admin_access',
         'can_delete_email_with_attachments',
+        'can_sync_inbox_emails',
         'can_close_discontinue_matter',
         'trust_rule42_supervisor',
     ];
@@ -81,6 +82,7 @@ class Staff extends Authenticatable
         'quick_access_enabled' => 'boolean',
         'grant_super_admin_access' => 'boolean',
         'can_delete_email_with_attachments' => 'boolean',
+        'can_sync_inbox_emails' => 'boolean',
         'can_close_discontinue_matter' => 'boolean',
         'trust_rule42_supervisor' => 'boolean',
         'created_at' => 'datetime',
@@ -365,6 +367,45 @@ class Staff extends Authenticatable
         }
 
         return (bool) ($this->can_delete_email_with_attachments ?? false);
+    }
+
+    /**
+     * Role IDs that may use inbox sync UI and grant {@see canSyncInboxEmails()} to others.
+     * Default: Super Admin (1) and Admin (17).
+     */
+    public static function inboxSyncGrantRoleIds(): array
+    {
+        $ids = config('crm.inbox_sync_grant_role_ids', [1, 17]);
+
+        return is_array($ids) ? array_values(array_map('intval', $ids)) : [1, 17];
+    }
+
+    /**
+     * Whether the actor may toggle inbox sync permission on staff records.
+     */
+    public static function canGrantInboxSyncPermission(?self $actor): bool
+    {
+        if (! $actor instanceof self) {
+            return false;
+        }
+
+        return in_array((int) ($actor->role ?? 0), self::inboxSyncGrantRoleIds(), true);
+    }
+
+    /**
+     * Whether this staff member may use Zoho inbox sync (Sync button, Unassigned folder).
+     */
+    public function canSyncInboxEmails(): bool
+    {
+        if (in_array((int) ($this->role ?? 0), self::inboxSyncGrantRoleIds(), true)) {
+            return true;
+        }
+
+        if ($this->hasEffectiveSuperAdminPrivileges()) {
+            return true;
+        }
+
+        return (bool) ($this->can_sync_inbox_emails ?? false);
     }
 
     /**
