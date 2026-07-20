@@ -231,14 +231,16 @@ class IncomingEmailSyncService
             }
 
             $messageId = trim((string) ($parsedData['message_id'] ?? ''));
+
+            $mailType = $defaultMailType === 'sent' ? 'sent' : 'inbox';
             if ($this->isDuplicate($mailbox, $messageId, $imapUid, $mailType)) {
                 return ['success' => true, 'skipped' => true];
             }
 
             $match = $this->matchingService->suggestMatches($parsedData);
-            $mailType = $defaultMailType === 'sent'
-                ? 'sent'
-                : ($match['mail_type'] ?? 'inbox');
+            if ($defaultMailType !== 'sent') {
+                $mailType = $match['mail_type'] ?? 'inbox';
+            }
             $threshold = (int) config('imap_sync.high_confidence_threshold', 80);
             $isAutoAssigned = ! empty($match['is_high_confidence']) && ! empty($match['best']['client_id']);
 
