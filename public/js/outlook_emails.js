@@ -88,6 +88,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const composeFormatBar = document.getElementById('composeFormatBar');
     const btnSendEl = document.getElementById('btnSend');
     const btnResend = document.getElementById('btnResend');
+    const btnAssignToClient = document.getElementById('btnAssignToClient');
+    const btnSyncInbox = document.getElementById('btnSyncInbox');
+    const assignEmailModal = document.getElementById('assignSyncedEmailModal');
+    const assignClientSelect = document.getElementById('assignClientId');
+    const assignMatterSelect = document.getElementById('assignClientMatterId');
+    const assignEmailLogIdInput = document.getElementById('assignEmailLogId');
+    const assignEmailConfirmBtn = document.getElementById('assignEmailConfirmBtn');
+    const assignEmailStatus = document.getElementById('assignEmailStatus');
+    const assignEmailUrl = outlookContainer ? outlookContainer.getAttribute('data-assign-email-url') : '';
+    const syncInboxUrl = outlookContainer ? outlookContainer.getAttribute('data-sync-inbox-url') : '';
+    const canSyncInbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-sync-inbox') === '1');
+    const mattersUrl = outlookContainer ? outlookContainer.getAttribute('data-matters-url') : '';
 
     let composeQuoteHtml = '';
     let composeSignatureHtml = '';
@@ -158,14 +170,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event Listeners
     folderItems.forEach(item => {
         item.addEventListener('click', (e) => {
+            const target = e.currentTarget;
+            const folder = target.dataset.folder || 'inbox';
+            if (folder === 'unassigned' && !canSyncInbox) {
+                return;
+            }
             folderItems.forEach(f => {
                 f.classList.remove('active');
                 f.setAttribute('aria-selected', 'false');
             });
-            const target = e.currentTarget;
             target.classList.add('active');
             target.setAttribute('aria-selected', 'true');
-            currentFolder = target.dataset.folder;
+            currentFolder = folder;
             currentPage = 1;
             updateOutboxFiltersVisibility();
             loadEmails();
@@ -1895,6 +1911,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Fetch from backend
     async function loadEmails() {
+        if (currentFolder === 'unassigned' && !canSyncInbox) {
+            currentFolder = 'inbox';
+            switchToFolder('inbox');
+        }
+
         try {
             const query = searchInput.value;
             const label = labelFilter ? labelFilter.value : '';
@@ -2372,6 +2393,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (btnResend) {
             btnResend.hidden = email.send_status !== 'failed' || parseInt(email.mail_type, 10) !== 2;
         }
+
+        if (btnAssignToClient) {
+            const needsAssign = email.sync_assignment_status === 'unassigned'
+                || (!email.client_id && email.mailbox_email);
+            btnAssignToClient.hidden = !canSyncInbox || !needsAssign;
+        }
         
         document.getElementById('readDate').textContent = formatEmailDate(getEmailDate(email));
 
@@ -2794,5 +2821,167 @@ document.addEventListener('DOMContentLoaded', function() {
              .replace(/>/g, "&gt;")
              .replace(/"/g, "&quot;")
              .replace(/'/g, "&#039;");
+    }
+
+    function getCsrfToken() {
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        return csrfMeta ? csrfMeta.content : '';
+    }
+
+    function loadAssignMattersForClient(selectedClientId) {
+        if (!assignMatterSelect || !mattersUrl || !selectedClientId) {
+            if (assignMatterSelect) {
+                assignMatterSelect.innerHTML = '<option value="">Select matter</option>';
+                assignMatterSelect.disabled = true;
+            }
+            return;
+        }
+
+        assignMatterSelect.disabled = true;
+        assignMatterSelect.innerHTML = '<option value="">Loading matters...</option>';
+
+        fetch(mattersUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: new URLSearchParams({ client_id: selectedClientId }).toString()
+        })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                let options = '<option value="">Select matter</option>';
+                const matters = (data && data.clientMatetrs) ? data.clientMatetrs : [];
+                matters.forEach(function (matter) {
+                    const selected = matterId && String(matter.id) === String(matterId) ? ' selected' : '';
+                    options += '<option value="' + matter.id + '"' + selected + '>' + escapeHtml(matter.title) + ' (' + escapeHtml(matter.client_unique_matter_no || '') + ')</option>';
+                });
+                assignMatterSelect.innerHTML = options;
+                assignMatterSelect.disabled = false;
+                if (typeof initTS === 'function') {
+                    initTS('#assignClientMatterId', { create: false, dropdownParent: 'body' });
+                }
+            })
+            .catch(function () {
+                assignMatterSelect.innerHTML = '<option value="">Could not load matters</option>';
+            });
+    }
+
+    if (assignClientSelect) {
+        assignClientSelect.addEventListener('change', function () {
+            loadAssignMattersForClient(assignClientSelect.value);
+        });
+    }
+
+    if (btnAssignToClient && assignEmailModal) {
+        btnAssignToClient.addEventListener('click', function () {
+            if (!selectedEmailId) {
+                crmToast('Select an email to assign.', 'warning');
+                return;
+            }
+            if (assignEmailLogIdInput) {
+                assignEmailLogIdInput.value = selectedEmailId;
+            }
+            if (assignEmailStatus) {
+                assignEmailStatus.hidden = true;
+                assignEmailStatus.textContent = '';
+            }
+            if (typeof initTS === 'function') {
+                initTS('#assignClientId', { create: false, dropdownParent: 'body' });
+                initTS('#assignClientMatterId', { create: false, dropdownParent: 'body' });
+            }
+            if (clientId && assignClientSelect) {
+                assignClientSelect.value = clientId;
+                loadAssignMattersForClient(clientId);
+            }
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                bootstrap.Modal.getOrCreateInstance(assignEmailModal).show();
+            } else {
+                assignEmailModal.classList.add('show');
+                assignEmailModal.style.display = 'block';
+            }
+        });
+    }
+
+    if (assignEmailConfirmBtn) {
+        assignEmailConfirmBtn.addEventListener('click', async function () {
+            const emailLogId = assignEmailLogIdInput ? assignEmailLogIdInput.value : '';
+            const selectedClient = assignClientSelect ? assignClientSelect.value : '';
+            const selectedMatter = assignMatterSelect ? assignMatterSelect.value : '';
+
+            if (!emailLogId || !selectedClient || !selectedMatter) {
+                crmToast('Please select both client and matter.', 'warning');
+                return;
+            }
+
+            assignEmailConfirmBtn.disabled = true;
+            try {
+                const response = await fetch(assignEmailUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': getCsrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        email_log_id: parseInt(emailLogId, 10),
+                        client_id: parseInt(selectedClient, 10),
+                        client_matter_id: parseInt(selectedMatter, 10)
+                    })
+                });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Modal && assignEmailModal) {
+                        bootstrap.Modal.getOrCreateInstance(assignEmailModal).hide();
+                    }
+                    if (btnAssignToClient) {
+                        btnAssignToClient.hidden = true;
+                    }
+                    currentFolder = 'inbox';
+                    folderItems.forEach(function (f) {
+                        f.classList.toggle('active', f.dataset.folder === 'inbox');
+                        f.setAttribute('aria-selected', f.dataset.folder === 'inbox' ? 'true' : 'false');
+                    });
+                    loadEmails();
+                    return;
+                }
+                crmToast(data.message || 'Could not assign email.', 'error');
+            } catch (error) {
+                crmToast('Could not assign email: ' + (error.message || 'Unknown error'), 'error');
+            } finally {
+                assignEmailConfirmBtn.disabled = false;
+            }
+        });
+    }
+
+    if (btnSyncInbox && syncInboxUrl && canSyncInbox) {
+        btnSyncInbox.addEventListener('click', async function () {
+            btnSyncInbox.disabled = true;
+            const originalHtml = btnSyncInbox.innerHTML;
+            btnSyncInbox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing...';
+            try {
+                const response = await fetch(syncInboxUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': getCsrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({})
+                });
+                const data = await response.json();
+                loadEmails();
+                crmToast('Sync complete. Imported: ' + (data.total_imported || 0) + ', Skipped: ' + (data.total_skipped || 0) + ', Failed: ' + (data.total_failed || 0), 'success');
+            } catch (error) {
+                crmToast('Sync failed: ' + (error.message || 'Unknown error'), 'error');
+            } finally {
+                btnSyncInbox.disabled = false;
+                btnSyncInbox.innerHTML = originalHtml;
+            }
+        });
     }
 });

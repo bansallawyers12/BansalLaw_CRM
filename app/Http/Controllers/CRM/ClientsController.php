@@ -8246,6 +8246,24 @@ class ClientsController extends Controller
     public function fetchAllOutlookEmails(Request $request)
     {
         $folder = $request->input('folder', 'inbox'); // inbox, sent, outbox, deleted
+        $staff = auth('admin')->user();
+        $canSyncInbox = $staff instanceof \App\Models\Staff && $staff->canSyncInboxEmails();
+
+        if ($folder === 'unassigned' && ! $canSyncInbox) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to view unassigned synced emails.',
+                    'emails' => [],
+                    'total' => 0,
+                    'current_page' => 1,
+                    'last_page' => 1,
+                ], 403);
+            }
+
+            return redirect()->back()->with('error', 'You do not have permission to view unassigned synced emails.');
+        }
+
         $search = $request->input('search');
         $clientId = $request->input('client_id');
         $clientMatterId = $request->input('client_matter_id');
@@ -8260,11 +8278,11 @@ class ClientsController extends Controller
         // Base query with attachments
         $query = \App\Models\EmailLog::with('attachments');
 
-        // Apply client and matter filter if provided
-        if (!empty($clientId)) {
+        // Apply client and matter filter if provided (skip for unassigned — those have no client yet)
+        if (! empty($clientId) && $folder !== 'unassigned') {
             $query->where('client_id', $clientId);
         }
-        if (!empty($clientMatterId)) {
+        if (! empty($clientMatterId) && $folder !== 'unassigned') {
             $query->where('client_matter_id', $clientMatterId);
         }
 
@@ -8278,6 +8296,28 @@ class ClientsController extends Controller
         // Apply sender filter
         if (!empty($senderFilter)) {
             $query->where('from_mail', $senderFilter);
+        }
+
+        $mailboxFilter = $request->input('mailbox_filter');
+        if (! empty($mailboxFilter) && \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'mailbox_email')) {
+            $query->whereRaw('LOWER(mailbox_email) = ?', [strtolower(trim((string) $mailboxFilter))]);
+        }
+
+        // When not scoped to a client, limit synced mail to the logged-in staff member's mailboxes.
+        if (empty($clientId) && \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'mailbox_email')) {
+            $staff = auth('admin')->user();
+            if ($staff instanceof \App\Models\Staff) {
+                $allowedMailboxes = \App\Services\EmailSync\IncomingEmailSyncService::mailboxAddressesForStaff(
+                    (int) $staff->id,
+                    $staff->email
+                );
+                if ($allowedMailboxes !== []) {
+                    $query->where(function ($q) use ($allowedMailboxes) {
+                        $q->whereNull('mailbox_email')
+                            ->orWhereIn('mailbox_email', $allowedMailboxes);
+                    });
+                }
+            }
         }
 
         // Apply folder logic
@@ -8327,6 +8367,12 @@ class ClientsController extends Controller
         } elseif ($folder === 'deleted') {
             // No easy way to fetch deleted items if they are permanently deleted
             $query->where('id', '<', 0); // Return empty for now
+        } elseif ($folder === 'unassigned') {
+            if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
+                $query->where('sync_assignment_status', 'unassigned');
+            } else {
+                $query->where('id', '<', 0);
+            }
         }
 
         // Apply search filter if present
@@ -8360,6 +8406,8 @@ class ClientsController extends Controller
             $email->bcc = $email->bcc ?? '';
             $email->send_status = $email->send_status ?? \App\Models\EmailLog::SEND_STATUS_SENT;
             $email->send_error = $email->send_error ?? '';
+            $email->sync_assignment_status = $email->sync_assignment_status ?? '';
+            $email->mailbox_email = $email->mailbox_email ?? '';
 
             $appTimezone = config('app.timezone', 'Australia/Melbourne');
             if ($email->fetch_mail_sent_time) {
