@@ -13,6 +13,9 @@
     $canGrantEmailDelete = \App\Models\Staff::canGrantEmailDeleteWithAttachmentsPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
+    $canGrantInboxSync = \App\Models\Staff::canGrantInboxSyncPermission(
+        $actor instanceof \App\Models\Staff ? $actor : null
+    );
     $canGrantCloseDiscontinue = \App\Models\Staff::canGrantCloseDiscontinueMatterPermission(
         $actor instanceof \App\Models\Staff ? $actor : null
     );
@@ -203,6 +206,17 @@
                         <input type="checkbox" name="can_delete_email_with_attachments" value="1"
                             @checked(old('can_delete_email_with_attachments', $isEdit ? ($fetchedData->can_delete_email_with_attachments ?? false) : false))>
                         <span>Can delete emails with attachments</span>
+                    </label>
+                </div>
+                @endif
+
+                @if($canGrantInboxSync && \Illuminate\Support\Facades\Schema::hasColumn('staff', 'can_sync_inbox_emails'))
+                <div class="form-group">
+                    <input type="hidden" name="can_sync_inbox_emails" value="0">
+                    <label class="staff-checkbox-row">
+                        <input type="checkbox" name="can_sync_inbox_emails" value="1"
+                            @checked(old('can_sync_inbox_emails', $isEdit ? ($fetchedData->can_sync_inbox_emails ?? false) : false))>
+                        <span>Can sync inbox from Zoho (Sync button &amp; Unassigned folder)</span>
                     </label>
                 </div>
                 @endif

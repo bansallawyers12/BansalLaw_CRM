@@ -159,6 +159,7 @@
             show_dashboard_per: '_access',
             quick_access_enabled: '_access',
             can_delete_email_with_attachments: '_access',
+            can_sync_inbox_emails: '_access',
             can_close_discontinue_matter: '_access',
             grant_super_admin_access: '_access',
             trust_rule42_supervisor: '_access',

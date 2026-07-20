@@ -117,6 +117,13 @@ class StaffController extends Controller
                 return $this->respondStaffMessage($request, 'Only Super Admin or Admin can grant email delete permission.', 422);
             }
 
+            $canGrantInboxSync = Staff::canGrantInboxSyncPermission(
+                $storeActor instanceof Staff ? $storeActor : null
+            );
+            if (! $canGrantInboxSync && $request->has('can_sync_inbox_emails')) {
+                return $this->respondStaffMessage($request, 'Only Super Admin or Admin can grant inbox sync permission.', 422);
+            }
+
             $canGrantCloseDiscontinue = Staff::canGrantCloseDiscontinueMatterPermission(
                 $storeActor instanceof Staff ? $storeActor : null
             );
@@ -208,6 +215,10 @@ class StaffController extends Controller
 
             if (! Staff::canGrantEmailDeleteWithAttachmentsPermission($actor instanceof Staff ? $actor : null) && $request->has('can_delete_email_with_attachments')) {
                 return $this->respondStaffMessage($request, 'Only Super Admin or Admin can grant email delete permission.', 422);
+            }
+
+            if (! Staff::canGrantInboxSyncPermission($actor instanceof Staff ? $actor : null) && $request->has('can_sync_inbox_emails')) {
+                return $this->respondStaffMessage($request, 'Only Super Admin or Admin can grant inbox sync permission.', 422);
             }
 
             if (! Staff::canGrantCloseDiscontinueMatterPermission($actor instanceof Staff ? $actor : null) && $request->has('can_close_discontinue_matter')) {
@@ -444,6 +455,13 @@ class StaffController extends Controller
         );
         if ($canGrantEmailDelete && Schema::hasColumn('staff', 'can_delete_email_with_attachments')) {
             $obj->can_delete_email_with_attachments = $request->boolean('can_delete_email_with_attachments');
+        }
+
+        $canGrantInboxSync = Staff::canGrantInboxSyncPermission(
+            $actor instanceof Staff ? $actor : null
+        );
+        if ($canGrantInboxSync && Schema::hasColumn('staff', 'can_sync_inbox_emails')) {
+            $obj->can_sync_inbox_emails = $request->boolean('can_sync_inbox_emails');
         }
 
         $canGrantCloseDiscontinue = Staff::canGrantCloseDiscontinueMatterPermission(
