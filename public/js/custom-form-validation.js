@@ -2623,7 +2623,23 @@ function customValidate(formName, savetype = '')
 						// Replace & in subject with placeholder to avoid WAF 403; server restores it before sending email
 						var subjectEl = myform.querySelector('input[name="subject"], [name="subject"]');
 						if (subjectEl && subjectEl.value) {
-							fd.set('subject', String(subjectEl.value).replace(/\&/g, '__AMP__'));
+							fd.set('subject', typeof crmWafSafeEmailSubject === 'function'
+								? crmWafSafeEmailSubject(subjectEl.value)
+								: String(subjectEl.value).replace(/\&/g, '__AMP__'));
+						}
+
+						var composeMessage = '';
+						if (typeof tinymce !== 'undefined' && tinymce.get('compose_email_message')) {
+							composeMessage = tinymce.get('compose_email_message').getContent() || '';
+						} else {
+							var messageEl = myform.querySelector('[name="message"], textarea[name="message"]');
+							if (messageEl) {
+								composeMessage = messageEl.value || '';
+							}
+						}
+						if (composeMessage && typeof crmEncodeSendmailMessage === 'function') {
+							fd.set('message', crmEncodeSendmailMessage(composeMessage));
+							fd.set('message_encoding', 'b64');
 						}
 						
 						// Use same-origin URL to avoid 403 from wrong domain (e.g. APP_URL vs current host)
@@ -2639,6 +2655,9 @@ function customValidate(formName, savetype = '')
 								}
 							}
 						} catch (e) {}
+						if (typeof crmResolveSameOriginUrl === 'function') {
+							sendmailUrl = crmResolveSameOriginUrl(sendmailUrl || '/sendmail');
+						}
 						
 						$.ajax({
 							type:'post',
@@ -2710,13 +2729,19 @@ function customValidate(formName, savetype = '')
 								if(xhr.status === 403){
 									var responseText = xhr.responseText || '';
 									var responseJSON = xhr.responseJSON || {};
+									var wafMsg = typeof crmSendmail403Message === 'function'
+										? crmSendmail403Message(responseText, xhr.status)
+										: (typeof crmEmailUpload403Message === 'function'
+											? crmEmailUpload403Message(xhr)
+											: null);
 									var isCsrf = responseText.includes('CSRF') || responseText.includes('csrf') ||
 										(responseJSON.message && (responseJSON.message.includes('CSRF') || responseJSON.message.includes('csrf')));
-									var msg = isCsrf
-										? 'Security token expired. Refresh the page and try again.'
-										: 'Access denied. If you are logged in, refresh the page and try again.';
+									var msg = wafMsg
+										|| (isCsrf
+											? 'Security token expired. Refresh the page and try again.'
+											: 'Access denied. If you are logged in, refresh the page and try again.');
 									$('.custom-error-msg').html('');
-									crmSendMailNotify(msg, 'warning');
+									crmSendMailNotify(msg, isCsrf ? 'warning' : 'error');
 									return;
 								}
 								if(xhr.status === 422){

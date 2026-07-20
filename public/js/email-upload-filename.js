@@ -811,6 +811,46 @@
         }).filter(Boolean).join('\n\n');
     }
 
+    /** Replace characters that often trigger mod_security on POST (subject line). */
+    function wafSafeEmailSubject(subject) {
+        return String(subject || '').replace(/&/g, '__AMP__');
+    }
+
+    /** Base64-encode HTML body so WAF does not scan reply/forward quoted content. */
+    function encodeSendmailMessage(html) {
+        try {
+            return global.btoa(global.unescape(global.encodeURIComponent(String(html || ''))));
+        } catch (e) {
+            return '';
+        }
+    }
+
+    /** Prefer same-origin path — wrong APP_URL host can cause 403 on some hosts. */
+    function resolveSameOriginUrl(pathOrUrl) {
+        if (!pathOrUrl) {
+            return '/sendmail';
+        }
+        try {
+            if (String(pathOrUrl).indexOf('http') === 0) {
+                var parsed = new URL(pathOrUrl, global.location.origin);
+                return parsed.pathname + (parsed.search || '');
+            }
+            return String(pathOrUrl);
+        } catch (e) {
+            return String(pathOrUrl);
+        }
+    }
+
+    function sendmail403Message(responseText, status) {
+        if (typeof emailUpload403Message === 'function') {
+            return emailUpload403Message(responseText, status);
+        }
+        if (status === 403) {
+            return 'The server blocked this email (security filter). Try sending a shorter plain reply, or contact your administrator to whitelist /sendmail in mod_security.';
+        }
+        return null;
+    }
+
     global.crmGetAllowedEmailUploadExtensions = getAllowedEmailUploadExtensions;
     global.crmEmailUploadAcceptAttribute = emailUploadAcceptAttribute;
     global.crmEmailUploadExtensionsLabel = emailUploadExtensionsLabel;
@@ -838,4 +878,8 @@
     global.crmBuildEmailUploadTechnicalDetails = buildEmailUploadTechnicalDetails;
     global.crmEmailUploadHasServiceError = emailUploadHasServiceError;
     global.crmFormatEmailUploadWarnings = formatEmailUploadWarnings;
+    global.crmWafSafeEmailSubject = wafSafeEmailSubject;
+    global.crmEncodeSendmailMessage = encodeSendmailMessage;
+    global.crmResolveSameOriginUrl = resolveSameOriginUrl;
+    global.crmSendmail403Message = sendmail403Message;
 })(typeof window !== 'undefined' ? window : this);
