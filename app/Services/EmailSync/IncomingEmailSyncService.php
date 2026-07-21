@@ -218,6 +218,10 @@ class IncomingEmailSyncService
 
         file_put_contents($tempPath, $rawEml);
 
+        $guard = Auth::guard('admin');
+        $previousUser = $guard->user();
+        $didLoginStaff = false;
+
         try {
             $safeName = $this->buildEmlFilename($subjectHint, $imapUid);
             $uploadedFile = new UploadedFile($tempPath, $safeName, 'message/rfc822', null, true);
@@ -253,7 +257,8 @@ class IncomingEmailSyncService
 
             $staff = Staff::find($staffUserId);
             if ($staff) {
-                Auth::guard('admin')->login($staff);
+                $guard->login($staff);
+                $didLoginStaff = true;
             }
 
             $import = $this->uploadController->importFromSync(
@@ -283,7 +288,12 @@ class IncomingEmailSyncService
             ];
         } finally {
             @unlink($tempPath);
-            Auth::guard('admin')->logout();
+            if ($didLoginStaff) {
+                $guard->logout();
+                if ($previousUser) {
+                    $guard->login($previousUser);
+                }
+            }
         }
     }
 
@@ -343,6 +353,78 @@ class IncomingEmailSyncService
     }
 
     /**
+     * @return array<string, string>
+     */
+    public static function syncRangeOptions(): array
+    {
+        return [
+            'today' => 'Today',
+            '2days' => 'Last 2 days',
+            '5days' => 'Last 5 days',
+            '1week' => 'Last 1 week',
+            '2weeks' => 'Last 2 weeks',
+            '1month' => 'Last 1 month',
+            'full' => 'Full (reset & backfill)',
+        ];
+    }
+
+    public static function isValidSyncRange(string $range): bool
+    {
+        return array_key_exists(strtolower(trim($range)), self::syncRangeOptions());
+    }
+
+    public static function resolveSyncSince(string $range): ?\Carbon\Carbon
+    {
+        $normalized = strtolower(trim($range));
+        if ($normalized === 'full') {
+            return null;
+        }
+
+        $timezone = (string) config('app.timezone', 'UTC');
+        $now = now($timezone);
+
+        return match ($normalized) {
+            '2days' => $now->copy()->subDays(1)->startOfDay(),
+            '5days' => $now->copy()->subDays(4)->startOfDay(),
+            '1week' => $now->copy()->subDays(6)->startOfDay(),
+            '2weeks' => $now->copy()->subDays(13)->startOfDay(),
+            '1month' => $now->copy()->subDays(29)->startOfDay(),
+            default => $now->copy()->startOfDay(),
+        };
+    }
+
+    /**
+     * @param list<string>|null $mailboxAddresses
+     */
+    public function resetUidTracking(?string $mailboxFilter = null, ?array $mailboxAddresses = null): int
+    {
+        $query = Email::query()
+            ->where('status', true)
+            ->where('sync_enabled', true);
+
+        if ($mailboxFilter !== null && $mailboxFilter !== '') {
+            $query->whereRaw('LOWER(email) = ?', [strtolower(trim($mailboxFilter))]);
+        } elseif ($mailboxAddresses !== null && $mailboxAddresses !== []) {
+            $normalized = array_values(array_unique(array_filter(array_map(
+                static fn (string $address): string => strtolower(trim($address)),
+                $mailboxAddresses
+            ))));
+            if ($normalized !== []) {
+                $query->where(function ($builder) use ($normalized) {
+                    foreach ($normalized as $address) {
+                        $builder->orWhereRaw('LOWER(email) = ?', [$address]);
+                    }
+                });
+            }
+        }
+
+        return $query->update([
+            'last_imap_uid' => null,
+            'last_imap_uid_sent' => null,
+        ]);
+    }
+
+    /**
      * Mailboxes the given staff member may view (shared + own email match).
      *
      * @return list<string>
@@ -362,7 +444,12 @@ class IncomingEmailSyncService
                 continue;
             }
 
-            if ($staffEmail && strcasecmp($account->email, $staffEmail) === 0) {
+            if ($staffEmail && strcasecmp(trim($account->email), trim($staffEmail)) === 0) {
+                $addresses[] = strtolower(trim($account->email));
+                continue;
+            }
+
+            if ((int) ($account->resolveOwnerStaffId() ?? 0) === $staffId) {
                 $addresses[] = strtolower(trim($account->email));
             }
         }

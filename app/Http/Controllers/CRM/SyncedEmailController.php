@@ -61,14 +61,84 @@ class SyncedEmailController extends Controller
             ], 403);
         }
 
-        $email = trim((string) $request->input('email', ''));
+        @set_time_limit(300);
 
-        $since = null;
-        if ($request->boolean('today')) {
-            $since = now((string) config('app.timezone', 'UTC'))->startOfDay();
+        $staff = Auth::guard('admin')->user();
+        $email = trim((string) $request->input('email', ''));
+        $syncRange = strtolower(trim((string) $request->input('sync_range', '')));
+
+        if ($syncRange === '' && $request->boolean('today', false)) {
+            $syncRange = 'today';
+        }
+        if ($syncRange === '') {
+            $syncRange = 'today';
         }
 
-        $summary = $syncService->syncAll($email !== '' ? $email : null, $since);
+        if (! IncomingEmailSyncService::isValidSyncRange($syncRange)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid sync range selected.',
+                'mailboxes' => [],
+                'total_imported' => 0,
+                'total_skipped' => 0,
+                'total_failed' => 0,
+            ], 422);
+        }
+
+        $since = $syncRange === 'full'
+            ? null
+            : IncomingEmailSyncService::resolveSyncSince($syncRange);
+
+        $addresses = [];
+        if ($email !== '') {
+            $addresses = [strtolower($email)];
+        } elseif ($staff instanceof Staff) {
+            $addresses = IncomingEmailSyncService::mailboxAddressesForStaff((int) $staff->id, $staff->email);
+            if ($addresses === [] && trim((string) $staff->email) !== '') {
+                $addresses = [strtolower(trim((string) $staff->email))];
+            }
+        }
+
+        if ($addresses === []) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No synced mailbox is linked to your staff account. Configure it in Admin Console → Staff → Email & mailbox.',
+                'mailboxes' => [],
+                'total_imported' => 0,
+                'total_skipped' => 0,
+                'total_failed' => 0,
+            ], 422);
+        }
+
+        if ($syncRange === 'full') {
+            $syncService->resetUidTracking(
+                $email !== '' ? $email : null,
+                $email === '' ? $addresses : null
+            );
+        }
+
+        $summary = [
+            'success' => true,
+            'sync_range' => $syncRange,
+            'mailboxes' => [],
+            'total_imported' => 0,
+            'total_skipped' => 0,
+            'total_failed' => 0,
+        ];
+
+        foreach ($addresses as $address) {
+            $partial = $syncService->syncAll($address, $since);
+            if (($partial['success'] ?? true) === false) {
+                $summary['success'] = false;
+                $summary['message'] = $partial['message'] ?? 'Inbox sync is disabled.';
+            }
+            foreach ($partial['mailboxes'] ?? [] as $mailboxEmail => $result) {
+                $summary['mailboxes'][$mailboxEmail] = $result;
+                $summary['total_imported'] += (int) ($result['imported'] ?? 0);
+                $summary['total_skipped'] += (int) ($result['skipped'] ?? 0);
+                $summary['total_failed'] += (int) ($result['failed'] ?? 0);
+            }
+        }
 
         return response()->json($summary);
     }
