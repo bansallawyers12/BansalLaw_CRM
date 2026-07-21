@@ -2876,7 +2876,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         destroyAssignEmailModalSelects();
 
-        const dropdownParent = assignEmailModal;
+        const dropdownParent = 'body';
         const clientsUrl = baseUrl
             ? baseUrl.replace(/\/$/, '') + '/clients/get-allclients'
             : '';
@@ -2952,7 +2952,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     const matterTs = initTS(assignMatterSelect, {
                         create: false,
-                        dropdownParent: assignEmailModal || document.body
+                        dropdownParent: 'body'
                     });
                     if (matterTs && matterTs.wrapper) {
                         matterTs.wrapper.style.width = '100%';
@@ -2986,6 +2986,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
                 bootstrap.Modal.getOrCreateInstance(assignEmailModal).show();
             } else {
+                document.body.classList.add('assign-email-modal-open');
                 assignEmailModal.classList.add('show');
                 assignEmailModal.style.display = 'block';
                 initAssignEmailModalSelects();
@@ -2997,6 +2998,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         assignEmailModal.addEventListener('shown.bs.modal', function () {
+            document.body.classList.add('assign-email-modal-open');
             initAssignEmailModalSelects();
             if (clientId && assignClientSelect) {
                 const ts = assignClientSelect.tomselect;
@@ -3010,6 +3012,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         assignEmailModal.addEventListener('hidden.bs.modal', function () {
+            document.body.classList.remove('assign-email-modal-open');
             destroyAssignEmailModalSelects();
             if (assignMatterSelect) {
                 assignMatterSelect.innerHTML = '<option value="">Select matter</option>';

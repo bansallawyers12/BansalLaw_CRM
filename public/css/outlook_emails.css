@@ -2182,14 +2182,7 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
     }
 }
 
-/* Assign email modal — Tom Select dropdown must sit above modal content */
-#assignSyncedEmailModal.assign-email-modal .modal-dialog,
-#assignSyncedEmailModal.assign-email-modal .modal-content,
-#assignSyncedEmailModal.assign-email-modal .modal-body {
-    overflow: visible;
-}
-
-#assignSyncedEmailModal.assign-email-modal .ts-dropdown {
-    z-index: 1060;
-    width: 100% !important;
+/* Assign email modal — Tom Select dropdown renders on body; keep above Bootstrap modal */
+body.assign-email-modal-open .ts-dropdown {
+    z-index: 1060 !important;
 }
