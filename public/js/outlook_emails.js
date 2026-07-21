@@ -1171,6 +1171,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const modeIndividualBtn = document.getElementById('attachmentModeIndividual');
                 const confirmBtn = document.getElementById('attachmentStorageConfirm');
                 const cancelBtn = document.getElementById('attachmentStorageCancel');
+                const closeBtn = document.getElementById('attachmentStorageClose');
 
                 if (!modal || !body || !confirmBtn || !cancelBtn) {
                     resolve(null);
@@ -1228,6 +1229,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     modal.setAttribute('aria-hidden', 'true');
                     confirmBtn.removeEventListener('click', onConfirm);
                     cancelBtn.removeEventListener('click', onCancel);
+                    if (closeBtn) {
+                        closeBtn.removeEventListener('click', onCancel);
+                    }
                     if (modeBulkBtn) {
                         modeBulkBtn.removeEventListener('click', onModeBulk);
                     }
@@ -1406,6 +1410,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 confirmBtn.addEventListener('click', onConfirm);
                 cancelBtn.addEventListener('click', onCancel);
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', onCancel);
+                }
                 if (modeBulkBtn) {
                     modeBulkBtn.addEventListener('click', onModeBulk);
                 }

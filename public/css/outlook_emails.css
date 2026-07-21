@@ -7,6 +7,12 @@
     --outlook-text-secondary: #605e5c;
     --outlook-bg: #ffffff;
     --outlook-bg-secondary: #faf9f8;
+    --outlook-modal-radius: 14px;
+    --outlook-modal-shadow: 0 20px 48px rgba(0, 0, 0, 0.16);
+    --outlook-modal-overlay: rgba(15, 23, 42, 0.52);
+    --outlook-modal-header-gradient: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
+    --outlook-modal-header-warn-gradient: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    --outlook-modal-header-danger-gradient: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
 }
 
 body, html {
@@ -654,7 +660,7 @@ body, html {
 
 .compose-header {
     padding: 14px 18px;
-    background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
+    background: var(--outlook-modal-header-gradient);
     color: white;
     border-radius: 12px 12px 0 0;
     display: flex;
@@ -685,22 +691,22 @@ body, html {
 
 .compose-close {
     cursor: pointer;
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.14);
     border: none;
     color: white;
     font-size: 14px;
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: background 0.15s ease;
+    transition: background-color 0.2s ease;
 }
 
 .compose-close:hover {
-    background: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.24);
 }
 
 .compose-body {
@@ -946,8 +952,8 @@ body, html {
     position: fixed;
     inset: 0;
     z-index: 10040;
-    background: rgba(32, 31, 30, 0.55);
-    backdrop-filter: blur(2px);
+    background: var(--outlook-modal-overlay);
+    backdrop-filter: blur(4px);
     align-items: center;
     justify-content: center;
     padding: 24px;
@@ -961,22 +967,28 @@ body, html {
     width: 100%;
     max-width: 400px;
     background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
-    padding: 32px 28px 26px;
-    text-align: center;
-    animation: emailUploadLoadingIn 0.22s ease-out;
+    border: 1px solid var(--outlook-border);
+    border-radius: var(--outlook-modal-radius);
+    box-shadow: var(--outlook-modal-shadow);
+    overflow: hidden;
+    animation: outlookModalIn 0.22s ease-out;
 }
 
-@keyframes emailUploadLoadingIn {
-    from {
-        opacity: 0;
-        transform: translateY(12px) scale(0.98);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+.email-upload-loading-card__header {
+    padding: 18px 22px 14px;
+    background: var(--outlook-modal-header-gradient);
+    color: #fff;
+    text-align: center;
+}
+
+.email-upload-loading-card__header .outlook-ui-modal__header-icon {
+    margin: 0 auto;
+}
+
+.email-upload-loading-card__body {
+    padding: 24px 28px 22px;
+    text-align: center;
+    background: var(--outlook-bg-secondary);
 }
 
 .email-upload-loading-icon {
@@ -1127,12 +1139,234 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
     color: #4a7eb5;
 }
 
+/* ========== Shared modern Outlook modals ========== */
+.outlook-modal-overlay {
+    backdrop-filter: blur(4px);
+}
+
+@keyframes outlookModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.outlook-ui-modal {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--outlook-border);
+    border-radius: var(--outlook-modal-radius);
+    box-shadow: var(--outlook-modal-shadow);
+    overflow: hidden;
+    animation: outlookModalIn 0.22s ease-out;
+}
+
+.outlook-ui-modal--xs { max-width: 400px; }
+.outlook-ui-modal--sm { max-width: 480px; }
+.outlook-ui-modal--md { max-width: 560px; }
+.outlook-ui-modal--lg { max-width: 920px; max-height: 88vh; }
+
+.outlook-ui-modal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 22px 18px;
+    background: var(--outlook-modal-header-gradient);
+    color: #fff;
+}
+
+.outlook-ui-modal__header--warn {
+    background: var(--outlook-modal-header-warn-gradient);
+}
+
+.outlook-ui-modal__header--danger {
+    background: var(--outlook-modal-header-danger-gradient);
+}
+
+.outlook-ui-modal__header-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    min-width: 0;
+}
+
+.outlook-ui-modal__header-icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.outlook-ui-modal__header-text {
+    min-width: 0;
+}
+
+.outlook-ui-modal__title {
+    margin: 0 0 4px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.3;
+}
+
+.outlook-ui-modal__subtitle {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.outlook-ui-modal__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.outlook-ui-modal__close {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.outlook-ui-modal__close:hover,
+.outlook-ui-modal__close:focus {
+    background: rgba(255, 255, 255, 0.24);
+    color: #fff;
+    outline: none;
+}
+
+.outlook-ui-modal__body {
+    padding: 20px 22px;
+    background: var(--outlook-bg-secondary);
+}
+
+.outlook-ui-modal__body--scroll {
+    overflow-y: auto;
+    min-height: 0;
+    flex: 1 1 auto;
+}
+
+.outlook-ui-modal__hint {
+    margin: 14px 0 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--outlook-text-secondary);
+}
+
+.outlook-ui-modal__preview-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--outlook-border);
+    border-radius: 10px;
+    background: #fff;
+}
+
+.outlook-ui-modal__preview-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--outlook-text-secondary);
+    margin-bottom: 4px;
+}
+
+.outlook-ui-modal__preview-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--outlook-text);
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.outlook-ui-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 22px 18px;
+    border-top: 1px solid var(--outlook-border);
+    background: #fff;
+}
+
+.outlook-ui-modal__btn {
+    min-width: 112px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.outlook-ui-modal__btn--cancel {
+    background: #fff;
+    border-color: #c8c6c4;
+    color: var(--outlook-text);
+}
+
+.outlook-ui-modal__btn--cancel:hover {
+    background: var(--outlook-hover);
+    border-color: #a19f9d;
+}
+
+.outlook-ui-modal__btn--confirm {
+    background: var(--outlook-blue);
+    color: #fff;
+}
+
+.outlook-ui-modal__btn--confirm:hover:not(:disabled) {
+    background: #106ebe;
+}
+
+.outlook-ui-modal__btn--danger {
+    background: #dc2626;
+    color: #fff;
+}
+
+.outlook-ui-modal__btn--danger:hover:not(:disabled) {
+    background: #b91c1c;
+}
+
+.outlook-ui-modal__btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
 /* Duplicate email confirmation modal */
 .duplicate-email-modal-overlay {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(50, 49, 48, 0.45);
+    background: var(--outlook-modal-overlay);
     z-index: 10050;
     align-items: center;
     justify-content: center;
@@ -1143,102 +1377,11 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
     display: flex;
 }
 
-.duplicate-email-modal {
-    width: 100%;
-    max-width: 420px;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
-    padding: 28px 24px 22px;
-    text-align: center;
-    animation: duplicateEmailModalIn 0.2s ease-out;
-}
-
-@keyframes duplicateEmailModalIn {
-    from {
-        opacity: 0;
-        transform: translateY(-12px) scale(0.98);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-.duplicate-email-modal__icon {
-    width: 56px;
-    height: 56px;
-    margin: 0 auto 16px;
-    border-radius: 50%;
-    background: #fff4e5;
-    color: #d97706;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-}
-
-.duplicate-email-modal__title {
-    margin: 0 0 10px;
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--outlook-text);
-}
-
 .duplicate-email-modal__message {
-    margin: 0 0 8px;
-    font-size: 15px;
-    color: var(--outlook-text);
-    font-weight: 500;
-}
-
-.duplicate-email-modal__filename {
-    margin: 0 0 12px;
-    font-size: 13px;
-    color: var(--outlook-text-secondary);
-    word-break: break-all;
-}
-
-.duplicate-email-modal__question {
-    margin: 0 0 22px;
+    margin: 0 0 14px;
     font-size: 14px;
-    color: var(--outlook-text-secondary);
-}
-
-.duplicate-email-modal__actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-}
-
-.duplicate-email-modal__btn {
-    min-width: 110px;
-    padding: 10px 18px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
-}
-
-.duplicate-email-modal__btn--reject {
-    background: #fff;
-    border-color: #c8c6c4;
     color: var(--outlook-text);
-}
-
-.duplicate-email-modal__btn--reject:hover {
-    background: var(--outlook-hover);
-}
-
-.duplicate-email-modal__btn--accept {
-    background: var(--outlook-blue);
-    color: #fff;
-}
-
-.duplicate-email-modal__btn--accept:hover {
-    background: #106ebe;
+    line-height: 1.45;
 }
 
 /* Attachment storage modal */
@@ -1246,7 +1389,7 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(50, 49, 48, 0.5);
+    background: var(--outlook-modal-overlay);
     z-index: 10060;
     align-items: center;
     justify-content: center;
@@ -1258,71 +1401,23 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
 }
 
 .attachment-storage-modal {
-    width: 100%;
-    max-width: 920px;
-    max-height: 88vh;
-    background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
-    animation: duplicateEmailModalIn 0.2s ease-out;
-    overflow: hidden;
-}
-
-.attachment-storage-modal__header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 22px 24px 16px;
-    border-bottom: 1px solid var(--outlook-border);
-    background: linear-gradient(180deg, #f8fbff 0%, #fff 100%);
-}
-
-.attachment-storage-modal__header-main {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    min-width: 0;
-}
-
-.attachment-storage-modal__icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background: #e8f4fd;
-    color: var(--outlook-blue);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    flex-shrink: 0;
-}
-
-.attachment-storage-modal__header h3 {
-    margin: 0 0 6px;
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--outlook-text);
-}
-
-.attachment-storage-modal__subtitle {
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.45;
-    color: var(--outlook-text-secondary);
 }
 
 .attachment-storage-modal__count {
-    flex-shrink: 0;
     padding: 6px 12px;
     border-radius: 999px;
-    background: #e8f4fd;
-    color: var(--outlook-blue);
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
     font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.attachment-storage-modal__body {
+    padding-top: 16px;
+    padding-bottom: 16px;
 }
 
 .attachment-storage-mode {
@@ -1331,7 +1426,7 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 14px 24px;
+    padding: 14px 22px;
     background: #fff;
     border-bottom: 1px solid var(--outlook-border);
 }
@@ -1823,9 +1918,9 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
-    padding: 16px 24px 20px;
+    padding: 14px 22px 18px;
     border-top: 1px solid var(--outlook-border);
-    background: #faf9f8;
+    background: #fff;
 }
 
 .attachment-storage-modal__btn {
@@ -1862,7 +1957,7 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
 }
 
 @media (max-width: 720px) {
-    .attachment-storage-modal__header {
+    .attachment-storage-modal .outlook-ui-modal__header {
         flex-direction: column;
     }
 
@@ -2197,87 +2292,17 @@ body.assign-email-modal-open .ts-dropdown {
     max-width: 480px;
 }
 
-.assign-email-modal__content {
-    border: 1px solid var(--outlook-border);
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.16);
-}
-
-.assign-email-modal__header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 20px 22px 18px;
-    border-bottom: 1px solid var(--outlook-border);
-    background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
-    color: #fff;
-}
-
-.assign-email-modal__header-main {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    min-width: 0;
-}
-
-.assign-email-modal__icon {
-    flex-shrink: 0;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.18);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-}
-
-.assign-email-modal__titles {
-    min-width: 0;
-}
-
-.assign-email-modal__header .modal-title {
-    margin: 0 0 4px;
-    font-size: 18px;
-    font-weight: 600;
-    color: #fff;
-    line-height: 1.3;
-}
-
-.assign-email-modal__subtitle {
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.45;
-    color: rgba(255, 255, 255, 0.88);
-}
-
-.assign-email-modal__close {
-    flex-shrink: 0;
-    width: 34px;
-    height: 34px;
+.assign-email-modal__content.outlook-ui-modal {
     border: none;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.14);
-    color: #fff;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+    box-shadow: var(--outlook-modal-shadow);
 }
 
-.assign-email-modal__close:hover,
-.assign-email-modal__close:focus {
-    background: rgba(255, 255, 255, 0.24);
-    color: #fff;
-    outline: none;
+.assign-email-modal__header.outlook-ui-modal__header {
+    border-bottom: none;
 }
 
-.assign-email-modal__body {
-    padding: 20px 22px 8px;
-    background: var(--outlook-bg-secondary);
+.assign-email-modal__body.outlook-ui-modal__body {
+    padding-bottom: 8px;
 }
 
 .assign-email-preview {
@@ -2417,55 +2442,4 @@ body.assign-email-modal-open .ts-dropdown {
     background: #fff4e5;
     color: #9a6700;
     border: 1px solid #f5d08a;
-}
-
-.assign-email-modal__footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    padding: 14px 22px 18px;
-    border-top: 1px solid var(--outlook-border);
-    background: #fff;
-}
-
-.assign-email-modal__btn {
-    min-width: 112px;
-    padding: 10px 18px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1.2;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    border: 1px solid transparent;
-    transition: background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
-}
-
-.assign-email-modal__btn--cancel {
-    background: #fff;
-    border-color: #c8c6c4;
-    color: var(--outlook-text);
-}
-
-.assign-email-modal__btn--cancel:hover {
-    background: var(--outlook-hover);
-    border-color: #a19f9d;
-    color: var(--outlook-text);
-}
-
-.assign-email-modal__btn--confirm {
-    background: var(--outlook-blue);
-    color: #fff;
-}
-
-.assign-email-modal__btn--confirm:hover:not(:disabled) {
-    background: #106ebe;
-    color: #fff;
-}
-
-.assign-email-modal__btn--confirm:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
 }
