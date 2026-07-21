@@ -402,6 +402,54 @@ class IncomingEmailSyncService
     }
 
     /**
+     * Active CRM mailboxes that may be selected for manual inbox sync.
+     *
+     * @return list<string>
+     */
+    public static function syncableMailboxAddresses(): array
+    {
+        return Email::query()
+            ->where('status', true)
+            ->where('sync_enabled', true)
+            ->orderBy('email')
+            ->pluck('email')
+            ->map(static fn ($address) => strtolower(trim((string) $address)))
+            ->filter(static fn (string $address) => $address !== '')
+            ->values()
+            ->all();
+    }
+
+    public static function findSyncableMailbox(string $email): ?Email
+    {
+        $normalized = strtolower(trim($email));
+        if ($normalized === '') {
+            return null;
+        }
+
+        return Email::query()
+            ->where('status', true)
+            ->where('sync_enabled', true)
+            ->whereRaw('LOWER(email) = ?', [$normalized])
+            ->first();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function allowedSyncMailboxAddressesForStaff(Staff $staff): array
+    {
+        $addresses = self::mailboxAddressesForStaff((int) $staff->id, $staff->email);
+        if ($addresses === [] && trim((string) $staff->email) !== '') {
+            $addresses = [strtolower(trim((string) $staff->email))];
+        }
+
+        return array_values(array_unique(array_filter(array_map(
+            static fn (string $address): string => strtolower(trim($address)),
+            $addresses
+        ))));
+    }
+
+    /**
      * @param list<string>|null $mailboxAddresses
      */
     public function resetUidTracking(?string $mailboxFilter = null, ?array $mailboxAddresses = null): int
@@ -433,21 +481,57 @@ class IncomingEmailSyncService
     }
 
     /**
+     * Staff login email used for To/Cc visibility matching.
+     *
+     * @return list<string>
+     */
+    public static function staffLoginEmailsForSyncFilter(Staff $staff): array
+    {
+        $email = strtolower(trim((string) ($staff->email ?? '')));
+
+        return $email !== '' ? [$email] : [];
+    }
+
+    /**
+     * Staff login + linked mailbox addresses for synced inbox visibility.
+     *
      * @return list<string>
      */
     public static function staffRecipientEmailsForSyncFilter(Staff $staff): array
     {
-        $emails = [];
-
-        if (trim((string) $staff->email) !== '') {
-            $emails[] = strtolower(trim((string) $staff->email));
-        }
+        $emails = self::staffLoginEmailsForSyncFilter($staff);
 
         foreach (self::mailboxAddressesForStaff((int) $staff->id, $staff->email) as $address) {
             $emails[] = strtolower(trim($address));
         }
 
         return array_values(array_unique(array_filter($emails)));
+    }
+
+    /**
+     * Normalize a single parsed recipient (plain email or "Name <email>") for storage/matching.
+     */
+    public static function normalizeRecipientEntry(string $entry): string
+    {
+        $entry = trim($entry);
+        if ($entry === '') {
+            return '';
+        }
+
+        $lower = strtolower($entry);
+        if (preg_match('/<([^>]+)>/', $lower, $matches)) {
+            $lower = strtolower(trim($matches[1]));
+        }
+
+        if (filter_var($lower, FILTER_VALIDATE_EMAIL)) {
+            return $lower;
+        }
+
+        if (preg_match('/[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}/i', $entry, $matches)) {
+            return strtolower($matches[0]);
+        }
+
+        return $lower;
     }
 
     /**
@@ -473,7 +557,8 @@ class IncomingEmailSyncService
     }
 
     /**
-     * Limit synced inbox lists to mail relevant to the staff member (To/Cc/Bcc/mailbox/from).
+     * Limit synced inbox lists to mail relevant to the staff member.
+     * Staff see mail when their login email appears in To/Cc, their mailbox was synced, or they sent it.
      * Admin and Super Admin see all synced mail.
      */
     public static function applySyncedInboxVisibilityFilter($query, Staff $staff): void
@@ -482,21 +567,31 @@ class IncomingEmailSyncService
             return;
         }
 
-        $staffEmails = self::staffRecipientEmailsForSyncFilter($staff);
-        if ($staffEmails === []) {
+        $loginEmails = self::staffLoginEmailsForSyncFilter($staff);
+        $mailboxEmails = array_values(array_diff(
+            self::staffRecipientEmailsForSyncFilter($staff),
+            $loginEmails
+        ));
+
+        if ($loginEmails === [] && $mailboxEmails === []) {
             $query->whereRaw('1 = 0');
 
             return;
         }
 
-        $query->where(function ($outer) use ($staffEmails) {
-            foreach ($staffEmails as $email) {
+        $query->where(function ($outer) use ($loginEmails, $mailboxEmails) {
+            foreach ($loginEmails as $email) {
                 $outer->orWhere(function ($match) use ($email) {
-                    $match->whereRaw('LOWER(COALESCE(mailbox_email, \'\')) = ?', [$email])
-                        ->orWhereRaw('LOWER(COALESCE(from_mail, \'\')) = ?', [$email]);
                     self::applyRecipientEmailMatch($match, 'to_mail', $email);
                     self::applyRecipientEmailMatch($match, 'cc', $email);
-                    self::applyRecipientEmailMatch($match, 'bcc', $email);
+                    self::applyStaffEmailFieldMatch($match, 'from_mail', $email);
+                });
+            }
+
+            foreach ($mailboxEmails as $email) {
+                $outer->orWhere(function ($match) use ($email) {
+                    $match->whereRaw('LOWER(COALESCE(mailbox_email, \'\')) = ?', [$email]);
+                    self::applyStaffEmailFieldMatch($match, 'from_mail', $email);
                 });
             }
         });
@@ -509,11 +604,27 @@ class IncomingEmailSyncService
         }
 
         $query->orWhere(function ($recipient) use ($column, $email) {
-            $recipient->whereRaw('LOWER(COALESCE(' . $column . ', \'\')) = ?', [$email])
-                ->orWhereRaw('LOWER(COALESCE(' . $column . ', \'\')) LIKE ?', [$email . ',%'])
-                ->orWhereRaw('LOWER(COALESCE(' . $column . ', \'\')) LIKE ?', ['%,' . $email . ',%'])
-                ->orWhereRaw('LOWER(COALESCE(' . $column . ', \'\')) LIKE ?', ['%,' . $email]);
+            self::applyStaffEmailFieldMatch($recipient, $column, $email);
         });
+    }
+
+    protected static function applyStaffEmailFieldMatch($query, string $column, string $email): void
+    {
+        if (! in_array($column, ['to_mail', 'cc', 'bcc', 'from_mail'], true)) {
+            return;
+        }
+
+        $columnExpr = 'LOWER(COALESCE(' . $column . ', \'\'))';
+
+        $query->whereRaw($columnExpr . ' = ?', [$email])
+            ->orWhereRaw($columnExpr . ' LIKE ?', ['%<' . $email . '>%'])
+            ->orWhereRaw($columnExpr . ' LIKE ?', ['%' . $email . '%']);
+
+        foreach ([',', ';'] as $separator) {
+            $query->orWhereRaw($columnExpr . ' LIKE ?', [$email . $separator . '%'])
+                ->orWhereRaw($columnExpr . ' LIKE ?', ['%' . $separator . $email . $separator . '%'])
+                ->orWhereRaw($columnExpr . ' LIKE ?', ['%' . $separator . $email]);
+        }
     }
 
     /**

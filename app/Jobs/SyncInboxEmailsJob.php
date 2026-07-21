@@ -37,7 +37,7 @@ class SyncInboxEmailsJob implements ShouldQueue
             'sync_id' => $this->syncId,
             'staff_id' => $this->staffId,
             'sync_range' => $this->prepared['sync_range'] ?? null,
-            'view_all' => ! empty($this->prepared['view_all']),
+            'email' => $this->prepared['email'] ?? null,
             'addresses' => $this->prepared['addresses'] ?? [],
         ]);
 

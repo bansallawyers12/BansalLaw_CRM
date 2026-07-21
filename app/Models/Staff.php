@@ -421,6 +421,14 @@ class Staff extends Authenticatable
     }
 
     /**
+     * Any staff with an email may open synced inbox views; lists are filtered to their To/Cc/mailbox.
+     */
+    public function canViewSyncedInboxMail(): bool
+    {
+        return trim((string) ($this->email ?? '')) !== '';
+    }
+
+    /**
      * Role IDs that may close/discontinue matters and grant {@see canCloseDiscontinueMatter()} to others.
      * Default: Super Admin (1) and Admin (17).
      */

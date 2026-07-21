@@ -62,6 +62,14 @@
         && $authStaff->canDeleteEmailWithAttachments();
     $canSyncInbox = $authStaff instanceof \App\Models\Staff
         && $authStaff->canSyncInboxEmails();
+    $canViewSyncedInbox = $authStaff instanceof \App\Models\Staff
+        && $authStaff->canViewSyncedInboxMail();
+    $canSelectSyncMailbox = $canSyncInbox
+        && $authStaff instanceof \App\Models\Staff
+        && $authStaff->canViewAllSyncedInboxMail();
+    $syncMailboxOptions = $canSelectSyncMailbox
+        ? \App\Services\EmailSync\IncomingEmailSyncService::syncableMailboxAddresses()
+        : [];
     $unassignedOnly = ! empty($unassignedOnly);
     $crmMailboxAddresses = \App\Models\Email::where('status', true)
         ->orderBy('email')
@@ -86,6 +94,8 @@
     data-sync-status-url="{{ url('/clients/synced-emails/sync-status') }}"
     @endif
     data-can-sync-inbox="{{ $canSyncInbox ? '1' : '0' }}"
+    data-can-view-synced-inbox="{{ $canViewSyncedInbox ? '1' : '0' }}"
+    data-can-select-sync-mailbox="{{ $canSelectSyncMailbox ? '1' : '0' }}"
     data-unassigned-only="{{ $unassignedOnly ? '1' : '0' }}"
     data-default-folder="{{ $unassignedOnly ? 'unassigned' : 'inbox' }}"
     data-matters-url="{{ url('/listAllMattersWRTSelClient') }}"
@@ -135,14 +145,23 @@
         </div>
 
         @if($canSyncInbox && $unassignedOnly)
-        <div class="sync-range-bar">
+        <div class="sync-range-bar{{ $canSelectSyncMailbox ? ' sync-range-bar--admin' : '' }}">
+            @if($canSelectSyncMailbox)
+            <label class="sync-range-bar__label" for="syncMailboxFilter">Mailbox</label>
+            <select id="syncMailboxFilter" class="list-filter-select sync-mailbox-select" aria-label="Select mailbox to sync" required>
+                <option value="">Select mailbox</option>
+                @foreach($syncMailboxOptions as $mailboxAddress)
+                    <option value="{{ $mailboxAddress }}">{{ $mailboxAddress }}</option>
+                @endforeach
+            </select>
+            @endif
             <label class="sync-range-bar__label" for="syncRangeFilter">Sync range</label>
             <select id="syncRangeFilter" class="list-filter-select sync-range-select" aria-label="Sync date range">
                 @foreach(\App\Services\EmailSync\IncomingEmailSyncService::syncRangeOptions() as $rangeValue => $rangeLabel)
                     <option value="{{ $rangeValue }}" @selected($rangeValue === 'today')>{{ $rangeLabel }}</option>
                 @endforeach
             </select>
-            <button type="button" class="action-btn action-btn--upload" id="btnSyncInbox" title="Fetch mail from Zoho for the selected range">
+            <button type="button" class="action-btn action-btn--upload" id="btnSyncInbox" title="{{ $canSelectSyncMailbox ? 'Fetch mail from Zoho for the selected mailbox and range' : 'Fetch mail from Zoho for the selected range' }}">
                 <i class="fa-solid fa-rotate"></i> Sync
             </button>
         </div>
