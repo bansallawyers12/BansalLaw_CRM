@@ -53,6 +53,14 @@ body, html {
     flex-shrink: 0;
 }
 
+.list-toolbar--sync-inbox {
+    justify-content: flex-start;
+}
+
+.list-toolbar--sync-inbox .folder-tabs {
+    flex: 1;
+}
+
 .sync-toolbar-group {
     display: inline-flex;
     align-items: center;
@@ -60,9 +68,28 @@ body, html {
     flex-shrink: 0;
 }
 
+.sync-range-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--outlook-border);
+    background: var(--outlook-bg-secondary);
+    flex-shrink: 0;
+}
+
+.sync-range-bar__label {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    white-space: nowrap;
+}
+
 .sync-range-select {
-    min-width: 170px;
-    max-width: 220px;
+    flex: 1;
+    min-width: 0;
+    max-width: none;
 }
 
 .email-client-badge {

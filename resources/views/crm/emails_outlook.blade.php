@@ -106,7 +106,7 @@
     
     <!-- Email List Pane -->
     <div class="outlook-list-pane">
-        <div class="list-toolbar">
+        <div class="list-toolbar{{ $unassignedOnly ? ' list-toolbar--sync-inbox' : '' }}">
             <div class="folder-tabs" role="tablist" aria-label="Mail folders">
                 @if($unassignedOnly)
                 <button type="button" class="folder-item active" data-folder="unassigned" role="tab" aria-selected="true">
@@ -127,23 +127,26 @@
                 </button>
                 @endif
             </div>
-            @if($canSyncInbox && $unassignedOnly)
-            <div class="sync-toolbar-group">
-                <select id="syncRangeFilter" class="list-filter-select sync-range-select" aria-label="Sync date range">
-                    @foreach(\App\Services\EmailSync\IncomingEmailSyncService::syncRangeOptions() as $rangeValue => $rangeLabel)
-                        <option value="{{ $rangeValue }}" @selected($rangeValue === 'today')>{{ $rangeLabel }}</option>
-                    @endforeach
-                </select>
-                <button type="button" class="action-btn action-btn--upload" id="btnSyncInbox" title="Fetch mail from Zoho for the selected range">
-                    <i class="fa-solid fa-rotate"></i> Sync
-                </button>
-            </div>
-            @endif
             <button type="button" class="action-btn action-btn--upload" id="btnUploadEmail" title="Upload Outlook email ({{ $crmEmailUploadLabel }})" hidden>
                 <i class="fa-solid fa-upload"></i> Upload
             </button>
             <input type="file" id="outlookEmailFileInput" accept="{{ $crmEmailUploadAccept }}" multiple hidden>
         </div>
+
+        @if($canSyncInbox && $unassignedOnly)
+        <div class="sync-range-bar">
+            <label class="sync-range-bar__label" for="syncRangeFilter">Sync range</label>
+            <select id="syncRangeFilter" class="list-filter-select sync-range-select" aria-label="Sync date range">
+                @foreach(\App\Services\EmailSync\IncomingEmailSyncService::syncRangeOptions() as $rangeValue => $rangeLabel)
+                    <option value="{{ $rangeValue }}" @selected($rangeValue === 'today')>{{ $rangeLabel }}</option>
+                @endforeach
+            </select>
+            <button type="button" class="action-btn action-btn--upload" id="btnSyncInbox" title="Fetch mail from Zoho for the selected range">
+                <i class="fa-solid fa-rotate"></i> Sync
+            </button>
+        </div>
+        @endif
+
         <div id="uploadStatus" class="upload-status" hidden></div>
 
         @if(! $unassignedOnly)
