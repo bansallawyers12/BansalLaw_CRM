@@ -39,4 +39,6 @@ return [
 
     'unassigned_storage_prefix' => 'sync-inbox',
 
+    'queue' => env('MAIL_INBOX_SYNC_QUEUE', 'default'),
+
 ];
