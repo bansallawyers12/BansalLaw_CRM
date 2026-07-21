@@ -453,7 +453,7 @@
 </div>
 
 @if($canSyncInbox)
-<div class="modal fade" id="assignSyncedEmailModal" tabindex="-1" role="dialog" aria-labelledby="assignSyncedEmailModalLabel" aria-hidden="true">
+<div class="modal fade assign-email-modal" id="assignSyncedEmailModal" tabindex="-1" role="dialog" aria-labelledby="assignSyncedEmailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -472,10 +472,6 @@
                             <option value="{{ $clientData->id }}" selected>
                                 {{ $clientData->first_name }} {{ $clientData->last_name }} ({{ $clientData->client_id }})
                             </option>
-                        @else
-                            @foreach(\App\Models\Admin::whereIn('type', ['client', 'lead'])->orderBy('first_name')->limit(500)->get() as $clientItem)
-                                <option value="{{ $clientItem->id }}">{{ $clientItem->first_name }} {{ $clientItem->last_name }} ({{ $clientItem->client_id }})</option>
-                            @endforeach
                         @endif
                     </select>
                 </div>
