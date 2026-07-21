@@ -53,6 +53,18 @@ body, html {
     flex-shrink: 0;
 }
 
+.sync-toolbar-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.sync-range-select {
+    min-width: 170px;
+    max-width: 220px;
+}
+
 .folder-tabs {
     display: flex;
     align-items: center;

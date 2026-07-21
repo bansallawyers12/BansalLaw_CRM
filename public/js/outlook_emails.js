@@ -92,6 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnResend = document.getElementById('btnResend');
     const btnAssignToClient = document.getElementById('btnAssignToClient');
     const btnSyncInbox = document.getElementById('btnSyncInbox');
+    const syncRangeFilter = document.getElementById('syncRangeFilter');
     const assignEmailModal = document.getElementById('assignSyncedEmailModal');
     const assignClientSelect = document.getElementById('assignClientId');
     const assignMatterSelect = document.getElementById('assignClientMatterId');
@@ -2964,27 +2965,85 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (btnSyncInbox && syncInboxUrl && canSyncInbox) {
         btnSyncInbox.addEventListener('click', async function () {
+            const syncRange = syncRangeFilter ? syncRangeFilter.value : 'today';
+            if (syncRange === 'full') {
+                const proceed = window.confirm(
+                    'Full sync resets mailbox tracking and re-imports recent mail. Messages already in the CRM will be skipped. Continue?'
+                );
+                if (! proceed) {
+                    return;
+                }
+            }
+
             btnSyncInbox.disabled = true;
+            if (syncRangeFilter) {
+                syncRangeFilter.disabled = true;
+            }
             const originalHtml = btnSyncInbox.innerHTML;
             btnSyncInbox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing...';
             try {
+                const mailboxAddresses = outlookContainer
+                    ? JSON.parse(outlookContainer.getAttribute('data-mailbox-addresses') || '[]')
+                    : [];
+                const syncEmail = authEmail || (mailboxAddresses.length ? mailboxAddresses[0] : '');
+                const params = new URLSearchParams({ sync_range: syncRange });
+                if (syncEmail) {
+                    params.append('email', syncEmail);
+                }
+
                 const response = await fetch(syncInboxUrl, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': getCsrfToken(),
                         'X-Requested-With': 'XMLHttpRequest'
                     },
-                    body: JSON.stringify({ today: true })
+                    body: params.toString()
                 });
-                const data = await response.json();
+
+                let data = {};
+                try {
+                    data = await response.json();
+                } catch (parseError) {
+                    throw new Error('Unexpected server response. The sync request may have been blocked.');
+                }
+
+                if (!response.ok || data.success === false) {
+                    crmToast(data.message || ('Sync failed (HTTP ' + response.status + ').'), 'error');
+                    return;
+                }
+
                 loadEmails();
-                crmToast('Sync complete. Imported: ' + (data.total_imported || 0) + ', Skipped: ' + (data.total_skipped || 0) + ', Failed: ' + (data.total_failed || 0), 'success');
+
+                let detail = 'Imported: ' + (data.total_imported || 0)
+                    + ', Skipped: ' + (data.total_skipped || 0)
+                    + ', Failed: ' + (data.total_failed || 0);
+                const mailboxErrors = [];
+                if (data.mailboxes && typeof data.mailboxes === 'object') {
+                    Object.keys(data.mailboxes).forEach(function (mailboxKey) {
+                        const result = data.mailboxes[mailboxKey];
+                        if (result && Array.isArray(result.errors) && result.errors.length) {
+                            mailboxErrors.push(mailboxKey + ': ' + result.errors.join('; '));
+                        }
+                    });
+                }
+                if (mailboxErrors.length) {
+                    detail += '. ' + mailboxErrors.join(' | ');
+                }
+
+                const toastType = (data.total_failed || 0) > 0 ? 'error' : 'success';
+                const rangeLabel = syncRangeFilter
+                    ? syncRangeFilter.options[syncRangeFilter.selectedIndex].text
+                    : syncRange;
+                crmToast('Sync complete (' + rangeLabel + '). ' + detail, toastType);
             } catch (error) {
                 crmToast('Sync failed: ' + (error.message || 'Unknown error'), 'error');
             } finally {
                 btnSyncInbox.disabled = false;
+                if (syncRangeFilter) {
+                    syncRangeFilter.disabled = false;
+                }
                 btnSyncInbox.innerHTML = originalHtml;
             }
         });

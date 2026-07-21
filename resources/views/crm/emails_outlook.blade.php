@@ -125,9 +125,16 @@
                 @endif
             </div>
             @if($canSyncInbox && $unassignedOnly)
-            <button type="button" class="action-btn action-btn--upload" id="btnSyncInbox" title="Fetch new mail from Zoho now">
-                <i class="fa-solid fa-rotate"></i> Sync
-            </button>
+            <div class="sync-toolbar-group">
+                <select id="syncRangeFilter" class="list-filter-select sync-range-select" aria-label="Sync date range">
+                    @foreach(\App\Services\EmailSync\IncomingEmailSyncService::syncRangeOptions() as $rangeValue => $rangeLabel)
+                        <option value="{{ $rangeValue }}" @selected($rangeValue === 'today')>{{ $rangeLabel }}</option>
+                    @endforeach
+                </select>
+                <button type="button" class="action-btn action-btn--upload" id="btnSyncInbox" title="Fetch mail from Zoho for the selected range">
+                    <i class="fa-solid fa-rotate"></i> Sync
+                </button>
+            </div>
             @endif
             <button type="button" class="action-btn action-btn--upload" id="btnUploadEmail" title="Upload Outlook email ({{ $crmEmailUploadLabel }})" hidden>
                 <i class="fa-solid fa-upload"></i> Upload
