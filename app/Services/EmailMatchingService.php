@@ -267,22 +267,19 @@ class EmailMatchingService
 
         foreach ($adminMatches->select('id', 'client_id', 'first_name', 'last_name', 'email', 'type')->get() as $client) {
             $matter = $this->resolveMatterForClient((int) $client->id);
-            if (! $matter) {
-                continue;
-            }
 
             $matches[] = $this->formatCandidate(
                 (int) $client->id,
-                (int) $matter->id,
+                $matter ? (int) $matter->id : 0,
                 (string) $client->client_id,
                 trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? '')),
                 (string) ($client->email ?? ''),
-                (string) $matter->client_unique_matter_no,
-                (string) ($matter->matter_title ?? ''),
+                $matter ? (string) $matter->client_unique_matter_no : '',
+                $matter ? (string) ($matter->matter_title ?? '') : '',
                 (string) $client->type,
                 85,
                 'email_address',
-                (int) $matter->matter_status === 1
+                $matter ? (int) $matter->matter_status === 1 : false
             );
         }
 
@@ -312,22 +309,19 @@ class EmailMatchingService
 
         foreach ($rows as $row) {
             $matter = $this->resolveMatterForClient((int) $row->client_id);
-            if (! $matter) {
-                continue;
-            }
 
             $matches[] = $this->formatCandidate(
                 (int) $row->client_id,
-                (int) $matter->id,
+                $matter ? (int) $matter->id : 0,
                 (string) $row->client_ref,
                 trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? '')),
                 (string) ($row->matched_email ?: $row->primary_email),
-                (string) $matter->client_unique_matter_no,
-                (string) ($matter->matter_title ?? ''),
+                $matter ? (string) $matter->client_unique_matter_no : '',
+                $matter ? (string) ($matter->matter_title ?? '') : '',
                 (string) $row->record_type,
                 85,
                 'email_address',
-                (int) $matter->matter_status === 1
+                $matter ? (int) $matter->matter_status === 1 : false
             );
         }
 

@@ -171,12 +171,36 @@ document.addEventListener('DOMContentLoaded', function() {
         return '<span class="email-status-badge email-status-badge--' + escapeHtml(status) + '">' + escapeHtml(label) + '</span>';
     }
 
+    function renderSyncedClientBadge(email) {
+        if (currentFolder !== 'assigned'
+            && email.sync_assignment_status !== 'auto_assigned'
+            && email.sync_assignment_status !== 'manual_assigned') {
+            return '';
+        }
+
+        const clientLabel = (email.client_name || '').trim()
+            || (email.client_ref || '').trim()
+            || (email.client_id ? ('Client #' + email.client_id) : '');
+        if (! clientLabel) {
+            return '';
+        }
+
+        const assignLabel = email.sync_assignment_status === 'manual_assigned' ? 'Manual' : 'Auto';
+        return '<span class="email-client-badge" title="' + escapeHtml(assignLabel + ' assigned to client') + '">'
+            + '<i class="fa-solid fa-user-check" aria-hidden="true"></i> '
+            + escapeHtml(clientLabel)
+            + '</span>';
+    }
+
     // Event Listeners
     folderItems.forEach(item => {
         item.addEventListener('click', (e) => {
             const target = e.currentTarget;
             const folder = target.dataset.folder || 'inbox';
             if (folder === 'unassigned' && !canSyncInbox) {
+                return;
+            }
+            if (folder === 'assigned' && !canSyncInbox) {
                 return;
             }
             folderItems.forEach(f => {
@@ -1915,9 +1939,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Fetch from backend
     async function loadEmails() {
-        if (currentFolder === 'unassigned' && !canSyncInbox) {
-            currentFolder = 'inbox';
-            switchToFolder('inbox');
+        if ((currentFolder === 'unassigned' || currentFolder === 'assigned') && !canSyncInbox) {
+            currentFolder = unassignedOnly ? 'unassigned' : 'inbox';
+            switchToFolder(currentFolder);
         }
 
         try {
@@ -2324,10 +2348,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             let dateStr = formatEmailDate(getEmailDate(email));
             const statusBadge = renderSendStatusBadge(email);
+            const clientBadge = renderSyncedClientBadge(email);
 
             el.innerHTML = `
                 <div class="email-item-header">
-                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${statusBadge}</div>
+                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${statusBadge}${clientBadge}</div>
                 </div>
                 <div class="email-subject">${escapeHtml(subject)}</div>
                 <div class="email-preview">${escapeHtml(preview)}</div>
@@ -2399,8 +2424,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (btnAssignToClient) {
-            const needsAssign = email.sync_assignment_status === 'unassigned'
-                || (!email.client_id && email.mailbox_email);
+            const needsAssign = currentFolder === 'unassigned'
+                && (email.sync_assignment_status === 'unassigned' || (!email.client_id && email.mailbox_email));
             btnAssignToClient.hidden = !canSyncInbox || !needsAssign;
         }
         
