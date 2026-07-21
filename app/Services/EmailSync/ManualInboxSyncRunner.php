@@ -18,7 +18,7 @@ class ManualInboxSyncRunner
     public function prepare(Staff $staff, string $syncRange, string $email = ''): array
     {
         $syncRange = strtolower(trim($syncRange));
-        $email = trim($email);
+        $email = strtolower(trim($email));
 
         if (! IncomingEmailSyncService::isValidSyncRange($syncRange)) {
             return [
@@ -32,26 +32,39 @@ class ManualInboxSyncRunner
         }
 
         if ($staff->canViewAllSyncedInboxMail()) {
+            if ($email === '') {
+                return [
+                    'success' => false,
+                    'message' => 'Please select a mailbox to sync.',
+                    'mailboxes' => [],
+                    'total_imported' => 0,
+                    'total_skipped' => 0,
+                    'total_failed' => 0,
+                ];
+            }
+
+            $mailbox = IncomingEmailSyncService::findSyncableMailbox($email);
+            if ($mailbox === null) {
+                return [
+                    'success' => false,
+                    'message' => 'The selected mailbox is not available for sync.',
+                    'mailboxes' => [],
+                    'total_imported' => 0,
+                    'total_skipped' => 0,
+                    'total_failed' => 0,
+                ];
+            }
+
             return [
                 'success' => true,
                 'sync_range' => $syncRange,
-                'view_all' => true,
-                'email' => $email,
-                'addresses' => [],
+                'email' => strtolower((string) $mailbox->email),
+                'addresses' => [strtolower((string) $mailbox->email)],
             ];
         }
 
-        $addresses = [];
-        if ($email !== '') {
-            $addresses = [strtolower($email)];
-        } else {
-            $addresses = IncomingEmailSyncService::mailboxAddressesForStaff((int) $staff->id, $staff->email);
-            if ($addresses === [] && trim((string) $staff->email) !== '') {
-                $addresses = [strtolower(trim((string) $staff->email))];
-            }
-        }
-
-        if ($addresses === []) {
+        $allowed = IncomingEmailSyncService::allowedSyncMailboxAddressesForStaff($staff);
+        if ($allowed === []) {
             return [
                 'success' => false,
                 'message' => 'No synced mailbox is linked to your staff account. Configure it in Admin Console → Staff → Email & mailbox.',
@@ -62,12 +75,23 @@ class ManualInboxSyncRunner
             ];
         }
 
+        $target = $email !== '' ? $email : $allowed[0];
+        if (! in_array($target, $allowed, true)) {
+            return [
+                'success' => false,
+                'message' => 'You do not have permission to sync that mailbox.',
+                'mailboxes' => [],
+                'total_imported' => 0,
+                'total_skipped' => 0,
+                'total_failed' => 0,
+            ];
+        }
+
         return [
             'success' => true,
             'sync_range' => $syncRange,
-            'view_all' => false,
-            'email' => $email,
-            'addresses' => $addresses,
+            'email' => $target,
+            'addresses' => [$target],
         ];
     }
 
@@ -78,39 +102,21 @@ class ManualInboxSyncRunner
     public function execute(array $prepared): array
     {
         $syncRange = (string) ($prepared['sync_range'] ?? 'today');
-        $email = trim((string) ($prepared['email'] ?? ''));
+        $email = strtolower(trim((string) ($prepared['email'] ?? '')));
+        $addresses = is_array($prepared['addresses'] ?? null) ? $prepared['addresses'] : [];
 
         InboxSyncLogger::info('Inbox sync execution started', [
             'sync_range' => $syncRange,
-            'view_all' => ! empty($prepared['view_all']),
             'email' => $email,
-            'addresses' => $prepared['addresses'] ?? [],
+            'addresses' => $addresses,
         ]);
 
         $since = $syncRange === 'full'
             ? null
             : IncomingEmailSyncService::resolveSyncSince($syncRange);
 
-        if (! empty($prepared['view_all'])) {
-            if ($syncRange === 'full') {
-                $this->syncService->resetUidTracking(null, null);
-            }
-
-            $summary = $this->syncService->syncAll(null, $since);
-            $summary['sync_range'] = $syncRange;
-
-            $this->logExecutionResult($summary);
-
-            return $summary;
-        }
-
-        $addresses = is_array($prepared['addresses'] ?? null) ? $prepared['addresses'] : [];
-
-        if ($syncRange === 'full') {
-            $this->syncService->resetUidTracking(
-                $email !== '' ? $email : null,
-                $email === '' ? $addresses : null
-            );
+        if ($syncRange === 'full' && $email !== '') {
+            $this->syncService->resetUidTracking($email, null);
         }
 
         $summary = [

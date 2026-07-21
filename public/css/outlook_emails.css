@@ -98,6 +98,16 @@ body, html {
     max-width: none;
 }
 
+.sync-mailbox-select {
+    flex: 1.4;
+    min-width: 180px;
+    max-width: 320px;
+}
+
+.sync-range-bar--admin {
+    flex-wrap: wrap;
+}
+
 .email-client-badge {
     display: inline-flex;
     align-items: center;

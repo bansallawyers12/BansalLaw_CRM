@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnAssignToClient = document.getElementById('btnAssignToClient');
     const btnSyncInbox = document.getElementById('btnSyncInbox');
     const syncRangeFilter = document.getElementById('syncRangeFilter');
+    const syncMailboxFilter = document.getElementById('syncMailboxFilter');
     const assignEmailModal = document.getElementById('assignSyncedEmailModal');
     const assignClientSelect = document.getElementById('assignClientId');
     const assignMatterSelect = document.getElementById('assignClientMatterId');
@@ -106,6 +107,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const syncInboxUrl = outlookContainer ? outlookContainer.getAttribute('data-sync-inbox-url') : '';
     const syncStatusUrlBase = outlookContainer ? outlookContainer.getAttribute('data-sync-status-url') : '';
     const canSyncInbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-sync-inbox') === '1');
+    const canViewSyncedInbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-view-synced-inbox') === '1');
+    const canSelectSyncMailbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-select-sync-mailbox') === '1');
     const mattersUrl = outlookContainer ? outlookContainer.getAttribute('data-matters-url') : '';
 
     let composeQuoteHtml = '';
@@ -201,10 +204,10 @@ document.addEventListener('DOMContentLoaded', function() {
         item.addEventListener('click', (e) => {
             const target = e.currentTarget;
             const folder = target.dataset.folder || 'inbox';
-            if (folder === 'unassigned' && !canSyncInbox) {
+            if (folder === 'unassigned' && !canViewSyncedInbox) {
                 return;
             }
-            if (folder === 'assigned' && !canSyncInbox) {
+            if (folder === 'assigned' && !canViewSyncedInbox) {
                 return;
             }
             folderItems.forEach(f => {
@@ -1950,7 +1953,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Fetch from backend
     async function loadEmails() {
-        if ((currentFolder === 'unassigned' || currentFolder === 'assigned') && !canSyncInbox) {
+        if ((currentFolder === 'unassigned' || currentFolder === 'assigned') && !canViewSyncedInbox) {
             currentFolder = unassignedOnly ? 'unassigned' : 'inbox';
             switchToFolder(currentFolder);
         }
@@ -3179,6 +3182,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (syncRangeFilter) {
             syncRangeFilter.disabled = isBusy;
         }
+        if (syncMailboxFilter) {
+            syncMailboxFilter.disabled = isBusy;
+        }
+    }
+
+    function resolveManualSyncEmail() {
+        if (canSelectSyncMailbox && syncMailboxFilter) {
+            return syncMailboxFilter.value.trim();
+        }
+
+        const mailboxAddresses = outlookContainer
+            ? JSON.parse(outlookContainer.getAttribute('data-mailbox-addresses') || '[]')
+            : [];
+
+        return authEmail || (mailboxAddresses.length ? mailboxAddresses[0] : '');
     }
 
     function pollInboxSyncStatus(syncId, rangeLabel, startedAt, originalHtml) {
@@ -3270,13 +3288,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const originalHtml = btnSyncInbox.innerHTML;
             const startedAt = Date.now();
+            const syncEmail = resolveManualSyncEmail();
+
+            if (canSelectSyncMailbox && !syncEmail) {
+                crmToast('Please select a mailbox to sync.', 'warning');
+                return;
+            }
+
             setSyncUiBusy(true);
 
             try {
-                const mailboxAddresses = outlookContainer
-                    ? JSON.parse(outlookContainer.getAttribute('data-mailbox-addresses') || '[]')
-                    : [];
-                const syncEmail = authEmail || (mailboxAddresses.length ? mailboxAddresses[0] : '');
                 const params = new URLSearchParams({ sync_range: syncRange });
                 if (syncEmail) {
                     params.append('email', syncEmail);

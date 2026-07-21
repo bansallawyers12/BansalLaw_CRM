@@ -3,8 +3,9 @@
     $_crmTopAdminish = $_staffTop instanceof \App\Models\Staff && $_staffTop->canAccessAdminConsole();
     $_trustSuperAdmin = $_staffTop instanceof \App\Models\Staff && $_staffTop->hasEffectiveSuperAdminPrivileges();
     $_canSyncInboxNav = $_staffTop instanceof \App\Models\Staff && $_staffTop->canSyncInboxEmails();
+    $_canViewSyncedInboxNav = $_staffTop instanceof \App\Models\Staff && $_staffTop->canViewSyncedInboxMail();
     $_unassignedMailCount = 0;
-    if ($_canSyncInboxNav && \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
+    if ($_canViewSyncedInboxNav && \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
         $_unassignedQuery = \App\Models\EmailLog::query();
         \App\Services\EmailSync\IncomingEmailSyncService::applyUnassignedSyncedInboxScope($_unassignedQuery);
         if ($_staffTop instanceof \App\Models\Staff) {
@@ -68,7 +69,7 @@
                     <a class="dropdown-item" href="{{route('leads.create', ['other_party' => 1])}}"><i class="fa-solid fa-user-plus me-2"></i> Add Other Party</a>
                 </div>
             </div>
-            @if($_canSyncInboxNav)
+            @if($_canViewSyncedInboxNav)
             <a href="{{ route('clients.unassigned-emails') }}" class="icon-btn {{ request()->routeIs('clients.unassigned-emails') ? 'active' : '' }}" title="Unassigned Mail" style="position: relative;">
                 <i class="fa-solid fa-user-clock"></i>
                 @if($_unassignedMailCount > 0)

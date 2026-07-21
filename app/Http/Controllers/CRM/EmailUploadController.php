@@ -1694,7 +1694,10 @@ class EmailUploadController extends Controller
             if ($entry === '' || str_contains($entry, 'object at 0x')) {
                 continue;
             }
-            $normalized[] = $entry;
+            $normalizedEntry = \App\Services\EmailSync\IncomingEmailSyncService::normalizeRecipientEntry($entry);
+            if ($normalizedEntry !== '') {
+                $normalized[] = $normalizedEntry;
+            }
         }
 
         return $normalized !== [] ? implode(',', array_values(array_unique($normalized))) : '';

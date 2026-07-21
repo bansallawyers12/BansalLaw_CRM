@@ -8248,8 +8248,9 @@ class ClientsController extends Controller
         $folder = $request->input('folder', 'inbox'); // inbox, sent, outbox, deleted
         $staff = auth('admin')->user();
         $canSyncInbox = $staff instanceof \App\Models\Staff && $staff->canSyncInboxEmails();
+        $canViewSyncedInbox = $staff instanceof \App\Models\Staff && $staff->canViewSyncedInboxMail();
 
-        if (in_array($folder, ['unassigned', 'assigned'], true) && ! $canSyncInbox) {
+        if (in_array($folder, ['unassigned', 'assigned'], true) && ! $canViewSyncedInbox) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,

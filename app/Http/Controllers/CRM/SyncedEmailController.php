@@ -48,7 +48,8 @@ class SyncedEmailController extends Controller
 
     public function unassignedIndex()
     {
-        if (! $this->staffCanSyncInbox()) {
+        $staff = Auth::guard('admin')->user();
+        if (! $staff instanceof Staff || ! $staff->canViewSyncedInboxMail()) {
             abort(403, 'You do not have permission to view unassigned synced emails.');
         }
 
@@ -134,8 +135,7 @@ class SyncedEmailController extends Controller
             'staff_id' => (int) $staff->id,
             'staff_email' => $staff->email,
             'sync_range' => $syncRange,
-            'email' => $email,
-            'view_all' => ! empty($prepared['view_all']),
+            'email' => $email !== '' ? $email : ($prepared['email'] ?? ''),
             'addresses' => $prepared['addresses'] ?? [],
         ]);
 
