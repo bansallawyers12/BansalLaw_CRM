@@ -11,6 +11,7 @@ use App\Services\EmailMatchingService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -447,6 +448,28 @@ class IncomingEmailSyncService
         }
 
         return array_values(array_unique(array_filter($emails)));
+    }
+
+    /**
+     * True synced inbox queue items still waiting for a client (excludes assigned mail).
+     */
+    public static function applyUnassignedSyncedInboxScope($query): void
+    {
+        if (! Schema::hasColumn('email_logs', 'sync_assignment_status')) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->where('sync_assignment_status', 'unassigned')
+            ->where(function ($clientQuery) {
+                $clientQuery->whereNull('client_id')
+                    ->orWhere('client_id', 0);
+            });
+
+        if (Schema::hasColumn('email_logs', 'synced_email_id')) {
+            $query->whereNotNull('synced_email_id');
+        }
     }
 
     /**
