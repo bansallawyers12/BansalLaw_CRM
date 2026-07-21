@@ -8374,11 +8374,7 @@ class ClientsController extends Controller
             // No easy way to fetch deleted items if they are permanently deleted
             $query->where('id', '<', 0); // Return empty for now
         } elseif ($folder === 'unassigned') {
-            if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
-                $query->where('sync_assignment_status', 'unassigned');
-            } else {
-                $query->where('id', '<', 0);
-            }
+            \App\Services\EmailSync\IncomingEmailSyncService::applyUnassignedSyncedInboxScope($query);
         } elseif ($folder === 'assigned') {
             if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
                 $query->whereIn('sync_assignment_status', ['auto_assigned', 'manual_assigned'])

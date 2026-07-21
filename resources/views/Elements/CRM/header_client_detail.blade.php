@@ -5,7 +5,8 @@
     $_canSyncInboxNav = $_staffTop instanceof \App\Models\Staff && $_staffTop->canSyncInboxEmails();
     $_unassignedMailCount = 0;
     if ($_canSyncInboxNav && \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
-        $_unassignedQuery = \App\Models\EmailLog::where('sync_assignment_status', 'unassigned');
+        $_unassignedQuery = \App\Models\EmailLog::query();
+        \App\Services\EmailSync\IncomingEmailSyncService::applyUnassignedSyncedInboxScope($_unassignedQuery);
         if ($_staffTop instanceof \App\Models\Staff) {
             \App\Services\EmailSync\IncomingEmailSyncService::applySyncedInboxVisibilityFilter($_unassignedQuery, $_staffTop);
         }
