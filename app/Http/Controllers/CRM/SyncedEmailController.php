@@ -43,6 +43,15 @@ class SyncedEmailController extends Controller
         return response()->json($result, $status);
     }
 
+    public function unassignedIndex()
+    {
+        if (! $this->staffCanSyncInbox()) {
+            abort(403, 'You do not have permission to view unassigned synced emails.');
+        }
+
+        return view('crm.unassigned_emails.index');
+    }
+
     public function syncNow(Request $request, IncomingEmailSyncService $syncService)
     {
         if (! $this->staffCanSyncInbox()) {

@@ -62,6 +62,7 @@
         && $authStaff->canDeleteEmailWithAttachments();
     $canSyncInbox = $authStaff instanceof \App\Models\Staff
         && $authStaff->canSyncInboxEmails();
+    $unassignedOnly = ! empty($unassignedOnly);
     $crmMailboxAddresses = \App\Models\Email::where('status', true)
         ->orderBy('email')
         ->pluck('email')
@@ -84,6 +85,8 @@
     data-sync-inbox-url="{{ url('/clients/synced-emails/sync-now') }}"
     @endif
     data-can-sync-inbox="{{ $canSyncInbox ? '1' : '0' }}"
+    data-unassigned-only="{{ $unassignedOnly ? '1' : '0' }}"
+    data-default-folder="{{ $unassignedOnly ? 'unassigned' : 'inbox' }}"
     data-matters-url="{{ url('/listAllMattersWRTSelClient') }}"
     data-staff-signature-url="{{ route('crm.staff.email-signature') }}"
     data-staff-id="{{ auth()->id() }}"
@@ -92,33 +95,36 @@
     data-matter-folders='@json($emailUploadMatterFolders)'>
     
     <!-- Drag & Drop Overlay -->
+    @if(! $unassignedOnly)
     <div id="dragDropOverlay" class="drag-drop-overlay" style="display: none;">
         <div class="drag-drop-content">
             <i class="fa-solid fa-cloud-arrow-up" style="font-size: 48px; margin-bottom: 15px;"></i>
             <h3>Drop Outlook email files here ({{ $crmEmailUploadLabel }})</h3>
         </div>
     </div>
+    @endif
     
     <!-- Email List Pane -->
     <div class="outlook-list-pane">
         <div class="list-toolbar">
             <div class="folder-tabs" role="tablist" aria-label="Mail folders">
+                @if($unassignedOnly)
+                <button type="button" class="folder-item active" data-folder="unassigned" role="tab" aria-selected="true">
+                    <i class="fa-solid fa-user-clock"></i> Unassigned
+                </button>
+                @else
                 <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
                     <i class="fa-solid fa-inbox"></i> Inbox
                 </button>
-                @if($canSyncInbox)
-                <button type="button" class="folder-item" data-folder="unassigned" role="tab" aria-selected="false">
-                    <i class="fa-solid fa-user-clock"></i> Unassigned
-                </button>
-                @endif
                 <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
                     <i class="fa-solid fa-paper-plane"></i> Sent Items
                 </button>
                 <button type="button" class="folder-item" data-folder="outbox" role="tab" aria-selected="false">
                     <i class="fa-solid fa-clock-rotate-left"></i> Email Log
                 </button>
+                @endif
             </div>
-            @if($canSyncInbox)
+            @if($canSyncInbox && $unassignedOnly)
             <button type="button" class="action-btn action-btn--upload" id="btnSyncInbox" title="Fetch new mail from Zoho now">
                 <i class="fa-solid fa-rotate"></i> Sync
             </button>
@@ -130,10 +136,12 @@
         </div>
         <div id="uploadStatus" class="upload-status" hidden></div>
 
+        @if(! $unassignedOnly)
         <div id="inlineDropZone" class="inline-drop-zone">
             <i class="fa-solid fa-cloud-arrow-up"></i>
             <span>Drag & drop saved Outlook email files ({{ $crmEmailUploadLabel }}) here </span>
         </div>
+        @endif
 
         <div class="list-header">
             <div class="list-header-row">

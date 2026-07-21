@@ -2,6 +2,24 @@
     $_staffTop = Auth::user();
     $_crmTopAdminish = $_staffTop instanceof \App\Models\Staff && $_staffTop->canAccessAdminConsole();
     $_trustSuperAdmin = $_staffTop instanceof \App\Models\Staff && $_staffTop->hasEffectiveSuperAdminPrivileges();
+    $_canSyncInboxNav = $_staffTop instanceof \App\Models\Staff && $_staffTop->canSyncInboxEmails();
+    $_unassignedMailCount = 0;
+    if ($_canSyncInboxNav && \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
+        $_unassignedQuery = \App\Models\EmailLog::where('sync_assignment_status', 'unassigned');
+        if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'mailbox_email')) {
+            $_allowedMailboxes = \App\Services\EmailSync\IncomingEmailSyncService::mailboxAddressesForStaff(
+                (int) $_staffTop->id,
+                $_staffTop->email
+            );
+            if ($_allowedMailboxes !== []) {
+                $_unassignedQuery->where(function ($q) use ($_allowedMailboxes) {
+                    $q->whereNull('mailbox_email')
+                        ->orWhereIn('mailbox_email', $_allowedMailboxes);
+                });
+            }
+        }
+        $_unassignedMailCount = $_unassignedQuery->count();
+    }
 @endphp
 <nav class="main-topbar">
     <button class="topbar-toggle" title="Show menu" aria-label="Toggle topbar">
@@ -58,6 +76,14 @@
                     <a class="dropdown-item" href="{{route('leads.create', ['other_party' => 1])}}"><i class="fa-solid fa-user-plus me-2"></i> Add Other Party</a>
                 </div>
             </div>
+            @if($_canSyncInboxNav)
+            <a href="{{ route('clients.unassigned-emails') }}" class="icon-btn {{ request()->routeIs('clients.unassigned-emails') ? 'active' : '' }}" title="Unassigned Mail" style="position: relative;">
+                <i class="fa-solid fa-user-clock"></i>
+                @if($_unassignedMailCount > 0)
+                    <span class="badge bg-danger" style="position: absolute; top: -5px; right: -5px; font-size: 10px; padding: 2px 5px; border-radius: 10px;">{{ $_unassignedMailCount }}</span>
+                @endif
+            </a>
+            @endif
             <div class="icon-dropdown js-dropdown">
                 <a href="{{route('clients.invoicelist')}}" class="icon-btn" title="Accounts"><i class="fa-solid fa-briefcase"></i></a>
                 <div class="icon-dropdown-menu">
