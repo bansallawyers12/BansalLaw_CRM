@@ -8304,8 +8304,13 @@ class ClientsController extends Controller
             $query->whereRaw('LOWER(mailbox_email) = ?', [strtolower(trim((string) $mailboxFilter))]);
         }
 
-        // When not scoped to a client, limit synced mail to the logged-in staff member's mailboxes.
-        if (empty($clientId) && \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'mailbox_email')) {
+        // Synced inbox queues: admin/super admin see all mail; staff see their mailbox / To/Cc/Bcc matches.
+        if (empty($clientId) && $isSyncedInboxFolder) {
+            $staff = auth('admin')->user();
+            if ($staff instanceof \App\Models\Staff) {
+                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedInboxVisibilityFilter($query, $staff);
+            }
+        } elseif (empty($clientId) && \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'mailbox_email')) {
             $staff = auth('admin')->user();
             if ($staff instanceof \App\Models\Staff) {
                 $allowedMailboxes = \App\Services\EmailSync\IncomingEmailSyncService::mailboxAddressesForStaff(

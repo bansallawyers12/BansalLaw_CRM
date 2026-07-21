@@ -409,6 +409,18 @@ class Staff extends Authenticatable
     }
 
     /**
+     * Admin / Super Admin may sync and view all synced inbox mail across mailboxes.
+     */
+    public function canViewAllSyncedInboxMail(): bool
+    {
+        if ($this->hasEffectiveSuperAdminPrivileges()) {
+            return true;
+        }
+
+        return in_array((int) ($this->role ?? 0), self::inboxSyncGrantRoleIds(), true);
+    }
+
+    /**
      * Role IDs that may close/discontinue matters and grant {@see canCloseDiscontinueMatter()} to others.
      * Default: Super Admin (1) and Admin (17).
      */
