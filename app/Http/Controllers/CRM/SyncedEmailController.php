@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SyncInboxEmailsJob;
 use App\Models\Staff;
-use App\Services\EmailSync\IncomingEmailSyncService;
+use App\Services\EmailSync\InboxSyncStatusStore;
+use App\Services\EmailSync\ManualInboxSyncRunner;
 use App\Services\EmailSync\UnassignedEmailAssignmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -52,8 +54,11 @@ class SyncedEmailController extends Controller
         return view('crm.unassigned_emails.index');
     }
 
-    public function syncNow(Request $request, IncomingEmailSyncService $syncService)
-    {
+    public function syncNow(
+        Request $request,
+        ManualInboxSyncRunner $runner,
+        InboxSyncStatusStore $statusStore
+    ) {
         if (! $this->staffCanSyncInbox()) {
             return response()->json([
                 'success' => false,
@@ -61,9 +66,14 @@ class SyncedEmailController extends Controller
             ], 403);
         }
 
-        @set_time_limit(300);
-
         $staff = Auth::guard('admin')->user();
+        if (! $staff instanceof Staff) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Staff account required to sync inbox emails.',
+            ], 403);
+        }
+
         $email = trim((string) $request->input('email', ''));
         $syncRange = strtolower(trim((string) $request->input('sync_range', '')));
 
@@ -74,84 +84,84 @@ class SyncedEmailController extends Controller
             $syncRange = 'today';
         }
 
-        if (! IncomingEmailSyncService::isValidSyncRange($syncRange)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid sync range selected.',
-                'mailboxes' => [],
-                'total_imported' => 0,
-                'total_skipped' => 0,
-                'total_failed' => 0,
-            ], 422);
+        $prepared = $runner->prepare($staff, $syncRange, $email);
+        if (($prepared['success'] ?? true) === false) {
+            return response()->json($prepared, 422);
         }
 
-        $since = $syncRange === 'full'
-            ? null
-            : IncomingEmailSyncService::resolveSyncSince($syncRange);
-
-        if ($staff instanceof Staff && $staff->canViewAllSyncedInboxMail()) {
-            if ($syncRange === 'full') {
-                $syncService->resetUidTracking(null, null);
-            }
-
-            $summary = $syncService->syncAll(null, $since);
-            $summary['sync_range'] = $syncRange;
-
-            return response()->json($summary);
-        }
-
-        $addresses = [];
-        if ($email !== '') {
-            $addresses = [strtolower($email)];
-        } elseif ($staff instanceof Staff) {
-            $addresses = IncomingEmailSyncService::mailboxAddressesForStaff((int) $staff->id, $staff->email);
-            if ($addresses === [] && trim((string) $staff->email) !== '') {
-                $addresses = [strtolower(trim((string) $staff->email))];
+        $activeSyncId = $statusStore->getActiveSyncId((int) $staff->id);
+        if ($activeSyncId !== null) {
+            $existing = $statusStore->get($activeSyncId, (int) $staff->id);
+            if ($existing && in_array($existing['status'] ?? '', ['pending', 'running'], true)) {
+                return response()->json([
+                    'success' => true,
+                    'background' => true,
+                    'sync_id' => $activeSyncId,
+                    'status' => $existing['status'],
+                    'message' => 'Inbox sync is already running in the background.',
+                ]);
             }
         }
 
-        if ($addresses === []) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No synced mailbox is linked to your staff account. Configure it in Admin Console → Staff → Email & mailbox.',
-                'mailboxes' => [],
-                'total_imported' => 0,
-                'total_skipped' => 0,
-                'total_failed' => 0,
-            ], 422);
-        }
-
-        if ($syncRange === 'full') {
-            $syncService->resetUidTracking(
-                $email !== '' ? $email : null,
-                $email === '' ? $addresses : null
-            );
-        }
-
-        $summary = [
-            'success' => true,
+        $syncId = $statusStore->create((int) $staff->id, [
             'sync_range' => $syncRange,
-            'mailboxes' => [],
-            'total_imported' => 0,
-            'total_skipped' => 0,
-            'total_failed' => 0,
+            'email' => $email,
+        ]);
+
+        SyncInboxEmailsJob::dispatchAfterResponse($syncId, (int) $staff->id, $prepared);
+
+        return response()->json([
+            'success' => true,
+            'background' => true,
+            'sync_id' => $syncId,
+            'status' => 'pending',
+            'message' => 'Inbox sync started in the background.',
+        ]);
+    }
+
+    public function syncStatus(string $syncId, InboxSyncStatusStore $statusStore)
+    {
+        if (! $this->staffCanSyncInbox()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to sync inbox emails.',
+            ], 403);
+        }
+
+        $staff = Auth::guard('admin')->user();
+        if (! $staff instanceof Staff) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Staff account required.',
+            ], 403);
+        }
+
+        $status = $statusStore->get($syncId, (int) $staff->id);
+        if ($status === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sync status not found.',
+            ], 404);
+        }
+
+        $response = [
+            'success' => true,
+            'sync_id' => $syncId,
+            'status' => $status['status'] ?? 'pending',
+            'message' => $status['message'] ?? null,
+            'sync_range' => $status['sync_range'] ?? null,
+            'summary' => $status['summary'] ?? null,
         ];
 
-        foreach ($addresses as $address) {
-            $partial = $syncService->syncAll($address, $since);
-            if (($partial['success'] ?? true) === false) {
-                $summary['success'] = false;
-                $summary['message'] = $partial['message'] ?? 'Inbox sync is disabled.';
-            }
-            foreach ($partial['mailboxes'] ?? [] as $mailboxEmail => $result) {
-                $summary['mailboxes'][$mailboxEmail] = $result;
-                $summary['total_imported'] += (int) ($result['imported'] ?? 0);
-                $summary['total_skipped'] += (int) ($result['skipped'] ?? 0);
-                $summary['total_failed'] += (int) ($result['failed'] ?? 0);
-            }
+        if (($status['summary'] ?? null) !== null && is_array($status['summary'])) {
+            $summary = $status['summary'];
+            $response['total_imported'] = (int) ($summary['total_imported'] ?? 0);
+            $response['total_skipped'] = (int) ($summary['total_skipped'] ?? 0);
+            $response['total_failed'] = (int) ($summary['total_failed'] ?? 0);
+            $response['mailboxes'] = $summary['mailboxes'] ?? [];
         }
 
-        return response()->json($summary);
+        return response()->json($response);
     }
 
     protected function staffCanSyncInbox(): bool

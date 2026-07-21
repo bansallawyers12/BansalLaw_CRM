@@ -83,6 +83,7 @@
     @if($canSyncInbox)
     data-assign-email-url="{{ url('/clients/synced-emails/assign') }}"
     data-sync-inbox-url="{{ url('/clients/synced-emails/sync-now') }}"
+    data-sync-status-url="{{ url('/clients/synced-emails/sync-status') }}"
     @endif
     data-can-sync-inbox="{{ $canSyncInbox ? '1' : '0' }}"
     data-unassigned-only="{{ $unassignedOnly ? '1' : '0' }}"

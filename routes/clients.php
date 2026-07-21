@@ -389,3 +389,4 @@ Route::get('/clients/outlook/fetch-all', [\App\Http\Controllers\CRM\ClientsContr
 Route::get('/clients/unassigned-emails', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'unassignedIndex'])->name('clients.unassigned-emails');
 Route::post('/clients/synced-emails/assign', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'assignToClient'])->name('clients.synced-emails.assign');
 Route::post('/clients/synced-emails/sync-now', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'syncNow'])->name('clients.synced-emails.sync-now');
+Route::get('/clients/synced-emails/sync-status/{syncId}', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'syncStatus'])->name('clients.synced-emails.sync-status');

@@ -104,6 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const assignMatterHint = document.getElementById('assignMatterHint');
     const assignEmailUrl = outlookContainer ? outlookContainer.getAttribute('data-assign-email-url') : '';
     const syncInboxUrl = outlookContainer ? outlookContainer.getAttribute('data-sync-inbox-url') : '';
+    const syncStatusUrlBase = outlookContainer ? outlookContainer.getAttribute('data-sync-status-url') : '';
     const canSyncInbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-sync-inbox') === '1');
     const mattersUrl = outlookContainer ? outlookContainer.getAttribute('data-matters-url') : '';
 
@@ -3150,6 +3151,104 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function buildInboxSyncResultMessage(data, rangeLabel) {
+        const detail = data.message
+            || ('Imported: ' + (data.total_imported || 0)
+                + ', Skipped: ' + (data.total_skipped || 0)
+                + ', Failed: ' + (data.total_failed || 0));
+        const prefix = rangeLabel ? ('Sync complete (' + rangeLabel + '). ') : 'Sync complete. ';
+        return prefix + detail;
+    }
+
+    function setSyncUiBusy(isBusy, originalHtml) {
+        if (btnSyncInbox) {
+            btnSyncInbox.disabled = isBusy;
+            if (isBusy) {
+                btnSyncInbox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing...';
+            } else if (originalHtml) {
+                btnSyncInbox.innerHTML = originalHtml;
+            }
+        }
+        if (syncRangeFilter) {
+            syncRangeFilter.disabled = isBusy;
+        }
+    }
+
+    function pollInboxSyncStatus(syncId, rangeLabel, startedAt, originalHtml) {
+        const pollIntervalMs = 2000;
+        const backgroundAfterMs = 10000;
+        let backgroundNotified = false;
+        let pollTimer = null;
+
+        function finishSyncUi() {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
+            setSyncUiBusy(false, originalHtml);
+        }
+
+        async function checkStatus() {
+            if (!syncStatusUrlBase || !syncId) {
+                finishSyncUi();
+                crmToast('Could not check sync status.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(syncStatusUrlBase + '/' + encodeURIComponent(syncId), {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                });
+
+                let data = {};
+                try {
+                    data = await response.json();
+                } catch (parseError) {
+                    throw new Error('Unexpected server response while checking sync status.');
+                }
+
+                if (!response.ok || data.success === false) {
+                    finishSyncUi();
+                    crmToast(data.message || ('Sync status failed (HTTP ' + response.status + ').'), 'error');
+                    return;
+                }
+
+                const status = String(data.status || 'pending');
+                const elapsed = Date.now() - startedAt;
+
+                if (elapsed >= backgroundAfterMs && !backgroundNotified && (status === 'pending' || status === 'running')) {
+                    backgroundNotified = true;
+                    setSyncUiBusy(false, originalHtml);
+                    crmToast('Sync is continuing in the background. You will be notified when it finishes.', 'info');
+                }
+
+                if (status === 'completed') {
+                    finishSyncUi();
+                    loadEmails();
+                    crmToast(buildInboxSyncResultMessage(data, rangeLabel), 'success');
+                    return;
+                }
+
+                if (status === 'failed') {
+                    finishSyncUi();
+                    crmToast(data.message || 'Inbox sync failed.', 'error');
+                    return;
+                }
+            } catch (error) {
+                finishSyncUi();
+                crmToast('Sync failed: ' + (error.message || 'Unknown error'), 'error');
+            }
+        }
+
+        checkStatus();
+        pollTimer = setInterval(checkStatus, pollIntervalMs);
+    }
+
     if (btnSyncInbox && syncInboxUrl && canSyncInbox) {
         btnSyncInbox.addEventListener('click', async function () {
             const syncRange = syncRangeFilter ? syncRangeFilter.value : 'today';
@@ -3162,12 +3261,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            btnSyncInbox.disabled = true;
-            if (syncRangeFilter) {
-                syncRangeFilter.disabled = true;
-            }
             const originalHtml = btnSyncInbox.innerHTML;
-            btnSyncInbox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing...';
+            const startedAt = Date.now();
+            setSyncUiBusy(true);
+
             try {
                 const mailboxAddresses = outlookContainer
                     ? JSON.parse(outlookContainer.getAttribute('data-mailbox-addresses') || '[]')
@@ -3197,41 +3294,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 if (!response.ok || data.success === false) {
+                    setSyncUiBusy(false, originalHtml);
                     crmToast(data.message || ('Sync failed (HTTP ' + response.status + ').'), 'error');
                     return;
                 }
 
-                loadEmails();
-
-                let detail = 'Imported: ' + (data.total_imported || 0)
-                    + ', Skipped: ' + (data.total_skipped || 0)
-                    + ', Failed: ' + (data.total_failed || 0);
-                const mailboxErrors = [];
-                if (data.mailboxes && typeof data.mailboxes === 'object') {
-                    Object.keys(data.mailboxes).forEach(function (mailboxKey) {
-                        const result = data.mailboxes[mailboxKey];
-                        if (result && Array.isArray(result.errors) && result.errors.length) {
-                            mailboxErrors.push(mailboxKey + ': ' + result.errors.join('; '));
-                        }
-                    });
-                }
-                if (mailboxErrors.length) {
-                    detail += '. ' + mailboxErrors.join(' | ');
-                }
-
-                const toastType = (data.total_failed || 0) > 0 ? 'error' : 'success';
                 const rangeLabel = syncRangeFilter
                     ? syncRangeFilter.options[syncRangeFilter.selectedIndex].text
                     : syncRange;
-                crmToast('Sync complete (' + rangeLabel + '). ' + detail, toastType);
-            } catch (error) {
-                crmToast('Sync failed: ' + (error.message || 'Unknown error'), 'error');
-            } finally {
-                btnSyncInbox.disabled = false;
-                if (syncRangeFilter) {
-                    syncRangeFilter.disabled = false;
+
+                if (data.background && data.sync_id) {
+                    pollInboxSyncStatus(data.sync_id, rangeLabel, startedAt, originalHtml);
+                    return;
                 }
-                btnSyncInbox.innerHTML = originalHtml;
+
+                setSyncUiBusy(false, originalHtml);
+                loadEmails();
+                crmToast(buildInboxSyncResultMessage(data, rangeLabel), (data.total_failed || 0) > 0 ? 'error' : 'success');
+            } catch (error) {
+                setSyncUiBusy(false, originalHtml);
+                crmToast('Sync failed: ' + (error.message || 'Unknown error'), 'error');
             }
         });
     }
