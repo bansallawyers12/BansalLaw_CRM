@@ -241,25 +241,32 @@ class IncomingEmailSyncService
                 return ['success' => true, 'skipped' => true];
             }
 
-            $match = $this->matchingService->suggestMatches($parsedData);
-            if ($defaultMailType !== 'sent') {
-                $mailType = $match['mail_type'] ?? 'inbox';
-            }
-            $threshold = (int) config('imap_sync.high_confidence_threshold', 80);
-            $isAutoAssigned = ! empty($match['is_high_confidence']) && ! empty($match['best']['client_id']);
-
-            $clientId = $isAutoAssigned ? (int) $match['best']['client_id'] : null;
-            $clientMatterId = $isAutoAssigned ? (int) ($match['best']['client_matter_id'] ?? 0) : null;
-            $clientMatterId = $clientMatterId > 0 ? $clientMatterId : null;
-            $recordType = (string) ($match['best']['record_type'] ?? 'client');
-
-            $clientUniqueId = $this->resolveStoragePrefix($mailbox, $clientId);
-
             $staff = Staff::find($staffUserId);
             if ($staff) {
                 $guard->login($staff);
                 $didLoginStaff = true;
             }
+
+            $match = $this->matchingService->suggestMatches($parsedData);
+            if ($defaultMailType !== 'sent') {
+                $mailType = $match['mail_type'] ?? 'inbox';
+            }
+
+            $bestMatch = $match['best'] ?? null;
+            $matchedBy = array_values(array_unique(array_merge(
+                $match['matched_by'] ?? [],
+                is_array($bestMatch) ? ($bestMatch['matched_by'] ?? []) : []
+            )));
+            $hasEmailMatch = in_array('email_address', $matchedBy, true);
+            $isAutoAssigned = ! empty($bestMatch['client_id'])
+                && (! empty($match['is_high_confidence']) || $hasEmailMatch);
+
+            $clientId = $isAutoAssigned ? (int) $bestMatch['client_id'] : null;
+            $clientMatterId = $isAutoAssigned ? (int) ($bestMatch['client_matter_id'] ?? 0) : null;
+            $clientMatterId = $clientMatterId > 0 ? $clientMatterId : null;
+            $recordType = (string) ($bestMatch['record_type'] ?? 'client');
+
+            $clientUniqueId = $this->resolveStoragePrefix($mailbox, $clientId);
 
             $import = $this->uploadController->importFromSync(
                 $uploadedFile,

@@ -8249,11 +8249,11 @@ class ClientsController extends Controller
         $staff = auth('admin')->user();
         $canSyncInbox = $staff instanceof \App\Models\Staff && $staff->canSyncInboxEmails();
 
-        if ($folder === 'unassigned' && ! $canSyncInbox) {
+        if (in_array($folder, ['unassigned', 'assigned'], true) && ! $canSyncInbox) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You do not have permission to view unassigned synced emails.',
+                    'message' => 'You do not have permission to view synced inbox emails.',
                     'emails' => [],
                     'total' => 0,
                     'current_page' => 1,
@@ -8261,7 +8261,7 @@ class ClientsController extends Controller
                 ], 403);
             }
 
-            return redirect()->back()->with('error', 'You do not have permission to view unassigned synced emails.');
+            return redirect()->back()->with('error', 'You do not have permission to view synced inbox emails.');
         }
 
         $search = $request->input('search');
@@ -8274,15 +8274,16 @@ class ClientsController extends Controller
         $dateTo = $request->input('date_to');
         $perPage = 15;
         $hasSendStatus = \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'send_status');
+        $isSyncedInboxFolder = in_array($folder, ['unassigned', 'assigned'], true);
 
-        // Base query with attachments
-        $query = \App\Models\EmailLog::with('attachments');
+        // Base query with attachments (+ client for assigned synced mail)
+        $query = \App\Models\EmailLog::with($isSyncedInboxFolder ? ['attachments', 'client'] : ['attachments']);
 
-        // Apply client and matter filter if provided (skip for unassigned — those have no client yet)
-        if (! empty($clientId) && $folder !== 'unassigned') {
+        // Apply client and matter filter if provided (skip for synced inbox queues — those are global)
+        if (! empty($clientId) && ! $isSyncedInboxFolder) {
             $query->where('client_id', $clientId);
         }
-        if (! empty($clientMatterId) && $folder !== 'unassigned') {
+        if (! empty($clientMatterId) && ! $isSyncedInboxFolder) {
             $query->where('client_matter_id', $clientMatterId);
         }
 
@@ -8373,6 +8374,16 @@ class ClientsController extends Controller
             } else {
                 $query->where('id', '<', 0);
             }
+        } elseif ($folder === 'assigned') {
+            if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
+                $query->whereIn('sync_assignment_status', ['auto_assigned', 'manual_assigned'])
+                    ->whereNotNull('client_id');
+                if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'synced_email_id')) {
+                    $query->whereNotNull('synced_email_id');
+                }
+            } else {
+                $query->where('id', '<', 0);
+            }
         }
 
         // Apply search filter if present
@@ -8408,6 +8419,12 @@ class ClientsController extends Controller
             $email->send_error = $email->send_error ?? '';
             $email->sync_assignment_status = $email->sync_assignment_status ?? '';
             $email->mailbox_email = $email->mailbox_email ?? '';
+            $email->client_name = '';
+            $email->client_ref = '';
+            if ($email->relationLoaded('client') && $email->client) {
+                $email->client_name = trim(($email->client->first_name ?? '') . ' ' . ($email->client->last_name ?? ''));
+                $email->client_ref = (string) ($email->client->client_id ?? '');
+            }
 
             $appTimezone = config('app.timezone', 'Australia/Melbourne');
             if ($email->fetch_mail_sent_time) {

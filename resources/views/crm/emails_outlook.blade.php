@@ -112,6 +112,9 @@
                 <button type="button" class="folder-item active" data-folder="unassigned" role="tab" aria-selected="true">
                     <i class="fa-solid fa-user-clock"></i> Unassigned
                 </button>
+                <button type="button" class="folder-item" data-folder="assigned" role="tab" aria-selected="false">
+                    <i class="fa-solid fa-user-check"></i> Assigned
+                </button>
                 @else
                 <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
                     <i class="fa-solid fa-inbox"></i> Inbox
