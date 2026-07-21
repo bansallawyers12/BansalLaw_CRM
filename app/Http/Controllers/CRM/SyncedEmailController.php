@@ -4,6 +4,7 @@ namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\SyncInboxEmailsJob;
+use App\Logging\InboxSyncLogger;
 use App\Models\Staff;
 use App\Services\EmailSync\InboxSyncStatusStore;
 use App\Services\EmailSync\ManualInboxSyncRunner;
@@ -60,6 +61,11 @@ class SyncedEmailController extends Controller
         InboxSyncStatusStore $statusStore
     ) {
         if (! $this->staffCanSyncInbox()) {
+            InboxSyncLogger::warning('Manual inbox sync denied', [
+                'staff_id' => Auth::id(),
+                'reason' => 'permission',
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'You do not have permission to sync inbox emails.',
@@ -86,6 +92,13 @@ class SyncedEmailController extends Controller
 
         $prepared = $runner->prepare($staff, $syncRange, $email);
         if (($prepared['success'] ?? true) === false) {
+            InboxSyncLogger::warning('Manual inbox sync prepare failed', [
+                'staff_id' => (int) $staff->id,
+                'sync_range' => $syncRange,
+                'email' => $email,
+                'message' => $prepared['message'] ?? null,
+            ]);
+
             return response()->json($prepared, 422);
         }
 
@@ -93,6 +106,12 @@ class SyncedEmailController extends Controller
         if ($activeSyncId !== null) {
             $existing = $statusStore->get($activeSyncId, (int) $staff->id);
             if ($existing && in_array($existing['status'] ?? '', ['pending', 'running'], true)) {
+                InboxSyncLogger::info('Manual inbox sync already running', [
+                    'staff_id' => (int) $staff->id,
+                    'sync_id' => $activeSyncId,
+                    'status' => $existing['status'] ?? null,
+                ]);
+
                 return response()->json([
                     'success' => true,
                     'background' => true,
@@ -109,6 +128,16 @@ class SyncedEmailController extends Controller
         ]);
 
         SyncInboxEmailsJob::dispatchAfterResponse($syncId, (int) $staff->id, $prepared);
+
+        InboxSyncLogger::info('Manual inbox sync queued', [
+            'sync_id' => $syncId,
+            'staff_id' => (int) $staff->id,
+            'staff_email' => $staff->email,
+            'sync_range' => $syncRange,
+            'email' => $email,
+            'view_all' => ! empty($prepared['view_all']),
+            'addresses' => $prepared['addresses'] ?? [],
+        ]);
 
         return response()->json([
             'success' => true,

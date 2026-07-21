@@ -3,6 +3,7 @@
 namespace App\Services\EmailSync;
 
 use App\Http\Controllers\CRM\EmailUploadController;
+use App\Logging\InboxSyncLogger;
 use App\Models\Admin;
 use App\Models\Email;
 use App\Models\EmailLog;
@@ -10,7 +11,6 @@ use App\Models\Staff;
 use App\Services\EmailMatchingService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Throwable;
@@ -152,11 +152,11 @@ class IncomingEmailSyncService
             $messages = $this->imapFetcher->fetchFromFolders($mailbox, $afterUid, $limit, $folders, $since);
         } catch (Throwable $e) {
             $result['errors'][] = strtoupper($defaultMailType) . ': ' . $e->getMessage();
-            Log::error('IMAP sync failed', [
+            InboxSyncLogger::error('IMAP sync failed', [
                 'mailbox' => $mailbox->email,
                 'folder_type' => $defaultMailType,
                 'error' => $e->getMessage(),
-            ]);
+            ], $e);
 
             return $result;
         }
@@ -188,11 +188,11 @@ class IncomingEmailSyncService
             } catch (Throwable $e) {
                 $result['failed']++;
                 $result['errors'][] = 'UID ' . $uid . ': ' . $e->getMessage();
-                Log::error('Synced email import failed', [
+                InboxSyncLogger::error('Synced email import failed', [
                     'mailbox' => $mailbox->email,
                     'uid' => $uid,
                     'error' => $e->getMessage(),
-                ]);
+                ], $e);
             }
         }
 
