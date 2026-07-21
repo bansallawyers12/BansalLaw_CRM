@@ -432,6 +432,68 @@ class IncomingEmailSyncService
     }
 
     /**
+     * @return list<string>
+     */
+    public static function staffRecipientEmailsForSyncFilter(Staff $staff): array
+    {
+        $emails = [];
+
+        if (trim((string) $staff->email) !== '') {
+            $emails[] = strtolower(trim((string) $staff->email));
+        }
+
+        foreach (self::mailboxAddressesForStaff((int) $staff->id, $staff->email) as $address) {
+            $emails[] = strtolower(trim($address));
+        }
+
+        return array_values(array_unique(array_filter($emails)));
+    }
+
+    /**
+     * Limit synced inbox lists to mail relevant to the staff member (To/Cc/Bcc/mailbox/from).
+     * Admin and Super Admin see all synced mail.
+     */
+    public static function applySyncedInboxVisibilityFilter($query, Staff $staff): void
+    {
+        if ($staff->canViewAllSyncedInboxMail()) {
+            return;
+        }
+
+        $staffEmails = self::staffRecipientEmailsForSyncFilter($staff);
+        if ($staffEmails === []) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->where(function ($outer) use ($staffEmails) {
+            foreach ($staffEmails as $email) {
+                $outer->orWhere(function ($match) use ($email) {
+                    $match->whereRaw('LOWER(COALESCE(mailbox_email, \'\')) = ?', [$email])
+                        ->orWhereRaw('LOWER(COALESCE(from_mail, \'\')) = ?', [$email]);
+                    self::applyRecipientEmailMatch($match, 'to_mail', $email);
+                    self::applyRecipientEmailMatch($match, 'cc', $email);
+                    self::applyRecipientEmailMatch($match, 'bcc', $email);
+                });
+            }
+        });
+    }
+
+    protected static function applyRecipientEmailMatch($query, string $column, string $email): void
+    {
+        if (! in_array($column, ['to_mail', 'cc', 'bcc'], true)) {
+            return;
+        }
+
+        $query->orWhere(function ($recipient) use ($column, $email) {
+            $recipient->whereRaw('LOWER(COALESCE(' . $column . ', \'\')) = ?', [$email])
+                ->orWhereRaw('LOWER(COALESCE(' . $column . ', \'\')) LIKE ?', [$email . ',%'])
+                ->orWhereRaw('LOWER(COALESCE(' . $column . ', \'\')) LIKE ?', ['%,' . $email . ',%'])
+                ->orWhereRaw('LOWER(COALESCE(' . $column . ', \'\')) LIKE ?', ['%,' . $email]);
+        });
+    }
+
+    /**
      * Mailboxes the given staff member may view (shared + own email match).
      *
      * @return list<string>

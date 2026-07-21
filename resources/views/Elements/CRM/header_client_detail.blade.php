@@ -6,17 +6,8 @@
     $_unassignedMailCount = 0;
     if ($_canSyncInboxNav && \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
         $_unassignedQuery = \App\Models\EmailLog::where('sync_assignment_status', 'unassigned');
-        if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'mailbox_email')) {
-            $_allowedMailboxes = \App\Services\EmailSync\IncomingEmailSyncService::mailboxAddressesForStaff(
-                (int) $_staffTop->id,
-                $_staffTop->email
-            );
-            if ($_allowedMailboxes !== []) {
-                $_unassignedQuery->where(function ($q) use ($_allowedMailboxes) {
-                    $q->whereNull('mailbox_email')
-                        ->orWhereIn('mailbox_email', $_allowedMailboxes);
-                });
-            }
+        if ($_staffTop instanceof \App\Models\Staff) {
+            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedInboxVisibilityFilter($_unassignedQuery, $_staffTop);
         }
         $_unassignedMailCount = $_unassignedQuery->count();
     }

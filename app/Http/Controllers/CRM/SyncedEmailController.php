@@ -89,6 +89,17 @@ class SyncedEmailController extends Controller
             ? null
             : IncomingEmailSyncService::resolveSyncSince($syncRange);
 
+        if ($staff instanceof Staff && $staff->canViewAllSyncedInboxMail()) {
+            if ($syncRange === 'full') {
+                $syncService->resetUidTracking(null, null);
+            }
+
+            $summary = $syncService->syncAll(null, $since);
+            $summary['sync_range'] = $syncRange;
+
+            return response()->json($summary);
+        }
+
         $addresses = [];
         if ($email !== '') {
             $addresses = [strtolower($email)];
