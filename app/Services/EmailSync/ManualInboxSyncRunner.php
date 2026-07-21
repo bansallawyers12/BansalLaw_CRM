@@ -2,6 +2,7 @@
 
 namespace App\Services\EmailSync;
 
+use App\Logging\InboxSyncLogger;
 use App\Models\Staff;
 
 class ManualInboxSyncRunner
@@ -78,6 +79,14 @@ class ManualInboxSyncRunner
     {
         $syncRange = (string) ($prepared['sync_range'] ?? 'today');
         $email = trim((string) ($prepared['email'] ?? ''));
+
+        InboxSyncLogger::info('Inbox sync execution started', [
+            'sync_range' => $syncRange,
+            'view_all' => ! empty($prepared['view_all']),
+            'email' => $email,
+            'addresses' => $prepared['addresses'] ?? [],
+        ]);
+
         $since = $syncRange === 'full'
             ? null
             : IncomingEmailSyncService::resolveSyncSince($syncRange);
@@ -89,6 +98,8 @@ class ManualInboxSyncRunner
 
             $summary = $this->syncService->syncAll(null, $since);
             $summary['sync_range'] = $syncRange;
+
+            $this->logExecutionResult($summary);
 
             return $summary;
         }
@@ -125,6 +136,38 @@ class ManualInboxSyncRunner
             }
         }
 
+        $this->logExecutionResult($summary);
+
         return $summary;
+    }
+
+    /**
+     * @param  array<string, mixed>  $summary
+     */
+    private function logExecutionResult(array $summary): void
+    {
+        $context = [
+            'sync_range' => $summary['sync_range'] ?? null,
+            'total_imported' => (int) ($summary['total_imported'] ?? 0),
+            'total_skipped' => (int) ($summary['total_skipped'] ?? 0),
+            'total_failed' => (int) ($summary['total_failed'] ?? 0),
+            'mailboxes' => array_keys($summary['mailboxes'] ?? []),
+        ];
+
+        if (($summary['success'] ?? true) === false) {
+            InboxSyncLogger::error('Inbox sync execution failed', array_merge($context, [
+                'message' => $summary['message'] ?? 'Inbox sync failed.',
+            ]));
+
+            return;
+        }
+
+        if ((int) ($summary['total_failed'] ?? 0) > 0) {
+            InboxSyncLogger::warning('Inbox sync execution completed with failures', $context);
+
+            return;
+        }
+
+        InboxSyncLogger::info('Inbox sync execution completed', $context);
     }
 }

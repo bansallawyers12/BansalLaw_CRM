@@ -101,6 +101,15 @@ return [
             'tap' => [App\Logging\Utf8LogFormatter::class],
         ],
 
+        'inbox_sync' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/inbox-sync.log'),
+            'level' => 'debug',
+            'days' => 30,
+            'permission' => 0644,
+            'tap' => [App\Logging\Utf8LogFormatter::class],
+        ],
+
     ],
 
 ];

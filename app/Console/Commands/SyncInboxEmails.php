@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Logging\InboxSyncLogger;
 use App\Models\Email;
 use App\Services\EmailSync\IncomingEmailSyncService;
 use Illuminate\Console\Command;
@@ -52,6 +53,14 @@ class SyncInboxEmails extends Command
 
         $this->info('Starting inbox sync' . ($email ? " for {$email}" : ' for all mailboxes') . '...');
 
+        InboxSyncLogger::info('Scheduled inbox sync started', [
+            'source' => 'artisan',
+            'email' => $email,
+            'since' => $since?->format('c'),
+            'full' => $this->option('full'),
+            'today' => $this->option('today'),
+        ]);
+
         $summary = $syncService->syncAll($email, $since);
 
         foreach ($summary['mailboxes'] as $mailboxEmail => $result) {
@@ -76,6 +85,21 @@ class SyncInboxEmails extends Command
             (int) ($summary['total_skipped'] ?? 0),
             (int) ($summary['total_failed'] ?? 0)
         ));
+
+        $logContext = [
+            'source' => 'artisan',
+            'email' => $email,
+            'total_imported' => (int) ($summary['total_imported'] ?? 0),
+            'total_skipped' => (int) ($summary['total_skipped'] ?? 0),
+            'total_failed' => (int) ($summary['total_failed'] ?? 0),
+            'mailboxes' => array_keys($summary['mailboxes'] ?? []),
+        ];
+
+        if ((int) ($summary['total_failed'] ?? 0) > 0) {
+            InboxSyncLogger::warning('Scheduled inbox sync completed with failures', $logContext);
+        } else {
+            InboxSyncLogger::info('Scheduled inbox sync completed', $logContext);
+        }
 
         return ((int) ($summary['total_failed'] ?? 0)) > 0 ? self::FAILURE : self::SUCCESS;
     }
