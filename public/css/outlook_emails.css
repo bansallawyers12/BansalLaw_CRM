@@ -2185,4 +2185,287 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
 /* Assign email modal — Tom Select dropdown renders on body; keep above Bootstrap modal */
 body.assign-email-modal-open .ts-dropdown {
     z-index: 1060 !important;
+    width: auto !important;
+    min-width: min(420px, calc(100vw - 32px)) !important;
+    max-width: 520px !important;
+    border-radius: 8px;
+    border-color: var(--outlook-border);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.assign-email-modal__dialog {
+    max-width: 480px;
+}
+
+.assign-email-modal__content {
+    border: 1px solid var(--outlook-border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.16);
+}
+
+.assign-email-modal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 22px 18px;
+    border-bottom: 1px solid var(--outlook-border);
+    background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
+    color: #fff;
+}
+
+.assign-email-modal__header-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    min-width: 0;
+}
+
+.assign-email-modal__icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.assign-email-modal__titles {
+    min-width: 0;
+}
+
+.assign-email-modal__header .modal-title {
+    margin: 0 0 4px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.3;
+}
+
+.assign-email-modal__subtitle {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.assign-email-modal__close {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.assign-email-modal__close:hover,
+.assign-email-modal__close:focus {
+    background: rgba(255, 255, 255, 0.24);
+    color: #fff;
+    outline: none;
+}
+
+.assign-email-modal__body {
+    padding: 20px 22px 8px;
+    background: var(--outlook-bg-secondary);
+}
+
+.assign-email-preview {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    border: 1px solid var(--outlook-border);
+    border-radius: 10px;
+    background: #fff;
+}
+
+.assign-email-preview__icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #e8f4fd;
+    color: var(--outlook-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+}
+
+.assign-email-preview__content {
+    min-width: 0;
+    flex: 1;
+}
+
+.assign-email-preview__label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--outlook-text-secondary);
+    margin-bottom: 4px;
+}
+
+.assign-email-preview__subject {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--outlook-text);
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.assign-email-preview__meta {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--outlook-text-secondary);
+    word-break: break-word;
+}
+
+.assign-email-field {
+    margin-bottom: 18px;
+}
+
+.assign-email-field__label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--outlook-text);
+}
+
+.assign-email-field__step {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--outlook-blue);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.assign-email-field__label-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.assign-email-field__label-text i {
+    color: var(--outlook-blue);
+    font-size: 12px;
+}
+
+.assign-email-field__select {
+    width: 100%;
+}
+
+.assign-email-field .ts-wrapper {
+    width: 100% !important;
+}
+
+.assign-email-field .ts-wrapper .ts-control {
+    min-height: 42px;
+    border-radius: 8px;
+    border-color: #c8c6c4;
+    background: #fff;
+    box-shadow: none;
+    padding: 8px 12px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.assign-email-field .ts-wrapper.focus .ts-control,
+.assign-email-field .ts-wrapper.single.focus .ts-control {
+    border-color: var(--outlook-blue);
+    box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.15);
+}
+
+.assign-email-field .ts-wrapper.disabled .ts-control {
+    background: #f3f2f1;
+    color: var(--outlook-text-secondary);
+}
+
+.assign-email-field__hint {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--outlook-text-secondary);
+    line-height: 1.4;
+}
+
+.assign-email-status {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.4;
+    background: #fff4e5;
+    color: #9a6700;
+    border: 1px solid #f5d08a;
+}
+
+.assign-email-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 22px 18px;
+    border-top: 1px solid var(--outlook-border);
+    background: #fff;
+}
+
+.assign-email-modal__btn {
+    min-width: 112px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid transparent;
+    transition: background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.assign-email-modal__btn--cancel {
+    background: #fff;
+    border-color: #c8c6c4;
+    color: var(--outlook-text);
+}
+
+.assign-email-modal__btn--cancel:hover {
+    background: var(--outlook-hover);
+    border-color: #a19f9d;
+    color: var(--outlook-text);
+}
+
+.assign-email-modal__btn--confirm {
+    background: var(--outlook-blue);
+    color: #fff;
+}
+
+.assign-email-modal__btn--confirm:hover:not(:disabled) {
+    background: #106ebe;
+    color: #fff;
+}
+
+.assign-email-modal__btn--confirm:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
 }

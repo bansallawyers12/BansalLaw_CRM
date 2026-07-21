@@ -454,19 +454,45 @@
 
 @if($canSyncInbox)
 <div class="modal fade assign-email-modal" id="assignSyncedEmailModal" tabindex="-1" role="dialog" aria-labelledby="assignSyncedEmailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="assignSyncedEmailModalLabel">Assign Email to Client</h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
+    <div class="modal-dialog modal-dialog-centered assign-email-modal__dialog" role="document">
+        <div class="modal-content assign-email-modal__content">
+            <div class="modal-header assign-email-modal__header">
+                <div class="assign-email-modal__header-main">
+                    <div class="assign-email-modal__icon" aria-hidden="true">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+                    <div class="assign-email-modal__titles">
+                        <h5 class="modal-title" id="assignSyncedEmailModalLabel">Assign Email to Client</h5>
+                        <p class="assign-email-modal__subtitle">Link this synced email to a client and matter.</p>
+                    </div>
+                </div>
+                <button type="button" class="assign-email-modal__close" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                 </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body assign-email-modal__body">
                 <input type="hidden" id="assignEmailLogId" value="">
-                <div class="form-group">
-                    <label for="assignClientId">Client</label>
-                    <select id="assignClientId" class="form-control crm-ts-plain" style="width:100%;">
+
+                <div class="assign-email-preview" id="assignEmailPreview">
+                    <div class="assign-email-preview__icon" aria-hidden="true">
+                        <i class="fa-solid fa-envelope"></i>
+                    </div>
+                    <div class="assign-email-preview__content">
+                        <div class="assign-email-preview__label">Selected email</div>
+                        <div class="assign-email-preview__subject" id="assignEmailPreviewSubject">—</div>
+                        <div class="assign-email-preview__meta" id="assignEmailPreviewMeta"></div>
+                    </div>
+                </div>
+
+                <div class="assign-email-field">
+                    <label class="assign-email-field__label" for="assignClientId">
+                        <span class="assign-email-field__step">1</span>
+                        <span class="assign-email-field__label-text">
+                            <i class="fa-solid fa-user" aria-hidden="true"></i>
+                            Client
+                        </span>
+                    </label>
+                    <select id="assignClientId" class="form-control crm-ts-plain assign-email-field__select">
                         <option value="">Select client</option>
                         @if(!empty($clientData))
                             <option value="{{ $clientData->id }}" selected>
@@ -474,19 +500,30 @@
                             </option>
                         @endif
                     </select>
+                    <p class="assign-email-field__hint">Search by name, email, or client reference.</p>
                 </div>
-                <div class="form-group">
-                    <label for="assignClientMatterId">Matter</label>
-                    <select id="assignClientMatterId" class="form-control crm-ts-plain" style="width:100%;" disabled>
+
+                <div class="assign-email-field">
+                    <label class="assign-email-field__label" for="assignClientMatterId">
+                        <span class="assign-email-field__step">2</span>
+                        <span class="assign-email-field__label-text">
+                            <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
+                            Matter
+                        </span>
+                    </label>
+                    <select id="assignClientMatterId" class="form-control crm-ts-plain assign-email-field__select" disabled>
                         <option value="">Select matter</option>
                     </select>
+                    <p class="assign-email-field__hint" id="assignMatterHint">Choose a client to load their matters.</p>
                 </div>
-                <div id="assignEmailStatus" class="small text-muted" hidden></div>
+
+                <div id="assignEmailStatus" class="assign-email-status" hidden role="alert"></div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="assignEmailConfirmBtn">
-                    <i class="fa-solid fa-floppy-disk"></i> Assign Email
+            <div class="modal-footer assign-email-modal__footer">
+                <button type="button" class="btn assign-email-modal__btn assign-email-modal__btn--cancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn assign-email-modal__btn assign-email-modal__btn--confirm" id="assignEmailConfirmBtn" disabled>
+                    <i class="fa-solid fa-link" aria-hidden="true"></i>
+                    Assign Email
                 </button>
             </div>
         </div>

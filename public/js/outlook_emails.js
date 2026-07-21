@@ -99,6 +99,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const assignEmailLogIdInput = document.getElementById('assignEmailLogId');
     const assignEmailConfirmBtn = document.getElementById('assignEmailConfirmBtn');
     const assignEmailStatus = document.getElementById('assignEmailStatus');
+    const assignEmailPreviewSubject = document.getElementById('assignEmailPreviewSubject');
+    const assignEmailPreviewMeta = document.getElementById('assignEmailPreviewMeta');
+    const assignMatterHint = document.getElementById('assignMatterHint');
     const assignEmailUrl = outlookContainer ? outlookContainer.getAttribute('data-assign-email-url') : '';
     const syncInboxUrl = outlookContainer ? outlookContainer.getAttribute('data-sync-inbox-url') : '';
     const canSyncInbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-sync-inbox') === '1');
@@ -2857,6 +2860,49 @@ document.addEventListener('DOMContentLoaded', function() {
         return csrfMeta ? csrfMeta.content : '';
     }
 
+    function updateAssignConfirmButton() {
+        if (!assignEmailConfirmBtn) {
+            return;
+        }
+        const hasClient = assignClientSelect && assignClientSelect.value;
+        const hasMatter = assignMatterSelect && assignMatterSelect.value && !assignMatterSelect.disabled;
+        assignEmailConfirmBtn.disabled = !(hasClient && hasMatter);
+    }
+
+    function populateAssignEmailPreview() {
+        if (!assignEmailPreviewSubject || !assignEmailPreviewMeta) {
+            return;
+        }
+
+        const email = selectedEmailId
+            ? emails.find(function (item) { return item.id === selectedEmailId; })
+            : null;
+
+        if (!email) {
+            assignEmailPreviewSubject.textContent = '(No subject)';
+            assignEmailPreviewMeta.textContent = '';
+            return;
+        }
+
+        assignEmailPreviewSubject.textContent = email.subject || '(No subject)';
+
+        const metaParts = [];
+        if (email.from_mail) {
+            metaParts.push('From ' + email.from_mail);
+        }
+        const dateStr = formatEmailDate(getEmailDate(email));
+        if (dateStr) {
+            metaParts.push(dateStr);
+        }
+        assignEmailPreviewMeta.textContent = metaParts.join(' · ');
+    }
+
+    function setAssignMatterHint(message) {
+        if (assignMatterHint) {
+            assignMatterHint.textContent = message;
+        }
+    }
+
     function destroyAssignEmailModalSelects() {
         if (typeof destroyTS !== 'function') {
             return;
@@ -2890,6 +2936,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     placeholder: 'Search client...',
                     onChange: function (value) {
                         loadAssignMattersForClient(value);
+                        updateAssignConfirmButton();
                     }
                 }));
             } else {
@@ -2906,12 +2953,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (assignMatterSelect && !assignMatterSelect.disabled) {
             const matterTs = initTS(assignMatterSelect, {
                 create: false,
-                dropdownParent: dropdownParent
+                dropdownParent: dropdownParent,
+                onChange: function () {
+                    updateAssignConfirmButton();
+                }
             });
             if (matterTs && matterTs.wrapper) {
                 matterTs.wrapper.style.width = '100%';
             }
         }
+
+        updateAssignConfirmButton();
     }
 
     function loadAssignMattersForClient(selectedClientId) {
@@ -2920,11 +2972,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 assignMatterSelect.innerHTML = '<option value="">Select matter</option>';
                 assignMatterSelect.disabled = true;
             }
+            setAssignMatterHint('Choose a client to load their matters.');
+            updateAssignConfirmButton();
             return;
         }
 
         assignMatterSelect.disabled = true;
         assignMatterSelect.innerHTML = '<option value="">Loading matters...</option>';
+        setAssignMatterHint('Loading matters for selected client...');
+        updateAssignConfirmButton();
 
         fetch(mattersUrl, {
             method: 'POST',
@@ -2946,27 +3002,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 assignMatterSelect.innerHTML = options;
                 assignMatterSelect.disabled = false;
+                const matterCount = matters.length;
+                setAssignMatterHint(
+                    matterCount
+                        ? (matterCount === 1 ? '1 matter available.' : matterCount + ' matters available.')
+                        : 'No matters found for this client.'
+                );
                 if (typeof initTS === 'function') {
                     if (typeof destroyTS === 'function') {
                         destroyTS(assignMatterSelect);
                     }
                     const matterTs = initTS(assignMatterSelect, {
                         create: false,
-                        dropdownParent: 'body'
+                        dropdownParent: 'body',
+                        onChange: function () {
+                            updateAssignConfirmButton();
+                        }
                     });
                     if (matterTs && matterTs.wrapper) {
                         matterTs.wrapper.style.width = '100%';
                     }
                 }
+                updateAssignConfirmButton();
             })
             .catch(function () {
                 assignMatterSelect.innerHTML = '<option value="">Could not load matters</option>';
+                setAssignMatterHint('Could not load matters. Try selecting the client again.');
+                updateAssignConfirmButton();
             });
     }
 
     if (assignClientSelect && typeof buildGetAllClientsTomSelectConfig !== 'function') {
         assignClientSelect.addEventListener('change', function () {
             loadAssignMattersForClient(assignClientSelect.value);
+            updateAssignConfirmButton();
         });
     }
 
@@ -2983,6 +3052,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 assignEmailStatus.hidden = true;
                 assignEmailStatus.textContent = '';
             }
+            populateAssignEmailPreview();
+            updateAssignConfirmButton();
             if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
                 bootstrap.Modal.getOrCreateInstance(assignEmailModal).show();
             } else {
@@ -3017,6 +3088,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (assignMatterSelect) {
                 assignMatterSelect.innerHTML = '<option value="">Select matter</option>';
                 assignMatterSelect.disabled = true;
+            }
+            setAssignMatterHint('Choose a client to load their matters.');
+            if (assignEmailConfirmBtn) {
+                assignEmailConfirmBtn.disabled = true;
             }
         });
     }
