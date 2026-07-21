@@ -48,13 +48,15 @@ function crmOutlookEmailUpload403Message(responseText, status) {
 
 document.addEventListener('DOMContentLoaded', function() {
     let currentPage = 1;
-    let currentFolder = 'inbox'; // inbox, sent, outbox
+    let currentFolder = 'inbox'; // inbox, sent, outbox, unassigned
     let emails = [];
     let selectedEmailId = null;
 
     // Elements
     const outlookContainer = document.getElementById('outlookContainer');
     const appTimezone = (outlookContainer && outlookContainer.dataset.appTimezone) || 'Australia/Melbourne';
+    const unassignedOnly = !!(outlookContainer && outlookContainer.getAttribute('data-unassigned-only') === '1');
+    const defaultFolder = (outlookContainer && outlookContainer.getAttribute('data-default-folder')) || 'inbox';
     const folderItems = document.querySelectorAll('.folder-item');
     const emailListContainer = document.getElementById('emailList');
     const readingPane = document.getElementById('readingPane');
@@ -134,6 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.crmLogEmailUploadFailure(payload);
     }
 
+    currentFolder = defaultFolder;
     loadEmails();
     updateOutboxFiltersVisibility();
 
@@ -2940,11 +2943,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (btnAssignToClient) {
                         btnAssignToClient.hidden = true;
                     }
-                    currentFolder = 'inbox';
-                    folderItems.forEach(function (f) {
-                        f.classList.toggle('active', f.dataset.folder === 'inbox');
-                        f.setAttribute('aria-selected', f.dataset.folder === 'inbox' ? 'true' : 'false');
-                    });
+                    if (! unassignedOnly) {
+                        currentFolder = 'inbox';
+                        folderItems.forEach(function (f) {
+                            f.classList.toggle('active', f.dataset.folder === 'inbox');
+                            f.setAttribute('aria-selected', f.dataset.folder === 'inbox' ? 'true' : 'false');
+                        });
+                    }
                     loadEmails();
                     return;
                 }
