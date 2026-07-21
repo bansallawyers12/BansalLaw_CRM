@@ -345,35 +345,56 @@
 </div>
 
 <!-- Email upload loading overlay -->
-<div class="email-upload-loading-overlay" id="emailUploadLoadingOverlay" aria-hidden="true" aria-live="polite" aria-busy="false">
-    <div class="email-upload-loading-card" role="status">
-        <div class="email-upload-loading-icon" aria-hidden="true">
-            <i class="fa-solid fa-envelope"></i>
-            <span class="email-upload-loading-spinner"></span>
+<div class="email-upload-loading-overlay outlook-modal-overlay" id="emailUploadLoadingOverlay" aria-hidden="true" aria-live="polite" aria-busy="false">
+    <div class="email-upload-loading-card outlook-ui-modal outlook-ui-modal--xs" role="status">
+        <div class="email-upload-loading-card__header">
+            <div class="outlook-ui-modal__header-icon" aria-hidden="true">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
         </div>
-        <h3 class="email-upload-loading-title" id="emailUploadLoadingTitle">Uploading email</h3>
-        <p class="email-upload-loading-message" id="emailUploadLoadingMessage">Please wait while your email is being processed…</p>
-        <p class="email-upload-loading-filename" id="emailUploadLoadingFilename"></p>
-        <div class="email-upload-loading-progress" aria-hidden="true">
-            <div class="email-upload-loading-progress-bar" id="emailUploadLoadingProgressBar"></div>
+        <div class="email-upload-loading-card__body">
+            <div class="email-upload-loading-icon" aria-hidden="true">
+                <i class="fa-solid fa-envelope"></i>
+                <span class="email-upload-loading-spinner"></span>
+            </div>
+            <h3 class="email-upload-loading-title" id="emailUploadLoadingTitle">Uploading email</h3>
+            <p class="email-upload-loading-message" id="emailUploadLoadingMessage">Please wait while your email is being processed…</p>
+            <p class="email-upload-loading-filename" id="emailUploadLoadingFilename"></p>
+            <div class="email-upload-loading-progress" aria-hidden="true">
+                <div class="email-upload-loading-progress-bar" id="emailUploadLoadingProgressBar"></div>
+            </div>
+            <p class="email-upload-loading-hint">Do not close or refresh this page</p>
         </div>
-        <p class="email-upload-loading-hint">Do not close or refresh this page</p>
     </div>
 </div>
 
 <!-- Duplicate email confirmation -->
-<div class="duplicate-email-modal-overlay" id="duplicateEmailModal" aria-hidden="true">
-    <div class="duplicate-email-modal" role="dialog" aria-labelledby="duplicateEmailModalTitle" aria-modal="true">
-        <div class="duplicate-email-modal__icon" aria-hidden="true">
-            <i class="fa-solid fa-envelope-open-text"></i>
+<div class="duplicate-email-modal-overlay outlook-modal-overlay" id="duplicateEmailModal" aria-hidden="true">
+    <div class="duplicate-email-modal outlook-ui-modal outlook-ui-modal--sm" role="dialog" aria-labelledby="duplicateEmailModalTitle" aria-modal="true">
+        <div class="outlook-ui-modal__header outlook-ui-modal__header--warn">
+            <div class="outlook-ui-modal__header-main">
+                <div class="outlook-ui-modal__header-icon" aria-hidden="true">
+                    <i class="fa-solid fa-envelope-open-text"></i>
+                </div>
+                <div class="outlook-ui-modal__header-text">
+                    <h3 class="outlook-ui-modal__title" id="duplicateEmailModalTitle">Duplicate Email</h3>
+                    <p class="outlook-ui-modal__subtitle">This email already exists in the CRM.</p>
+                </div>
+            </div>
         </div>
-        <h3 class="duplicate-email-modal__title" id="duplicateEmailModalTitle">Duplicate Email</h3>
-        <p class="duplicate-email-modal__message">This email already exists.</p>
-        <p class="duplicate-email-modal__filename" id="duplicateEmailFileName"></p>
-        <p class="duplicate-email-modal__question">Do you want to upload it anyway?</p>
-        <div class="duplicate-email-modal__actions">
-            <button type="button" class="duplicate-email-modal__btn duplicate-email-modal__btn--reject" id="duplicateEmailReject">Reject</button>
-            <button type="button" class="duplicate-email-modal__btn duplicate-email-modal__btn--accept" id="duplicateEmailAccept">Accept</button>
+        <div class="outlook-ui-modal__body">
+            <p class="duplicate-email-modal__message">A matching message was found for this upload.</p>
+            <div class="outlook-ui-modal__preview-card">
+                <div>
+                    <div class="outlook-ui-modal__preview-label">File</div>
+                    <div class="outlook-ui-modal__preview-value" id="duplicateEmailFileName">—</div>
+                </div>
+            </div>
+            <p class="outlook-ui-modal__hint">Do you want to upload it anyway?</p>
+        </div>
+        <div class="outlook-ui-modal__footer">
+            <button type="button" class="outlook-ui-modal__btn outlook-ui-modal__btn--cancel" id="duplicateEmailReject">Reject</button>
+            <button type="button" class="outlook-ui-modal__btn outlook-ui-modal__btn--confirm" id="duplicateEmailAccept">Upload anyway</button>
         </div>
     </div>
 </div>
@@ -383,21 +404,27 @@
 @endif
 
 <!-- Attachment storage modal -->
-<div class="attachment-storage-modal-overlay" id="attachmentStorageModal" aria-hidden="true">
-    <div class="attachment-storage-modal" role="dialog" aria-labelledby="attachmentStorageModalTitle" aria-modal="true">
-        <div class="attachment-storage-modal__header">
-            <div class="attachment-storage-modal__header-main">
-                <div class="attachment-storage-modal__icon" aria-hidden="true">
+<div class="attachment-storage-modal-overlay outlook-modal-overlay" id="attachmentStorageModal" aria-hidden="true">
+    <div class="attachment-storage-modal outlook-ui-modal outlook-ui-modal--lg" role="dialog" aria-labelledby="attachmentStorageModalTitle" aria-modal="true">
+        <div class="outlook-ui-modal__header">
+            <div class="outlook-ui-modal__header-main">
+                <div class="outlook-ui-modal__header-icon" aria-hidden="true">
                     <i class="fa-solid fa-paperclip"></i>
                 </div>
-                <div>
-                    <h3 id="attachmentStorageModalTitle">Save Attachments to Documents</h3>
-                    <p class="attachment-storage-modal__subtitle" id="attachmentStorageSubtitle">Choose where files are stored and rename them before saving.</p>
+                <div class="outlook-ui-modal__header-text">
+                    <h3 class="outlook-ui-modal__title" id="attachmentStorageModalTitle">Save Attachments to Documents</h3>
+                    <p class="outlook-ui-modal__subtitle" id="attachmentStorageSubtitle">Choose where files are stored and rename them before saving.</p>
                 </div>
             </div>
-            <span class="attachment-storage-modal__count" id="attachmentStorageCount" aria-live="polite"></span>
+            <div class="outlook-ui-modal__header-actions">
+                <span class="attachment-storage-modal__count" id="attachmentStorageCount" aria-live="polite"></span>
+                <button type="button" class="outlook-ui-modal__close" id="attachmentStorageClose" aria-label="Close">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
         </div>
 
+        <div class="outlook-ui-modal__body outlook-ui-modal__body--scroll attachment-storage-modal__body">
         <div class="attachment-storage-mode" id="attachmentStorageMode" hidden>
             <span class="attachment-storage-mode__label">How do you want to save these files?</span>
             <div class="attachment-storage-mode__toggle" role="group" aria-label="Attachment save mode">
@@ -444,9 +471,10 @@
                 <tbody id="attachmentStorageModalBody"></tbody>
             </table>
         </div>
-        <div class="attachment-storage-modal__actions">
-            <button type="button" class="attachment-storage-modal__btn attachment-storage-modal__btn--cancel" id="attachmentStorageCancel">Cancel upload</button>
-            <button type="button" class="attachment-storage-modal__btn attachment-storage-modal__btn--confirm" id="attachmentStorageConfirm">
+        </div>
+        <div class="outlook-ui-modal__footer attachment-storage-modal__actions">
+            <button type="button" class="outlook-ui-modal__btn outlook-ui-modal__btn--cancel attachment-storage-modal__btn attachment-storage-modal__btn--cancel" id="attachmentStorageCancel">Cancel upload</button>
+            <button type="button" class="outlook-ui-modal__btn outlook-ui-modal__btn--confirm attachment-storage-modal__btn attachment-storage-modal__btn--confirm" id="attachmentStorageConfirm">
                 <i class="fa-solid fa-upload" aria-hidden="true"></i> Continue upload
             </button>
         </div>
@@ -454,24 +482,24 @@
 </div>
 
 @if($canSyncInbox)
-<div class="modal fade assign-email-modal" id="assignSyncedEmailModal" tabindex="-1" role="dialog" aria-labelledby="assignSyncedEmailModalLabel" aria-hidden="true">
+<div class="modal fade assign-email-modal outlook-ui-modal-wrapper" id="assignSyncedEmailModal" tabindex="-1" role="dialog" aria-labelledby="assignSyncedEmailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered assign-email-modal__dialog" role="document">
-        <div class="modal-content assign-email-modal__content">
-            <div class="modal-header assign-email-modal__header">
-                <div class="assign-email-modal__header-main">
-                    <div class="assign-email-modal__icon" aria-hidden="true">
+        <div class="modal-content assign-email-modal__content outlook-ui-modal">
+            <div class="modal-header assign-email-modal__header outlook-ui-modal__header">
+                <div class="assign-email-modal__header-main outlook-ui-modal__header-main">
+                    <div class="assign-email-modal__icon outlook-ui-modal__header-icon" aria-hidden="true">
                         <i class="fa-solid fa-user-plus"></i>
                     </div>
-                    <div class="assign-email-modal__titles">
-                        <h5 class="modal-title" id="assignSyncedEmailModalLabel">Assign Email to Client</h5>
-                        <p class="assign-email-modal__subtitle">Link this synced email to a client and matter.</p>
+                    <div class="assign-email-modal__titles outlook-ui-modal__header-text">
+                        <h5 class="modal-title outlook-ui-modal__title" id="assignSyncedEmailModalLabel">Assign Email to Client</h5>
+                        <p class="assign-email-modal__subtitle outlook-ui-modal__subtitle">Link this synced email to a client and matter.</p>
                     </div>
                 </div>
-                <button type="button" class="assign-email-modal__close" data-bs-dismiss="modal" aria-label="Close">
+                <button type="button" class="assign-email-modal__close outlook-ui-modal__close" data-bs-dismiss="modal" aria-label="Close">
                     <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                 </button>
             </div>
-            <div class="modal-body assign-email-modal__body">
+            <div class="modal-body assign-email-modal__body outlook-ui-modal__body">
                 <input type="hidden" id="assignEmailLogId" value="">
 
                 <div class="assign-email-preview" id="assignEmailPreview">
@@ -520,9 +548,9 @@
 
                 <div id="assignEmailStatus" class="assign-email-status" hidden role="alert"></div>
             </div>
-            <div class="modal-footer assign-email-modal__footer">
-                <button type="button" class="btn assign-email-modal__btn assign-email-modal__btn--cancel" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn assign-email-modal__btn assign-email-modal__btn--confirm" id="assignEmailConfirmBtn" disabled>
+            <div class="modal-footer assign-email-modal__footer outlook-ui-modal__footer">
+                <button type="button" class="btn outlook-ui-modal__btn outlook-ui-modal__btn--cancel assign-email-modal__btn assign-email-modal__btn--cancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn outlook-ui-modal__btn outlook-ui-modal__btn--confirm assign-email-modal__btn assign-email-modal__btn--confirm" id="assignEmailConfirmBtn" disabled>
                     <i class="fa-solid fa-link" aria-hidden="true"></i>
                     Assign Email
                 </button>
