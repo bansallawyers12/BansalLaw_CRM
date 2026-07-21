@@ -2857,6 +2857,63 @@ document.addEventListener('DOMContentLoaded', function() {
         return csrfMeta ? csrfMeta.content : '';
     }
 
+    function destroyAssignEmailModalSelects() {
+        if (typeof destroyTS !== 'function') {
+            return;
+        }
+        if (assignClientSelect) {
+            destroyTS(assignClientSelect);
+        }
+        if (assignMatterSelect) {
+            destroyTS(assignMatterSelect);
+        }
+    }
+
+    function initAssignEmailModalSelects() {
+        if (!assignEmailModal || typeof initTS !== 'function') {
+            return;
+        }
+
+        destroyAssignEmailModalSelects();
+
+        const dropdownParent = assignEmailModal;
+        const clientsUrl = baseUrl
+            ? baseUrl.replace(/\/$/, '') + '/clients/get-allclients'
+            : '';
+
+        if (assignClientSelect) {
+            let clientTs = null;
+            if (typeof buildGetAllClientsTomSelectConfig === 'function' && clientsUrl) {
+                clientTs = initTS(assignClientSelect, buildGetAllClientsTomSelectConfig({
+                    url: clientsUrl,
+                    dropdownParent: dropdownParent,
+                    placeholder: 'Search client...',
+                    onChange: function (value) {
+                        loadAssignMattersForClient(value);
+                    }
+                }));
+            } else {
+                clientTs = initTS(assignClientSelect, {
+                    create: false,
+                    dropdownParent: dropdownParent
+                });
+            }
+            if (clientTs && clientTs.wrapper) {
+                clientTs.wrapper.style.width = '100%';
+            }
+        }
+
+        if (assignMatterSelect && !assignMatterSelect.disabled) {
+            const matterTs = initTS(assignMatterSelect, {
+                create: false,
+                dropdownParent: dropdownParent
+            });
+            if (matterTs && matterTs.wrapper) {
+                matterTs.wrapper.style.width = '100%';
+            }
+        }
+    }
+
     function loadAssignMattersForClient(selectedClientId) {
         if (!assignMatterSelect || !mattersUrl || !selectedClientId) {
             if (assignMatterSelect) {
@@ -2890,7 +2947,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 assignMatterSelect.innerHTML = options;
                 assignMatterSelect.disabled = false;
                 if (typeof initTS === 'function') {
-                    initTS('#assignClientMatterId', { create: false, dropdownParent: 'body' });
+                    if (typeof destroyTS === 'function') {
+                        destroyTS(assignMatterSelect);
+                    }
+                    const matterTs = initTS(assignMatterSelect, {
+                        create: false,
+                        dropdownParent: assignEmailModal || document.body
+                    });
+                    if (matterTs && matterTs.wrapper) {
+                        matterTs.wrapper.style.width = '100%';
+                    }
                 }
             })
             .catch(function () {
@@ -2898,7 +2964,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    if (assignClientSelect) {
+    if (assignClientSelect && typeof buildGetAllClientsTomSelectConfig !== 'function') {
         assignClientSelect.addEventListener('change', function () {
             loadAssignMattersForClient(assignClientSelect.value);
         });
@@ -2917,19 +2983,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 assignEmailStatus.hidden = true;
                 assignEmailStatus.textContent = '';
             }
-            if (typeof initTS === 'function') {
-                initTS('#assignClientId', { create: false, dropdownParent: 'body' });
-                initTS('#assignClientMatterId', { create: false, dropdownParent: 'body' });
-            }
-            if (clientId && assignClientSelect) {
-                assignClientSelect.value = clientId;
-                loadAssignMattersForClient(clientId);
-            }
             if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
                 bootstrap.Modal.getOrCreateInstance(assignEmailModal).show();
             } else {
                 assignEmailModal.classList.add('show');
                 assignEmailModal.style.display = 'block';
+                initAssignEmailModalSelects();
+                if (clientId && assignClientSelect) {
+                    assignClientSelect.value = clientId;
+                    loadAssignMattersForClient(clientId);
+                }
+            }
+        });
+
+        assignEmailModal.addEventListener('shown.bs.modal', function () {
+            initAssignEmailModalSelects();
+            if (clientId && assignClientSelect) {
+                const ts = assignClientSelect.tomselect;
+                if (ts) {
+                    ts.setValue(clientId, true);
+                } else {
+                    assignClientSelect.value = clientId;
+                }
+                loadAssignMattersForClient(clientId);
+            }
+        });
+
+        assignEmailModal.addEventListener('hidden.bs.modal', function () {
+            destroyAssignEmailModalSelects();
+            if (assignMatterSelect) {
+                assignMatterSelect.innerHTML = '<option value="">Select matter</option>';
+                assignMatterSelect.disabled = true;
             }
         });
     }
