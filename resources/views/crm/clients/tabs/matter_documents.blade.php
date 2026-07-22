@@ -969,10 +969,11 @@
                 $(document).on('click', '.client-nav-button[data-tab="matterdocuments"]', function() {
                     setTimeout(function() {
                         initVisaDocDragDrop();
-                        if (typeof adjustPreviewContainers === 'function') {
+                        if (typeof scheduleClientDocumentsPanelHeightAdjust === 'function') {
+                            scheduleClientDocumentsPanelHeightAdjust();
+                        } else if (typeof adjustPreviewContainers === 'function') {
                             adjustPreviewContainers();
-                        }
-                        if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                        } else if (typeof adjustClientDocumentsPanelHeight === 'function') {
                             adjustClientDocumentsPanelHeight();
                         }
                     }, 200);
@@ -982,10 +983,11 @@
                 if ($('#matterdocuments-tab').hasClass('active')) {
                     setTimeout(function() {
                         initVisaDocDragDrop();
-                        if (typeof adjustPreviewContainers === 'function') {
+                        if (typeof scheduleClientDocumentsPanelHeightAdjust === 'function') {
+                            scheduleClientDocumentsPanelHeightAdjust();
+                        } else if (typeof adjustPreviewContainers === 'function') {
                             adjustPreviewContainers();
-                        }
-                        if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                        } else if (typeof adjustClientDocumentsPanelHeight === 'function') {
                             adjustClientDocumentsPanelHeight();
                         }
                     }, 500);
@@ -1049,7 +1051,9 @@
                     
                     if (dropzoneContainer.is(':visible')) {
                         dropzoneContainer.slideUp(200, function() {
-                            if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                            if (typeof scheduleClientDocumentsPanelHeightAdjust === 'function') {
+                                scheduleClientDocumentsPanelHeightAdjust();
+                            } else if (typeof adjustClientDocumentsPanelHeight === 'function') {
                                 adjustClientDocumentsPanelHeight();
                             }
                         });
@@ -1063,7 +1067,9 @@
                             window.hideBulkUploadModal();
                         }
                         dropzoneContainer.slideDown(200, function() {
-                            if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                            if (typeof scheduleClientDocumentsPanelHeightAdjust === 'function') {
+                                scheduleClientDocumentsPanelHeightAdjust();
+                            } else if (typeof adjustClientDocumentsPanelHeight === 'function') {
                                 adjustClientDocumentsPanelHeight();
                             }
                         });

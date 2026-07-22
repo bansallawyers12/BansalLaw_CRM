@@ -98,15 +98,15 @@
     ];
 
     /**
-     * Personal documents: preview + list row at full viewport height.
+     * Personal/Matter documents: preview + list row at full viewport height (100vh).
      */
-    function adjustPersonalDocPreviewHeight() {
-        var $tab = $('#personaldocuments-tab');
+    function adjustDocTabPreviewHeight(tabSelector, paneSelector, contentSelector) {
+        var $tab = $(tabSelector);
         if (!$tab.length || !$tab.hasClass('active')) {
             return;
         }
 
-        var $pane = $tab.find('.subtab2-pane.active');
+        var $pane = $tab.find(paneSelector);
         var $preview = $pane.find('.client-doc-preview-pane').first();
         if (!$preview.length) {
             return;
@@ -136,7 +136,7 @@
             });
         }
 
-        var $content = $tab.find('.subtab2-content').first();
+        var $content = $tab.find(contentSelector).first();
         if ($content.length) {
             $content.css({
                 minHeight: fullHeight,
@@ -144,6 +144,14 @@
                 maxHeight: 'none'
             });
         }
+    }
+
+    function adjustPersonalDocPreviewHeight() {
+        adjustDocTabPreviewHeight('#personaldocuments-tab', '.subtab2-pane.active', '.subtab2-content');
+    }
+
+    function adjustMatterDocPreviewHeight() {
+        adjustDocTabPreviewHeight('#matterdocuments-tab', '.subtab6-pane.active', '.subtab6-content');
     }
 
     /**
@@ -155,9 +163,15 @@
         var isMobile = $(window).width() <= 768;
         var viewportHeight = window.innerHeight || $(window).height();
 
-        if ($('#personaldocuments-tab').hasClass('active') && !isMobile) {
-            adjustPersonalDocPreviewHeight();
-            return;
+        if (!isMobile) {
+            if ($('#personaldocuments-tab').hasClass('active')) {
+                adjustPersonalDocPreviewHeight();
+                return;
+            }
+            if ($('#matterdocuments-tab').hasClass('active')) {
+                adjustMatterDocPreviewHeight();
+                return;
+            }
         }
 
         clientDocumentsTabConfigs.forEach(function(cfg) {
@@ -224,17 +238,21 @@
     function scheduleClientDocumentsPanelHeightAdjust() {
         adjustClientDocumentsPanelHeight();
         adjustPersonalDocPreviewHeight();
+        adjustMatterDocPreviewHeight();
         window.requestAnimationFrame(function() {
             adjustClientDocumentsPanelHeight();
             adjustPersonalDocPreviewHeight();
+            adjustMatterDocPreviewHeight();
         });
         setTimeout(function() {
             adjustClientDocumentsPanelHeight();
             adjustPersonalDocPreviewHeight();
+            adjustMatterDocPreviewHeight();
         }, 150);
         setTimeout(function() {
             adjustClientDocumentsPanelHeight();
             adjustPersonalDocPreviewHeight();
+            adjustMatterDocPreviewHeight();
         }, 400);
     }
 
@@ -248,7 +266,7 @@
      */
     function adjustPreviewContainers() {
         if ($('#matterdocuments-tab').hasClass('active') || $('#personaldocuments-tab').hasClass('active')) {
-            adjustClientDocumentsPanelHeight();
+            scheduleClientDocumentsPanelHeightAdjust();
             return;
         }
 
@@ -282,6 +300,7 @@
     window.adjustActivityFeedHeight = adjustActivityFeedHeight;
     window.adjustClientDocumentsPanelHeight = adjustClientDocumentsPanelHeight;
     window.adjustPersonalDocPreviewHeight = adjustPersonalDocPreviewHeight;
+    window.adjustMatterDocPreviewHeight = adjustMatterDocPreviewHeight;
     window.scheduleClientDocumentsPanelHeightAdjust = scheduleClientDocumentsPanelHeightAdjust;
     window.adjustMatterDocumentsPanelHeight = adjustMatterDocumentsPanelHeight;
     window.adjustPreviewContainers = adjustPreviewContainers;
