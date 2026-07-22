@@ -891,6 +891,8 @@ $(document).ready(function() {
             if (isClientDocPreviewPane(container)) {
                 if (typeof window.scheduleClientDocumentsPanelHeightAdjust === 'function') {
                     window.scheduleClientDocumentsPanelHeightAdjust();
+                } else if (typeof window.adjustMatterDocPreviewHeight === 'function') {
+                    window.adjustMatterDocPreviewHeight();
                 } else if (typeof window.adjustPersonalDocPreviewHeight === 'function') {
                     window.adjustPersonalDocPreviewHeight();
                 }
@@ -1045,6 +1047,8 @@ $(document).ready(function() {
 
         if (typeof window.scheduleClientDocumentsPanelHeightAdjust === 'function') {
             window.scheduleClientDocumentsPanelHeightAdjust();
+        } else if (typeof window.adjustMatterDocPreviewHeight === 'function') {
+            window.adjustMatterDocPreviewHeight();
         } else if (typeof window.adjustPersonalDocPreviewHeight === 'function') {
             window.adjustPersonalDocPreviewHeight();
         } else if (typeof window.adjustClientDocumentsPanelHeight === 'function') {
@@ -1081,6 +1085,8 @@ $(document).ready(function() {
                 `);
                 if (typeof window.scheduleClientDocumentsPanelHeightAdjust === 'function') {
                     window.scheduleClientDocumentsPanelHeightAdjust();
+                } else if (typeof window.adjustMatterDocPreviewHeight === 'function') {
+                    window.adjustMatterDocPreviewHeight();
                 } else if (typeof window.adjustPersonalDocPreviewHeight === 'function') {
                     window.adjustPersonalDocPreviewHeight();
                 }
