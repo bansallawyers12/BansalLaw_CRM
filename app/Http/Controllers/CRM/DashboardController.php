@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\DashboardRequest;
 use App\Models\Staff;
 use App\Services\DashboardService;
+use App\Services\StaffPersonalCalendarFeedService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
@@ -14,10 +15,15 @@ class DashboardController extends Controller
 {
     protected $dashboardService;
 
-    public function __construct(DashboardService $dashboardService)
-    {
+    protected StaffPersonalCalendarFeedService $personalCalendarFeed;
+
+    public function __construct(
+        DashboardService $dashboardService,
+        StaffPersonalCalendarFeedService $personalCalendarFeed
+    ) {
         $this->middleware('auth:admin');
         $this->dashboardService = $dashboardService;
+        $this->personalCalendarFeed = $personalCalendarFeed;
     }
 
     /**
@@ -26,8 +32,38 @@ class DashboardController extends Controller
     public function index(DashboardRequest $request)
     {
         $dashboardData = $this->dashboardService->getDashboardData($request);
-        
+        $staff = Auth::guard('admin')->user();
+
+        if ($staff instanceof Staff) {
+            $dashboardData['calendarStats'] = $this->personalCalendarFeed->statsForStaff($staff);
+        } else {
+            $dashboardData['calendarStats'] = ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0];
+        }
+
         return view('crm.dashboard-optimized', $dashboardData);
+    }
+
+    /**
+     * JSON feed for the staff personal calendar on the dashboard.
+     */
+    public function calendarEvents(Request $request)
+    {
+        $staff = Auth::guard('admin')->user();
+        if (! $staff instanceof Staff) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $rows = $this->personalCalendarFeed->eventsForStaffRequest($staff, $request);
+        $events = array_map(
+            fn (array $row) => $this->personalCalendarFeed->toFullCalendarEvent($row),
+            $rows
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $events,
+            'stats' => $this->personalCalendarFeed->statsForStaff($staff),
+        ]);
     }
 
     /**

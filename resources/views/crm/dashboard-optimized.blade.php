@@ -12,22 +12,25 @@
             || ! empty((string) ($filters['client_stage'] ?? ''));
     @endphp
     <main class="main-content">
-        <header class="header">
-            <div class="header-title-section">
-                <h1 id="dashboardGreeting" data-first-name="{{ $staffFirstName }}">{{ $greeting }}, {{ $staffFirstName }}</h1>
-                <p class="dashboard-header-meta">
-                    <time id="dashboardDateTime" datetime="{{ $dashboardNow->toIso8601String() }}" data-timezone="{{ $dashboardTz }}">
-                        {{ $dashboardNow->format('l, j F Y') }} · {{ $dashboardNow->format('g:i A') }}
-                    </time>
-                </p>
-            </div>
-            <div class="header-actions">
-                <a href="{{ route('adminconsole.system.clients.createclient') }}" class="action-btn action-btn-primary">
-                    <i class="fa-solid fa-user-plus"></i> New client
-                </a>
-                <button type="button" class="action-btn action-btn-secondary" id="refreshDashboard" title="Refresh Dashboard (Alt+R)">
-                    <i class="fa-solid fa-rotate"></i> Refresh
-                </button>
+        <header class="dashboard-welcome-banner">
+            <div class="dashboard-welcome-content">
+                <div class="dashboard-welcome-text">
+                    <p class="dashboard-welcome-label">Dashboard</p>
+                    <h1 id="dashboardGreeting" data-first-name="{{ $staffFirstName }}">{{ $greeting }}, {{ $staffFirstName }}</h1>
+                    <p class="dashboard-header-meta">
+                        <time id="dashboardDateTime" datetime="{{ $dashboardNow->toIso8601String() }}" data-timezone="{{ $dashboardTz }}">
+                            {{ $dashboardNow->format('l, j F Y') }} · {{ $dashboardNow->format('g:i A') }}
+                        </time>
+                    </p>
+                </div>
+                <div class="header-actions">
+                    <a href="{{ route('adminconsole.system.clients.createclient') }}" class="action-btn action-btn-primary">
+                        <i class="fa-solid fa-user-plus"></i> New client
+                    </a>
+                    <button type="button" class="action-btn action-btn-secondary" id="refreshDashboard" title="Refresh Dashboard (Alt+R)">
+                        <i class="fa-solid fa-rotate"></i> Refresh
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -69,6 +72,11 @@
                 icon-class="icon-pending" 
             />
         </section>
+
+        <x-dashboard.staff-calendar
+            :stats="$calendarStats ?? ['today' => 0, 'this_week' => 0, 'overdue_actions' => 0]"
+            :timezone="$dashboardTz"
+        />
 
         @include('crm.partials.access-approvals-dashboard')
 
@@ -413,6 +421,7 @@
 
 @push('styles')
 @once
+@vite(['resources/css/fullcalendar-v6.css'])
 <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 <link rel="stylesheet" href="{{ asset('css/task-popover-modern.css') }}">
 <style>
@@ -431,11 +440,8 @@
     font-variant-numeric: tabular-nums;
 }
 
-.header-title-section h1 {
-    margin: 0;
-    font-size: 1.8em;
-    font-weight: 700;
-    color: var(--primary-color);
+.dashboard-welcome-banner .dashboard-header-meta time {
+    color: inherit;
 }
 .todo-filter-tabs {
     display: flex;
@@ -1325,6 +1331,8 @@ body > .ts-dropdown {
     // Define dashboard routes and data before loading the main script
     window.dashboardRoutes = {
         dashboard: "{{ route('dashboard') }}",
+        calendarEvents: "{{ route('dashboard.calendar-events') }}",
+        storeCalendarEvent: "{{ route('booking.api.calendar-events.store') }}",
         updateStage: "{{ route('dashboard.update-stage') }}",
         columnPreferences: "{{ route('dashboard.column-preferences') }}",
         extendDeadline: "{{ route('dashboard.extend-deadline') }}",
@@ -1343,6 +1351,7 @@ body > .ts-dropdown {
     }
 </script>
 <script src="{{ asset('js/dashboard-optimized.js') }}"></script>
+<script src="{{ asset('js/dashboard-calendar.js') }}"></script>
 <script>
 $(function () {
     // Initialize Add New Task popover - content from template (avoids unescaped & in data-content attribute)
