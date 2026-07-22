@@ -96,7 +96,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const syncMailboxFilter = document.getElementById('syncMailboxFilter');
     const assignEmailModal = document.getElementById('assignSyncedEmailModal');
     const assignClientSelect = document.getElementById('assignClientId');
-    const assignMatterSelect = document.getElementById('assignClientMatterId');
+    const assignMatterHiddenInput = document.getElementById('assignClientMatterId');
+    const assignMatterList = document.getElementById('assignMatterList');
+    const assignMatterPlaceholder = document.getElementById('assignMatterPlaceholder');
+    const assignMatterLoading = document.getElementById('assignMatterLoading');
+    const assignMatterPicker = document.getElementById('assignMatterPicker');
     const assignEmailLogIdInput = document.getElementById('assignEmailLogId');
     const assignEmailConfirmBtn = document.getElementById('assignEmailConfirmBtn');
     const assignEmailStatus = document.getElementById('assignEmailStatus');
@@ -104,8 +108,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const assignEmailPreviewMeta = document.getElementById('assignEmailPreviewMeta');
     const assignMatterHint = document.getElementById('assignMatterHint');
     const assignMatterField = document.getElementById('assignMatterField');
-    const assignSelectedClientChip = document.getElementById('assignSelectedClientChip');
-    const assignSelectedClientLabel = document.getElementById('assignSelectedClientLabel');
+    const assignClientField = document.getElementById('assignClientField');
+    const assignStepClient = document.getElementById('assignStepClient');
+    const assignStepMatter = document.getElementById('assignStepMatter');
+    const assignStepConnector = document.getElementById('assignStepConnector');
     const assignEmailUrl = outlookContainer ? outlookContainer.getAttribute('data-assign-email-url') : '';
     const syncInboxUrl = outlookContainer ? outlookContainer.getAttribute('data-sync-inbox-url') : '';
     const syncStatusUrlBase = outlookContainer ? outlookContainer.getAttribute('data-sync-status-url') : '';
@@ -2901,8 +2907,35 @@ document.addEventListener('DOMContentLoaded', function() {
             ? extractClientIdFromTomSelectValue(assignClientSelect.value, clientTs)
             : null;
         const hasClient = !!clientId;
-        const hasMatter = assignMatterSelect && assignMatterSelect.value && !assignMatterSelect.disabled;
+        const hasMatter = assignMatterHiddenInput && assignMatterHiddenInput.value !== '';
         assignEmailConfirmBtn.disabled = !(hasClient && hasMatter);
+    }
+
+    function updateAssignStepProgress() {
+        const clientTs = assignClientSelect && assignClientSelect.tomselect ? assignClientSelect.tomselect : null;
+        const hasClient = !!extractClientIdFromTomSelectValue(
+            assignClientSelect ? assignClientSelect.value : '',
+            clientTs
+        );
+        const hasMatter = assignMatterHiddenInput && assignMatterHiddenInput.value !== '';
+
+        if (assignStepClient) {
+            assignStepClient.classList.toggle('assign-email-step--active', !hasClient);
+            assignStepClient.classList.toggle('assign-email-step--done', hasClient);
+        }
+        if (assignStepMatter) {
+            assignStepMatter.classList.toggle('assign-email-step--active', hasClient && !hasMatter);
+            assignStepMatter.classList.toggle('assign-email-step--done', hasMatter);
+        }
+        if (assignStepConnector) {
+            assignStepConnector.classList.toggle('assign-email-step__connector--done', hasClient);
+        }
+        if (assignClientField) {
+            assignClientField.classList.toggle('assign-email-field--done', hasClient);
+        }
+        if (assignMatterField) {
+            assignMatterField.classList.toggle('assign-email-field--disabled', !hasClient);
+        }
     }
 
     function populateAssignEmailPreview() {
@@ -2937,14 +2970,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!assignMatterHint) {
             return;
         }
-        const iconClass = state === 'loading'
-            ? 'fa-solid fa-spinner fa-spin'
-            : state === 'success'
-                ? 'fa-solid fa-circle-check'
-                : state === 'error'
-                    ? 'fa-solid fa-circle-exclamation'
-                    : 'fa-solid fa-arrow-up';
-        assignMatterHint.innerHTML = '<i class="' + iconClass + ' assign-email-field__hint-icon" aria-hidden="true"></i> ' + escapeHtml(message || '');
+        if (!message) {
+            assignMatterHint.textContent = '';
+            assignMatterHint.hidden = true;
+            return;
+        }
+        assignMatterHint.hidden = false;
+        assignMatterHint.textContent = message;
         assignMatterHint.classList.toggle('assign-email-field__hint--loading', state === 'loading');
         assignMatterHint.classList.toggle('assign-email-field__hint--success', state === 'success');
         assignMatterHint.classList.toggle('assign-email-field__hint--error', state === 'error');
@@ -2956,26 +2988,99 @@ document.addEventListener('DOMContentLoaded', function() {
             assignMatterField.classList.toggle('assign-email-field--loading', state === 'loading');
             assignMatterField.classList.toggle('assign-email-field--empty', state === 'empty');
         }
+        if (assignMatterPicker) {
+            assignMatterPicker.classList.toggle('assign-matter-picker--loading', state === 'loading');
+            assignMatterPicker.classList.toggle('assign-matter-picker--ready', state === 'ready');
+            assignMatterPicker.classList.toggle('assign-matter-picker--empty', state === 'empty');
+        }
     }
 
-    function updateAssignSelectedClientChip(tsInstance, value) {
-        if (!assignSelectedClientChip || !assignSelectedClientLabel) {
+    function setAssignMatterPickerView(view) {
+        if (assignMatterPlaceholder) {
+            assignMatterPlaceholder.hidden = view !== 'placeholder';
+        }
+        if (assignMatterLoading) {
+            assignMatterLoading.hidden = view !== 'loading';
+        }
+        if (assignMatterList) {
+            assignMatterList.hidden = view !== 'list';
+        }
+    }
+
+    function clearAssignMatterSelection() {
+        if (assignMatterHiddenInput) {
+            assignMatterHiddenInput.value = '';
+        }
+        if (assignMatterList) {
+            assignMatterList.innerHTML = '';
+        }
+        setAssignMatterPickerView('placeholder');
+        setAssignMatterFieldState('idle');
+        setAssignMatterHint('', null);
+        updateAssignStepProgress();
+    }
+
+    function selectAssignMatter(matterId) {
+        if (!assignMatterHiddenInput || !assignMatterList) {
             return;
         }
-        if (!value || !tsInstance) {
-            assignSelectedClientChip.hidden = true;
-            assignSelectedClientLabel.textContent = '';
+        assignMatterHiddenInput.value = String(matterId);
+        assignMatterList.querySelectorAll('.assign-matter-card').forEach(function (card) {
+            const isSelected = card.getAttribute('data-matter-id') === String(matterId);
+            card.classList.toggle('assign-matter-card--selected', isSelected);
+            card.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+        });
+        updateAssignConfirmButton();
+        updateAssignStepProgress();
+    }
+
+    function renderAssignMatterPicker(matters, preferredMatterId) {
+        if (!assignMatterList || !assignMatterHiddenInput) {
             return;
         }
-        const option = tsInstance.options[value] || {};
-        const label = option.name || option.text || '';
-        if (!label) {
-            assignSelectedClientChip.hidden = true;
-            assignSelectedClientLabel.textContent = '';
+
+        assignMatterList.innerHTML = '';
+        assignMatterHiddenInput.value = '';
+
+        if (!matters || matters.length === 0) {
+            setAssignMatterPickerView('placeholder');
+            if (assignMatterPlaceholder) {
+                assignMatterPlaceholder.innerHTML = '<i class="fa-solid fa-folder-open" aria-hidden="true"></i><span>No matters found for this client.</span>';
+            }
             return;
         }
-        assignSelectedClientLabel.textContent = label;
-        assignSelectedClientChip.hidden = false;
+
+        let autoSelectId = preferredMatterId || null;
+        if (!autoSelectId && matters.length === 1) {
+            autoSelectId = matters[0].id;
+        }
+
+        matters.forEach(function (matter) {
+            const ref = (matter.client_unique_matter_no || '').trim();
+            const title = (matter.title || '').trim();
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'assign-matter-card';
+            card.setAttribute('data-matter-id', String(matter.id));
+            card.setAttribute('aria-pressed', 'false');
+            card.innerHTML =
+                '<span class="assign-matter-card__main">'
+                + '<span class="assign-matter-card__ref">' + escapeHtml(ref || 'Matter') + '</span>'
+                + (title ? '<span class="assign-matter-card__title">' + escapeHtml(title) + '</span>' : '')
+                + '</span>'
+                + '<span class="assign-matter-card__check" aria-hidden="true"><i class="fa-solid fa-check"></i></span>';
+            card.addEventListener('click', function () {
+                selectAssignMatter(matter.id);
+            });
+            assignMatterList.appendChild(card);
+        });
+
+        setAssignMatterPickerView('list');
+        if (autoSelectId) {
+            selectAssignMatter(autoSelectId);
+        } else {
+            updateAssignStepProgress();
+        }
     }
 
     function extractClientIdFromTomSelectValue(value, tsInstance) {
@@ -3010,48 +3115,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return null;
     }
 
-    function formatAssignMatterLabel(matter) {
-        const ref = (matter.client_unique_matter_no || '').trim();
-        const title = (matter.title || '').trim();
-        if (ref && title) {
-            return ref + ' — ' + title;
-        }
-        return ref || title || 'Matter';
-    }
-
-    function initAssignMatterTomSelect(preferredMatterId) {
-        if (!assignMatterSelect || typeof initTS !== 'function') {
-            return null;
-        }
-        if (typeof destroyTS === 'function') {
-            destroyTS(assignMatterSelect);
-        }
-        const matterTs = initTS(assignMatterSelect, {
-            create: false,
-            dropdownParent: 'body',
-            placeholder: 'Select matter...',
-            onChange: function () {
-                updateAssignConfirmButton();
-            }
-        });
-        if (matterTs && matterTs.wrapper) {
-            matterTs.wrapper.style.width = '100%';
-        }
-        if (preferredMatterId && matterTs) {
-            matterTs.setValue(String(preferredMatterId), true);
-        }
-        return matterTs;
-    }
-
     function destroyAssignEmailModalSelects() {
         if (typeof destroyTS !== 'function') {
             return;
         }
         if (assignClientSelect) {
             destroyTS(assignClientSelect);
-        }
-        if (assignMatterSelect) {
-            destroyTS(assignMatterSelect);
         }
     }
 
@@ -3073,79 +3142,65 @@ document.addEventListener('DOMContentLoaded', function() {
                 clientTs = initTS(assignClientSelect, buildGetAllClientsTomSelectConfig({
                     url: clientsUrl,
                     dropdownParent: dropdownParent,
-                    placeholder: 'Search client by name, email, or ref...',
+                    placeholder: 'Type name, email, or client ref...',
                     onChange: function (value) {
+                        clearAssignMatterSelection();
                         if (!value) {
-                            updateAssignSelectedClientChip(null, '');
-                            loadAssignMattersForClient(null);
                             updateAssignConfirmButton();
+                            updateAssignStepProgress();
                             return;
                         }
                         const option = this.options[value] || {};
                         if (option.locked) {
                             this.clear(true);
-                            updateAssignSelectedClientChip(null, '');
                             if (typeof window.openCrmAccessModal === 'function') {
                                 window.openCrmAccessModal(option);
                             }
-                            loadAssignMattersForClient(null);
                             updateAssignConfirmButton();
+                            updateAssignStepProgress();
                             return;
                         }
-                        updateAssignSelectedClientChip(this, value);
                         const clientId = extractClientIdFromTomSelectValue(value, this);
                         const matterRef = extractMatterRefFromTomSelectValue(value);
                         loadAssignMattersForClient(clientId, matterRef);
                         updateAssignConfirmButton();
+                        updateAssignStepProgress();
                     }
                 }));
+                if (clientTs && clientTs.wrapper) {
+                    clientTs.wrapper.classList.add('assign-email-ts');
+                    clientTs.wrapper.style.width = '100%';
+                }
             } else {
                 clientTs = initTS(assignClientSelect, {
                     create: false,
                     dropdownParent: dropdownParent
                 });
             }
-            if (clientTs && clientTs.wrapper) {
-                clientTs.wrapper.style.width = '100%';
-            }
-        }
-
-        if (assignMatterSelect && !assignMatterSelect.disabled) {
-            const matterTs = initTS(assignMatterSelect, {
-                create: false,
-                dropdownParent: dropdownParent,
-                onChange: function () {
-                    updateAssignConfirmButton();
-                }
-            });
-            if (matterTs && matterTs.wrapper) {
-                matterTs.wrapper.style.width = '100%';
-            }
         }
 
         updateAssignConfirmButton();
+        updateAssignStepProgress();
     }
 
     function loadAssignMattersForClient(selectedClientId, preferredMatterRef) {
-        if (!assignMatterSelect || !mattersUrl || !selectedClientId) {
-            if (assignMatterSelect) {
-                if (typeof destroyTS === 'function') {
-                    destroyTS(assignMatterSelect);
-                }
-                assignMatterSelect.innerHTML = '<option value="">Select matter</option>';
-                assignMatterSelect.disabled = true;
+        if (!mattersUrl || !selectedClientId) {
+            clearAssignMatterSelection();
+            if (assignMatterPlaceholder) {
+                assignMatterPlaceholder.innerHTML = '<i class="fa-solid fa-arrow-up" aria-hidden="true"></i><span>Choose a client first to see their matters.</span>';
             }
-            setAssignMatterFieldState('idle');
-            setAssignMatterHint('Choose a client first to load their matters.', 'idle');
             updateAssignConfirmButton();
             return;
         }
 
-        assignMatterSelect.disabled = true;
-        assignMatterSelect.innerHTML = '<option value="">Loading matters...</option>';
+        if (assignMatterHiddenInput) {
+            assignMatterHiddenInput.value = '';
+        }
         setAssignMatterFieldState('loading');
-        setAssignMatterHint('Loading matters for selected client...', 'loading');
+        setAssignMatterPickerView('loading');
+        setAssignMatterHint('Loading matters...', 'loading');
         updateAssignConfirmButton();
+        updateAssignStepProgress();
 
         fetch(mattersUrl, {
             method: 'POST',
@@ -3166,46 +3221,44 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(function (data) {
                 const matters = (data && data.clientMatetrs) ? data.clientMatetrs : [];
                 let preferredMatterId = null;
-                let options = '<option value="">Select matter</option>';
 
                 matters.forEach(function (matter) {
                     const matterRef = String(matter.client_unique_matter_no || '').trim();
                     const selectedByContext = matterId && String(matter.id) === String(matterId);
                     const selectedByRef = preferredMatterRef
                         && matterRef.toLowerCase() === String(preferredMatterRef).toLowerCase();
-                    const selected = selectedByContext || selectedByRef ? ' selected' : '';
-                    if (selected) {
+                    if (selectedByContext || selectedByRef) {
                         preferredMatterId = matter.id;
                     }
-                    options += '<option value="' + matter.id + '"' + selected + '>'
-                        + escapeHtml(formatAssignMatterLabel(matter))
-                        + '</option>';
                 });
-
-                assignMatterSelect.innerHTML = options;
-                assignMatterSelect.disabled = matters.length === 0;
 
                 const matterCount = matters.length;
                 if (matterCount === 0) {
                     setAssignMatterFieldState('empty');
                     setAssignMatterHint('No matters found for this client. Create a matter first.', 'error');
+                    renderAssignMatterPicker([], null);
                 } else {
                     setAssignMatterFieldState('ready');
                     setAssignMatterHint(
-                        matterCount === 1 ? '1 matter available — select it below.' : matterCount + ' matters available — pick the correct one.',
+                        matterCount === 1
+                            ? 'Tap the matter below to confirm.'
+                            : matterCount + ' matters — tap the one this email relates to.',
                         'success'
                     );
+                    renderAssignMatterPicker(matters, preferredMatterId);
                 }
-
-                initAssignMatterTomSelect(preferredMatterId);
                 updateAssignConfirmButton();
+                updateAssignStepProgress();
             })
             .catch(function () {
-                assignMatterSelect.innerHTML = '<option value="">Could not load matters</option>';
-                assignMatterSelect.disabled = true;
                 setAssignMatterFieldState('empty');
+                setAssignMatterPickerView('placeholder');
+                if (assignMatterPlaceholder) {
+                    assignMatterPlaceholder.innerHTML = '<i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i><span>Could not load matters. Try again.</span>';
+                }
                 setAssignMatterHint('Could not load matters. Try selecting the client again.', 'error');
                 updateAssignConfirmButton();
+                updateAssignStepProgress();
             });
     }
 
@@ -3231,6 +3284,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             populateAssignEmailPreview();
             updateAssignConfirmButton();
+            updateAssignStepProgress();
             if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
                 bootstrap.Modal.getOrCreateInstance(assignEmailModal).show();
             } else {
@@ -3257,22 +3311,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 loadAssignMattersForClient(clientId);
             }
+            updateAssignStepProgress();
         });
 
         assignEmailModal.addEventListener('hidden.bs.modal', function () {
             document.body.classList.remove('assign-email-modal-open');
             destroyAssignEmailModalSelects();
-            if (assignMatterSelect) {
-                assignMatterSelect.innerHTML = '<option value="">Select matter</option>';
-                assignMatterSelect.disabled = true;
-            }
-            setAssignMatterFieldState('idle');
-            setAssignMatterHint('Choose a client first to load their matters.', 'idle');
-            if (assignSelectedClientChip) {
-                assignSelectedClientChip.hidden = true;
-            }
-            if (assignSelectedClientLabel) {
-                assignSelectedClientLabel.textContent = '';
+            clearAssignMatterSelection();
+            if (assignMatterPlaceholder) {
+                assignMatterPlaceholder.innerHTML = '<i class="fa-solid fa-arrow-up" aria-hidden="true"></i><span>Choose a client first to see their matters.</span>';
             }
             if (assignEmailConfirmBtn) {
                 assignEmailConfirmBtn.disabled = true;
@@ -3286,7 +3333,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const clientTs = assignClientSelect && assignClientSelect.tomselect ? assignClientSelect.tomselect : null;
             const selectedClientRaw = assignClientSelect ? assignClientSelect.value : '';
             const selectedClientId = extractClientIdFromTomSelectValue(selectedClientRaw, clientTs);
-            const selectedMatter = assignMatterSelect ? assignMatterSelect.value : '';
+            const selectedMatter = assignMatterHiddenInput ? assignMatterHiddenInput.value : '';
 
             if (!emailLogId || !selectedClientId || !selectedMatter) {
                 crmToast('Please select both client and matter.', 'warning');

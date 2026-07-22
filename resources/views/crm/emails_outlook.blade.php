@@ -520,10 +520,11 @@
             </div>
             <div class="modal-body assign-email-modal__body outlook-ui-modal__body">
                 <input type="hidden" id="assignEmailLogId" value="">
+                <input type="hidden" id="assignClientMatterId" value="">
 
                 <div class="assign-email-preview" id="assignEmailPreview">
                     <div class="assign-email-preview__icon" aria-hidden="true">
-                        <i class="fa-solid fa-envelope"></i>
+                        <i class="fa-solid fa-envelope-open-text"></i>
                     </div>
                     <div class="assign-email-preview__content">
                         <div class="assign-email-preview__label">Selected email</div>
@@ -532,49 +533,61 @@
                     </div>
                 </div>
 
+                <div class="assign-email-steps" aria-hidden="true">
+                    <div class="assign-email-step assign-email-step--active" id="assignStepClient">
+                        <span class="assign-email-step__dot">1</span>
+                        <span class="assign-email-step__label">Client</span>
+                    </div>
+                    <div class="assign-email-step__connector" id="assignStepConnector"></div>
+                    <div class="assign-email-step" id="assignStepMatter">
+                        <span class="assign-email-step__dot">2</span>
+                        <span class="assign-email-step__label">Matter</span>
+                    </div>
+                </div>
+
                 <div class="assign-email-fields">
-                    <div class="assign-email-field assign-email-field--client">
+                    <div class="assign-email-field assign-email-field--client" id="assignClientField">
                         <label class="assign-email-field__label" for="assignClientId">
-                            <span class="assign-email-field__step">1</span>
                             <span class="assign-email-field__label-text">
                                 <i class="fa-solid fa-user" aria-hidden="true"></i>
-                                Client
+                                Find client
                             </span>
                         </label>
-                        <div class="assign-email-field__control">
-                            <select id="assignClientId" class="form-control crm-ts-plain assign-email-field__select">
-                                <option value="">Search and select client...</option>
-                                @if(!empty($clientData))
-                                    <option value="{{ $clientData->id }}" selected>
-                                        {{ $clientData->first_name }} {{ $clientData->last_name }} ({{ $clientData->client_id }})
-                                    </option>
-                                @endif
-                            </select>
+                        <div class="assign-email-picker assign-email-picker--client">
+                            <i class="fa-solid fa-magnifying-glass assign-email-picker__icon" aria-hidden="true"></i>
+                            <div class="assign-email-picker__control">
+                                <select id="assignClientId" class="form-control crm-ts-plain assign-email-field__select" autocomplete="off">
+                                    <option value="">Type name, email, or client ref...</option>
+                                    @if(!empty($clientData))
+                                        <option value="{{ $clientData->id }}" selected>
+                                            {{ $clientData->first_name }} {{ $clientData->last_name }} ({{ $clientData->client_id }})
+                                        </option>
+                                    @endif
+                                </select>
+                            </div>
                         </div>
-                        <p class="assign-email-field__hint">Search by name, email, or client reference.</p>
-                        <div class="assign-email-selected-client" id="assignSelectedClientChip" hidden>
-                            <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
-                            <span id="assignSelectedClientLabel"></span>
-                        </div>
+                        <p class="assign-email-field__hint">Search and pick the client this email belongs to.</p>
                     </div>
 
                     <div class="assign-email-field assign-email-field--matter" id="assignMatterField">
-                        <label class="assign-email-field__label" for="assignClientMatterId">
-                            <span class="assign-email-field__step">2</span>
+                        <label class="assign-email-field__label">
                             <span class="assign-email-field__label-text">
                                 <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
-                                Matter
+                                Select matter
                             </span>
                         </label>
-                        <div class="assign-email-field__control">
-                            <select id="assignClientMatterId" class="form-control crm-ts-plain assign-email-field__select" disabled>
-                                <option value="">Select matter</option>
-                            </select>
+                        <div class="assign-matter-picker" id="assignMatterPicker">
+                            <div class="assign-matter-picker__placeholder" id="assignMatterPlaceholder">
+                                <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
+                                <span>Choose a client first to see their matters.</span>
+                            </div>
+                            <div class="assign-matter-picker__list" id="assignMatterList" hidden></div>
+                            <div class="assign-matter-picker__loading" id="assignMatterLoading" hidden>
+                                <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+                                <span>Loading matters...</span>
+                            </div>
                         </div>
-                        <p class="assign-email-field__hint" id="assignMatterHint">
-                            <i class="fa-solid fa-arrow-up assign-email-field__hint-icon" aria-hidden="true"></i>
-                            Choose a client first to load their matters.
-                        </p>
+                        <p class="assign-email-field__hint" id="assignMatterHint"></p>
                     </div>
                 </div>
 
