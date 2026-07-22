@@ -246,52 +246,108 @@
     }
 
     #importLeadModal .import-lead-modal__layout {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    #importLeadModal .import-lead-modal__steps-bar {
         display: grid;
-        grid-template-columns: minmax(220px, 280px) 1fr;
-        gap: 1.25rem;
-        align-items: start;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
     }
 
     @media (max-width: 767px) {
-        #importLeadModal .import-lead-modal__layout {
+        #importLeadModal .import-lead-modal__steps-bar {
             grid-template-columns: 1fr;
         }
     }
 
-    #importLeadModal .import-lead-modal__help {
-        background: var(--page-bg, #f0f6ff);
+    #importLeadModal .import-lead-modal__step-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 0.75rem 0.85rem;
         border: 1px solid var(--border, #c8dcef);
-        border-radius: 12px;
-        padding: 1rem 1.1rem;
+        border-radius: 10px;
+        background: var(--page-bg, #f0f6ff);
+        min-height: 100%;
     }
 
-    #importLeadModal .import-lead-modal__help h6 {
-        margin: 0 0 0.75rem;
+    #importLeadModal .import-lead-modal__step-card p {
+        margin: 0;
+        color: var(--text-muted, #5e7a90);
+        font-size: 0.8125rem;
+        line-height: 1.45;
+    }
+
+    #importLeadModal .import-lead-modal__toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+
+    #importLeadModal .import-lead-modal__required-fields {
+        padding: 0.85rem 1rem;
+        border: 1px solid rgba(58, 111, 168, 0.25);
+        border-radius: 10px;
+        background: rgba(58, 111, 168, 0.06);
+    }
+
+    #importLeadModal .import-lead-modal__required-fields h6 {
+        margin: 0 0 0.5rem;
         color: var(--navy, #1e3d60);
         font-size: 0.8125rem;
         font-weight: 700;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
     }
 
-    #importLeadModal .import-lead-modal__steps {
-        list-style: none;
-        margin: 0 0 1rem;
-        padding: 0;
-    }
-
-    #importLeadModal .import-lead-modal__steps li {
+    #importLeadModal .import-lead-modal__required-list {
         display: flex;
-        gap: 10px;
-        align-items: flex-start;
-        color: var(--text-muted, #5e7a90);
-        font-size: 0.875rem;
-        line-height: 1.45;
-        margin-bottom: 0.65rem;
+        flex-wrap: wrap;
+        gap: 0.45rem 0.75rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
     }
 
-    #importLeadModal .import-lead-modal__steps li:last-child {
-        margin-bottom: 0;
+    #importLeadModal .import-lead-modal__required-list li {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--navy, #1e3d60);
+        font-size: 0.8125rem;
+        font-weight: 600;
+    }
+
+    #importLeadModal .import-lead-modal__required-list li.is-optional {
+        color: var(--text-muted, #5e7a90);
+        font-weight: 500;
+    }
+
+    #importLeadModal .import-lead-modal__required-list .badge-req {
+        display: inline-block;
+        padding: 0.1rem 0.4rem;
+        border-radius: 999px;
+        background: rgba(168, 48, 32, 0.12);
+        color: var(--danger, #a83020);
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    #importLeadModal .import-lead-modal__required-list .badge-opt {
+        display: inline-block;
+        padding: 0.1rem 0.4rem;
+        border-radius: 999px;
+        background: rgba(30, 61, 96, 0.08);
+        color: var(--text-muted, #5e7a90);
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
     }
 
     #importLeadModal .import-lead-modal__step-num {
@@ -330,6 +386,11 @@
         border-color: var(--sidebar-active, #3a6fa8);
         color: var(--navy, #1e3d60);
         text-decoration: none;
+    }
+
+    #importLeadModal .import-lead-modal__toolbar .import-lead-modal__template-btn {
+        width: auto;
+        white-space: nowrap;
     }
 
     #importLeadModal .import-lead-modal__dropzone {
@@ -493,43 +554,102 @@
     }
 
     #importLeadModal .import-lead-modal__option {
-        margin-top: 1rem;
-        padding: 0.85rem 1rem;
+        margin-top: 0;
+        padding: 0;
+        border: none;
+        background: transparent;
+    }
+
+    #importLeadModal .import-lead-modal__toggle {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        width: 100%;
+        margin: 0;
+        padding: 0.9rem 1rem;
         border: 1px solid var(--border, #c8dcef);
         border-radius: 12px;
         background: #fff;
+        cursor: pointer;
+        user-select: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     }
 
-    #importLeadModal .import-lead-modal__option .form-check {
-        margin: 0;
-        padding-left: 1.75rem;
+    #importLeadModal .import-lead-modal__toggle:hover {
+        border-color: rgba(58, 111, 168, 0.45);
+        background: rgba(58, 111, 168, 0.03);
     }
 
-    #importLeadModal .import-lead-modal__option .form-check-input {
-        width: 1.05rem;
-        height: 1.05rem;
-        margin-top: 0.15rem;
-        border-color: var(--border, #c8dcef);
+    #importLeadModal .import-lead-modal__toggle-input {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+        pointer-events: none;
     }
 
-    #importLeadModal .import-lead-modal__option .form-check-input:checked {
-        background-color: var(--sidebar-active, #3a6fa8);
-        border-color: var(--sidebar-active, #3a6fa8);
+    #importLeadModal .import-lead-modal__toggle-switch {
+        position: relative;
+        flex-shrink: 0;
+        width: 42px;
+        height: 24px;
+        margin-top: 2px;
+        border-radius: 999px;
+        background: #c8d4e3;
+        transition: background 0.15s ease;
     }
 
-    #importLeadModal .import-lead-modal__option .form-check-label {
+    #importLeadModal .import-lead-modal__toggle-switch::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(30, 61, 96, 0.25);
+        transition: transform 0.15s ease;
+    }
+
+    #importLeadModal .import-lead-modal__toggle-input:checked + .import-lead-modal__toggle-switch {
+        background: var(--sidebar-active, #3a6fa8);
+    }
+
+    #importLeadModal .import-lead-modal__toggle-input:checked + .import-lead-modal__toggle-switch::after {
+        transform: translateX(18px);
+    }
+
+    #importLeadModal .import-lead-modal__toggle-input:focus-visible + .import-lead-modal__toggle-switch {
+        outline: 2px solid rgba(58, 111, 168, 0.45);
+        outline-offset: 2px;
+    }
+
+    #importLeadModal .import-lead-modal__toggle-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        min-width: 0;
+    }
+
+    #importLeadModal .import-lead-modal__toggle-title {
         color: var(--navy, #1e3d60);
-        font-size: 0.875rem;
-        font-weight: 600;
-        line-height: 1.45;
+        font-size: 0.9375rem;
+        font-weight: 700;
+        line-height: 1.35;
     }
 
     #importLeadModal .import-lead-modal__option-help {
         display: block;
-        margin-top: 0.25rem;
         color: var(--text-muted, #5e7a90);
         font-size: 0.8125rem;
         font-weight: 500;
+        line-height: 1.45;
+    }
+
+    #importLeadModal .import-lead-modal__submit[disabled] {
+        opacity: 0.55;
+        cursor: not-allowed;
     }
 
     #importLeadModal .modal-footer {
@@ -914,13 +1034,13 @@
                     </span>
                     <div>
                         <h5 class="modal-title" id="importLeadModalLabel">Import Leads</h5>
-                        <p class="import-lead-modal__subtitle">Bulk upload from JSON, CSV, or Excel</p>
+                        <p class="import-lead-modal__subtitle">Upload a file to create multiple leads at once</p>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <form method="post" name="importLeadForm" action="{{ URL::to('/clients/import') }}" autocomplete="off" enctype="multipart/form-data">
+            <form method="post" name="importLeadForm" action="{{ URL::to('/clients/import') }}" autocomplete="off" enctype="multipart/form-data" id="importLeadForm">
                 @csrf
                 <div class="modal-body">
                     @if ($errors->has('import_file'))
@@ -931,85 +1051,99 @@
                     @endif
 
                     <div class="import-lead-modal__layout">
-                        <aside class="import-lead-modal__help">
-                            <h6>How it works</h6>
-                            <ol class="import-lead-modal__steps">
-                                <li>
-                                    <span class="import-lead-modal__step-num">1</span>
-                                    <span>Download the template or prepare your file with one lead per row.</span>
-                                </li>
-                                <li>
-                                    <span class="import-lead-modal__step-num">2</span>
-                                    <span>Each row needs a first name and at least an email or phone number.</span>
-                                </li>
-                                <li>
-                                    <span class="import-lead-modal__step-num">3</span>
-                                    <span>Notes are saved as activity notes on the new lead.</span>
-                                </li>
-                            </ol>
-                            <a href="{{ route('leads.import_template') }}" class="import-lead-modal__template-btn">
-                                <i class="fa-solid fa-download"></i>
-                                Download CSV Template
-                            </a>
-                        </aside>
+                        <div class="import-lead-modal__steps-bar" aria-label="Import steps">
+                            <div class="import-lead-modal__step-card">
+                                <span class="import-lead-modal__step-num">1</span>
+                                <p>Download the template or prepare your spreadsheet with one lead per row.</p>
+                            </div>
+                            <div class="import-lead-modal__step-card">
+                                <span class="import-lead-modal__step-num">2</span>
+                                <p>Upload a JSON, CSV, or Excel file using the area below.</p>
+                            </div>
+                            <div class="import-lead-modal__step-card">
+                                <span class="import-lead-modal__step-num">3</span>
+                                <p>Review the import summary and check the leads list when finished.</p>
+                            </div>
+                        </div>
 
-                        <div class="import-lead-modal__main">
-                            <label class="import-lead-modal__dropzone" id="import_lead_dropzone" for="import_lead_file">
-                                <input type="file"
-                                    class="import-lead-modal__file-input"
-                                    id="import_lead_file"
-                                    name="import_file"
-                                    accept=".json,.csv,.xlsx,.xls"
-                                    required>
+                        <label class="import-lead-modal__dropzone" id="import_lead_dropzone" for="import_lead_file">
+                            <input type="file"
+                                class="import-lead-modal__file-input"
+                                id="import_lead_file"
+                                name="import_file"
+                                accept=".json,.csv,.xlsx,.xls"
+                                required>
 
-                                <div class="import-lead-modal__dropzone-empty">
-                                    <div class="import-lead-modal__dropzone-icon">
-                                        <i class="fa-solid fa-cloud-arrow-up"></i>
-                                    </div>
-                                    <p class="import-lead-modal__dropzone-title">Drag & drop your file here</p>
-                                    <p class="import-lead-modal__dropzone-hint">or click to browse from your computer</p>
-                                    <span class="import-lead-modal__dropzone-action">
-                                        <i class="fa-solid fa-folder-open"></i> Choose file
-                                    </span>
+                            <div class="import-lead-modal__dropzone-empty">
+                                <div class="import-lead-modal__dropzone-icon">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
                                 </div>
+                                <p class="import-lead-modal__dropzone-title">Drag & drop your file here</p>
+                                <p class="import-lead-modal__dropzone-hint">or click to browse from your computer</p>
+                                <span class="import-lead-modal__dropzone-action">
+                                    <i class="fa-solid fa-folder-open"></i> Choose file
+                                </span>
+                            </div>
 
-                                <div class="import-lead-modal__file-preview">
-                                    <span class="import-lead-modal__file-icon">
-                                        <i class="fa-solid fa-file-lines"></i>
-                                    </span>
-                                    <span class="import-lead-modal__file-meta">
-                                        <span class="import-lead-modal__file-name" id="import_lead_file_name">No file selected</span>
-                                        <span class="import-lead-modal__file-size" id="import_lead_file_size"></span>
-                                    </span>
-                                    <button type="button" class="import-lead-modal__file-remove" id="import_lead_file_remove" aria-label="Remove selected file">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
-                                </div>
-                            </label>
+                            <div class="import-lead-modal__file-preview">
+                                <span class="import-lead-modal__file-icon">
+                                    <i class="fa-solid fa-file-lines"></i>
+                                </span>
+                                <span class="import-lead-modal__file-meta">
+                                    <span class="import-lead-modal__file-name" id="import_lead_file_name">No file selected</span>
+                                    <span class="import-lead-modal__file-size" id="import_lead_file_size"></span>
+                                </span>
+                                <button type="button" class="import-lead-modal__file-remove" id="import_lead_file_remove" aria-label="Remove selected file">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </label>
 
+                        <div class="import-lead-modal__toolbar">
                             <div class="import-lead-modal__formats" aria-label="Supported file formats">
                                 <span class="import-lead-modal__format-chip"><i class="fa-solid fa-file-code"></i> JSON</span>
                                 <span class="import-lead-modal__format-chip"><i class="fa-solid fa-file-csv"></i> CSV</span>
                                 <span class="import-lead-modal__format-chip"><i class="fa-solid fa-file-excel"></i> XLSX</span>
                                 <span class="import-lead-modal__format-chip"><i class="fa-solid fa-file-excel"></i> XLS</span>
                             </div>
+                            <a href="{{ route('leads.import_template') }}" class="import-lead-modal__template-btn">
+                                <i class="fa-solid fa-download"></i>
+                                Download CSV Template
+                            </a>
+                        </div>
 
-                            <div class="import-lead-modal__option">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="skip_duplicates_lead" name="skip_duplicates" value="1" checked>
-                                    <label class="form-check-label" for="skip_duplicates_lead">
-                                        Skip duplicate leads
-                                        <span class="import-lead-modal__option-help">Same email or phone in CRM, or repeated rows in the uploaded file.</span>
-                                    </label>
-                                </div>
-                            </div>
+                        <div class="import-lead-modal__required-fields">
+                            <h6><i class="fa-solid fa-table-columns"></i> Expected columns</h6>
+                            <ul class="import-lead-modal__required-list">
+                                <li><span class="badge-req">Required</span> First Name</li>
+                                <li><span class="badge-req">One required</span> Email or Phone</li>
+                                <li class="is-optional"><span class="badge-opt">Optional</span> Last Name</li>
+                                <li class="is-optional"><span class="badge-opt">Optional</span> Stage</li>
+                                <li class="is-optional"><span class="badge-opt">Optional</span> Notes</li>
+                            </ul>
+                        </div>
+
+                        <div class="import-lead-modal__option">
+                            <label class="import-lead-modal__toggle" for="skip_duplicates_lead">
+                                <input class="import-lead-modal__toggle-input"
+                                    type="checkbox"
+                                    id="skip_duplicates_lead"
+                                    name="skip_duplicates"
+                                    value="1"
+                                    checked>
+                                <span class="import-lead-modal__toggle-switch" aria-hidden="true"></span>
+                                <span class="import-lead-modal__toggle-text">
+                                    <span class="import-lead-modal__toggle-title">Skip duplicate leads</span>
+                                    <span class="import-lead-modal__option-help">Ignore rows that match an existing lead by email or phone, or that repeat within the same file.</span>
+                                </span>
+                            </label>
                         </div>
                     </div>
                 </div>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary import-lead-modal__submit" id="import_lead_submit" disabled>
                         <i class="fa-solid fa-upload"></i> Import Leads
                     </button>
                 </div>
@@ -1124,6 +1258,7 @@
             var $fileName = $('#import_lead_file_name');
             var $fileSize = $('#import_lead_file_size');
             var $removeBtn = $('#import_lead_file_remove');
+            var $submitBtn = $('#import_lead_submit');
 
             function formatFileSize(bytes) {
                 if (!bytes && bytes !== 0) return '';
@@ -1137,12 +1272,14 @@
                     $dropzone.removeClass('has-file');
                     $fileName.text('No file selected');
                     $fileSize.text('');
+                    $submitBtn.prop('disabled', true);
                     return;
                 }
 
                 $dropzone.addClass('has-file');
                 $fileName.text(file.name);
                 $fileSize.text(formatFileSize(file.size));
+                $submitBtn.prop('disabled', false);
             }
 
             $input.on('change', function() {
@@ -1190,7 +1327,16 @@
                 $input.val('');
                 syncSelectedFile(null);
                 $dropzone.removeClass('is-dragover');
+                $submitBtn.prop('disabled', true).html('<i class="fa-solid fa-upload"></i> Import Leads');
             });
+
+            $('#importLeadForm').on('submit', function() {
+                $submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Importing...');
+            });
+
+            if ($input[0] && $input[0].files && $input[0].files[0]) {
+                syncSelectedFile($input[0].files[0]);
+            }
         })();
 
         // Auto-open the import modal when there are import validation errors (after redirect back)
