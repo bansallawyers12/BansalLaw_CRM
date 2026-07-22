@@ -103,6 +103,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const assignEmailPreviewSubject = document.getElementById('assignEmailPreviewSubject');
     const assignEmailPreviewMeta = document.getElementById('assignEmailPreviewMeta');
     const assignMatterHint = document.getElementById('assignMatterHint');
+    const assignMatterField = document.getElementById('assignMatterField');
+    const assignSelectedClientChip = document.getElementById('assignSelectedClientChip');
+    const assignSelectedClientLabel = document.getElementById('assignSelectedClientLabel');
     const assignEmailUrl = outlookContainer ? outlookContainer.getAttribute('data-assign-email-url') : '';
     const syncInboxUrl = outlookContainer ? outlookContainer.getAttribute('data-sync-inbox-url') : '';
     const syncStatusUrlBase = outlookContainer ? outlookContainer.getAttribute('data-sync-status-url') : '';
@@ -2893,7 +2896,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!assignEmailConfirmBtn) {
             return;
         }
-        const hasClient = assignClientSelect && assignClientSelect.value;
+        const clientTs = assignClientSelect && assignClientSelect.tomselect ? assignClientSelect.tomselect : null;
+        const clientId = assignClientSelect
+            ? extractClientIdFromTomSelectValue(assignClientSelect.value, clientTs)
+            : null;
+        const hasClient = !!clientId;
         const hasMatter = assignMatterSelect && assignMatterSelect.value && !assignMatterSelect.disabled;
         assignEmailConfirmBtn.disabled = !(hasClient && hasMatter);
     }
@@ -2926,10 +2933,114 @@ document.addEventListener('DOMContentLoaded', function() {
         assignEmailPreviewMeta.textContent = metaParts.join(' · ');
     }
 
-    function setAssignMatterHint(message) {
-        if (assignMatterHint) {
-            assignMatterHint.textContent = message;
+    function setAssignMatterHint(message, state) {
+        if (!assignMatterHint) {
+            return;
         }
+        const iconClass = state === 'loading'
+            ? 'fa-solid fa-spinner fa-spin'
+            : state === 'success'
+                ? 'fa-solid fa-circle-check'
+                : state === 'error'
+                    ? 'fa-solid fa-circle-exclamation'
+                    : 'fa-solid fa-arrow-up';
+        assignMatterHint.innerHTML = '<i class="' + iconClass + ' assign-email-field__hint-icon" aria-hidden="true"></i> ' + escapeHtml(message || '');
+        assignMatterHint.classList.toggle('assign-email-field__hint--loading', state === 'loading');
+        assignMatterHint.classList.toggle('assign-email-field__hint--success', state === 'success');
+        assignMatterHint.classList.toggle('assign-email-field__hint--error', state === 'error');
+    }
+
+    function setAssignMatterFieldState(state) {
+        if (assignMatterField) {
+            assignMatterField.classList.toggle('assign-email-field--ready', state === 'ready');
+            assignMatterField.classList.toggle('assign-email-field--loading', state === 'loading');
+            assignMatterField.classList.toggle('assign-email-field--empty', state === 'empty');
+        }
+    }
+
+    function updateAssignSelectedClientChip(tsInstance, value) {
+        if (!assignSelectedClientChip || !assignSelectedClientLabel) {
+            return;
+        }
+        if (!value || !tsInstance) {
+            assignSelectedClientChip.hidden = true;
+            assignSelectedClientLabel.textContent = '';
+            return;
+        }
+        const option = tsInstance.options[value] || {};
+        const label = option.name || option.text || '';
+        if (!label) {
+            assignSelectedClientChip.hidden = true;
+            assignSelectedClientLabel.textContent = '';
+            return;
+        }
+        assignSelectedClientLabel.textContent = label;
+        assignSelectedClientChip.hidden = false;
+    }
+
+    function extractClientIdFromTomSelectValue(value, tsInstance) {
+        if (!value) {
+            return null;
+        }
+        const option = tsInstance && tsInstance.options ? tsInstance.options[value] : null;
+        if (option && option.cid != null && option.cid !== '') {
+            const fromCid = parseInt(option.cid, 10);
+            if (!isNaN(fromCid)) {
+                return fromCid;
+            }
+        }
+        const numeric = parseInt(String(value), 10);
+        if (!isNaN(numeric) && String(numeric) === String(value).trim()) {
+            return numeric;
+        }
+        return null;
+    }
+
+    function extractMatterRefFromTomSelectValue(value) {
+        if (!value) {
+            return null;
+        }
+        const str = String(value);
+        const marker = '/Matter/';
+        const markerIndex = str.indexOf(marker);
+        if (markerIndex >= 0) {
+            const ref = str.substring(markerIndex + marker.length).trim();
+            return ref !== '' ? ref : null;
+        }
+        return null;
+    }
+
+    function formatAssignMatterLabel(matter) {
+        const ref = (matter.client_unique_matter_no || '').trim();
+        const title = (matter.title || '').trim();
+        if (ref && title) {
+            return ref + ' — ' + title;
+        }
+        return ref || title || 'Matter';
+    }
+
+    function initAssignMatterTomSelect(preferredMatterId) {
+        if (!assignMatterSelect || typeof initTS !== 'function') {
+            return null;
+        }
+        if (typeof destroyTS === 'function') {
+            destroyTS(assignMatterSelect);
+        }
+        const matterTs = initTS(assignMatterSelect, {
+            create: false,
+            dropdownParent: 'body',
+            placeholder: 'Select matter...',
+            onChange: function () {
+                updateAssignConfirmButton();
+            }
+        });
+        if (matterTs && matterTs.wrapper) {
+            matterTs.wrapper.style.width = '100%';
+        }
+        if (preferredMatterId && matterTs) {
+            matterTs.setValue(String(preferredMatterId), true);
+        }
+        return matterTs;
     }
 
     function destroyAssignEmailModalSelects() {
@@ -2962,9 +3073,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 clientTs = initTS(assignClientSelect, buildGetAllClientsTomSelectConfig({
                     url: clientsUrl,
                     dropdownParent: dropdownParent,
-                    placeholder: 'Search client...',
+                    placeholder: 'Search client by name, email, or ref...',
                     onChange: function (value) {
-                        loadAssignMattersForClient(value);
+                        if (!value) {
+                            updateAssignSelectedClientChip(null, '');
+                            loadAssignMattersForClient(null);
+                            updateAssignConfirmButton();
+                            return;
+                        }
+                        const option = this.options[value] || {};
+                        if (option.locked) {
+                            this.clear(true);
+                            updateAssignSelectedClientChip(null, '');
+                            if (typeof window.openCrmAccessModal === 'function') {
+                                window.openCrmAccessModal(option);
+                            }
+                            loadAssignMattersForClient(null);
+                            updateAssignConfirmButton();
+                            return;
+                        }
+                        updateAssignSelectedClientChip(this, value);
+                        const clientId = extractClientIdFromTomSelectValue(value, this);
+                        const matterRef = extractMatterRefFromTomSelectValue(value);
+                        loadAssignMattersForClient(clientId, matterRef);
                         updateAssignConfirmButton();
                     }
                 }));
@@ -2995,20 +3126,25 @@ document.addEventListener('DOMContentLoaded', function() {
         updateAssignConfirmButton();
     }
 
-    function loadAssignMattersForClient(selectedClientId) {
+    function loadAssignMattersForClient(selectedClientId, preferredMatterRef) {
         if (!assignMatterSelect || !mattersUrl || !selectedClientId) {
             if (assignMatterSelect) {
+                if (typeof destroyTS === 'function') {
+                    destroyTS(assignMatterSelect);
+                }
                 assignMatterSelect.innerHTML = '<option value="">Select matter</option>';
                 assignMatterSelect.disabled = true;
             }
-            setAssignMatterHint('Choose a client to load their matters.');
+            setAssignMatterFieldState('idle');
+            setAssignMatterHint('Choose a client first to load their matters.', 'idle');
             updateAssignConfirmButton();
             return;
         }
 
         assignMatterSelect.disabled = true;
         assignMatterSelect.innerHTML = '<option value="">Loading matters...</option>';
-        setAssignMatterHint('Loading matters for selected client...');
+        setAssignMatterFieldState('loading');
+        setAssignMatterHint('Loading matters for selected client...', 'loading');
         updateAssignConfirmButton();
 
         fetch(mattersUrl, {
@@ -3019,44 +3155,56 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-CSRF-TOKEN': getCsrfToken(),
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: new URLSearchParams({ client_id: selectedClientId }).toString()
+            body: new URLSearchParams({ client_id: String(selectedClientId) }).toString()
         })
-            .then(function (response) { return response.json(); })
-            .then(function (data) {
-                let options = '<option value="">Select matter</option>';
-                const matters = (data && data.clientMatetrs) ? data.clientMatetrs : [];
-                matters.forEach(function (matter) {
-                    const selected = matterId && String(matter.id) === String(matterId) ? ' selected' : '';
-                    options += '<option value="' + matter.id + '"' + selected + '>' + escapeHtml(matter.title) + ' (' + escapeHtml(matter.client_unique_matter_no || '') + ')</option>';
-                });
-                assignMatterSelect.innerHTML = options;
-                assignMatterSelect.disabled = false;
-                const matterCount = matters.length;
-                setAssignMatterHint(
-                    matterCount
-                        ? (matterCount === 1 ? '1 matter available.' : matterCount + ' matters available.')
-                        : 'No matters found for this client.'
-                );
-                if (typeof initTS === 'function') {
-                    if (typeof destroyTS === 'function') {
-                        destroyTS(assignMatterSelect);
-                    }
-                    const matterTs = initTS(assignMatterSelect, {
-                        create: false,
-                        dropdownParent: 'body',
-                        onChange: function () {
-                            updateAssignConfirmButton();
-                        }
-                    });
-                    if (matterTs && matterTs.wrapper) {
-                        matterTs.wrapper.style.width = '100%';
-                    }
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
                 }
+                return response.json();
+            })
+            .then(function (data) {
+                const matters = (data && data.clientMatetrs) ? data.clientMatetrs : [];
+                let preferredMatterId = null;
+                let options = '<option value="">Select matter</option>';
+
+                matters.forEach(function (matter) {
+                    const matterRef = String(matter.client_unique_matter_no || '').trim();
+                    const selectedByContext = matterId && String(matter.id) === String(matterId);
+                    const selectedByRef = preferredMatterRef
+                        && matterRef.toLowerCase() === String(preferredMatterRef).toLowerCase();
+                    const selected = selectedByContext || selectedByRef ? ' selected' : '';
+                    if (selected) {
+                        preferredMatterId = matter.id;
+                    }
+                    options += '<option value="' + matter.id + '"' + selected + '>'
+                        + escapeHtml(formatAssignMatterLabel(matter))
+                        + '</option>';
+                });
+
+                assignMatterSelect.innerHTML = options;
+                assignMatterSelect.disabled = matters.length === 0;
+
+                const matterCount = matters.length;
+                if (matterCount === 0) {
+                    setAssignMatterFieldState('empty');
+                    setAssignMatterHint('No matters found for this client. Create a matter first.', 'error');
+                } else {
+                    setAssignMatterFieldState('ready');
+                    setAssignMatterHint(
+                        matterCount === 1 ? '1 matter available — select it below.' : matterCount + ' matters available — pick the correct one.',
+                        'success'
+                    );
+                }
+
+                initAssignMatterTomSelect(preferredMatterId);
                 updateAssignConfirmButton();
             })
             .catch(function () {
                 assignMatterSelect.innerHTML = '<option value="">Could not load matters</option>';
-                setAssignMatterHint('Could not load matters. Try selecting the client again.');
+                assignMatterSelect.disabled = true;
+                setAssignMatterFieldState('empty');
+                setAssignMatterHint('Could not load matters. Try selecting the client again.', 'error');
                 updateAssignConfirmButton();
             });
     }
@@ -3118,7 +3266,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 assignMatterSelect.innerHTML = '<option value="">Select matter</option>';
                 assignMatterSelect.disabled = true;
             }
-            setAssignMatterHint('Choose a client to load their matters.');
+            setAssignMatterFieldState('idle');
+            setAssignMatterHint('Choose a client first to load their matters.', 'idle');
+            if (assignSelectedClientChip) {
+                assignSelectedClientChip.hidden = true;
+            }
+            if (assignSelectedClientLabel) {
+                assignSelectedClientLabel.textContent = '';
+            }
             if (assignEmailConfirmBtn) {
                 assignEmailConfirmBtn.disabled = true;
             }
@@ -3128,10 +3283,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (assignEmailConfirmBtn) {
         assignEmailConfirmBtn.addEventListener('click', async function () {
             const emailLogId = assignEmailLogIdInput ? assignEmailLogIdInput.value : '';
-            const selectedClient = assignClientSelect ? assignClientSelect.value : '';
+            const clientTs = assignClientSelect && assignClientSelect.tomselect ? assignClientSelect.tomselect : null;
+            const selectedClientRaw = assignClientSelect ? assignClientSelect.value : '';
+            const selectedClientId = extractClientIdFromTomSelectValue(selectedClientRaw, clientTs);
             const selectedMatter = assignMatterSelect ? assignMatterSelect.value : '';
 
-            if (!emailLogId || !selectedClient || !selectedMatter) {
+            if (!emailLogId || !selectedClientId || !selectedMatter) {
                 crmToast('Please select both client and matter.', 'warning');
                 return;
             }
@@ -3148,7 +3305,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     body: JSON.stringify({
                         email_log_id: parseInt(emailLogId, 10),
-                        client_id: parseInt(selectedClient, 10),
+                        client_id: selectedClientId,
                         client_matter_id: parseInt(selectedMatter, 10)
                     })
                 });

@@ -2299,7 +2299,81 @@ body.assign-email-modal-open .ts-dropdown {
 }
 
 .assign-email-modal__dialog {
-    max-width: 480px;
+    max-width: 560px;
+}
+
+.assign-email-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.assign-email-field {
+    padding: 14px 16px;
+    border: 1px solid var(--outlook-border);
+    border-radius: 12px;
+    background: #fafafa;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.assign-email-field--client {
+    background: #fff;
+}
+
+.assign-email-field--matter.assign-email-field--ready {
+    border-color: #b8d4f0;
+    background: #f8fbff;
+    box-shadow: inset 0 0 0 1px rgba(0, 120, 212, 0.08);
+}
+
+.assign-email-field--matter.assign-email-field--loading {
+    border-color: #d6e4f5;
+    background: #f8fbff;
+}
+
+.assign-email-field--matter.assign-email-field--empty {
+    border-color: #f0d8a8;
+    background: #fffaf0;
+}
+
+.assign-email-field__control {
+    position: relative;
+}
+
+.assign-email-selected-client {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #e8f4fd;
+    color: #0f548c;
+    font-size: 12px;
+    font-weight: 600;
+    max-width: 100%;
+}
+
+.assign-email-selected-client span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.assign-email-field__hint-icon {
+    margin-right: 4px;
+}
+
+.assign-email-field__hint--loading {
+    color: #0078d4;
+}
+
+.assign-email-field__hint--success {
+    color: #107c10;
+}
+
+.assign-email-field__hint--error {
+    color: #a4262c;
 }
 
 .assign-email-modal__content.outlook-ui-modal {
@@ -2369,7 +2443,7 @@ body.assign-email-modal-open .ts-dropdown {
 }
 
 .assign-email-field {
-    margin-bottom: 18px;
+    margin-bottom: 0;
 }
 
 .assign-email-field__label {
