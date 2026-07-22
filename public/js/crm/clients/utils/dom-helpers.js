@@ -98,14 +98,67 @@
     ];
 
     /**
-     * Size Personal/Matter document tabs to fill the viewport below the tab strip.
+     * Personal documents: preview + list row at full viewport height.
+     */
+    function adjustPersonalDocPreviewHeight() {
+        var $tab = $('#personaldocuments-tab');
+        if (!$tab.length || !$tab.hasClass('active')) {
+            return;
+        }
+
+        var $pane = $tab.find('.subtab2-pane.active');
+        var $preview = $pane.find('.client-doc-preview-pane').first();
+        if (!$preview.length) {
+            return;
+        }
+
+        var fullHeight = '100vh';
+
+        $preview.css({
+            height: fullHeight,
+            minHeight: fullHeight,
+            maxHeight: fullHeight,
+            flex: '1 1 ' + fullHeight
+        });
+
+        $pane.css({
+            minHeight: fullHeight,
+            height: fullHeight,
+            alignItems: 'stretch'
+        });
+
+        var $listPanel = $pane.find('.checklist-table-container');
+        if ($listPanel.length) {
+            $listPanel.css({
+                minHeight: fullHeight,
+                maxHeight: fullHeight,
+                height: fullHeight
+            });
+        }
+
+        var $content = $tab.find('.subtab2-content').first();
+        if ($content.length) {
+            $content.css({
+                minHeight: fullHeight,
+                height: fullHeight,
+                maxHeight: 'none'
+            });
+        }
+    }
+
+    /**
+     * Size Personal/Matter document tabs so the checklist list + preview row fills the viewport.
      */
     function adjustClientDocumentsPanelHeight() {
-        var bottomGutter = 8;
-        var heightBonus = 50;
-        var minHeight = 570;
+        var bottomGutter = 12;
+        var minRowHeight = 400;
         var isMobile = $(window).width() <= 768;
-        var isTablet = $(window).width() <= 992;
+        var viewportHeight = window.innerHeight || $(window).height();
+
+        if ($('#personaldocuments-tab').hasClass('active') && !isMobile) {
+            adjustPersonalDocPreviewHeight();
+            return;
+        }
 
         clientDocumentsTabConfigs.forEach(function(cfg) {
             var $tab = $(cfg.selector);
@@ -113,41 +166,76 @@
                 return;
             }
 
-            if (!$tab.hasClass('active')) {
-                $tab.css({ height: '', maxHeight: '' });
-                $tab.find('.client-doc-preview-pane').css('height', '');
-                return;
-            }
-
-            var tabTop = $tab.offset().top;
-            var mobileMin = isTablet ? 480 : minHeight;
-            var targetHeight = Math.max(mobileMin, $(window).height() - tabTop - bottomGutter + heightBonus);
-
-            $tab.css({
-                height: targetHeight + 'px',
-                maxHeight: targetHeight + 'px'
-            });
-
+            var $content = $tab.find('.subtab2-content, .subtab6-content').first();
             var $pane = $tab.find(cfg.paneSelector);
             var $listPanel = $pane.find('.checklist-table-container');
             var $preview = $pane.find('.client-doc-preview-pane').first();
 
-            if (!$listPanel.length || !$preview.length) {
+            if (!$tab.hasClass('active')) {
+                $tab.css({ height: '', maxHeight: '', minHeight: '' });
+                $content.css({ height: '', minHeight: '', maxHeight: '' });
+                $pane.css({ height: '', minHeight: '', maxHeight: '' });
+                $listPanel.css({ height: '', minHeight: '' });
+                $preview.css({ height: '', minHeight: '' });
                 return;
             }
+
+            if (!$content.length || !$pane.length || !$listPanel.length || !$preview.length) {
+                return;
+            }
+
+            var tabTop = $tab.offset().top;
+            var tabHeight = Math.max(isMobile ? 480 : 560, viewportHeight - tabTop - bottomGutter);
+            $tab.css({
+                height: tabHeight + 'px',
+                maxHeight: tabHeight + 'px',
+                minHeight: tabHeight + 'px'
+            });
+
+            // Size only the list + preview row from its top edge to the viewport bottom.
+            var contentTop = $content.offset().top;
+            var rowHeight = Math.max(minRowHeight, viewportHeight - contentTop - bottomGutter);
+            $content.css({
+                height: rowHeight + 'px',
+                minHeight: rowHeight + 'px',
+                maxHeight: rowHeight + 'px'
+            });
+            $pane.css({
+                height: '100%',
+                minHeight: '100%'
+            });
 
             if (isMobile) {
-                var paneHeight = $pane.innerHeight();
                 var listHeight = $listPanel.outerHeight(true);
-                var previewHeight = Math.max(240, paneHeight - listHeight - 12);
-                $preview.css('height', previewHeight + 'px');
+                var previewHeight = Math.max(240, rowHeight - listHeight - 12);
+                $preview.css({
+                    height: previewHeight + 'px',
+                    minHeight: previewHeight + 'px'
+                });
+                $listPanel.css({ height: '', minHeight: '' });
                 return;
             }
 
-            $pane.css('height', '100%');
-            $preview.css('height', '100%');
-            $listPanel.css('height', '100%');
+            $listPanel.css({ height: '100%', minHeight: '100%' });
+            $preview.css({ height: '100%', minHeight: '100%' });
         });
+    }
+
+    function scheduleClientDocumentsPanelHeightAdjust() {
+        adjustClientDocumentsPanelHeight();
+        adjustPersonalDocPreviewHeight();
+        window.requestAnimationFrame(function() {
+            adjustClientDocumentsPanelHeight();
+            adjustPersonalDocPreviewHeight();
+        });
+        setTimeout(function() {
+            adjustClientDocumentsPanelHeight();
+            adjustPersonalDocPreviewHeight();
+        }, 150);
+        setTimeout(function() {
+            adjustClientDocumentsPanelHeight();
+            adjustPersonalDocPreviewHeight();
+        }, 400);
     }
 
     /** @deprecated Use adjustClientDocumentsPanelHeight */
@@ -193,8 +281,14 @@
 
     window.adjustActivityFeedHeight = adjustActivityFeedHeight;
     window.adjustClientDocumentsPanelHeight = adjustClientDocumentsPanelHeight;
+    window.adjustPersonalDocPreviewHeight = adjustPersonalDocPreviewHeight;
+    window.scheduleClientDocumentsPanelHeightAdjust = scheduleClientDocumentsPanelHeightAdjust;
     window.adjustMatterDocumentsPanelHeight = adjustMatterDocumentsPanelHeight;
     window.adjustPreviewContainers = adjustPreviewContainers;
     window.downloadFile = downloadFile;
+
+    if (typeof jQuery !== 'undefined') {
+        jQuery(window).on('load', scheduleClientDocumentsPanelHeightAdjust);
+    }
 
 })(typeof jQuery !== 'undefined' ? jQuery : null);

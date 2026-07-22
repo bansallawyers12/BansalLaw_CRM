@@ -234,7 +234,9 @@
 
             if (tabId === 'matterdocuments' || tabId === 'personaldocuments') {
                 setTimeout(function() {
-                    if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                    if (typeof scheduleClientDocumentsPanelHeightAdjust === 'function') {
+                        scheduleClientDocumentsPanelHeightAdjust();
+                    } else if (typeof adjustClientDocumentsPanelHeight === 'function') {
                         adjustClientDocumentsPanelHeight();
                     }
                     if (typeof adjustPreviewContainers === 'function') {

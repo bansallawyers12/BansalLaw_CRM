@@ -654,7 +654,9 @@
                 $(document).on('click', '.client-nav-button[data-tab="personaldocuments"]', function() {
                     setTimeout(function() {
                         initPersonalDocDragDrop();
-                        if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                        if (typeof scheduleClientDocumentsPanelHeightAdjust === 'function') {
+                            scheduleClientDocumentsPanelHeightAdjust();
+                        } else if (typeof adjustClientDocumentsPanelHeight === 'function') {
                             adjustClientDocumentsPanelHeight();
                         }
                     }, 200);
@@ -663,7 +665,9 @@
                 if ($('#personaldocuments-tab').hasClass('active')) {
                     setTimeout(function() {
                         initPersonalDocDragDrop();
-                        if (typeof adjustClientDocumentsPanelHeight === 'function') {
+                        if (typeof scheduleClientDocumentsPanelHeightAdjust === 'function') {
+                            scheduleClientDocumentsPanelHeightAdjust();
+                        } else if (typeof adjustClientDocumentsPanelHeight === 'function') {
                             adjustClientDocumentsPanelHeight();
                         }
                     }, 500);
