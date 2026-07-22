@@ -1487,11 +1487,10 @@
         const date = formatDate(getEmailDate(email));
         const isRead = email.mail_is_read == 1;
 
-        // NEW: Attachment indicator
-        const hasAttachments = email.attachments && Array.isArray(email.attachments) && email.attachments.length > 0;
-        const regularAttachments = hasAttachments ? getRegularAttachments(email.attachments) : [];
-        const attachmentIcon = hasAttachments
-            ? `<i class="fa-solid fa-paperclip attachment-indicator" title="${email.attachments.length} attachment(s)"></i>`
+        // Attachment indicator — only for real (non-inline) attachments
+        const regularAttachments = getRegularAttachments(email.attachments || []);
+        const attachmentIcon = regularAttachments.length
+            ? `<i class="fa-solid fa-paperclip attachment-indicator" title="${regularAttachments.length} attachment(s)"></i>`
             : '';
         const attachmentNamesHtml = regularAttachments.length
             ? `<div class="email-item-attachments">${regularAttachments.slice(0, 3).map(function(att) {

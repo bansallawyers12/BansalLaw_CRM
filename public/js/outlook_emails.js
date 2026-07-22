@@ -2261,8 +2261,26 @@ document.addEventListener('DOMContentLoaded', function() {
         return items;
     }
 
+    /**
+     * User-uploaded / extracted attachments only (excludes stored .msg/.pdf copies).
+     */
+    function getUserEmailAttachments(email) {
+        if (!email || !Array.isArray(email.attachments)) {
+            return [];
+        }
+
+        return email.attachments.filter(function(att) {
+            return att && !att.is_inline;
+        });
+    }
+
     function renderEmailAttachmentListSummary(email) {
-        const items = collectEmailAttachmentItems(email);
+        const items = getUserEmailAttachments(email).map(function(att) {
+            return {
+                name: resolveAttachmentDisplayName(att)
+            };
+        });
+
         if (!items.length) {
             return '';
         }
@@ -2356,7 +2374,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const subject = email.subject || '(No Subject)';
             const preview = normalizePreviewText(email.text_preview || '', 80);
             
-            const hasAttachment = (email.attachments && email.attachments.length > 0) || email.msg_file_url || email.pdf_file_url;
+            const hasAttachment = getUserEmailAttachments(email).length > 0;
             const attachmentIcon = hasAttachment ? '<i class="fa-solid fa-paperclip email-list-clip" title="Has attachments"></i>' : '';
             const attachmentSummary = renderEmailAttachmentListSummary(email);
 
