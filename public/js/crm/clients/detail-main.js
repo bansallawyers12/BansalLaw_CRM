@@ -28,7 +28,11 @@
     $(document).ready(function() {
         // Run on load
         adjustActivityFeedHeight();
-        adjustClientDocumentsPanelHeight();
+        if (typeof scheduleClientDocumentsPanelHeightAdjust === 'function') {
+            scheduleClientDocumentsPanelHeightAdjust();
+        } else {
+            adjustClientDocumentsPanelHeight();
+        }
         adjustPreviewContainers();
         // Run on resize (for responsiveness)
         $(window).on('resize', function () {
@@ -884,6 +888,13 @@ $(document).ready(function() {
 
         $iframe.on('load', function() {
             finishLoading();
+            if (isClientDocPreviewPane(container)) {
+                if (typeof window.scheduleClientDocumentsPanelHeightAdjust === 'function') {
+                    window.scheduleClientDocumentsPanelHeightAdjust();
+                } else if (typeof window.adjustPersonalDocPreviewHeight === 'function') {
+                    window.adjustPersonalDocPreviewHeight();
+                }
+            }
         });
 
         $iframe.on('error', function() {
@@ -1032,7 +1043,11 @@ $(document).ready(function() {
             </div>
         `);
 
-        if (typeof window.adjustClientDocumentsPanelHeight === 'function') {
+        if (typeof window.scheduleClientDocumentsPanelHeightAdjust === 'function') {
+            window.scheduleClientDocumentsPanelHeightAdjust();
+        } else if (typeof window.adjustPersonalDocPreviewHeight === 'function') {
+            window.adjustPersonalDocPreviewHeight();
+        } else if (typeof window.adjustClientDocumentsPanelHeight === 'function') {
             window.adjustClientDocumentsPanelHeight();
         }
 
@@ -1064,6 +1079,11 @@ $(document).ready(function() {
                         </div>
                     </div>
                 `);
+                if (typeof window.scheduleClientDocumentsPanelHeightAdjust === 'function') {
+                    window.scheduleClientDocumentsPanelHeightAdjust();
+                } else if (typeof window.adjustPersonalDocPreviewHeight === 'function') {
+                    window.adjustPersonalDocPreviewHeight();
+                }
             };
             img.onerror = showPreviewError;
             img.src = embeddedPreviewUrl;
