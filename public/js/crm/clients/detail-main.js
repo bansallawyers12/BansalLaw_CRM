@@ -2555,7 +2555,26 @@ success: function(response) {
 
 
 
+        function prepareInvoiceEditModal() {
+            var $modal = $('#createreceiptmodal');
+            if (!$modal.length) {
+                return;
+            }
+
+            $modal.find('.receipt-type-selector').hide();
+            $modal.find('.modal-title').html('<i class="fa-solid fa-file-invoice-dollar" style="color: #17a2b8;"></i> Edit Draft Invoice');
+            $('#client_receipt_form, #office_receipt_form').hide();
+            $('#invoice_receipt_form').show();
+        }
+
         function getInfoByReceiptId(receiptid) {
+
+            if (!receiptid) {
+                return;
+            }
+
+            prepareInvoiceEditModal();
+            $('#function_type').val('edit');
 
             $.ajax({
 
@@ -2573,7 +2592,7 @@ success: function(response) {
                     if (!obj) return;
                     if (obj.status) {
 
-                        $('#function_type').val("edit");
+                        $('#function_type').val('edit');
 
                         $('#createreceiptmodal').modal('show');
 
@@ -2587,6 +2606,13 @@ success: function(response) {
 
                             invoiceRadio.dispatchEvent(new Event('change'));
 
+                        }
+
+                        if (obj.record_get_parent && obj.record_get_parent.length) {
+                            var parentRow = obj.record_get_parent[0];
+                            if (parentRow.client_matter_id) {
+                                $('#client_matter_id_invoice').val(parentRow.client_matter_id);
+                            }
                         }
 
 
@@ -2727,13 +2753,29 @@ success: function(response) {
 
                         }
 
+                    } else {
+                        alert(obj.message || 'Could not load draft invoice.');
                     }
 
+                },
+
+                error: function() {
+                    alert('Could not load draft invoice. Please try again.');
                 }
 
             });
 
         }
+
+        $(document).on('click', '.updatedraftinvoice', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            var receiptid = $(this).data('receiptid');
+            getInfoByReceiptId(receiptid);
+        });
+
+        window.getInfoByReceiptId = getInfoByReceiptId;
 
 
 
