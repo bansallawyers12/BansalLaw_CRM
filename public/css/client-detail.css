@@ -4590,6 +4590,22 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   opacity: 1 !important;
 }
 
+/* Document move modals: centered overlay when appended to body from overflow:hidden tab panes. */
+#moveDocumentModal.modal,
+#moveVisaDocumentModal.modal {
+  z-index: 12050 !important;
+}
+#moveDocumentModal.modal.show,
+#moveVisaDocumentModal.modal.show {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+#moveDocumentModal.modal.show .modal-dialog,
+#moveVisaDocumentModal.modal.show .modal-dialog {
+  transform: none !important;
+  opacity: 1 !important;
+}
+
 
 .hide-list-view .checklist-table-container { display: none !important; }
 .hide-list-view .preview-pane { flex: 0 0 100% !important; max-width: 100% !important; }
