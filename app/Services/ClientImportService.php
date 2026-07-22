@@ -87,33 +87,21 @@ class ClientImportService
             }
 
             // Check for duplicate email/phone if skip_duplicates is enabled.
-            // The OR conditions are grouped inside a closure so the whereIn('type') restriction
-            // applies to both clauses (fixes SQL precedence bug with bare orWhere).
             if ($skipDuplicates) {
+                $duplicateCheck = app(LeadDuplicateCheckService::class);
                 $email = isset($clientData['email']) ? trim((string) $clientData['email']) : '';
                 $phone = isset($clientData['phone']) ? trim((string) $clientData['phone']) : '';
 
                 if ($email !== '' || $phone !== '') {
-                    $existingClient = Admin::whereIn('type', ['client', 'lead'])
-                        ->where(function ($q) use ($email, $phone) {
-                            if ($email !== '') {
-                                $q->where('email', $email);
-                            }
-                            if ($phone !== '') {
-                                $q->orWhere('phone', $phone);
-                            }
-                        })
-                        ->first();
+                    $duplicate = $duplicateCheck->findDuplicate($email, $phone);
 
-                    if ($existingClient) {
+                    if ($duplicate !== null) {
                         DB::rollBack();
-                        $match = $email !== '' && $existingClient->email === $email
-                            ? 'email ' . $email
-                            : 'phone ' . $phone;
+
                         return [
                             'success' => false,
                             'client_id' => null,
-                            'message' => 'Lead with same ' . $match . ' already exists. Import skipped.'
+                            'message' => 'Lead with same ' . $duplicate['match'] . ' (' . $duplicate['value'] . ') already exists. Import skipped.',
                         ];
                     }
                 }
@@ -193,7 +181,19 @@ class ClientImportService
             $client->py_date = $this->parseDate($clientData['py_date'] ?? null);
             $client->source = $clientData['source'] ?? null;
             $client->type = $clientData['type'] ?? 'lead';
-            $client->status = $clientData['status'] ?? 1;
+            $leadStatus = isset($clientData['lead_status']) ? trim((string) $clientData['lead_status']) : null;
+            if ($leadStatus !== null && $leadStatus !== '' && Schema::hasColumn('admins', 'lead_status')) {
+                if (! in_array($leadStatus, LeadFollowUpNoteService::pipelineStatuses(), true)) {
+                    $leadStatus = 'new';
+                }
+                $client->lead_status = $leadStatus;
+                $client->status = LeadFollowUpNoteService::adminsStatusForLeadStatus($leadStatus);
+            } else {
+                $client->status = $clientData['status'] ?? 1;
+            }
+            if (Schema::hasColumn('admins', 'followup_date') && ! empty($clientData['followup_date'])) {
+                $client->followup_date = $this->parseDateTime($clientData['followup_date']);
+            }
             $client->agent_id = $clientData['agent_id'] ?? null;
             
             // Verification metadata (dates only, not staff IDs)

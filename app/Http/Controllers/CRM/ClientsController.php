@@ -84,6 +84,7 @@ use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\ClientExportService;
 use App\Services\FCMService;
 use App\Services\ClientImportService;
+use App\Services\LeadSpreadsheetImportService;
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
 use App\Traits\ClientQueries;
@@ -7761,7 +7762,6 @@ class ClientsController extends Controller
     public function import(Request $request)
     {
         try {
-            // Validate file upload (use extension check; mimes:json often fails when server reports .json as text/plain)
             $request->validate([
                 'import_file' => [
                     'required',
@@ -7769,15 +7769,40 @@ class ClientsController extends Controller
                     'max:10240', // 10MB
                     function ($attribute, $value, $fail) {
                         $ext = strtolower($value->getClientOriginalExtension());
-                        if ($ext !== 'json') {
-                            $fail('The file must be a JSON file (.json).');
+                        if (! in_array($ext, ['json', 'csv', 'xlsx', 'xls'], true)) {
+                            $fail('The file must be a JSON, CSV, or Excel file (.json, .csv, .xlsx, .xls).');
                         }
                     },
                 ],
             ]);
 
-            // Read and parse JSON file
             $file = $request->file('import_file');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $skipDuplicates = $request->has('skip_duplicates');
+
+            if (in_array($ext, ['csv', 'xlsx', 'xls'], true)) {
+                $result = app(LeadSpreadsheetImportService::class)->importFromFile($file, $skipDuplicates);
+
+                if ($result['success']) {
+                    $message = $result['message'];
+                    if (! empty($result['errors'])) {
+                        $message .= ' Errors: ' . implode(' ', array_slice($result['errors'], 0, 3));
+                    }
+
+                    return redirect()->route('leads.index')->with('success', $message);
+                }
+
+                $errorMessage = $result['message'];
+                if (! empty($result['errors'])) {
+                    $errorMessage .= ' ' . implode(' ', array_slice($result['errors'], 0, 5));
+                }
+
+                return redirect()->back()
+                    ->withErrors(['import_file' => $errorMessage])
+                    ->withInput();
+            }
+
+            // Read and parse JSON file
             $jsonContent = file_get_contents($file->getRealPath());
             $importData = json_decode($jsonContent, true);
 
@@ -7810,7 +7835,6 @@ class ClientsController extends Controller
 
             // Import as lead (JSON may contain client data; we always create a lead)
             $importData['client']['type'] = 'lead';
-            $skipDuplicates = $request->has('skip_duplicates');
             $importService = app(ClientImportService::class);
             $result = $importService->importClient($importData, $skipDuplicates);
 
