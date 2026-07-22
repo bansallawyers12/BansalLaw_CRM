@@ -441,14 +441,12 @@
             </div>
 
             <!-- Move document modal (shared with personal docs) -->
-            <div class="modal fade" id="moveVisaDocumentModal" tabindex="-1" role="dialog">
-                <div class="modal-dialog" role="document">
+            <div class="modal fade" id="moveVisaDocumentModal" tabindex="-1" role="dialog" aria-labelledby="moveVisaDocumentModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title">Move Document</h5>
-                            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
+                            <h5 class="modal-title" id="moveVisaDocumentModalLabel">Move Document</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             <div class="form-group">
@@ -617,9 +615,20 @@
                 let currentMoveVisaDocumentId = null;
                 let currentMoveVisaDocumentType = null;
 
+                function appendMatterDocModalToBody(selector) {
+                    const $modal = $(selector);
+                    if ($modal.length && !$modal.parent().is('body')) {
+                        $modal.appendTo('body');
+                    }
+                }
+
+                appendMatterDocModalToBody('#moveVisaDocumentModal');
+
                 function openMoveVisaDocumentModal(documentId, currentType) {
                     currentMoveVisaDocumentId = documentId;
                     currentMoveVisaDocumentType = currentType;
+
+                    appendMatterDocModalToBody('#moveVisaDocumentModal');
                     
                     // Reset modal
                     $('#moveVisaTargetType').val('');

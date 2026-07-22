@@ -275,14 +275,12 @@
             </div>
 
             <!-- Move Document Modal -->
-            <div class="modal fade" id="moveDocumentModal" tabindex="-1" role="dialog">
-                <div class="modal-dialog" role="document">
+            <div class="modal fade" id="moveDocumentModal" tabindex="-1" role="dialog" aria-labelledby="moveDocumentModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title">Move Document</h5>
-                            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
+                            <h5 class="modal-title" id="moveDocumentModalLabel">Move Document</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             <div class="form-group">
@@ -329,13 +327,11 @@
 
             <!-- Video Upload Folder Selection Modal -->
             <div class="modal fade" id="videoUploadFolderModal" tabindex="-1" role="dialog" aria-labelledby="videoUploadFolderModalLabel" aria-hidden="true">
-                <div class="modal-dialog" role="document">
+                <div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="videoUploadFolderModalLabel">Select Folder for Video</h5>
-                            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             <p class="text-muted" style="margin-bottom: 12px;">Choose which personal document folder this video should be saved in.</p>
@@ -794,9 +790,22 @@
                 let currentMoveDocumentId = null;
                 let currentMoveDocumentType = null;
 
+                function appendPersonalDocModalToBody(selector) {
+                    const $modal = $(selector);
+                    if ($modal.length && !$modal.parent().is('body')) {
+                        $modal.appendTo('body');
+                    }
+                }
+
+                // Bootstrap modals must be direct children of body; tab panes use overflow:hidden.
+                appendPersonalDocModalToBody('#moveDocumentModal');
+                appendPersonalDocModalToBody('#videoUploadFolderModal');
+
                 function openMoveDocumentModal(documentId, currentType) {
                     currentMoveDocumentId = documentId;
                     currentMoveDocumentType = currentType;
+
+                    appendPersonalDocModalToBody('#moveDocumentModal');
                     
                     // Reset modal
                     $('#moveTargetType').val('');
