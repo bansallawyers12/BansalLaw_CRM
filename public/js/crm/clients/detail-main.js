@@ -3152,19 +3152,65 @@ success: function(response) {
 
 
 
-        $(document).delegate('.removeitems_invoice', 'click', function(){
+        function invoiceRowHasFilledData($row) {
+            if ($.trim($row.find('input[name="id[]"]').val())) {
+                return true;
+            }
+            if ($.trim($row.find('input[name="trans_date[]"]').val())) {
+                return true;
+            }
+            if ($.trim($row.find('input[name="entry_date[]"]').val())) {
+                return true;
+            }
+            if ($.trim($row.find('input[name="description[]"]').val())) {
+                return true;
+            }
+            if ($.trim($row.find('input[name="withdraw_amount[]"]').val())) {
+                return true;
+            }
+            var gstIncluded = $row.find('select[name="gst_included[]"]').val();
+            if (gstIncluded && gstIncluded !== '') {
+                return true;
+            }
+            var paymentType = $row.find('select[name="payment_type[]"]').val();
+            if (paymentType && paymentType !== '') {
+                return true;
+            }
+            return false;
+        }
 
-            var $tr_invoice    = $(this).closest('.product_field_clone_invoice');
+        function removeInvoiceRow($row) {
+            var $tbody = $row.closest('.productitem_invoice');
+            var $dataRows = $tbody.children('tr.clonedrow_invoice, tr.product_field_clone_invoice');
 
-            var trclone_invoice = $('.product_field_clone_invoice').length;
-
-            if(trclone_invoice > 0){
-
-                $tr_invoice.remove();
-
+            if ($dataRows.length <= 1) {
+                $row.find('input[name="id[]"]').val('');
+                $row.find('input[type="text"]').not('[type="hidden"]').val('');
+                $row.find('select').prop('selectedIndex', 0);
+            } else {
+                $row.remove();
             }
 
             grandtotalAccountTab_invoice();
+        }
+
+        $(document).delegate('.removeitems_invoice', 'click', function(e){
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            var $row = $(this).closest('tr');
+            if (!$row.length || !$row.closest('.productitem_invoice').length) {
+                return;
+            }
+
+            if (invoiceRowHasFilledData($row)) {
+                if (!confirm('Are you sure you want to remove this line?')) {
+                    return;
+                }
+            }
+
+            removeInvoiceRow($row);
 
         });
 
