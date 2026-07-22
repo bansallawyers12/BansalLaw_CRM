@@ -21,6 +21,7 @@
     <div class="topbar-left">
         <div class="icon-group">
             <a href="{{route('dashboard')}}" class="icon-btn" title="Dashboard"><i class="fa-solid fa-tachometer-alt"></i></a>
+            <a href="{{ route('dashboard') }}#myCalendarSection" class="icon-btn" title="My Calendar"><i class="fa-solid fa-calendar-days"></i></a>
             <a href="{{ route('signatures.index') }}" class="icon-btn" title="Signature Dashboard"><i class="fa-solid fa-pen"></i></a>
             <div class="icon-dropdown js-dropdown">
                 <a href="{{ route('booking.appointments.index') }}" class="icon-btn" title="Website Bookings" style="position: relative;">
