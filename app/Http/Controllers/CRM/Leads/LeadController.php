@@ -22,6 +22,7 @@ use App\Traits\ClientHelpers;
 use App\Services\ClientReferenceService;
 use App\Support\StaffClientVisibility;
 use App\Services\LeadFollowUpNoteService;
+use App\Services\LeadSpreadsheetImportService;
 use App\Models\Staff;
 use App\Models\ClientAddress;
 use App\Models\ClientQualification;
@@ -1803,6 +1804,19 @@ class LeadController extends Controller
         }
         
         return false;
+    }
+
+    /**
+     * Download a CSV template for bulk lead import.
+     */
+    public function importTemplate()
+    {
+        $filename = 'lead-import-template.csv';
+
+        return response(LeadSpreadsheetImportService::templateCsvContent(), 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     /**
