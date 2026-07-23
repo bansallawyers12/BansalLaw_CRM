@@ -8653,6 +8653,32 @@ class ClientsController extends Controller
                 $unreadCountQuery->where('client_matter_id', $clientMatterId);
             }
             $unreadCount = $unreadCountQuery->count();
+        } elseif ($isSyncedInboxFolder && $staff instanceof \App\Models\Staff) {
+            $unreadCountQuery = \App\Models\EmailLog::query();
+            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedInboxVisibilityFilter($unreadCountQuery, $staff);
+            $this->applyIncomingInboxScope($unreadCountQuery);
+            $this->applyUnreadEmailScope($unreadCountQuery);
+
+            if ($folder === 'unassigned') {
+                \App\Services\EmailSync\IncomingEmailSyncService::applyUnassignedSyncedInboxScope($unreadCountQuery);
+            } else {
+                if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
+                    $unreadCountQuery->whereIn('sync_assignment_status', ['auto_assigned', 'manual_assigned'])
+                        ->whereNotNull('client_id');
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'synced_email_id')) {
+                        $unreadCountQuery->whereNotNull('synced_email_id');
+                    }
+                } else {
+                    $unreadCountQuery->where('id', '<', 0);
+                }
+            }
+
+            $unreadCount = $unreadCountQuery->count();
+        }
+
+        $dateSummary = null;
+        if ($isSyncedInboxFolder && $staff instanceof \App\Models\Staff) {
+            $dateSummary = $this->syncedInboxDateSummary($folder, $staff);
         }
 
         return response()->json([
@@ -8666,7 +8692,73 @@ class ClientsController extends Controller
             'to' => $emails->lastItem() ?? 0,
             'senders' => $senders,
             'unread_count' => $unreadCount,
+            'date_summary' => $dateSummary,
         ]);
+    }
+
+    /**
+     * Count synced inbox emails by date bucket (today, yesterday, this week, earlier).
+     */
+    protected function syncedInboxDateSummary(string $folder, \App\Models\Staff $staff): array
+    {
+        $query = \App\Models\EmailLog::query();
+        \App\Services\EmailSync\IncomingEmailSyncService::applySyncedInboxVisibilityFilter($query, $staff);
+
+        if ($folder === 'unassigned') {
+            \App\Services\EmailSync\IncomingEmailSyncService::applyUnassignedSyncedInboxScope($query);
+        } elseif (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
+            $query->whereIn('sync_assignment_status', ['auto_assigned', 'manual_assigned'])
+                ->whereNotNull('client_id');
+            if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'synced_email_id')) {
+                $query->whereNotNull('synced_email_id');
+            }
+        } else {
+            return [
+                'today' => 0,
+                'yesterday' => 0,
+                'this_week' => 0,
+                'earlier' => 0,
+                'total' => 0,
+            ];
+        }
+
+        $tz = config('app.timezone', 'Australia/Melbourne');
+        $now = now()->timezone($tz);
+        $todayStart = $now->copy()->startOfDay();
+        $yesterdayStart = $todayStart->copy()->subDay();
+        $weekStart = $now->copy()->startOfWeek();
+
+        $summary = [
+            'today' => 0,
+            'yesterday' => 0,
+            'this_week' => 0,
+            'earlier' => 0,
+            'total' => 0,
+        ];
+
+        $query->select(['id', 'fetch_mail_sent_time', 'created_at'])
+            ->orderBy('id')
+            ->chunkById(500, function ($rows) use (&$summary, $tz, $todayStart, $yesterdayStart, $weekStart) {
+                foreach ($rows as $email) {
+                    $dt = $email->fetch_mail_sent_time ?? $email->created_at;
+                    if (! $dt) {
+                        continue;
+                    }
+                    $local = $dt->copy()->timezone($tz);
+                    $summary['total']++;
+                    if ($local->gte($todayStart)) {
+                        $summary['today']++;
+                    } elseif ($local->gte($yesterdayStart)) {
+                        $summary['yesterday']++;
+                    } elseif ($local->gte($weekStart)) {
+                        $summary['this_week']++;
+                    } else {
+                        $summary['earlier']++;
+                    }
+                }
+            });
+
+        return $summary;
     }
 
     protected function applyIncomingInboxScope($query): void

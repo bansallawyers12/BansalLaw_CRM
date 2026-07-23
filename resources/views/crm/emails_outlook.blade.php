@@ -108,6 +108,9 @@
     data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}"
     data-update-mail-read-url="{{ route('clients.updatemailreadbit') }}"
     data-mark-all-read-url="{{ route('clients.markAllEmailsRead') }}"
+    @if($canViewSyncedInbox && $unassignedOnly)
+    data-mark-synced-read-url="{{ route('clients.synced-emails.mark-read') }}"
+    @endif
     data-personal-folders='@json($emailUploadPersonalFolders)'
     data-matter-folders='@json($emailUploadMatterFolders)'>
     
@@ -215,9 +218,15 @@
                     <i class="fa-solid fa-envelope-open" aria-hidden="true"></i>
                     <span>Mark all read</span>
                 </button>
+                @else
+                <button type="button" class="mark-all-read-btn mark-all-read-btn--synced" id="btnMarkAllRead" title="Mark all unread emails in this tab as read" hidden>
+                    <i class="fa-solid fa-envelope-open" aria-hidden="true"></i>
+                    <span>Mark all read</span>
+                </button>
                 @endif
             </div>
             <div class="list-header-filters">
+                @if(! $unassignedOnly)
                 <select id="labelFilter" class="list-filter-select" aria-label="Filter by label">
                     <option value="">All Labels</option>
                     @if(isset($clientData) && isset($matterId))
@@ -236,6 +245,7 @@
                         @endforeach
                     @endif
                 </select>
+                @endif
                 <select id="senderFilter" class="list-filter-select" aria-label="Filter by sender">
                     <option value="">All Senders</option>
                     @if(isset($clientData) && isset($matterId))
@@ -267,6 +277,10 @@
                 <input type="date" id="dateToFilter" class="list-filter-date list-filter-outbox" aria-label="To date" title="To date" hidden>
             </div>
         </div>
+
+        @if($unassignedOnly)
+        <div id="syncedDateSummary" class="synced-date-summary" hidden aria-live="polite"></div>
+        @endif
         
         <div class="email-list" id="emailList">
             <div style="padding:16px;text-align:center;color:#666;">Loading emails...</div>
@@ -296,6 +310,9 @@
                     <button class="action-btn" id="btnReply"><i class="fa-solid fa-reply"></i> Reply</button>
                     <button class="action-btn" id="btnReplyAll"><i class="fa-solid fa-reply-all"></i> Reply All</button>
                     <button class="action-btn" id="btnForward"><i class="fa-solid fa-share"></i> Forward</button>
+                    <button type="button" class="action-btn action-btn--muted" id="btnMarkRead" hidden title="Mark this email as read">
+                        <i class="fa-solid fa-envelope-open"></i> Mark as read
+                    </button>
                     <button type="button" class="action-btn action-btn--warning" id="btnResend" hidden>
                         <i class="fa-solid fa-rotate-right"></i> Resend
                     </button>

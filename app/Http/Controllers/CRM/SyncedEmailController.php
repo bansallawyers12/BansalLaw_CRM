@@ -5,12 +5,15 @@ namespace App\Http\Controllers\CRM;
 use App\Http\Controllers\Controller;
 use App\Jobs\SyncInboxEmailsJob;
 use App\Logging\InboxSyncLogger;
+use App\Models\EmailLog;
 use App\Models\Staff;
+use App\Services\EmailSync\IncomingEmailSyncService;
 use App\Services\EmailSync\InboxSyncStatusStore;
 use App\Services\EmailSync\ManualInboxSyncRunner;
 use App\Services\EmailSync\UnassignedEmailAssignmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class SyncedEmailController extends Controller
 {
@@ -54,6 +57,78 @@ class SyncedEmailController extends Controller
         }
 
         return view('crm.unassigned_emails.index');
+    }
+
+    /**
+     * Mark all unread emails as read in a synced inbox folder (unassigned or assigned).
+     */
+    public function markFolderRead(Request $request)
+    {
+        $staff = Auth::guard('admin')->user();
+        if (! $staff instanceof Staff || ! $staff->canViewSyncedInboxMail()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to update synced inbox emails.',
+                'updated_count' => 0,
+            ], 403);
+        }
+
+        $folder = $request->input('folder', 'unassigned');
+        if (! in_array($folder, ['unassigned', 'assigned'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid folder.',
+                'updated_count' => 0,
+            ], 422);
+        }
+
+        $query = EmailLog::query();
+        IncomingEmailSyncService::applySyncedInboxVisibilityFilter($query, $staff);
+
+        $query->where('mail_type', 1)
+            ->where(function ($q) {
+                $q->where('mail_body_type', 'inbox')
+                    ->orWhereNull('mail_body_type');
+            })
+            ->where(function ($q) {
+                $q->whereNull('mail_is_read')
+                    ->orWhere('mail_is_read', false);
+            });
+
+        if ($folder === 'unassigned') {
+            IncomingEmailSyncService::applyUnassignedSyncedInboxScope($query);
+        } else {
+            if (! Schema::hasColumn('email_logs', 'sync_assignment_status')) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No unread emails to update.',
+                    'updated_count' => 0,
+                ]);
+            }
+
+            $query->whereIn('sync_assignment_status', ['auto_assigned', 'manual_assigned'])
+                ->whereNotNull('client_id');
+
+            if (Schema::hasColumn('email_logs', 'synced_email_id')) {
+                $query->whereNotNull('synced_email_id');
+            }
+        }
+
+        $updatedCount = (clone $query)->count();
+
+        if ($updatedCount > 0) {
+            $query->update(['mail_is_read' => true]);
+        }
+
+        $message = $updatedCount > 0
+            ? ($updatedCount === 1 ? '1 email marked as read.' : $updatedCount . ' emails marked as read.')
+            : 'No unread emails to update.';
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'updated_count' => $updatedCount,
+        ]);
     }
 
     public function syncNow(

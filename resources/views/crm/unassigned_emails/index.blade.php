@@ -3,12 +3,6 @@
 @section('title', 'Unassigned Mail')
 
 @section('content')
-    @php
-        $staffUser = auth('admin')->user();
-        $staffFirstName = ($staffUser && ! empty($staffUser->first_name)) ? $staffUser->first_name : 'there';
-        $pageTz = ($staffUser && ! empty($staffUser->time_zone)) ? $staffUser->time_zone : config('app.timezone');
-        $pageNow = now()->timezone($pageTz);
-    @endphp
     <main class="main-content unassigned-mail-page">
         <header class="unassigned-mail-page__header">
             <div class="unassigned-mail-page__header-main">
@@ -18,10 +12,7 @@
                 <div class="unassigned-mail-page__header-text">
                     <h1>Unassigned mail</h1>
                     <p class="unassigned-mail-page__subtitle">
-                        Review synced inbox emails, assign them to clients, and track what is already linked.
-                    </p>
-                    <p class="unassigned-mail-page__meta">
-                        <time datetime="{{ $pageNow->toIso8601String() }}">{{ $pageNow->format('l, j F Y') }} · {{ $pageNow->format('g:i A') }}</time>
+                        Review synced emails, assign to clients, and mark items as read.
                     </p>
                 </div>
             </div>

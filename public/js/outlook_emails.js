@@ -121,9 +121,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const mattersUrl = outlookContainer ? outlookContainer.getAttribute('data-matters-url') : '';
     const updateMailReadUrl = outlookContainer ? (outlookContainer.getAttribute('data-update-mail-read-url') || '') : '';
     const markAllReadUrl = outlookContainer ? (outlookContainer.getAttribute('data-mark-all-read-url') || '') : '';
+    const markSyncedReadUrl = outlookContainer ? (outlookContainer.getAttribute('data-mark-synced-read-url') || '') : '';
     const btnMarkAllRead = document.getElementById('btnMarkAllRead');
+    const btnMarkRead = document.getElementById('btnMarkRead');
+    const syncedDateSummaryEl = document.getElementById('syncedDateSummary');
     const folderUnreadBadge = document.getElementById('folderUnreadBadge');
     let unreadCount = 0;
+    let syncedDateSummary = null;
+    let selectedEmail = null;
 
     let composeQuoteHtml = '';
     let composeSignatureHtml = '';
@@ -385,13 +390,156 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const canMarkAll = !!clientId
+        const isClientInbox = !!clientId
             && !!markAllReadUrl
             && unreadCount > 0
             && (currentFolder === 'inbox' || currentFolder === 'unread');
 
+        const isSyncedFolder = !!markSyncedReadUrl
+            && unreadCount > 0
+            && (currentFolder === 'unassigned' || currentFolder === 'assigned');
+
+        const canMarkAll = isClientInbox || isSyncedFolder;
+
         btnMarkAllRead.hidden = !canMarkAll;
         btnMarkAllRead.disabled = false;
+    }
+
+    function updateMarkReadButtonVisibility(email) {
+        if (!btnMarkRead) {
+            return;
+        }
+        btnMarkRead.hidden = !email || !isEmailUnread(email);
+    }
+
+    function isSyncedInboxFolder(folder) {
+        return folder === 'unassigned' || folder === 'assigned';
+    }
+
+    function getAppTzDateKey(dateInput) {
+        if (!dateInput) {
+            return null;
+        }
+        const date = new Date(dateInput);
+        if (isNaN(date.getTime())) {
+            return null;
+        }
+        return new Intl.DateTimeFormat('en-CA', { timeZone: appTimezone }).format(date);
+    }
+
+    function parseEmailDateValue(email) {
+        if (!email) {
+            return null;
+        }
+        const raw = email.fetch_mail_sent_time || email.created_at || email.sent_at || email.received_date;
+        if (!raw) {
+            return null;
+        }
+        const parsed = new Date(raw);
+        if (!isNaN(parsed.getTime())) {
+            return parsed;
+        }
+        if (typeof raw === 'string' && /^\d{2}\/\d{2}\/\d{4}/.test(raw)) {
+            const parts = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+            if (parts) {
+                const iso = parts[3] + '-' + parts[2] + '-' + parts[1];
+                const fallback = new Date(iso);
+                if (!isNaN(fallback.getTime())) {
+                    return fallback;
+                }
+            }
+        }
+        return null;
+    }
+
+    function getEmailDateBucket(email) {
+        const emailDate = parseEmailDateValue(email);
+        if (!emailDate) {
+            return 'earlier';
+        }
+
+        const emailKey = getAppTzDateKey(emailDate);
+        const todayKey = getAppTzDateKey(new Date());
+        if (!emailKey || !todayKey) {
+            return 'earlier';
+        }
+        if (emailKey === todayKey) {
+            return 'today';
+        }
+
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        if (emailKey === getAppTzDateKey(yesterday)) {
+            return 'yesterday';
+        }
+
+        const weekStart = new Date();
+        const day = weekStart.getDay();
+        const diffToMonday = day === 0 ? 6 : day - 1;
+        weekStart.setDate(weekStart.getDate() - diffToMonday);
+        weekStart.setHours(0, 0, 0, 0);
+        const weekStartKey = getAppTzDateKey(weekStart);
+        if (weekStartKey && emailKey >= weekStartKey) {
+            return 'this_week';
+        }
+
+        return 'earlier';
+    }
+
+    const dateGroupLabels = {
+        today: 'Today',
+        yesterday: 'Yesterday',
+        this_week: 'This week',
+        earlier: 'Earlier'
+    };
+
+    function renderSyncedDateSummaryBar(summary) {
+        if (!syncedDateSummaryEl || !unassignedOnly) {
+            return;
+        }
+
+        if (!summary || !summary.total) {
+            syncedDateSummaryEl.hidden = true;
+            syncedDateSummaryEl.innerHTML = '';
+            return;
+        }
+
+        const todayCount = Number(summary.today) || 0;
+        const yesterdayCount = Number(summary.yesterday) || 0;
+        const weekCount = Number(summary.this_week) || 0;
+        const earlierCount = Number(summary.earlier) || 0;
+        const totalCount = Number(summary.total) || 0;
+        const folderLabel = currentFolder === 'assigned' ? 'assigned' : 'unassigned';
+
+        let chips = '';
+        if (todayCount > 0) {
+            chips += '<span class="synced-date-summary__chip synced-date-summary__chip--today">'
+                + '<strong>' + todayCount + '</strong> today</span>';
+        }
+        if (yesterdayCount > 0) {
+            chips += '<span class="synced-date-summary__chip">'
+                + '<strong>' + yesterdayCount + '</strong> yesterday</span>';
+        }
+        if (weekCount > 0) {
+            chips += '<span class="synced-date-summary__chip">'
+                + '<strong>' + weekCount + '</strong> this week</span>';
+        }
+        if (earlierCount > 0) {
+            chips += '<span class="synced-date-summary__chip">'
+                + '<strong>' + earlierCount + '</strong> earlier</span>';
+        }
+
+        syncedDateSummaryEl.innerHTML = ''
+            + '<div class="synced-date-summary__main">'
+            + '  <span class="synced-date-summary__title">'
+            + '    <i class="fa-solid fa-calendar-day" aria-hidden="true"></i>'
+            + '    ' + escapeHtml(todayCount === 1 ? '1 email today' : todayCount + ' emails today')
+            + '  </span>'
+            + '  <span class="synced-date-summary__meta">' + totalCount + ' ' + folderLabel + ' total</span>'
+            + '</div>'
+            + '<div class="synced-date-summary__chips">' + chips + '</div>';
+
+        syncedDateSummaryEl.hidden = false;
     }
 
     function updateUnreadTabBadge(count) {
@@ -433,7 +581,11 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (currentFolder === 'inbox') {
             emails = sortEmailsUnreadFirst(emails);
             renderEmailList();
+        } else if (isSyncedInboxFolder(currentFolder)) {
+            renderEmailList();
         }
+
+        updateMarkReadButtonVisibility(email);
 
         if (!updateMailReadUrl) {
             return;
@@ -456,7 +608,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function markAllEmailsAsRead() {
-        if (!markAllReadUrl || !clientId) {
+        const isSyncedFolder = isSyncedInboxFolder(currentFolder);
+
+        if (isSyncedFolder) {
+            if (!markSyncedReadUrl) {
+                crmToast('Cannot mark emails as read in this view.', 'warning');
+                return;
+            }
+        } else if (!markAllReadUrl || !clientId) {
             crmToast('Cannot mark emails as read in this view.', 'warning');
             return;
         }
@@ -473,21 +632,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            const formData = new FormData();
-            formData.append('client_id', clientId);
-            if (matterId) {
-                formData.append('client_matter_id', matterId);
-            }
-            formData.append('_token', getCsrfToken());
-
-            const response = await fetch(markAllReadUrl, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+            let response;
+            if (isSyncedFolder) {
+                const formData = new FormData();
+                formData.append('folder', currentFolder);
+                formData.append('_token', getCsrfToken());
+                response = await fetch(markSyncedReadUrl, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+            } else {
+                const formData = new FormData();
+                formData.append('client_id', clientId);
+                if (matterId) {
+                    formData.append('client_matter_id', matterId);
                 }
-            });
+                formData.append('_token', getCsrfToken());
+                response = await fetch(markAllReadUrl, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+            }
 
             const data = await response.json().catch(function () {
                 return {};
@@ -515,6 +688,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnMarkAllRead) {
         btnMarkAllRead.addEventListener('click', function () {
             markAllEmailsAsRead();
+        });
+    }
+
+    if (btnMarkRead) {
+        btnMarkRead.addEventListener('click', function () {
+            if (!selectedEmail) {
+                return;
+            }
+            const activeEl = document.querySelector('.email-item.active');
+            markEmailAsRead(selectedEmail, activeEl);
         });
     }
 
@@ -2324,6 +2507,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeof data.unread_count !== 'undefined') {
                 updateUnreadTabBadge(data.unread_count);
             }
+            if (data.date_summary) {
+                syncedDateSummary = data.date_summary;
+                renderSyncedDateSummaryBar(syncedDateSummary);
+            } else if (unassignedOnly) {
+                syncedDateSummary = null;
+                renderSyncedDateSummaryBar(null);
+            }
             if (currentFolder === 'inbox') {
                 emails = sortEmailsUnreadFirst(emails);
             }
@@ -2735,9 +2925,32 @@ document.addEventListener('DOMContentLoaded', function() {
         const showInboxSections = currentFolder === 'inbox'
             && emails.some(function(item) { return isEmailUnread(item); })
             && emails.some(function(item) { return !isEmailUnread(item); });
+        const showDateGroups = isSyncedInboxFolder(currentFolder);
+        let lastDateGroup = null;
 
         emails.forEach(function(email, index) {
             const unread = isEmailUnread(email);
+
+            if (showDateGroups) {
+                const bucket = getEmailDateBucket(email);
+                if (bucket !== lastDateGroup) {
+                    const groupHeader = document.createElement('div');
+                    groupHeader.className = 'email-list-date-group';
+                    const groupCount = syncedDateSummary && syncedDateSummary[bucket]
+                        ? Number(syncedDateSummary[bucket])
+                        : null;
+                    const countLabel = groupCount !== null && groupCount > 0
+                        ? ' <span class="email-list-date-group__count">' + groupCount + '</span>'
+                        : '';
+                    groupHeader.innerHTML = '<span class="email-list-date-group__label">'
+                        + escapeHtml(dateGroupLabels[bucket] || 'Earlier')
+                        + countLabel
+                        + '</span>';
+                    emailListContainer.appendChild(groupHeader);
+                    lastDateGroup = bucket;
+                }
+            }
+
             if (showInboxSections && !unread && index > 0 && isEmailUnread(emails[index - 1]) && !insertedEarlierDivider) {
                 const divider = document.createElement('div');
                 divider.className = 'email-list-section-divider';
@@ -2767,13 +2980,35 @@ document.addEventListener('DOMContentLoaded', function() {
             const autoAssignedBadge = unread && email.sync_assignment_status === 'auto_assigned'
                 ? '<span class="email-new-badge" title="Auto-assigned from synced inbox">New</span>'
                 : '';
-            const unreadBadge = unread && currentFolder === 'inbox'
+            const unreadBadge = unread && (currentFolder === 'inbox' || isSyncedInboxFolder(currentFolder))
                 ? '<span class="email-unread-label" title="Unread">Unread</span>'
                 : '';
+            const markReadAction = unread && isSyncedInboxFolder(currentFolder)
+                ? '<button type="button" class="email-item-mark-read" title="Mark as read" aria-label="Mark as read"><i class="fa-solid fa-envelope-open"></i></button>'
+                : '';
 
-            el.innerHTML = `
+            if (isSyncedInboxFolder(currentFolder)) {
+                const senderInitial = escapeHtml((sender.charAt(0) || '?').toUpperCase());
+                const badgeRow = attachmentIcon + calendarIndicator + unreadBadge + autoAssignedBadge + statusBadge + clientBadge;
+                el.classList.add('email-item--synced');
+                el.innerHTML = ''
+                    + '<div class="email-item-synced">'
+                    + '  <div class="email-item-avatar" aria-hidden="true">' + senderInitial + '</div>'
+                    + '  <div class="email-item-body">'
+                    + '    <div class="email-item-top">'
+                    + '      <div class="email-sender">' + escapeHtml(sender) + '</div>'
+                    + '      <div class="email-date">' + dateStr + '</div>'
+                    + '    </div>'
+                    + '    <div class="email-subject">' + escapeHtml(subject) + '</div>'
+                    + '    <div class="email-preview">' + escapeHtml(preview) + '</div>'
+                    + '    <div class="email-item-badges">' + badgeRow + markReadAction + '</div>'
+                    + '  </div>'
+                    + '</div>';
+            } else {
+                el.innerHTML = `
                 <div class="email-item-header">
                     <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${calendarIndicator}${unreadBadge}${autoAssignedBadge}${statusBadge}${clientBadge}</div>
+                    ${markReadAction}
                 </div>
                 <div class="email-subject">${escapeHtml(subject)}</div>
                 <div class="email-preview">${escapeHtml(preview)}</div>
@@ -2782,8 +3017,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="email-date">${dateStr}</div>
                 </div>
             `;
+            }
 
-            el.addEventListener('click', () => {
+            el.addEventListener('click', (e) => {
+                if (e.target.closest('.email-item-mark-read')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    markEmailAsRead(email, el);
+                    return;
+                }
                 document.querySelectorAll('.email-item').forEach(i => i.classList.remove('active'));
                 el.classList.add('active');
                 selectedEmailId = email.id;
@@ -2797,6 +3039,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function showEmail(email, listElement) {
         emptyState.style.display = 'none';
         readingPane.classList.add('is-visible');
+
+        selectedEmail = email;
+        updateMarkReadButtonVisibility(email);
 
         markEmailAsRead(email, listElement);
 
