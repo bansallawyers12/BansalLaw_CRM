@@ -120,6 +120,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const canSelectSyncMailbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-select-sync-mailbox') === '1');
     const mattersUrl = outlookContainer ? outlookContainer.getAttribute('data-matters-url') : '';
     const updateMailReadUrl = outlookContainer ? (outlookContainer.getAttribute('data-update-mail-read-url') || '') : '';
+    const markAllReadUrl = outlookContainer ? (outlookContainer.getAttribute('data-mark-all-read-url') || '') : '';
+    const btnMarkAllRead = document.getElementById('btnMarkAllRead');
     const folderUnreadBadge = document.getElementById('folderUnreadBadge');
     let unreadCount = 0;
 
@@ -378,9 +380,24 @@ document.addEventListener('DOMContentLoaded', function() {
         return items;
     }
 
+    function updateMarkAllReadButtonVisibility() {
+        if (!btnMarkAllRead) {
+            return;
+        }
+
+        const canMarkAll = !!clientId
+            && !!markAllReadUrl
+            && unreadCount > 0
+            && (currentFolder === 'inbox' || currentFolder === 'unread');
+
+        btnMarkAllRead.hidden = !canMarkAll;
+        btnMarkAllRead.disabled = false;
+    }
+
     function updateUnreadTabBadge(count) {
         unreadCount = Math.max(0, Number(count) || 0);
         if (!folderUnreadBadge) {
+            updateMarkAllReadButtonVisibility();
             return;
         }
         if (unreadCount > 0) {
@@ -392,6 +409,7 @@ document.addEventListener('DOMContentLoaded', function() {
             folderUnreadBadge.hidden = true;
             folderUnreadBadge.removeAttribute('aria-label');
         }
+        updateMarkAllReadButtonVisibility();
     }
 
     async function markEmailAsRead(email, listElement) {
@@ -435,6 +453,69 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Failed to mark email as read', error);
         }
+    }
+
+    async function markAllEmailsAsRead() {
+        if (!markAllReadUrl || !clientId) {
+            crmToast('Cannot mark emails as read in this view.', 'warning');
+            return;
+        }
+
+        if (unreadCount <= 0) {
+            crmToast('No unread emails to update.', 'info');
+            return;
+        }
+
+        const originalHtml = btnMarkAllRead ? btnMarkAllRead.innerHTML : '';
+        if (btnMarkAllRead) {
+            btnMarkAllRead.disabled = true;
+            btnMarkAllRead.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i><span>Marking...</span>';
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('client_id', clientId);
+            if (matterId) {
+                formData.append('client_matter_id', matterId);
+            }
+            formData.append('_token', getCsrfToken());
+
+            const response = await fetch(markAllReadUrl, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const data = await response.json().catch(function () {
+                return {};
+            });
+
+            if (!response.ok || data.success === false) {
+                crmToast(data.message || 'Could not mark emails as read.', 'error');
+                return;
+            }
+
+            crmToast(data.message || 'All emails marked as read.', 'success');
+            currentPage = 1;
+            loadEmails();
+        } catch (error) {
+            crmToast('Could not mark emails as read: ' + (error.message || 'Unknown error'), 'error');
+        } finally {
+            if (btnMarkAllRead) {
+                btnMarkAllRead.disabled = false;
+                btnMarkAllRead.innerHTML = originalHtml;
+            }
+            updateMarkAllReadButtonVisibility();
+        }
+    }
+
+    if (btnMarkAllRead) {
+        btnMarkAllRead.addEventListener('click', function () {
+            markAllEmailsAsRead();
+        });
     }
 
     // Event Listeners
@@ -602,6 +683,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentPage = 1;
         resetReadingPane();
         updateOutboxFiltersVisibility();
+        updateMarkAllReadButtonVisibility();
     }
 
     // Send Mail
