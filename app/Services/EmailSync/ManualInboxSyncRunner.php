@@ -113,6 +113,7 @@ class ManualInboxSyncRunner
 
         $parserStatus = IncomingEmailSyncService::pythonParserStatus();
         if (! $parserStatus['available']) {
+            IncomingEmailSyncService::markParserUnavailable();
             $message = (string) ($parserStatus['message'] ?? 'Email parser service is unavailable.');
 
             InboxSyncLogger::error('Inbox sync blocked — Python parser unavailable', [

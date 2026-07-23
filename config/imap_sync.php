@@ -39,6 +39,17 @@ return [
 
     'initial_backfill_multiplier' => (int) env('MAIL_SYNC_INITIAL_BACKFILL_MULTIPLIER', 4),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Automatic catch-up (no manual Full sync needed after parser downtime)
+    |--------------------------------------------------------------------------
+    */
+    'auto_catchup_enabled' => env('MAIL_SYNC_AUTO_CATCHUP_ENABLED', true),
+
+    'auto_catchup_days' => (int) env('MAIL_SYNC_AUTO_CATCHUP_DAYS', 7),
+
+    'auto_catchup_interval_hours' => (int) env('MAIL_SYNC_AUTO_CATCHUP_INTERVAL_HOURS', 6),
+
     'high_confidence_threshold' => (int) env('MAIL_SYNC_HIGH_CONFIDENCE', 80),
 
     'schedule_minutes' => (int) env('MAIL_SYNC_SCHEDULE_MINUTES', 5),
