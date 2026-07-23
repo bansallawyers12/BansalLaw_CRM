@@ -173,11 +173,15 @@
                 }
 
                 $newRoot.attr('id', 'clients-listing-spa-root').attr('data-spa-root', '1');
-                if (resolved.pathname === '/clients' || resolved.pathname === '/leads') {
+                if (resolved.pathname === '/clients' || resolved.pathname === '/leads' || resolved.pathname === '/archived') {
                     $newRoot.addClass('clients-listing');
                 }
+                $newRoot.removeClass('clients-listing--leads clients-listing--archived');
                 if (resolved.pathname === '/leads') {
                     $newRoot.addClass('clients-listing--leads');
+                }
+                if (resolved.pathname === '/archived') {
+                    $newRoot.addClass('clients-listing--archived');
                 }
 
                 $root().replaceWith($newRoot);
@@ -632,6 +636,66 @@
         });
 
         return false;
+    };
+
+    window.unarchiveArchivedClient = function (id, clientName) {
+        if (!id) {
+            clientsSwalAlert({ icon: 'warning', title: 'Invalid record', text: 'Please select a valid record.' });
+            return;
+        }
+
+        var safeName = clientName || 'this record';
+        var $row = $root().find('#id_' + id);
+
+        clientsSwalConfirm({
+            title: 'Unarchive record?',
+            html: 'Are you sure you want to unarchive <strong>' + safeName + '</strong>?<br><br>This will move the record back to the active list.',
+            icon: 'question',
+            confirmText: 'Yes, unarchive',
+            confirmColor: '#1e7a52'
+        }).then(function (result) {
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: (cfg().routes.unarchive || '/unarchive') + '/' + id,
+                headers: { 'X-CSRF-TOKEN': cfg().csrfToken, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                dataType: 'json',
+                success: function (resp) {
+                    var obj = typeof resp === 'string' ? JSON.parse(resp) : resp;
+                    if (obj && obj.status === 1) {
+                        $row.fadeOut(200, function () {
+                            $(this).remove();
+                            updateBulkSelectionUI();
+                            if ($root().find('.client-data-row').length === 0) {
+                                loadListing(window.location.href, false);
+                            }
+                        });
+                        clientsSwalAlert({
+                            icon: 'success',
+                            title: 'Unarchived',
+                            text: obj.message || 'Record unarchived successfully.',
+                            timer: 2200
+                        });
+                    } else {
+                        clientsSwalAlert({
+                            icon: 'error',
+                            title: 'Could not unarchive',
+                            text: (obj && obj.message) ? obj.message : 'Failed to unarchive record.'
+                        });
+                    }
+                },
+                error: function (xhr) {
+                    var message = 'An error occurred while unarchiving the record.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+                    clientsSwalAlert({ icon: 'error', title: 'Unarchive failed', text: message });
+                }
+            });
+        });
     };
 
     function initEmailModalPickers() {

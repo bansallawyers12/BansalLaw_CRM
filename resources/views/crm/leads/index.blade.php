@@ -1338,6 +1338,8 @@ window.ClientsListingSpaConfig = {
     routes: {
         clientsIndex: @json(url('/clients')),
         leadsIndex: @json(url('/leads')),
+        archivedIndex: @json(url('/archived')),
+        unarchive: @json(url('/unarchive')),
         markBulkEmailsRead: @json(route('clients.markBulkClientsEmailsRead')),
         mergeRecords: @json(url('/merge_records')),
         getRecipients: @json(url('/clients/get-recipients')),

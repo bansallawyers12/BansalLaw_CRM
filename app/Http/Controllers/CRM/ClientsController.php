@@ -609,9 +609,19 @@ class ClientsController extends Controller
 	{
 		$query 		= Admin::where('is_archived', '=', '1')->whereIn('type', ['client', 'lead']);
         StaffClientVisibility::restrictAdminEloquentQuery($query);
-        $totalData 	= $query->count();	//for all data
-        $lists		= $query->sortable(['id' => 'desc'])->paginate(20);
-        return view('crm.archived.index', compact(['lists', 'totalData']));
+        $totalData 	= $query->count();
+
+        $allowedPerPage = [10, 20, 50, 100, 200];
+        $perPage = (int) $request->get('per_page', 20);
+        if (! in_array($perPage, $allowedPerPage, true)) {
+            $perPage = 20;
+        }
+
+        $lists = $query->sortable(['id' => 'desc'])
+            ->paginate($perPage)
+            ->appends($request->except('page'));
+
+        return view('crm.archived.index', compact('lists', 'totalData', 'perPage'));
     }
 
     /**

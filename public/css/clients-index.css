@@ -878,3 +878,81 @@ body.sidebar-mini .clients-listing .card .card-body table.table tbody tr td:last
 .clients-listing--leads .table.table-leads td.lead-info-col + td.lead-contact-date-cell {
     border-left: 1px solid rgba(200, 220, 239, 0.65);
 }
+
+/* Archived listing */
+.clients-listing--archived .table.table-archived {
+    min-width: 860px !important;
+}
+
+.clients-listing--archived .table.table-archived th:nth-child(2),
+.clients-listing--archived .table.table-archived td:nth-child(2) {
+    width: auto !important;
+    min-width: 200px !important;
+    max-width: 320px !important;
+    white-space: normal !important;
+}
+
+.clients-listing--archived .table.table-archived th:nth-child(3),
+.clients-listing--archived .table.table-archived td:nth-child(3),
+.clients-listing--archived .table.table-archived th:nth-child(4),
+.clients-listing--archived .table.table-archived td:nth-child(4) {
+    width: auto !important;
+    min-width: 100px !important;
+    max-width: 140px !important;
+    white-space: normal !important;
+}
+
+.clients-listing--archived .table.table-archived th:nth-child(5),
+.clients-listing--archived .table.table-archived td:nth-child(5),
+.clients-listing--archived .table.table-archived th:nth-child(6),
+.clients-listing--archived .table.table-archived td:nth-child(6) {
+    width: 110px !important;
+    min-width: 100px !important;
+    max-width: 120px !important;
+    white-space: normal !important;
+}
+
+.clients-listing--archived .table.table-archived th:nth-child(7),
+.clients-listing--archived .table.table-archived td:nth-child(7) {
+    width: 120px !important;
+    min-width: 110px !important;
+    max-width: 140px !important;
+    white-space: nowrap !important;
+}
+
+.clients-listing--archived .client-name-meta {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.clients-listing--archived .archived-type-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+    flex-shrink: 0;
+}
+
+.clients-listing--archived .archived-date-cell {
+    vertical-align: middle;
+    line-height: 1.35;
+}
+
+.clients-listing--archived .archived-date-cell .lead-contact-date__date {
+    display: block;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    color: var(--navy, #1e3d60);
+}
+
+.clients-listing--archived .archived-date-cell .lead-contact-date__time {
+    display: block;
+    margin-top: 3px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted, #5e7a90);
+    text-transform: lowercase;
+}
+
+.clients-listing--archived .btn-action-icon.btn-action-email {
+    background: var(--sidebar-active, #3a6fa8);
+}

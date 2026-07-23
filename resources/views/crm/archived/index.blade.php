@@ -5,100 +5,206 @@
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-flatpickr.css') }}">
+<link rel="stylesheet" href="{{ asset('css/clients-index.css') }}">
+<style>
+    .clients-swal-popup {
+        border-radius: 14px !important;
+        border: 1px solid var(--border, #c8dcef) !important;
+        box-shadow: 0 16px 48px rgba(30, 61, 96, 0.18) !important;
+        padding: 0.5rem 0 1.5rem !important;
+    }
+
+    .clients-swal-popup .swal2-title {
+        color: var(--navy, #1e3d60) !important;
+        font-size: 1.2rem !important;
+        font-weight: 700 !important;
+    }
+
+    .clients-swal-popup .swal2-html-container {
+        color: var(--text-muted, #5e7a90) !important;
+        font-size: 0.9375rem !important;
+        line-height: 1.5 !important;
+    }
+</style>
 @endsection
 
 @section('content')
-<div id="clients-listing-spa-root" class="listing-container" data-spa-root="1">
-    <section class="listing-section" style="padding-top: 40px;">
-        <div class="listing-section-body">
+<div id="clients-listing-spa-root" class="listing-container clients-listing clients-listing--archived" data-spa-root="1">
+    <section class="listing-section">
+        <div class="listing-section-body" id="clients-listing-spa-inner">
             @include('../Elements/flash-message')
 
             <div class="card">
                 <div class="custom-error-msg">
                 </div>
                 <div class="card-header">
-                    <h4>Clients Archived</h4>
+                    <div class="clients-page-header">
+                        <div class="clients-page-header__title">
+                            <span class="clients-page-header__icon" aria-hidden="true">
+                                <i class="fa-solid fa-box-archive"></i>
+                            </span>
+                            <div>
+                                <h4>Archived Clients</h4>
+                                <p class="clients-page-header__subtitle">
+                                    {{ number_format($lists->total()) }} archived {{ Str::plural('record', $lists->total()) }} &middot; Restore or review inactive client and lead records
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="card-header-actions">
+                            <div class="per-page-wrap">
+                                <label for="per_page">Show</label>
+                                <select name="per_page" id="per_page" class="form-control per-page-select" aria-label="Results per page">
+                                    @foreach([10, 20, 50, 100, 200] as $option)
+                                        <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>
+                                            {{ $option }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="card-body">
-                    <ul class="nav nav-pills" id="client_tabs" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link " id="clients-tab"  href="{{URL::to('/clients')}}" >Clients</a>
-                        </li>
-                        <li class="nav-item ">
-                            <a class="nav-link active" id="archived-tab"  href="{{URL::to('/archived')}}" >Archived</a>
-                        </li>
-                        <li class="nav-item is_checked_clientn">
-                            <a class="nav-link" id="lead-tab"  href="{{URL::to('/leads')}}" >Leads</a>
-                        </li>
-                    </ul>
+                    <div class="clients-toolbar">
+                        <ul class="clients-tabs nav" id="client_tabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link" id="clients-tab" href="{{ URL::to('/clients') }}">Clients</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link active" id="archived-tab" href="{{ URL::to('/archived') }}">Archived</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="lead-tab" href="{{ URL::to('/leads') }}">Leads</a>
+                            </li>
+                        </ul>
+                        <span class="clients-select-help"><i class="fa-regular fa-square-check"></i> Select records with the checkboxes on the left</span>
+                    </div>
+
+                    <div class="clients-bulk-bar" id="clientsBulkBar" aria-live="polite">
+                        <span class="clients-bulk-bar__count">
+                            <i class="fa-solid fa-check-double"></i>
+                            <span id="selectedCount">0</span> selected
+                        </span>
+                    </div>
+
+                    @if($lists->total() > 0)
+                    <div class="clients-results-bar">
+                        Showing {{ number_format($lists->firstItem()) }}&ndash;{{ number_format($lists->lastItem()) }} of {{ number_format($lists->total()) }} archived records
+                    </div>
+                    @endif
 
                     <div class="table-responsive">
-                        <table class="table">
+                        <table class="table table-archived">
                             <thead>
                                 <tr>
-                                    <th class="text-center">
-                                        <div class="form-check custom-checkbox-table">
-                                            <input type="checkbox" data-checkboxes="mygroup" data-checkbox-role="dad" class="form-check-input" id="checkbox-all">
-                                            <label for="checkbox-all" class="form-check-label">&nbsp;</label>
-                                        </div>
+                                    <th class="client-select-cell">
+                                        <label class="client-row-checkbox client-row-checkbox--header" for="checkbox-all" title="Select all on this page">
+                                            <input type="checkbox" data-checkboxes="mygroup" data-checkbox-role="dad" class="cb-select-all" id="checkbox-all">
+                                            <span class="client-row-checkbox__box" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
+                                        </label>
                                     </th>
                                     <th>Name</th>
-                                    <th>Agent</th>
-                                    <th>Tag(s)</th>
-                                    <th>Current City</th>
                                     <th>Assignee</th>
-                                    <th>Archived By</th>
-                                    <th>Archived On</th>
+                                    <th>City</th>
+                                    <th>Archived</th>
                                     <th>Added On</th>
-                                    <th>Action</th>
+                                    <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="tdata">
-                                @if(@$totalData !== 0)
-                                <?php $i=0; ?>
-                                    @foreach (@$lists as $list)
-                                    <tr id="id_{{$list->id}}">
-                                        <td style="white-space: initial;" class="text-center">
-                                            <div class="form-check">
-                                                <input type="checkbox" data-checkboxes="mygroup" class="form-check-input" id="checkbox-{{$i}}">
-                                                <label for="checkbox-{{$i}}" class="form-check-label">&nbsp;</label>
+                                @if($lists->count() > 0)
+                                <?php $i = 0; ?>
+                                @foreach ($lists as $list)
+                                    <?php
+                                    $encodedId = base64_encode(convert_uuencode(@$list->id));
+                                    $clientDetailUrl = URL::to('/clients/detail/' . $encodedId);
+                                    $firstName = trim((string) @$list->first_name);
+                                    $lastName = trim((string) @$list->last_name);
+                                    $displayName = trim($firstName . ' ' . $lastName);
+                                    if ($displayName === '') {
+                                        $displayName = config('constants.empty');
+                                    }
+                                    $initials = strtoupper(substr($firstName !== '' ? $firstName : $lastName, 0, 1) . substr($lastName !== '' ? $lastName : $firstName, 0, 1));
+                                    if ($initials === '') {
+                                        $initials = '?';
+                                    }
+                                    $assignee = \App\Models\Staff::where('id', @$list->assignee)->first();
+                                    $assigneeName = $assignee
+                                        ? trim(($assignee->first_name ?? '') . ' ' . ($assignee->last_name ?? ''))
+                                        : config('constants.empty');
+                                    $archivedOn = ! empty($list->archived_on) ? \Carbon\Carbon::parse($list->archived_on) : null;
+                                    $addedOn = ! empty($list->created_at) ? \Carbon\Carbon::parse($list->created_at) : null;
+                                    $typeLabel = ($list->type ?? 'client') === 'lead' ? 'Lead' : 'Client';
+                                    ?>
+                                    <tr id="id_{{ $list->id }}" class="client-data-row">
+                                        <td class="client-select-cell">
+                                            <label class="client-row-checkbox" for="checkbox-{{ $i }}" title="Select record">
+                                                <input data-id="{{ @$list->id }}" type="checkbox" data-checkboxes="mygroup" class="cb-element your-checkbox" id="checkbox-{{ $i }}">
+                                                <span class="client-row-checkbox__box" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <div class="client-name-cell">
+                                                <span class="client-avatar" aria-hidden="true">{{ $initials }}</span>
+                                                <div class="client-name-meta">
+                                                    <a href="{{ $clientDetailUrl }}" class="client-name-link" title="View profile">{{ Str::limit($displayName, 50, '...') }}</a>
+                                                    @if(!empty($list->client_id))
+                                                        <span class="client-id-chip">{{ Str::limit($list->client_id, 24, '...') }}</span>
+                                                    @endif
+                                                    <span class="status-badge inactive archived-type-badge">{{ $typeLabel }}</span>
+                                                </div>
                                             </div>
                                         </td>
-                                        <td style="white-space: initial;"> {{ @$list->first_name == "" ? config('constants.empty') : Str::limit(@$list->first_name, '50', '...') }} {{ @$list->last_name == "" ? config('constants.empty') : Str::limit(@$list->last_name, '50', '...') }}</td>
-                                        <?php
-                                        $agent = \Illuminate\Support\Facades\Schema::hasTable('agent_details') && ! empty($list->agent_id)
-                                            ? \App\Models\AgentDetails::where('id', $list->agent_id)->first()
-                                            : null;
-                                        ?>
-                                        <td style="white-space: initial;">@if($agent) {{ @$agent->full_name }} @else - @endif</td>
-                                        <td style="white-space: initial;">-</td>
-                                        <td style="white-space: initial;">{{@$list->city}}</td>
-                                        <?php
-                                        $assignee = \App\Models\Staff::where('id',@$list->assignee)->first();
-                                        ?>
-                                        <td style="white-space: initial;">{{ @$assignee->first_name == "" ? config('constants.empty') : Str::limit(@$assignee->first_name, '50', '...') }}</td>
-                                        <td style="white-space: initial;">{{date('d/m/Y', strtotime($list->archived_on))}}</td>
-                                        <td style="white-space: initial;">-</td>
-                                        <td style="white-space: initial;">{{date('d/m/Y', strtotime($list->created_at))}}</td>
-                                        <td style="white-space: initial;">
-                                            <div class="dropdown d-inline">
-                                                <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-haspopup="true" aria-expanded="false">Action</button>
-                                                <div class="dropdown-menu dropdown-menu-end">
-                                                    <a class="dropdown-item has-icon" href="javascript:;" onclick="movetoclientAction({{$list->id}}, 'admins','is_archived')"><i class="fa-solid fa-arrow-right" aria-hidden="true"></i> Move to clients</a>
-                                                    <a class="dropdown-item has-icon" href="javascript:;" onclick="unarchiveClientAction({{$list->id}}, '{{ @$list->first_name }} {{ @$list->last_name }}')">
-                                                        <i class="fa-solid fa-undo"></i> Unarchive
-                                                    </a>
-                                                </div>
+                                        <td>{{ Str::limit($assigneeName, 40, '...') }}</td>
+                                        <td>{{ ! empty($list->city) ? Str::limit($list->city, 40, '...') : config('constants.empty') }}</td>
+                                        <td class="archived-date-cell">
+                                            @if($archivedOn)
+                                                <span class="lead-contact-date__date">{{ $archivedOn->format('d/m/Y') }}</span>
+                                                <span class="lead-contact-date__time">{{ $archivedOn->format('g:i a') }}</span>
+                                            @else
+                                                {{ config('constants.empty') }}
+                                            @endif
+                                        </td>
+                                        <td class="archived-date-cell">
+                                            @if($addedOn)
+                                                <span class="lead-contact-date__date">{{ $addedOn->format('d/m/Y') }}</span>
+                                            @else
+                                                {{ config('constants.empty') }}
+                                            @endif
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="action-buttons">
+                                                <button type="button"
+                                                        class="btn-action-icon btn-action-edit"
+                                                        title="Unarchive record"
+                                                        onclick="unarchiveArchivedClient({{ $list->id }}, {{ json_encode($displayName) }})">
+                                                    <i class="fa-solid fa-rotate-left"></i>
+                                                </button>
+                                                <a class="btn-action-icon btn-action-email"
+                                                   href="{{ $clientDetailUrl }}"
+                                                   title="View record">
+                                                    <i class="fa-regular fa-eye"></i>
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>
                                     <?php $i++; ?>
-                                    @endforeach
+                                @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="10" style="text-align: center; padding: 20px;">
-                                            No Record Found
+                                        <td colspan="7">
+                                            <div class="clients-empty-state">
+                                                <div class="clients-empty-state__icon" aria-hidden="true">
+                                                    <i class="fa-solid fa-box-open"></i>
+                                                </div>
+                                                <h5>No archived records</h5>
+                                                <p>There are no archived client or lead records to display.</p>
+                                                <a href="{{ URL::to('/clients') }}" class="btn btn-theme btn-theme-sm">
+                                                    <i class="fa-solid fa-users"></i> Back to Clients
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endif
@@ -106,9 +212,8 @@
                         </table>
                     </div>
 
-                    <!-- Pagination -->
                     <div class="card-footer">
-                    {!! $lists->appends(\Request::except('page'))->render() !!}
+                        {!! $lists->appends(\Request::except('page'))->render() !!}
                     </div>
                 </div>
             </div>
@@ -118,140 +223,26 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('js/crm/clients/clients-listing-spa.js') }}"></script>
 <script>
-    jQuery(document).ready(function($){
-        $('.listing-container [data-checkboxes]').each(function () {
-            var me = $(this),
-            group = me.data('checkboxes'),
-            role = me.data('checkbox-role');
-
-            me.change(function () {
-                var all = $('.listing-container [data-checkboxes="' + group + '"]:not([data-checkbox-role="dad"])'),
-                checked = $('.listing-container [data-checkboxes="' + group + '"]:not([data-checkbox-role="dad"]):checked'),
-                dad = $('.listing-container [data-checkboxes="' + group + '"][data-checkbox-role="dad"]'),
-                total = all.length,
-                checked_length = checked.length;
-                if (role == 'dad') {
-                    if (me.is(':checked')) {
-                        all.prop('checked', true);
-                    } else {
-                        all.prop('checked', false);
-                    }
-                } else {
-                    if (checked_length >= total) {
-                        dad.prop('checked', true);
-                    } else {
-                        dad.prop('checked', false);
-                    }
-                }
-            });
-        });
-
-        $('.listing-container .cb-element').change(function () {
-            if ($('.listing-container .cb-element:checked').length == $('.listing-container .cb-element').length){
-                $('.listing-container #checkbox-all').prop('checked',true);
-            }
-            else {
-                $('.listing-container #checkbox-all').prop('checked',false);
-            }
-        });
-    });
-</script>
-<script>
-    // Unarchive client function - similar to movetoclientAction
-    function unarchiveClientAction(id, clientName) {
-        var confirmMessage = 'Are you sure you want to unarchive the client "' + clientName + '"?\n\nThis will move the client back to the active clients list.';
-        var conf = confirm(confirmMessage);
-        
-        if(conf) {
-            if(id == '') {
-                alert('Please select a valid client ID.');
-                return false;
-            } else {
-                $('.popuploader').show();
-                $(".server-error").html(''); //remove server error.
-                $(".custom-error-msg").html(''); //remove custom error.
-                
-                $.ajax({
-                    type: 'POST',
-                    headers: { 
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    url: '{{ route("clients.unarchive", ":id") }}'.replace(':id', id),
-                    data: {},
-                    dataType: 'json',
-                    success: function(resp) {
-                        $('.popuploader').hide();
-                        var obj = resp;
-                        
-                        // Handle response - check if it's already parsed or needs parsing
-                        if (typeof resp === 'string') {
-                            try {
-                                obj = $.parseJSON(resp);
-                            } catch(e) {
-                                console.error('JSON parse error:', e);
-                                var html = errorMessage('Invalid server response. Please try again.');
-                                $(".custom-error-msg").html(html);
-                                $('html, body').animate({scrollTop:0}, 'slow');
-                                return;
-                            }
-                        }
-                        
-                        if(obj.status == 1) {
-                            // Remove the row from table
-                            $("#id_"+id).fadeOut(300, function() {
-                                $(this).remove();
-                                
-                                // Check if table is empty
-                                if($('.tdata tr').length === 0) {
-                                    $('.tdata').html('<tr><td colspan="10" style="text-align: center; padding: 20px;">No Record Found</td></tr>');
-                                }
-                            });
-                            
-                            // Show success message
-                            var html = successMessage(obj.message || 'Client has been unarchived successfully.');
-                            $(".custom-error-msg").html(html);
-                        } else {
-                            // Show error message even if status is 0
-                            var html = errorMessage(obj.message || 'Failed to unarchive client.');
-                            $(".custom-error-msg").html(html);
-                        }
-                        
-                        $('html, body').animate({scrollTop:0}, 'slow');
-                    },
-                    error: function(xhr) {
-                        $('.popuploader').hide();
-                        var errorMessage = 'An error occurred while unarchiving the client.';
-                        
-                        if(xhr.responseJSON && xhr.responseJSON.message) {
-                            errorMessage = xhr.responseJSON.message;
-                        } else if(xhr.responseText) {
-                            try {
-                                var response = JSON.parse(xhr.responseText);
-                                if(response.message) {
-                                    errorMessage = response.message;
-                                }
-                            } catch(e) {
-                                // Use default error message
-                            }
-                        }
-                        
-                        var html = errorMessage(errorMessage);
-                        $(".custom-error-msg").html(html);
-                        $('html, body').animate({scrollTop:0}, 'slow');
-                    },
-                    beforeSend: function() {
-                        $("#loader").show();
-                    },
-                    complete: function() {
-                        $("#loader").hide();
-                    }
-                });
-            }
-        }
+window.ClientsListingSpaConfig = {
+    csrfToken: document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '',
+    routes: {
+        clientsIndex: @json(url('/clients')),
+        leadsIndex: @json(url('/leads')),
+        archivedIndex: @json(url('/archived')),
+        unarchive: @json(url('/unarchive')),
+        markBulkEmailsRead: @json(route('clients.markBulkClientsEmailsRead')),
+        mergeRecords: @json(url('/merge_records')),
+        getRecipients: @json(url('/clients/get-recipients')),
+        getTemplates: @json(url('/get-templates'))
     }
+};
+
+jQuery(function () {
+    if (window.ClientsListingSpa) {
+        ClientsListingSpa.init();
+    }
+});
 </script>
 @endpush
-
-
-
