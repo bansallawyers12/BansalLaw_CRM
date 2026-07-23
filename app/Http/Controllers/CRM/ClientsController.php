@@ -4016,6 +4016,46 @@ class ClientsController extends Controller
         echo json_encode($response);
 	}
 
+    /**
+     * Mark all unread inbox emails as read for a client (optional matter scope).
+     */
+    public function markAllEmailsRead(Request $request)
+    {
+        $clientId = $request->input('client_id');
+        $clientMatterId = $request->input('client_matter_id');
+
+        if (empty($clientId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Client is required.',
+                'updated_count' => 0,
+            ], 422);
+        }
+
+        $query = \App\Models\EmailLog::query();
+        $this->applyIncomingInboxScope($query);
+        $this->applyUnreadEmailScope($query);
+        $query->where('client_id', $clientId);
+
+        if (! empty($clientMatterId)) {
+            $query->where('client_matter_id', $clientMatterId);
+        }
+
+        $updatedCount = (clone $query)->count();
+
+        if ($updatedCount > 0) {
+            $query->update(['mail_is_read' => true]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $updatedCount > 0
+                ? ($updatedCount === 1 ? '1 email marked as read.' : $updatedCount . ' emails marked as read.')
+                : 'No unread emails to update.',
+            'updated_count' => $updatedCount,
+        ]);
+    }
+
     //chatgpt enhance message
     public function enhanceMessage(Request $request)
     {

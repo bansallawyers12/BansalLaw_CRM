@@ -107,6 +107,7 @@
     data-staff-id="{{ auth()->id() }}"
     data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}"
     data-update-mail-read-url="{{ route('clients.updatemailreadbit') }}"
+    data-mark-all-read-url="{{ route('clients.markAllEmailsRead') }}"
     data-personal-folders='@json($emailUploadPersonalFolders)'
     data-matter-folders='@json($emailUploadMatterFolders)'>
     
@@ -209,6 +210,12 @@
                     <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
                     <input type="text" id="searchInput" placeholder="Search emails...">
                 </div>
+                @if(! $unassignedOnly)
+                <button type="button" class="mark-all-read-btn" id="btnMarkAllRead" title="Mark all unread emails as read" hidden>
+                    <i class="fa-solid fa-envelope-open" aria-hidden="true"></i>
+                    <span>Mark all read</span>
+                </button>
+                @endif
             </div>
             <div class="list-header-filters">
                 <select id="labelFilter" class="list-filter-select" aria-label="Filter by label">
