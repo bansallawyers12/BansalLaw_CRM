@@ -11,12 +11,15 @@ use App\Models\Staff;
 use App\Services\EmailMatchingService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Throwable;
 
 class IncomingEmailSyncService
 {
+    private const PARSER_DOWN_CACHE_KEY = 'inbox_sync_parser_unavailable';
+
     public function __construct(
         private ZohoImapFetcher $imapFetcher,
         private EmailMatchingService $matchingService,
@@ -46,16 +49,24 @@ class IncomingEmailSyncService
         }
 
         $mailboxes = $query->orderBy('email')->get();
+
+        if (! self::isPythonParserAvailable()) {
+            self::markParserUnavailable();
+        }
+
+        $forceCatchup = self::isPythonParserAvailable() && self::consumeParserRecoveryFlag();
+
         $summary = [
             'success' => true,
             'mailboxes' => [],
             'total_imported' => 0,
             'total_skipped' => 0,
             'total_failed' => 0,
+            'auto_catchup' => $forceCatchup,
         ];
 
         foreach ($mailboxes as $mailbox) {
-            $summary['mailboxes'][$mailbox->email] = $this->syncMailbox($mailbox, $since);
+            $summary['mailboxes'][$mailbox->email] = $this->syncMailbox($mailbox, $since, $forceCatchup);
             $summary['total_imported'] += (int) ($summary['mailboxes'][$mailbox->email]['imported'] ?? 0);
             $summary['total_skipped'] += (int) ($summary['mailboxes'][$mailbox->email]['skipped'] ?? 0);
             $summary['total_failed'] += (int) ($summary['mailboxes'][$mailbox->email]['failed'] ?? 0);
@@ -67,7 +78,7 @@ class IncomingEmailSyncService
     /**
      * @return array<string, mixed>
      */
-    public function syncMailbox(Email $mailbox, ?\DateTimeInterface $since = null): array
+    public function syncMailbox(Email $mailbox, ?\DateTimeInterface $since = null, bool $forceCatchup = false): array
     {
         $staffUserId = $mailbox->resolveOwnerStaffId();
         if (! $staffUserId) {
@@ -84,11 +95,13 @@ class IncomingEmailSyncService
             ];
         }
 
+        $inboxAfterUid = $this->resolveImapCursor($mailbox, 'inbox');
+
         $inboxResult = $this->syncMailboxFolder(
             $mailbox,
             $staffUserId,
             (array) config('imap_sync.folders', ['INBOX']),
-            (int) ($mailbox->last_imap_uid ?? 0),
+            $inboxAfterUid,
             'inbox',
             $since
         );
@@ -98,28 +111,220 @@ class IncomingEmailSyncService
         $combined['last_uid'] = $inboxResult['last_uid'];
 
         if ($mailbox->sync_sent_enabled) {
+            $sentAfterUid = $this->resolveImapCursor($mailbox, 'sent');
             $sentResult = $this->syncMailboxFolder(
                 $mailbox,
                 $staffUserId,
                 (array) config('imap_sync.sent_folders', ['Sent']),
-                (int) ($mailbox->last_imap_uid_sent ?? 0),
+                $sentAfterUid,
                 'sent',
                 $since
             );
 
-            $combined['imported'] += $sentResult['imported'];
-            $combined['skipped'] += $sentResult['skipped'];
-            $combined['failed'] += $sentResult['failed'];
-            $combined['errors'] = array_merge($combined['errors'], $sentResult['errors']);
+            $combined = $this->mergeSyncResults($combined, $sentResult);
             $combined['sent_last_uid'] = $sentResult['last_uid'];
             $mailbox->last_imap_uid_sent = $sentResult['last_uid'];
         }
+
+        $combined = $this->runAutoCatchupIfNeeded($mailbox, $staffUserId, $combined, $forceCatchup);
 
         $mailbox->last_synced_at = now();
         $mailbox->last_sync_error = $combined['errors'] === [] ? null : Str::limit(implode('; ', $combined['errors']), 2000);
         $mailbox->save();
 
         return $combined;
+    }
+
+    /**
+     * Roll back IMAP UID watermarks that were advanced without a successful import.
+     */
+    protected function resolveImapCursor(Email $mailbox, string $folderType): int
+    {
+        $column = $folderType === 'sent' ? 'last_imap_uid_sent' : 'last_imap_uid';
+        $stored = (int) ($mailbox->$column ?? 0);
+        $mailBodyType = $folderType === 'sent' ? 'sent' : 'inbox';
+
+        $importedMax = (int) (EmailLog::query()
+            ->where('synced_email_id', $mailbox->id)
+            ->where('mail_body_type', $mailBodyType)
+            ->whereNotNull('imap_uid')
+            ->max('imap_uid') ?? 0);
+
+        if ($importedMax > 0 && $stored > $importedMax) {
+            InboxSyncLogger::warning('Healed IMAP UID watermark from imported mail history', [
+                'mailbox' => $mailbox->email,
+                'folder_type' => $folderType,
+                'stored_uid' => $stored,
+                'imported_max_uid' => $importedMax,
+            ]);
+
+            $mailbox->$column = $importedMax;
+
+            return $importedMax;
+        }
+
+        return $stored;
+    }
+
+    /**
+     * @param  array<string, mixed>  $primary
+     */
+    protected function runAutoCatchupIfNeeded(
+        Email $mailbox,
+        int $staffUserId,
+        array $primary,
+        bool $forceCatchup
+    ): array {
+        if (! config('imap_sync.auto_catchup_enabled', true)) {
+            return $primary;
+        }
+
+        if (! self::isPythonParserAvailable()) {
+            self::markParserUnavailable();
+
+            return $primary;
+        }
+
+        $needsCatchup = $forceCatchup
+            || $this->shouldRunPeriodicCatchup($mailbox)
+            || $this->primarySyncHadImportFailures($primary);
+
+        if (! $needsCatchup) {
+            return $primary;
+        }
+
+        $days = max(1, (int) config('imap_sync.auto_catchup_days', 7));
+        $timezone = (string) config('app.timezone', 'UTC');
+        $catchupSince = now($timezone)->subDays($days - 1)->startOfDay();
+
+        $reason = $forceCatchup
+            ? 'parser_recovery'
+            : ($this->primarySyncHadImportFailures($primary) ? 'import_failures' : 'periodic');
+
+        InboxSyncLogger::info('Automatic catch-up inbox sync started', [
+            'mailbox' => $mailbox->email,
+            'since' => $catchupSince->format('c'),
+            'reason' => $reason,
+        ]);
+
+        $catchupInbox = $this->syncMailboxFolder(
+            $mailbox,
+            $staffUserId,
+            (array) config('imap_sync.folders', ['INBOX']),
+            (int) ($mailbox->last_imap_uid ?? 0),
+            'inbox',
+            $catchupSince
+        );
+
+        $combined = $this->mergeSyncResults($primary, $catchupInbox);
+        $combined['auto_catchup'] = true;
+        $combined['auto_catchup_reason'] = $reason;
+        $mailbox->last_imap_uid = max((int) ($mailbox->last_imap_uid ?? 0), (int) ($catchupInbox['last_uid'] ?? 0));
+        $combined['last_uid'] = $mailbox->last_imap_uid;
+
+        if ($mailbox->sync_sent_enabled) {
+            $catchupSent = $this->syncMailboxFolder(
+                $mailbox,
+                $staffUserId,
+                (array) config('imap_sync.sent_folders', ['Sent']),
+                (int) ($mailbox->last_imap_uid_sent ?? 0),
+                'sent',
+                $catchupSince
+            );
+
+            $combined = $this->mergeSyncResults($combined, $catchupSent);
+            $mailbox->last_imap_uid_sent = max(
+                (int) ($mailbox->last_imap_uid_sent ?? 0),
+                (int) ($catchupSent['last_uid'] ?? 0)
+            );
+            $combined['sent_last_uid'] = $mailbox->last_imap_uid_sent;
+        }
+
+        $this->markCatchupRan($mailbox);
+
+        $catchupImported = (int) ($catchupInbox['imported'] ?? 0);
+        if ($mailbox->sync_sent_enabled) {
+            $catchupImported += (int) ($catchupSent['imported'] ?? 0);
+        }
+
+        InboxSyncLogger::info('Automatic catch-up inbox sync finished', [
+            'mailbox' => $mailbox->email,
+            'reason' => $reason,
+            'imported' => $catchupImported,
+            'skipped' => (int) ($catchupInbox['skipped'] ?? 0),
+            'failed' => (int) ($catchupInbox['failed'] ?? 0),
+        ]);
+
+        return $combined;
+    }
+
+    /**
+     * @param  array<string, mixed>  $left
+     * @param  array<string, mixed>  $right
+     * @return array<string, mixed>
+     */
+    protected function mergeSyncResults(array $left, array $right): array
+    {
+        $merged = $left;
+        $merged['imported'] = (int) ($left['imported'] ?? 0) + (int) ($right['imported'] ?? 0);
+        $merged['skipped'] = (int) ($left['skipped'] ?? 0) + (int) ($right['skipped'] ?? 0);
+        $merged['failed'] = (int) ($left['failed'] ?? 0) + (int) ($right['failed'] ?? 0);
+        $merged['errors'] = array_values(array_merge(
+            (array) ($left['errors'] ?? []),
+            (array) ($right['errors'] ?? [])
+        ));
+
+        return $merged;
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     */
+    protected function primarySyncHadImportFailures(array $result): bool
+    {
+        return (int) ($result['failed'] ?? 0) > 0
+            && (int) ($result['imported'] ?? 0) === 0
+            && (int) ($result['skipped'] ?? 0) === 0;
+    }
+
+    protected function shouldRunPeriodicCatchup(Email $mailbox): bool
+    {
+        $hours = max(1, (int) config('imap_sync.auto_catchup_interval_hours', 6));
+        $last = Cache::get($this->catchupCacheKey($mailbox));
+
+        if ($last === null) {
+            return true;
+        }
+
+        try {
+            return now()->diffInHours(\Illuminate\Support\Carbon::parse($last)) >= $hours;
+        } catch (Throwable) {
+            return true;
+        }
+    }
+
+    protected function markCatchupRan(Email $mailbox): void
+    {
+        Cache::put(
+            $this->catchupCacheKey($mailbox),
+            now()->toIso8601String(),
+            now()->addDays(30)
+        );
+    }
+
+    protected function catchupCacheKey(Email $mailbox): string
+    {
+        return 'inbox_sync_catchup_at:' . $mailbox->id;
+    }
+
+    public static function markParserUnavailable(): void
+    {
+        Cache::put(self::PARSER_DOWN_CACHE_KEY, true, now()->addDays(14));
+    }
+
+    public static function consumeParserRecoveryFlag(): bool
+    {
+        return (bool) Cache::pull(self::PARSER_DOWN_CACHE_KEY, false);
     }
 
     /**
