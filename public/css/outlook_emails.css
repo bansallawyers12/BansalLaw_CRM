@@ -169,6 +169,36 @@ body, html {
     text-align: center;
 }
 
+.folder-unread-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--outlook-blue);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.email-new-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+}
+
 .action-btn--upload {
     flex-shrink: 0;
     padding: 8px 14px;
@@ -378,10 +408,25 @@ body, html {
 
 .email-item.unread {
     font-weight: 600;
+    border-left: 3px solid var(--outlook-blue);
+    padding-left: 11px;
 }
 
 .email-item.unread .email-subject {
-    color: var(--outlook-blue);
+    color: var(--outlook-text);
+    font-weight: 700;
+}
+
+.email-item.unread .email-subject::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--outlook-blue);
+    margin-right: 8px;
+    vertical-align: middle;
+    transform: translateY(-1px);
 }
 
 .email-item-header {

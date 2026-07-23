@@ -8395,6 +8395,16 @@ class ClientsController extends Controller
             if (! empty($dateTo)) {
                 $query->whereRaw('DATE(COALESCE(sent_at, failed_at, fetch_mail_sent_time, created_at)) <= ?', [$dateTo]);
             }
+        } elseif ($folder === 'unread') {
+            $query->where('mail_type', 1)
+                ->where(function ($q) {
+                    $q->where('mail_body_type', 'inbox')
+                      ->orWhereNull('mail_body_type');
+                })
+                ->where(function ($q) {
+                    $q->where('mail_is_read', 0)
+                      ->orWhereNull('mail_is_read');
+                });
         } elseif ($folder === 'deleted') {
             // No easy way to fetch deleted items if they are permanently deleted
             $query->where('id', '<', 0); // Return empty for now
@@ -8444,6 +8454,7 @@ class ClientsController extends Controller
             $email->send_status = $email->send_status ?? \App\Models\EmailLog::SEND_STATUS_SENT;
             $email->send_error = $email->send_error ?? '';
             $email->sync_assignment_status = $email->sync_assignment_status ?? '';
+            $email->is_read = (bool) $email->mail_is_read;
             $email->mailbox_email = $email->mailbox_email ?? '';
             $email->client_name = '';
             $email->client_ref = '';
@@ -8496,6 +8507,24 @@ class ClientsController extends Controller
         
         $senders = $sendersQuery->distinct()->pluck('from_mail');
 
+        $unreadCount = 0;
+        if (! empty($clientId)) {
+            $unreadCountQuery = \App\Models\EmailLog::where('mail_type', 1)
+                ->where(function ($q) {
+                    $q->where('mail_body_type', 'inbox')
+                      ->orWhereNull('mail_body_type');
+                })
+                ->where('client_id', $clientId)
+                ->where(function ($q) {
+                    $q->where('mail_is_read', 0)
+                      ->orWhereNull('mail_is_read');
+                });
+            if (! empty($clientMatterId)) {
+                $unreadCountQuery->where('client_matter_id', $clientMatterId);
+            }
+            $unreadCount = $unreadCountQuery->count();
+        }
+
         return response()->json([
             'status' => 'success',
             'emails' => $emails->items(),
@@ -8505,7 +8534,8 @@ class ClientsController extends Controller
             'last_page' => $emails->lastPage(),
             'from' => $emails->firstItem() ?? 0,
             'to' => $emails->lastItem() ?? 0,
-            'senders' => $senders
+            'senders' => $senders,
+            'unread_count' => $unreadCount,
         ]);
     }
 }

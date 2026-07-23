@@ -119,6 +119,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const canViewSyncedInbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-view-synced-inbox') === '1');
     const canSelectSyncMailbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-select-sync-mailbox') === '1');
     const mattersUrl = outlookContainer ? outlookContainer.getAttribute('data-matters-url') : '';
+    const updateMailReadUrl = outlookContainer ? (outlookContainer.getAttribute('data-update-mail-read-url') || '') : '';
+    const folderUnreadBadge = document.getElementById('folderUnreadBadge');
+    let unreadCount = 0;
 
     let composeQuoteHtml = '';
     let composeSignatureHtml = '';
@@ -189,6 +192,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderSyncedClientBadge(email) {
         if (currentFolder !== 'assigned'
+            && currentFolder !== 'unread'
+            && currentFolder !== 'inbox'
             && email.sync_assignment_status !== 'auto_assigned'
             && email.sync_assignment_status !== 'manual_assigned') {
             return '';
@@ -206,6 +211,78 @@ document.addEventListener('DOMContentLoaded', function() {
             + '<i class="fa-solid fa-user-check" aria-hidden="true"></i> '
             + escapeHtml(clientLabel)
             + '</span>';
+    }
+
+    function isEmailUnread(email) {
+        if (!email) {
+            return false;
+        }
+        if (typeof email.is_read === 'boolean') {
+            return !email.is_read;
+        }
+        return email.mail_is_read != 1 && email.mail_is_read !== true;
+    }
+
+    function updateUnreadTabBadge(count) {
+        unreadCount = Math.max(0, Number(count) || 0);
+        if (!folderUnreadBadge) {
+            return;
+        }
+        if (unreadCount > 0) {
+            folderUnreadBadge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+            folderUnreadBadge.hidden = false;
+            folderUnreadBadge.setAttribute('aria-label', unreadCount + ' unread');
+        } else {
+            folderUnreadBadge.textContent = '';
+            folderUnreadBadge.hidden = true;
+            folderUnreadBadge.removeAttribute('aria-label');
+        }
+    }
+
+    async function markEmailAsRead(email, listElement) {
+        if (!email || !isEmailUnread(email)) {
+            return;
+        }
+
+        email.mail_is_read = 1;
+        email.is_read = true;
+        if (listElement) {
+            listElement.classList.remove('unread');
+        }
+        updateUnreadTabBadge(unreadCount - 1);
+
+        if (currentFolder === 'unread') {
+            emails = emails.filter(function (item) {
+                return item.id !== email.id;
+            });
+            if (selectedEmailId === email.id) {
+                selectedEmailId = null;
+            }
+            renderEmailList();
+            if (emails.length === 0) {
+                emptyState.style.display = 'flex';
+                readingPane.classList.remove('is-visible');
+            }
+        }
+
+        if (!updateMailReadUrl) {
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('mail_report_id', email.id);
+            formData.append('_token', getCsrfToken());
+            await fetch(updateMailReadUrl, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+        } catch (error) {
+            console.error('Failed to mark email as read', error);
+        }
     }
 
     // Event Listeners
@@ -2004,6 +2081,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             emails = data.emails || [];
+            if (typeof data.unread_count !== 'undefined') {
+                updateUnreadTabBadge(data.unread_count);
+            }
             
             // Pagination
             const total = data.total || 0;
@@ -2368,13 +2448,17 @@ document.addEventListener('DOMContentLoaded', function() {
         emailListContainer.innerHTML = '';
         
         if (emails.length === 0) {
-            emailListContainer.innerHTML = '<div style="padding:16px;text-align:center;color:#666;">No emails found.</div>';
+            const emptyMsg = currentFolder === 'unread'
+                ? 'No unread emails. You\'re all caught up!'
+                : 'No emails found.';
+            emailListContainer.innerHTML = '<div style="padding:16px;text-align:center;color:#666;">' + emptyMsg + '</div>';
             return;
         }
 
         emails.forEach(email => {
             const el = document.createElement('div');
-            el.className = 'email-item' + (email.is_read ? '' : ' unread');
+            const unread = isEmailUnread(email);
+            el.className = 'email-item' + (unread ? ' unread' : '');
             if (selectedEmailId === email.id) {
                 el.classList.add('active');
             }
@@ -2390,10 +2474,13 @@ document.addEventListener('DOMContentLoaded', function() {
             let dateStr = formatEmailDate(getEmailDate(email));
             const statusBadge = renderSendStatusBadge(email);
             const clientBadge = renderSyncedClientBadge(email);
+            const autoAssignedBadge = unread && email.sync_assignment_status === 'auto_assigned'
+                ? '<span class="email-new-badge" title="Auto-assigned from synced inbox">New</span>'
+                : '';
 
             el.innerHTML = `
                 <div class="email-item-header">
-                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${statusBadge}${clientBadge}</div>
+                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${autoAssignedBadge}${statusBadge}${clientBadge}</div>
                 </div>
                 <div class="email-subject">${escapeHtml(subject)}</div>
                 <div class="email-preview">${escapeHtml(preview)}</div>
@@ -2407,16 +2494,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.querySelectorAll('.email-item').forEach(i => i.classList.remove('active'));
                 el.classList.add('active');
                 selectedEmailId = email.id;
-                showEmail(email);
+                showEmail(email, el);
             });
 
             emailListContainer.appendChild(el);
         });
     }
 
-    function showEmail(email) {
+    function showEmail(email, listElement) {
         emptyState.style.display = 'none';
         readingPane.classList.add('is-visible');
+
+        markEmailAsRead(email, listElement);
 
         document.getElementById('readSubject').textContent = email.subject || '(No Subject)';
         document.getElementById('readSender').textContent = email.from_mail || 'Unknown Sender';

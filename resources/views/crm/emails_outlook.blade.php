@@ -102,6 +102,7 @@
     data-staff-signature-url="{{ route('crm.staff.email-signature') }}"
     data-staff-id="{{ auth()->id() }}"
     data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}"
+    data-update-mail-read-url="{{ route('clients.updatemailreadbit') }}"
     data-personal-folders='@json($emailUploadPersonalFolders)'
     data-matter-folders='@json($emailUploadMatterFolders)'>
     
@@ -129,6 +130,10 @@
                 @else
                 <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
                     <i class="fa-solid fa-inbox"></i> Inbox
+                </button>
+                <button type="button" class="folder-item" data-folder="unread" role="tab" aria-selected="false">
+                    <i class="fa-solid fa-envelope"></i> Unread
+                    <span class="folder-unread-badge" id="folderUnreadBadge" hidden aria-label="Unread count"></span>
                 </button>
                 <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
                     <i class="fa-solid fa-paper-plane"></i> Sent Items
