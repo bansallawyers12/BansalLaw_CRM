@@ -323,14 +323,36 @@ document.addEventListener('DOMContentLoaded', function() {
             + '</span>';
     }
 
-    function isEmailUnread(email) {
+    function isEmailRead(email) {
         if (!email) {
             return false;
         }
         if (typeof email.is_read === 'boolean') {
-            return !email.is_read;
+            return email.is_read;
         }
-        return email.mail_is_read != 1 && email.mail_is_read !== true;
+        const value = email.mail_is_read;
+        if (value === true || value === 1 || value === '1' || value === 't' || value === 'true') {
+            return true;
+        }
+        if (value === false || value === 0 || value === '0' || value === 'f' || value === 'false') {
+            return false;
+        }
+        return false;
+    }
+
+    function isEmailUnread(email) {
+        return !isEmailRead(email);
+    }
+
+    function resetReadingPane() {
+        selectedEmailId = null;
+        readingPane.classList.remove('is-visible');
+        emptyState.style.display = 'flex';
+        const calendarBanner = document.getElementById('readCalendarBanner');
+        if (calendarBanner) {
+            calendarBanner.hidden = true;
+            calendarBanner.innerHTML = '';
+        }
     }
 
     function sortEmailsUnreadFirst(list) {
@@ -377,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        email.mail_is_read = 1;
+        email.mail_is_read = true;
         email.is_read = true;
         if (listElement) {
             listElement.classList.remove('unread');
@@ -388,14 +410,8 @@ document.addEventListener('DOMContentLoaded', function() {
             emails = emails.filter(function (item) {
                 return item.id !== email.id;
             });
-            if (selectedEmailId === email.id) {
-                selectedEmailId = null;
-            }
+            selectedEmailId = email.id;
             renderEmailList();
-            if (emails.length === 0) {
-                emptyState.style.display = 'flex';
-                readingPane.classList.remove('is-visible');
-            }
         } else if (currentFolder === 'inbox') {
             emails = sortEmailsUnreadFirst(emails);
             renderEmailList();
@@ -432,15 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (folder === 'assigned' && !canViewSyncedInbox) {
                 return;
             }
-            folderItems.forEach(f => {
-                f.classList.remove('active');
-                f.setAttribute('aria-selected', 'false');
-            });
-            target.classList.add('active');
-            target.setAttribute('aria-selected', 'true');
-            currentFolder = folder;
-            currentPage = 1;
-            updateOutboxFiltersVisibility();
+            switchToFolder(folder);
             loadEmails();
         });
     });
@@ -592,6 +600,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         currentFolder = folder;
         currentPage = 1;
+        resetReadingPane();
+        updateOutboxFiltersVisibility();
     }
 
     // Send Mail
@@ -2180,20 +2190,22 @@ document.addEventListener('DOMContentLoaded', function() {
             switchToFolder(currentFolder);
         }
 
+        emailListContainer.innerHTML = '<div style="padding:16px;text-align:center;color:#666;">Loading emails...</div>';
+
         try {
             const query = searchInput.value;
             const label = labelFilter ? labelFilter.value : '';
             const sender = senderFilter ? senderFilter.value : '';
+            const folderToFetch = currentFolder;
             
-            // Assuming we will create this new endpoint for fetching ALL emails across all clients
             const url = new URL(`${baseUrl}/clients/outlook/fetch-all`);
-            url.searchParams.append('folder', currentFolder);
+            url.searchParams.append('folder', folderToFetch);
             url.searchParams.append('page', currentPage);
             url.searchParams.append('search', query);
             url.searchParams.append('label_id', label);
             url.searchParams.append('sender_filter', sender);
             url.searchParams.append('sort_order', sortOrder ? sortOrder.value : 'desc');
-            if (currentFolder === 'outbox') {
+            if (folderToFetch === 'outbox') {
                 if (sendStatusFilter && sendStatusFilter.value) {
                     url.searchParams.append('send_status', sendStatusFilter.value);
                 }
@@ -2214,9 +2226,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             });
-            const data = await response.json();
+            const data = await response.json().catch(function () {
+                return {};
+            });
+
+            if (!response.ok) {
+                throw new Error(data.message || ('Failed to load emails (' + response.status + ')'));
+            }
+
+            if (folderToFetch !== currentFolder) {
+                return;
+            }
             
-            emails = data.emails || [];
+            emails = Array.isArray(data.emails) ? data.emails : [];
             if (typeof data.unread_count !== 'undefined') {
                 updateUnreadTabBadge(data.unread_count);
             }
@@ -2252,7 +2274,13 @@ document.addEventListener('DOMContentLoaded', function() {
             renderEmailList();
         } catch (error) {
             console.error('Failed to fetch emails', error);
-            emailListContainer.innerHTML = '<div style="padding:16px;text-align:center;color:red;">Error loading emails</div>';
+            emails = [];
+            emailListContainer.innerHTML = '<div style="padding:16px;text-align:center;color:red;">'
+                + escapeHtml(error.message || 'Error loading emails')
+                + '</div>';
+            pageInfo.textContent = '0 records found';
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
         }
     }
 
@@ -3612,11 +3640,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         btnAssignToClient.hidden = true;
                     }
                     if (! unassignedOnly) {
-                        currentFolder = 'inbox';
-                        folderItems.forEach(function (f) {
-                            f.classList.toggle('active', f.dataset.folder === 'inbox');
-                            f.setAttribute('aria-selected', f.dataset.folder === 'inbox' ? 'true' : 'false');
-                        });
+                        switchToFolder('inbox');
                     }
                     loadEmails();
                     return;

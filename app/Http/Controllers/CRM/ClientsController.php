@@ -4000,7 +4000,7 @@ class ClientsController extends Controller
             //dd($emailLogInfo);
             if( $emailLogInfo ){
                 $email_log_info = \App\Models\EmailLog::find($request->mail_report_id);
-                $email_log_info->mail_is_read = 1;
+                $email_log_info->mail_is_read = true;
                 $email_log_info->save();
 
                 $response['status'] 	= 	true;
@@ -8300,11 +8300,13 @@ class ClientsController extends Controller
         $perPage = 15;
         $hasSendStatus = \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'send_status');
         $isSyncedInboxFolder = in_array($folder, ['unassigned', 'assigned'], true);
+        $hasCalendarLinksTable = \Illuminate\Support\Facades\Schema::hasTable('email_calendar_links');
 
         // Base query with attachments (+ client for assigned synced mail)
-        $withRelations = $isSyncedInboxFolder
-            ? ['attachments', 'client', 'calendarLinks']
-            : ['attachments', 'calendarLinks'];
+        $withRelations = $isSyncedInboxFolder ? ['attachments', 'client'] : ['attachments'];
+        if ($hasCalendarLinksTable) {
+            $withRelations[] = 'calendarLinks';
+        }
         $query = \App\Models\EmailLog::with($withRelations);
 
         // Apply client and matter filter if provided (skip for synced inbox queues — those are global)
@@ -8355,13 +8357,9 @@ class ClientsController extends Controller
         }
 
         // Apply folder logic
-        // Inbox = received uploads; Sent = CRM compose (mail_type 2) + uploaded sent items
+        // Inbox = all incoming mail (read + unread). Unread tab = incoming mail that is not read yet.
         if ($folder === 'inbox') {
-            $query->where('mail_type', 1)
-                ->where(function ($q) {
-                    $q->where('mail_body_type', 'inbox')
-                      ->orWhereNull('mail_body_type');
-                });
+            $this->applyIncomingInboxScope($query);
         } elseif ($folder === 'sent') {
             $query->where(function ($q) use ($hasSendStatus) {
                 $q->where(function ($crm) use ($hasSendStatus) {
@@ -8399,15 +8397,8 @@ class ClientsController extends Controller
                 $query->whereRaw('DATE(COALESCE(sent_at, failed_at, fetch_mail_sent_time, created_at)) <= ?', [$dateTo]);
             }
         } elseif ($folder === 'unread') {
-            $query->where('mail_type', 1)
-                ->where(function ($q) {
-                    $q->where('mail_body_type', 'inbox')
-                      ->orWhereNull('mail_body_type');
-                })
-                ->where(function ($q) {
-                    $q->where('mail_is_read', 0)
-                      ->orWhereNull('mail_is_read');
-                });
+            $this->applyIncomingInboxScope($query);
+            $this->applyUnreadEmailScope($query);
         } elseif ($folder === 'deleted') {
             // No easy way to fetch deleted items if they are permanently deleted
             $query->where('id', '<', 0); // Return empty for now
@@ -8438,7 +8429,7 @@ class ClientsController extends Controller
         // Sort by actual email sent time, user-selectable direction (default: newest first)
         $sortDirection = strtolower($request->input('sort_order', 'desc')) === 'asc' ? 'ASC' : 'DESC';
         if ($folder === 'inbox') {
-            $query->orderByRaw('CASE WHEN COALESCE(mail_is_read, 0) = 0 THEN 0 ELSE 1 END ASC');
+            $query->orderByRaw('CASE WHEN (mail_is_read IS NULL OR mail_is_read = ?) THEN 0 ELSE 1 END ASC', [false]);
         }
         if ($folder === 'outbox' && $hasSendStatus) {
             $query->orderByRaw('COALESCE(sent_at, failed_at, fetch_mail_sent_time, created_at) ' . $sortDirection);
@@ -8451,7 +8442,7 @@ class ClientsController extends Controller
         $calendarMergeService = app(\App\Services\Email\EmailCalendarMergeService::class);
 
         // Prepare preview text and map authenticated document/attachment URLs
-        $emails->getCollection()->transform(function ($email) use ($calendarMergeService) {
+        $emails->getCollection()->transform(function ($email) use ($calendarMergeService, $hasCalendarLinksTable) {
             $preview = strip_tags($email->message);
             $email->text_preview = mb_substr($preview, 0, 100);
 
@@ -8461,7 +8452,7 @@ class ClientsController extends Controller
             $email->send_status = $email->send_status ?? \App\Models\EmailLog::SEND_STATUS_SENT;
             $email->send_error = $email->send_error ?? '';
             $email->sync_assignment_status = $email->sync_assignment_status ?? '';
-            $email->is_read = ! ($email->mail_is_read === null || $email->mail_is_read === false || (string) $email->mail_is_read === '0');
+            $email->is_read = $this->emailLogIsRead($email);
             $email->mailbox_email = $email->mailbox_email ?? '';
             $email->client_name = '';
             $email->client_ref = '';
@@ -8497,7 +8488,17 @@ class ClientsController extends Controller
                 }));
             }
 
-            $calendarSummary = $calendarMergeService->calendarSummaryForEmail($email);
+            if ($hasCalendarLinksTable) {
+                $calendarSummary = $calendarMergeService->calendarSummaryForEmail($email);
+            } else {
+                $calendarSummary = [
+                    'has_calendar' => false,
+                    'count' => 0,
+                    'merged_count' => 0,
+                    'pending_count' => 0,
+                    'events' => [],
+                ];
+            }
             $email->calendar = $calendarSummary;
             $email->has_calendar = $calendarSummary['has_calendar'];
             $email->calendar_event_count = $calendarSummary['count'];
@@ -8523,16 +8524,10 @@ class ClientsController extends Controller
 
         $unreadCount = 0;
         if (! empty($clientId)) {
-            $unreadCountQuery = \App\Models\EmailLog::where('mail_type', 1)
-                ->where(function ($q) {
-                    $q->where('mail_body_type', 'inbox')
-                      ->orWhereNull('mail_body_type');
-                })
-                ->where('client_id', $clientId)
-                ->where(function ($q) {
-                    $q->where('mail_is_read', 0)
-                      ->orWhereNull('mail_is_read');
-                });
+            $unreadCountQuery = \App\Models\EmailLog::query();
+            $this->applyIncomingInboxScope($unreadCountQuery);
+            $unreadCountQuery->where('client_id', $clientId);
+            $this->applyUnreadEmailScope($unreadCountQuery);
             if (! empty($clientMatterId)) {
                 $unreadCountQuery->where('client_matter_id', $clientMatterId);
             }
@@ -8551,6 +8546,38 @@ class ClientsController extends Controller
             'senders' => $senders,
             'unread_count' => $unreadCount,
         ]);
+    }
+
+    protected function applyIncomingInboxScope($query): void
+    {
+        $query->where('mail_type', 1)
+            ->where(function ($q) {
+                $q->where('mail_body_type', 'inbox')
+                  ->orWhereNull('mail_body_type');
+            });
+    }
+
+    protected function applyUnreadEmailScope($query): void
+    {
+        $query->where(function ($q) {
+            $q->whereNull('mail_is_read')
+              ->orWhere('mail_is_read', false);
+        });
+    }
+
+    protected function emailLogIsRead($email): bool
+    {
+        $value = $email->mail_is_read ?? null;
+
+        if ($value === null) {
+            return false;
+        }
+
+        if ($value === false || $value === 0 || $value === '0' || $value === 'f' || $value === 'false') {
+            return false;
+        }
+
+        return (bool) $value;
     }
 
     protected function emailHasCalendarAttachment($email): bool
