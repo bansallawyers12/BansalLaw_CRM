@@ -171,10 +171,16 @@
                         <div class="sync-inbox-panel__hint">Missed mail is recovered automatically after sync.</div>
                     </div>
                 </div>
-                <button type="button" class="sync-inbox-panel__btn" id="btnSyncInbox" title="{{ $canSelectSyncMailbox ? 'Fetch mail from Zoho for the selected mailbox and range' : 'Fetch mail from Zoho for the selected range' }}">
-                    <i class="fa-solid fa-rotate"></i>
-                    <span>Sync now</span>
-                </button>
+                <div class="sync-inbox-panel__actions">
+                    <button type="button" class="sync-inbox-panel__btn" id="btnSyncInbox" title="{{ $canSelectSyncMailbox ? 'Fetch mail from Zoho for the selected mailbox and range' : 'Fetch mail from Zoho for the selected range' }}">
+                        <i class="fa-solid fa-rotate"></i>
+                        <span>Sync now</span>
+                    </button>
+                    <button type="button" class="sync-inbox-panel__btn sync-inbox-panel__btn--mark-read" id="btnMarkAllRead" title="Mark all unread emails in this tab as read" hidden>
+                        <i class="fa-solid fa-envelope-open"></i>
+                        <span>Mark all read</span>
+                    </button>
+                </div>
             </div>
             <div class="sync-inbox-panel__controls">
                 @if($canSelectSyncMailbox)
@@ -197,6 +203,51 @@
                     </select>
                 </div>
             </div>
+            <div class="sync-inbox-panel__list-tools">
+                <div class="search-box search-box--compact">
+                    <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
+                    <input type="text" id="searchInput" placeholder="Search emails...">
+                </div>
+                <select id="senderFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by sender">
+                    <option value="">All senders</option>
+                </select>
+                <select id="sortOrder" class="list-filter-select list-filter-select--compact" aria-label="Sort order">
+                    <option value="desc" selected>Newest</option>
+                    <option value="asc">Oldest</option>
+                </select>
+            </div>
+        </div>
+        @elseif($unassignedOnly)
+        <div class="sync-inbox-panel sync-inbox-panel--tools-only">
+            <div class="sync-inbox-panel__top">
+                <div class="sync-inbox-panel__intro">
+                    <div class="sync-inbox-panel__intro-icon" aria-hidden="true">
+                        <i class="fa-solid fa-inbox"></i>
+                    </div>
+                    <div>
+                        <div class="sync-inbox-panel__title">Synced inbox</div>
+                    </div>
+                </div>
+                <div class="sync-inbox-panel__actions">
+                    <button type="button" class="sync-inbox-panel__btn sync-inbox-panel__btn--mark-read" id="btnMarkAllRead" title="Mark all unread emails in this tab as read" hidden>
+                        <i class="fa-solid fa-envelope-open"></i>
+                        <span>Mark all read</span>
+                    </button>
+                </div>
+            </div>
+            <div class="sync-inbox-panel__list-tools">
+                <div class="search-box search-box--compact">
+                    <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
+                    <input type="text" id="searchInput" placeholder="Search emails...">
+                </div>
+                <select id="senderFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by sender">
+                    <option value="">All senders</option>
+                </select>
+                <select id="sortOrder" class="list-filter-select list-filter-select--compact" aria-label="Sort order">
+                    <option value="desc" selected>Newest</option>
+                    <option value="asc">Oldest</option>
+                </select>
+            </div>
         </div>
         @endif
 
@@ -209,32 +260,18 @@
         </div>
         @endif
 
-        <div class="list-header{{ $unassignedOnly ? ' list-header--synced' : '' }}">
-            <div class="list-header-row{{ $unassignedOnly ? ' list-header-row--synced' : '' }}">
+        @if(! $unassignedOnly)
+        <div class="list-header">
+            <div class="list-header-row">
                 <div class="search-box">
                     <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
                     <input type="text" id="searchInput" placeholder="Search emails...">
                 </div>
-                @if($unassignedOnly)
-                <select id="senderFilter" class="list-filter-select list-filter-select--inline" aria-label="Filter by sender">
-                    <option value="">All senders</option>
-                </select>
-                <select id="sortOrder" class="list-filter-select list-filter-select--inline" aria-label="Sort order">
-                    <option value="desc" selected>Newest</option>
-                    <option value="asc">Oldest</option>
-                </select>
-                <button type="button" class="mark-all-read-btn mark-all-read-btn--synced" id="btnMarkAllRead" title="Mark all unread emails in this tab as read" hidden>
-                    <i class="fa-solid fa-envelope-open" aria-hidden="true"></i>
-                    <span>Mark all read</span>
-                </button>
-                @else
                 <button type="button" class="mark-all-read-btn" id="btnMarkAllRead" title="Mark all unread emails as read" hidden>
                     <i class="fa-solid fa-envelope-open" aria-hidden="true"></i>
                     <span>Mark all read</span>
                 </button>
-                @endif
             </div>
-            @if(! $unassignedOnly)
             <div class="list-header-filters">
                 <select id="labelFilter" class="list-filter-select" aria-label="Filter by label">
                     <option value="">All Labels</option>
@@ -284,12 +321,11 @@
                 <input type="date" id="dateFromFilter" class="list-filter-date list-filter-outbox" aria-label="From date" title="From date" hidden>
                 <input type="date" id="dateToFilter" class="list-filter-date list-filter-outbox" aria-label="To date" title="To date" hidden>
             </div>
-            @endif
         </div>
+        @endif
 
         @if($unassignedOnly)
         <div class="synced-mail-list-body">
-            <div id="syncedDateSummary" class="synced-date-summary" hidden aria-live="polite"></div>
             <div class="email-list email-list--synced" id="emailList">
                 <div class="email-list-loading">Loading emails...</div>
             </div>

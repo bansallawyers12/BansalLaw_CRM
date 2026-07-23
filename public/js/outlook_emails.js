@@ -582,56 +582,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderSyncedDateSummaryBar(summary) {
-        if (!syncedDateSummaryEl || !unassignedOnly) {
-            return;
-        }
-
-        if (!summary || !summary.total) {
-            syncedDateSummaryEl.hidden = true;
-            syncedDateSummaryEl.innerHTML = '';
-            return;
-        }
-
-        const todayCount = Number(summary.today) || 0;
-        const yesterdayCount = Number(summary.yesterday) || 0;
-        const weekCount = Number(summary.this_week) || 0;
-        const earlierCount = Number(summary.earlier) || 0;
-        const totalCount = Number(summary.total) || 0;
-        const folderLabel = currentFolder === 'assigned' ? 'assigned' : 'unassigned';
-
-        let chips = '';
-        const stats = [
-            { key: 'today', label: 'Today', value: todayCount, active: true },
-            { key: 'yesterday', label: 'Yesterday', value: yesterdayCount },
-            { key: 'this_week', label: 'This week', value: weekCount },
-            { key: 'earlier', label: 'Earlier', value: earlierCount }
-        ];
-
-        stats.forEach(function (stat) {
-            if (stat.value <= 0) {
-                return;
-            }
-            chips += '<div class="synced-stat' + (stat.active ? ' synced-stat--active' : '') + '">'
-                + '<span class="synced-stat__value">' + stat.value + '</span>'
-                + '<span class="synced-stat__label">' + escapeHtml(stat.label) + '</span>'
-                + '</div>';
-        });
-
-        syncedDateSummaryEl.innerHTML = ''
-            + '<div class="synced-date-summary__head">'
-            + '  <div class="synced-date-summary__title">'
-            + '    <i class="fa-solid fa-inbox" aria-hidden="true"></i>'
-            + '    <span>' + escapeHtml(folderLabel.charAt(0).toUpperCase() + folderLabel.slice(1)) + ' inbox</span>'
-            + '  </div>'
-            + '  <div class="synced-date-summary__today">'
-            + '    <strong>' + todayCount + '</strong>'
-            + '    <span>' + (todayCount === 1 ? 'email today' : 'emails today') + '</span>'
-            + '  </div>'
-            + '</div>'
-            + (chips ? '<div class="synced-date-summary__stats">' + chips + '</div>' : '')
-            + '<div class="synced-date-summary__meta">' + totalCount + ' total in this tab</div>';
-
-        syncedDateSummaryEl.hidden = false;
+        syncedDateSummary = summary || null;
     }
 
     function updateUnreadTabBadge(count) {
@@ -3066,7 +3017,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const sender = email.from_mail || 'Unknown';
             const subject = email.subject || '(No Subject)';
-            const preview = normalizePreviewText(email.text_preview || '', 80);
+            const preview = normalizePreviewText(email.text_preview || '', 55);
             
             const hasAttachment = getUserEmailAttachments(email).length > 0;
             const attachmentIcon = hasAttachment ? '<i class="fa-solid fa-paperclip email-list-clip" title="Has attachments"></i>' : '';
@@ -3085,36 +3036,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? '<span class="email-unread-label" title="Unread">Unread</span>'
                 : '';
             const markReadAction = unread && isSyncedInboxFolder(currentFolder)
-                ? '<button type="button" class="email-item-mark-read" title="Mark as read" aria-label="Mark as read"><i class="fa-solid fa-check"></i><span>Read</span></button>'
+                ? '<button type="button" class="email-item-mark-read email-item-mark-read--compact" title="Mark as read" aria-label="Mark as read"><i class="fa-solid fa-check"></i></button>'
                 : '';
 
             if (isSyncedInboxFolder(currentFolder)) {
                 const senderInitial = escapeHtml((sender.charAt(0) || '?').toUpperCase());
                 const senderName = escapeHtml(extractSenderName(sender));
-                const senderAddress = escapeHtml(sender);
                 const badgeRow = attachmentIcon + calendarIndicator + unreadBadge + autoAssignedBadge + statusBadge + clientBadge;
                 const unreadDot = unread ? '<span class="email-item-unread-dot" aria-hidden="true"></span>' : '';
-                el.classList.add('email-item--synced');
+                const previewHtml = preview
+                    ? '<div class="email-preview">' + escapeHtml(preview) + '</div>'
+                    : '';
+                el.classList.add('email-item--synced', 'email-item--synced-compact');
                 el.innerHTML = ''
-                    + '<div class="email-item-synced">'
+                    + '<div class="email-item-synced email-item-synced--compact">'
                     + '  <div class="email-item-avatar-wrap">'
                     + '    <div class="email-item-avatar" aria-hidden="true">' + senderInitial + '</div>'
                     +      unreadDot
                     + '  </div>'
                     + '  <div class="email-item-body">'
-                    + '    <div class="email-item-top">'
-                    + '      <div class="email-item-from">'
-                    + '        <div class="email-sender-name">' + senderName + '</div>'
-                    + '        <div class="email-sender-address">' + senderAddress + '</div>'
-                    + '      </div>'
-                    + '      <div class="email-item-actions-top">'
-                    + '        <div class="email-date">' + dateStr + '</div>'
-                    +          markReadAction
-                    + '      </div>'
+                    + '    <div class="email-item-line-main">'
+                    + '      <span class="email-sender-name">' + senderName + '</span>'
+                    + '      <span class="email-item-line-sep">·</span>'
+                    + '      <span class="email-subject">' + escapeHtml(subject) + '</span>'
                     + '    </div>'
-                    + '    <div class="email-subject">' + escapeHtml(subject) + '</div>'
-                    + '    <div class="email-preview">' + escapeHtml(preview) + '</div>'
+                    +      previewHtml
                     + (badgeRow ? '    <div class="email-item-badges">' + badgeRow + '</div>' : '')
+                    + '  </div>'
+                    + '  <div class="email-item-side">'
+                    + '    <div class="email-date">' + dateStr + '</div>'
+                    +      markReadAction
                     + '  </div>'
                     + '</div>';
             } else {
