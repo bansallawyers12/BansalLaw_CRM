@@ -2611,14 +2611,41 @@ document.addEventListener('DOMContentLoaded', function() {
             + '</div>';
     }
 
+    function renderListEmptyState(message, hint, iconClass) {
+        const icon = iconClass || 'fa-inbox';
+        let html = '<div class="email-list-empty">'
+            + '<div class="email-list-empty__icon" aria-hidden="true"><i class="fa-solid ' + icon + '"></i></div>'
+            + '<p class="email-list-empty__title">' + escapeHtml(message) + '</p>';
+        if (hint) {
+            html += '<p class="email-list-empty__hint">' + escapeHtml(hint) + '</p>';
+        }
+        html += '</div>';
+        return html;
+    }
+
     function renderEmailList() {
         emailListContainer.innerHTML = '';
         
         if (emails.length === 0) {
-            const emptyMsg = currentFolder === 'unread'
-                ? 'No unread emails. You\'re all caught up!'
-                : 'No emails found.';
-            emailListContainer.innerHTML = '<div style="padding:16px;text-align:center;color:#666;">' + emptyMsg + '</div>';
+            let emptyMsg = 'No emails found.';
+            let emptyHint = '';
+            let emptyIcon = 'fa-inbox';
+
+            if (currentFolder === 'unread') {
+                emptyMsg = 'No unread emails';
+                emptyHint = 'You\'re all caught up.';
+                emptyIcon = 'fa-envelope-open';
+            } else if (currentFolder === 'unassigned') {
+                emptyMsg = 'No unassigned emails';
+                emptyHint = 'All synced mail is linked to clients. Use Sync now to fetch new mail from Zoho.';
+                emptyIcon = 'fa-user-clock';
+            } else if (currentFolder === 'assigned') {
+                emptyMsg = 'No assigned emails yet';
+                emptyHint = 'Emails you assign from the Unassigned tab will appear here.';
+                emptyIcon = 'fa-user-check';
+            }
+
+            emailListContainer.innerHTML = renderListEmptyState(emptyMsg, emptyHint, emptyIcon);
             return;
         }
 
@@ -3639,6 +3666,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (btnAssignToClient) {
                         btnAssignToClient.hidden = true;
                     }
+                    crmToast(data.message || 'Email assigned to client successfully.', 'success', 'Assigned');
                     if (! unassignedOnly) {
                         switchToFolder('inbox');
                     }
@@ -3667,7 +3695,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (btnSyncInbox) {
             btnSyncInbox.disabled = isBusy;
             if (isBusy) {
-                btnSyncInbox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing...';
+                btnSyncInbox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Syncing...</span>';
             } else if (originalHtml) {
                 btnSyncInbox.innerHTML = originalHtml;
             }
@@ -3774,13 +3802,79 @@ document.addEventListener('DOMContentLoaded', function() {
         pollTimer = setInterval(checkStatus, pollIntervalMs);
     }
 
+    let fullSyncConfirmResolver = null;
+
+    function closeFullSyncConfirmModal(result) {
+        const modal = document.getElementById('fullSyncConfirmModal');
+        if (modal) {
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+        if (fullSyncConfirmResolver) {
+            const resolve = fullSyncConfirmResolver;
+            fullSyncConfirmResolver = null;
+            resolve(!!result);
+        }
+    }
+
+    function confirmFullSync() {
+        const modal = document.getElementById('fullSyncConfirmModal');
+        if (!modal) {
+            return Promise.resolve(window.confirm(
+                'Full sync resets mailbox tracking and re-imports recent mail. Messages already in the CRM will be skipped. Continue?'
+            ));
+        }
+
+        return new Promise(function(resolve) {
+            fullSyncConfirmResolver = resolve;
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            const proceedBtn = document.getElementById('fullSyncConfirmProceed');
+            if (proceedBtn) {
+                proceedBtn.focus();
+            }
+        });
+    }
+
+    (function initFullSyncConfirmModal() {
+        const modal = document.getElementById('fullSyncConfirmModal');
+        if (!modal || modal.dataset.bound === '1') {
+            return;
+        }
+        modal.dataset.bound = '1';
+
+        const cancelBtn = document.getElementById('fullSyncConfirmCancel');
+        const proceedBtn = document.getElementById('fullSyncConfirmProceed');
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                closeFullSyncConfirmModal(false);
+            });
+        }
+        if (proceedBtn) {
+            proceedBtn.addEventListener('click', function() {
+                closeFullSyncConfirmModal(true);
+            });
+        }
+
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                closeFullSyncConfirmModal(false);
+            }
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && modal.classList.contains('active')) {
+                closeFullSyncConfirmModal(false);
+            }
+        });
+    })();
+
     if (btnSyncInbox && syncInboxUrl && canSyncInbox) {
         btnSyncInbox.addEventListener('click', async function () {
             const syncRange = syncRangeFilter ? syncRangeFilter.value : 'today';
             if (syncRange === 'full') {
-                const proceed = window.confirm(
-                    'Full sync resets mailbox tracking and re-imports recent mail. Messages already in the CRM will be skipped. Continue?'
-                );
+                const proceed = await confirmFullSync();
                 if (! proceed) {
                     return;
                 }
