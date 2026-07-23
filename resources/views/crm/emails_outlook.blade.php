@@ -84,7 +84,7 @@
 <!-- Outlook CSS -->
 <link rel="stylesheet" href="{{ asset('css/outlook_emails.css') }}?v={{ time() }}">
 
-<div class="outlook-container" id="outlookContainer"
+<div class="outlook-container{{ $unassignedOnly ? ' outlook-container--unassigned' : '' }}" id="outlookContainer"
     data-base-url="{{ url('/') }}"
     data-app-timezone="{{ config('app.timezone', 'Australia/Melbourne') }}"
     data-client-id="{{ $clientData->id ?? '' }}"
@@ -154,25 +154,43 @@
         </div>
 
         @if($canSyncInbox && $unassignedOnly)
-        <div class="sync-range-bar{{ $canSelectSyncMailbox ? ' sync-range-bar--admin' : '' }}">
-            @if($canSelectSyncMailbox)
-            <label class="sync-range-bar__label" for="syncMailboxFilter">Mailbox</label>
-            <select id="syncMailboxFilter" class="list-filter-select sync-mailbox-select" aria-label="Select mailbox to sync" required>
-                <option value="">Select mailbox</option>
-                @foreach($syncMailboxOptions as $mailboxAddress)
-                    <option value="{{ $mailboxAddress }}">{{ $mailboxAddress }}</option>
-                @endforeach
-            </select>
-            @endif
-            <label class="sync-range-bar__label" for="syncRangeFilter">Sync range</label>
-            <select id="syncRangeFilter" class="list-filter-select sync-range-select" aria-label="Sync date range">
-                @foreach(\App\Services\EmailSync\IncomingEmailSyncService::syncRangeOptions() as $rangeValue => $rangeLabel)
-                    <option value="{{ $rangeValue }}" @selected($rangeValue === 'today')>{{ $rangeLabel }}</option>
-                @endforeach
-            </select>
-            <button type="button" class="action-btn action-btn--upload" id="btnSyncInbox" title="{{ $canSelectSyncMailbox ? 'Fetch mail from Zoho for the selected mailbox and range' : 'Fetch mail from Zoho for the selected range' }}">
-                <i class="fa-solid fa-rotate"></i> Sync
-            </button>
+        <div class="sync-inbox-panel{{ $canSelectSyncMailbox ? ' sync-inbox-panel--admin' : '' }}">
+            <div class="sync-inbox-panel__top">
+                <div class="sync-inbox-panel__intro">
+                    <div class="sync-inbox-panel__intro-icon" aria-hidden="true">
+                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                    </div>
+                    <div>
+                        <div class="sync-inbox-panel__title">Fetch from Zoho</div>
+                        <div class="sync-inbox-panel__hint">Missed mail is recovered automatically after sync.</div>
+                    </div>
+                </div>
+                <button type="button" class="sync-inbox-panel__btn" id="btnSyncInbox" title="{{ $canSelectSyncMailbox ? 'Fetch mail from Zoho for the selected mailbox and range' : 'Fetch mail from Zoho for the selected range' }}">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Sync now</span>
+                </button>
+            </div>
+            <div class="sync-inbox-panel__controls">
+                @if($canSelectSyncMailbox)
+                <div class="sync-inbox-panel__field">
+                    <label class="sync-inbox-panel__label" for="syncMailboxFilter">Mailbox</label>
+                    <select id="syncMailboxFilter" class="list-filter-select sync-mailbox-select" aria-label="Select mailbox to sync" required>
+                        <option value="">Select mailbox</option>
+                        @foreach($syncMailboxOptions as $mailboxAddress)
+                            <option value="{{ $mailboxAddress }}">{{ $mailboxAddress }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+                <div class="sync-inbox-panel__field">
+                    <label class="sync-inbox-panel__label" for="syncRangeFilter">Sync range</label>
+                    <select id="syncRangeFilter" class="list-filter-select sync-range-select" aria-label="Sync date range">
+                        @foreach(\App\Services\EmailSync\IncomingEmailSyncService::syncRangeOptions() as $rangeValue => $rangeLabel)
+                            <option value="{{ $rangeValue }}" @selected($rangeValue === 'today')>{{ $rangeLabel }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
         </div>
         @endif
 
@@ -509,6 +527,36 @@
         </div>
     </div>
 </div>
+
+@if($canSyncInbox && $unassignedOnly)
+<div class="full-sync-confirm-overlay outlook-modal-overlay" id="fullSyncConfirmModal" aria-hidden="true">
+    <div class="full-sync-confirm-modal outlook-ui-modal outlook-ui-modal--sm" role="dialog" aria-labelledby="fullSyncConfirmTitle" aria-modal="true">
+        <div class="outlook-ui-modal__header outlook-ui-modal__header--warn">
+            <div class="outlook-ui-modal__header-main">
+                <div class="outlook-ui-modal__header-icon" aria-hidden="true">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                </div>
+                <div class="outlook-ui-modal__header-text">
+                    <h3 class="outlook-ui-modal__title" id="fullSyncConfirmTitle">Run full sync?</h3>
+                    <p class="outlook-ui-modal__subtitle">This resets mailbox tracking and re-imports recent mail.</p>
+                </div>
+            </div>
+        </div>
+        <div class="outlook-ui-modal__body">
+            <p class="full-sync-confirm-modal__message">
+                Messages already stored in the CRM will be skipped. Use this only when you need a deeper backfill.
+            </p>
+        </div>
+        <div class="outlook-ui-modal__footer">
+            <button type="button" class="outlook-ui-modal__btn outlook-ui-modal__btn--cancel" id="fullSyncConfirmCancel">Cancel</button>
+            <button type="button" class="outlook-ui-modal__btn outlook-ui-modal__btn--confirm" id="fullSyncConfirmProceed">
+                <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+                Continue sync
+            </button>
+        </div>
+    </div>
+</div>
+@endif
 
 @if($canSyncInbox)
 <div class="modal fade assign-email-modal outlook-ui-modal-wrapper" id="assignSyncedEmailModal" tabindex="-1" role="dialog" aria-labelledby="assignSyncedEmailModalLabel" aria-hidden="true">
