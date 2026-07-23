@@ -8,7 +8,7 @@
 @endsection
 
 @section('content')
-<div class="listing-container">
+<div id="clients-listing-spa-root" class="listing-container" data-spa-root="1">
     <section class="listing-section" style="padding-top: 40px;">
         <div class="listing-section-body">
             @include('../Elements/flash-message')
