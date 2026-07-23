@@ -168,9 +168,14 @@ class LeadController extends Controller
             $lists = $query->sortable(['id' => 'desc'])
                 ->paginate($perPage)
                 ->appends($request->except('page'));
+
+            $unreadEmailCounts = $this->getUnreadEmailCountsByClientIds(
+                $lists->pluck('id')->filter()->map(fn ($id) => (int) $id)->values()->all()
+            );
         } else { //dd('no');
             $lists = Lead::whereNull('id')->whereNotNull('id')->sortable(['id' => 'desc'])->paginate($perPage);
             $totalData = 0;
+            $unreadEmailCounts = [];
             $leadStageLabels = [
                 'new' => 'New Enquiry',
                 'initial_consultation' => 'Initial Consultation',
@@ -183,7 +188,38 @@ class LeadController extends Controller
             ];
         }
         
-        return view('crm.leads.index', compact('lists', 'totalData', 'perPage', 'leadStageLabels'));
+        return view('crm.leads.index', compact('lists', 'totalData', 'perPage', 'leadStageLabels', 'unreadEmailCounts'));
+    }
+
+    /**
+     * Unread incoming inbox email counts keyed by client/lead id.
+     *
+     * @param  array<int>  $clientIds
+     * @return array<int, int>
+     */
+    protected function getUnreadEmailCountsByClientIds(array $clientIds): array
+    {
+        if ($clientIds === []) {
+            return [];
+        }
+
+        $query = \App\Models\EmailLog::query()
+            ->select('client_id', \Illuminate\Support\Facades\DB::raw('COUNT(*) as unread_count'))
+            ->whereIn('client_id', $clientIds)
+            ->where('mail_type', 1)
+            ->where(function ($q) {
+                $q->where('mail_body_type', 'inbox')
+                    ->orWhereNull('mail_body_type');
+            })
+            ->where(function ($q) {
+                $q->whereNull('mail_is_read')
+                    ->orWhere('mail_is_read', false);
+            });
+
+        return $query->groupBy('client_id')
+            ->pluck('unread_count', 'client_id')
+            ->map(fn ($count) => (int) $count)
+            ->all();
     }
 
     /**
@@ -1859,12 +1895,28 @@ class LeadController extends Controller
             
             // Archive the lead
             $lead->archive();
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Lead has been archived successfully.',
+                    'lead_id' => (int) $decodedId,
+                ]);
+            }
             
             return redirect()->route('leads.index')
                 ->with('success', 'Lead has been archived successfully.');
                 
         } catch (\Exception $e) {
             Log::error('Error archiving lead: ' . $e->getMessage());
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An error occurred while archiving the lead. Please try again.',
+                ], 500);
+            }
+
             return redirect()->route('leads.index')
                 ->with('error', 'An error occurred while archiving the lead. Please try again.');
         }

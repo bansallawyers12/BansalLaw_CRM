@@ -102,6 +102,7 @@ Route::post('/reassigsentemail', [ClientsController::class, 'reassigsentemail'])
 Route::post('/listAllMattersWRTSelClient', [ClientsController::class, 'listAllMattersWRTSelClient'])->name('clients.listAllMattersWRTSelClient');
 Route::post('/updatemailreadbit', [ClientsController::class, 'updatemailreadbit'])->name('clients.updatemailreadbit');
 Route::post('/mark-all-emails-read', [ClientsController::class, 'markAllEmailsRead'])->name('clients.markAllEmailsRead');
+Route::post('/mark-bulk-clients-emails-read', [ClientsController::class, 'markBulkClientsEmailsRead'])->name('clients.markBulkClientsEmailsRead');
 
 Route::post('/clients/filter-emails', [ClientsController::class, 'filterEmails'])->name('clients.filter.emails');
 Route::post('/clients/filter-sentemails', [ClientsController::class, 'filterSentEmails'])->name('clients.filter.sentmails');

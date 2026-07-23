@@ -165,6 +165,10 @@ class ClientsController extends Controller
             $lists = $query->sortable(['id' => 'desc'])
                 ->paginate($perPage)
                 ->appends($request->except('page'));
+
+            $unreadEmailCounts = $this->getUnreadEmailCountsByClientIds(
+                $lists->pluck('id')->filter()->map(fn ($id) => (int) $id)->values()->all()
+            );
 		} else {
 		    $query = $this->getEmptyClientQuery();
             $allowedPerPage = [10, 20, 50, 100, 200];
@@ -174,9 +178,10 @@ class ClientsController extends Controller
             }
 		    $lists = $query->sortable(['id' => 'desc'])->paginate($perPage);
 		    $totalData = 0;
+            $unreadEmailCounts = [];
 		}
 		
-		return view('crm.clients.index', compact(['lists', 'totalData', 'perPage']));
+		return view('crm.clients.index', compact(['lists', 'totalData', 'perPage', 'unreadEmailCounts']));
     }
 
     public function clientsmatterslist(Request $request)
@@ -655,11 +660,27 @@ class ClientsController extends Controller
             $client->archived_on = now();
             $client->save();
             
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Client has been archived successfully.',
+                    'client_id' => (int) $decodedId,
+                ]);
+            }
+
             return redirect()->route('clients.index')
                 ->with('success', 'Client has been archived successfully.');
                 
         } catch (\Exception $e) {
             Log::error('Error archiving client: ' . $e->getMessage());
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An error occurred while archiving the client. Please try again.',
+                ], 500);
+            }
+
             return redirect()->route('clients.index')
                 ->with('error', 'An error occurred while archiving the client. Please try again.');
         }
@@ -4053,6 +4074,52 @@ class ClientsController extends Controller
                 ? ($updatedCount === 1 ? '1 email marked as read.' : $updatedCount . ' emails marked as read.')
                 : 'No unread emails to update.',
             'updated_count' => $updatedCount,
+        ]);
+    }
+
+    /**
+     * Mark all unread inbox emails as read for multiple selected clients.
+     */
+    public function markBulkClientsEmailsRead(Request $request)
+    {
+        if (! $this->hasClientListModuleAccess()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to perform this action.',
+                'updated_count' => 0,
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'client_ids' => 'required|array|min:1',
+            'client_ids.*' => 'integer|min:1',
+        ]);
+
+        $clientIds = array_values(array_unique(array_map('intval', $validated['client_ids'])));
+
+        $query = \App\Models\EmailLog::query();
+        $this->applyIncomingInboxScope($query);
+        $this->applyUnreadEmailScope($query);
+        $query->whereIn('client_id', $clientIds);
+
+        $updatedCount = (clone $query)->count();
+
+        if ($updatedCount > 0) {
+            $query->update(['mail_is_read' => true]);
+        }
+
+        $clientCount = count($clientIds);
+        $message = $updatedCount > 0
+            ? ($updatedCount === 1
+                ? '1 unread email marked as read for ' . $clientCount . ' selected client(s).'
+                : $updatedCount . ' unread emails marked as read for ' . $clientCount . ' selected client(s).')
+            : 'No unread emails to update for the selected client(s).';
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'updated_count' => $updatedCount,
+            'client_count' => $clientCount,
         ]);
     }
 
@@ -8603,6 +8670,31 @@ class ClientsController extends Controller
             $q->whereNull('mail_is_read')
               ->orWhere('mail_is_read', false);
         });
+    }
+
+    /**
+     * Unread incoming inbox email counts keyed by client_id (for listing pages).
+     *
+     * @param  array<int>  $clientIds
+     * @return array<int, int>
+     */
+    protected function getUnreadEmailCountsByClientIds(array $clientIds): array
+    {
+        if ($clientIds === []) {
+            return [];
+        }
+
+        $query = \App\Models\EmailLog::query()
+            ->select('client_id', DB::raw('COUNT(*) as unread_count'))
+            ->whereIn('client_id', $clientIds);
+
+        $this->applyIncomingInboxScope($query);
+        $this->applyUnreadEmailScope($query);
+
+        return $query->groupBy('client_id')
+            ->pluck('unread_count', 'client_id')
+            ->map(fn ($count) => (int) $count)
+            ->all();
     }
 
     protected function emailLogIsRead($email): bool
