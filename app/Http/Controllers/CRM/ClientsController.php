@@ -8302,7 +8302,10 @@ class ClientsController extends Controller
         $isSyncedInboxFolder = in_array($folder, ['unassigned', 'assigned'], true);
 
         // Base query with attachments (+ client for assigned synced mail)
-        $query = \App\Models\EmailLog::with($isSyncedInboxFolder ? ['attachments', 'client'] : ['attachments']);
+        $withRelations = $isSyncedInboxFolder
+            ? ['attachments', 'client', 'calendarLinks']
+            : ['attachments', 'calendarLinks'];
+        $query = \App\Models\EmailLog::with($withRelations);
 
         // Apply client and matter filter if provided (skip for synced inbox queues — those are global)
         if (! empty($clientId) && ! $isSyncedInboxFolder) {
@@ -8434,6 +8437,9 @@ class ClientsController extends Controller
 
         // Sort by actual email sent time, user-selectable direction (default: newest first)
         $sortDirection = strtolower($request->input('sort_order', 'desc')) === 'asc' ? 'ASC' : 'DESC';
+        if ($folder === 'inbox') {
+            $query->orderByRaw('CASE WHEN COALESCE(mail_is_read, 0) = 0 THEN 0 ELSE 1 END ASC');
+        }
         if ($folder === 'outbox' && $hasSendStatus) {
             $query->orderByRaw('COALESCE(sent_at, failed_at, fetch_mail_sent_time, created_at) ' . $sortDirection);
         } else {
@@ -8442,9 +8448,10 @@ class ClientsController extends Controller
 
         // Paginate
         $emails = $query->paginate($perPage);
+        $calendarMergeService = app(\App\Services\Email\EmailCalendarMergeService::class);
 
         // Prepare preview text and map authenticated document/attachment URLs
-        $emails->getCollection()->transform(function ($email) {
+        $emails->getCollection()->transform(function ($email) use ($calendarMergeService) {
             $preview = strip_tags($email->message);
             $email->text_preview = mb_substr($preview, 0, 100);
 
@@ -8454,7 +8461,7 @@ class ClientsController extends Controller
             $email->send_status = $email->send_status ?? \App\Models\EmailLog::SEND_STATUS_SENT;
             $email->send_error = $email->send_error ?? '';
             $email->sync_assignment_status = $email->sync_assignment_status ?? '';
-            $email->is_read = (bool) $email->mail_is_read;
+            $email->is_read = ! ($email->mail_is_read === null || $email->mail_is_read === false || (string) $email->mail_is_read === '0');
             $email->mailbox_email = $email->mailbox_email ?? '';
             $email->client_name = '';
             $email->client_ref = '';
@@ -8489,6 +8496,13 @@ class ClientsController extends Controller
                     return $attachment;
                 }));
             }
+
+            $calendarSummary = $calendarMergeService->calendarSummaryForEmail($email);
+            $email->calendar = $calendarSummary;
+            $email->has_calendar = $calendarSummary['has_calendar'];
+            $email->calendar_event_count = $calendarSummary['count'];
+            $email->has_calendar_invite = $calendarSummary['has_calendar']
+                || $this->emailHasCalendarAttachment($email);
 
             return $email;
         });
@@ -8537,5 +8551,26 @@ class ClientsController extends Controller
             'senders' => $senders,
             'unread_count' => $unreadCount,
         ]);
+    }
+
+    protected function emailHasCalendarAttachment($email): bool
+    {
+        if (! $email->relationLoaded('attachments') || ! $email->attachments) {
+            return false;
+        }
+
+        $calendarMergeService = app(\App\Services\Email\EmailCalendarMergeService::class);
+
+        foreach ($email->attachments as $attachment) {
+            if ($calendarMergeService->isCalendarAttachment(
+                $attachment->filename ?? '',
+                $attachment->content_type ?? '',
+                $attachment->extension ?? ''
+            )) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

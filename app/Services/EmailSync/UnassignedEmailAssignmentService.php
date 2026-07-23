@@ -7,6 +7,7 @@ use App\Models\ClientMatter;
 use App\Models\Document;
 use App\Models\EmailLog;
 use App\Models\EmailLogAttachment;
+use App\Services\Email\EmailCalendarMergeService;
 use App\Traits\LogsClientActivity;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -85,6 +86,19 @@ class UnassignedEmailAssignmentService
                 }
                 $from = $emailLog->from_mail ?: 'Unknown';
                 $this->logClientActivity($clientId, $activitySubject, "<p>From: {$from}</p>", 'email');
+            }
+
+            try {
+                app(EmailCalendarMergeService::class)->mergePendingForEmail(
+                    $emailLog->fresh(['attachments', 'calendarLinks']),
+                    $staffUserId
+                );
+            } catch (Throwable $calendarException) {
+                Log::warning('Email calendar merge failed after assignment', [
+                    'email_log_id' => $emailLog->id,
+                    'client_id' => $clientId,
+                    'error' => $calendarException->getMessage(),
+                ]);
             }
 
             return [

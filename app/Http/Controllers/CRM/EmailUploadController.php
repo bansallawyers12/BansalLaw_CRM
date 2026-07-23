@@ -21,6 +21,7 @@ use App\Models\ActivitiesLog;
 use App\Models\ClientMatter;
 use App\Models\Admin;
 use App\Logging\EmailUploadErrorLogger;
+use App\Services\Email\EmailCalendarMergeService;
 use App\Traits\LogsClientActivity;
 use Illuminate\Support\Carbon;
 
@@ -699,12 +700,30 @@ class EmailUploadController extends Controller
             }
 
             $attachmentStorageMap = $this->parseAttachmentStorageMap($request);
+            $icsAttachments = [];
+            $calendarMergeService = app(EmailCalendarMergeService::class);
 
             // NEW: Save attachments
             if (isset($parsedData['attachments']) && is_array($parsedData['attachments'])) {
                 foreach ($parsedData['attachments'] as $index => $attachmentData) {
                     try {
             $origName = $attachmentData['filename'] ?? '';
+            if ($calendarMergeService->isCalendarAttachment(
+                $origName,
+                $attachmentData['content_type'] ?? '',
+                pathinfo($origName, PATHINFO_EXTENSION)
+            )) {
+                $rawIcs = $attachmentData['content'] ?? $attachmentData['data'] ?? null;
+                if (! empty($rawIcs)) {
+                    $decodedIcs = base64_decode((string) $rawIcs, true);
+                    if ($decodedIcs !== false && trim($decodedIcs) !== '') {
+                        $icsAttachments[] = [
+                            'filename' => $origName,
+                            'content' => $decodedIcs,
+                        ];
+                    }
+                }
+            }
             $storageConfig = $attachmentStorageMap[$origName]
                 ?? $attachmentStorageMap[$attachmentData['display_name'] ?? '']
                 ?? null;
@@ -741,6 +760,25 @@ class EmailUploadController extends Controller
 
             // NEW: Auto-assign labels
             $this->autoAssignLabels($mailReport, $mailType);
+
+            if ($mailType === 'inbox') {
+                try {
+                    $calendarResult = $calendarMergeService->mergeFromEmail(
+                        $mailReport->fresh(['attachments']),
+                        $actingUserId,
+                        $icsAttachments
+                    );
+                    if (($calendarResult['merged'] ?? 0) > 0 || ($calendarResult['pending'] ?? 0) > 0) {
+                        $warnings[] = 'Detected schedule date(s) in this email'
+                            . (($calendarResult['merged'] ?? 0) > 0 ? ' and added to calendar.' : ' (will merge when assigned to a client).');
+                    }
+                } catch (\Throwable $calendarException) {
+                    Log::warning('Email calendar merge skipped after upload', [
+                        'email_log_id' => $mailReport->id,
+                        'error' => $calendarException->getMessage(),
+                    ]);
+                }
+            }
 
             // 5. Update client matter timestamp
             $matterId = $document->client_matter_id;

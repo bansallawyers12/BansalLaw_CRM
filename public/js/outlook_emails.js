@@ -190,6 +190,116 @@ document.addEventListener('DOMContentLoaded', function() {
         return '<span class="email-status-badge email-status-badge--' + escapeHtml(status) + '">' + escapeHtml(label) + '</span>';
     }
 
+    function emailHasCalendarIndicator(email) {
+        if (!email) {
+            return false;
+        }
+        if (email.has_calendar || email.has_calendar_invite) {
+            return true;
+        }
+        if (email.calendar && email.calendar.has_calendar) {
+            return true;
+        }
+        return hasCalendarAttachment(email);
+    }
+
+    function hasCalendarAttachment(email) {
+        const attachments = getUserEmailAttachments(email);
+        return attachments.some(function(att) {
+            const name = String(att.filename || att.file_name || att.display_name || '').toLowerCase();
+            const type = String(att.content_type || att.mime_type || '').toLowerCase();
+            const ext = String(att.extension || '').toLowerCase();
+            return ext === 'ics' || name.endsWith('.ics') || type.indexOf('text/calendar') !== -1;
+        });
+    }
+
+    function formatCalendarEventType(eventType) {
+        const labels = {
+            hearing: 'Hearing',
+            interview: 'Interview',
+            walkin: 'Walk-in',
+            appointment: 'Appointment',
+            meeting: 'Meeting',
+            court: 'Court',
+            mention: 'Mention',
+            tribunal: 'Tribunal'
+        };
+        return labels[eventType] || 'Event';
+    }
+
+    function renderCalendarListIndicator(email) {
+        if (!emailHasCalendarIndicator(email)) {
+            return '';
+        }
+
+        const calendar = email.calendar || {};
+        const mergedCount = calendar.merged_count || 0;
+        const pendingCount = calendar.pending_count || 0;
+        const totalCount = calendar.count || (mergedCount + pendingCount) || 1;
+        let title = 'Calendar event detected';
+        if (mergedCount > 0) {
+            title = mergedCount + ' event(s) added to calendar';
+        } else if (pendingCount > 0) {
+            title = 'Schedule detected — will merge when assigned to client';
+        } else if (hasCalendarAttachment(email)) {
+            title = 'Calendar invite attachment (.ics)';
+        }
+
+        const badge = mergedCount > 0
+            ? '<span class="email-calendar-badge email-calendar-badge--merged">Calendar</span>'
+            : '<span class="email-calendar-badge email-calendar-badge--detected">Schedule</span>';
+
+        return '<span class="email-list-calendar" title="' + escapeHtml(title) + '" aria-label="' + escapeHtml(title) + '">'
+            + '<i class="fa-solid fa-calendar-days"></i>'
+            + badge
+            + (totalCount > 1 ? '<span class="email-calendar-count">' + totalCount + '</span>' : '')
+            + '</span>';
+    }
+
+    function renderReadingPaneCalendarBanner(email) {
+        const bannerEl = document.getElementById('readCalendarBanner');
+        if (!bannerEl) {
+            return;
+        }
+
+        const calendar = email.calendar || {};
+        const hasIndicator = emailHasCalendarIndicator(email);
+        if (!hasIndicator) {
+            bannerEl.hidden = true;
+            bannerEl.innerHTML = '';
+            return;
+        }
+
+        const events = Array.isArray(calendar.events) ? calendar.events : [];
+        let html = '<div class="email-calendar-banner__header">'
+            + '<i class="fa-solid fa-calendar-check" aria-hidden="true"></i>'
+            + '<strong>Calendar</strong>'
+            + '</div>';
+
+        if (events.length > 0) {
+            html += '<ul class="email-calendar-banner__list">';
+            events.forEach(function(event) {
+                const statusLabel = event.status === 'merged' ? 'Added to calendar' : 'Pending merge';
+                const typeLabel = formatCalendarEventType(event.event_type || 'meeting');
+                html += '<li>'
+                    + '<span class="email-calendar-banner__type">' + escapeHtml(typeLabel) + '</span>'
+                    + '<span class="email-calendar-banner__title">' + escapeHtml(event.event_title || 'Scheduled event') + '</span>'
+                    + (event.starts_at ? '<span class="email-calendar-banner__when">' + escapeHtml(event.starts_at) + '</span>' : '')
+                    + (event.location ? '<span class="email-calendar-banner__where">' + escapeHtml(event.location) + '</span>' : '')
+                    + '<span class="email-calendar-banner__status email-calendar-banner__status--' + escapeHtml(event.status || 'merged') + '">' + escapeHtml(statusLabel) + '</span>'
+                    + '</li>';
+            });
+            html += '</ul>';
+        } else if (hasCalendarAttachment(email)) {
+            html += '<p class="email-calendar-banner__message">This email includes a calendar invite attachment.</p>';
+        } else {
+            html += '<p class="email-calendar-banner__message">A schedule date was detected in this email.</p>';
+        }
+
+        bannerEl.hidden = false;
+        bannerEl.innerHTML = html;
+    }
+
     function renderSyncedClientBadge(email) {
         if (currentFolder !== 'assigned'
             && currentFolder !== 'unread'
@@ -221,6 +331,29 @@ document.addEventListener('DOMContentLoaded', function() {
             return !email.is_read;
         }
         return email.mail_is_read != 1 && email.mail_is_read !== true;
+    }
+
+    function sortEmailsUnreadFirst(list) {
+        const items = Array.isArray(list) ? list.slice() : [];
+        const sortDir = sortOrder && sortOrder.value === 'asc' ? 1 : -1;
+
+        items.sort(function(a, b) {
+            const aUnread = isEmailUnread(a) ? 0 : 1;
+            const bUnread = isEmailUnread(b) ? 0 : 1;
+            if (aUnread !== bUnread) {
+                return aUnread - bUnread;
+            }
+
+            const aDate = new Date(getEmailDate(a) || 0).getTime();
+            const bDate = new Date(getEmailDate(b) || 0).getTime();
+            if (isNaN(aDate) || isNaN(bDate)) {
+                return 0;
+            }
+
+            return (aDate - bDate) * sortDir;
+        });
+
+        return items;
     }
 
     function updateUnreadTabBadge(count) {
@@ -263,6 +396,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 emptyState.style.display = 'flex';
                 readingPane.classList.remove('is-visible');
             }
+        } else if (currentFolder === 'inbox') {
+            emails = sortEmailsUnreadFirst(emails);
+            renderEmailList();
         }
 
         if (!updateMailReadUrl) {
@@ -2084,6 +2220,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeof data.unread_count !== 'undefined') {
                 updateUnreadTabBadge(data.unread_count);
             }
+            if (currentFolder === 'inbox') {
+                emails = sortEmailsUnreadFirst(emails);
+            }
             
             // Pagination
             const total = data.total || 0;
@@ -2455,9 +2594,22 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        emails.forEach(email => {
-            const el = document.createElement('div');
+        let insertedEarlierDivider = false;
+        const showInboxSections = currentFolder === 'inbox'
+            && emails.some(function(item) { return isEmailUnread(item); })
+            && emails.some(function(item) { return !isEmailUnread(item); });
+
+        emails.forEach(function(email, index) {
             const unread = isEmailUnread(email);
+            if (showInboxSections && !unread && index > 0 && isEmailUnread(emails[index - 1]) && !insertedEarlierDivider) {
+                const divider = document.createElement('div');
+                divider.className = 'email-list-section-divider';
+                divider.innerHTML = '<span>Earlier messages</span>';
+                emailListContainer.appendChild(divider);
+                insertedEarlierDivider = true;
+            }
+
+            const el = document.createElement('div');
             el.className = 'email-item' + (unread ? ' unread' : '');
             if (selectedEmailId === email.id) {
                 el.classList.add('active');
@@ -2474,13 +2626,17 @@ document.addEventListener('DOMContentLoaded', function() {
             let dateStr = formatEmailDate(getEmailDate(email));
             const statusBadge = renderSendStatusBadge(email);
             const clientBadge = renderSyncedClientBadge(email);
+            const calendarIndicator = renderCalendarListIndicator(email);
             const autoAssignedBadge = unread && email.sync_assignment_status === 'auto_assigned'
                 ? '<span class="email-new-badge" title="Auto-assigned from synced inbox">New</span>'
+                : '';
+            const unreadBadge = unread && currentFolder === 'inbox'
+                ? '<span class="email-unread-label" title="Unread">Unread</span>'
                 : '';
 
             el.innerHTML = `
                 <div class="email-item-header">
-                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${autoAssignedBadge}${statusBadge}${clientBadge}</div>
+                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${calendarIndicator}${unreadBadge}${autoAssignedBadge}${statusBadge}${clientBadge}</div>
                 </div>
                 <div class="email-subject">${escapeHtml(subject)}</div>
                 <div class="email-preview">${escapeHtml(preview)}</div>
@@ -2506,6 +2662,8 @@ document.addEventListener('DOMContentLoaded', function() {
         readingPane.classList.add('is-visible');
 
         markEmailAsRead(email, listElement);
+
+        renderReadingPaneCalendarBanner(email);
 
         document.getElementById('readSubject').textContent = email.subject || '(No Subject)';
         document.getElementById('readSender').textContent = email.from_mail || 'Unknown Sender';

@@ -295,6 +295,7 @@
                     <div class="meta-date" id="readDate"></div>
                 </div>
                 <div class="email-send-error" id="readSendError" hidden></div>
+                <div class="email-calendar-banner" id="readCalendarBanner" hidden></div>
             </div>
 
             <div id="attachmentsContainer" class="email-attachments-container reading-attachments" hidden></div>

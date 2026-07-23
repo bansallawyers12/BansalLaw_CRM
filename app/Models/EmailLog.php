@@ -99,6 +99,11 @@ class EmailLog extends Authenticatable
         return $this->hasMany(EmailLogAttachment::class, 'email_log_id');
     }
 
+    public function calendarLinks(): HasMany
+    {
+        return $this->hasMany(EmailCalendarLink::class, 'email_log_id');
+    }
+
     /**
      * Get the labels for the email.
      */
