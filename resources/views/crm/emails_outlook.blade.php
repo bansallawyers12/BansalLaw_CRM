@@ -131,9 +131,11 @@
                 @if($unassignedOnly)
                 <button type="button" class="folder-item active" data-folder="unassigned" role="tab" aria-selected="true">
                     <i class="fa-solid fa-user-clock"></i> Unassigned
+                    <span class="folder-synced-badge" id="folderUnassignedUnreadBadge" hidden aria-label="Unread unassigned count"></span>
                 </button>
                 <button type="button" class="folder-item" data-folder="assigned" role="tab" aria-selected="false">
                     <i class="fa-solid fa-user-check"></i> Assigned
+                    <span class="folder-synced-badge" id="folderAssignedUnreadBadge" hidden aria-label="Unread assigned count"></span>
                 </button>
                 @else
                 <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
@@ -207,26 +209,33 @@
         </div>
         @endif
 
-        <div class="list-header">
-            <div class="list-header-row">
+        <div class="list-header{{ $unassignedOnly ? ' list-header--synced' : '' }}">
+            <div class="list-header-row{{ $unassignedOnly ? ' list-header-row--synced' : '' }}">
                 <div class="search-box">
                     <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
                     <input type="text" id="searchInput" placeholder="Search emails...">
                 </div>
-                @if(! $unassignedOnly)
-                <button type="button" class="mark-all-read-btn" id="btnMarkAllRead" title="Mark all unread emails as read" hidden>
+                @if($unassignedOnly)
+                <select id="senderFilter" class="list-filter-select list-filter-select--inline" aria-label="Filter by sender">
+                    <option value="">All senders</option>
+                </select>
+                <select id="sortOrder" class="list-filter-select list-filter-select--inline" aria-label="Sort order">
+                    <option value="desc" selected>Newest</option>
+                    <option value="asc">Oldest</option>
+                </select>
+                <button type="button" class="mark-all-read-btn mark-all-read-btn--synced" id="btnMarkAllRead" title="Mark all unread emails in this tab as read" hidden>
                     <i class="fa-solid fa-envelope-open" aria-hidden="true"></i>
                     <span>Mark all read</span>
                 </button>
                 @else
-                <button type="button" class="mark-all-read-btn mark-all-read-btn--synced" id="btnMarkAllRead" title="Mark all unread emails in this tab as read" hidden>
+                <button type="button" class="mark-all-read-btn" id="btnMarkAllRead" title="Mark all unread emails as read" hidden>
                     <i class="fa-solid fa-envelope-open" aria-hidden="true"></i>
                     <span>Mark all read</span>
                 </button>
                 @endif
             </div>
+            @if(! $unassignedOnly)
             <div class="list-header-filters">
-                @if(! $unassignedOnly)
                 <select id="labelFilter" class="list-filter-select" aria-label="Filter by label">
                     <option value="">All Labels</option>
                     @if(isset($clientData) && isset($matterId))
@@ -245,7 +254,6 @@
                         @endforeach
                     @endif
                 </select>
-                @endif
                 <select id="senderFilter" class="list-filter-select" aria-label="Filter by sender">
                     <option value="">All Senders</option>
                     @if(isset($clientData) && isset($matterId))
@@ -276,15 +284,21 @@
                 <input type="date" id="dateFromFilter" class="list-filter-date list-filter-outbox" aria-label="From date" title="From date" hidden>
                 <input type="date" id="dateToFilter" class="list-filter-date list-filter-outbox" aria-label="To date" title="To date" hidden>
             </div>
+            @endif
         </div>
 
         @if($unassignedOnly)
-        <div id="syncedDateSummary" class="synced-date-summary" hidden aria-live="polite"></div>
-        @endif
-        
+        <div class="synced-mail-list-body">
+            <div id="syncedDateSummary" class="synced-date-summary" hidden aria-live="polite"></div>
+            <div class="email-list email-list--synced" id="emailList">
+                <div class="email-list-loading">Loading emails...</div>
+            </div>
+        </div>
+        @else
         <div class="email-list" id="emailList">
             <div style="padding:16px;text-align:center;color:#666;">Loading emails...</div>
         </div>
+        @endif
 
         <div class="pagination-bar">
             <span id="pageInfo">Loading...</span>

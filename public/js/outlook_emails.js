@@ -126,6 +126,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnMarkRead = document.getElementById('btnMarkRead');
     const syncedDateSummaryEl = document.getElementById('syncedDateSummary');
     const folderUnreadBadge = document.getElementById('folderUnreadBadge');
+    const folderUnassignedUnreadBadge = document.getElementById('folderUnassignedUnreadBadge');
+    const folderAssignedUnreadBadge = document.getElementById('folderAssignedUnreadBadge');
     let unreadCount = 0;
     let syncedDateSummary = null;
     let selectedEmail = null;
@@ -493,6 +495,92 @@ document.addEventListener('DOMContentLoaded', function() {
         earlier: 'Earlier'
     };
 
+    const dateGroupIcons = {
+        today: 'fa-sun',
+        yesterday: 'fa-moon',
+        this_week: 'fa-calendar-week',
+        earlier: 'fa-clock-rotate-left'
+    };
+
+    function formatTimeOnly(dateInput) {
+        if (!dateInput) {
+            return '';
+        }
+        try {
+            const date = new Date(dateInput);
+            if (isNaN(date.getTime())) {
+                return '';
+            }
+            return new Intl.DateTimeFormat('en-AU', {
+                timeZone: appTimezone,
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            }).format(date).toLowerCase();
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function formatListEmailDate(email) {
+        const bucket = getEmailDateBucket(email);
+        const raw = getEmailDate(email);
+        if (bucket === 'today') {
+            const timeOnly = formatTimeOnly(raw);
+            if (timeOnly) {
+                return timeOnly;
+            }
+        }
+        if (bucket === 'yesterday') {
+            return 'Yesterday';
+        }
+        return formatEmailDate(raw);
+    }
+
+    function extractSenderName(fromMail) {
+        const value = String(fromMail || '').trim();
+        if (!value) {
+            return 'Unknown';
+        }
+        const match = value.match(/^([^<]+)</);
+        if (match && match[1]) {
+            return match[1].trim().replace(/^["']|["']$/g, '');
+        }
+        if (value.includes('@')) {
+            return value.split('@')[0].replace(/[._-]+/g, ' ');
+        }
+        return value;
+    }
+
+    function renderSyncedFolderUnreadBadge(count) {
+        const badge = currentFolder === 'assigned'
+            ? folderAssignedUnreadBadge
+            : folderUnassignedUnreadBadge;
+        const otherBadge = currentFolder === 'assigned'
+            ? folderUnassignedUnreadBadge
+            : folderAssignedUnreadBadge;
+
+        if (otherBadge) {
+            otherBadge.hidden = true;
+            otherBadge.textContent = '';
+        }
+
+        if (!badge) {
+            return;
+        }
+
+        const safeCount = Math.max(0, Number(count) || 0);
+        if (safeCount > 0) {
+            badge.textContent = safeCount > 99 ? '99+' : String(safeCount);
+            badge.hidden = false;
+            badge.setAttribute('aria-label', safeCount + ' unread');
+        } else {
+            badge.textContent = '';
+            badge.hidden = true;
+            badge.removeAttribute('aria-label');
+        }
+    }
+
     function renderSyncedDateSummaryBar(summary) {
         if (!syncedDateSummaryEl || !unassignedOnly) {
             return;
@@ -512,32 +600,36 @@ document.addEventListener('DOMContentLoaded', function() {
         const folderLabel = currentFolder === 'assigned' ? 'assigned' : 'unassigned';
 
         let chips = '';
-        if (todayCount > 0) {
-            chips += '<span class="synced-date-summary__chip synced-date-summary__chip--today">'
-                + '<strong>' + todayCount + '</strong> today</span>';
-        }
-        if (yesterdayCount > 0) {
-            chips += '<span class="synced-date-summary__chip">'
-                + '<strong>' + yesterdayCount + '</strong> yesterday</span>';
-        }
-        if (weekCount > 0) {
-            chips += '<span class="synced-date-summary__chip">'
-                + '<strong>' + weekCount + '</strong> this week</span>';
-        }
-        if (earlierCount > 0) {
-            chips += '<span class="synced-date-summary__chip">'
-                + '<strong>' + earlierCount + '</strong> earlier</span>';
-        }
+        const stats = [
+            { key: 'today', label: 'Today', value: todayCount, active: true },
+            { key: 'yesterday', label: 'Yesterday', value: yesterdayCount },
+            { key: 'this_week', label: 'This week', value: weekCount },
+            { key: 'earlier', label: 'Earlier', value: earlierCount }
+        ];
+
+        stats.forEach(function (stat) {
+            if (stat.value <= 0) {
+                return;
+            }
+            chips += '<div class="synced-stat' + (stat.active ? ' synced-stat--active' : '') + '">'
+                + '<span class="synced-stat__value">' + stat.value + '</span>'
+                + '<span class="synced-stat__label">' + escapeHtml(stat.label) + '</span>'
+                + '</div>';
+        });
 
         syncedDateSummaryEl.innerHTML = ''
-            + '<div class="synced-date-summary__main">'
-            + '  <span class="synced-date-summary__title">'
-            + '    <i class="fa-solid fa-calendar-day" aria-hidden="true"></i>'
-            + '    ' + escapeHtml(todayCount === 1 ? '1 email today' : todayCount + ' emails today')
-            + '  </span>'
-            + '  <span class="synced-date-summary__meta">' + totalCount + ' ' + folderLabel + ' total</span>'
+            + '<div class="synced-date-summary__head">'
+            + '  <div class="synced-date-summary__title">'
+            + '    <i class="fa-solid fa-inbox" aria-hidden="true"></i>'
+            + '    <span>' + escapeHtml(folderLabel.charAt(0).toUpperCase() + folderLabel.slice(1)) + ' inbox</span>'
+            + '  </div>'
+            + '  <div class="synced-date-summary__today">'
+            + '    <strong>' + todayCount + '</strong>'
+            + '    <span>' + (todayCount === 1 ? 'email today' : 'emails today') + '</span>'
+            + '  </div>'
             + '</div>'
-            + '<div class="synced-date-summary__chips">' + chips + '</div>';
+            + (chips ? '<div class="synced-date-summary__stats">' + chips + '</div>' : '')
+            + '<div class="synced-date-summary__meta">' + totalCount + ' total in this tab</div>';
 
         syncedDateSummaryEl.hidden = false;
     }
@@ -545,6 +637,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateUnreadTabBadge(count) {
         unreadCount = Math.max(0, Number(count) || 0);
         if (!folderUnreadBadge) {
+            if (unassignedOnly && isSyncedInboxFolder(currentFolder)) {
+                renderSyncedFolderUnreadBadge(unreadCount);
+            }
             updateMarkAllReadButtonVisibility();
             return;
         }
@@ -556,6 +651,9 @@ document.addEventListener('DOMContentLoaded', function() {
             folderUnreadBadge.textContent = '';
             folderUnreadBadge.hidden = true;
             folderUnreadBadge.removeAttribute('aria-label');
+        }
+        if (unassignedOnly && isSyncedInboxFolder(currentFolder)) {
+            renderSyncedFolderUnreadBadge(unreadCount);
         }
         updateMarkAllReadButtonVisibility();
     }
@@ -2455,7 +2553,7 @@ document.addEventListener('DOMContentLoaded', function() {
             switchToFolder(currentFolder);
         }
 
-        emailListContainer.innerHTML = '<div style="padding:16px;text-align:center;color:#666;">Loading emails...</div>';
+        emailListContainer.innerHTML = '<div class="email-list-loading">Loading emails...</div>';
 
         try {
             const query = searchInput.value;
@@ -2935,17 +3033,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const bucket = getEmailDateBucket(email);
                 if (bucket !== lastDateGroup) {
                     const groupHeader = document.createElement('div');
-                    groupHeader.className = 'email-list-date-group';
+                    groupHeader.className = 'email-list-date-group email-list-date-group--' + bucket;
                     const groupCount = syncedDateSummary && syncedDateSummary[bucket]
                         ? Number(syncedDateSummary[bucket])
                         : null;
+                    const groupIcon = dateGroupIcons[bucket] || dateGroupIcons.earlier;
                     const countLabel = groupCount !== null && groupCount > 0
-                        ? ' <span class="email-list-date-group__count">' + groupCount + '</span>'
+                        ? '<span class="email-list-date-group__count">' + groupCount + '</span>'
                         : '';
-                    groupHeader.innerHTML = '<span class="email-list-date-group__label">'
-                        + escapeHtml(dateGroupLabels[bucket] || 'Earlier')
-                        + countLabel
-                        + '</span>';
+                    groupHeader.innerHTML = ''
+                        + '<span class="email-list-date-group__icon" aria-hidden="true"><i class="fa-solid ' + groupIcon + '"></i></span>'
+                        + '<span class="email-list-date-group__label">' + escapeHtml(dateGroupLabels[bucket] || 'Earlier') + '</span>'
+                        + countLabel;
                     emailListContainer.appendChild(groupHeader);
                     lastDateGroup = bucket;
                 }
@@ -2973,7 +3072,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const attachmentIcon = hasAttachment ? '<i class="fa-solid fa-paperclip email-list-clip" title="Has attachments"></i>' : '';
             const attachmentSummary = renderEmailAttachmentListSummary(email);
 
-            let dateStr = formatEmailDate(getEmailDate(email));
+            let dateStr = isSyncedInboxFolder(currentFolder)
+                ? formatListEmailDate(email)
+                : formatEmailDate(getEmailDate(email));
             const statusBadge = renderSendStatusBadge(email);
             const clientBadge = renderSyncedClientBadge(email);
             const calendarIndicator = renderCalendarListIndicator(email);
@@ -2984,24 +3085,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? '<span class="email-unread-label" title="Unread">Unread</span>'
                 : '';
             const markReadAction = unread && isSyncedInboxFolder(currentFolder)
-                ? '<button type="button" class="email-item-mark-read" title="Mark as read" aria-label="Mark as read"><i class="fa-solid fa-envelope-open"></i></button>'
+                ? '<button type="button" class="email-item-mark-read" title="Mark as read" aria-label="Mark as read"><i class="fa-solid fa-check"></i><span>Read</span></button>'
                 : '';
 
             if (isSyncedInboxFolder(currentFolder)) {
                 const senderInitial = escapeHtml((sender.charAt(0) || '?').toUpperCase());
+                const senderName = escapeHtml(extractSenderName(sender));
+                const senderAddress = escapeHtml(sender);
                 const badgeRow = attachmentIcon + calendarIndicator + unreadBadge + autoAssignedBadge + statusBadge + clientBadge;
+                const unreadDot = unread ? '<span class="email-item-unread-dot" aria-hidden="true"></span>' : '';
                 el.classList.add('email-item--synced');
                 el.innerHTML = ''
                     + '<div class="email-item-synced">'
-                    + '  <div class="email-item-avatar" aria-hidden="true">' + senderInitial + '</div>'
+                    + '  <div class="email-item-avatar-wrap">'
+                    + '    <div class="email-item-avatar" aria-hidden="true">' + senderInitial + '</div>'
+                    +      unreadDot
+                    + '  </div>'
                     + '  <div class="email-item-body">'
                     + '    <div class="email-item-top">'
-                    + '      <div class="email-sender">' + escapeHtml(sender) + '</div>'
-                    + '      <div class="email-date">' + dateStr + '</div>'
+                    + '      <div class="email-item-from">'
+                    + '        <div class="email-sender-name">' + senderName + '</div>'
+                    + '        <div class="email-sender-address">' + senderAddress + '</div>'
+                    + '      </div>'
+                    + '      <div class="email-item-actions-top">'
+                    + '        <div class="email-date">' + dateStr + '</div>'
+                    +          markReadAction
+                    + '      </div>'
                     + '    </div>'
                     + '    <div class="email-subject">' + escapeHtml(subject) + '</div>'
                     + '    <div class="email-preview">' + escapeHtml(preview) + '</div>'
-                    + '    <div class="email-item-badges">' + badgeRow + markReadAction + '</div>'
+                    + (badgeRow ? '    <div class="email-item-badges">' + badgeRow + '</div>' : '')
                     + '  </div>'
                     + '</div>';
             } else {
