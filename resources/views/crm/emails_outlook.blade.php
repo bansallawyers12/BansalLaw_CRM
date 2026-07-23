@@ -70,6 +70,9 @@
     $syncMailboxOptions = $canSelectSyncMailbox
         ? \App\Services\EmailSync\IncomingEmailSyncService::syncableMailboxAddresses()
         : [];
+    $staffSyncMailboxAddresses = ($authStaff instanceof \App\Models\Staff && $canSyncInbox && ! $canSelectSyncMailbox)
+        ? \App\Services\EmailSync\IncomingEmailSyncService::allowedSyncMailboxAddressesForStaff($authStaff)
+        : [];
     $unassignedOnly = ! empty($unassignedOnly);
     $crmMailboxAddresses = \App\Models\Email::where('status', true)
         ->orderBy('email')
@@ -88,6 +91,7 @@
     data-matter-id="{{ $matterId ?? '' }}"
     data-auth-email="{{ auth()->user()->email ?? '' }}"
     data-mailbox-addresses='@json($crmMailboxAddresses)'
+    data-staff-sync-mailboxes='@json($staffSyncMailboxAddresses)'
     @if($canSyncInbox)
     data-assign-email-url="{{ url('/clients/synced-emails/assign') }}"
     data-sync-inbox-url="{{ url('/clients/synced-emails/sync-now') }}"

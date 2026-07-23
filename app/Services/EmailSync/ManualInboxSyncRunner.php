@@ -111,6 +111,27 @@ class ManualInboxSyncRunner
             'addresses' => $addresses,
         ]);
 
+        $parserStatus = IncomingEmailSyncService::pythonParserStatus();
+        if (! $parserStatus['available']) {
+            $message = (string) ($parserStatus['message'] ?? 'Email parser service is unavailable.');
+
+            InboxSyncLogger::error('Inbox sync blocked — Python parser unavailable', [
+                'sync_range' => $syncRange,
+                'email' => $email,
+                'parser_url' => $parserStatus['url'] ?? '',
+            ]);
+
+            return [
+                'success' => false,
+                'message' => $message,
+                'sync_range' => $syncRange,
+                'mailboxes' => [],
+                'total_imported' => 0,
+                'total_skipped' => 0,
+                'total_failed' => 0,
+            ];
+        }
+
         $since = $syncRange === 'full'
             ? null
             : IncomingEmailSyncService::resolveSyncSince($syncRange);

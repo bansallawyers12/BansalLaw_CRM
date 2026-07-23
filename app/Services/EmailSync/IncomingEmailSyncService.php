@@ -146,59 +146,144 @@ class IncomingEmailSyncService
         $limit = (int) config('imap_sync.max_messages_per_mailbox', 25);
         if ($since === null && $afterUid <= 0) {
             $limit *= max(1, (int) config('imap_sync.initial_backfill_multiplier', 4));
+        } elseif ($since !== null) {
+            $limit *= max(1, (int) config('imap_sync.range_sync_multiplier', 4));
         }
 
-        try {
-            $messages = $this->imapFetcher->fetchFromFolders($mailbox, $afterUid, $limit, $folders, $since);
-        } catch (Throwable $e) {
-            $result['errors'][] = strtoupper($defaultMailType) . ': ' . $e->getMessage();
-            InboxSyncLogger::error('IMAP sync failed', [
-                'mailbox' => $mailbox->email,
-                'folder_type' => $defaultMailType,
-                'error' => $e->getMessage(),
-            ], $e);
+        $maxBatches = $since !== null
+            ? 1
+            : max(1, (int) config('imap_sync.max_incremental_batches', 6));
 
-            return $result;
-        }
-
+        $cursorUid = $afterUid;
         $maxUid = $afterUid;
 
-        foreach ($messages as $message) {
-            $uid = (int) $message['uid'];
-            $maxUid = max($maxUid, $uid);
-
+        for ($batch = 0; $batch < $maxBatches; $batch++) {
             try {
-                $importResult = $this->importMessage(
+                $messages = $this->imapFetcher->fetchFromFolders(
                     $mailbox,
-                    $staffUserId,
-                    $message['raw_eml'],
-                    $uid,
-                    $message['subject'] ?? '',
-                    $defaultMailType
+                    $cursorUid,
+                    $limit,
+                    $folders,
+                    $since
                 );
-
-                if (! empty($importResult['skipped'])) {
-                    $result['skipped']++;
-                } elseif (! empty($importResult['success'])) {
-                    $result['imported']++;
-                } else {
-                    $result['failed']++;
-                    $result['errors'][] = $importResult['error'] ?? ('Import failed for UID ' . $uid);
-                }
             } catch (Throwable $e) {
-                $result['failed']++;
-                $result['errors'][] = 'UID ' . $uid . ': ' . $e->getMessage();
-                InboxSyncLogger::error('Synced email import failed', [
+                $result['errors'][] = strtoupper($defaultMailType) . ': ' . $e->getMessage();
+                InboxSyncLogger::error('IMAP sync failed', [
                     'mailbox' => $mailbox->email,
-                    'uid' => $uid,
+                    'folder_type' => $defaultMailType,
+                    'batch' => $batch + 1,
                     'error' => $e->getMessage(),
                 ], $e);
+
+                break;
+            }
+
+            if ($messages === []) {
+                break;
+            }
+
+            $batchHighestUid = $cursorUid;
+
+            foreach ($messages as $message) {
+                $uid = (int) $message['uid'];
+
+                try {
+                    $importResult = $this->importMessage(
+                        $mailbox,
+                        $staffUserId,
+                        $message['raw_eml'],
+                        $uid,
+                        $message['subject'] ?? '',
+                        $defaultMailType
+                    );
+
+                    if (! empty($importResult['skipped'])) {
+                        $result['skipped']++;
+                        $batchHighestUid = max($batchHighestUid, $uid);
+                        $maxUid = max($maxUid, $uid);
+                    } elseif (! empty($importResult['success'])) {
+                        $result['imported']++;
+                        $batchHighestUid = max($batchHighestUid, $uid);
+                        $maxUid = max($maxUid, $uid);
+                    } else {
+                        $result['failed']++;
+                        $result['errors'][] = $importResult['error'] ?? ('Import failed for UID ' . $uid);
+                    }
+                } catch (Throwable $e) {
+                    $result['failed']++;
+                    $result['errors'][] = 'UID ' . $uid . ': ' . $e->getMessage();
+                    InboxSyncLogger::error('Synced email import failed', [
+                        'mailbox' => $mailbox->email,
+                        'uid' => $uid,
+                        'error' => $e->getMessage(),
+                    ], $e);
+                }
+            }
+
+            if ($since === null) {
+                if ($batchHighestUid <= $cursorUid) {
+                    break;
+                }
+                $cursorUid = $batchHighestUid;
+            }
+
+            if (count($messages) < $limit) {
+                break;
             }
         }
 
-        $result['last_uid'] = $maxUid;
+        $result['last_uid'] = max($afterUid, $maxUid);
 
         return $result;
+    }
+
+    /**
+     * Verify the Python email parser is reachable before importing synced mail.
+     */
+    public static function isPythonParserAvailable(): bool
+    {
+        $url = rtrim((string) config('services.python.url', ''), '/');
+        if ($url === '') {
+            return false;
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(5)->get($url . '/health');
+
+            return $response->successful();
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * @return array{available: bool, url: string, message: string}
+     */
+    public static function pythonParserStatus(): array
+    {
+        $url = rtrim((string) config('services.python.url', ''), '/');
+        if ($url === '') {
+            return [
+                'available' => false,
+                'url' => '',
+                'message' => 'Python email parser URL is not configured.',
+            ];
+        }
+
+        if (self::isPythonParserAvailable()) {
+            return [
+                'available' => true,
+                'url' => $url,
+                'message' => 'Python email parser is available.',
+            ];
+        }
+
+        return [
+            'available' => false,
+            'url' => $url,
+            'message' => 'Cannot connect to the email processing service at ' . $url
+                . '. Start the Python parser (python_services/start_services.py) or update PYTHON_SERVICE_URL / PYTHON_CONVERTER_URL.',
+        ];
     }
 
     /**

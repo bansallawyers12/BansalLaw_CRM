@@ -21,6 +21,12 @@ return [
 
     'max_messages_per_mailbox' => (int) env('MAIL_SYNC_MAX_MESSAGES', 25),
 
+    'range_sync_multiplier' => (int) env('MAIL_SYNC_RANGE_MULTIPLIER', 4),
+
+    'max_range_sync_batches' => (int) env('MAIL_SYNC_MAX_RANGE_BATCHES', 8),
+
+    'max_incremental_batches' => (int) env('MAIL_SYNC_MAX_INCREMENTAL_BATCHES', 6),
+
     'folders' => array_values(array_filter(array_map(
         'trim',
         explode(',', (string) env('MAIL_SYNC_FOLDERS', 'INBOX'))

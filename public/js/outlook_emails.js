@@ -3685,11 +3685,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return syncMailboxFilter.value.trim();
         }
 
+        const staffSyncMailboxes = outlookContainer
+            ? JSON.parse(outlookContainer.getAttribute('data-staff-sync-mailboxes') || '[]')
+            : [];
+        if (staffSyncMailboxes.length) {
+            return staffSyncMailboxes[0];
+        }
+
         const mailboxAddresses = outlookContainer
             ? JSON.parse(outlookContainer.getAttribute('data-mailbox-addresses') || '[]')
             : [];
 
-        return authEmail || (mailboxAddresses.length ? mailboxAddresses[0] : '');
+        return mailboxAddresses.length ? mailboxAddresses[0] : '';
     }
 
     function pollInboxSyncStatus(syncId, rangeLabel, startedAt, originalHtml) {

@@ -65,7 +65,8 @@ class ZohoImapFetcher
                 /** @var Message $message */
                 foreach ($messages as $message) {
                     $uid = (int) $message->getUid();
-                    if ($uid <= $afterUid) {
+                    // Date-range sync re-fetches messages that may have UIDs below the watermark.
+                    if ($since === null && $uid <= $afterUid) {
                         continue;
                     }
 
