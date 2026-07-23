@@ -399,7 +399,8 @@ class IncomingEmailSyncService
                         $message['raw_eml'],
                         $uid,
                         $message['subject'] ?? '',
-                        $defaultMailType
+                        $defaultMailType,
+                        array_key_exists('is_seen', $message) ? (bool) $message['is_seen'] : null
                     );
 
                     if (! empty($importResult['skipped'])) {
@@ -500,7 +501,8 @@ class IncomingEmailSyncService
         string $rawEml,
         int $imapUid,
         string $subjectHint,
-        string $defaultMailType = 'inbox'
+        string $defaultMailType = 'inbox',
+        ?bool $imapSeen = null
     ): array {
         $tempPath = storage_path('app/temp/imap-sync-' . Str::uuid() . '.eml');
         if (! is_dir(dirname($tempPath))) {
@@ -573,6 +575,7 @@ class IncomingEmailSyncService
                     'sync_assignment_status' => $isAutoAssigned ? 'auto_assigned' : 'unassigned',
                     'imap_uid' => $imapUid,
                     'message_id' => $messageId,
+                    'mail_is_read' => $imapSeen,
                 ]
             );
 

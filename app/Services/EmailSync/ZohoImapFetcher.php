@@ -7,12 +7,14 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 use Webklex\PHPIMAP\Client;
 use Webklex\PHPIMAP\ClientManager;
+use Webklex\PHPIMAP\IMAP;
 use Webklex\PHPIMAP\Message;
+use Webklex\PHPIMAP\Query\Query;
 
 class ZohoImapFetcher
 {
     /**
-     * @return list<array{uid: int, raw_eml: string, subject: string}>
+     * @return list<array{uid: int, raw_eml: string, subject: string, is_seen: bool}>
      */
     public function fetchNewMessages(Email $mailbox, int $afterUid, int $limit, ?array $folders = null): array
     {
@@ -20,7 +22,7 @@ class ZohoImapFetcher
     }
 
     /**
-     * @return list<array{uid: int, raw_eml: string, subject: string}>
+     * @return list<array{uid: int, raw_eml: string, subject: string, is_seen: bool}>
      */
     public function fetchFromFolders(
         Email $mailbox,
@@ -49,11 +51,11 @@ class ZohoImapFetcher
                 }
 
                 if ($since !== null) {
-                    $query = $folder->query()->since($since)->limit($limit);
+                    $query = $this->applyPeekFetch($folder->query()->since($since)->limit($limit));
                 } elseif ($afterUid > 0) {
-                    $query = $folder->query()->where('UID', ($afterUid + 1) . ':*')->limit($limit);
+                    $query = $this->applyPeekFetch($folder->query()->where('UID', ($afterUid + 1) . ':*')->limit($limit));
                 } else {
-                    $query = $folder->messages()->all()->limit($limit)->setFetchOrderDesc();
+                    $query = $this->applyPeekFetch($folder->messages()->all()->limit($limit)->setFetchOrderDesc());
                 }
 
                 /** @var \Webklex\PHPIMAP\Support\MessageCollection $messages */
@@ -70,10 +72,14 @@ class ZohoImapFetcher
                         continue;
                     }
 
+                    $isSeen = $this->messageIsSeen($message);
+
                     $rawEml = $this->buildRawEml($message);
                     if ($rawEml === '') {
                         continue;
                     }
+
+                    $this->restoreUnreadStateIfNeeded($message, $isSeen);
 
                     $subject = (string) ($message->getSubject()?->toString() ?? '');
 
@@ -81,6 +87,7 @@ class ZohoImapFetcher
                         'uid' => $uid,
                         'raw_eml' => $rawEml,
                         'subject' => $subject,
+                        'is_seen' => $isSeen,
                     ];
 
                     if (count($results) >= $limit) {
@@ -100,7 +107,8 @@ class ZohoImapFetcher
         return $results;
     }
 
-    public function testConnection(Email $mailbox): bool    {
+    public function testConnection(Email $mailbox): bool
+    {
         $password = $this->resolvePassword($mailbox);
         if ($password === '') {
             throw new \RuntimeException('Zoho app password is missing.');
@@ -125,7 +133,9 @@ class ZohoImapFetcher
         $port = (int) ($mailbox->imap_port ?: config('imap_sync.default_port', 993));
         $encryption = $mailbox->imap_encryption ?: config('imap_sync.default_encryption', 'ssl');
 
-        $manager = new ClientManager([]);
+        $manager = new ClientManager([
+            'options' => $this->imapOptions(),
+        ]);
 
         /** @var Client $client */
         $client = $manager->make([
@@ -142,6 +152,68 @@ class ZohoImapFetcher
         $client->connect();
 
         return $client;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function imapOptions(): array
+    {
+        return [
+            'fetch' => $this->usePeekFetch() ? IMAP::FT_PEEK : IMAP::FT_UID,
+            'sequence' => IMAP::ST_UID,
+            'fetch_body' => true,
+            'fetch_flags' => true,
+        ];
+    }
+
+    protected function usePeekFetch(): bool
+    {
+        return (bool) config('imap_sync.use_peek_fetch', true);
+    }
+
+    /**
+     * @param  Query|\Webklex\PHPIMAP\Query\WhereQuery  $query
+     * @return Query|\Webklex\PHPIMAP\Query\WhereQuery
+     */
+    protected function applyPeekFetch($query)
+    {
+        if (! $this->usePeekFetch()) {
+            return $query;
+        }
+
+        if (method_exists($query, 'leaveUnread')) {
+            return $query->leaveUnread();
+        }
+
+        return $query;
+    }
+
+    protected function messageIsSeen(Message $message): bool
+    {
+        try {
+            return $message->hasFlag('seen');
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    protected function restoreUnreadStateIfNeeded(Message $message, bool $wasSeenBeforeFetch): void
+    {
+        if (! $this->usePeekFetch() || $wasSeenBeforeFetch) {
+            return;
+        }
+
+        try {
+            if (method_exists($message, 'peek')) {
+                $message->peek();
+            }
+        } catch (Throwable $e) {
+            Log::debug('IMAP peek restore skipped', [
+                'uid' => $message->getUid(),
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     protected function buildRawEml(Message $message): string
