@@ -422,7 +422,12 @@
                                                 $initials = '?';
                                             }
                                             $unreadMailCount = (int) ($unreadEmailCounts[$list->id] ?? 0);
-                                            $clientEmailsUrl = rtrim($clientDetailUrl, '/') . '/emails';
+                                            $unreadMatterRef = $unreadEmailMatterRefs[$list->id] ?? null;
+                                            if ($unreadMailCount > 0 && ! empty($unreadMatterRef)) {
+                                                $clientEmailsUrl = URL::to('/clients/detail/' . $encodedId . '/' . $unreadMatterRef . '/emails');
+                                            } else {
+                                                $clientEmailsUrl = rtrim($clientDetailUrl, '/') . '/emails';
+                                            }
                                             ?>
                                             <td>
                                                 <div class="client-name-cell">

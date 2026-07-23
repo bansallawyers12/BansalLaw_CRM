@@ -169,6 +169,9 @@ class ClientsController extends Controller
             $unreadEmailCounts = $this->getUnreadEmailCountsByClientIds(
                 $lists->pluck('id')->filter()->map(fn ($id) => (int) $id)->values()->all()
             );
+            $unreadEmailMatterRefs = $this->getUnreadEmailMatterRefsByClientIds(
+                $lists->pluck('id')->filter()->map(fn ($id) => (int) $id)->values()->all()
+            );
 		} else {
 		    $query = $this->getEmptyClientQuery();
             $allowedPerPage = [10, 20, 50, 100, 200];
@@ -179,9 +182,10 @@ class ClientsController extends Controller
 		    $lists = $query->sortable(['id' => 'desc'])->paginate($perPage);
 		    $totalData = 0;
             $unreadEmailCounts = [];
+            $unreadEmailMatterRefs = [];
 		}
 		
-		return view('crm.clients.index', compact(['lists', 'totalData', 'perPage', 'unreadEmailCounts']));
+		return view('crm.clients.index', compact(['lists', 'totalData', 'perPage', 'unreadEmailCounts', 'unreadEmailMatterRefs']));
     }
 
     public function clientsmatterslist(Request $request)
@@ -8705,6 +8709,69 @@ class ClientsController extends Controller
             ->pluck('unread_count', 'client_id')
             ->map(fn ($count) => (int) $count)
             ->all();
+    }
+
+    /**
+     * For each client, return the matter ref (client_unique_matter_no) that has the most unread inbox mail.
+     *
+     * @param  array<int>  $clientIds
+     * @return array<int, string>
+     */
+    protected function getUnreadEmailMatterRefsByClientIds(array $clientIds): array
+    {
+        if ($clientIds === [] || ! \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'client_matter_id')) {
+            return [];
+        }
+
+        $query = \App\Models\EmailLog::query()
+            ->select('client_id', 'client_matter_id', DB::raw('COUNT(*) as unread_count'))
+            ->whereIn('client_id', $clientIds)
+            ->whereNotNull('client_matter_id');
+
+        $this->applyIncomingInboxScope($query);
+        $this->applyUnreadEmailScope($query);
+
+        $rows = $query->groupBy('client_id', 'client_matter_id')->get();
+
+        $bestByClient = [];
+        foreach ($rows as $row) {
+            $clientId = (int) $row->client_id;
+            $count = (int) $row->unread_count;
+            $matterId = (int) $row->client_matter_id;
+
+            if ($matterId <= 0) {
+                continue;
+            }
+
+            $current = $bestByClient[$clientId] ?? null;
+            if ($current === null
+                || $count > $current['count']
+                || ($count === $current['count'] && $matterId > $current['matter_id'])) {
+                $bestByClient[$clientId] = [
+                    'count' => $count,
+                    'matter_id' => $matterId,
+                ];
+            }
+        }
+
+        if ($bestByClient === []) {
+            return [];
+        }
+
+        $matterIds = collect($bestByClient)->pluck('matter_id')->unique()->values()->all();
+        $matterRefs = \App\Models\ClientMatter::query()
+            ->whereIn('id', $matterIds)
+            ->pluck('client_unique_matter_no', 'id');
+
+        $result = [];
+        foreach ($bestByClient as $clientId => $data) {
+            $ref = $matterRefs[$data['matter_id']] ?? null;
+            if ($ref !== null && $ref !== '') {
+                $result[$clientId] = $ref;
+            }
+        }
+
+        return $result;
     }
 
     protected function emailLogIsRead($email): bool
