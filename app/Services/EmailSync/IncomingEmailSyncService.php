@@ -399,8 +399,7 @@ class IncomingEmailSyncService
                         $message['raw_eml'],
                         $uid,
                         $message['subject'] ?? '',
-                        $defaultMailType,
-                        array_key_exists('is_seen', $message) ? (bool) $message['is_seen'] : null
+                        $defaultMailType
                     );
 
                     if (! empty($importResult['skipped'])) {
@@ -501,8 +500,7 @@ class IncomingEmailSyncService
         string $rawEml,
         int $imapUid,
         string $subjectHint,
-        string $defaultMailType = 'inbox',
-        ?bool $imapSeen = null
+        string $defaultMailType = 'inbox'
     ): array {
         $tempPath = storage_path('app/temp/imap-sync-' . Str::uuid() . '.eml');
         if (! is_dir(dirname($tempPath))) {
@@ -575,7 +573,9 @@ class IncomingEmailSyncService
                     'sync_assignment_status' => $isAutoAssigned ? 'auto_assigned' : 'unassigned',
                     'imap_uid' => $imapUid,
                     'message_id' => $messageId,
-                    'mail_is_read' => $imapSeen,
+                    // New incoming mail must always appear unread in the CRM; the IMAP
+                    // \Seen flag is unreliable (body fetch or webmail access sets it).
+                    'mail_is_read' => $mailType === 'sent',
                 ]
             );
 
