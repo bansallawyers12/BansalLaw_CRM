@@ -1,5 +1,5 @@
            <!-- Matter Documents tab (matter-specific; internal id matterdocuments-tab) -->
-           <div class="tab-pane client-documents-tab" id="matterdocuments-tab">
+           <div class="tab-pane client-documents-tab{{ strtolower((string) ($activeTab ?? '')) === 'matterdocuments' ? ' active' : '' }}" id="matterdocuments-tab">
                 <div class="card full-width documentalls-container">
                     <?php
                     $client_selected_matter_id1 = null;

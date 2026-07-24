@@ -1,4 +1,19 @@
-<div class="tab-pane" id="legalforms-tab">
+<div class="tab-pane{{ strtolower((string) ($activeTab ?? '')) === 'legalforms' ? ' active' : '' }}" id="legalforms-tab">
+    @php
+        $lfClientMatters = \App\Models\ClientMatter::query()
+            ->with('matter:id,title')
+            ->where('client_id', $fetchedData->id)
+            ->where(function ($q) {
+                $q->where('matter_status', 1)->orWhere('matter_status', '1');
+            })
+            ->whereNotNull('sel_matter_id')
+            ->orderByDesc('id')
+            ->get();
+        $lfDefaultMatterRef = '';
+        if (! empty($id1) && is_string($id1)) {
+            $lfDefaultMatterRef = $id1;
+        }
+    @endphp
     <div class="legal-forms-container">
         <div class="legal-forms-header">
             <h4><i class="fa-solid fa-file-signature"></i> Legal Forms & Agreements</h4>
@@ -31,15 +46,15 @@
 </div>
 
 {{-- Create/Edit Legal Form Modal --}}
-<div class="modal fade" id="legalFormModal" tabindex="-1" aria-labelledby="legalFormModalLabel" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
+<div class="modal fade legal-form-modal" id="legalFormModal" tabindex="-1" aria-labelledby="legalFormModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered legal-form-modal-dialog">
+        <div class="modal-content legal-form-modal-content">
             <div class="modal-header legal-form-modal-header">
                 <h5 class="modal-title" id="legalFormModalLabel">Create Legal Form</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="legalFormForm" autocomplete="off">
+                <form id="legalFormForm" autocomplete="off" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="client_id" value="{{ $fetchedData->id }}">
                     <input type="hidden" name="form_type" id="lf_form_type" value="">
@@ -52,9 +67,42 @@
                             <input type="date" name="form_date" id="lf_form_date" class="form-control" value="{{ date('Y-m-d') }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold">Matter Reference</label>
-                            <input type="text" name="matter_reference" id="lf_matter_reference" class="form-control" placeholder="e.g. 260069">
+                            <label class="form-label fw-bold" for="lf_matter_reference">Matter Reference</label>
+                            @if($lfClientMatters->isEmpty())
+                                <select id="lf_matter_reference" name="matter_reference" class="form-control" disabled>
+                                    <option value="">No matters for this client</option>
+                                </select>
+                            @else
+                                <select id="lf_matter_reference" name="matter_reference" class="form-control" required>
+                                    <option value="">Select matter</option>
+                                    @foreach($lfClientMatters as $lfMatter)
+                                        @php
+                                            $lfMatterTitle = $lfMatter->matter
+                                                ? \App\Models\Matter::displayTitleFromJoinedRow($lfMatter->matter->title ?? null)
+                                                : 'Matter';
+                                            $lfMatterLabel = trim($lfMatterTitle) . ' (' . ($lfMatter->client_unique_matter_no ?? '') . ')';
+                                        @endphp
+                                        <option value="{{ $lfMatter->client_unique_matter_no }}"
+                                                data-matter-id="{{ $lfMatter->id }}"
+                                                @selected($lfDefaultMatterRef !== '' && $lfDefaultMatterRef === (string) $lfMatter->client_unique_matter_no)>
+                                            {{ $lfMatterLabel }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            @endif
                         </div>
+                    </div>
+
+                    {{-- Optional attachment (images / documents) --}}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="lf_attachment">Attachment <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="file"
+                               name="attachment"
+                               id="lf_attachment"
+                               class="form-control"
+                               accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,.pdf,.doc,.docx,.txt,.xls,.xlsx">
+                        <small class="text-muted d-block mt-1">Images or documents only (JPG, PNG, PDF, Word, Excel, text). Max 10 MB.</small>
+                        <div id="lf_attachment_preview" class="legal-form-attachment-preview mt-2" style="display:none;"></div>
                     </div>
 
                     {{-- Firm Details Section --}}
@@ -119,7 +167,7 @@
                                 <i class="fa-solid fa-magic"></i> AI Generate
                             </button>
                         </div>
-                        <textarea name="scope_of_work" id="lf_scope_of_work" class="form-control lf-modal-textarea" rows="5" placeholder="Describe the work to be undertaken..."></textarea>
+                        <textarea name="scope_of_work" id="lf_scope_of_work" class="form-control lf-modal-textarea" rows="4" placeholder="Describe the work to be undertaken..."></textarea>
                     </div>
 
                     {{-- Authority to Act specific --}}
@@ -264,7 +312,7 @@
 
                 </form>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer legal-form-modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="saveLegalFormBtn" onclick="saveLegalForm()">
                     <i class="fa-solid fa-floppy-disk"></i> Create Form & Generate Word Document
@@ -278,8 +326,8 @@
 (function() {
     'use strict';
 
-    /** App may be served from a subdirectory (e.g. /BansalLaw_CRM/public); never use root-relative /legal-forms */
-    var LF_BASE = @json(rtrim(url('legal-forms'), '/'));
+    /** Path only (same-origin); works with subdirectory installs and avoids APP_URL host mismatches */
+    var LF_BASE = @json(rtrim(parse_url(url('/legal-forms'), PHP_URL_PATH) ?: '/legal-forms', '/'));
 
     const FORM_TYPE_LABELS = {
         'short_costs_disclosure': 'Short Costs Disclosure',
@@ -299,24 +347,92 @@
         'authority_to_act': '#10b981'
     };
 
+    // Keep modal out of .tab-content overflow/stacking contexts (footer was overlapping body).
+    (function ensureLegalFormModalOnBody() {
+        var modalEl = document.getElementById('legalFormModal');
+        if (modalEl && modalEl.parentElement !== document.body) {
+            document.body.appendChild(modalEl);
+        }
+    })();
+
+    function syncLegalFormMatterFromSelect() {
+        var matterRefSelect = document.getElementById('lf_matter_reference');
+        var matterIdInput = document.getElementById('lf_client_matter_id');
+        if (!matterRefSelect || !matterIdInput || matterRefSelect.disabled) {
+            return;
+        }
+        var opt = matterRefSelect.options[matterRefSelect.selectedIndex];
+        matterIdInput.value = (opt && opt.getAttribute('data-matter-id')) ? opt.getAttribute('data-matter-id') : '';
+    }
+
+    function selectLegalFormMatterByRef(matterRef) {
+        var matterRefSelect = document.getElementById('lf_matter_reference');
+        if (!matterRefSelect || matterRefSelect.disabled || !matterRef) {
+            syncLegalFormMatterFromSelect();
+            return;
+        }
+        var matched = false;
+        for (var i = 0; i < matterRefSelect.options.length; i++) {
+            if (matterRefSelect.options[i].value === matterRef) {
+                matterRefSelect.selectedIndex = i;
+                matched = true;
+                break;
+            }
+        }
+        if (!matched && matterRefSelect.options.length > 1 && !matterRefSelect.value) {
+            matterRefSelect.selectedIndex = 1;
+        }
+        syncLegalFormMatterFromSelect();
+    }
+
+    function updateLegalFormAttachmentPreview() {
+        var input = document.getElementById('lf_attachment');
+        var preview = document.getElementById('lf_attachment_preview');
+        if (!input || !preview) {
+            return;
+        }
+        if (!input.files || !input.files.length) {
+            preview.style.display = 'none';
+            preview.innerHTML = '';
+            return;
+        }
+        var file = input.files[0];
+        var icon = file.type.indexOf('image/') === 0 ? 'fa-file-image' : 'fa-file';
+        preview.style.display = 'block';
+        preview.innerHTML = '<i class="fa-solid ' + icon + '"></i> ' + file.name + ' (' + Math.max(1, Math.round(file.size / 1024)) + ' KB)';
+    }
+
+    var lfMatterRefSelect = document.getElementById('lf_matter_reference');
+    if (lfMatterRefSelect) {
+        lfMatterRefSelect.addEventListener('change', syncLegalFormMatterFromSelect);
+    }
+    var lfAttachmentInput = document.getElementById('lf_attachment');
+    if (lfAttachmentInput) {
+        lfAttachmentInput.addEventListener('change', updateLegalFormAttachmentPreview);
+    }
+
+    syncLegalFormMatterFromSelect();
+
     window.openLegalFormModal = function(formType) {
         // Reset form
         document.getElementById('legalFormForm').reset();
         document.getElementById('lf_form_type').value = formType;
         document.getElementById('lf_form_date').value = new Date().toISOString().split('T')[0];
 
-        // Set matter ID from detail page dropdown
+        // Pre-select matter from sidebar dropdown or URL matter ref
+        var sidebarMatterRef = '';
         var matterSelect = document.getElementById('sel_matter_id_client_detail');
         if (matterSelect && matterSelect.value) {
-            document.getElementById('lf_client_matter_id').value = matterSelect.value;
             var selectedOption = matterSelect.options[matterSelect.selectedIndex];
             if (selectedOption) {
-                var matterNo = selectedOption.getAttribute('data-clientuniquematterno');
-                if (matterNo) {
-                    document.getElementById('lf_matter_reference').value = matterNo;
-                }
+                sidebarMatterRef = selectedOption.getAttribute('data-clientuniquematterno') || '';
             }
         }
+        if (!sidebarMatterRef && window.ClientDetailShared && typeof window.ClientDetailShared.parseClientDetailMatterRefFromUrl === 'function') {
+            sidebarMatterRef = window.ClientDetailShared.parseClientDetailMatterRefFromUrl() || '';
+        }
+        selectLegalFormMatterByRef(sidebarMatterRef);
+        updateLegalFormAttachmentPreview();
 
         // Show/hide sections based on form type
         var costsSection = document.getElementById('lf_costs_section');
@@ -373,6 +489,18 @@
 
     window.saveLegalForm = function() {
         var form = document.getElementById('legalFormForm');
+        syncLegalFormMatterFromSelect();
+
+        var matterRefSelect = document.getElementById('lf_matter_reference');
+        if (matterRefSelect && !matterRefSelect.disabled && !matterRefSelect.value) {
+            if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                iziToast.error({ message: 'Please select a matter reference.', position: 'topRight' });
+            } else {
+                alert('Please select a matter reference.');
+            }
+            return;
+        }
+
         var formData = new FormData(form);
         var btn = document.getElementById('saveLegalFormBtn');
         btn.disabled = true;
@@ -476,6 +604,9 @@
             html += '</div>';
             html += '<div class="legal-form-card-actions">';
             html += '<a href="' + LF_BASE + '/' + form.id + '/download" class="btn btn-sm btn-outline-success" title="Download Word Document"><i class="fa-solid fa-file-word"></i> Download</a>';
+            if (form.attachment_path) {
+                html += '<a href="' + LF_BASE + '/' + form.id + '/attachment" class="btn btn-sm btn-outline-primary" title="Download attachment"><i class="fa-solid fa-paperclip"></i> Attachment</a>';
+            }
             html += '<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteLegalForm(' + form.id + ')" title="Delete"><i class="fa-solid fa-trash"></i></button>';
             html += '</div>';
             html += '</div>';

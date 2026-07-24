@@ -1075,7 +1075,7 @@ function customValidate(formName, savetype = '')
 								}
 								crmToast('Invoice No - ' + obj.invoice_no + ' is generated', 'success');
 								$('#createreceiptmodal').modal('hide');
-                                localStorage.setItem('activeTab', 'accounts');
+                                localStorage.setItem('activeTab', 'account');
                                 
                                 // Get the matter ID that was used to create the invoice
                                 var matterIdUsed = $('#client_matter_id_invoice').val();

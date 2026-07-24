@@ -43,6 +43,8 @@ class ClientLegalForm extends Model
         'payment_reference',
         'authority_scope',
         'pdf_path',
+        'attachment_path',
+        'attachment_original_name',
         'form_date',
         'signed_date',
     ];
@@ -77,7 +79,8 @@ class ClientLegalForm extends Model
 
     public function creator()
     {
-        return $this->belongsTo(Admin::class, 'created_by');
+        // created_by is Auth::guard('admin') → staff.id
+        return $this->belongsTo(Staff::class, 'created_by');
     }
 
     public function getFormTypeLabelAttribute(): string

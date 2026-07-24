@@ -316,6 +316,7 @@ Route::delete('/legal-forms/{legalForm}', [\App\Http\Controllers\CRM\LegalFormsC
 Route::post('/legal-forms/{legalForm}/delete', [\App\Http\Controllers\CRM\LegalFormsController::class, 'destroy'])->name('legal-forms.delete');
 Route::get('/legal-forms/{legalForm}/preview', [\App\Http\Controllers\CRM\LegalFormsController::class, 'previewDocx'])->name('legal-forms.preview');
 Route::get('/legal-forms/{legalForm}/download', [\App\Http\Controllers\CRM\LegalFormsController::class, 'downloadDocx'])->name('legal-forms.download');
+Route::get('/legal-forms/{legalForm}/attachment', [\App\Http\Controllers\CRM\LegalFormsController::class, 'downloadAttachment'])->name('legal-forms.attachment');
 
 /*---------- Court Dates & Hearings ----------*/
 Route::post('/clients/court-hearings/store', [ClientsController::class, 'storeCourtHearing'])->name('clients.courtHearings.store');

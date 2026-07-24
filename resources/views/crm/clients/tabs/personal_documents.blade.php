@@ -1,5 +1,5 @@
            <!-- Personal Documents Tab (Client-Level) -->
-           <div class="tab-pane client-documents-tab" id="personaldocuments-tab">
+           <div class="tab-pane client-documents-tab{{ strtolower((string) ($activeTab ?? '')) === 'personaldocuments' ? ' active' : '' }}" id="personaldocuments-tab">
                 <div class="card full-width documentalls-container">
                     <?php
                     $clientId = $fetchedData->id ?? null;

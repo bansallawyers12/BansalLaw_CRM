@@ -1,5 +1,5 @@
 {{-- Demo-only: client detail new design — Tasks tab (stage changes via header Update Stage only). Internal slug remains clientaction for routing/JS. --}}
-<div class="tab-pane" id="clientaction-tab" role="tabpanel" aria-labelledby="cdn-tab-clientaction">
+<div class="tab-pane{{ strtolower((string) ($activeTab ?? '')) === 'clientaction' ? ' active' : '' }}" id="clientaction-tab" role="tabpanel" aria-labelledby="cdn-tab-clientaction">
     <div class="card full-width cdn-tasks-tab-card">
         <div class="card-body cdn-tasks-tab-card__body">
             <h2 class="cdn-tasks-tab-title">
