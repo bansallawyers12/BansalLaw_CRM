@@ -124,6 +124,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const markSyncedReadUrl = outlookContainer ? (outlookContainer.getAttribute('data-mark-synced-read-url') || '') : '';
     const btnMarkAllRead = document.getElementById('btnMarkAllRead');
     const btnMarkRead = document.getElementById('btnMarkRead');
+    const btnGmailBack = document.getElementById('btnGmailBack');
+    const gmailReadingToolbar = document.getElementById('gmailReadingToolbar');
+    const emailUiModeSwitch = document.getElementById('emailUiModeSwitch');
+    const outlookListPane = document.querySelector('.outlook-list-pane');
+    const EMAIL_UI_MODE_STORAGE_KEY = 'crm_email_ui_mode';
+    let emailUiMode = 'outlook';
     const syncedDateSummaryEl = document.getElementById('syncedDateSummary');
     const folderUnreadBadge = document.getElementById('folderUnreadBadge');
     const folderUnassignedUnreadBadge = document.getElementById('folderUnassignedUnreadBadge');
@@ -166,8 +172,38 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     currentFolder = defaultFolder;
+    setEmailUiMode(getStoredEmailUiMode(), false);
     loadEmails();
     updateOutboxFiltersVisibility();
+
+    if (emailUiModeSwitch) {
+        emailUiModeSwitch.addEventListener('click', function (event) {
+            const button = event.target.closest('.email-ui-mode-btn');
+            if (!button) {
+                return;
+            }
+
+            const nextMode = button.getAttribute('data-ui-mode');
+            if (!nextMode || nextMode === emailUiMode) {
+                return;
+            }
+
+            resetReadingPane();
+            document.querySelectorAll('.email-item').forEach(function (item) {
+                item.classList.remove('active');
+            });
+            setEmailUiMode(nextMode, true);
+        });
+    }
+
+    if (btnGmailBack) {
+        btnGmailBack.addEventListener('click', function () {
+            resetReadingPane();
+            document.querySelectorAll('.email-item').forEach(function (item) {
+                item.classList.remove('active');
+            });
+        });
+    }
 
     function updateOutboxFiltersVisibility() {
         const isOutbox = currentFolder === 'outbox';
@@ -357,10 +393,85 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedEmailId = null;
         readingPane.classList.remove('is-visible');
         emptyState.style.display = 'flex';
+        closeGmailReadingView();
         const calendarBanner = document.getElementById('readCalendarBanner');
         if (calendarBanner) {
             calendarBanner.hidden = true;
             calendarBanner.innerHTML = '';
+        }
+    }
+
+    function isGmailUiMode() {
+        return emailUiMode === 'gmail';
+    }
+
+    function getStoredEmailUiMode() {
+        try {
+            const stored = localStorage.getItem(EMAIL_UI_MODE_STORAGE_KEY);
+            return stored === 'gmail' ? 'gmail' : 'outlook';
+        } catch (error) {
+            return 'outlook';
+        }
+    }
+
+    function updateEmailUiModeButtons() {
+        if (!emailUiModeSwitch) {
+            return;
+        }
+
+        emailUiModeSwitch.querySelectorAll('.email-ui-mode-btn').forEach(function (button) {
+            const active = button.getAttribute('data-ui-mode') === emailUiMode;
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+    }
+
+    function closeGmailReadingView() {
+        if (!outlookContainer) {
+            return;
+        }
+
+        outlookContainer.classList.remove('gmail-reading-open');
+        if (gmailReadingToolbar) {
+            gmailReadingToolbar.hidden = true;
+        }
+    }
+
+    function openGmailReadingView() {
+        if (!isGmailUiMode() || !outlookContainer) {
+            return;
+        }
+
+        outlookContainer.classList.add('gmail-reading-open');
+        if (gmailReadingToolbar) {
+            gmailReadingToolbar.hidden = false;
+        }
+    }
+
+    function setEmailUiMode(mode, persist) {
+        emailUiMode = mode === 'gmail' ? 'gmail' : 'outlook';
+
+        if (outlookContainer) {
+            outlookContainer.classList.toggle('ui-mode-gmail', emailUiMode === 'gmail');
+            outlookContainer.classList.toggle('ui-mode-outlook', emailUiMode === 'outlook');
+        }
+
+        if (persist !== false) {
+            try {
+                localStorage.setItem(EMAIL_UI_MODE_STORAGE_KEY, emailUiMode);
+            } catch (error) {
+                // Ignore storage failures.
+            }
+        }
+
+        updateEmailUiModeButtons();
+
+        if (emailUiMode === 'outlook') {
+            closeGmailReadingView();
+        } else if (!selectedEmailId) {
+            closeGmailReadingView();
+            readingPane.classList.remove('is-visible');
+            emptyState.style.display = 'none';
         }
     }
 
@@ -3103,6 +3214,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function showEmail(email, listElement) {
         emptyState.style.display = 'none';
         readingPane.classList.add('is-visible');
+        openGmailReadingView();
 
         selectedEmail = email;
         updateMarkReadButtonVisibility(email);

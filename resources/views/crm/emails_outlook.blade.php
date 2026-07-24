@@ -153,9 +153,21 @@
                 </button>
                 @endif
             </div>
-            <button type="button" class="action-btn action-btn--upload" id="btnUploadEmail" title="Upload Outlook email ({{ $crmEmailUploadLabel }})" hidden>
-                <i class="fa-solid fa-upload"></i> Upload
-            </button>
+            <div class="list-toolbar__actions">
+                <div class="email-ui-mode-switch" id="emailUiModeSwitch" role="group" aria-label="Choose email layout">
+                    <button type="button" class="email-ui-mode-btn" data-ui-mode="outlook" title="Outlook split view — list and preview side by side">
+                        <i class="fa-solid fa-table-columns" aria-hidden="true"></i>
+                        <span>Outlook</span>
+                    </button>
+                    <button type="button" class="email-ui-mode-btn" data-ui-mode="gmail" title="Gmail view — full list, open email in full page">
+                        <i class="fa-solid fa-list" aria-hidden="true"></i>
+                        <span>Gmail</span>
+                    </button>
+                </div>
+                <button type="button" class="action-btn action-btn--upload" id="btnUploadEmail" title="Upload Outlook email ({{ $crmEmailUploadLabel }})" hidden>
+                    <i class="fa-solid fa-upload"></i> Upload
+                </button>
+            </div>
             <input type="file" id="outlookEmailFileInput" accept="{{ $crmEmailUploadAccept }}" multiple hidden>
         </div>
 
@@ -356,6 +368,12 @@
         <!-- Email Content (Hidden by default) -->
         <div class="reading-pane-content" id="readingPane">
             <div class="reading-header">
+                <div class="gmail-reading-toolbar" id="gmailReadingToolbar" hidden>
+                    <button type="button" class="gmail-back-btn" id="btnGmailBack" aria-label="Back to email list">
+                        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                        <span>Back to list</span>
+                    </button>
+                </div>
                 <div class="action-bar">
                     <button class="action-btn" id="btnReply"><i class="fa-solid fa-reply"></i> Reply</button>
                     <button class="action-btn" id="btnReplyAll"><i class="fa-solid fa-reply-all"></i> Reply All</button>

@@ -67,6 +67,55 @@ body, html {
     flex: 1;
 }
 
+.list-toolbar__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.email-ui-mode-switch {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px;
+    border-radius: 10px;
+    border: 1px solid #dbeafe;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.email-ui-mode-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 11px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.email-ui-mode-btn i {
+    font-size: 13px;
+}
+
+.email-ui-mode-btn:hover {
+    color: #0f172a;
+    background: #f8fafc;
+}
+
+.email-ui-mode-btn.active {
+    color: #0078d4;
+    background: #eff6ff;
+    box-shadow: inset 0 0 0 1px #bfdbfe;
+}
+
 .sync-toolbar-group {
     display: inline-flex;
     align-items: center;
@@ -4085,5 +4134,145 @@ body.assign-email-modal-open .ts-dropdown .option.active {
     .outlook-container--unassigned .outlook-list-pane {
         width: 100%;
         max-width: none;
+    }
+}
+
+/* ========== Gmail vs Outlook UI modes ========== */
+.outlook-container.ui-mode-gmail .outlook-list-pane {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    flex: 1 1 auto;
+    border-right: none;
+}
+
+.outlook-container.ui-mode-gmail .outlook-reading-pane {
+    display: none;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+}
+
+.outlook-container.ui-mode-gmail.gmail-reading-open .outlook-list-pane {
+    display: none;
+}
+
+.outlook-container.ui-mode-gmail.gmail-reading-open .outlook-reading-pane {
+    display: flex;
+}
+
+.outlook-container.ui-mode-gmail .empty-state {
+    display: none !important;
+}
+
+.gmail-reading-toolbar {
+    margin-bottom: 12px;
+}
+
+.gmail-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 1px solid #dbeafe;
+    border-radius: 999px;
+    background: #fff;
+    color: #0078d4;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.gmail-back-btn:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+}
+
+.outlook-container.ui-mode-gmail .reading-header {
+    padding-top: 16px;
+}
+
+.outlook-container.ui-mode-gmail .reading-body {
+    background: #fff;
+}
+
+.outlook-container.ui-mode-gmail .email-list,
+.outlook-container.ui-mode-gmail .email-list--synced {
+    background: #fff;
+    padding: 0;
+}
+
+.outlook-container.ui-mode-gmail .email-item,
+.outlook-container.ui-mode-gmail .email-item--synced,
+.outlook-container.ui-mode-gmail .email-item--synced-compact {
+    margin: 0;
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid #eef2f7;
+    box-shadow: none;
+    background: #fff;
+}
+
+.outlook-container.ui-mode-gmail .email-item:hover,
+.outlook-container.ui-mode-gmail .email-item--synced:hover,
+.outlook-container.ui-mode-gmail .email-item--synced-compact:hover {
+    background: #f8fafc;
+    box-shadow: none;
+}
+
+.outlook-container.ui-mode-gmail .email-item.active,
+.outlook-container.ui-mode-gmail .email-item--synced.active,
+.outlook-container.ui-mode-gmail .email-item--synced-compact.active {
+    background: #eef6ff;
+    box-shadow: inset 3px 0 0 #0078d4;
+}
+
+.outlook-container.ui-mode-gmail .email-item.unread,
+.outlook-container.ui-mode-gmail .email-item--synced.unread,
+.outlook-container.ui-mode-gmail .email-item--synced-compact.unread {
+    background: #fff;
+}
+
+.outlook-container.ui-mode-gmail .email-item.unread .email-subject,
+.outlook-container.ui-mode-gmail .email-item--synced-compact.unread .email-subject {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.outlook-container.ui-mode-gmail .email-list-date-group {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 10px 16px;
+}
+
+.outlook-container.ui-mode-gmail .synced-mail-list-body,
+.outlook-container.ui-mode-gmail .pagination-bar {
+    background: #fff;
+}
+
+.outlook-container.ui-mode-gmail.gmail-reading-open #readingPane {
+    display: flex;
+}
+
+@media (max-width: 900px) {
+    .list-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .list-toolbar__actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .email-ui-mode-btn span {
+        display: none;
+    }
+
+    .email-ui-mode-btn {
+        padding: 8px 10px;
     }
 }
