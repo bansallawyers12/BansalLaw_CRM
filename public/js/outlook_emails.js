@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const dateFromFilter = document.getElementById('dateFromFilter');
     const dateToFilter = document.getElementById('dateToFilter');
     const pageInfo = document.getElementById('pageInfo');
+    const pageSummary = document.getElementById('pageSummary');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
     
@@ -473,6 +474,63 @@ document.addEventListener('DOMContentLoaded', function() {
             readingPane.classList.remove('is-visible');
             emptyState.style.display = 'none';
         }
+    }
+
+    function updatePaginationDisplay(total, lastPage, from, to) {
+        const safeLastPage = Math.max(1, Number(lastPage) || 1);
+        const safeTotal = Math.max(0, Number(total) || 0);
+
+        if (pageSummary) {
+            pageSummary.textContent = 'Page ' + currentPage + ' of ' + safeLastPage;
+        }
+
+        if (pageInfo) {
+            if (safeTotal > 0) {
+                pageInfo.textContent = 'Showing ' + from + '-' + to + ' of ' + safeTotal;
+            } else {
+                pageInfo.textContent = 'No emails found';
+            }
+        }
+
+        if (prevBtn) {
+            prevBtn.disabled = currentPage <= 1;
+        }
+        if (nextBtn) {
+            nextBtn.disabled = currentPage >= safeLastPage || safeTotal === 0;
+        }
+    }
+
+    function resizeReadBodyForGmail(iframe) {
+        if (!iframe || !isGmailUiMode()) {
+            return;
+        }
+
+        try {
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            const body = doc && doc.body;
+            if (!body) {
+                return;
+            }
+            const height = Math.max(360, body.scrollHeight + 32);
+            iframe.style.height = height + 'px';
+            iframe.style.minHeight = height + 'px';
+        } catch (error) {
+            iframe.style.minHeight = '360px';
+        }
+    }
+
+    function resetReadBodyIframeSizing(iframe) {
+        if (!iframe) {
+            return;
+        }
+
+        if (isGmailUiMode()) {
+            resizeReadBodyForGmail(iframe);
+            return;
+        }
+
+        iframe.style.height = '100%';
+        iframe.style.minHeight = '100%';
     }
 
     function sortEmailsUnreadFirst(list) {
@@ -2685,13 +2743,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const to = data.to || 0;
             
             if (total > 0) {
-                pageInfo.textContent = `Showing ${from}-${to} of ${total}`;
+                updatePaginationDisplay(total, lastPage, from, to);
             } else {
-                pageInfo.textContent = '0 records found';
+                updatePaginationDisplay(0, 1, 0, 0);
             }
-            
-            prevBtn.disabled = currentPage <= 1;
-            nextBtn.disabled = currentPage >= lastPage;
 
             // Update sender filter dropdown
             if (senderFilter && data.senders) {
@@ -2710,9 +2765,8 @@ document.addEventListener('DOMContentLoaded', function() {
             emailListContainer.innerHTML = '<div style="padding:16px;text-align:center;color:red;">'
                 + escapeHtml(error.message || 'Error loading emails')
                 + '</div>';
-            pageInfo.textContent = '0 records found';
-            prevBtn.disabled = true;
-            nextBtn.disabled = true;
+            pageInfo.textContent = 'No emails found';
+            updatePaginationDisplay(0, 1, 0, 0);
         }
     }
 
@@ -3216,6 +3270,10 @@ document.addEventListener('DOMContentLoaded', function() {
         readingPane.classList.add('is-visible');
         openGmailReadingView();
 
+        if (isGmailUiMode() && readingPane) {
+            readingPane.scrollTop = 0;
+        }
+
         selectedEmail = email;
         updateMarkReadButtonVisibility(email);
 
@@ -3311,12 +3369,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (pdfToPreview) {
-            iframe.onload = null;
+            iframe.onload = function () {
+                resetReadBodyIframeSizing(iframe);
+            };
             iframe.removeAttribute('srcdoc');
-            iframe.style.height = '100%';
-            iframe.style.minHeight = '100%';
             iframe.src = pdfToPreview;
+            resetReadBodyIframeSizing(iframe);
         } else {
+            iframe.onload = null;
             iframe.removeAttribute('src');
             iframe.removeAttribute('srcdoc');
             let bodyHtml = contentStr;
@@ -3326,19 +3386,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 bodyHtml = escapeHtml(bodyHtml).replace(/\n/g, '<br>');
             }
             renderHtmlIframe(iframe, bodyHtml || '<p>No content available.</p>');
+            resetReadBodyIframeSizing(iframe);
         }
     }
 
     function renderHtmlIframe(iframe, html) {
         if (!iframe) return;
-        iframe.style.height = '100%';
-        iframe.style.minHeight = '100%';
+        if (!isGmailUiMode()) {
+            iframe.style.height = '100%';
+            iframe.style.minHeight = '100%';
+        }
         const doc = iframe.contentDocument || iframe.contentWindow.document;
         const bodyHtml = html || '';
         doc.open();
         doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><base target="_blank"><style>' +
-            'html,body{height:100%;margin:0;padding:0;box-sizing:border-box;}' +
-            'body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;line-height:1.6;color:#242424;word-wrap:break-word;overflow-wrap:break-word;padding:16px 20px;overflow-y:auto;}' +
+            'html,body{margin:0;padding:0;box-sizing:border-box;}' +
+            'body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;line-height:1.6;color:#242424;word-wrap:break-word;overflow-wrap:break-word;padding:16px 20px;}' +
             'img{max-width:100%;height:auto;}' +
             'table{max-width:100%;}' +
             'a{color:#0078d4;}' +
@@ -3346,6 +3409,11 @@ document.addEventListener('DOMContentLoaded', function() {
             'p{margin:0 0 0.75em;}' +
             '</style></head><body>' + bodyHtml + '</body></html>');
         doc.close();
+        if (isGmailUiMode()) {
+            setTimeout(function () {
+                resizeReadBodyForGmail(iframe);
+            }, 0);
+        }
     }
 
     function resetComposeEditor() {
