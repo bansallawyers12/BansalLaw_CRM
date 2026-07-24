@@ -242,6 +242,10 @@
 
                 }
 
+                if (!selectedMatter && window.ClientDetailConfig && window.ClientDetailConfig.clientMatterId) {
+                    selectedMatter = String(window.ClientDetailConfig.clientMatterId);
+                }
+
                 if(selected == 'office_receipt'){
 
                     if (!isQuickReceiptMode) {
@@ -254,9 +258,9 @@
 
                 else if(selected == 'invoice_receipt'){
 
-                    if($('#function_type').val() == '' || $('#function_type').val() == 'add' ) {
+                    if($('#invoice_receipt_form input[name="function_type"]').val() == '' || $('#invoice_receipt_form input[name="function_type"]').val() == 'add' ) {
 
-                        $('#function_type').val("add");
+                        $('#invoice_receipt_form input[name="function_type"]').val("add");
 
                         getTopInvoiceNoFromDB(3);
 
@@ -2379,7 +2383,7 @@ success: function(response) {
                     if (!obj) return;
                     if(obj.status){
 
-                        $('#function_type').val("edit");
+                        $('#invoice_receipt_form input[name="function_type"]').val("edit");
 
                         $('#createreceiptmodal').modal('show');
 
@@ -2535,7 +2539,7 @@ success: function(response) {
 
                                     $('.unique_invoice_no').text(subArray.invoice_no);
 
-                                    $('#receipt_id').val(subArray.receipt_id);
+                                    $('#invoice_receipt_id').val(subArray.receipt_id);
 
                                 }
 
@@ -2574,7 +2578,7 @@ success: function(response) {
             }
 
             prepareInvoiceEditModal();
-            $('#function_type').val('edit');
+            $('#invoice_receipt_form input[name="function_type"]').val('edit');
 
             $.ajax({
 
@@ -2592,7 +2596,7 @@ success: function(response) {
                     if (!obj) return;
                     if (obj.status) {
 
-                        $('#function_type').val('edit');
+                        $('#invoice_receipt_form input[name="function_type"]').val('edit');
 
                         $('#createreceiptmodal').modal('show');
 
@@ -2741,7 +2745,7 @@ success: function(response) {
 
                                     $('.unique_invoice_no').text(subArray.invoice_no);
 
-                                    $('#receipt_id').val(subArray.receipt_id);
+                                    $('#invoice_receipt_id').val(subArray.receipt_id);
 
                                 }
 

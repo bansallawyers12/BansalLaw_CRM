@@ -798,6 +798,64 @@
 @endphp
 <script>
 window.TRUST_WITHDRAWAL_AUTHORITY_TYPES = @json($__acctTabTrustAuthTypes);
+
+    function resolveAccountMatterId() {
+        if ($('.general_matter_checkbox_client_detail').is(':checked')) {
+            var generalMatter = $('.general_matter_checkbox_client_detail').val();
+            if (generalMatter) {
+                return generalMatter;
+            }
+        }
+
+        var selectedMatter = $('#sel_matter_id_client_detail').val();
+        if (selectedMatter) {
+            return selectedMatter;
+        }
+
+        if (window.ClientDetailConfig && window.ClientDetailConfig.clientMatterId) {
+            return String(window.ClientDetailConfig.clientMatterId);
+        }
+
+        return '';
+    }
+
+    function formatInvoiceDateToday() {
+        var d = new Date();
+        var dd = String(d.getDate()).padStart(2, '0');
+        var mm = String(d.getMonth() + 1).padStart(2, '0');
+        var yyyy = d.getFullYear();
+        return dd + '/' + mm + '/' + yyyy;
+    }
+
+    function prepareInvoiceFormForCreate(selectedMatter) {
+        $('#invoice_receipt_form input[name="function_type"]').val('add');
+        $('#client_matter_id_invoice').val(selectedMatter);
+
+        var today = formatInvoiceDateToday();
+        var $firstRow = $('#invoice_receipt_form .productitem_invoice tr.clonedrow_invoice').first();
+        $firstRow.find('input[name="trans_date[]"]').each(function() {
+            $(this).val(today);
+            var fp = this._flatpickr;
+            if (fp) {
+                fp.setDate(today, false, 'd/m/Y');
+            }
+        });
+        $firstRow.find('input[name="entry_date[]"]').each(function() {
+            $(this).val(today);
+            var fp = this._flatpickr;
+            if (fp) {
+                fp.setDate(today, false, 'd/m/Y');
+            }
+        });
+
+        if (typeof initFlatpickrForClass === 'function') {
+            initFlatpickrForClass('#invoice_receipt_form .report_date_fields_invoice');
+            initFlatpickrForClass('#invoice_receipt_form .report_entry_date_fields_invoice', {
+                defaultDate: new Date()
+            });
+        }
+    }
+
 document.addEventListener('DOMContentLoaded', function() {
     // Improved Create Receipt Button Click Handler
     // Automatically selects the correct form based on which button was clicked
@@ -827,12 +885,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $('#client_receipt_form, #invoice_receipt_form, #office_receipt_form').hide();
         
         // Get the selected matter ID
-        let selectedMatter;
-        if ($('.general_matter_checkbox_client_detail').is(':checked')) {
-            selectedMatter = $('.general_matter_checkbox_client_detail').val();
-        } else {
-            selectedMatter = $('#sel_matter_id_client_detail').val();
-        }
+        let selectedMatter = resolveAccountMatterId();
         
         // Select the appropriate radio button and trigger change event
         // The change handler in detail-main.js will hide all forms and show the correct one
@@ -855,12 +908,7 @@ document.addEventListener('DOMContentLoaded', function() {
             loadInvoicesForOfficeReceipt(selectedMatter);
         } else if (receiptType == '3') {
             // Invoice
-            
-            // CRITICAL: Set function_type to "add" for new invoices
-            $('#function_type').val('add');
-            
-            // Set the matter ID
-            $('#client_matter_id_invoice').val(selectedMatter);
+            prepareInvoiceFormForCreate(selectedMatter);
             
             $('input[name="receipt_type"][value="invoice_receipt"]').prop('checked', true).trigger('change');
         }
@@ -879,8 +927,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Re-ensure critical fields are set (in case change event cleared them)
             if (receiptType == '3') {
-                $('#function_type').val('add');
-                $('#client_matter_id_invoice').val(selectedMatter);
+                prepareInvoiceFormForCreate(selectedMatter);
             } else if (receiptType == '1') {
                 $('#client_matter_id_ledger').val(selectedMatter);
             } else if (receiptType == '2') {

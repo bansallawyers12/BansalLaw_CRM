@@ -421,8 +421,8 @@
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 					<input type="hidden" name="loggedin_staffid" value="{{@Auth::user()->id}}">
 					<input type="hidden" name="receipt_type" value="3">
-					<input type="hidden" name="receipt_id" id="receipt_id" value="">
-					<input type="hidden" name="function_type" id="function_type" value="">
+					<input type="hidden" name="receipt_id" id="invoice_receipt_id" value="">
+					<input type="hidden" name="function_type" id="invoice_function_type" value="">
                     <input type="hidden" name="client_matter_id" id="client_matter_id_invoice" value="">
 
 					<div class="row">
@@ -466,7 +466,7 @@
                                                 <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="" />
                                             </td>
                                             <td>
-                                                <select class="form-control" name="gst_included[]">
+                                                <select class="form-control" name="gst_included[]" data-valid="required">
                                                     <option value="">Select</option>
                                                     <option value="Yes">Yes</option>
                                                     <option value="No">No</option>
@@ -474,7 +474,7 @@
                                             </td>
 
                                             <td>
-                                                <select class="form-control payment_type_invoice_per_row" name="payment_type[]">
+                                                <select class="form-control payment_type_invoice_per_row" name="payment_type[]" data-valid="required">
                                                     <option value="">Select</option>
                                                     <option value="Professional Fee">Professional Fee</option>
                                                     <option value="Department Charges">Department Charges</option>
@@ -699,8 +699,8 @@
 					<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
 					<input type="hidden" name="loggedin_staffid" value="{{@Auth::user()->id}}">
 					<input type="hidden" name="receipt_type" value="3">
-					<input type="hidden" name="receipt_id" id="receipt_id" value="">
-					<input type="hidden" name="function_type" id="function_type" value="add">
+					<input type="hidden" name="receipt_id" id="adjust_invoice_receipt_id" value="">
+					<input type="hidden" name="function_type" id="adjust_invoice_function_type" value="add">
 
 					<div class="row">
 						<div class="col-3 col-md-3 col-lg-3">
@@ -943,8 +943,8 @@
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
                 <input type="hidden" name="loggedin_staffid" value="{{@Auth::user()->id}}">
                 <input type="hidden" name="receipt_type" value="3">
-                <input type="hidden" name="receipt_id" id="receipt_id" value="">
-                <input type="hidden" name="function_type" id="function_type" value="">
+                <input type="hidden" name="receipt_id" id="update_draft_invoice_receipt_id" value="">
+                <input type="hidden" name="function_type" id="update_draft_invoice_function_type" value="">
 
 					<div class="row">
 						<div class="col-6 col-md-6 col-lg-6">

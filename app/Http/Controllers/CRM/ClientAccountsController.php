@@ -1303,9 +1303,30 @@ class ClientAccountsController extends Controller
             }
 
             $this->ensureCrmRecordAccess((int) $requestData['client_id']);
+
+            $functionType = $requestData['function_type'] ?? 'add';
+            $response = [
+                'requestData' => [],
+                'status' => false,
+                'message' => 'Please try again',
+                'function_type' => $functionType,
+                'total_balance_amount' => 0,
+                'invoice_no' => '',
+            ];
             
-            if( $requestData['function_type'] == 'add')
+            if ($functionType == 'add')
         {
+            if (empty($requestData['trans_date']) || !is_array($requestData['trans_date'])) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'At least one invoice line with a transaction date is required.',
+                    'requestData' => [],
+                    'function_type' => $functionType,
+                    'total_balance_amount' => 0,
+                    'invoice_no' => '',
+                ], 422);
+            }
+
             if(isset($requestData['trans_date'])){
                 //Generate unique receipt id
                 $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type',3)->orderBy('receipt_id', 'desc')->first();
@@ -1316,6 +1337,9 @@ class ClientAccountsController extends Controller
                 }
                 $finalArr = array();
                 $totalWithdrawAmount = 0;
+                $invoiceType = 'INV';
+                $invoice_no = $this->createInvoiceNumber($invoiceType);
+                $lastInsertId = null;
                 for($i=0; $i<count($requestData['trans_date']); $i++){
                     // Calculate unit price and withdraw amount based on GST
                     /*$unitPrice = floatval($requestData['withdraw_amount'][$i]);
@@ -1324,9 +1348,6 @@ class ClientAccountsController extends Controller
                         $withdrawAmount = $unitPrice * 1.10; // Add 10% GST
                     }*/
                     $withdrawAmount = floatval($requestData['withdraw_amount'][$i]);
-   
-                    $invoiceType = 'INV';
-                    $invoice_no = $this->createInvoiceNumber($invoiceType);
    
                     $finalArr[$i]['trans_date'] = $requestData['trans_date'][$i];
                     $finalArr[$i]['entry_date'] = $requestData['entry_date'][$i];
@@ -1432,7 +1453,7 @@ class ClientAccountsController extends Controller
                 $response['invoice_no'] = "";
             }
         }
-        else if ($requestData['function_type'] == 'edit') {
+        else if ($functionType == 'edit') {
             DB::beginTransaction();
             try {
                 // Step 1: Check for deleted entries and remove them
