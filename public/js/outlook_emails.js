@@ -206,6 +206,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    window.addEventListener('resize', function () {
+        if (!isGmailUiMode() || !outlookContainer || !outlookContainer.classList.contains('gmail-reading-open')) {
+            return;
+        }
+
+        const iframe = document.getElementById('readBody');
+        if (iframe) {
+            resizeReadBodyForGmail(iframe);
+        }
+    });
+
     function updateOutboxFiltersVisibility() {
         const isOutbox = currentFolder === 'outbox';
         document.querySelectorAll('.list-filter-outbox').forEach(function (el) {
@@ -433,6 +444,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         outlookContainer.classList.remove('gmail-reading-open');
+        document.body.classList.remove('gmail-email-reading-open');
         if (gmailReadingToolbar) {
             gmailReadingToolbar.hidden = true;
         }
@@ -444,6 +456,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         outlookContainer.classList.add('gmail-reading-open');
+        document.body.classList.add('gmail-email-reading-open');
         if (gmailReadingToolbar) {
             gmailReadingToolbar.hidden = false;
         }
@@ -500,8 +513,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function getGmailReadingBodyMinHeight() {
+        const readingBody = document.querySelector('#readingPane .reading-body');
+        if (readingBody && readingBody.clientHeight > 240) {
+            return readingBody.clientHeight;
+        }
+
+        return Math.max(520, window.innerHeight - 260);
+    }
+
     function resizeReadBodyForGmail(iframe) {
         if (!iframe || !isGmailUiMode()) {
+            return;
+        }
+
+        const minHeight = getGmailReadingBodyMinHeight();
+        iframe.style.minHeight = minHeight + 'px';
+
+        if (iframe.src && !iframe.getAttribute('srcdoc')) {
+            iframe.style.height = minHeight + 'px';
             return;
         }
 
@@ -509,13 +539,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const doc = iframe.contentDocument || iframe.contentWindow.document;
             const body = doc && doc.body;
             if (!body) {
+                iframe.style.height = minHeight + 'px';
                 return;
             }
-            const height = Math.max(360, body.scrollHeight + 32);
-            iframe.style.height = height + 'px';
-            iframe.style.minHeight = height + 'px';
+            const contentHeight = Math.max(minHeight, body.scrollHeight + 32);
+            iframe.style.height = contentHeight + 'px';
         } catch (error) {
-            iframe.style.minHeight = '360px';
+            iframe.style.height = minHeight + 'px';
         }
     }
 
@@ -525,7 +555,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (isGmailUiMode()) {
-            resizeReadBodyForGmail(iframe);
+            if (typeof window.requestAnimationFrame === 'function') {
+                window.requestAnimationFrame(function () {
+                    resizeReadBodyForGmail(iframe);
+                });
+            } else {
+                resizeReadBodyForGmail(iframe);
+            }
             return;
         }
 
@@ -3270,8 +3306,13 @@ document.addEventListener('DOMContentLoaded', function() {
         readingPane.classList.add('is-visible');
         openGmailReadingView();
 
-        if (isGmailUiMode() && readingPane) {
-            readingPane.scrollTop = 0;
+        if (isGmailUiMode()) {
+            const readingBody = document.querySelector('#readingPane .reading-body');
+            if (readingBody) {
+                readingBody.scrollTop = 0;
+            } else if (readingPane) {
+                readingPane.scrollTop = 0;
+            }
         }
 
         selectedEmail = email;
