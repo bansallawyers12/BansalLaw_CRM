@@ -306,7 +306,7 @@ Route::post('/clients/getCostAssignmentLegalPractitionerDetailLead', [ClientsCon
 
 Route::post('/clients/{admin}/upload-agreement', [ClientsController::class, 'uploadAgreement'])->name('clients.uploadAgreement');
 
-// Legal Forms (Short Costs Disclosure, Cost Agreement, Authority to Act)
+// Legal Forms (Short Costs Disclosure, Long Cost Disclosure, Authority to Act)
 Route::post('/legal-forms', [\App\Http\Controllers\CRM\LegalFormsController::class, 'store'])->name('legal-forms.store');
 Route::post('/legal-forms/generate-scope-ai', [\App\Http\Controllers\CRM\LegalFormsController::class, 'generateScopeAI'])->name('legal-forms.generate-scope-ai');
 Route::get('/legal-forms/client-forms', [\App\Http\Controllers\CRM\LegalFormsController::class, 'getClientForms'])->name('legal-forms.client-forms');
@@ -317,6 +317,7 @@ Route::post('/legal-forms/{legalForm}/delete', [\App\Http\Controllers\CRM\LegalF
 Route::get('/legal-forms/{legalForm}/preview', [\App\Http\Controllers\CRM\LegalFormsController::class, 'previewDocx'])->name('legal-forms.preview');
 Route::get('/legal-forms/{legalForm}/download', [\App\Http\Controllers\CRM\LegalFormsController::class, 'downloadDocx'])->name('legal-forms.download');
 Route::get('/legal-forms/{legalForm}/attachment', [\App\Http\Controllers\CRM\LegalFormsController::class, 'downloadAttachment'])->name('legal-forms.attachment');
+Route::post('/legal-forms/{legalForm}/attachment', [\App\Http\Controllers\CRM\LegalFormsController::class, 'uploadAttachment'])->name('legal-forms.upload-attachment');
 
 /*---------- Court Dates & Hearings ----------*/
 Route::post('/clients/court-hearings/store', [ClientsController::class, 'storeCourtHearing'])->name('clients.courtHearings.store');

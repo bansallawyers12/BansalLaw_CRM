@@ -15,33 +15,48 @@
         }
     @endphp
     <div class="legal-forms-container">
-        <div class="legal-forms-header">
-            <h4><i class="fa-solid fa-file-signature"></i> Legal Forms & Agreements</h4>
-            <div class="legal-forms-actions">
-                <div class="dropdown">
-                    <button class="btn btn-primary dropdown-toggle" type="button" id="createLegalFormBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fa-solid fa-plus"></i> Create Form
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="createLegalFormBtn" style="z-index: 1050; min-width: 240px;">
-                        <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('short_costs_disclosure')">
-                            <i class="fa-solid fa-file-invoice-dollar text-primary"></i> Short Costs Disclosure
-                        </a></li>
-                        <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('cost_agreement')">
-                            <i class="fa-solid fa-file-contract text-purple"></i> Cost Agreement
-                        </a></li>
-                        <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('authority_to_act')">
-                            <i class="fa-solid fa-stamp text-success"></i> Authority to Act
-                        </a></li>
-                    </ul>
+        <div class="legal-forms-split-layout">
+            <div class="checklist-table-container legal-forms-list-panel">
+                <div class="legal-forms-list-toolbar">
+                    <div class="legal-forms-list-toolbar__title">
+                        <h3><i class="fa-solid fa-file-signature"></i> Saved Forms</h3>
+                        <span id="legal-forms-count" class="legal-forms-count">0</span>
+                    </div>
+                    <div class="dropdown legal-forms-list-toolbar__actions">
+                        <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="createLegalFormBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-plus"></i> Create
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="createLegalFormBtn">
+                            <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('short_costs_disclosure')">
+                                <i class="fa-solid fa-file-invoice-dollar text-primary"></i> Short Costs Disclosure
+                            </a></li>
+                            <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('cost_agreement')">
+                                <i class="fa-solid fa-file-contract text-purple"></i> Long Cost Disclosure
+                            </a></li>
+                            <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('authority_to_act')">
+                                <i class="fa-solid fa-stamp text-success"></i> Authority to Act
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div id="legal-forms-list" class="legal-forms-list">
+                    <div class="text-center py-4" id="legal-forms-loading">
+                        <i class="fa-solid fa-spinner fa-spin"></i> Loading forms...
+                    </div>
+                </div>
+            </div>
+            <div class="preview-pane file-preview-container preview-container-legal-forms client-doc-preview-pane">
+                <div class="client-doc-preview-empty">
+                    <i class="fa-solid fa-file-lines client-doc-preview-empty-icon" aria-hidden="true"></i>
+                    <p class="preview-placeholder-text"><strong>Form Preview</strong></p>
+                    <p class="preview-placeholder-text">Select a form from the list to preview it here</p>
                 </div>
             </div>
         </div>
-
-        <div id="legal-forms-list" class="legal-forms-list">
-            <div class="text-center py-4" id="legal-forms-loading">
-                <i class="fa-solid fa-spinner fa-spin"></i> Loading forms...
-            </div>
-        </div>
+        <input type="file"
+               id="legal-form-attachment-input"
+               class="d-none"
+               accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,.pdf,.doc,.docx,.txt,.xls,.xlsx">
     </div>
 </div>
 
@@ -54,7 +69,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="legalFormForm" autocomplete="off" enctype="multipart/form-data">
+                <form id="legalFormForm" autocomplete="off">
                     @csrf
                     <input type="hidden" name="client_id" value="{{ $fetchedData->id }}">
                     <input type="hidden" name="form_type" id="lf_form_type" value="">
@@ -91,18 +106,6 @@
                                 </select>
                             @endif
                         </div>
-                    </div>
-
-                    {{-- Optional attachment (images / documents) --}}
-                    <div class="mb-3">
-                        <label class="form-label fw-bold" for="lf_attachment">Attachment <span class="text-muted fw-normal">(optional)</span></label>
-                        <input type="file"
-                               name="attachment"
-                               id="lf_attachment"
-                               class="form-control"
-                               accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,.pdf,.doc,.docx,.txt,.xls,.xlsx">
-                        <small class="text-muted d-block mt-1">Images or documents only (JPG, PNG, PDF, Word, Excel, text). Max 10 MB.</small>
-                        <div id="lf_attachment_preview" class="legal-form-attachment-preview mt-2" style="display:none;"></div>
                     </div>
 
                     {{-- Firm Details Section --}}
@@ -329,11 +332,7 @@
     /** Path only (same-origin); works with subdirectory installs and avoids APP_URL host mismatches */
     var LF_BASE = @json(rtrim(parse_url(url('/legal-forms'), PHP_URL_PATH) ?: '/legal-forms', '/'));
 
-    const FORM_TYPE_LABELS = {
-        'short_costs_disclosure': 'Short Costs Disclosure',
-        'cost_agreement': 'Cost Agreement',
-        'authority_to_act': 'Authority to Act'
-    };
+    const FORM_TYPE_LABELS = @json(\App\Models\ClientLegalForm::FORM_TYPES);
 
     const FORM_TYPE_ICONS = {
         'short_costs_disclosure': 'fa-solid fa-file-invoice-dollar',
@@ -385,30 +384,9 @@
         syncLegalFormMatterFromSelect();
     }
 
-    function updateLegalFormAttachmentPreview() {
-        var input = document.getElementById('lf_attachment');
-        var preview = document.getElementById('lf_attachment_preview');
-        if (!input || !preview) {
-            return;
-        }
-        if (!input.files || !input.files.length) {
-            preview.style.display = 'none';
-            preview.innerHTML = '';
-            return;
-        }
-        var file = input.files[0];
-        var icon = file.type.indexOf('image/') === 0 ? 'fa-file-image' : 'fa-file';
-        preview.style.display = 'block';
-        preview.innerHTML = '<i class="fa-solid ' + icon + '"></i> ' + file.name + ' (' + Math.max(1, Math.round(file.size / 1024)) + ' KB)';
-    }
-
     var lfMatterRefSelect = document.getElementById('lf_matter_reference');
     if (lfMatterRefSelect) {
         lfMatterRefSelect.addEventListener('change', syncLegalFormMatterFromSelect);
-    }
-    var lfAttachmentInput = document.getElementById('lf_attachment');
-    if (lfAttachmentInput) {
-        lfAttachmentInput.addEventListener('change', updateLegalFormAttachmentPreview);
     }
 
     syncLegalFormMatterFromSelect();
@@ -432,7 +410,6 @@
             sidebarMatterRef = window.ClientDetailShared.parseClientDetailMatterRefFromUrl() || '';
         }
         selectLegalFormMatterByRef(sidebarMatterRef);
-        updateLegalFormAttachmentPreview();
 
         // Show/hide sections based on form type
         var costsSection = document.getElementById('lf_costs_section');
@@ -456,7 +433,7 @@
             costsSection.style.display = 'block';
             personSection.style.display = 'flex';
         } else if (formType === 'cost_agreement') {
-            modalTitle.textContent = 'Create Cost Agreement';
+            modalTitle.textContent = 'Create Long Cost Disclosure';
             costsSection.style.display = 'block';
             personSection.style.display = 'flex';
             feeTypeSection.style.display = 'block';
@@ -576,44 +553,222 @@
         });
     };
 
-    function renderLegalFormsList(forms) {
-        var listEl = document.getElementById('legal-forms-list');
+    function resetLegalFormPreviewPane() {
+        var pane = document.querySelector('.preview-container-legal-forms');
+        if (!pane) {
+            return;
+        }
+        pane.innerHTML = ''
+            + '<div class="client-doc-preview-empty">'
+            + '<i class="fa-solid fa-file-lines client-doc-preview-empty-icon" aria-hidden="true"></i>'
+            + '<p class="preview-placeholder-text"><strong>Form Preview</strong></p>'
+            + '<p class="preview-placeholder-text">Select a form from the list to preview it here</p>'
+            + '</div>';
+    }
 
-        if (!forms || forms.length === 0) {
-            listEl.innerHTML = '<div class="legal-forms-empty"><div class="legal-forms-empty-icon"><i class="fa-solid fa-file-signature"></i></div><p>No legal forms created yet.</p><p class="text-muted">Click "Create Form" to generate a Short Costs Disclosure, Cost Agreement, or Authority to Act.</p></div>';
+    window.previewLegalForm = function(formId, formLabel) {
+        if (!formId) {
             return;
         }
 
-        var html = '<div class="legal-forms-grid">';
+        var previewUrl = LF_BASE + '/' + formId + '/preview';
+        var downloadUrl = LF_BASE + '/' + formId + '/download';
+        var rows = document.querySelectorAll('.legal-form-row');
+        rows.forEach(function(row) {
+            row.classList.remove('is-preview-active');
+        });
+        var activeRow = document.getElementById('legal-form-row-' + formId);
+        if (activeRow) {
+            activeRow.classList.add('is-preview-active');
+        }
+
+        if (typeof window.previewFile === 'function') {
+            window.previewFile('docx', previewUrl, 'preview-container-legal-forms', formLabel || 'Legal Form');
+            window.setTimeout(function() {
+                var pane = document.querySelector('.preview-container-legal-forms');
+                if (!pane) {
+                    return;
+                }
+                var downloadBtn = pane.querySelector('.client-doc-preview-download-btn');
+                if (downloadBtn) {
+                    downloadBtn.href = downloadUrl;
+                }
+                var openBtn = pane.querySelector('.client-doc-preview-open-btn');
+                if (openBtn) {
+                    openBtn.href = downloadUrl;
+                }
+                var officeDownload = pane.querySelector('.client-doc-preview-office-bar a');
+                if (officeDownload) {
+                    officeDownload.href = downloadUrl;
+                }
+            }, 50);
+        } else {
+            window.open(previewUrl, '_blank', 'noopener');
+        }
+    };
+
+    function formatLegalFormListAmount(form) {
+        var amount = null;
+
+        if (form.estimated_total != null && parseFloat(form.estimated_total) > 0) {
+            amount = parseFloat(form.estimated_total);
+        } else if (form.fixed_fee_amount != null && parseFloat(form.fixed_fee_amount) > 0) {
+            amount = parseFloat(form.fixed_fee_amount);
+        } else if (form.retainer_amount != null && parseFloat(form.retainer_amount) > 0) {
+            amount = parseFloat(form.retainer_amount);
+        } else {
+            var fees = parseFloat(form.estimated_legal_fees) || 0;
+            var disb = parseFloat(form.estimated_disbursements) || 0;
+            var barr = parseFloat(form.estimated_barrister_fees) || 0;
+            var gst = parseFloat(form.gst_amount);
+            if (isNaN(gst)) {
+                gst = fees * 0.10;
+            }
+            var total = fees + disb + barr + gst;
+            if (total > 0) {
+                amount = total;
+            }
+        }
+
+        if (amount === null || isNaN(amount)) {
+            return null;
+        }
+
+        return '$' + amount.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function renderLegalFormsList(forms) {
+        var listEl = document.getElementById('legal-forms-list');
+        var countEl = document.getElementById('legal-forms-count');
+        resetLegalFormPreviewPane();
+
+        if (countEl) {
+            countEl.textContent = forms && forms.length ? String(forms.length) : '0';
+        }
+
+        if (!forms || forms.length === 0) {
+            listEl.innerHTML = '<div class="legal-forms-empty"><div class="legal-forms-empty-icon"><i class="fa-solid fa-file-signature"></i></div><p>No legal forms yet</p><p class="text-muted">Use <strong>Create</strong> to add a Short Costs Disclosure, Long Cost Disclosure, or Authority to Act.</p></div>';
+            return;
+        }
+
+        var html = '<div class="legal-forms-card-list">';
+
         forms.forEach(function(form) {
             var label = FORM_TYPE_LABELS[form.form_type] || form.form_type;
-            var icon = FORM_TYPE_ICONS[form.form_type] || 'fa-solid fa-file';
             var color = FORM_TYPE_COLORS[form.form_type] || '#6b7280';
             var date = form.form_date ? new Date(form.form_date).toLocaleDateString('en-AU') : new Date(form.created_at).toLocaleDateString('en-AU');
-            var creator = form.creator ? (form.creator.first_name || '') + ' ' + (form.creator.last_name || '') : '';
             var matterRef = form.matter_reference || (form.matter ? form.matter.client_unique_matter_no : '');
-
-            html += '<div class="legal-form-card">';
-            html += '<div class="legal-form-card-header" style="border-left: 4px solid ' + color + ';">';
-            html += '<div class="legal-form-card-icon" style="color: ' + color + ';"><i class="' + icon + '"></i></div>';
-            html += '<div class="legal-form-card-info">';
-            html += '<h5>' + label + '</h5>';
-            html += '<span class="legal-form-card-date">' + date + '</span>';
-            if (matterRef) html += '<span class="legal-form-card-matter"> &bull; Ref: ' + matterRef + '</span>';
-            html += '</div>';
-            html += '</div>';
-            html += '<div class="legal-form-card-actions">';
-            html += '<a href="' + LF_BASE + '/' + form.id + '/download" class="btn btn-sm btn-outline-success" title="Download Word Document"><i class="fa-solid fa-file-word"></i> Download</a>';
-            if (form.attachment_path) {
-                html += '<a href="' + LF_BASE + '/' + form.id + '/attachment" class="btn btn-sm btn-outline-primary" title="Download attachment"><i class="fa-solid fa-paperclip"></i> Attachment</a>';
+            var previewLabel = label + (matterRef ? ' (' + matterRef + ')' : '');
+            var safePreviewLabel = previewLabel.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            var amountText = formatLegalFormListAmount(form);
+            var attachTitle = form.attachment_original_name ? String(form.attachment_original_name).replace(/"/g, '&quot;') : '';
+            var attachName = form.attachment_original_name || '';
+            attachName = attachName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            if (attachName.length > 18) {
+                attachName = attachName.substring(0, 15) + '...';
             }
-            html += '<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteLegalForm(' + form.id + ')" title="Delete"><i class="fa-solid fa-trash"></i></button>';
-            html += '</div>';
-            html += '</div>';
+
+            html += '<div class="legal-form-list-item legal-form-row" id="legal-form-row-' + form.id + '" data-form-id="' + form.id + '" data-preview-label="' + previewLabel.replace(/"/g, '&quot;') + '" style="--lf-accent:' + color + ';" role="button" tabindex="0">';
+            html += '<div class="legal-form-list-item__main" onclick="previewLegalForm(' + form.id + ', \'' + safePreviewLabel + '\')">';
+            html += '<div class="legal-form-list-item__title">' + label + '</div>';
+            html += '<dl class="legal-form-list-item__meta">';
+            if (amountText) {
+                html += '<div class="legal-form-meta-item legal-form-meta-item--amount"><dt>Amount</dt><dd>' + amountText + '</dd></div>';
+            }
+            html += '<div class="legal-form-meta-item"><dt>Date</dt><dd>' + date + '</dd></div>';
+            if (matterRef) {
+                html += '<div class="legal-form-meta-item"><dt>Matter</dt><dd>' + matterRef + '</dd></div>';
+            }
+            if (form.attachment_path && attachName) {
+                html += '<div class="legal-form-meta-item legal-form-meta-item--file"><dt>File</dt><dd><a href="' + LF_BASE + '/' + form.id + '/attachment" title="' + attachTitle + '" onclick="event.stopPropagation();">' + attachName + '</a></dd></div>';
+            }
+            html += '</dl></div>';
+            html += '<div class="legal-form-list-item__actions" onclick="event.stopPropagation();">';
+            html += '<a href="' + LF_BASE + '/' + form.id + '/download" class="legal-form-action-btn" title="Download Word"><i class="fa-solid fa-download"></i></a>';
+            html += '<button type="button" class="legal-form-action-btn legal-form-action-btn--attach' + (form.attachment_path ? ' is-attached' : '') + '" onclick="triggerLegalFormAttachmentUpload(' + form.id + ')" title="' + (form.attachment_path ? 'Replace attachment' : 'Add attachment') + '"><i class="fa-solid fa-file-arrow-up"></i></button>';
+            html += '<button type="button" class="legal-form-action-btn legal-form-action-btn--danger" onclick="deleteLegalForm(' + form.id + ')" title="Delete"><i class="fa-solid fa-trash"></i></button>';
+            html += '</div></div>';
         });
+
         html += '</div>';
         listEl.innerHTML = html;
     }
+
+    window.triggerLegalFormAttachmentUpload = function(formId) {
+        var input = document.getElementById('legal-form-attachment-input');
+        if (!input || !formId) {
+            return;
+        }
+        input.dataset.formId = String(formId);
+        input.value = '';
+        input.click();
+    };
+
+    (function initLegalFormAttachmentUpload() {
+        var input = document.getElementById('legal-form-attachment-input');
+        if (!input) {
+            return;
+        }
+
+        input.addEventListener('change', function() {
+            var formId = input.dataset.formId;
+            if (!formId || !input.files || !input.files.length) {
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('attachment', input.files[0]);
+
+            var activeBtn = document.querySelector('#legal-form-row-' + formId + ' .legal-form-action-btn--attach');
+            if (activeBtn) {
+                activeBtn.disabled = true;
+                activeBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            }
+
+            $.ajax({
+                url: LF_BASE + '/' + formId + '/attachment',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                success: function(response) {
+                    if (response.success) {
+                        loadLegalForms();
+                        if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
+                            iziToast.success({ message: response.message || 'Attachment uploaded.', position: 'topRight' });
+                        }
+                    } else {
+                        var failMsg = (response && response.message) ? response.message : 'Failed to upload attachment.';
+                        if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                            iziToast.error({ message: failMsg, position: 'topRight' });
+                        } else {
+                            alert(failMsg);
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    var msg = 'Failed to upload attachment.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                        iziToast.error({ message: msg, position: 'topRight' });
+                    } else {
+                        alert(msg);
+                    }
+                },
+                complete: function() {
+                    input.value = '';
+                    delete input.dataset.formId;
+                    if (activeBtn) {
+                        activeBtn.disabled = false;
+                        activeBtn.innerHTML = '<i class="fa-solid fa-file-arrow-up"></i>';
+                    }
+                }
+            });
+        });
+    })();
 
     window.generateWithAI = function(fieldName) {
         var clientId = {{ $fetchedData->id }};
@@ -724,6 +879,15 @@
             }
         });
     };
+
+    $(document).on('keydown', '.legal-form-row', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            var id = $(this).data('form-id');
+            var label = $(this).data('preview-label') || '';
+            previewLegalForm(id, label);
+        }
+    });
 
     // Load forms when the tab pane becomes visible (gains 'active' class)
     var legalFormsTabPane = document.getElementById('legalforms-tab');

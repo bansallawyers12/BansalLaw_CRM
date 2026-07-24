@@ -4,17 +4,13 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Font Awesome CDN (single source — loaded via components.font-awesome)
+    | Style prefix (FA4/5 → FA6/7)
     |--------------------------------------------------------------------------
-    */
-    'version' => '6.7.2',
-
-    'cdn_url' => 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css',
-
-    /*
-    |--------------------------------------------------------------------------
-    | FA4/5 style prefix → FA6 prefix
-    |--------------------------------------------------------------------------
+    |
+    | CSS is loaded locally via components.font-awesome (npm
+    | @fortawesome/fontawesome-free → public/css/fontawesome.min.css).
+    | Bump the package and run `npm run copy:fontawesome` to refresh assets.
+    |
     */
     'style_prefix' => [
         'fa' => 'fa-solid',
@@ -25,7 +21,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Icon names renamed or removed in FA6 (legacy name => FA6 name)
+    | Icon names renamed or removed in FA6+ (legacy name => current name)
     |--------------------------------------------------------------------------
     |
     | Applied by FontAwesomeHelper::iconName() / migrateClasses() and the
@@ -43,7 +39,7 @@ return [
         'thumb-tack' => 'thumbtack',
         'plus-circle' => 'circle-plus',
 
-        // Common FA5 → FA6 Free renames (aliases may still work; prefer canonical)
+        // Common FA5 → FA6/7 Free renames (aliases may still work; prefer canonical)
         'external-link-alt' => 'up-right-from-square',
         'calendar-alt' => 'calendar-days',
         'file-alt' => 'file-lines',
