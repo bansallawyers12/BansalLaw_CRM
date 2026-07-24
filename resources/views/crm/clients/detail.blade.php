@@ -432,45 +432,52 @@ use App\Http\Controllers\Controller;
             // Full strip when matter ref / matters exist, or converted client still on lead workflow without matters yet.
             if( $isMatterIdInUrl || $matter_cnt > 0 || $crmShowMatterDocsForConvertedLead )
             {  //if client unique reference id is present in url
+                $cdnShowTopMatterDocsNav = ! $crmDetailNavIsLead && $matter_cnt > 0 && !($hideMatterDocumentsForBankMatter ?? false);
+                $cdnNavSelected = $cdnActiveTabSlug;
+                if ($cdnNavSelected === 'notuseddocuments') {
+                    $cdnNavSelected = 'personaldocuments';
+                } elseif ($cdnNavSelected === 'matterdocuments' && ! $cdnShowTopMatterDocsNav) {
+                    $cdnNavSelected = 'personaldocuments';
+                }
             ?>
                 <a href="{{ route('clients.index') }}" style="display: inline-block; border-radius: 9px; padding: 8px 18px; font-size: 13px; font-weight: 600; color: #334155; background: #fff; border: 1px solid #c7d7fa; text-decoration: none; text-align: center; margin-right: 4px; box-shadow: none; vertical-align: top;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#bfd7ff';" onmouseout="this.style.background='#fff'; this.style.borderColor='#c7d7fa';" title="Back to Client List">
                     <i class="fa-solid fa-arrow-left" style="margin-right: 5px;"></i> Back
                 </a>
-                <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button active" data-tab="personaldetails" aria-selected="true" aria-controls="personaldetails-tab">
+                <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button{{ $cdnNavSelected === 'personaldetails' ? ' active' : '' }}" data-tab="personaldetails" aria-selected="{{ $cdnNavSelected === 'personaldetails' ? 'true' : 'false' }}" aria-controls="personaldetails-tab">
                     <i class="fa-solid fa-table-cells-large" aria-hidden="true"></i>
                     <span>Overview</span>
                 </button>
-                <button type="button" role="tab" id="cdn-tab-activityfeed" class="client-nav-button" data-tab="activityfeed" aria-selected="false" aria-controls="activityfeed-tab">
+                <button type="button" role="tab" id="cdn-tab-activityfeed" class="client-nav-button{{ $cdnNavSelected === 'activityfeed' ? ' active' : '' }}" data-tab="activityfeed" aria-selected="{{ $cdnNavSelected === 'activityfeed' ? 'true' : 'false' }}" aria-controls="activityfeed-tab">
                     <i class="fa-solid fa-history" aria-hidden="true"></i>
                     <span>Timeline</span>
                 </button>
-                <button type="button" role="tab" id="cdn-tab-clientaction" class="client-nav-button" data-tab="clientaction" aria-selected="false" aria-controls="clientaction-tab">
+                <button type="button" role="tab" id="cdn-tab-clientaction" class="client-nav-button{{ $cdnNavSelected === 'clientaction' ? ' active' : '' }}" data-tab="clientaction" aria-selected="{{ $cdnNavSelected === 'clientaction' ? 'true' : 'false' }}" aria-controls="clientaction-tab">
                     <i class="fa-solid fa-list-check" aria-hidden="true"></i>
                     <span>Tasks</span>
                 </button>
-                <button type="button" role="tab" id="cdn-tab-noteterm" class="client-nav-button" data-tab="noteterm" aria-selected="false" aria-controls="noteterm-tab">
+                <button type="button" role="tab" id="cdn-tab-noteterm" class="client-nav-button{{ $cdnNavSelected === 'noteterm' ? ' active' : '' }}" data-tab="noteterm" aria-selected="{{ $cdnNavSelected === 'noteterm' ? 'true' : 'false' }}" aria-controls="noteterm-tab">
                     <i class="fa-solid fa-note-sticky" aria-hidden="true"></i>
                     <span>Notes</span>
                 </button>
-                <button type="button" role="tab" id="cdn-tab-personaldocuments" class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments" aria-selected="false" aria-controls="personaldocuments-tab">
+                <button type="button" role="tab" id="cdn-tab-personaldocuments" class="client-nav-button cdn-demo-doc-nav{{ $cdnNavSelected === 'personaldocuments' ? ' active' : '' }}" data-tab="personaldocuments" aria-selected="{{ $cdnNavSelected === 'personaldocuments' ? 'true' : 'false' }}" aria-controls="personaldocuments-tab">
                     <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
                     <span>Documents</span>
                 </button>
-                @if(! $crmDetailNavIsLead && $matter_cnt > 0 && !($hideMatterDocumentsForBankMatter ?? false))
-                <button type="button" role="tab" id="cdn-tab-matterdocuments-top" class="client-nav-button" data-tab="matterdocuments" aria-selected="false" aria-controls="matterdocuments-tab">
+                @if($cdnShowTopMatterDocsNav)
+                <button type="button" role="tab" id="cdn-tab-matterdocuments-top" class="client-nav-button{{ $cdnNavSelected === 'matterdocuments' ? ' active' : '' }}" data-tab="matterdocuments" aria-selected="{{ $cdnNavSelected === 'matterdocuments' ? 'true' : 'false' }}" aria-controls="matterdocuments-tab">
                     <i class="fa-solid fa-file-contract" aria-hidden="true"></i>
                     <span>Matter documents</span>
                 </button>
                 @endif
-                <button type="button" role="tab" id="cdn-tab-legalforms" class="client-nav-button" data-tab="legalforms" aria-selected="false" aria-controls="legalforms-tab">
+                <button type="button" role="tab" id="cdn-tab-legalforms" class="client-nav-button{{ $cdnNavSelected === 'legalforms' ? ' active' : '' }}" data-tab="legalforms" aria-selected="{{ $cdnNavSelected === 'legalforms' ? 'true' : 'false' }}" aria-controls="legalforms-tab">
                     <i class="fa-solid fa-file-signature" aria-hidden="true"></i>
                     <span>Legal Forms</span>
                 </button>
-                <button type="button" role="tab" id="cdn-tab-emails" class="client-nav-button" data-tab="emails" aria-selected="false" aria-controls="emails-tab">
+                <button type="button" role="tab" id="cdn-tab-emails" class="client-nav-button{{ $cdnNavSelected === 'emails' ? ' active' : '' }}" data-tab="emails" aria-selected="{{ $cdnNavSelected === 'emails' ? 'true' : 'false' }}" aria-controls="emails-tab">
                     <i class="fa-solid fa-inbox" aria-hidden="true"></i>
                     <span>Emails</span>
                 </button>
-                <button type="button" role="tab" id="cdn-tab-account" class="client-nav-button" data-tab="account" aria-selected="false" aria-controls="account-tab">
+                <button type="button" role="tab" id="cdn-tab-account" class="client-nav-button{{ $cdnNavSelected === 'account' ? ' active' : '' }}" data-tab="account" aria-selected="{{ $cdnNavSelected === 'account' ? 'true' : 'false' }}" aria-controls="account-tab">
                     <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
                     <span>Billing</span>
                 </button>
@@ -479,27 +486,28 @@ use App\Http\Controllers\Controller;
             else
             {  //If no matter is exist
                 $cdnShowMattersDocSubtab = false;
+                $cdnNavSelected = $cdnActiveTabSlug === 'notuseddocuments' ? 'personaldocuments' : $cdnActiveTabSlug;
             ?>
                 <a href="{{ route('clients.index') }}" style="display: inline-block; border-radius: 9px; padding: 8px 18px; font-size: 13px; font-weight: 600; color: #334155; background: #fff; border: 1px solid #c7d7fa; text-decoration: none; text-align: center; margin-right: 4px; box-shadow: none; vertical-align: top;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#bfd7ff';" onmouseout="this.style.background='#fff'; this.style.borderColor='#c7d7fa';" title="Back to Client List">
                     <i class="fa-solid fa-arrow-left" style="margin-right: 5px;"></i> Back
                 </a>
-                <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button active" data-tab="personaldetails" aria-selected="true" aria-controls="personaldetails-tab">
+                <button type="button" role="tab" id="cdn-tab-personaldetails" class="client-nav-button{{ $cdnNavSelected === 'personaldetails' ? ' active' : '' }}" data-tab="personaldetails" aria-selected="{{ $cdnNavSelected === 'personaldetails' ? 'true' : 'false' }}" aria-controls="personaldetails-tab">
                     <i class="fa-solid fa-table-cells-large" aria-hidden="true"></i>
                     <span>Overview</span>
                 </button>
-                <button type="button" role="tab" id="cdn-tab-activityfeed" class="client-nav-button" data-tab="activityfeed" aria-selected="false" aria-controls="activityfeed-tab">
+                <button type="button" role="tab" id="cdn-tab-activityfeed" class="client-nav-button{{ $cdnNavSelected === 'activityfeed' ? ' active' : '' }}" data-tab="activityfeed" aria-selected="{{ $cdnNavSelected === 'activityfeed' ? 'true' : 'false' }}" aria-controls="activityfeed-tab">
                     <i class="fa-solid fa-history" aria-hidden="true"></i>
                     <span>Timeline</span>
                 </button>
-                <button type="button" role="tab" id="cdn-tab-clientaction" class="client-nav-button" data-tab="clientaction" aria-selected="false" aria-controls="clientaction-tab">
+                <button type="button" role="tab" id="cdn-tab-clientaction" class="client-nav-button{{ $cdnNavSelected === 'clientaction' ? ' active' : '' }}" data-tab="clientaction" aria-selected="{{ $cdnNavSelected === 'clientaction' ? 'true' : 'false' }}" aria-controls="clientaction-tab">
                     <i class="fa-solid fa-list-check" aria-hidden="true"></i>
                     <span>Tasks</span>
                 </button>
-                <button type="button" role="tab" id="cdn-tab-noteterm" class="client-nav-button" data-tab="noteterm" aria-selected="false" aria-controls="noteterm-tab">
+                <button type="button" role="tab" id="cdn-tab-noteterm" class="client-nav-button{{ $cdnNavSelected === 'noteterm' ? ' active' : '' }}" data-tab="noteterm" aria-selected="{{ $cdnNavSelected === 'noteterm' ? 'true' : 'false' }}" aria-controls="noteterm-tab">
                     <i class="fa-solid fa-note-sticky" aria-hidden="true"></i>
                     <span>Notes</span>
                 </button>
-                <button type="button" role="tab" id="cdn-tab-personaldocuments" class="client-nav-button cdn-demo-doc-nav" data-tab="personaldocuments" aria-selected="false" aria-controls="personaldocuments-tab">
+                <button type="button" role="tab" id="cdn-tab-personaldocuments" class="client-nav-button cdn-demo-doc-nav{{ $cdnNavSelected === 'personaldocuments' ? ' active' : '' }}" data-tab="personaldocuments" aria-selected="{{ $cdnNavSelected === 'personaldocuments' ? 'true' : 'false' }}" aria-controls="personaldocuments-tab">
                     <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
                     <span>Documents</span>
                 </button>

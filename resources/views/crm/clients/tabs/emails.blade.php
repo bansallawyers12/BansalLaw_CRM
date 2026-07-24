@@ -1,4 +1,4 @@
            <!-- Emails Tab -->
-           <div class="tab-pane" id="emails-tab">
+           <div class="tab-pane{{ strtolower((string) ($activeTab ?? '')) === 'emails' ? ' active' : '' }}" id="emails-tab">
                 @include('crm.emails_outlook')
             </div>

@@ -1,5 +1,5 @@
            <!-- Account Tab -->
-           <div class="tab-pane" id="account-tab">
+           <div class="tab-pane{{ strtolower((string) ($activeTab ?? '')) === 'account' ? ' active' : '' }}" id="account-tab">
 <?php use Illuminate\Support\Facades\Storage; ?>
 @php
     $__account_matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id', $fetchedData->id)->where('matter_status', 1)->count();

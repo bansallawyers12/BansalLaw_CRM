@@ -1,4 +1,4 @@
-<div class="tab-pane active" id="personaldetails-tab">
+<div class="tab-pane{{ strtolower((string) ($activeTab ?? 'personaldetails')) === 'personaldetails' ? ' active' : '' }}" id="personaldetails-tab">
                 @php
                     $__sch = \Illuminate\Support\Facades\Schema::class;
                     $detailHasMatterTeam = $__sch::hasTable('client_matters')

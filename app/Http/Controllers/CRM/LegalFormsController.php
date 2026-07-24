@@ -56,9 +56,20 @@ class LegalFormsController extends Controller
             'retainer_amount' => 'nullable|numeric|min:0',
             'payment_reference' => 'nullable|string|max:100',
             'authority_scope' => 'nullable|string',
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,bmp,pdf,doc,docx,txt,xls,xlsx|max:10240',
         ]);
 
-        $data = $request->all();
+        $data = $request->except(['attachment']);
+
+        if (empty($data['client_matter_id']) && ! empty($data['matter_reference'])) {
+            $resolvedMatterId = ClientMatter::query()
+                ->where('client_id', (int) $data['client_id'])
+                ->where('client_unique_matter_no', trim((string) $data['matter_reference']))
+                ->value('id');
+            if ($resolvedMatterId) {
+                $data['client_matter_id'] = $resolvedMatterId;
+            }
+        }
         $data['created_by'] = Auth::id();
 
         // Ensure numeric fields are never null
@@ -79,8 +90,12 @@ class LegalFormsController extends Controller
         }
 
         try {
-            $form = DB::transaction(function () use ($data) {
+            $form = DB::transaction(function () use ($request, $data) {
                 $form = ClientLegalForm::create($data);
+                $attachmentMeta = $this->storeAttachment($request, (int) $form->client_id);
+                if ($attachmentMeta !== []) {
+                    $form->update($attachmentMeta);
+                }
                 $docxPath = $this->docxService->generate($form);
                 $form->update(['pdf_path' => $docxPath]);
 
@@ -168,9 +183,8 @@ class LegalFormsController extends Controller
 
     public function destroy(ClientLegalForm $legalForm): JsonResponse
     {
-        if ($legalForm->pdf_path && file_exists(public_path($legalForm->pdf_path))) {
-            unlink(public_path($legalForm->pdf_path));
-        }
+        $this->deleteStoredFile($legalForm->pdf_path);
+        $this->deleteStoredFile($legalForm->attachment_path);
         $legalForm->delete();
 
         return response()->json([
@@ -197,6 +211,61 @@ class LegalFormsController extends Controller
         return response()->download($fullPath, $filename, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         ]);
+    }
+
+    public function downloadAttachment(ClientLegalForm $legalForm)
+    {
+        $path = $legalForm->attachment_path;
+        if (! $path) {
+            abort(404, 'Attachment not found.');
+        }
+
+        $fullPath = public_path($path);
+        if (! file_exists($fullPath)) {
+            abort(404, 'Attachment not found.');
+        }
+
+        $filename = $legalForm->attachment_original_name ?: basename($path);
+
+        return response()->download($fullPath, $filename);
+    }
+
+    /**
+     * @return array{attachment_path?: string, attachment_original_name?: string}
+     */
+    private function storeAttachment(Request $request, int $clientId): array
+    {
+        if (! $request->hasFile('attachment')) {
+            return [];
+        }
+
+        $file = $request->file('attachment');
+        $dir = 'legal_forms/' . $clientId . '/attachments';
+        $fullDir = public_path($dir);
+        if (! is_dir($fullDir)) {
+            mkdir($fullDir, 0755, true);
+        }
+
+        $originalName = $file->getClientOriginalName();
+        $safeName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+        $file->move($fullDir, $safeName);
+
+        return [
+            'attachment_path' => $dir . '/' . $safeName,
+            'attachment_original_name' => $originalName,
+        ];
+    }
+
+    private function deleteStoredFile(?string $relativePath): void
+    {
+        if (! $relativePath) {
+            return;
+        }
+
+        $fullPath = public_path($relativePath);
+        if (file_exists($fullPath)) {
+            unlink($fullPath);
+        }
     }
 
     public function previewDocx(ClientLegalForm $legalForm)
@@ -431,7 +500,7 @@ class LegalFormsController extends Controller
         $response = $http->post('https://api.anthropic.com/v1/messages', [
             'model' => config('services.anthropic.model'),
             'max_tokens' => 1000,
-           // 'system' => $systemPrompt,
+            'system' => $systemPrompt,
             'messages' => [
                 [
                     'role' => 'user',
@@ -440,16 +509,13 @@ class LegalFormsController extends Controller
             ],
         ]);
 
-       
         if (! $response->successful()) {
-           
             $err = $response->json('error.message') ?? $response->body();
 
             throw new \RuntimeException(is_string($err) ? $err : 'Anthropic request failed');
         }
 
         $data = $response->json();
-      
 
         $blocks = $data['content'] ?? [];
         $text = '';

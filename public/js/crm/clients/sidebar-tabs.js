@@ -430,10 +430,18 @@
      * fresh page load.
      */
     function activateInitialTab(activeTabFromUrl) {
-        // Check localStorage first (takes precedence for better UX when returning to page)
+        // Deep links / shared URLs (.../legalforms) must win over a stale localStorage tab.
+        // localStorage is only used when the path has no explicit tab slug.
         const storedTab = localStorage.getItem('activeTab');
-        let tabId = storedTab || activeTabFromUrl || 'personaldetails';
-        
+        const pathSegs = String(window.location.pathname || '').split('/').filter(Boolean);
+        const lastSeg = pathSegs.length ? pathSegs[pathSegs.length - 1] : '';
+        const urlHasExplicitTab = !!(window.ClientDetailShared
+            && typeof window.ClientDetailShared.isClientDetailTabSlug === 'function'
+            && window.ClientDetailShared.isClientDetailTabSlug(lastSeg));
+        let tabId = (urlHasExplicitTab && activeTabFromUrl)
+            ? activeTabFromUrl
+            : (storedTab || activeTabFromUrl || 'personaldetails');
+
         // Clear localStorage after reading to prevent stale tab persistence
         if (storedTab) {
             localStorage.removeItem('activeTab');

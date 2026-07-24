@@ -1,5 +1,5 @@
            <!-- Not Used Documents Tab (Shared - Client Level) -->
-           <div class="tab-pane" id="notuseddocuments-tab">
+           <div class="tab-pane{{ strtolower((string) ($activeTab ?? '')) === 'notuseddocuments' ? ' active' : '' }}" id="notuseddocuments-tab">
                 <div class="card full-width documentalls-container not-used-documents-page">
                     <?php
                     $notUsedDocs = collect();

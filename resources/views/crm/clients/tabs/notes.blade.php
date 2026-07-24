@@ -1,5 +1,5 @@
             <!-- Notes Tab -->
-            <div class="tab-pane" id="noteterm-tab">
+            <div class="tab-pane{{ strtolower((string) ($activeTab ?? '')) === 'noteterm' ? ' active' : '' }}" id="noteterm-tab">
                 <div class="card full-width notes-container">
                     <div class="notes-header">
                         <h3><i class="fa-solid fa-file-lines"></i> Notes</h3>
