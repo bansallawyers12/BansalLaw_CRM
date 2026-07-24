@@ -17,7 +17,7 @@
 | [CROSS_ACCESS_IMPLEMENTATION_PLAN.md](CROSS_ACCESS_IMPLEMENTATION_PLAN.md) | Allocated-only visibility, quick/supervisor access grants |
 | [CLIENT_INTAKE_FORM_INSTRUCTIONS.md](CLIENT_INTAKE_FORM_INSTRUCTIONS.md) | Website lead form JSON → CRM import |
 | [theme.md](theme.md) | UI colour tokens (Powder Blue & Soft Gold) |
-| [FONT_AWESOME_MIGRATION.md](FONT_AWESOME_MIGRATION.md) | Font Awesome 6 migration (complete) |
+| [FONT_AWESOME_MIGRATION.md](FONT_AWESOME_MIGRATION.md) | Font Awesome local FA7 + class migration (complete) |
 
 ## Database column guides
 
