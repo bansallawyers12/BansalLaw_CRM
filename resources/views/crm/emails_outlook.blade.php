@@ -348,11 +348,20 @@
         </div>
         @endif
 
-        <div class="pagination-bar">
-            <span id="pageInfo">Loading...</span>
+        <div class="pagination-bar" id="emailPaginationBar">
+            <div class="pagination-bar__summary">
+                <span class="pagination-bar__page" id="pageSummary">Page 1 of 1</span>
+                <span class="pagination-bar__count" id="pageInfo">0 emails</span>
+            </div>
             <div class="pagination-controls">
-                <button id="prevBtn" disabled><i class="fa-solid fa-chevron-left"></i></button>
-                <button id="nextBtn" disabled><i class="fa-solid fa-chevron-right"></i></button>
+                <button type="button" class="pagination-btn" id="prevBtn" disabled aria-label="Previous page">
+                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                    <span>Previous</span>
+                </button>
+                <button type="button" class="pagination-btn" id="nextBtn" disabled aria-label="Next page">
+                    <span>Next</span>
+                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -369,12 +378,15 @@
         <div class="reading-pane-content" id="readingPane">
             <div class="reading-header">
                 <div class="gmail-reading-toolbar" id="gmailReadingToolbar" hidden>
-                    <button type="button" class="gmail-back-btn" id="btnGmailBack" aria-label="Back to email list">
-                        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-                        <span>Back to list</span>
-                    </button>
+                    <div class="gmail-reading-toolbar__top">
+                        <button type="button" class="gmail-back-btn" id="btnGmailBack" aria-label="Back to email list">
+                            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                            <span>Back to list</span>
+                        </button>
+                        <span class="gmail-reading-toolbar__hint">Reading email</span>
+                    </div>
                 </div>
-                <div class="action-bar">
+                <div class="action-bar action-bar--reading">
                     <button class="action-btn" id="btnReply"><i class="fa-solid fa-reply"></i> Reply</button>
                     <button class="action-btn" id="btnReplyAll"><i class="fa-solid fa-reply-all"></i> Reply All</button>
                     <button class="action-btn" id="btnForward"><i class="fa-solid fa-share"></i> Forward</button>
