@@ -377,16 +377,49 @@
         <!-- Email Content (Hidden by default) -->
         <div class="reading-pane-content" id="readingPane">
             <div class="reading-header">
-                <div class="gmail-reading-toolbar" id="gmailReadingToolbar" hidden>
-                    <div class="gmail-reading-toolbar__top">
-                        <button type="button" class="gmail-back-btn" id="btnGmailBack" aria-label="Back to email list">
+                <div class="gmail-read-topbar" id="gmailReadingToolbar" hidden>
+                    <div class="gmail-read-topbar__left">
+                        <button type="button" class="gmail-icon-btn" id="btnGmailBack" aria-label="Back to email list">
                             <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-                            <span>Back to list</span>
                         </button>
-                        <span class="gmail-reading-toolbar__hint">Reading email</span>
+                        <div class="gmail-read-topbar__actions">
+                            @if($canDeleteEmail)
+                            <button type="button" class="gmail-icon-btn" id="gmailIconDelete" title="Delete" hidden>
+                                <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                            </button>
+                            @endif
+                            <button type="button" class="gmail-icon-btn" id="gmailIconMarkRead" title="Mark as read" hidden>
+                                <i class="fa-solid fa-envelope-open" aria-hidden="true"></i>
+                            </button>
+                            @if($canSyncInbox)
+                            <button type="button" class="gmail-icon-btn" id="gmailIconAssign" title="Assign to client" hidden>
+                                <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+                            </button>
+                            @endif
+                            <div class="gmail-read-more-wrap">
+                                <button type="button" class="gmail-icon-btn" id="gmailIconMore" title="More actions" aria-expanded="false" aria-haspopup="true">
+                                    <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+                                </button>
+                                <div class="gmail-read-more-menu" id="gmailReadMoreMenu" hidden role="menu">
+                                    <button type="button" class="gmail-read-more-item" id="gmailMenuReply" role="menuitem"><i class="fa-solid fa-reply"></i> Reply</button>
+                                    <button type="button" class="gmail-read-more-item" id="gmailMenuReplyAll" role="menuitem"><i class="fa-solid fa-reply-all"></i> Reply all</button>
+                                    <button type="button" class="gmail-read-more-item" id="gmailMenuForward" role="menuitem"><i class="fa-solid fa-share"></i> Forward</button>
+                                    <button type="button" class="gmail-read-more-item" id="gmailMenuResend" role="menuitem" hidden><i class="fa-solid fa-rotate-right"></i> Resend</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="gmail-read-topbar__right">
+                        <span class="gmail-read-position" id="gmailReadPosition"></span>
+                        <button type="button" class="gmail-icon-btn" id="gmailReadPrev" aria-label="Previous email">
+                            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" class="gmail-icon-btn" id="gmailReadNext" aria-label="Next email">
+                            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                        </button>
                     </div>
                 </div>
-                <div class="action-bar action-bar--reading">
+                <div class="action-bar action-bar--reading action-bar--outlook">
                     <button class="action-btn" id="btnReply"><i class="fa-solid fa-reply"></i> Reply</button>
                     <button class="action-btn" id="btnReplyAll"><i class="fa-solid fa-reply-all"></i> Reply All</button>
                     <button class="action-btn" id="btnForward"><i class="fa-solid fa-share"></i> Forward</button>
@@ -407,9 +440,12 @@
                     </button>
                     @endif
                 </div>
-                
-                <h2 class="email-full-subject" id="readSubject">Loading...</h2>
-                
+
+                <div class="gmail-read-subject-row">
+                    <h2 class="email-full-subject" id="readSubject">Loading...</h2>
+                    <span class="gmail-folder-chip" id="gmailFolderChip" hidden></span>
+                </div>
+
                 <div class="email-meta">
                     <div class="sender-avatar" id="readAvatar">?</div>
                     <div class="meta-details">
@@ -418,16 +454,35 @@
                         <div class="meta-recipients meta-cc" id="readCc" hidden></div>
                         <div class="meta-recipients meta-bcc" id="readBcc" hidden></div>
                     </div>
-                    <div class="meta-date" id="readDate"></div>
+                    <div class="gmail-read-meta__right">
+                        <div class="meta-date" id="readDate"></div>
+                        <div class="gmail-read-meta__icons">
+                            <button type="button" class="gmail-icon-btn gmail-icon-btn--sm" id="gmailMetaReply" title="Reply">
+                                <i class="fa-solid fa-reply" aria-hidden="true"></i>
+                            </button>
+                            <button type="button" class="gmail-icon-btn gmail-icon-btn--sm" id="gmailMetaMore" title="More actions" aria-expanded="false">
+                                <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div class="email-send-error" id="readSendError" hidden></div>
                 <div class="email-calendar-banner" id="readCalendarBanner" hidden></div>
             </div>
 
             <div id="attachmentsContainer" class="email-attachments-container reading-attachments" hidden></div>
-            
+
             <div class="reading-body">
                 <iframe id="readBody"></iframe>
+            </div>
+
+            <div class="gmail-read-footer" id="gmailReadingFooter" hidden>
+                <button type="button" class="gmail-pill-btn" id="gmailFooterReply">
+                    <i class="fa-solid fa-reply" aria-hidden="true"></i> Reply
+                </button>
+                <button type="button" class="gmail-pill-btn" id="gmailFooterForward">
+                    <i class="fa-solid fa-share" aria-hidden="true"></i> Forward
+                </button>
             </div>
         </div>
     </div>

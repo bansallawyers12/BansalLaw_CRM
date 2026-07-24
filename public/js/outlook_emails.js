@@ -118,6 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const syncStatusUrlBase = outlookContainer ? outlookContainer.getAttribute('data-sync-status-url') : '';
     const canSyncInbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-sync-inbox') === '1');
     const canViewSyncedInbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-view-synced-inbox') === '1');
+    const canDeleteEmail = !!(outlookContainer && outlookContainer.dataset.canDeleteEmail === '1');
     const canSelectSyncMailbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-select-sync-mailbox') === '1');
     const mattersUrl = outlookContainer ? outlookContainer.getAttribute('data-matters-url') : '';
     const updateMailReadUrl = outlookContainer ? (outlookContainer.getAttribute('data-update-mail-read-url') || '') : '';
@@ -127,6 +128,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnMarkRead = document.getElementById('btnMarkRead');
     const btnGmailBack = document.getElementById('btnGmailBack');
     const gmailReadingToolbar = document.getElementById('gmailReadingToolbar');
+    const gmailReadingFooter = document.getElementById('gmailReadingFooter');
+    const gmailFolderChip = document.getElementById('gmailFolderChip');
+    const gmailReadPosition = document.getElementById('gmailReadPosition');
+    const gmailReadPrev = document.getElementById('gmailReadPrev');
+    const gmailReadNext = document.getElementById('gmailReadNext');
+    const gmailReadMoreMenu = document.getElementById('gmailReadMoreMenu');
+    const gmailIconDelete = document.getElementById('gmailIconDelete');
+    const gmailIconMarkRead = document.getElementById('gmailIconMarkRead');
+    const gmailIconAssign = document.getElementById('gmailIconAssign');
+    const gmailIconMore = document.getElementById('gmailIconMore');
+    const gmailMenuResend = document.getElementById('gmailMenuResend');
+    const GMAIL_FOLDER_LABELS = {
+        inbox: 'Inbox',
+        unread: 'Unread',
+        sent: 'Sent',
+        outbox: 'Outbox',
+        unassigned: 'Unassigned',
+        assigned: 'Assigned'
+    };
+    let listTotal = 0;
+    let listFrom = 0;
+    let listLastPage = 1;
     const emailUiModeSwitch = document.getElementById('emailUiModeSwitch');
     const outlookListPane = document.querySelector('.outlook-list-pane');
     const EMAIL_UI_MODE_STORAGE_KEY = 'crm_email_ui_mode';
@@ -205,6 +228,53 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    if (gmailReadPrev) {
+        gmailReadPrev.addEventListener('click', function () {
+            navigateGmailEmail('prev');
+        });
+    }
+
+    if (gmailReadNext) {
+        gmailReadNext.addEventListener('click', function () {
+            navigateGmailEmail('next');
+        });
+    }
+
+    if (gmailIconDelete) {
+        gmailIconDelete.addEventListener('click', function () {
+            proxyClickButton(document.getElementById('btnDeleteEmail'));
+        });
+    }
+
+    if (gmailIconMarkRead && btnMarkRead) {
+        gmailIconMarkRead.addEventListener('click', function () {
+            proxyClickButton(btnMarkRead);
+        });
+    }
+
+    if (gmailIconAssign && btnAssignToClient) {
+        gmailIconAssign.addEventListener('click', function () {
+            proxyClickButton(btnAssignToClient);
+        });
+    }
+
+    if (gmailIconMore) {
+        gmailIconMore.addEventListener('click', function (event) {
+            event.stopPropagation();
+            toggleGmailReadMoreMenu();
+        });
+    }
+
+    document.addEventListener('click', function (event) {
+        if (!gmailReadMoreMenu || gmailReadMoreMenu.hidden) {
+            return;
+        }
+        if (event.target.closest('.gmail-read-more-wrap')) {
+            return;
+        }
+        closeGmailReadMoreMenu();
+    });
 
     window.addEventListener('resize', function () {
         if (!isGmailUiMode() || !outlookContainer || !outlookContainer.classList.contains('gmail-reading-open')) {
@@ -438,6 +508,177 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function closeGmailReadMoreMenu() {
+        if (!gmailReadMoreMenu) {
+            return;
+        }
+        gmailReadMoreMenu.hidden = true;
+        if (gmailIconMore) {
+            gmailIconMore.setAttribute('aria-expanded', 'false');
+        }
+    }
+
+    function toggleGmailReadMoreMenu() {
+        if (!gmailReadMoreMenu || !gmailIconMore) {
+            return;
+        }
+        const open = gmailReadMoreMenu.hidden;
+        gmailReadMoreMenu.hidden = !open;
+        gmailIconMore.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    function proxyClickButton(button) {
+        if (button && !button.hidden && !button.disabled) {
+            button.click();
+        }
+    }
+
+    function getCurrentFolderLabel() {
+        return GMAIL_FOLDER_LABELS[currentFolder] || 'Inbox';
+    }
+
+    function updateGmailReadNav() {
+        if (!isGmailUiMode() || !gmailReadPosition) {
+            return;
+        }
+
+        const idx = emails.findIndex(function (item) {
+            return item.id === selectedEmailId;
+        });
+
+        if (idx === -1 || listTotal <= 0) {
+            gmailReadPosition.textContent = '';
+            if (gmailReadPrev) {
+                gmailReadPrev.disabled = true;
+            }
+            if (gmailReadNext) {
+                gmailReadNext.disabled = true;
+            }
+            return;
+        }
+
+        const position = Math.max(1, listFrom + idx);
+        gmailReadPosition.textContent = position + ' of ' + listTotal;
+
+        if (gmailReadPrev) {
+            gmailReadPrev.disabled = idx <= 0 && currentPage <= 1;
+        }
+        if (gmailReadNext) {
+            gmailReadNext.disabled = idx >= emails.length - 1 && currentPage >= listLastPage;
+        }
+    }
+
+    function updateGmailReadingChrome(email) {
+        if (!isGmailUiMode()) {
+            return;
+        }
+
+        if (gmailFolderChip) {
+            gmailFolderChip.textContent = getCurrentFolderLabel();
+            gmailFolderChip.hidden = false;
+        }
+
+        if (gmailIconDelete) {
+            gmailIconDelete.hidden = !canDeleteEmail;
+        }
+        if (gmailIconMarkRead) {
+            gmailIconMarkRead.hidden = !email || !isEmailUnread(email);
+        }
+        if (gmailIconAssign && btnAssignToClient) {
+            gmailIconAssign.hidden = btnAssignToClient.hidden;
+        }
+        if (gmailMenuResend && btnResend) {
+            gmailMenuResend.hidden = btnResend.hidden;
+        }
+
+        updateGmailReadNav();
+        closeGmailReadMoreMenu();
+    }
+
+    function navigateGmailEmail(direction) {
+        if (!selectedEmailId || !emails.length) {
+            return;
+        }
+
+        const idx = emails.findIndex(function (item) {
+            return item.id === selectedEmailId;
+        });
+        if (idx === -1) {
+            return;
+        }
+
+        if (direction === 'prev') {
+            if (idx > 0) {
+                const prevEmail = emails[idx - 1];
+                const el = emailListContainer.querySelector('[data-email-id="' + prevEmail.id + '"]');
+                showEmail(prevEmail, el);
+                return;
+            }
+            if (currentPage > 1) {
+                currentPage -= 1;
+                loadEmails().then(function () {
+                    if (emails.length) {
+                        const lastEmail = emails[emails.length - 1];
+                        const el = emailListContainer.querySelector('[data-email-id="' + lastEmail.id + '"]');
+                        showEmail(lastEmail, el);
+                    }
+                });
+            }
+            return;
+        }
+
+        if (idx < emails.length - 1) {
+            const nextEmail = emails[idx + 1];
+            const el = emailListContainer.querySelector('[data-email-id="' + nextEmail.id + '"]');
+            showEmail(nextEmail, el);
+            return;
+        }
+
+        if (currentPage < listLastPage) {
+            currentPage += 1;
+            loadEmails().then(function () {
+                if (emails.length) {
+                    const firstEmail = emails[0];
+                    const el = emailListContainer.querySelector('[data-email-id="' + firstEmail.id + '"]');
+                    showEmail(firstEmail, el);
+                }
+            });
+        }
+    }
+
+    function formatGmailReadDate(email) {
+        const dateValue = getEmailDate(email);
+        const formatted = formatEmailDate(dateValue);
+        if (!formatted) {
+            return '';
+        }
+
+        try {
+            const date = new Date(dateValue);
+            if (isNaN(date.getTime())) {
+                return formatted;
+            }
+
+            const now = new Date();
+            const diffMs = now.getTime() - date.getTime();
+            const diffMins = Math.floor(diffMs / 60000);
+            if (diffMins >= 0 && diffMins < 60 * 24) {
+                if (diffMins < 1) {
+                    return formatted + ' (just now)';
+                }
+                if (diffMins < 60) {
+                    return formatted + ' (' + diffMins + ' min ago)';
+                }
+                const diffHours = Math.floor(diffMins / 60);
+                return formatted + ' (' + diffHours + ' hr ago)';
+            }
+        } catch (error) {
+            // Fall back to plain formatted date.
+        }
+
+        return formatted;
+    }
+
     function closeGmailReadingView() {
         if (!outlookContainer) {
             return;
@@ -448,6 +689,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (gmailReadingToolbar) {
             gmailReadingToolbar.hidden = true;
         }
+        if (gmailReadingFooter) {
+            gmailReadingFooter.hidden = true;
+        }
+        closeGmailReadMoreMenu();
     }
 
     function openGmailReadingView() {
@@ -459,6 +704,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.classList.add('gmail-email-reading-open');
         if (gmailReadingToolbar) {
             gmailReadingToolbar.hidden = false;
+        }
+        if (gmailReadingFooter) {
+            gmailReadingFooter.hidden = false;
         }
     }
 
@@ -492,6 +740,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function updatePaginationDisplay(total, lastPage, from, to) {
         const safeLastPage = Math.max(1, Number(lastPage) || 1);
         const safeTotal = Math.max(0, Number(total) || 0);
+        listTotal = safeTotal;
+        listFrom = Math.max(0, Number(from) || 0);
+        listLastPage = safeLastPage;
 
         if (pageSummary) {
             pageSummary.textContent = 'Page ' + currentPage + ' of ' + safeLastPage;
@@ -511,6 +762,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (nextBtn) {
             nextBtn.disabled = currentPage >= safeLastPage || safeTotal === 0;
         }
+
+        updateGmailReadNav();
     }
 
     function resizeReadBodyForGmail(iframe) {
@@ -579,6 +832,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         btnMarkRead.hidden = !email || !isEmailUnread(email);
+        if (gmailIconMarkRead) {
+            gmailIconMarkRead.hidden = btnMarkRead.hidden;
+        }
     }
 
     function isSyncedInboxFolder(folder) {
@@ -1220,10 +1476,63 @@ document.addEventListener('DOMContentLoaded', function() {
         btnResend.addEventListener('click', () => openComposeResend());
     }
 
-    const canDeleteEmail = outlookContainer && outlookContainer.dataset.canDeleteEmail === '1';
     const btnDeleteEmail = document.getElementById('btnDeleteEmail');
     if (btnDeleteEmail && canDeleteEmail) {
         btnDeleteEmail.addEventListener('click', handleDeleteEmail);
+    }
+
+    const gmailMenuReply = document.getElementById('gmailMenuReply');
+    const gmailMenuReplyAll = document.getElementById('gmailMenuReplyAll');
+    const gmailMenuForward = document.getElementById('gmailMenuForward');
+    const gmailMetaReply = document.getElementById('gmailMetaReply');
+    const gmailMetaMore = document.getElementById('gmailMetaMore');
+    const gmailFooterReply = document.getElementById('gmailFooterReply');
+    const gmailFooterForward = document.getElementById('gmailFooterForward');
+
+    if (gmailMenuReply) {
+        gmailMenuReply.addEventListener('click', function () {
+            closeGmailReadMoreMenu();
+            proxyClickButton(btnReply);
+        });
+    }
+    if (gmailMenuReplyAll) {
+        gmailMenuReplyAll.addEventListener('click', function () {
+            closeGmailReadMoreMenu();
+            proxyClickButton(btnReplyAll);
+        });
+    }
+    if (gmailMenuForward) {
+        gmailMenuForward.addEventListener('click', function () {
+            closeGmailReadMoreMenu();
+            proxyClickButton(btnForward);
+        });
+    }
+    if (gmailMenuResend && btnResend) {
+        gmailMenuResend.addEventListener('click', function () {
+            closeGmailReadMoreMenu();
+            proxyClickButton(btnResend);
+        });
+    }
+    if (gmailMetaReply) {
+        gmailMetaReply.addEventListener('click', function () {
+            proxyClickButton(btnReply);
+        });
+    }
+    if (gmailMetaMore) {
+        gmailMetaMore.addEventListener('click', function (event) {
+            event.stopPropagation();
+            toggleGmailReadMoreMenu();
+        });
+    }
+    if (gmailFooterReply) {
+        gmailFooterReply.addEventListener('click', function () {
+            proxyClickButton(btnReply);
+        });
+    }
+    if (gmailFooterForward) {
+        gmailFooterForward.addEventListener('click', function () {
+            proxyClickButton(btnForward);
+        });
     }
 
     // File Upload Handler
@@ -3268,6 +3577,14 @@ document.addEventListener('DOMContentLoaded', function() {
         readingPane.classList.add('is-visible');
         openGmailReadingView();
 
+        selectedEmailId = email.id;
+        if (listElement) {
+            document.querySelectorAll('.email-item, .email-item--synced, .email-item--synced-compact').forEach(function (item) {
+                item.classList.remove('active');
+            });
+            listElement.classList.add('active');
+        }
+
         if (isGmailUiMode()) {
             const readingBody = document.querySelector('#readingPane .reading-body');
             if (readingBody) {
@@ -3290,7 +3607,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const readToEl = document.getElementById('readTo');
         const readCcEl = document.getElementById('readCc');
         const toLine = formatRecipientLine('To', email.to_mail);
-        readToEl.textContent = toLine || 'To: Unknown';
+        if (isGmailUiMode()) {
+            readToEl.innerHTML = '<span class="gmail-to-me">to me <i class="fa-solid fa-caret-down" aria-hidden="true"></i></span>';
+            readToEl.title = toLine || 'To: Unknown';
+        } else {
+            readToEl.textContent = toLine || 'To: Unknown';
+            readToEl.removeAttribute('title');
+        }
 
         if (readCcEl) {
             const ccLine = formatRecipientLine('Cc', email.cc);
@@ -3335,11 +3658,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 && (email.sync_assignment_status === 'unassigned' || (!email.client_id && email.mailbox_email));
             btnAssignToClient.hidden = !canSyncInbox || !needsAssign;
         }
-        
-        document.getElementById('readDate').textContent = formatEmailDate(getEmailDate(email));
 
+        const readDateEl = document.getElementById('readDate');
+        if (readDateEl) {
+            readDateEl.textContent = isGmailUiMode()
+                ? formatGmailReadDate(email)
+                : formatEmailDate(getEmailDate(email));
+        }
+        
         const initial = (email.from_mail || '?').charAt(0).toUpperCase();
         document.getElementById('readAvatar').textContent = initial;
+
+        updateGmailReadingChrome(email);
 
         // Render Attachments if any exist
         const attachmentsContainer = document.getElementById('attachmentsContainer');
