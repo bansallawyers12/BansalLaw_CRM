@@ -4338,7 +4338,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (assignClientSelect) {
             let clientTs = null;
             if (typeof buildGetAllClientsTomSelectConfig === 'function' && clientsUrl) {
-                clientTs = initTS(assignClientSelect, buildGetAllClientsTomSelectConfig({
+                const clientTsConfig = buildGetAllClientsTomSelectConfig({
                     url: clientsUrl,
                     dropdownParent: dropdownParent,
                     placeholder: 'Type name, email, or client ref...',
@@ -4365,7 +4365,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         updateAssignConfirmButton();
                         updateAssignStepProgress();
                     }
-                }));
+                });
+                // Hide the empty placeholder <option> from the dropdown list; it
+                // otherwise renders as a fake selectable row above the results.
+                clientTsConfig.allowEmptyOption = false;
+                clientTs = initTS(assignClientSelect, clientTsConfig);
                 if (clientTs && clientTs.wrapper) {
                     clientTs.wrapper.classList.add('assign-email-ts');
                     clientTs.wrapper.style.width = '100%';
@@ -4509,6 +4513,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     assignClientSelect.value = clientId;
                 }
                 loadAssignMattersForClient(clientId);
+            } else if (assignClientSelect && assignClientSelect.tomselect) {
+                assignClientSelect.tomselect.focus();
             }
             updateAssignStepProgress();
         });
