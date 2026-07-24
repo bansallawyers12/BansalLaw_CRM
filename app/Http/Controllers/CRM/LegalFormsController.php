@@ -9,6 +9,8 @@ use App\Models\ClientMatter;
 use App\Models\Document;
 use App\Models\Note;
 use App\Services\LegalFormDocxService;
+use App\Services\PythonConverterService;
+use PhpOffice\PhpWord\IOFactory;
 use GuzzleHttp\Client;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -230,6 +232,42 @@ class LegalFormsController extends Controller
         return response()->download($fullPath, $filename);
     }
 
+    public function uploadAttachment(Request $request, ClientLegalForm $legalForm): JsonResponse
+    {
+        $request->validate([
+            'attachment' => 'required|file|mimes:jpg,jpeg,png,gif,webp,bmp,pdf,doc,docx,txt,xls,xlsx|max:10240',
+        ]);
+
+        try {
+            $this->deleteStoredFile($legalForm->attachment_path);
+            $attachmentMeta = $this->storeAttachment($request, (int) $legalForm->client_id);
+            if ($attachmentMeta === []) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No attachment file was received.',
+                ], 422);
+            }
+
+            $legalForm->update($attachmentMeta);
+        } catch (\Throwable $e) {
+            Log::error('Legal form attachment upload failed', [
+                'legal_form_id' => $legalForm->id,
+                'exception' => $e,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage() ?: 'Could not upload the attachment.',
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Attachment uploaded successfully.',
+            'form' => $legalForm->fresh()->load(['client', 'matter', 'creator']),
+        ]);
+    }
+
     /**
      * @return array{attachment_path?: string, attachment_original_name?: string}
      */
@@ -268,20 +306,122 @@ class LegalFormsController extends Controller
         }
     }
 
-    public function previewDocx(ClientLegalForm $legalForm)
+    public function previewDocx(Request $request, ClientLegalForm $legalForm)
     {
         $docxPath = $this->docxService->generate($legalForm);
         $legalForm->update(['pdf_path' => $docxPath]);
 
         $fullPath = public_path($docxPath);
-        if (!file_exists($fullPath)) {
+        if (! file_exists($fullPath)) {
             abort(404, 'Document not found.');
         }
 
-        return response()->download($fullPath, null, [
+        $client = $legalForm->client;
+        $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
+        $typeLabel = str_replace(' ', '_', ClientLegalForm::FORM_TYPES[$legalForm->form_type] ?? 'Form');
+        $filename = $clientName . '_' . $typeLabel . '.docx';
+        $safeFilename = str_replace('"', '\\"', $filename);
+
+        if ($request->boolean('embed')) {
+            $fileContent = file_get_contents($fullPath);
+            if (! is_string($fileContent) || $fileContent === '') {
+                return response($this->legalFormPreviewErrorHtml('The form file could not be loaded.'), 404)
+                    ->header('Content-Type', 'text/html; charset=UTF-8');
+            }
+
+            $converter = app(PythonConverterService::class);
+            $result = $converter->convertBytesToPdf($fileContent, $filename, 45);
+            if (! empty($result['success']) && ! empty($result['pdf_data'])) {
+                $pdfName = pathinfo($filename, PATHINFO_FILENAME) . '.pdf';
+
+                return response($result['pdf_data'], 200, [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'inline; filename="' . str_replace('"', '\\"', $pdfName) . '"',
+                ]);
+            }
+
+            $htmlPreview = $this->convertDocxBytesToHtml($fileContent, $filename);
+            if ($htmlPreview !== null) {
+                return response($htmlPreview, 200, [
+                    'Content-Type' => 'text/html; charset=UTF-8',
+                ]);
+            }
+
+            Log::warning('Legal form preview conversion failed', [
+                'legal_form_id' => $legalForm->id,
+                'error' => $result['error'] ?? 'unknown',
+            ]);
+
+            return response($this->legalFormPreviewErrorHtml(), 503)
+                ->header('Content-Type', 'text/html; charset=UTF-8');
+        }
+
+        $disposition = $request->boolean('download') ? 'attachment' : 'inline';
+
+        return response()->file($fullPath, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'Content-Disposition' => 'inline; filename="' . basename($docxPath) . '"',
+            'Content-Disposition' => $disposition . '; filename="' . $safeFilename . '"',
         ]);
+    }
+
+    private function legalFormPreviewErrorHtml(string $message = ''): string
+    {
+        $body = $message !== ''
+            ? htmlspecialchars($message, ENT_QUOTES, 'UTF-8')
+            : 'Unable to convert this form for preview. Use Download to open the Word document.';
+
+        return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Preview unavailable</title>'
+            . '<style>body{font-family:Segoe UI,Arial,sans-serif;padding:24px;color:#444;background:#fff;}</style></head>'
+            . '<body><p>' . $body . '</p></body></html>';
+    }
+
+    private function convertDocxBytesToHtml(string $fileContent, string $filename): ?string
+    {
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        if (! in_array($extension, ['doc', 'docx', 'rtf', 'odt'], true)) {
+            return null;
+        }
+
+        $safeFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($filename)) ?: ('document.' . $extension);
+        $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'crm_legal_form_html_' . uniqid('', true);
+
+        if (! @mkdir($tempDir, 0755, true) && ! is_dir($tempDir)) {
+            return null;
+        }
+
+        $inputPath = $tempDir . DIRECTORY_SEPARATOR . $safeFilename;
+        file_put_contents($inputPath, $fileContent);
+
+        try {
+            $phpWord = IOFactory::load($inputPath);
+            $writer = IOFactory::createWriter($phpWord, 'HTML');
+            ob_start();
+            $writer->save('php://output');
+            $body = ob_get_clean();
+
+            if ($body === false || trim($body) === '') {
+                return null;
+            }
+
+            return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Form preview</title>'
+                . '<style>body{font-family:Segoe UI,Calibri,Arial,sans-serif;font-size:14px;line-height:1.55;color:#1f2937;margin:0;padding:28px 32px;background:#fff;}'
+                . 'table{border-collapse:collapse;width:100%;margin:12px 0;} td,th{border:1px solid #d1d5db;padding:6px 10px;vertical-align:top;}'
+                . 'p{margin:0.5em 0;} h1,h2,h3{color:#1a3a5c;margin:0.75em 0 0.35em;}</style></head><body>'
+                . $body
+                . '</body></html>';
+        } catch (\Throwable $e) {
+            Log::warning('Legal form PhpWord HTML preview failed', [
+                'file' => $filename,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        } finally {
+            foreach (glob($tempDir . DIRECTORY_SEPARATOR . '*') ?: [] as $tempFile) {
+                @unlink($tempFile);
+            }
+            @rmdir($tempDir);
+        }
     }
 
     public function getClientForms(Request $request): JsonResponse

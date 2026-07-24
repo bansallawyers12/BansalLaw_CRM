@@ -2812,7 +2812,350 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 
 /* ===== Legal Forms Tab ===== */
 .legal-forms-container {
-    padding: 20px;
+    padding: 16px 20px 20px;
+    height: 100%;
+}
+
+#legalforms-tab .legal-forms-split-layout {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    align-items: stretch;
+    min-height: calc(100vh - 180px);
+    height: calc(100vh - 180px);
+}
+
+#legalforms-tab .legal-forms-list-panel {
+    flex: 0 1 440px;
+    min-width: 0;
+    width: 440px;
+    max-width: 42%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    margin-top: 0;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border, #c8dcef);
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(30, 61, 96, 0.06);
+}
+
+#legalforms-tab .legal-forms-list-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border, #c8dcef);
+    background: linear-gradient(180deg, #f8fbff 0%, #f0f6ff 100%);
+    flex-shrink: 0;
+}
+
+#legalforms-tab .legal-forms-list-toolbar__title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+#legalforms-tab .legal-forms-list-toolbar h3 {
+    margin: 0;
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: var(--navy, #1e3d60);
+}
+
+#legalforms-tab .legal-forms-list-toolbar h3 i {
+    margin-right: 6px;
+    color: var(--sidebar-active, #3a6fa8);
+}
+
+#legalforms-tab .legal-forms-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: #dbeafe;
+    color: #1e40af;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+#legalforms-tab .legal-forms-list-toolbar__actions .btn-primary {
+    background: var(--navy, #1e3d60);
+    border-color: var(--navy, #1e3d60);
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 6px 14px;
+}
+
+#legalforms-tab .legal-forms-list-panel .legal-forms-list,
+#legalforms-tab .legal-forms-list-panel .legal-forms-card-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+#legalforms-tab .legal-forms-card-list {
+    display: flex;
+    flex-direction: column;
+}
+
+#legalforms-tab .legal-form-list-item {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px 14px 12px 12px;
+    border-bottom: 1px solid #e8eef5;
+    background: #fff;
+    cursor: pointer;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    border-left: 3px solid var(--lf-accent, #94a3b8);
+}
+
+#legalforms-tab .legal-form-list-item:hover {
+    background: #f8fbff;
+}
+
+#legalforms-tab .legal-form-list-item__main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+#legalforms-tab .legal-form-list-item__title {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.35;
+    margin-bottom: 6px;
+}
+
+#legalforms-tab .legal-form-list-item__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    margin: 0;
+}
+
+#legalforms-tab .legal-form-meta-item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    margin: 0;
+    font-size: 0.76rem;
+    line-height: 1.35;
+    white-space: nowrap;
+}
+
+#legalforms-tab .legal-form-meta-item dt {
+    margin: 0;
+    font-weight: 500;
+    color: #94a3b8;
+    font-size: 0.72rem;
+}
+
+#legalforms-tab .legal-form-meta-item dd {
+    margin: 0;
+    font-weight: 600;
+    color: #475569;
+}
+
+#legalforms-tab .legal-form-meta-item--amount dd {
+    color: #047857;
+}
+
+#legalforms-tab .legal-form-meta-item--file dd a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+#legalforms-tab .legal-form-meta-item--file dd a:hover {
+    text-decoration: underline;
+}
+
+#legalforms-tab .legal-form-list-item__actions {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    align-self: center;
+}
+
+#legalforms-tab .legal-form-row {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+#legalforms-tab .legal-form-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    border: 1px solid #dbe3ee;
+    background: #fff;
+    color: #64748b;
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+
+#legalforms-tab .legal-form-action-btn i {
+    font-size: 0.78rem;
+}
+
+#legalforms-tab .legal-form-action-btn:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #334155;
+}
+
+#legalforms-tab .legal-form-action-btn--attach:hover,
+#legalforms-tab .legal-form-action-btn--attach.is-attached {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+
+#legalforms-tab .legal-form-action-btn--danger:hover {
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #b91c1c;
+}
+
+#legalforms-tab .legal-forms-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: #64748b;
+}
+
+#legalforms-tab .legal-forms-empty-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: #f1f5f9;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    margin-bottom: 12px;
+}
+
+#legalforms-tab .preview-container-legal-forms.client-doc-preview-pane {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 100%;
+    min-height: 0;
+    align-self: stretch;
+    justify-content: flex-start;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#legalforms-tab .preview-container-legal-forms .client-doc-preview-header {
+    background: linear-gradient(180deg, #f8fbff 0%, #f0f6ff 100%);
+    border-bottom: 1px solid var(--border, #c8dcef);
+}
+
+#legalforms-tab .preview-container-legal-forms .client-doc-preview-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    min-height: 280px;
+    padding: 32px 24px;
+    text-align: center;
+    color: var(--text-muted, #5e7a90);
+    background: #fafbfc;
+}
+
+#legalforms-tab .preview-container-legal-forms .client-doc-preview-empty-icon {
+    font-size: 3.5rem;
+    color: #c8d4e0;
+    margin-bottom: 14px;
+}
+
+#legalforms-tab .preview-container-legal-forms .preview-placeholder-text {
+    color: var(--text-muted, #5e7a90);
+    margin: 0;
+    max-width: 280px;
+}
+
+#legalforms-tab .preview-container-legal-forms .preview-content {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+    height: 100%;
+    background: #fff;
+}
+
+#legalforms-tab .preview-container-legal-forms .preview-iframe-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    background: #fff;
+}
+
+#legalforms-tab .preview-container-legal-forms .preview-iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #fff;
+}
+
+#legalforms-tab .legal-forms-table tbody tr.legal-form-row.is-preview-active,
+#legalforms-tab .legal-form-list-item.legal-form-row.is-preview-active,
+#legalforms-tab .legal-forms-table tbody tr.legal-form-row.is-preview-active:hover,
+#legalforms-tab .legal-form-list-item.legal-form-row.is-preview-active:hover {
+    background-color: rgba(58, 111, 168, 0.1);
+    box-shadow: inset 3px 0 0 var(--lf-accent, var(--sidebar-active, #3a6fa8));
+}
+
+#legalforms-tab .legal-forms-table tbody tr.legal-form-row.is-preview-active .legal-form-row-title,
+#legalforms-tab .legal-form-list-item.legal-form-row.is-preview-active .legal-form-list-item__title {
+    color: var(--navy, #1e3d60);
+}
+
+@media (max-width: 992px) {
+    #legalforms-tab .legal-forms-split-layout {
+        flex-direction: column;
+        height: auto;
+        min-height: 0;
+    }
+
+    #legalforms-tab .legal-forms-list-panel {
+        width: 100%;
+        max-width: none;
+        flex: 0 0 auto;
+        max-height: 45vh;
+    }
+
+    #legalforms-tab .preview-container-legal-forms.client-doc-preview-pane {
+        min-height: 55vh;
+        height: 55vh;
+    }
 }
 
 .legal-forms-header {
@@ -3041,20 +3384,6 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 #legalFormModal.legal-form-modal select.form-control {
     height: auto;
     min-height: 42px;
-}
-
-#legalFormModal.legal-form-modal .legal-form-attachment-preview {
-    padding: 0.5rem 0.75rem;
-    background: #f0f4f8;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    color: #374151;
-    word-break: break-word;
-}
-
-#legalFormModal.legal-form-modal .legal-form-attachment-preview i {
-    margin-right: 0.35rem;
-    color: #1a3a5c;
 }
 
 @media (max-width: 768px) {
