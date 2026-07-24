@@ -513,55 +513,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function getGmailReadingBodyMinHeight() {
-        const readingBody = document.querySelector('#readingPane .reading-body');
-        if (readingBody && readingBody.clientHeight > 240) {
-            return readingBody.clientHeight;
-        }
-
-        return Math.max(520, window.innerHeight - 260);
-    }
-
     function resizeReadBodyForGmail(iframe) {
-        if (!iframe || !isGmailUiMode()) {
+        // Both modes now let the iframe fill its flex container; scrolling happens inside it.
+        if (!iframe) {
             return;
         }
-
-        const minHeight = getGmailReadingBodyMinHeight();
-        iframe.style.minHeight = minHeight + 'px';
-
-        if (iframe.src && !iframe.getAttribute('srcdoc')) {
-            iframe.style.height = minHeight + 'px';
-            return;
-        }
-
-        try {
-            const doc = iframe.contentDocument || iframe.contentWindow.document;
-            const body = doc && doc.body;
-            if (!body) {
-                iframe.style.height = minHeight + 'px';
-                return;
-            }
-            const contentHeight = Math.max(minHeight, body.scrollHeight + 32);
-            iframe.style.height = contentHeight + 'px';
-        } catch (error) {
-            iframe.style.height = minHeight + 'px';
-        }
+        iframe.style.height = '100%';
+        iframe.style.minHeight = '100%';
     }
 
     function resetReadBodyIframeSizing(iframe) {
         if (!iframe) {
-            return;
-        }
-
-        if (isGmailUiMode()) {
-            if (typeof window.requestAnimationFrame === 'function') {
-                window.requestAnimationFrame(function () {
-                    resizeReadBodyForGmail(iframe);
-                });
-            } else {
-                resizeReadBodyForGmail(iframe);
-            }
             return;
         }
 
@@ -3433,16 +3395,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderHtmlIframe(iframe, html) {
         if (!iframe) return;
-        if (!isGmailUiMode()) {
-            iframe.style.height = '100%';
-            iframe.style.minHeight = '100%';
-        }
+        iframe.style.height = '100%';
+        iframe.style.minHeight = '100%';
         const doc = iframe.contentDocument || iframe.contentWindow.document;
         const bodyHtml = html || '';
         doc.open();
         doc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><base target="_blank"><style>' +
-            'html,body{margin:0;padding:0;box-sizing:border-box;}' +
-            'body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;line-height:1.6;color:#242424;word-wrap:break-word;overflow-wrap:break-word;padding:16px 20px;}' +
+            'html,body{height:100%;margin:0;padding:0;box-sizing:border-box;}' +
+            'body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;line-height:1.6;color:#242424;word-wrap:break-word;overflow-wrap:break-word;padding:16px 20px;overflow-y:auto;}' +
             'img{max-width:100%;height:auto;}' +
             'table{max-width:100%;}' +
             'a{color:#0078d4;}' +
@@ -3450,11 +3410,6 @@ document.addEventListener('DOMContentLoaded', function() {
             'p{margin:0 0 0.75em;}' +
             '</style></head><body>' + bodyHtml + '</body></html>');
         doc.close();
-        if (isGmailUiMode()) {
-            setTimeout(function () {
-                resizeReadBodyForGmail(iframe);
-            }, 0);
-        }
     }
 
     function resetComposeEditor() {
