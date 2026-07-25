@@ -217,17 +217,16 @@ class SignatureDashboardController extends Controller
                     
                     // Create a note about the association
                     $folderName = ($entityType === 'lead') ? 'personal documents' : 'general documents';
-                    \App\Models\SignatureActivity::create([
-                        'document_id' => $document->id,
-                        'created_by' => auth('admin')->id(),
-                        'action_type' => 'associated',
-                        'note' => "Document associated with {$entityType}: {$entity->first_name} {$entity->last_name} (folder: {$folderName})",
-                        'metadata' => [
+                    app(\App\Services\SignatureAuditService::class)->log(
+                        $document,
+                        'associated',
+                        "Document associated with {$entityType}: {$entity->first_name} {$entity->last_name} (folder: {$folderName})",
+                        [
                             'entity_id' => $entity->id,
                             'entity_type' => $entityType,
                             'folder' => $folderName
                         ]
-                    ]);
+                    );
                 }
             }
 
@@ -655,31 +654,31 @@ class SignatureDashboardController extends Controller
                     }, $fromAddress);
 
                     // Create activity note for successful email
-                    \App\Models\SignatureActivity::create([
-                        'document_id' => $document->id,
-                        'created_by' => \Illuminate\Support\Facades\Auth::guard('admin')->id() ?? 1,
-                        'action_type' => 'email_sent',
-                        'note' => "Email sent successfully to {$signer->name} ({$signer->email})",
-                        'metadata' => [
+                    app(\App\Services\SignatureAuditService::class)->log(
+                        $document,
+                        'email_sent',
+                        "Email sent successfully to {$signer->name} ({$signer->email})",
+                        [
                             'signer_email' => $signer->email,
                             'signer_name' => $signer->name,
                             'subject' => $subject,
                             'status' => 'sent_via_ses',
-                        ]
-                    ]);
+                        ],
+                        $signer
+                    );
                 } catch (\Exception $emailException) {
                     // Create activity note for failed email
-                    \App\Models\SignatureActivity::create([
-                        'document_id' => $document->id,
-                        'created_by' => \Illuminate\Support\Facades\Auth::guard('admin')->id() ?? 1,
-                        'action_type' => 'email_failed',
-                        'note' => "Failed to send email to {$signer->name} ({$signer->email}): {$emailException->getMessage()}",
-                        'metadata' => [
+                    app(\App\Services\SignatureAuditService::class)->log(
+                        $document,
+                        'email_failed',
+                        "Failed to send email to {$signer->name} ({$signer->email}): {$emailException->getMessage()}",
+                        [
                             'signer_email' => $signer->email,
                             'signer_name' => $signer->name,
                             'error' => $emailException->getMessage(),
-                        ]
-                    ]);
+                        ],
+                        $signer
+                    );
                     throw $emailException;
                 }
                 

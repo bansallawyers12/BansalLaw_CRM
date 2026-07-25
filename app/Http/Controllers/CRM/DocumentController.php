@@ -1562,31 +1562,29 @@ class DocumentController extends Controller
                         $sendMail = true;
                         
                         // Create activity note for successful email
-                        \App\Models\SignatureActivity::create([
-                            'document_id' => $document->id,
-                            'created_by' => Auth::guard('admin')->id() ?? 1,
-                            'action_type' => 'email_sent',
-                            'note' => "Email sent successfully to {$signerName} ({$signerEmail})",
-                            'metadata' => [
+                        app(\App\Services\SignatureAuditService::class)->log(
+                            $document,
+                            'email_sent',
+                            "Email sent successfully to {$signerName} ({$signerEmail})",
+                            [
                                 'signer_email' => $signerEmail,
                                 'signer_name' => $signerName,
                                 'subject' => $request->subject,
                                 'status' => 'sent_via_ses',
                             ]
-                        ]);
+                        );
                     } catch (\Exception $emailException) {
                         // Create activity note for failed email
-                        \App\Models\SignatureActivity::create([
-                            'document_id' => $document->id,
-                            'created_by' => Auth::guard('admin')->id() ?? 1,
-                            'action_type' => 'email_failed',
-                            'note' => "Failed to send email to {$signerName} ({$signerEmail}): {$emailException->getMessage()}",
-                            'metadata' => [
+                        app(\App\Services\SignatureAuditService::class)->log(
+                            $document,
+                            'email_failed',
+                            "Failed to send email to {$signerName} ({$signerEmail}): {$emailException->getMessage()}",
+                            [
                                 'signer_email' => $signerEmail,
                                 'signer_name' => $signerName,
                                 'error' => $emailException->getMessage(),
                             ]
-                        ]);
+                        );
                         throw $emailException;
                     }
 
@@ -1683,30 +1681,28 @@ class DocumentController extends Controller
                         );
                         
                         // Create activity note for successful email
-                        \App\Models\SignatureActivity::create([
-                            'document_id' => $document->id,
-                            'created_by' => Auth::guard('admin')->id() ?? 1,
-                            'action_type' => 'email_sent',
-                            'note' => "Email sent successfully to {$signerName} ({$signerEmail})",
-                            'metadata' => [
+                        app(\App\Services\SignatureAuditService::class)->log(
+                            $document,
+                            'email_sent',
+                            "Email sent successfully to {$signerName} ({$signerEmail})",
+                            [
                                 'signer_email' => $signerEmail,
                                 'signer_name' => $signerName,
                                 'status' => 'sent_via_ses',
                             ]
-                        ]);
+                        );
                     } catch (\Exception $emailException) {
                         // Create activity note for failed email
-                        \App\Models\SignatureActivity::create([
-                            'document_id' => $document->id,
-                            'created_by' => Auth::guard('admin')->id() ?? 1,
-                            'action_type' => 'email_failed',
-                            'note' => "Failed to send email to {$signerName} ({$signerEmail}): {$emailException->getMessage()}",
-                            'metadata' => [
+                        app(\App\Services\SignatureAuditService::class)->log(
+                            $document,
+                            'email_failed',
+                            "Failed to send email to {$signerName} ({$signerEmail}): {$emailException->getMessage()}",
+                            [
                                 'signer_email' => $signerEmail,
                                 'signer_name' => $signerName,
                                 'error' => $emailException->getMessage(),
                             ]
-                        ]);
+                        );
                         throw $emailException;
                     }
                 }
