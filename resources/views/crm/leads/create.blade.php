@@ -114,7 +114,7 @@
             <!-- Sidebar Navigation -->
             <div class="sidebar-navigation" id="sidebarNav">
                 <div class="nav-header">
-                    <h3><i class="fa-solid fa-user-plus"></i> Create New Lead</h3>
+                    <h3><i class="fa-solid fa-user-plus"></i> {{ request('other_party') || old('is_other_party') ? 'Create Other Party' : 'Create New Lead' }}</h3>
                 </div>
                 <nav class="nav-menu">
                     <button class="nav-item active" onclick="scrollToSection('personalSection')">
@@ -131,7 +131,7 @@
                     </button>
                     <button type="submit" form="createLeadForm" class="nav-item save-btn">
                         <i class="fa-solid fa-floppy-disk"></i>
-                        <span>Save Lead</span>
+                        <span>{{ request('other_party') || old('is_other_party') ? 'Save Other Party' : 'Save Lead' }}</span>
                     </button>
                 </div>
             </div>
@@ -206,7 +206,7 @@
                                 </div>
                                 <div class="form-group full-width">
                                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600;">
-                                        <input type="checkbox" name="is_other_party" value="1"
+                                        <input type="checkbox" name="is_other_party" id="isOtherPartyCheckbox" value="1"
                                             {{ old('is_other_party', request('other_party')) ? 'checked' : '' }}>
                                         <span>Other party <small class="text-muted" style="font-weight: normal;">(not a sales lead — appears in Other Parties list)</small></span>
                                     </label>
@@ -240,8 +240,8 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="dob">Date of Birth <span class="text-danger">*</span></label>
-                                        <input type="text" id="dob" name="dob" value="{{ old('dob') }}" class="date-picker" placeholder="dd/mm/yyyy" required>
+                                        <label for="dob">Date of Birth <span class="text-danger other-party-optional-marker">*</span></label>
+                                        <input type="text" id="dob" name="dob" value="{{ old('dob') }}" class="date-picker other-party-relaxed-field" placeholder="dd/mm/yyyy" required>
                                         @error('dob')
                                             <span class="text-danger">{{ $message }}</span>
                                         @enderror
@@ -253,8 +253,8 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="gender">Gender <span class="text-danger">*</span></label>
-                                        <select id="gender" name="gender" required>
+                                        <label for="gender">Gender <span class="text-danger other-party-optional-marker">*</span></label>
+                                        <select id="gender" name="gender" class="other-party-relaxed-field" required>
                                             <option value="">Select Gender</option>
                                             <option value="Male" {{ old('gender') == 'Male' ? 'selected' : '' }}>Male</option>
                                             <option value="Female" {{ old('gender') == 'Female' ? 'selected' : '' }}>Female</option>
@@ -393,10 +393,33 @@
                                     <h4 style="margin-bottom: 15px;">
                                         <i class="fa-solid fa-user-tie"></i> Primary Contact Person
                                     </h4>
+
+                                    <input type="hidden" name="contact_person_manual" id="contactPersonManualFlag"
+                                           value="{{ old('contact_person_manual', '0') }}">
+
+                                    <div class="content-grid" style="margin-bottom: 16px;">
+                                        <div class="form-group full-width">
+                                            <label style="display: block; margin-bottom: 10px; font-weight: 600;">How would you like to add the contact person?</label>
+                                            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                                    <input type="radio" name="contact_person_mode" value="search" id="contactPersonModeSearch"
+                                                           {{ old('contact_person_manual') ? '' : 'checked' }}
+                                                           style="margin-right: 8px;">
+                                                    <span>Search existing</span>
+                                                </label>
+                                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                                    <input type="radio" name="contact_person_mode" value="manual" id="contactPersonModeManual"
+                                                           {{ old('contact_person_manual') ? 'checked' : '' }}
+                                                           style="margin-right: 8px;">
+                                                    <span>Add manually</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
                                     
                                     <div class="content-grid">
-                                        <div class="form-group full-width">
-                                            <label for="contactPersonEmail">Search Contact Person <span class="text-danger">*</span></label>
+                                        <div class="form-group full-width" id="contactPersonSearchWrap">
+                                            <label for="contactPersonEmail">Search Contact Person <span class="text-danger contact-person-search-required">*</span></label>
                                             <select id="contactPersonEmail" name="contact_person_id" 
                                                     class="form-control crm-ts-contact-person company-required" 
                                                     data-placeholder="Type phone, email, name, or client ID to search..."
@@ -425,18 +448,18 @@
                                         </div>
                                         
                                         <div class="form-group">
-                                            <label for="contactPersonFirstName">First Name <span class="text-danger">*</span></label>
+                                            <label for="contactPersonFirstName">First Name <span class="text-danger contact-person-manual-required">*</span></label>
                                             <input type="text" id="contactPersonFirstName" name="contact_person_first_name" 
                                                    value="{{ old('contact_person_first_name') }}" 
-                                                   class="company-field contact-person-field company-required" readonly>
-                                            <small class="form-text text-muted">Auto-filled from selected contact person</small>
+                                                   class="company-field contact-person-field">
+                                            <small class="form-text text-muted contact-person-search-hint">Auto-filled from selected contact person</small>
                                         </div>
                                         
                                         <div class="form-group">
-                                            <label for="contactPersonLastName">Last Name <span class="text-danger">*</span></label>
+                                            <label for="contactPersonLastName">Last Name <span class="text-danger contact-person-manual-required">*</span></label>
                                             <input type="text" id="contactPersonLastName" name="contact_person_last_name" 
                                                    value="{{ old('contact_person_last_name') }}" 
-                                                   class="company-field contact-person-field company-required" readonly>
+                                                   class="company-field contact-person-field">
                                         </div>
                                         
                                         <div class="form-group">
@@ -451,19 +474,150 @@
                                         </div>
                                         
                                         <div class="form-group">
-                                            <label for="contactPersonPhone">Phone</label>
+                                            <label for="contactPersonPhone">Phone <span class="text-danger contact-person-manual-contact-required" style="display:none;">*</span></label>
                                             <input type="text" id="contactPersonPhone" name="contact_person_phone" 
                                                    value="{{ old('contact_person_phone') }}" 
-                                                   class="company-field contact-person-field" readonly>
-                                            <small class="form-text text-muted">Auto-filled from selected contact person</small>
+                                                   class="company-field contact-person-field">
+                                            <small class="form-text text-muted contact-person-search-hint">Auto-filled from selected contact person</small>
+                                            @error('contact_person_phone')
+                                                <span class="text-danger">{{ $message }}</span>
+                                            @enderror
                                         </div>
                                         
                                         <div class="form-group">
-                                            <label for="contactPersonEmailDisplay">Email</label>
-                                            <input type="email" id="contactPersonEmailDisplay" 
-                                                   value="{{ old('contact_person_email_display') }}" 
-                                                   class="company-field contact-person-field" readonly>
-                                            <small class="form-text text-muted">Auto-filled from selected contact person</small>
+                                            <label for="contactPersonEmailDisplay">Email <span class="text-danger contact-person-manual-contact-required" style="display:none;">*</span></label>
+                                            <input type="email" id="contactPersonEmailDisplay" name="contact_person_email"
+                                                   value="{{ old('contact_person_email', old('contact_person_email_display')) }}" 
+                                                   class="company-field contact-person-field">
+                                            <small class="form-text text-muted contact-person-search-hint">Auto-filled from selected contact person</small>
+                                            @error('contact_person_email')
+                                                <span class="text-danger">{{ $message }}</span>
+                                            @enderror
+                                        </div>
+
+                                        <div class="form-group full-width" id="contactPersonManualActions" style="display:none;">
+                                            <button type="button" class="btn btn-outline-primary btn-sm" id="saveManualContactPersonBtn">
+                                                <i class="fa-solid fa-user-plus"></i> Save contact person &amp; use
+                                            </button>
+                                            <small class="form-text text-muted d-block mt-1">
+                                                Saves this person as a new lead so they can be searched next time. You can also save the whole company lead below without clicking this button.
+                                            </small>
+                                            <div id="manualContactPersonMessage" class="mt-2" style="display:none;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Solicitor Section --}}
+                                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
+                                    <h4 style="margin-bottom: 15px;">
+                                        <i class="fa-solid fa-scale-balanced"></i> Solicitor
+                                    </h4>
+
+                                    <input type="hidden" name="solicitor_manual" id="solicitorManualFlag"
+                                           value="{{ old('solicitor_manual', '0') }}">
+
+                                    <div class="content-grid" style="margin-bottom: 16px;">
+                                        <div class="form-group full-width">
+                                            <label style="display: block; margin-bottom: 10px; font-weight: 600;">How would you like to add the solicitor?</label>
+                                            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                                    <input type="radio" name="solicitor_mode" value="search" id="solicitorModeSearch"
+                                                           {{ old('solicitor_manual') ? '' : 'checked' }}
+                                                           style="margin-right: 8px;">
+                                                    <span>Search existing</span>
+                                                </label>
+                                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                                    <input type="radio" name="solicitor_mode" value="manual" id="solicitorModeManual"
+                                                           {{ old('solicitor_manual') ? 'checked' : '' }}
+                                                           style="margin-right: 8px;">
+                                                    <span>Add manually</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="content-grid">
+                                        <div class="form-group full-width" id="solicitorSearchWrap">
+                                            <label for="solicitorSearch">Search Solicitor</label>
+                                            <select id="solicitorSearch" name="solicitor_id"
+                                                    class="form-control crm-ts-solicitor company-field"
+                                                    data-placeholder="Type phone, email, name, or client ID to search..."
+                                                    style="width: 100%;">
+                                                @if(old('solicitor_id'))
+                                                    @php
+                                                        $oldSolicitor = \App\Models\Admin::find(old('solicitor_id'));
+                                                    @endphp
+                                                    @if($oldSolicitor)
+                                                        <option value="{{ $oldSolicitor->id }}" selected>
+                                                            {{ $oldSolicitor->first_name }} {{ $oldSolicitor->last_name }}
+                                                            ({{ $oldSolicitor->email }})
+                                                        </option>
+                                                    @endif
+                                                @endif
+                                            </select>
+                                            <small class="form-text text-muted">
+                                                Search existing clients/leads by email, name, phone, or client ID. Selected person's details will auto-fill below.
+                                            </small>
+                                            @error('solicitor_id')
+                                                <span class="text-danger">{{ $message }}</span>
+                                            @enderror
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="solicitorFirstName">First Name <span class="text-danger solicitor-manual-required">*</span></label>
+                                            <input type="text" id="solicitorFirstName" name="solicitor_first_name"
+                                                   value="{{ old('solicitor_first_name') }}"
+                                                   class="company-field solicitor-field">
+                                            <small class="form-text text-muted solicitor-search-hint">Auto-filled from selected solicitor</small>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="solicitorLastName">Last Name <span class="text-danger solicitor-manual-required">*</span></label>
+                                            <input type="text" id="solicitorLastName" name="solicitor_last_name"
+                                                   value="{{ old('solicitor_last_name') }}"
+                                                   class="company-field solicitor-field">
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="solicitorPosition">Position/Title</label>
+                                            <input type="text" id="solicitorPosition" name="solicitor_position"
+                                                   value="{{ old('solicitor_position') }}"
+                                                   class="company-field">
+                                            @error('solicitor_position')
+                                                <span class="text-danger">{{ $message }}</span>
+                                            @enderror
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="solicitorPhone">Phone <span class="text-danger solicitor-manual-contact-required" style="display:none;">*</span></label>
+                                            <input type="text" id="solicitorPhone" name="solicitor_phone"
+                                                   value="{{ old('solicitor_phone') }}"
+                                                   class="company-field solicitor-field">
+                                            <small class="form-text text-muted solicitor-search-hint">Auto-filled from selected solicitor</small>
+                                            @error('solicitor_phone')
+                                                <span class="text-danger">{{ $message }}</span>
+                                            @enderror
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="solicitorEmailDisplay">Email <span class="text-danger solicitor-manual-contact-required" style="display:none;">*</span></label>
+                                            <input type="email" id="solicitorEmailDisplay" name="solicitor_email"
+                                                   value="{{ old('solicitor_email') }}"
+                                                   class="company-field solicitor-field">
+                                            <small class="form-text text-muted solicitor-search-hint">Auto-filled from selected solicitor</small>
+                                            @error('solicitor_email')
+                                                <span class="text-danger">{{ $message }}</span>
+                                            @enderror
+                                        </div>
+
+                                        <div class="form-group full-width" id="solicitorManualActions" style="display:none;">
+                                            <button type="button" class="btn btn-outline-primary btn-sm" id="saveManualSolicitorBtn">
+                                                <i class="fa-solid fa-user-plus"></i> Save solicitor &amp; use
+                                            </button>
+                                            <small class="form-text text-muted d-block mt-1">
+                                                Saves this person as a new lead so they can be searched next time. You can also save the whole company lead below without clicking this button.
+                                            </small>
+                                            <div id="manualSolicitorMessage" class="mt-2" style="display:none;"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -656,7 +810,7 @@
                                     </div>
                                     <div class="form-group">
                                         <label>Phone Number <span class="text-danger">*</span></label>
-                                        <input type="text" id="primaryPhoneInput" name="phone[0]" class="form-control" placeholder="Enter phone number" value="{{ old('phone.0') }}" required>
+                                        <input type="text" id="primaryPhoneInput" name="phone[0]" class="form-control other-party-relaxed-field" placeholder="Enter phone number" value="{{ old('phone.0') }}" required>
                                         @error('phone.0')
                                             <span class="text-danger">{{ $message }}</span>
                                         @enderror
@@ -695,7 +849,7 @@
                                 </div>
                                 <div class="form-group">
                                         <label>Email Address <span class="text-danger">*</span></label>
-                                        <input type="email" id="primaryEmailInput" name="email[0]" class="form-control" placeholder="Enter email address" value="{{ old('email.0') }}" required>
+                                        <input type="email" id="primaryEmailInput" name="email[0]" class="form-control other-party-relaxed-field" placeholder="Enter email address" value="{{ old('email.0') }}" required>
                                         @error('email.0')
                                             <span class="text-danger">{{ $message }}</span>
                                         @enderror
@@ -991,10 +1145,14 @@
         
         // Initialize company toggle functionality
         initCompanyToggle();
+        initOtherPartyToggle();
+        initContactPersonModeToggle();
+        initSolicitorModeToggle();
         
         // Initialize contact person search and phone/email match check if company fields are visible
         @if(old('is_company') == 'yes')
             initContactPersonSearch();
+            initSolicitorSearch();
             initContactMatchCheck();
         @endif
 
@@ -1058,7 +1216,10 @@
             // Initialize contact person search when company fields are shown
             setTimeout(function() {
                 initContactPersonSearch();
+                initSolicitorSearch();
                 initContactMatchCheck();
+                initContactPersonModeToggle();
+                initSolicitorModeToggle();
             }, 100);
         } else {
             // Show personal fields, hide company fields
@@ -1071,10 +1232,14 @@
                 field.removeAttribute('required');
             });
             
-            // Add required to personal fields
-            personalRequiredFields.forEach(field => {
-                field.setAttribute('required', 'required');
-            });
+            // Add required to personal fields (respect other-party relaxed mode)
+            if (!isOtherPartyMode()) {
+                personalRequiredFields.forEach(field => {
+                    field.setAttribute('required', 'required');
+                });
+            } else {
+                toggleOtherPartyFields(true);
+            }
             
             // Clear company field values (optional, but preserve contact person selection)
             if (companyFields) {
@@ -1117,6 +1282,241 @@
             });
         }
     }
+
+    function isOtherPartyMode() {
+        const checkbox = document.getElementById('isOtherPartyCheckbox');
+        return !!(checkbox && checkbox.checked);
+    }
+
+    function toggleOtherPartyFields(isOtherParty) {
+        const relaxedFields = document.querySelectorAll('.other-party-relaxed-field');
+        const optionalMarkers = document.querySelectorAll('.other-party-optional-marker');
+
+        relaxedFields.forEach(field => {
+            if (isOtherParty) {
+                field.removeAttribute('required');
+            } else if (!document.querySelector('input[name="is_company"][value="yes"]:checked')) {
+                if (field.id === 'primaryPhoneInput' || field.id === 'primaryEmailInput' || field.id === 'dob' || field.id === 'gender') {
+                    field.setAttribute('required', 'required');
+                }
+            }
+        });
+
+        optionalMarkers.forEach(marker => {
+            marker.style.display = isOtherParty ? 'none' : '';
+        });
+    }
+
+    function initOtherPartyToggle() {
+        const checkbox = document.getElementById('isOtherPartyCheckbox');
+        if (!checkbox) {
+            return;
+        }
+
+        toggleOtherPartyFields(checkbox.checked);
+        checkbox.addEventListener('change', function () {
+            toggleOtherPartyFields(this.checked);
+        });
+    }
+    
+    function isContactPersonManualMode() {
+        return document.getElementById('contactPersonModeManual')?.checked === true;
+    }
+
+    function setContactPersonMode(mode) {
+        const isManual = mode === 'manual';
+        const searchRadio = document.getElementById('contactPersonModeSearch');
+        const manualRadio = document.getElementById('contactPersonModeManual');
+        if (searchRadio) searchRadio.checked = !isManual;
+        if (manualRadio) manualRadio.checked = isManual;
+        toggleContactPersonMode(isManual);
+    }
+
+    function toggleContactPersonMode(isManual) {
+        const searchWrap = document.getElementById('contactPersonSearchWrap');
+        const manualActions = document.getElementById('contactPersonManualActions');
+        const manualFlag = document.getElementById('contactPersonManualFlag');
+        const searchSelect = document.getElementById('contactPersonEmail');
+        const firstName = document.getElementById('contactPersonFirstName');
+        const lastName = document.getElementById('contactPersonLastName');
+        const phone = document.getElementById('contactPersonPhone');
+        const email = document.getElementById('contactPersonEmailDisplay');
+        const searchHints = document.querySelectorAll('.contact-person-search-hint');
+        const manualRequiredMarkers = document.querySelectorAll('.contact-person-manual-required');
+        const manualContactRequiredMarkers = document.querySelectorAll('.contact-person-manual-contact-required');
+        const searchRequiredMarkers = document.querySelectorAll('.contact-person-search-required');
+
+        if (manualFlag) {
+            manualFlag.value = isManual ? '1' : '0';
+        }
+        if (searchWrap) {
+            searchWrap.style.display = isManual ? 'none' : 'block';
+        }
+        if (manualActions) {
+            manualActions.style.display = isManual ? 'block' : 'none';
+        }
+
+        [firstName, lastName, phone, email].forEach(function (field) {
+            if (!field) return;
+            if (isManual) {
+                field.removeAttribute('readonly');
+                field.classList.remove('field-auto-filled');
+            } else {
+                field.setAttribute('readonly', 'readonly');
+            }
+        });
+
+        if (searchSelect) {
+            if (isManual) {
+                searchSelect.removeAttribute('required');
+                searchSelect.classList.remove('company-required');
+                if (searchSelect.tomselect) {
+                    searchSelect.tomselect.disable();
+                }
+            } else {
+                searchSelect.setAttribute('required', 'required');
+                searchSelect.classList.add('company-required');
+                if (searchSelect.tomselect) {
+                    searchSelect.tomselect.enable();
+                }
+            }
+        }
+
+        if (firstName) {
+            if (isManual) firstName.setAttribute('required', 'required');
+            else firstName.removeAttribute('required');
+        }
+        if (lastName) {
+            if (isManual) lastName.setAttribute('required', 'required');
+            else lastName.removeAttribute('required');
+        }
+        if (phone) phone.removeAttribute('required');
+        if (email) email.removeAttribute('required');
+
+        searchHints.forEach(function (el) {
+            el.style.display = isManual ? 'none' : '';
+        });
+        manualRequiredMarkers.forEach(function (el) {
+            el.style.display = isManual ? '' : 'none';
+        });
+        manualContactRequiredMarkers.forEach(function (el) {
+            el.style.display = isManual ? '' : 'none';
+        });
+        searchRequiredMarkers.forEach(function (el) {
+            el.style.display = isManual ? 'none' : '';
+        });
+
+        if (isManual) {
+            $('#associatedPersonAlert').hide();
+        }
+    }
+
+    function initContactPersonModeToggle() {
+        const searchRadio = document.getElementById('contactPersonModeSearch');
+        const manualRadio = document.getElementById('contactPersonModeManual');
+        if (!searchRadio || !manualRadio) {
+            return;
+        }
+
+        toggleContactPersonMode(isContactPersonManualMode());
+
+        searchRadio.addEventListener('change', function () {
+            if (this.checked) {
+                toggleContactPersonMode(false);
+            }
+        });
+        manualRadio.addEventListener('change', function () {
+            if (this.checked) {
+                toggleContactPersonMode(true);
+                clearLeadContactPersonFields(false);
+            }
+        });
+
+        $('#saveManualContactPersonBtn').off('click.manualContact').on('click.manualContact', saveManualContactPerson);
+    }
+
+    function selectCreatedContactPerson(person) {
+        var selEl = document.getElementById('contactPersonEmail');
+        if (!selEl) return;
+
+        if (selEl.tomselect) {
+            var ts = selEl.tomselect;
+            ts.enable();
+            ts.clear(true);
+            ts.addOption({
+                id: person.id,
+                text: person.text,
+                first_name: person.first_name || '',
+                last_name: person.last_name || '',
+                email: person.email || '',
+                phone: person.phone || '',
+                client_id: person.client_id != null && person.client_id !== '' ? person.client_id : ''
+            });
+            ts.setValue(String(person.id), true);
+            fillLeadContactPersonFields(ts.options[person.id] || ts.options[String(person.id)] || person);
+        } else {
+            var $select = $('#contactPersonEmail');
+            $select.find('option').not('[value=""]').remove();
+            var option = new Option(person.text, person.id, true, true);
+            $select.append(option).trigger('change');
+            fillLeadContactPersonFields(person);
+        }
+    }
+
+    function showManualContactPersonMessage(type, message) {
+        var box = document.getElementById('manualContactPersonMessage');
+        if (!box) return;
+        box.style.display = 'block';
+        box.className = 'mt-2 alert alert-' + (type === 'success' ? 'success' : 'danger');
+        box.textContent = message;
+    }
+
+    function saveManualContactPerson() {
+        var payload = {
+            _token: '{{ csrf_token() }}',
+            first_name: ($('#contactPersonFirstName').val() || '').trim(),
+            last_name: ($('#contactPersonLastName').val() || '').trim(),
+            phone: ($('#contactPersonPhone').val() || '').trim(),
+            email: ($('#contactPersonEmailDisplay').val() || '').trim()
+        };
+
+        if (!payload.first_name || !payload.last_name) {
+            showManualContactPersonMessage('error', 'First name and last name are required.');
+            return;
+        }
+        if (!payload.phone && !payload.email) {
+            showManualContactPersonMessage('error', 'Phone or email is required.');
+            return;
+        }
+
+        var btn = document.getElementById('saveManualContactPersonBtn');
+        if (btn) btn.disabled = true;
+
+        $.ajax({
+            url: '{{ route("leads.store.contact_person.mini") }}',
+            method: 'POST',
+            data: payload,
+            success: function (res) {
+                if (res.success && res.person) {
+                    selectCreatedContactPerson(res.person);
+                    setContactPersonMode('search');
+                    showManualContactPersonMessage('success', 'Contact person saved. They can now be searched next time.');
+                } else {
+                    showManualContactPersonMessage('error', res.message || 'Could not save contact person.');
+                }
+            },
+            error: function (xhr) {
+                var msg = 'Could not save contact person.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                showManualContactPersonMessage('error', msg);
+            },
+            complete: function () {
+                if (btn) btn.disabled = false;
+            }
+        });
+    }
     
     function fillLeadContactPersonFields(item) {
         if (!item) return;
@@ -1127,7 +1527,15 @@
         $('.contact-person-field').addClass('field-auto-filled');
     }
 
-    function clearLeadContactPersonFields() {
+    function clearLeadContactPersonFields(clearSearch) {
+        if (clearSearch !== false) {
+            var selEl = document.getElementById('contactPersonEmail');
+            if (selEl && selEl.tomselect) {
+                selEl.tomselect.clear(true);
+            } else {
+                $('#contactPersonEmail').val('').trigger('change');
+            }
+        }
         $('#contactPersonFirstName').val('');
         $('#contactPersonLastName').val('');
         $('#contactPersonPhone').val('');
@@ -1159,6 +1567,239 @@
         };
         cfg.onClear = function () {
             clearLeadContactPersonFields();
+        };
+        initTS(el, cfg);
+    }
+
+    function isSolicitorManualMode() {
+        return document.getElementById('solicitorModeManual')?.checked === true;
+    }
+
+    function setSolicitorMode(mode) {
+        const isManual = mode === 'manual';
+        const searchRadio = document.getElementById('solicitorModeSearch');
+        const manualRadio = document.getElementById('solicitorModeManual');
+        if (searchRadio) searchRadio.checked = !isManual;
+        if (manualRadio) manualRadio.checked = isManual;
+        toggleSolicitorMode(isManual);
+    }
+
+    function toggleSolicitorMode(isManual) {
+        const searchWrap = document.getElementById('solicitorSearchWrap');
+        const manualActions = document.getElementById('solicitorManualActions');
+        const manualFlag = document.getElementById('solicitorManualFlag');
+        const searchSelect = document.getElementById('solicitorSearch');
+        const firstName = document.getElementById('solicitorFirstName');
+        const lastName = document.getElementById('solicitorLastName');
+        const phone = document.getElementById('solicitorPhone');
+        const email = document.getElementById('solicitorEmailDisplay');
+        const searchHints = document.querySelectorAll('.solicitor-search-hint');
+        const manualRequiredMarkers = document.querySelectorAll('.solicitor-manual-required');
+        const manualContactRequiredMarkers = document.querySelectorAll('.solicitor-manual-contact-required');
+
+        if (manualFlag) {
+            manualFlag.value = isManual ? '1' : '0';
+        }
+        if (searchWrap) {
+            searchWrap.style.display = isManual ? 'none' : 'block';
+        }
+        if (manualActions) {
+            manualActions.style.display = isManual ? 'block' : 'none';
+        }
+
+        [firstName, lastName, phone, email].forEach(function (field) {
+            if (!field) return;
+            if (isManual) {
+                field.removeAttribute('readonly');
+                field.classList.remove('field-auto-filled');
+            } else {
+                field.setAttribute('readonly', 'readonly');
+            }
+        });
+
+        if (searchSelect && searchSelect.tomselect) {
+            if (isManual) {
+                searchSelect.tomselect.disable();
+            } else {
+                searchSelect.tomselect.enable();
+            }
+        }
+
+        if (firstName) {
+            if (isManual) firstName.setAttribute('required', 'required');
+            else firstName.removeAttribute('required');
+        }
+        if (lastName) {
+            if (isManual) lastName.setAttribute('required', 'required');
+            else lastName.removeAttribute('required');
+        }
+        if (phone) phone.removeAttribute('required');
+        if (email) email.removeAttribute('required');
+
+        searchHints.forEach(function (el) {
+            el.style.display = isManual ? 'none' : '';
+        });
+        manualRequiredMarkers.forEach(function (el) {
+            el.style.display = isManual ? '' : 'none';
+        });
+        manualContactRequiredMarkers.forEach(function (el) {
+            el.style.display = isManual ? '' : 'none';
+        });
+    }
+
+    function initSolicitorModeToggle() {
+        const searchRadio = document.getElementById('solicitorModeSearch');
+        const manualRadio = document.getElementById('solicitorModeManual');
+        if (!searchRadio || !manualRadio) {
+            return;
+        }
+
+        toggleSolicitorMode(isSolicitorManualMode());
+
+        searchRadio.addEventListener('change', function () {
+            if (this.checked) {
+                toggleSolicitorMode(false);
+            }
+        });
+        manualRadio.addEventListener('change', function () {
+            if (this.checked) {
+                toggleSolicitorMode(true);
+                clearSolicitorFields(false);
+            }
+        });
+
+        $('#saveManualSolicitorBtn').off('click.manualSolicitor').on('click.manualSolicitor', saveManualSolicitor);
+    }
+
+    function fillSolicitorFields(item) {
+        if (!item) return;
+        $('#solicitorFirstName').val(item.first_name || '');
+        $('#solicitorLastName').val(item.last_name || '');
+        $('#solicitorPhone').val(item.phone || '');
+        $('#solicitorEmailDisplay').val(item.email || '');
+        $('.solicitor-field').addClass('field-auto-filled');
+    }
+
+    function clearSolicitorFields(clearSearch) {
+        if (clearSearch !== false) {
+            var selEl = document.getElementById('solicitorSearch');
+            if (selEl && selEl.tomselect) {
+                selEl.tomselect.clear(true);
+            } else {
+                $('#solicitorSearch').val('').trigger('change');
+            }
+        }
+        $('#solicitorFirstName').val('');
+        $('#solicitorLastName').val('');
+        $('#solicitorPhone').val('');
+        $('#solicitorEmailDisplay').val('');
+        $('.solicitor-field').removeClass('field-auto-filled');
+    }
+
+    function selectCreatedSolicitor(person) {
+        var selEl = document.getElementById('solicitorSearch');
+        if (!selEl) return;
+
+        if (selEl.tomselect) {
+            var ts = selEl.tomselect;
+            ts.enable();
+            ts.clear(true);
+            ts.addOption({
+                id: person.id,
+                text: person.text,
+                first_name: person.first_name || '',
+                last_name: person.last_name || '',
+                email: person.email || '',
+                phone: person.phone || '',
+                client_id: person.client_id != null && person.client_id !== '' ? person.client_id : ''
+            });
+            ts.setValue(String(person.id), true);
+            fillSolicitorFields(ts.options[person.id] || ts.options[String(person.id)] || person);
+        } else {
+            var $select = $('#solicitorSearch');
+            $select.find('option').not('[value=""]').remove();
+            var option = new Option(person.text, person.id, true, true);
+            $select.append(option).trigger('change');
+            fillSolicitorFields(person);
+        }
+    }
+
+    function showManualSolicitorMessage(type, message) {
+        var box = document.getElementById('manualSolicitorMessage');
+        if (!box) return;
+        box.style.display = 'block';
+        box.className = 'mt-2 alert alert-' + (type === 'success' ? 'success' : 'danger');
+        box.textContent = message;
+    }
+
+    function saveManualSolicitor() {
+        var payload = {
+            _token: '{{ csrf_token() }}',
+            first_name: ($('#solicitorFirstName').val() || '').trim(),
+            last_name: ($('#solicitorLastName').val() || '').trim(),
+            phone: ($('#solicitorPhone').val() || '').trim(),
+            email: ($('#solicitorEmailDisplay').val() || '').trim()
+        };
+
+        if (!payload.first_name || !payload.last_name) {
+            showManualSolicitorMessage('error', 'First name and last name are required.');
+            return;
+        }
+        if (!payload.phone && !payload.email) {
+            showManualSolicitorMessage('error', 'Phone or email is required.');
+            return;
+        }
+
+        var btn = document.getElementById('saveManualSolicitorBtn');
+        if (btn) btn.disabled = true;
+
+        $.ajax({
+            url: '{{ route("leads.store.contact_person.mini") }}',
+            method: 'POST',
+            data: payload,
+            success: function (res) {
+                if (res.success && res.person) {
+                    selectCreatedSolicitor(res.person);
+                    setSolicitorMode('search');
+                    showManualSolicitorMessage('success', 'Solicitor saved. They can now be searched next time.');
+                } else {
+                    showManualSolicitorMessage('error', res.message || 'Could not save solicitor.');
+                }
+            },
+            error: function (xhr) {
+                var msg = 'Could not save solicitor.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                showManualSolicitorMessage('error', msg);
+            },
+            complete: function () {
+                if (btn) btn.disabled = false;
+            }
+        });
+    }
+
+    function initSolicitorSearch() {
+        var el = document.getElementById('solicitorSearch');
+        if (!el) return;
+        if (typeof TomSelect === 'undefined' || typeof initTS !== 'function' || typeof buildContactPersonSearchTomSelectConfig !== 'function') {
+            return;
+        }
+        if (el.tomselect) {
+            return;
+        }
+        var cfg = buildContactPersonSearchTomSelectConfig({
+            url: '{{ route("api.search.contact.person") }}',
+            dropdownParent: 'body',
+            placeholder: 'Type phone, email, name, or client ID to search...',
+            minQueryLength: 2
+        });
+        cfg.onItemAdd = function (value) {
+            var item = this.options[value] || this.options[String(value)];
+            fillSolicitorFields(item);
+        };
+        cfg.onClear = function () {
+            clearSolicitorFields();
         };
         initTS(el, cfg);
     }

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use App\Models\Admin;
 use App\Models\Company;
 use App\Models\Lead;
@@ -67,6 +68,215 @@ class LeadController extends Controller
                 unset($adminData[$col]);
             }
         }
+    }
+
+    /**
+     * Ensure manual contact person phone/email are not already registered elsewhere.
+     *
+     * @throws ValidationException
+     */
+    private function assertContactPersonNotDuplicate(
+        ?string $phone,
+        ?string $email,
+        string $phoneField = 'contact_person_phone',
+        string $emailField = 'contact_person_email'
+    ): void {
+        $errors = [];
+
+        if ($phone !== null && trim($phone) !== '') {
+            $phone = trim($phone);
+            if (Admin::where('phone', $phone)->exists() || ClientContact::where('phone', $phone)->exists()) {
+                $errors[$phoneField] = 'This phone number is already registered. Search for the existing person instead.';
+            }
+        }
+
+        if ($email !== null && trim($email) !== '') {
+            $email = trim($email);
+            if (Admin::where('email', $email)->exists() || ClientEmail::where('email', $email)->exists()) {
+                $errors[$emailField] = 'This email is already registered. Search for the existing person instead.';
+            }
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
+    }
+
+    /**
+     * Whether any solicitor fields were submitted on a company lead form.
+     */
+    private function hasSolicitorInput(array $requestData): bool
+    {
+        if (! empty($requestData['solicitor_id'])) {
+            return true;
+        }
+
+        if ($requestData['solicitor_manual'] ?? false) {
+            return true;
+        }
+
+        foreach (['solicitor_first_name', 'solicitor_last_name', 'solicitor_phone', 'solicitor_email', 'solicitor_position'] as $field) {
+            if (trim((string) ($requestData[$field] ?? '')) !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Create a searchable personal lead when contact person / solicitor is entered manually.
+     *
+     * @throws ValidationException
+     */
+    private function resolveManualPartyPersonFromRequest(
+        Request $request,
+        string $prefix,
+        string $label,
+        int $assignUserId
+    ): ?int {
+        $requestData = $request->all();
+        $manualFlag = $prefix . '_manual';
+        $idField = $prefix . '_id';
+
+        if (! $request->boolean($manualFlag) || ! empty($requestData[$idField])) {
+            return ! empty($requestData[$idField]) ? (int) $requestData[$idField] : null;
+        }
+
+        $manualValidator = validator($request->all(), [
+            $prefix . '_first_name' => 'required|max:255',
+            $prefix . '_last_name' => 'required|max:255',
+            $prefix . '_phone' => 'nullable|max:255',
+            $prefix . '_email' => 'nullable|email|max:255',
+        ], [
+            $prefix . '_first_name.required' => "{$label} first name is required.",
+            $prefix . '_last_name.required' => "{$label} last name is required.",
+            $prefix . '_email.email' => "Please enter a valid {$label} email address.",
+        ]);
+
+        if ($manualValidator->fails()) {
+            throw new ValidationException($manualValidator);
+        }
+
+        $manualPhone = trim((string) ($requestData[$prefix . '_phone'] ?? ''));
+        $manualEmail = trim((string) ($requestData[$prefix . '_email'] ?? ''));
+        if ($manualPhone === '' && $manualEmail === '') {
+            throw ValidationException::withMessages([
+                $prefix . '_phone' => "{$label} phone or email is required.",
+                $prefix . '_email' => "{$label} phone or email is required.",
+            ]);
+        }
+
+        $this->assertContactPersonNotDuplicate(
+            $manualPhone !== '' ? $manualPhone : null,
+            $manualEmail !== '' ? $manualEmail : null,
+            $prefix . '_phone',
+            $prefix . '_email'
+        );
+
+        return $this->createPersonalContactPersonLead(
+            trim((string) $requestData[$prefix . '_first_name']),
+            trim((string) $requestData[$prefix . '_last_name']),
+            $manualPhone !== '' ? $manualPhone : null,
+            $manualEmail !== '' ? $manualEmail : null,
+            $assignUserId
+        );
+    }
+
+    /**
+     * Create a personal lead used as a company contact person (searchable later).
+     */
+    private function createPersonalContactPersonLead(
+        string $firstName,
+        string $lastName,
+        ?string $phone,
+        ?string $email,
+        int $assignUserId
+    ): int {
+        $referenceService = app(ClientReferenceService::class);
+        $reference = $referenceService->generateClientReference(trim($firstName . ' ' . $lastName));
+
+        $phone = trim((string) ($phone ?? '')) !== '' ? trim((string) $phone) : null;
+        $email = trim((string) ($email ?? '')) !== '' ? trim((string) $email) : null;
+        $adminEmail = $email ?? ('contact_person_' . time() . '@lead.internal');
+
+        $adminData = [
+            'password' => Hash::make('LEAD_PLACEHOLDER'),
+            'client_counter' => $reference['client_counter'],
+            'client_id' => $reference['client_id'],
+            'status' => 1,
+            'lead_status' => 'new',
+            'followup_date' => null,
+            'type' => 'lead',
+            'is_archived' => 0,
+            'is_deleted' => null,
+            'is_company' => 0,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'phone' => $phone,
+            'email' => $adminEmail,
+            'australian_study' => 0,
+            'specialist_education' => 0,
+            'regional_study' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+
+        if (Schema::hasColumn('admins', 'is_other_party')) {
+            $adminData['is_other_party'] = 0;
+        }
+
+        $this->applyLeadAssigneeToAdminRow($adminData, $assignUserId);
+        $this->pruneAdminInsertData($adminData);
+
+        $adminId = (int) DB::table('admins')->insertGetId($adminData);
+
+        if ($phone) {
+            ClientContact::create([
+                'admin_id' => Auth::user()->id,
+                'client_id' => $adminId,
+                'contact_type' => 'Personal',
+                'phone' => $phone,
+                'country_code' => '',
+                'is_verified' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        if ($email) {
+            ClientEmail::create([
+                'admin_id' => Auth::user()->id,
+                'client_id' => $adminId,
+                'email_type' => 'Personal',
+                'email' => $email,
+                'is_verified' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return $adminId;
+    }
+
+    /**
+     * Build display text for contact person search dropdowns.
+     */
+    private function formatContactPersonSearchText(Admin $person): string
+    {
+        $fullName = trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? ''));
+        $displayText = $fullName !== '' ? $fullName : 'Contact person';
+        if ($person->email) {
+            $displayText .= " ({$person->email})";
+        }
+        if ($person->phone) {
+            $displayText .= " - {$person->phone}";
+        }
+        if ($person->client_id) {
+            $displayText .= " - {$person->client_id}";
+        }
+
+        return $displayText;
     }
 
     /**
@@ -357,6 +567,71 @@ class LeadController extends Controller
     }
 
     /**
+     * Mini-create a personal contact person from company lead form (JSON).
+     */
+    public function storeContactPersonMini(Request $request)
+    {
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+        ]);
+
+        if (trim((string) ($validated['phone'] ?? '')) === '' && trim((string) ($validated['email'] ?? '')) === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Phone or email is required.',
+            ], 422);
+        }
+
+        try {
+            $this->assertContactPersonNotDuplicate($validated['phone'] ?? null, $validated['email'] ?? null);
+            $adminId = $this->createPersonalContactPersonLead(
+                trim($validated['first_name']),
+                trim($validated['last_name']),
+                $validated['phone'] ?? null,
+                $validated['email'] ?? null,
+                (int) Auth::id()
+            );
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => collect($e->errors())->flatten()->first() ?: 'Could not create contact person.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not create contact person.',
+            ], 500);
+        }
+
+        $person = Admin::find($adminId);
+        if (! $person) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not create contact person.',
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'person' => [
+                'id' => $person->id,
+                'text' => $this->formatContactPersonSearchText($person),
+                'first_name' => $person->first_name,
+                'last_name' => $person->last_name,
+                'email' => $person->email,
+                'phone' => $person->phone,
+                'client_id' => $person->client_id,
+            ],
+        ]);
+    }
+
+    /**
      * Parse user_roles.module_access into an array (handles int vs string JSON keys).
      *
      * @return array<int|string, mixed>
@@ -620,6 +895,7 @@ class LeadController extends Controller
             $isCompany = $request->input('is_company') === 'yes' || 
                          $request->input('is_company') === true || 
                          $request->input('is_company') === 1;
+            $isOtherParty = $request->boolean('is_other_party');
             
             // Extract phone and email (now only one of each)
             $primaryPhone = $requestData['phone'][0] ?? null;
@@ -672,6 +948,52 @@ class LeadController extends Controller
                     ]);
                     $requestData = $request->all();
                     Log::info('Auto-associated contact person from phone/email: ' . $matchedPerson->id);
+                }
+            }
+
+            if ($isCompany
+                && $request->boolean('contact_person_manual')
+                && empty($requestData['contact_person_id'])) {
+                $assignUserId = Auth::user()->id;
+                if (! empty($requestData['assigned_staff_id'])) {
+                    $assignUserId = (int) $requestData['assigned_staff_id'];
+                }
+
+                $contactPersonId = $this->resolveManualPartyPersonFromRequest(
+                    $request,
+                    'contact_person',
+                    'Contact person',
+                    $assignUserId
+                );
+
+                $request->merge([
+                    'contact_person_id' => $contactPersonId,
+                    'contact_person_manual' => 0,
+                ]);
+                $requestData = $request->all();
+                Log::info('Created manual contact person with ID: ' . $contactPersonId);
+            }
+
+            if ($isCompany && $this->hasSolicitorInput($requestData)) {
+                $assignUserId = Auth::user()->id;
+                if (! empty($requestData['assigned_staff_id'])) {
+                    $assignUserId = (int) $requestData['assigned_staff_id'];
+                }
+
+                if ($request->boolean('solicitor_manual') && empty($requestData['solicitor_id'])) {
+                    $solicitorId = $this->resolveManualPartyPersonFromRequest(
+                        $request,
+                        'solicitor',
+                        'Solicitor',
+                        $assignUserId
+                    );
+
+                    $request->merge([
+                        'solicitor_id' => $solicitorId,
+                        'solicitor_manual' => 0,
+                    ]);
+                    $requestData = $request->all();
+                    Log::info('Created manual solicitor with ID: ' . $solicitorId);
                 }
             }
 
@@ -737,6 +1059,26 @@ class LeadController extends Controller
                         'contact_person_id.exists' => 'The selected contact person does not exist.',
                         'phone.0.required' => 'Phone number is required.',
                         'email.0.required' => 'Email address is required.',
+                        'email.0.email' => 'Please enter a valid email address.',
+                    ];
+                } elseif ($isOtherParty) {
+                    $validationRules = [
+                        'first_name' => 'required|max:255',
+                        'last_name' => 'required|max:255',
+                        'gender' => 'nullable|max:255',
+                        'dob' => 'nullable',
+                        'phone.0' => 'required_without:email.0|nullable|max:255',
+                        'email.0' => 'required_without:phone.0|nullable|email|max:255',
+                        'lead_status' => 'nullable|in:new,follow_up,not_qualified,hostile',
+                        'followup_date' => 'nullable|date',
+                        'assigned_staff_id' => 'nullable|exists:staff,id',
+                    ];
+
+                    $validationMessages = [
+                        'first_name.required' => 'First name is required.',
+                        'last_name.required' => 'Last name is required.',
+                        'phone.0.required_without' => 'Phone or email is required.',
+                        'email.0.required_without' => 'Phone or email is required.',
                         'email.0.email' => 'Please enter a valid email address.',
                     ];
                 } else {
@@ -875,6 +1217,9 @@ class LeadController extends Controller
 
                 // For company leads with duplicate email: use placeholder for admin record (admins.email has unique constraint)
                 $adminEmail = $primaryEmail;
+                if (! $isCompany && $isOtherParty && trim((string) ($adminEmail ?? '')) === '') {
+                    $adminEmail = 'other_party_' . time() . '@lead.internal';
+                }
                 if ($isCompany && $primaryEmail) {
                     $emailExists = Admin::where('email', $primaryEmail)->exists()
                         || ClientEmail::where('email', $primaryEmail)->exists();
@@ -1058,7 +1403,7 @@ class LeadController extends Controller
 
                     $leadCompanyType = Company::normalizeBusinessType($requestData['company_type'] ?? null);
 
-                    $company = Company::create([
+                    $companyData = [
                         'admin_id' => $admin->id,
                         'company_name' => $requestData['company_name'],
                         'trading_name' => $primaryTradingName,
@@ -1075,7 +1420,16 @@ class LeadController extends Controller
                         'contact_person_position' => $requestData['contact_person_position'] ?? null,
                         'created_at' => now(),
                         'updated_at' => now(),
-                    ]);
+                    ];
+
+                    if (Schema::hasColumn('companies', 'solicitor_id')) {
+                        $companyData['solicitor_id'] = ! empty($requestData['solicitor_id']) ? (int) $requestData['solicitor_id'] : null;
+                    }
+                    if (Schema::hasColumn('companies', 'solicitor_position')) {
+                        $companyData['solicitor_position'] = $requestData['solicitor_position'] ?? null;
+                    }
+
+                    $company = Company::create($companyData);
                     if ($hasTradingName && !empty($tradingNames)) {
                         foreach ($tradingNames as $idx => $name) {
                             if ($name !== '') {

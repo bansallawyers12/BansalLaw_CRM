@@ -21,6 +21,8 @@ class Company extends Model
         'company_website',
         'contact_person_id',
         'contact_person_position',
+        'solicitor_id',
+        'solicitor_position',
         // Employer sponsorship fields
         'trust_name',
         'trust_abn',
@@ -122,6 +124,14 @@ class Company extends Model
     public function contactPerson(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'contact_person_id', 'id');
+    }
+
+    /**
+     * Get the solicitor linked to this company lead/client.
+     */
+    public function solicitor(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'solicitor_id', 'id');
     }
 
     /**
