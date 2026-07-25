@@ -97,8 +97,54 @@ class PublicDocumentController extends Controller
             }
 
             // Track when document was opened
-            if (!$signer->opened_at) {
+            $isFirstOpen = !$signer->opened_at;
+            if ($isFirstOpen) {
                 $signer->update(['opened_at' => now()]);
+            }
+
+            try {
+                $audit = app(\App\Services\SignatureAuditService::class);
+                if ($isFirstOpen) {
+                    $audit->log(
+                        $document,
+                        'link_opened',
+                        "Signing link opened by {$signer->name} ({$signer->email})",
+                        [
+                            'signer_id' => $signer->id,
+                            'signer_name' => $signer->name,
+                            'signer_email' => $signer->email,
+                        ],
+                        $signer,
+                        \App\Services\SignatureAuditService::ACTOR_SIGNER,
+                        request()
+                    );
+                } else {
+                    $recentView = $document->signatureActivities()
+                        ->where('action_type', 'link_viewed')
+                        ->where('signer_id', $signer->id)
+                        ->where('created_at', '>=', now()->subDay())
+                        ->exists();
+                    if (!$recentView) {
+                        $audit->log(
+                            $document,
+                            'link_viewed',
+                            "Signing page viewed again by {$signer->name}",
+                            [
+                                'signer_id' => $signer->id,
+                                'signer_name' => $signer->name,
+                                'signer_email' => $signer->email,
+                            ],
+                            $signer,
+                            \App\Services\SignatureAuditService::ACTOR_SIGNER,
+                            request()
+                        );
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Failed to log signature link open audit', [
+                    'document_id' => $document->id,
+                    'error' => $e->getMessage(),
+                ]);
             }
 
             $signatureFields = $document->signatureFields()->get();
@@ -454,6 +500,8 @@ class PublicDocumentController extends Controller
 
                 // ✅ PYTHON SERVICE: Try Python service first (supports ALL PDF compressions)
                 $pythonService = app(\App\Services\PythonService::class);
+                $auditSignaturePaths = [];
+                $tempSignaturePaths = [];
                 
                 if ($pythonService->isHealthy()) {
                     Log::info('Attempting to create signed PDF with Python service');
@@ -474,6 +522,7 @@ class PublicDocumentController extends Controller
                                 $tmpSignaturePath = storage_path('app/tmp_signature_' . uniqid() . '.png');
                                 $s3Image = Storage::disk('s3')->get($signaturePath);
                                 file_put_contents($tmpSignaturePath, $s3Image);
+                                $tempSignaturePaths[] = $tmpSignaturePath;
                             } catch (\Exception $e) {
                                 Log::warning('Failed to get signature file from S3', ['path' => $signaturePath, 'error' => $e->getMessage()]);
                                 continue; // Skip this signature
@@ -483,6 +532,7 @@ class PublicDocumentController extends Controller
                         if ($tmpSignaturePath && file_exists($tmpSignaturePath)) {
                             // Read signature as base64
                             $signatureBase64 = base64_encode(file_get_contents($tmpSignaturePath));
+                            $auditSignaturePaths[] = $tmpSignaturePath;
                             
                             $signaturesForPython[] = [
                                 'field_id' => $fieldId,
@@ -493,11 +543,6 @@ class PublicDocumentController extends Controller
                                 'height_percent' => $signatureInfo['h_percent'],
                                 'signature_data' => $signatureBase64
                             ];
-                            
-                            // Clean up temp S3 file
-                            if (strpos($tmpSignaturePath, 'tmp_signature_') !== false) {
-                                @unlink($tmpSignaturePath);
-                            }
                         }
                     }
                     
@@ -518,6 +563,26 @@ class PublicDocumentController extends Controller
                             'file_exists' => file_exists($outputTmpPath),
                             'file_size' => file_exists($outputTmpPath) ? filesize($outputTmpPath) : 0
                         ]);
+
+                        try {
+                            app(\App\Services\SignatureAuditService::class)->log(
+                                $document,
+                                'stamp_failed',
+                                'Python signature stamp failed',
+                                ['signer_id' => $signer->id],
+                                $signer,
+                                \App\Services\SignatureAuditService::ACTOR_SIGNER,
+                                $request
+                            );
+                        } catch (\Throwable $e) {
+                            Log::warning('Failed to log stamp_failed audit', ['error' => $e->getMessage()]);
+                        }
+
+                        foreach ($tempSignaturePaths ?? [] as $tempSigPath) {
+                            if (is_string($tempSigPath) && file_exists($tempSigPath)) {
+                                @unlink($tempSigPath);
+                            }
+                        }
                         
                         return redirect()->back()
                             ->with('error', 'Signature processing service is currently unavailable. Please try again later or contact support if the issue persists.')
@@ -525,6 +590,20 @@ class PublicDocumentController extends Controller
                     }
                 } else {
                     Log::error('Python PDF service not available');
+
+                    try {
+                        app(\App\Services\SignatureAuditService::class)->log(
+                            $document,
+                            'stamp_failed',
+                            'Python signature service unavailable',
+                            ['signer_id' => $signer->id],
+                            $signer,
+                            \App\Services\SignatureAuditService::ACTOR_SIGNER,
+                            $request
+                        );
+                    } catch (\Throwable $e) {
+                        Log::warning('Failed to log stamp_failed audit', ['error' => $e->getMessage()]);
+                    }
                     
                     return redirect()->back()
                         ->with('error', 'Signature processing service is currently unavailable. Please try again later or contact support if the issue persists.')
@@ -557,6 +636,34 @@ class PublicDocumentController extends Controller
                     $signedPdfUrl = asset('storage/' . $localSignedPath);
                     $signedPdfPath = storage_path('app/public/' . $localSignedPath);
                     Log::info('Signed PDF saved locally', ['path' => $signedPdfPath]);
+                }
+
+                // Record hashes + certificate before temp cleanup
+                try {
+                    $signedLocalForHash = file_exists($outputTmpPath)
+                        ? $outputTmpPath
+                        : (is_string($signedPdfPath) && file_exists($signedPdfPath) ? $signedPdfPath : null);
+                    $originalLocalForHash = (isset($tmpPdfPath) && file_exists($tmpPdfPath)) ? $tmpPdfPath : null;
+
+                    app(\App\Services\SignatureAuditService::class)->recordCompletionEvidence(
+                        $document,
+                        $signer,
+                        $originalLocalForHash,
+                        $signedLocalForHash,
+                        $auditSignaturePaths ?? [],
+                        $request
+                    );
+                } catch (\Throwable $e) {
+                    Log::warning('Failed to record signature completion evidence', [
+                        'document_id' => $document->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
+                foreach ($tempSignaturePaths ?? [] as $tempSigPath) {
+                    if (is_string($tempSigPath) && file_exists($tempSigPath)) {
+                        @unlink($tempSigPath);
+                    }
                 }
 
                 // Clean up temp files (only if they were temp files)
@@ -962,7 +1069,22 @@ class PublicDocumentController extends Controller
     {
         try {
             $document = Document::findOrFail($id);
-            
+
+            try {
+                app(\App\Services\SignatureAuditService::class)->log(
+                    $document,
+                    'downloaded_signed',
+                    'Signed PDF downloaded',
+                    [],
+                    null,
+                    auth('admin')->check()
+                        ? \App\Services\SignatureAuditService::ACTOR_STAFF
+                        : \App\Services\SignatureAuditService::ACTOR_SIGNER
+                );
+            } catch (\Throwable $e) {
+                // non-blocking
+            }
+
             if ($document->signed_doc_link) {
                 $signedDocUrl = $document->signed_doc_link;
                 

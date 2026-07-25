@@ -64,6 +64,7 @@ Route::prefix('signatures')->group(function () {
     Route::post('/bulk-resend', [SignatureDashboardController::class, 'bulkResend'])->name('signatures.bulk-resend');
     
     Route::get('/{id}', [SignatureDashboardController::class, 'show'])->name('signatures.show');
+    Route::get('/{id}/certificate', [SignatureDashboardController::class, 'downloadCertificate'])->name('signatures.certificate');
     Route::post('/{id}/reminder', [SignatureDashboardController::class, 'sendReminder'])->name('signatures.reminder');
     Route::post('/{id}/cancel', [SignatureDashboardController::class, 'cancelSignature'])->name('signatures.cancel');
     Route::post('/{id}/send', [SignatureDashboardController::class, 'sendForSignature'])->name('signatures.send');
@@ -284,6 +285,7 @@ Route::prefix('signatures')->group(function () {
     Route::post('/bulk-resend', [SignatureDashboardController::class, 'bulkResend'])->name('signatures.bulk-resend');
     
     Route::get('/{id}', [SignatureDashboardController::class, 'show'])->name('signatures.show');
+    Route::get('/{id}/certificate', [SignatureDashboardController::class, 'downloadCertificate'])->name('signatures.certificate');
     Route::post('/{id}/reminder', [SignatureDashboardController::class, 'sendReminder'])->name('signatures.reminder');
     Route::post('/{id}/cancel', [SignatureDashboardController::class, 'cancelSignature'])->name('signatures.cancel');
     Route::post('/{id}/send', [SignatureDashboardController::class, 'sendForSignature'])->name('signatures.send');

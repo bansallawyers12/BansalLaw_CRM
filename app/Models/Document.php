@@ -41,6 +41,10 @@ class Document extends Model
         'status',
         'signature_doc_link',
         'signed_doc_link',
+        'signed_hash',
+        'original_hash',
+        'hash_generated_at',
+        'certificate_path',
         'created_by',
         'lead_id',
     ];
@@ -48,6 +52,7 @@ class Document extends Model
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'hash_generated_at' => 'datetime',
     ];
 
     public $sortable = [

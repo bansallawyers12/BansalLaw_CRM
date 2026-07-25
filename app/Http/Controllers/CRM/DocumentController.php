@@ -1101,6 +1101,25 @@ class DocumentController extends Controller
                 'user_id' => auth('admin')->id()
             ]);
 
+            try {
+                app(\App\Services\SignatureAuditService::class)->log(
+                    $document,
+                    'fields_placed',
+                    'Signature fields placed (' . count($validatedSignatures) . ' field(s))',
+                    [
+                        'fields_count' => count($validatedSignatures),
+                        'pages' => collect($validatedSignatures)->pluck('page_number')->unique()->values()->all(),
+                    ],
+                    null,
+                    \App\Services\SignatureAuditService::ACTOR_STAFF
+                );
+            } catch (\Throwable $e) {
+                Log::warning('Failed to log fields_placed audit', [
+                    'document_id' => $document->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             // Check if there's pending signer information from document upload
             $pendingSigner = session('pending_document_signer');
             if ($pendingSigner && isset($pendingSigner['email']) && isset($pendingSigner['name'])) {
