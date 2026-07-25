@@ -102,7 +102,19 @@
         padding: 6px 8px;
         margin-bottom: 8px;
     }
+#conflictPartiesCard #cpPartiesContainer {
+        margin-bottom: 8px;
+        min-width: 0;
+        overflow: visible;
+    }
+
+    #conflictPartiesCard .cp-edit,
+    #conflictPartiesCard .opp-party-row {
+        min-width: 0;
+        overflow: visible;
+    }
 </style>
+<link rel="stylesheet" href="{{ asset('css/crm/other-party-picker.css') }}?v={{ @filemtime(public_path('css/crm/other-party-picker.css')) ?: time() }}">
 
 <div class="card" id="conflictPartiesCard" data-client-id="{{ $fetchedData->id }}">
     <div id="conflictPartiesView" class="cp-view" role="region" aria-label="Other parties summary">
@@ -167,30 +179,28 @@
         </div>
 
         <p class="text-muted small mb-2">
-            <i class="fa-solid fa-circle-info"></i>
-            <strong>Other party</strong> — search and select from records created as Other Party only.
-            <strong>Opposing solicitor</strong> — enter manually below each party.
+            Search and select an <strong>other party</strong>, choose their <strong>role</strong>, and optionally add the <strong>opposing solicitor</strong> (search existing or enter manually).
         </p>
 
-        <div class="d-flex flex-wrap gap-2 mb-2">
+        <div class="d-flex flex-wrap gap-2 mb-2 align-items-center">
             <button type="button" class="btn btn-outline-primary btn-sm" id="cpCreateOtherPartyBtn">
-                <i class="fa-solid fa-user-plus"></i> Quick create other party
+                <i class="fa-solid fa-user-plus"></i> New other party
             </button>
-            <a href="{{ route('leads.create', ['other_party' => 1]) }}" target="_blank" rel="noopener" class="btn btn-link btn-sm p-0 align-self-center">Open full create form</a>
+            <a href="{{ route('leads.create', ['other_party' => 1]) }}" target="_blank" rel="noopener" class="small">Full create form</a>
         </div>
 
-        <div id="cpMiniCreateOtherParty" class="border rounded p-2 mb-3" style="display:none;background:#fff;">
-            <p class="small fw-semibold mb-2">Quick create other party</p>
+        <div id="cpMiniCreateOtherParty" class="cp-mini-create" style="display:none;">
+            <p class="small fw-semibold mb-2 mb-0">Quick create other party</p>
+            <p class="text-muted small mb-2">First &amp; last name required. Phone or email required.</p>
             <div class="row g-2">
-                <div class="col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpFirst" placeholder="First name *"></div>
-                <div class="col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpLast" placeholder="Last name *"></div>
-                <div class="col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpPhone" placeholder="Phone"></div>
-                <div class="col-md-3"><input type="email" class="form-control form-control-sm" id="cpMiniOpEmail" placeholder="Email"></div>
+                <div class="col-sm-6 col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpFirst" placeholder="First name *"></div>
+                <div class="col-sm-6 col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpLast" placeholder="Last name *"></div>
+                <div class="col-sm-6 col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpPhone" placeholder="Phone"></div>
+                <div class="col-sm-6 col-md-3"><input type="email" class="form-control form-control-sm" id="cpMiniOpEmail" placeholder="Email"></div>
             </div>
-            <div class="mt-2 d-flex gap-2 align-items-center flex-wrap">
+            <div class="mt-2 d-flex gap-2 flex-wrap">
                 <button type="button" class="btn btn-sm btn-primary" id="cpMiniOpSave">Save &amp; select</button>
-                <button type="button" class="btn btn-sm btn-link" id="cpMiniOpCancel">Cancel</button>
-                <span class="text-muted small">Phone or email required. Saved as searchable Other Party.</span>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="cpMiniOpCancel">Cancel</button>
             </div>
             <div id="cpMiniOpMessage" class="mt-2" style="display:none;"></div>
         </div>
@@ -306,6 +316,7 @@
     var outcomeLabels = @json($outcomeLabels);
     var outcomeBadgeColors = @json($outcomeBadgeColors);
     var searchUrl = window.OTHER_PARTY_SEARCH_URL || @json(route('api.search.other.party'));
+    var solicitorSearchUrl = window.CONTACT_PERSON_SEARCH_URL || @json(route('api.search.contact.person'));
     var runCheckUrl = @json(route('clients.conflictCheck.run'));
     var clientId = card.getAttribute('data-client-id');
     var latestOutcome = @json($latestOutcome);
@@ -332,9 +343,9 @@
         return window.OtherPartyPicker.appendRow(container, {
             rowClass: 'cp-party-row',
             searchUrl: searchUrl,
+            solicitorSearchUrl: solicitorSearchUrl,
             excludeId: clientId,
             roles: partyRoles,
-            repSectionTitle: 'Opposing solicitor (enter manually)',
             data: data || {}
         });
     }

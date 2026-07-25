@@ -696,6 +696,8 @@ class ClientMatterHubController extends Controller
 			$matterId = $request->input('matter_id');
 			$reason = $request->input('discontinue_reason');
 			$notes = $request->input('discontinue_notes', '');
+			$isComplete = trim((string) $reason) === \App\Support\MatterCompletionChecklist::REASON_COMPLETE;
+			$completionChecklist = null;
 
 			if (!$matterId) {
 				return response()->json(['status' => false, 'message' => 'Matter ID is required'], 422);
@@ -703,6 +705,21 @@ class ClientMatterHubController extends Controller
 
 			if (!$reason || trim($reason) === '') {
 				return response()->json(['status' => false, 'message' => 'Please select a reason for discontinuing.'], 422);
+			}
+
+			if ($isComplete) {
+				$rawChecklist = $request->input('completion_checklist');
+				if (is_string($rawChecklist) && $rawChecklist !== '') {
+					$decoded = json_decode($rawChecklist, true);
+					$rawChecklist = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
+				}
+				$completionChecklist = \App\Support\MatterCompletionChecklist::normalizeInput($rawChecklist);
+				if (! \App\Support\MatterCompletionChecklist::allChecked($completionChecklist)) {
+					return response()->json([
+						'status' => false,
+						'message' => 'All completion checklist items must be checked before completing the matter.',
+					], 422);
+				}
 			}
 
 			$clientMatter = ClientMatter::find($matterId);
@@ -715,6 +732,9 @@ class ClientMatterHubController extends Controller
 			$clientMatter->closed_by = Auth::guard('admin')->id() ?? Auth::id();
 			$clientMatter->discontinue_reason = $reason;
 			$clientMatter->discontinue_notes = $notes;
+			if ($isComplete && Schema::hasColumn('client_matters', 'matter_completion_checklist')) {
+				$clientMatter->matter_completion_checklist = $completionChecklist;
+			}
 			$saved = $clientMatter->save();
 
 			if ($saved) {
@@ -723,7 +743,15 @@ class ClientMatterHubController extends Controller
 
 				// applications table removed
 
-				$description = 'Discontinued matter. Reason: <b>' . e($reason) . '</b>';
+				$description = $isComplete
+					? 'Completed matter.'
+					: 'Discontinued matter. Reason: <b>' . e($reason) . '</b>';
+				if ($isComplete) {
+					$checklistHtml = \App\Support\MatterCompletionChecklist::toHtmlSummary($completionChecklist ?? []);
+					if ($checklistHtml !== '') {
+						$description .= '<br>Checklist:<br>' . $checklistHtml;
+					}
+				}
 				if (!empty(trim($notes))) {
 					$description .= '<br>Notes: ' . e($notes);
 				}
@@ -733,7 +761,7 @@ class ClientMatterHubController extends Controller
 					$activityLog = new ActivitiesLog;
 					$activityLog->client_id = $clientMatter->client_id;
 					$activityLog->created_by = Auth::user()->id;
-					$activityLog->subject = 'Matter Discontinued';
+					$activityLog->subject = $isComplete ? 'Matter Completed' : 'Matter Discontinued';
 					$activityLog->description = $description;
 					$activityLog->activity_type = 'stage';
 					$activityLog->use_for = 'matter';
@@ -747,7 +775,9 @@ class ClientMatterHubController extends Controller
 				$currentTab = $request->input('current_tab', 'personaldetails');
 				if ($this->shouldNotifyClientForMatterLifecycle($currentTab)) {
 					$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
-					$notificationMessage = 'Your matter ' . $matterNo . ' has been discontinued. Reason: ' . e($reason);
+					$notificationMessage = $isComplete
+						? 'Your matter ' . $matterNo . ' has been completed.'
+						: 'Your matter ' . $matterNo . ' has been discontinued. Reason: ' . e($reason);
 					DB::table('notifications')->insert([
 						'sender_id' => Auth::user()->id,
 						'receiver_id' => $clientMatter->client_id,
@@ -764,10 +794,12 @@ class ClientMatterHubController extends Controller
 
 					try {
 						$fcmService = new FCMService();
-						$notificationTitle = 'Matter Discontinued';
-						$notificationBody = 'Your matter ' . $matterNo . ' has been discontinued. Reason: ' . $reason;
+						$notificationTitle = $isComplete ? 'Matter Completed' : 'Matter Discontinued';
+						$notificationBody = $isComplete
+							? 'Your matter ' . $matterNo . ' has been completed.'
+							: 'Your matter ' . $matterNo . ' has been discontinued. Reason: ' . $reason;
 						$notificationData = [
-							'type' => 'matter_discontinued',
+							'type' => $isComplete ? 'matter_completed' : 'matter_discontinued',
 							'client_matter_id' => (string) $matterId,
 							'message' => $notificationMessage,
 						];
@@ -797,7 +829,9 @@ class ClientMatterHubController extends Controller
 
 				return response()->json([
 					'status' => true,
-					'message' => 'Matter has been successfully discontinued.',
+					'message' => $isComplete
+						? 'Matter has been successfully completed.'
+						: 'Matter has been successfully discontinued.',
 					'redirect_url' => $redirectUrl
 				]);
 			}
@@ -918,6 +952,9 @@ class ClientMatterHubController extends Controller
 			$clientMatter->closed_by = null;
 			$clientMatter->discontinue_reason = null;
 			$clientMatter->discontinue_notes = null;
+			if (Schema::hasColumn('client_matters', 'matter_completion_checklist')) {
+				$clientMatter->matter_completion_checklist = null;
+			}
 			$clientMatter->reopen_requested_by = null;
 			$saved = $clientMatter->save();
 

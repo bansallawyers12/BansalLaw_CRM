@@ -162,14 +162,12 @@
             ->get();
     }
 @endphp
-<div class="modal fade custom_modal" id="discontinue-matter-modal" tabindex="-1" role="dialog" aria-labelledby="discontinueMatterModalLabel" aria-hidden="true">
+<div class="modal fade custom_modal matter-close-modal" id="discontinue-matter-modal" tabindex="-1" role="dialog" aria-labelledby="discontinueMatterModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="discontinueMatterModalLabel">Discontinue Matter</h5>
-				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
+		<div class="modal-content matter-close-modal__content">
+			<div class="modal-header matter-close-modal__header">
+				<h5 class="modal-title matter-close-modal__title" id="discontinueMatterModalLabel">Close Matter</h5>
+				<x-crm.modal-close />
 			</div>
 			<div class="modal-body">
 				<form id="discontinue-matter-form" name="discontinue-matter-form" autocomplete="off">
@@ -195,6 +193,7 @@
 								<label for="discontinue-reason">Reason for Discontinue <span class="span_req">*</span></label>
 								<select class="form-control" id="discontinue-reason" name="discontinue_reason" data-valid="required" required>
 									<option value="">Please Select</option>
+									<option value="Complete">Complete</option>
 									<option value="Change of Matter">Change of Matter</option>
 									<option value="Error by Team Member">Error by Team Member</option>
 									<option value="Financial Difficulties">Financial Difficulties</option>
@@ -214,12 +213,50 @@
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<button type="button" class="btn btn-danger" id="discontinue-matter-submit">
-								<i class="fa-solid fa-ban"></i> Discontinue
+								<i class="fa-solid fa-ban" id="discontinue-matter-submit-icon"></i> <span id="discontinue-matter-submit-label">Discontinue</span>
 							</button>
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 						</div>
 					</div>
 				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+@php
+    $matterCompletionChecklist = config('matter_completion.checklist', []);
+@endphp
+<div class="modal fade custom_modal matter-close-modal" id="complete-matter-modal" tabindex="-1" role="dialog" aria-labelledby="completeMatterModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content matter-close-modal__content">
+			<div class="modal-header matter-close-modal__header">
+				<h5 class="modal-title matter-close-modal__title" id="completeMatterModalLabel">Complete Matter — Checklist</h5>
+				<x-crm.modal-close />
+			</div>
+			<div class="modal-body">
+				<p class="text-muted small mb-3">All items below must be checked before the matter can be marked as complete.</p>
+				<div id="complete-matter-checklist" class="complete-matter-checklist">
+					@foreach($matterCompletionChecklist as $key => $label)
+						<label class="complete-matter-checklist__item d-flex align-items-start gap-2 mb-2">
+							<input type="checkbox" class="complete-matter-check-item mt-1" name="completion_checklist[{{ $key }}]" value="1" data-check-key="{{ $key }}">
+							<span>{{ $label }}</span>
+						</label>
+					@endforeach
+				</div>
+				<span class="custom-error complete-matter-checklist-error text-danger small d-block mt-2" role="alert"><strong></strong></span>
+				<div class="form-group mt-3 mb-0">
+					<label for="complete-matter-description">Description <small class="text-muted">(optional)</small></label>
+					<textarea class="form-control" id="complete-matter-description" rows="3" maxlength="5000" placeholder="Optional notes about completing this matter"></textarea>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-outline-secondary" id="complete-matter-back-btn">
+					<i class="fa-solid fa-arrow-left"></i> Back
+				</button>
+				<button type="button" class="btn btn-success" id="complete-matter-submit" disabled>
+					<i class="fa-solid fa-circle-check"></i> Complete matter
+				</button>
 			</div>
 		</div>
 	</div>

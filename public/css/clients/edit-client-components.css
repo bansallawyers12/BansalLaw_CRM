@@ -563,6 +563,24 @@
     font-weight: 600;
 }
 
+/* ===== COMPLETE MATTER CHECKLIST MODAL ===== */
+.complete-matter-checklist {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px 14px;
+    background: #fafbfc;
+}
+
+.complete-matter-checklist__item {
+    font-size: 14px;
+    color: #343a40;
+    cursor: pointer;
+}
+
+.complete-matter-checklist__item input {
+    flex-shrink: 0;
+}
+
 /* ===== OTP MODAL ===== */
 #otpVerificationModal.modal {
     display: none;

@@ -21,6 +21,7 @@ class ClientMatter extends Model
     protected $casts = [
         'deadline' => 'date',
         'date_of_incidence' => 'date',
+        'matter_completion_checklist' => 'array',
     ];
 
     /**
@@ -49,6 +50,7 @@ class ClientMatter extends Model
         'closed_by',
         'discontinue_reason',
         'discontinue_notes',
+        'matter_completion_checklist',
         'reopen_requested_by',
     ];
 

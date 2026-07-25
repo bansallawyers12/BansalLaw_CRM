@@ -47,6 +47,8 @@
         window.OtherPartyPicker.appendRow('#change_matter_opposing_parties_container', {
             rowClass: 'cm-opp-row opp-party-row',
             searchUrl: window.OTHER_PARTY_SEARCH_URL,
+            solicitorSearchUrl: window.CONTACT_PERSON_SEARCH_URL,
+            excludeId: window.currentClientId || null,
             stream: getChangeMatterStream(),
             data: prefill
         });

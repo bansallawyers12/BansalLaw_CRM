@@ -3,7 +3,7 @@
         <div class="modal-content add-matter-modal__content" style="max-width: 720px;" onclick="event.stopPropagation()">
             <div class="modal-header add-matter-modal__header">
                 <h3 id="addMatterModalTitle" class="add-matter-modal__title">Add matter</h3>
-                <button type="button" class="close-btn add-matter-modal__close" onclick="closeAddMatterModal()" aria-label="Close">&times;</button>
+                <x-crm.modal-close :dismiss="false" onclick="closeAddMatterModal()" />
             </div>
             <div class="modal-body add-matter-modal__body">
                 <p class="text-muted add-matter-modal__intro">Creates an active matter for {{ $fetchedData->first_name }} {{ $fetchedData->last_name }} ({{ $__crmEditLeadType ? 'Lead' : 'Client' }} ID: {{ $fetchedData->client_id }}).</p>
@@ -91,7 +91,7 @@
                     <label class="fw-semibold">Other parties <small class="text-muted">(optional)</small></label>
                     <p class="text-muted small"><i class="fa-solid fa-circle-info"></i> Run conflict check on Personal Details (Other Parties &amp; Conflict Check) before engaging.</p>
                     <div id="quick_add_opposing_parties_wrap"></div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary mt-1" id="quick_add_opposing_party_btn">
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-1" id="quick_add_opposing_party_btn" onclick="typeof quickAddOpposingPartyRow==='function'&&quickAddOpposingPartyRow(event)">
                         <i class="fa-solid fa-plus"></i> Add other party
                     </button>
                 </div>

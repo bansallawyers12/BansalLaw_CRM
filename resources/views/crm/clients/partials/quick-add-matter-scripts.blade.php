@@ -6,6 +6,16 @@
 
     window.MATTER_PARTY_ROLES_BY_STREAM = window.MATTER_PARTY_ROLES_BY_STREAM || @json(config('matter_streams.party_roles_by_stream', []));
     window.OTHER_PARTY_SEARCH_URL = window.OTHER_PARTY_SEARCH_URL || @json(route('api.search.other.party'));
+    window.CONTACT_PERSON_SEARCH_URL = window.CONTACT_PERSON_SEARCH_URL || @json(route('api.search.contact.person'));
+
+    function clearQuickAddOpposingParties() {
+        var oppWrap = document.getElementById('quick_add_opposing_parties_wrap');
+        if (!oppWrap) return;
+        oppWrap.querySelectorAll('.opp-party-lead-select, .opp-party-solicitor-select').forEach(function (sel) {
+            if (typeof window.destroyTS === 'function') window.destroyTS(sel);
+        });
+        oppWrap.innerHTML = '';
+    }
 
     function closeAddMatterModal() {
         var el = document.getElementById('addMatterModal');
@@ -22,8 +32,7 @@
         if (it) it.value = '';
         var opr = document.getElementById('edit_add_matter_our_party_role');
         if (opr) opr.value = '';
-        var oppWrap = document.getElementById('quick_add_opposing_parties_wrap');
-        if (oppWrap) oppWrap.innerHTML = '';
+        clearQuickAddOpposingParties();
     }
 
     function getQuickAddMatterStream() {
@@ -53,25 +62,41 @@
         }
     };
 
-    document.addEventListener('click', function (e) {
-        if (e.target && e.target.id === 'quick_add_opposing_party_btn') {
-            e.preventDefault();
-            if (window.OtherPartyPicker) {
-                window.OtherPartyPicker.appendRow('#quick_add_opposing_parties_wrap', {
-                    rowClass: 'quick-opp-row opp-party-row',
-                    searchUrl: window.OTHER_PARTY_SEARCH_URL,
-                    stream: getQuickAddMatterStream(),
-                    data: {}
-                });
+    function quickAddOpposingPartyRow(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        if (!window.OtherPartyPicker) {
+            if (typeof iziToast !== 'undefined' && iziToast.show) {
+                iziToast.show({ message: 'Other party picker is not loaded. Refresh the page and try again.', color: 'red', position: 'topRight', timeout: 5000 });
+            } else {
+                alert('Other party picker is not loaded. Refresh the page and try again.');
             }
+            return;
         }
-    });
+        window.OtherPartyPicker.appendRow('#quick_add_opposing_parties_wrap', {
+            rowClass: 'quick-opp-row opp-party-row',
+            searchUrl: window.OTHER_PARTY_SEARCH_URL,
+            solicitorSearchUrl: window.CONTACT_PERSON_SEARCH_URL,
+            excludeId: window.currentClientId || null,
+            stream: getQuickAddMatterStream(),
+            data: {}
+        });
+    }
+
+    function bindQuickAddOpposingPartyButton() {
+        var addBtn = document.getElementById('quick_add_opposing_party_btn');
+        if (!addBtn || addBtn.dataset.oppPartyBound === '1') return;
+        addBtn.dataset.oppPartyBound = '1';
+        addBtn.addEventListener('click', quickAddOpposingPartyRow);
+    }
+
+    bindQuickAddOpposingPartyButton();
 
     function openAddMatterModal() {
         var el = document.getElementById('addMatterModal');
         if (!el) return;
         el.style.display = 'flex';
         document.body.style.overflow = 'hidden';
+        bindQuickAddOpposingPartyButton();
         if (typeof window.rebuildQuickAddPartyRole === 'function') window.rebuildQuickAddPartyRole();
     }
 
@@ -176,5 +201,6 @@
     window.closeAddMatterModal = closeAddMatterModal;
     window.addMatterModalBackdropClick = addMatterModalBackdropClick;
     window.submitLeadMatterFromEdit = submitLeadMatterFromEdit;
+    window.quickAddOpposingPartyRow = quickAddOpposingPartyRow;
 })();
 </script>

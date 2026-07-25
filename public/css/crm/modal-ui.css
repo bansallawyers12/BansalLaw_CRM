@@ -1,0 +1,208 @@
+/**
+ * CRM — unified modal header layout and close (X) button.
+ * Applies to Bootstrap modals, .custom_modal, and standalone modals.
+ */
+
+.modal .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: nowrap;
+}
+
+.modal .modal-header .modal-title,
+.modal .modal-header h1,
+.modal .modal-header h2,
+.modal .modal-header h3,
+.modal .modal-header h4,
+.modal .modal-header h5,
+.modal .modal-header h6 {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    line-height: 1.3;
+}
+
+/* Shared close control */
+.modal .modal-header .crm-modal-close,
+.modal .modal-header .close,
+.modal .modal-header .close-btn,
+.modal .modal-header .btn-close {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    padding: 0;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    line-height: 1;
+    opacity: 1;
+    float: none;
+    text-shadow: none;
+    box-shadow: none;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+/* Light header (default) */
+.modal .modal-header .crm-modal-close,
+.modal .modal-header .close,
+.modal .modal-header .close-btn {
+    border: 1px solid #dee2e6;
+    background: #f8f9fa;
+    color: #495057;
+    font-size: 0;
+}
+
+.modal .modal-header .crm-modal-close:hover,
+.modal .modal-header .crm-modal-close:focus,
+.modal .modal-header .close:hover,
+.modal .modal-header .close:focus,
+.modal .modal-header .close-btn:hover,
+.modal .modal-header .close-btn:focus {
+    background: #e9ecef;
+    border-color: #ced4da;
+    color: #212529;
+    outline: none;
+}
+
+.modal .modal-header .crm-modal-close i {
+    font-size: 1.15rem;
+    line-height: 1;
+    pointer-events: none;
+}
+
+/* Legacy × buttons → Font Awesome xmark */
+.modal .modal-header .close span,
+.modal .modal-header .close-btn:not(.crm-modal-close) {
+    font-size: 0;
+    line-height: 0;
+}
+
+.modal .modal-header .close:not(.crm-modal-close)::before,
+.modal .modal-header .close-btn:not(.crm-modal-close):not(.add-matter-modal__close)::before {
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    content: "\f00d";
+    font-size: 1.15rem;
+    line-height: 1;
+    color: inherit;
+}
+
+.modal .modal-header .btn-close {
+    border: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+    background-size: 14px;
+    filter: none;
+    opacity: 1;
+}
+
+.modal .modal-header .btn-close:hover,
+.modal .modal-header .btn-close:focus {
+    background-color: #e9ecef;
+    border-color: #ced4da;
+    opacity: 1;
+    box-shadow: none;
+}
+
+/* Dark / branded headers */
+.custom_modal .modal-header,
+.add-matter-modal__header,
+.matter-close-modal__header,
+.modal-header.bg-primary,
+.modal-header.bg-dark,
+.modal .modal-header.text-white {
+    border-bottom: 3px solid #c9a227;
+}
+
+.custom_modal .modal-header .crm-modal-close,
+.custom_modal .modal-header .close,
+.custom_modal .modal-header .close-btn,
+.custom_modal .modal-header .btn-close,
+.add-matter-modal__header .crm-modal-close,
+.add-matter-modal__header .close-btn,
+.matter-close-modal__header .crm-modal-close,
+.modal-header.bg-primary .crm-modal-close,
+.modal-header.bg-primary .close,
+.modal-header.bg-primary .btn-close,
+.modal-header.bg-dark .crm-modal-close,
+.modal-header.bg-dark .close,
+.modal-header.bg-dark .btn-close,
+.modal .modal-header.text-white .crm-modal-close,
+.modal .modal-header.text-white .close,
+.modal .modal-header.text-white .btn-close {
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.custom_modal .modal-header .crm-modal-close:hover,
+.custom_modal .modal-header .crm-modal-close:focus,
+.custom_modal .modal-header .close:hover,
+.custom_modal .modal-header .close:focus,
+.custom_modal .modal-header .close-btn:hover,
+.custom_modal .modal-header .close-btn:focus,
+.custom_modal .modal-header .btn-close:hover,
+.custom_modal .modal-header .btn-close:focus,
+.add-matter-modal__header .crm-modal-close:hover,
+.add-matter-modal__header .crm-modal-close:focus,
+.add-matter-modal__header .close-btn:hover,
+.add-matter-modal__header .close-btn:focus,
+.matter-close-modal__header .crm-modal-close:hover,
+.matter-close-modal__header .crm-modal-close:focus,
+.modal-header.bg-primary .crm-modal-close:hover,
+.modal-header.bg-primary .close:hover,
+.modal-header.bg-primary .btn-close:hover,
+.modal .modal-header.text-white .crm-modal-close:hover,
+.modal .modal-header.text-white .close:hover {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: rgba(255, 255, 255, 0.55);
+    color: #fff;
+}
+
+.custom_modal .modal-header .btn-close,
+.add-matter-modal__header .btn-close,
+.modal-header.bg-primary .btn-close,
+.modal .modal-header.text-white .btn-close {
+    filter: brightness(0) invert(1);
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.custom_modal .modal-header .close:not(.crm-modal-close)::before,
+.custom_modal .modal-header .close-btn:not(.crm-modal-close)::before,
+.add-matter-modal__header .close-btn:not(.crm-modal-close)::before {
+    color: #fff;
+}
+
+/* Matter close modals — match CRM navy header */
+.matter-close-modal .modal-content {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+.matter-close-modal .matter-close-modal__header.modal-header {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #1e3d60 0%, #2a5080 100%);
+    color: #fff;
+}
+
+.matter-close-modal .matter-close-modal__title.modal-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.matter-close-modal .modal-body {
+    padding: 20px 22px;
+}
+
+.matter-close-modal .modal-footer {
+    padding: 14px 22px 18px;
+    gap: 10px;
+}

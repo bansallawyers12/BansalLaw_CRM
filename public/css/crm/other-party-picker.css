@@ -1,0 +1,192 @@
+/* Other party row — conflict check & matter forms */
+.opp-party-row {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 12px;
+    container-type: inline-size;
+    min-width: 0;
+    overflow: visible;
+}
+
+.opp-party-row__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px 12px;
+    align-items: end;
+    min-width: 0;
+}
+
+.opp-party-field {
+    min-width: 0;
+}
+
+.opp-party-field--party,
+.opp-party-field--role {
+    min-width: 0;
+}
+
+.opp-party-field--remove {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* Wide enough row: party | role | remove on one line */
+@container (min-width: 460px) {
+    .opp-party-row__top {
+        grid-template-columns: minmax(0, 1fr) minmax(100px, 140px) auto;
+    }
+
+    .opp-party-field--remove {
+        grid-column: auto;
+        grid-row: 1;
+        margin-top: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .opp-party-row__top {
+        grid-template-columns: 1fr;
+    }
+
+    .opp-party-field--remove {
+        grid-column: 1;
+    }
+}
+
+.opp-party-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 4px;
+}
+
+.opp-party-remove {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.opp-party-solicitor-block {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed #e9ecef;
+}
+
+.opp-party-solicitor-block__head {
+    font-size: 13px;
+    font-weight: 600;
+    color: #343a40;
+    margin-bottom: 8px;
+}
+
+.opp-party-solicitor-mode {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+
+.opp-party-solicitor-mode label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.opp-party-solicitor-search-wrap {
+    margin-bottom: 10px;
+}
+
+.opp-party-rep-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 12px;
+}
+
+@media (max-width: 576px) {
+    .opp-party-rep-fields {
+        grid-template-columns: 1fr;
+    }
+}
+
+.opp-party-field--full {
+    grid-column: 1 / -1;
+}
+
+/* Tom Select — readable selected state (fix solid blue bar) */
+.opp-party-row .ts-wrapper.single {
+    width: 100%;
+}
+
+.opp-party-row .ts-wrapper.single .ts-control {
+    background: #fff !important;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    min-height: 38px;
+    padding: 4px 8px;
+    box-shadow: none;
+}
+
+.opp-party-row .ts-wrapper.single.focus .ts-control {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+.opp-party-row .ts-wrapper.single .ts-control .item {
+    background: #eef4ff;
+    color: #1a4480;
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin: 2px 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.opp-party-row .ts-wrapper.single .ts-control input {
+    color: #212529 !important;
+    background: transparent !important;
+    min-width: 80px;
+}
+
+.opp-party-row .ts-wrapper.single .ts-control input::placeholder {
+    color: #6c757d;
+}
+
+.opp-party-row .opp-party-rep-fields input.form-control {
+    font-size: 13px;
+}
+
+.opp-party-row .opp-party-rep-fields input[readonly] {
+    background-color: #f8f9fa;
+}
+
+#conflictPartiesCard .cp-mini-create {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+#conflictPartiesCard .cp-mini-create .row {
+    margin-bottom: 0;
+}
+
+#addMatterModal #quick_add_opposing_parties_wrap {
+    min-width: 0;
+    overflow: visible;
+}
+
+#addMatterModal .opp-party-row {
+    min-width: 0;
+}
