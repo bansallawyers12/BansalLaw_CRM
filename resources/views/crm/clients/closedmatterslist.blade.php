@@ -65,6 +65,14 @@
     .thCls,.tdCls { white-space: initial !important; }
     .badge-closed { background: #6b7280; color: white; }
     .badge-discontinued { background: #dc2626; color: white; }
+    .badge-complete { background: #188038; color: white; }
+    .closed-matter-checklist-summary {
+        display: block;
+        margin-top: 4px;
+        font-size: 11px;
+        color: #059669;
+        font-weight: 600;
+    }
 </style>
 @include('crm.clients.partials.enhanced-date-filter-styles')
 @endsection
@@ -118,6 +126,7 @@
                             'sel_legal_practitioner' => request('sel_legal_practitioner'),
                             'sel_person_responsible' => request('sel_person_responsible'),
                             'sel_person_assisting' => request('sel_person_assisting'),
+                            'closure_status' => request('closure_status'),
                             'quick_date_range' => request('quick_date_range'),
                             'from_date' => request('from_date'),
                             'to_date' => request('to_date'),
@@ -197,6 +206,16 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="closure_status" class="col-form-label" style="color:#4a5568 !important;">Closure Status</label>
+                                        <select class="form-control" name="closure_status" id="closure_status">
+                                            <option value="">All closed matters</option>
+                                            <option value="complete" {{ request('closure_status') === 'complete' ? 'selected' : '' }}>Complete</option>
+                                            <option value="discontinued" {{ request('closure_status') === 'discontinued' ? 'selected' : '' }}>Discontinued</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                             <div class="date-filter-section mt-3">
                                 <div class="row">
@@ -205,7 +224,7 @@
                                             <label for="date_filter_field" class="col-form-label" style="color:#4a5568 !important;">Date Field</label>
                                             <select name="date_filter_field" id="date_filter_field" class="form-control">
                                                 <option value="created_at" {{ request('date_filter_field', 'created_at') === 'created_at' ? 'selected' : '' }}>Created Date</option>
-                                                <option value="updated_at" {{ request('date_filter_field') === 'updated_at' ? 'selected' : '' }}>Last Updated</option>
+                                                <option value="updated_at" {{ request('date_filter_field') === 'updated_at' ? 'selected' : '' }}>Closed / Last Updated</option>
                                             </select>
                                         </div>
                                     </div>
@@ -267,7 +286,8 @@
                                     <th class="thCls">Person Assisting</th>
                                     <th class="thCls">Status</th>
                                     <th class="thCls">Closed By</th>
-                                    <th class="thCls">Reason</th>
+                                    <th class="thCls sortable-header"><a href="{{ $buildSortUrl('cm.updated_at') }}">Closed At {!! $sortIcon('cm.updated_at') !!}</a></th>
+                                    <th class="thCls">Reason / Notes</th>
                                     <th class="thCls sortable-header"><a href="{{ $buildSortUrl('cm.created_at') }}">Created At {!! $sortIcon('cm.created_at') !!}</a></th>
                                     <th class="thCls">Office</th>
                                     <th class="thCls">Reopen</th>
@@ -283,9 +303,15 @@
                                         $person_assisting = \App\Models\Staff::select('first_name','last_name')->where('id', $list->sel_person_assisting)->first();
                                         $matter_office = $list->office_id ? \App\Models\Branch::find($list->office_id) : null;
                                         $closed_by_info = $list->closed_by ? \App\Models\Staff::select('first_name','last_name')->where('id', $list->closed_by)->first() : null;
-                                        $statusLabel = ($list->matter_status ?? 1) == 0 ? 'Discontinued' : ($list->workflow_stage_name ?? 'Closed');
-                                        $statusClass = ($list->matter_status ?? 1) == 0 ? 'badge-discontinued' : 'badge-closed';
+                                        $statusLabel = \App\Support\MatterCompletionChecklist::closureStatusLabel($list);
+                                        $statusClass = \App\Support\MatterCompletionChecklist::closureStatusBadgeClass($list);
                                         $isDiscontinued = ($list->matter_status ?? 1) == 0;
+                                        $isComplete = $isDiscontinued && \App\Support\MatterCompletionChecklist::isCompleteReason($list->discontinue_reason ?? null);
+                                        $checklist = \App\Support\MatterCompletionChecklist::parseStored($list->matter_completion_checklist ?? null);
+                                        $checklistChecked = \App\Support\MatterCompletionChecklist::checkedLabels($checklist);
+                                        $checklistTotal = \App\Support\MatterCompletionChecklist::totalCount();
+                                        $displayReason = \App\Support\MatterCompletionChecklist::displayReason($list);
+                                        $closedAt = ($isDiscontinued && !empty($list->updated_at)) ? date('d/m/Y H:i', strtotime($list->updated_at)) : '—';
                                         ?>
                                         <tr id="id_{{@$list->id}}">
                                             <td class="tdCls"><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)).'/'.$list->client_unique_matter_no )}}">{{ @$list->title == "" ? config('constants.empty') : Str::limit(@$list->title, '50', '...') }} ({{ @$list->client_unique_matter_no == "" ? config('constants.empty') : Str::limit(@$list->client_unique_matter_no, '50', '...') }})</a></td>
@@ -295,11 +321,28 @@
                                             <td class="tdCls">{{ @$person_responsible->first_name ?? '' }} {{ @$person_responsible->last_name ?? '' }}</td>
                                             <td class="tdCls">{{ @$person_assisting->first_name ?? '' }} {{ @$person_assisting->last_name ?? '' }}</td>
                                             <td class="tdCls"><span class="badge {{ $statusClass }}">{{ $statusLabel }}</span></td>
-                                            <td class="tdCls">{{ $list->closed_by ? (@$closed_by_info->first_name . ' ' . @$closed_by_info->last_name) : 'Unknown' }}</td>
                                             <td class="tdCls">
-                                                {{ $list->discontinue_reason ?? '-' }}
+                                                @if($list->closed_by && $closed_by_info)
+                                                    {{ trim($closed_by_info->first_name . ' ' . $closed_by_info->last_name) }}
+                                                @elseif($isDiscontinued)
+                                                    <span class="text-muted">Unknown</span>
+                                                @else
+                                                    <span class="text-muted">—</span>
+                                                @endif
+                                            </td>
+                                            <td class="tdCls">{{ $closedAt }}</td>
+                                            <td class="tdCls">
+                                                <strong>{{ $displayReason }}</strong>
                                                 @if(!empty($list->discontinue_notes))
-                                                    <br><small class="text-muted" title="{{ $list->discontinue_notes }}">{{ Str::limit($list->discontinue_notes, 30) }}</small>
+                                                    <br><small class="text-muted" title="{{ $list->discontinue_notes }}">{{ Str::limit($list->discontinue_notes, 80) }}</small>
+                                                @endif
+                                                @if($isComplete && count($checklistChecked) > 0)
+                                                    <span class="closed-matter-checklist-summary" title="{{ e(implode(', ', $checklistChecked)) }}">
+                                                        <i class="fa-solid fa-circle-check"></i>
+                                                        Checklist {{ count($checklistChecked) }}/{{ $checklistTotal }}
+                                                    </span>
+                                                @elseif($isComplete)
+                                                    <br><small class="text-muted">Checklist not recorded</small>
                                                 @endif
                                             </td>
                                             <td class="tdCls">{{ date('d/m/Y', strtotime($list->created_at)) }}</td>
@@ -330,7 +373,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="{{ $_cmEffectiveSa ? '10' : '9' }}" style="text-align: center; padding: 20px;">No Record Found</td>
+                                        <td colspan="12" style="text-align: center; padding: 20px;">No Record Found</td>
                                     </tr>
                                 @endif
                             </tbody>
