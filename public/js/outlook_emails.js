@@ -283,7 +283,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const iframe = document.getElementById('readBody');
         if (iframe) {
-            resizeReadBodyForGmail(iframe);
+            resetReadBodyIframeSizing(iframe);
         }
     });
 
@@ -693,6 +693,7 @@ document.addEventListener('DOMContentLoaded', function() {
             gmailReadingFooter.hidden = true;
         }
         closeGmailReadMoreMenu();
+        clearGmailReadingBodySizing();
     }
 
     function openGmailReadingView() {
@@ -766,13 +767,19 @@ document.addEventListener('DOMContentLoaded', function() {
         updateGmailReadNav();
     }
 
-    function resizeReadBodyForGmail(iframe) {
-        // Both modes now let the iframe fill its flex container; scrolling happens inside it.
-        if (!iframe) {
-            return;
+    function clearGmailReadingBodySizing() {
+        const readingBody = document.querySelector('#readingPane .reading-body');
+        const iframe = document.getElementById('readBody');
+
+        if (readingBody) {
+            readingBody.style.minHeight = '';
+            readingBody.style.maxHeight = '';
+            readingBody.style.height = '';
         }
-        iframe.style.height = '100%';
-        iframe.style.minHeight = '100%';
+        if (iframe) {
+            iframe.style.height = '';
+            iframe.style.minHeight = '';
+        }
     }
 
     function resetReadBodyIframeSizing(iframe) {
@@ -3368,10 +3375,41 @@ document.addEventListener('DOMContentLoaded', function() {
         return label + ': ' + cleaned;
     }
 
+    function renderGmailReadingAttachments(items) {
+        const chips = items.map(function (item) {
+            const href = item.previewUrl || item.downloadUrl;
+            const sizeLabel = formatFileSize(item.size);
+            const meta = sizeLabel ? ' <span class="gmail-attachment-chip__size">' + escapeHtml(sizeLabel) + '</span>' : '';
+
+            return ''
+                + '<a class="gmail-attachment-chip" href="' + href + '" target="_blank" rel="noopener" title="' + escapeHtml(item.name) + '">'
+                + '  <span class="gmail-attachment-chip__icon"><i class="fa-solid ' + item.icon + '"></i></span>'
+                + '  <span class="gmail-attachment-chip__text">'
+                + '    <span class="gmail-attachment-chip__name">' + escapeHtml(item.name) + '</span>'
+                + meta
+                + '  </span>'
+                + '  <span class="gmail-attachment-chip__action" aria-hidden="true"><i class="fa-solid fa-download"></i></span>'
+                + '</a>';
+        }).join('');
+
+        return ''
+            + '<div class="gmail-attachments-strip">'
+            + '  <div class="gmail-attachments-strip__label">'
+            + '    <i class="fa-solid fa-paperclip" aria-hidden="true"></i>'
+            + '    <span>' + items.length + ' attachment' + (items.length === 1 ? '' : 's') + '</span>'
+            + '  </div>'
+            + '  <div class="gmail-attachments-strip__list">' + chips + '</div>'
+            + '</div>';
+    }
+
     function renderReadingPaneAttachments(email) {
         const items = collectEmailAttachmentItems(email);
         if (!items.length) {
             return '';
+        }
+
+        if (isGmailUiMode()) {
+            return renderGmailReadingAttachments(items);
         }
 
         const rows = items.map(function(item) {
