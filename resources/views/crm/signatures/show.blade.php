@@ -877,10 +877,20 @@
                 </div>
 
                 @if($document->status === 'signed' && $document->signed_doc_link)
-                <div style="margin-top: 20px; text-align: center;">
+                <div style="margin-top: 20px; text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center;">
                     <a href="{{ route('documents.download.signed', $document->id) }}" class="btn btn-success btn-lg">
                         <i class="fa-solid fa-download"></i> Download Signed Document
                     </a>
+                    @if($document->certificate_path)
+                    <a href="{{ route('signatures.certificate', $document->id) }}" class="btn btn-outline-secondary">
+                                <i class="fa-solid fa-shield-halved"></i> Download Certificate of Completion
+                    </a>
+                    @endif
+                    @if($document->signed_hash)
+                    <div style="font-size: 11px; color: #6c757d; max-width: 100%; word-break: break-all;">
+                        <strong>Signed SHA-256:</strong> {{ $document->signed_hash }}
+                    </div>
+                    @endif
                 </div>
                 @endif
             </div>
@@ -1005,6 +1015,11 @@
                     <a href="{{ route('documents.download.signed', $document->id) }}" class="btn btn-success btn-block">
                         <i class="fa-solid fa-download"></i> Download
                     </a>
+                    @if($document->certificate_path)
+                    <a href="{{ route('signatures.certificate', $document->id) }}" class="btn btn-secondary btn-block">
+                        <i class="fa-solid fa-shield-halved"></i> Certificate
+                    </a>
+                    @endif
                     @endif
                     
                     <a href="{{ route('documents.edit', $document->id) }}" class="btn btn-primary btn-block">
@@ -1039,165 +1054,45 @@
             <div class="sidebar-card" style="margin-top: 20px;">
                 <h3 class="section-title" style="font-size: 16px;">
                     <i class="fa-solid fa-history"></i>
-                    Activity Timeline
+                    Audit Trail
                 </h3>
 
                 <div class="timeline-container">
                     @php
-                        $activities = collect();
-                        
-                        // Document creation
-                        $activities->push([
-                            'date' => $document->created_at,
-                            'text' => 'Document created',
-                            'icon' => 'fa-solid fa-file-plus',
-                            'type' => 'created'
-                        ]);
-                        
-                        // Signature fields placed
-                        if ($document->status === 'signature_placed' || $document->signatureFields->count() > 0) {
-                            $signatureFieldsDate = $document->signatureFields->min('created_at') ?? $document->updated_at;
-                            $activities->push([
-                                'date' => $signatureFieldsDate,
-                                'text' => 'Signature fields placed',
-                                'icon' => 'fa-solid fa-pen-to-square',
-                                'type' => 'signature_placed'
-                            ]);
-                        }
-                        
-                        // Document sent for signature
-                        if ($document->status === 'sent' || $document->status === 'signed') {
-                            $sentDate = $document->signers->min('created_at') ?? $document->updated_at;
-                            $activities->push([
-                                'date' => $sentDate,
-                                'text' => 'Document sent for signature',
-                                'icon' => 'fa-solid fa-paper-plane',
-                                'type' => 'sent'
-                            ]);
-                        }
-                        
-                        // Signer activities
-                        foreach ($document->signers as $signer) {
-                            // Signer added
-                            $activities->push([
-                                'date' => $signer->created_at,
-                                'text' => "Signer added: {$signer->name}",
-                                'icon' => 'fa-solid fa-user-plus',
-                                'type' => 'signer_added'
-                            ]);
-                            
-                            // Document opened
-                            if ($signer->opened_at) {
-                                $activities->push([
-                                    'date' => $signer->opened_at,
-                                    'text' => "Opened by {$signer->name}",
-                                    'icon' => 'fa-solid fa-eye',
-                                    'type' => 'opened'
-                                ]);
-                            }
-                            
-                            // Reminders sent
-                            if ($signer->reminder_count > 0) {
-                                for ($i = 1; $i <= $signer->reminder_count; $i++) {
-                                    $reminderDate = $signer->last_reminder_sent_at ?? $signer->updated_at;
-                                    $activities->push([
-                                        'date' => $reminderDate,
-                                        'text' => "Reminder #{$i} sent to {$signer->name}",
-                                        'icon' => 'fa-solid fa-bell',
-                                        'type' => 'reminder'
-                                    ]);
-                                }
-                            }
-                            
-                            // Document signed
-                            if ($signer->signed_at) {
-                                $activities->push([
-                                    'date' => $signer->signed_at,
-                                    'text' => "Signed by {$signer->name}",
-                                    'icon' => 'fa-solid fa-circle-check',
-                                    'type' => 'signed'
-                                ]);
-                            }
-                            
-                            // Signature cancelled
-                            if ($signer->cancelled_at) {
-                                $activities->push([
-                                    'date' => $signer->cancelled_at,
-                                    'text' => "Signature cancelled for {$signer->name}",
-                                    'icon' => 'fa-solid fa-circle-xmark',
-                                    'type' => 'signature_cancelled'
-                                ]);
-                            }
-                        }
-                        
-                        // Email delivery activities from SignatureActivity
-                        foreach ($document->signatureActivities()->whereIn('action_type', ['email_sent', 'email_failed', 'email_delivered', 'signature_cancelled'])->get() as $note) {
-                            $metadata = $note->metadata ?? [];
-                            $signerName = $metadata['signer_name'] ?? 'Unknown';
-                            $signerEmail = $metadata['signer_email'] ?? '';
-                            
-                            if ($note->action_type === 'email_sent') {
-                                $status = $metadata['status'] ?? 'sent';
-                                $activities->push([
-                                    'date' => $note->created_at,
-                                    'text' => "Email sent to {$signerName}" . ($signerEmail ? " ({$signerEmail})" : ''),
-                                    'icon' => 'fa-solid fa-envelope',
-                                    'type' => 'email_sent',
-                                    'note' => $note
-                                ]);
-                            } elseif ($note->action_type === 'email_failed') {
-                                $error = $metadata['error'] ?? 'Unknown error';
-                                $activities->push([
-                                    'date' => $note->created_at,
-                                    'text' => "Email failed to {$signerName}" . ($signerEmail ? " ({$signerEmail})" : ''),
-                                    'icon' => 'fa-solid fa-triangle-exclamation',
-                                    'type' => 'email_failed',
-                                    'note' => $note,
-                                    'error' => $error
-                                ]);
-                            } elseif ($note->action_type === 'email_delivered') {
-                                $activities->push([
-                                    'date' => $note->created_at,
-                                    'text' => "Email delivered to {$signerName}" . ($signerEmail ? " ({$signerEmail})" : ''),
-                                    'icon' => 'fa-solid fa-check',
-                                    'type' => 'email_delivered',
-                                    'note' => $note
-                                ]);
-                            } elseif ($note->action_type === 'signature_cancelled') {
-                                $activities->push([
-                                    'date' => $note->created_at,
-                                    'text' => $note->note ?? "Signature cancelled for {$signerName}",
-                                    'icon' => 'fa-solid fa-circle-xmark',
-                                    'type' => 'signature_cancelled',
-                                    'note' => $note
-                                ]);
-                            }
-                        }
-                        
-                        // Sort activities by date (newest first)
-                        $activities = $activities->sortByDesc('date');
+                        $activities = $auditTimeline ?? collect();
                     @endphp
                     
                     @if($activities->count() > 0)
                         @foreach($activities as $activity)
-                        <div class="timeline-item {{ $activity['type'] }}" style="{{ $activity['type'] === 'email_failed' || $activity['type'] === 'signature_cancelled' ? 'border-left: 3px solid #dc3545;' : ($activity['type'] === 'email_sent' ? 'border-left: 3px solid #28a745;' : ($activity['type'] === 'email_delivered' ? 'border-left: 3px solid #17a2b8;' : '')) }}">
-                            <div class="timeline-icon" style="{{ $activity['type'] === 'email_failed' || $activity['type'] === 'signature_cancelled' ? 'background-color: #dc3545;' : ($activity['type'] === 'email_sent' ? 'background-color: #28a745;' : ($activity['type'] === 'email_delivered' ? 'background-color: #17a2b8;' : '')) }}">
+                        <div class="timeline-item {{ $activity['type'] }}" style="{{ in_array($activity['type'], ['email_failed', 'signature_cancelled', 'stamp_failed', 'voided'], true) ? 'border-left: 3px solid #dc3545;' : (in_array($activity['type'], ['email_sent', 'reminder_sent', 'signed'], true) ? 'border-left: 3px solid #28a745;' : (in_array($activity['type'], ['link_opened', 'link_viewed', 'email_delivered'], true) ? 'border-left: 3px solid #17a2b8;' : '')) }}">
+                            <div class="timeline-icon" style="{{ in_array($activity['type'], ['email_failed', 'signature_cancelled', 'stamp_failed', 'voided'], true) ? 'background-color: #dc3545;' : (in_array($activity['type'], ['email_sent', 'reminder_sent', 'signed'], true) ? 'background-color: #28a745;' : (in_array($activity['type'], ['link_opened', 'link_viewed', 'email_delivered'], true) ? 'background-color: #17a2b8;' : '')) }}">
                                 <i class="{{ $activity['icon'] }}"></i>
                             </div>
                             <div class="timeline-content">
-                                <div class="timeline-date">{{ $activity['date']->format('M d, Y g:i A') }}</div>
-                                <div class="timeline-text" style="{{ $activity['type'] === 'email_failed' || $activity['type'] === 'signature_cancelled' ? 'color: #dc3545; font-weight: 500;' : '' }}">{{ $activity['text'] }}</div>
-                                @if(isset($activity['error']))
+                                <div class="timeline-date">{{ $activity['date']?->format('M d, Y g:i A') }}</div>
+                                <div class="timeline-text" style="{{ in_array($activity['type'], ['email_failed', 'signature_cancelled', 'stamp_failed', 'voided'], true) ? 'color: #dc3545; font-weight: 500;' : '' }}">{{ $activity['text'] }}</div>
+                                @if(!empty($activity['error']))
                                 <div style="margin-top: 5px; padding: 6px 10px; background-color: #fee; border-left: 3px solid #dc3545; border-radius: 4px; font-size: 12px; color: #721c24;">
                                     <strong>Error:</strong> {{ \Illuminate\Support\Str::limit($activity['error'], 150) }}
                                 </div>
                                 @endif
-                                @if(isset($activity['note']) && $activity['note']->metadata && isset($activity['note']->metadata['request_id']))
+                                @if(!empty($activity['meta']['ip']) || !empty($activity['meta']['hash']) || (!empty($activity['note']) && !empty($activity['note']->metadata['request_id'])))
                                 <div style="margin-top: 3px; font-size: 11px; color: #6c757d;">
-                                    Request ID: {{ \Illuminate\Support\Str::limit($activity['note']->metadata['request_id'], 30) }}
+                                    @if(!empty($activity['meta']['ip']))
+                                        IP: {{ $activity['meta']['ip'] }}
+                                    @endif
+                                    @if(!empty($activity['meta']['actor']))
+                                        · Actor: {{ $activity['meta']['actor'] }}
+                                    @endif
+                                    @if(!empty($activity['note']->metadata['request_id']))
+                                        · Request ID: {{ \Illuminate\Support\Str::limit($activity['note']->metadata['request_id'], 30) }}
+                                    @endif
+                                    @if(!empty($activity['meta']['hash']))
+                                        <div style="word-break: break-all;">Hash: {{ $activity['meta']['hash'] }}</div>
+                                    @endif
                                 </div>
                                 @endif
-                                <div class="timeline-time">{{ $activity['date']->diffForHumans() }}</div>
+                                <div class="timeline-time">{{ $activity['date']?->diffForHumans() }}</div>
                             </div>
                         </div>
                         @endforeach

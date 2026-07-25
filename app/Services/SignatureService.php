@@ -6,7 +6,6 @@ use App\Models\Document;
 use App\Models\Signer;
 use App\Models\Admin;
 use App\Models\Staff;
-use App\Models\SignatureActivity;
 use App\Models\ActivitiesLog;
 use Illuminate\Support\Str;
 use Illuminate\Mail\Message;
@@ -17,14 +16,19 @@ class SignatureService
 {
     protected EmailConfigService $emailConfigService;
     protected MailRoutingService $mailRouting;
+    protected SignatureAuditService $auditService;
 
     /**
      * Constructor with dependency injection
      */
-    public function __construct(EmailConfigService $emailConfigService, MailRoutingService $mailRouting)
-    {
+    public function __construct(
+        EmailConfigService $emailConfigService,
+        MailRoutingService $mailRouting,
+        ?SignatureAuditService $auditService = null
+    ) {
         $this->emailConfigService = $emailConfigService;
         $this->mailRouting = $mailRouting;
+        $this->auditService = $auditService ?? app(SignatureAuditService::class);
     }
 
     /**
@@ -69,6 +73,18 @@ class SignatureService
             $document->update([
                 'status' => 'sent',
             ]);
+
+            $this->auditService->log(
+                $document,
+                'sent',
+                'Document sent for signature to ' . count($createdSigners) . ' signer(s)',
+                [
+                    'signer_ids' => collect($createdSigners)->pluck('id')->all(),
+                    'signer_emails' => collect($createdSigners)->pluck('email')->all(),
+                ],
+                null,
+                SignatureAuditService::ACTOR_STAFF
+            );
 
             // Send emails to all signers
             foreach ($createdSigners as $signer) {
@@ -182,13 +198,11 @@ class SignatureService
                 }
             }, $from['from_address'] ?? null);
 
-            // Create activity note for successful email delivery
-            SignatureActivity::create([
-                'document_id' => $document->id,
-                'created_by' => $this->activityCreatorId(),
-                'action_type' => 'email_sent',
-                'note' => "Email sent successfully to {$signer->name} ({$signer->email})",
-                'metadata' => [
+            $this->auditService->log(
+                $document,
+                'email_sent',
+                "Email sent successfully to {$signer->name} ({$signer->email})",
+                [
                     'signer_id' => $signer->id,
                     'signer_email' => $signer->email,
                     'signer_name' => $signer->name,
@@ -196,8 +210,10 @@ class SignatureService
                     'mailer' => $mailerName,
                     'status' => 'sent_via_'.$mailerName,
                     'email_account' => $from['from_address'],
-                ]
-            ]);
+                ],
+                $signer,
+                SignatureAuditService::ACTOR_STAFF
+            );
 
             Log::info('Signing email sent', [
                 'document_id' => $document->id,
@@ -207,23 +223,22 @@ class SignatureService
                 'email_account' => $from['from_address'],
             ]);
         } catch (\Exception $e) {
-            // Create activity note for failed email delivery
             try {
-                SignatureActivity::create([
-                    'document_id' => $document->id,
-                    'created_by' => $this->activityCreatorId(),
-                    'action_type' => 'email_failed',
-                    'note' => "Failed to send email to {$signer->name} ({$signer->email}): {$e->getMessage()}",
-                    'metadata' => [
+                $this->auditService->log(
+                    $document,
+                    'email_failed',
+                    "Failed to send email to {$signer->name} ({$signer->email}): {$e->getMessage()}",
+                    [
                         'signer_id' => $signer->id,
                         'signer_email' => $signer->email,
                         'signer_name' => $signer->name,
                         'error' => $e->getMessage(),
-                        'error_trace' => substr($e->getTraceAsString(), 0, 500), // Limit trace length
-                    ]
-                ]);
+                        'error_trace' => substr($e->getTraceAsString(), 0, 500),
+                    ],
+                    $signer,
+                    SignatureAuditService::ACTOR_STAFF
+                );
             } catch (\Exception $noteException) {
-                // If note creation fails, just log it
                 Log::warning('Failed to create email failure note', [
                     'document_id' => $document->id,
                     'error' => $noteException->getMessage()
@@ -292,21 +307,21 @@ class SignatureService
                 'reminder_count' => $signer->reminder_count + 1
             ]);
 
-            // Create activity note for reminder email
-            SignatureActivity::create([
-                'document_id' => $document->id,
-                'created_by' => $this->activityCreatorId(),
-                'action_type' => 'email_sent',
-                'note' => "Reminder #{$signer->reminder_count} sent to {$signer->name} ({$signer->email})",
-                'metadata' => [
+            $this->auditService->log(
+                $document,
+                'reminder_sent',
+                "Reminder #{$signer->reminder_count} sent to {$signer->name} ({$signer->email})",
+                [
                     'signer_id' => $signer->id,
                     'signer_email' => $signer->email,
                     'signer_name' => $signer->name,
                     'reminder_number' => $signer->reminder_count,
                     'mailer' => $mailerName,
                     'status' => 'sent_via_'.$mailerName,
-                ]
-            ]);
+                ],
+                $signer,
+                SignatureAuditService::ACTOR_STAFF
+            );
 
             Log::info('Reminder sent', [
                 'signer_id' => $signer->id,
@@ -317,21 +332,21 @@ class SignatureService
 
             return true;
         } catch (\Exception $e) {
-            // Create activity note for failed reminder
             try {
-                SignatureActivity::create([
-                    'document_id' => $document->id,
-                    'created_by' => $this->activityCreatorId(),
-                    'action_type' => 'email_failed',
-                    'note' => "Failed to send reminder to {$signer->name} ({$signer->email}): {$e->getMessage()}",
-                    'metadata' => [
+                $this->auditService->log(
+                    $document,
+                    'email_failed',
+                    "Failed to send reminder to {$signer->name} ({$signer->email}): {$e->getMessage()}",
+                    [
                         'signer_id' => $signer->id,
                         'signer_email' => $signer->email,
                         'signer_name' => $signer->name,
                         'reminder_number' => $signer->reminder_count + 1,
                         'error' => $e->getMessage(),
-                    ]
-                ]);
+                    ],
+                    $signer,
+                    SignatureAuditService::ACTOR_STAFF
+                );
             } catch (\Exception $noteException) {
                 Log::warning('Failed to create reminder failure note', [
                     'document_id' => $document->id,
@@ -357,7 +372,15 @@ class SignatureService
                 'status' => 'voided',
             ]);
 
-            // Optionally log the reason
+            $this->auditService->log(
+                $document,
+                'voided',
+                $reason ? "Document voided: {$reason}" : 'Document voided',
+                ['reason' => $reason],
+                null,
+                SignatureAuditService::ACTOR_STAFF
+            );
+
             if ($reason) {
                 Log::info('Document voided', [
                     'document_id' => $document->id,
@@ -389,17 +412,17 @@ class SignatureService
 
             $document->update($updates);
 
-            // Create audit trail entry in signature_activities
-            SignatureActivity::create([
-                'document_id' => $document->id,
-                'created_by' => $this->activityCreatorId(),
-                'action_type' => 'associated',
-                'note' => $note ?? "Document associated with {$entityType}",
-                'metadata' => [
+            $this->auditService->log(
+                $document,
+                'associated',
+                $note ?? "Document associated with {$entityType}",
+                [
                     'entity_type' => $entityType,
                     'entity_id' => $entityId,
-                ]
-            ]);
+                ],
+                null,
+                SignatureAuditService::ACTOR_STAFF
+            );
 
             // Create activity log on Client/Lead timeline
             if ($entityType === 'client') {
@@ -462,20 +485,20 @@ class SignatureService
             }
             $document->update($updates);
 
-            // Create audit trail entry in signature_activities
-            SignatureActivity::create([
-                'document_id' => $document->id,
-                'created_by' => $this->activityCreatorId(),
-                'action_type' => 'associated',
-                'note' => $note ?? "Document associated with {$entityType} ({$docCategory})",
-                'metadata' => [
+            $this->auditService->log(
+                $document,
+                'associated',
+                $note ?? "Document associated with {$entityType} ({$docCategory})",
+                [
                     'entity_type' => $entityType,
                     'entity_id' => $entityId,
                     'matter_id' => $matterId,
                     'doc_category' => $docCategory,
                     'doc_type' => $docType,
-                ]
-            ]);
+                ],
+                null,
+                SignatureAuditService::ACTOR_STAFF
+            );
 
             // Create activity log on Client/Lead timeline
             if ($entityType === 'client') {
@@ -528,17 +551,17 @@ class SignatureService
                 'lead_id' => null,
             ]);
 
-            // Create audit trail entry
-            SignatureActivity::create([
-                'document_id' => $document->id,
-                'created_by' => $this->activityCreatorId(),
-                'action_type' => 'detached',
-                'note' => $reason ?? "Document detached from {$entityType}",
-                'metadata' => [
+            $this->auditService->log(
+                $document,
+                'detached',
+                $reason ?? "Document detached from {$entityType}",
+                [
                     'old_entity_type' => $entityType,
                     'old_entity_id' => $oldEntityId,
-                ]
-            ]);
+                ],
+                null,
+                SignatureAuditService::ACTOR_STAFF
+            );
 
             // Create activity log on Client/Lead timeline
             if ($oldClientId) {

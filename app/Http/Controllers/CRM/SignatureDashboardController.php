@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class SignatureDashboardController extends Controller
 {
@@ -190,17 +191,16 @@ class SignatureDashboardController extends Controller
                         ]);
                         
                         // Create a note about the matter association
-                        \App\Models\SignatureActivity::create([
-                            'document_id' => $document->id,
-                            'created_by' => auth('admin')->id(),
-                            'action_type' => 'associated',
-                            'note' => "Document associated with matter: {$matter->client_unique_matter_no}",
-                            'metadata' => [
+                        app(\App\Services\SignatureAuditService::class)->log(
+                            $document,
+                            'associated',
+                            "Document associated with matter: {$matter->client_unique_matter_no}",
+                            [
                                 'matter_id' => $matter->id,
                                 'matter_number' => $matter->client_unique_matter_no,
                                 'client_id' => $client->id
                             ]
-                        ]);
+                        );
                     }
                 }
             } elseif ($request->has('selected_client_id') && $request->selected_client_id) {
@@ -217,17 +217,16 @@ class SignatureDashboardController extends Controller
                     
                     // Create a note about the association
                     $folderName = ($entityType === 'lead') ? 'personal documents' : 'general documents';
-                    \App\Models\SignatureActivity::create([
-                        'document_id' => $document->id,
-                        'created_by' => auth('admin')->id(),
-                        'action_type' => 'associated',
-                        'note' => "Document associated with {$entityType}: {$entity->first_name} {$entity->last_name} (folder: {$folderName})",
-                        'metadata' => [
+                    app(\App\Services\SignatureAuditService::class)->log(
+                        $document,
+                        'associated',
+                        "Document associated with {$entityType}: {$entity->first_name} {$entity->last_name} (folder: {$folderName})",
+                        [
                             'entity_id' => $entity->id,
                             'entity_type' => $entityType,
                             'folder' => $folderName
                         ]
-                    ]);
+                    );
                 }
             }
 
@@ -333,7 +332,140 @@ class SignatureDashboardController extends Controller
         // Provide errors variable for the layout
         $errors = request()->session()->get('errors') ?? new \Illuminate\Support\MessageBag();
 
-        return view('crm.signatures.show', compact('document', 'errors', 'emailAccounts', 'clients', 'leads'));
+        $auditTimeline = $this->buildAuditTimeline($document);
+
+        return view('crm.signatures.show', compact('document', 'errors', 'emailAccounts', 'clients', 'leads', 'auditTimeline'));
+    }
+
+    /**
+     * Download Certificate of Completion for a signed document.
+     */
+    public function downloadCertificate($id)
+    {
+        $document = Document::findOrFail($id);
+        $this->authorize('view', $document);
+
+        if (empty($document->certificate_path)) {
+            return back()->with('error', 'No completion certificate is available for this document yet.');
+        }
+
+        try {
+            app(\App\Services\SignatureAuditService::class)->log(
+                $document,
+                'downloaded_certificate',
+                'Certificate of Completion downloaded',
+                ['certificate_path' => $document->certificate_path],
+                null,
+                \App\Services\SignatureAuditService::ACTOR_STAFF
+            );
+        } catch (\Throwable $e) {
+            // non-blocking
+        }
+
+        $path = $document->certificate_path;
+        $filename = 'certificate_of_completion_' . $document->id . '.pdf';
+
+        try {
+            if (Storage::disk('s3')->exists($path)) {
+                return redirect(Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(5), [
+                    'ResponseContentDisposition' => 'attachment; filename="' . $filename . '"',
+                ]));
+            }
+        } catch (\Throwable $e) {
+            // fall through to local
+        }
+
+        if (Storage::disk('public')->exists($path)) {
+            return response()->download(storage_path('app/public/' . $path), $filename);
+        }
+
+        return back()->with('error', 'Certificate file could not be found.');
+    }
+
+    /**
+     * Build a chronological audit timeline for the document detail page.
+     */
+    protected function buildAuditTimeline(Document $document): \Illuminate\Support\Collection
+    {
+        $activities = collect();
+
+        $activities->push([
+            'date' => $document->created_at,
+            'text' => 'Document created',
+            'icon' => 'fa-solid fa-file-plus',
+            'type' => 'created',
+            'meta' => null,
+        ]);
+
+        foreach ($document->signatureActivities as $note) {
+            $metadata = $note->metadata ?? [];
+            $error = $metadata['error'] ?? null;
+            $activities->push([
+                'date' => $note->created_at,
+                'text' => $note->note ?: $note->action_text,
+                'icon' => $this->auditIconFor($note->action_type),
+                'type' => $note->action_type,
+                'note' => $note,
+                'error' => $error,
+                'meta' => [
+                    'ip' => $note->ip_address,
+                    'actor' => $note->actor_type,
+                    'hash' => $metadata['evidence']['signed_sha256']
+                        ?? $metadata['evidence']['original_sha256']
+                        ?? null,
+                ],
+            ]);
+        }
+
+        // Fallback synthetic rows for older records that only have signer timestamps
+        foreach ($document->signers as $signer) {
+            $hasOpen = $document->signatureActivities->contains(function ($a) use ($signer) {
+                return in_array($a->action_type, ['link_opened', 'link_viewed'], true)
+                    && (($a->signer_id === $signer->id) || (($a->metadata['signer_id'] ?? null) == $signer->id));
+            });
+            if ($signer->opened_at && !$hasOpen) {
+                $activities->push([
+                    'date' => $signer->opened_at,
+                    'text' => "Opened by {$signer->name}",
+                    'icon' => 'fa-solid fa-eye',
+                    'type' => 'opened',
+                    'meta' => null,
+                ]);
+            }
+
+            $hasSigned = $document->signatureActivities->contains(function ($a) use ($signer) {
+                return $a->action_type === 'signed'
+                    && (($a->signer_id === $signer->id) || (($a->metadata['signer_id'] ?? null) == $signer->id));
+            });
+            if ($signer->signed_at && !$hasSigned) {
+                $activities->push([
+                    'date' => $signer->signed_at,
+                    'text' => "Signed by {$signer->name}",
+                    'icon' => 'fa-solid fa-circle-check',
+                    'type' => 'signed',
+                    'meta' => null,
+                ]);
+            }
+        }
+
+        return $activities->sortByDesc('date')->values();
+    }
+
+    protected function auditIconFor(string $actionType): string
+    {
+        return match ($actionType) {
+            'fields_placed' => 'fa-solid fa-pen-to-square',
+            'sent' => 'fa-solid fa-paper-plane',
+            'email_sent', 'reminder_sent' => 'fa-solid fa-envelope',
+            'email_failed', 'stamp_failed' => 'fa-solid fa-triangle-exclamation',
+            'link_opened', 'link_viewed' => 'fa-solid fa-eye',
+            'signed' => 'fa-solid fa-circle-check',
+            'signature_cancelled', 'voided' => 'fa-solid fa-circle-xmark',
+            'associated' => 'fa-solid fa-link',
+            'detached' => 'fa-solid fa-unlink',
+            'downloaded_signed', 'downloaded_certificate' => 'fa-solid fa-download',
+            default => 'fa-solid fa-circle-info',
+        };
     }
 
     public function sendReminder(Request $request, $id)
@@ -432,18 +564,19 @@ class SignatureDashboardController extends Controller
             }
             
             // Create activity log entry
-            \App\Models\SignatureActivity::create([
-                'document_id' => $document->id,
-                'created_by' => auth('admin')->id(),
-                'note' => "Signature cancelled for {$signer->name} ({$signer->email})",
-                'action_type' => 'signature_cancelled',
-                'metadata' => [
+            app(\App\Services\SignatureAuditService::class)->log(
+                $document,
+                'signature_cancelled',
+                "Signature cancelled for {$signer->name} ({$signer->email})",
+                [
                     'signer_id' => $signer->id,
                     'signer_name' => $signer->name,
                     'signer_email' => $signer->email,
-                    'cancelled_at' => now()->toIso8601String()
-                ]
-            ]);
+                    'cancelled_at' => now()->toIso8601String(),
+                ],
+                $signer,
+                \App\Services\SignatureAuditService::ACTOR_STAFF
+            );
             
             return back()->with('success', 'Signature cancelled successfully. The signer will no longer be able to sign this document.');
         } catch (\Exception $e) {
@@ -521,31 +654,31 @@ class SignatureDashboardController extends Controller
                     }, $fromAddress);
 
                     // Create activity note for successful email
-                    \App\Models\SignatureActivity::create([
-                        'document_id' => $document->id,
-                        'created_by' => \Illuminate\Support\Facades\Auth::guard('admin')->id() ?? 1,
-                        'action_type' => 'email_sent',
-                        'note' => "Email sent successfully to {$signer->name} ({$signer->email})",
-                        'metadata' => [
+                    app(\App\Services\SignatureAuditService::class)->log(
+                        $document,
+                        'email_sent',
+                        "Email sent successfully to {$signer->name} ({$signer->email})",
+                        [
                             'signer_email' => $signer->email,
                             'signer_name' => $signer->name,
                             'subject' => $subject,
                             'status' => 'sent_via_ses',
-                        ]
-                    ]);
+                        ],
+                        $signer
+                    );
                 } catch (\Exception $emailException) {
                     // Create activity note for failed email
-                    \App\Models\SignatureActivity::create([
-                        'document_id' => $document->id,
-                        'created_by' => \Illuminate\Support\Facades\Auth::guard('admin')->id() ?? 1,
-                        'action_type' => 'email_failed',
-                        'note' => "Failed to send email to {$signer->name} ({$signer->email}): {$emailException->getMessage()}",
-                        'metadata' => [
+                    app(\App\Services\SignatureAuditService::class)->log(
+                        $document,
+                        'email_failed',
+                        "Failed to send email to {$signer->name} ({$signer->email}): {$emailException->getMessage()}",
+                        [
                             'signer_email' => $signer->email,
                             'signer_name' => $signer->name,
                             'error' => $emailException->getMessage(),
-                        ]
-                    ]);
+                        ],
+                        $signer
+                    );
                     throw $emailException;
                 }
                 
