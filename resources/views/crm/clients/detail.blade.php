@@ -1641,10 +1641,12 @@ $(document).ready(function() {
 })();
 </script>
 {{-- Edit matter details modal (must load before detail-main.js) --}}
-<script src="{{ URL::asset('js/crm/clients/other-party-picker.js') }}?v={{ time() }}"></script>
+<link rel="stylesheet" href="{{ asset('css/crm/other-party-picker.css') }}?v={{ @filemtime(public_path('css/crm/other-party-picker.css')) ?: time() }}">
+<script src="{{ URL::asset('js/crm/clients/other-party-picker.js') }}?v={{ @filemtime(public_path('js/crm/clients/other-party-picker.js')) ?: time() }}"></script>
 <script>
     window.MATTER_PARTY_ROLES_BY_STREAM = @json(config('matter_streams.party_roles_by_stream', []));
     window.OTHER_PARTY_SEARCH_URL = @json(route('api.search.other.party'));
+    window.CONTACT_PERSON_SEARCH_URL = @json(route('api.search.contact.person'));
     window.STORE_OTHER_PARTY_MINI_URL = @json(route('leads.store.other_party.mini'));
 </script>
 <script src="{{ URL::asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ time() }}"></script>
@@ -2159,14 +2161,14 @@ function openDiscontinueMatterModal(preselectedMatterId) {
             }
         }
     }
-    var reasonEl = document.getElementById('discontinue-reason');
-    if (reasonEl) reasonEl.value = '';
-    var notesEl = document.getElementById('discontinue-notes');
-    if (notesEl) notesEl.value = '';
-    var matterErrEl = document.querySelector('.discontinue-matter-error strong');
-    if (matterErrEl) matterErrEl.textContent = '';
-    var errEl = document.querySelector('.discontinue-reason-error strong');
-    if (errEl) errEl.textContent = '';
+    if (typeof window.resetMatterCloseModals === 'function') {
+        window.resetMatterCloseModals();
+    } else {
+        var reasonEl = document.getElementById('discontinue-reason');
+        if (reasonEl) reasonEl.value = '';
+        var notesEl = document.getElementById('discontinue-notes');
+        if (notesEl) notesEl.value = '';
+    }
     if (typeof window.jQuery !== 'undefined') {
         $('#discontinue-matter-modal').modal('show');
     }
@@ -2179,4 +2181,5 @@ function openCloseMatterModal(btn) {
 window.openDiscontinueMatterModal = openDiscontinueMatterModal;
 window.openCloseMatterModal = openCloseMatterModal;
 </script>
+@include('crm.clients.partials.matter-close-scripts')
 @endpush

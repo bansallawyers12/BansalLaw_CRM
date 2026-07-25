@@ -1352,10 +1352,12 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/modules/subtabs.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/ledger-dragdrop.js') }}"></script>
 {{-- Edit matter details modal (must load before detail-main.js) --}}
+<link rel="stylesheet" href="{{ asset('css/crm/other-party-picker.css') }}?v={{ @filemtime(public_path('css/crm/other-party-picker.css')) ?: time() }}">
 <script src="{{ URL::asset('js/crm/clients/other-party-picker.js') }}?v={{ time() }}"></script>
 <script>
     window.MATTER_PARTY_ROLES_BY_STREAM = @json(config('matter_streams.party_roles_by_stream', []));
     window.OTHER_PARTY_SEARCH_URL = @json(route('api.search.other.party'));
+    window.CONTACT_PERSON_SEARCH_URL = @json(route('api.search.contact.person'));
 </script>
 <script src="{{ URL::asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ time() }}"></script>
 {{-- Main detail page JavaScript --}}

@@ -17,6 +17,7 @@
     <!-- Styles -->
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
     <link href="{{ asset('css/crm-theme.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/crm/modal-ui.css') }}?v={{ @filemtime(public_path('css/crm/modal-ui.css')) ?: time() }}" rel="stylesheet">
     @include('components.sweetalert2-assets')
 </head>
 <body class="crm-app-minimal">

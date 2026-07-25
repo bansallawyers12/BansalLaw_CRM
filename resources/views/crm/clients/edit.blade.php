@@ -1967,10 +1967,12 @@
         window.ClientDetailConfig.urls = window.ClientDetailConfig.urls || {};
         window.ClientDetailConfig.urls.fetchClientMatterAssignee = @json(url('/clients/fetchClientMatterAssignee'));
     </script>
+    <link rel="stylesheet" href="{{ asset('css/crm/other-party-picker.css') }}?v={{ @filemtime(public_path('css/crm/other-party-picker.css')) ?: time() }}">
     <script src="{{ asset('js/crm/clients/other-party-picker.js') }}?v={{ time() }}"></script>
     <script>
         window.MATTER_PARTY_ROLES_BY_STREAM = @json(config('matter_streams.party_roles_by_stream', []));
         window.OTHER_PARTY_SEARCH_URL = @json(route('api.search.other.party'));
+        window.CONTACT_PERSON_SEARCH_URL = @json(route('api.search.contact.person'));
         window.countriesData = @json($countries);
         window.storeLeadMatterFromEditUrl = @json(route('clients.storeLeadMatterFromEdit'));
         window.currentClientId = @json((string) ($fetchedData->id ?? ''));

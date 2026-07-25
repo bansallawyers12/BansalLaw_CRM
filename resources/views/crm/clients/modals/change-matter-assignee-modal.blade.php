@@ -142,4 +142,5 @@
 <script>
 window.MATTER_PARTY_ROLES_BY_STREAM = @json(config('matter_streams.party_roles_by_stream', []));
 window.OTHER_PARTY_SEARCH_URL = @json(route('api.search.other.party'));
+window.CONTACT_PERSON_SEARCH_URL = @json(route('api.search.contact.person'));
 </script>

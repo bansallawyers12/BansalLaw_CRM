@@ -3,6 +3,7 @@
     // =====================================================
     window.MATTER_PARTY_ROLES_BY_STREAM = @json(config('matter_streams.party_roles_by_stream', []));
     window.OTHER_PARTY_SEARCH_URL = @json(route('api.search.other.party'));
+    window.CONTACT_PERSON_SEARCH_URL = @json(route('api.search.contact.person'));
     window.STORE_OTHER_PARTY_MINI_URL = @json(route('leads.store.other_party.mini'));
     var selectedMatterTypeId = null;
     var selectedMatterTypeNick = null;
@@ -19,6 +20,8 @@
         window.OtherPartyPicker.appendRow('#dyn_opposing_parties_wrap', {
             rowClass: 'dyn-opp-row opp-party-row',
             searchUrl: window.OTHER_PARTY_SEARCH_URL,
+            solicitorSearchUrl: window.CONTACT_PERSON_SEARCH_URL,
+            excludeId: window.currentClientId || null,
             stream: getDynMatterStream(),
             data: prefill || {}
         });
@@ -57,11 +60,12 @@
     }
 
     document.addEventListener('click', function (e) {
-        if (e.target && e.target.id === 'dyn_add_opposing_party_btn') {
+        if (e.target && e.target.closest && e.target.closest('#dyn_add_opposing_party_btn')) {
             e.preventDefault();
             dynAppendOpposingRow({});
+            return;
         }
-        if (e.target && e.target.id === 'dyn_create_other_party_btn') {
+        if (e.target && e.target.closest && e.target.closest('#dyn_create_other_party_btn')) {
             e.preventDefault();
             var box = document.getElementById('dyn_mini_create_other_party');
             if (box) box.style.display = box.style.display === 'none' ? 'block' : 'none';

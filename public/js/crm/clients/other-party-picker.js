@@ -21,17 +21,17 @@
         return html;
     }
 
-    function initOtherPartyTomSelect(selectEl, searchUrl, excludeId) {
+    function initSearchTomSelect(selectEl, searchUrl, excludeId, placeholder) {
         if (selectEl && typeof global.destroyTS === 'function') {
             global.destroyTS(selectEl);
         }
         if (!selectEl || typeof global.initTS !== 'function' || typeof global.buildContactPersonSearchTomSelectConfig !== 'function') {
-            console.warn('Other party search: Tom Select helpers not loaded.');
+            console.warn('Party search: Tom Select helpers not loaded.');
             return false;
         }
         var cfg = global.buildContactPersonSearchTomSelectConfig({
             url: searchUrl,
-            placeholder: 'Search other party (name, phone, email, ID)...',
+            placeholder: placeholder || 'Type name, phone, email, or ID…',
             dropdownParent: 'body',
             excludeId: excludeId
         });
@@ -39,12 +39,89 @@
         return true;
     }
 
+    function fillRepFieldsFromPerson(row, person) {
+        if (!row || !person) return;
+        var nameEl = row.querySelector('.opp-party-rep-name');
+        var emailEl = row.querySelector('.opp-party-rep-email');
+        var phoneEl = row.querySelector('.opp-party-rep-phone');
+        var fullName = ((person.first_name || '') + ' ' + (person.last_name || '')).trim();
+        if (!fullName && person.text) {
+            fullName = String(person.text).split(' (')[0].trim();
+        }
+        if (nameEl) nameEl.value = fullName;
+        if (emailEl) emailEl.value = person.email || '';
+        if (phoneEl) phoneEl.value = person.phone || '';
+    }
+
+    function setRepFieldsReadonly(row, readonly) {
+        if (!row) return;
+        ['opp-party-rep-name', 'opp-party-rep-email', 'opp-party-rep-phone'].forEach(function (cls) {
+            var el = row.querySelector('.' + cls);
+            if (!el) return;
+            if (readonly) {
+                el.setAttribute('readonly', 'readonly');
+            } else {
+                el.removeAttribute('readonly');
+            }
+        });
+    }
+
+    function toggleSolicitorMode(row, isManual) {
+        if (!row) return;
+        var searchWrap = row.querySelector('.opp-party-solicitor-search-wrap');
+        var solSelect = row.querySelector('.opp-party-solicitor-select');
+        if (searchWrap) {
+            searchWrap.style.display = isManual ? 'none' : 'block';
+        }
+        if (solSelect && solSelect.tomselect) {
+            if (isManual) {
+                solSelect.tomselect.disable();
+            } else {
+                solSelect.tomselect.enable();
+            }
+        }
+        if (isManual) {
+            setRepFieldsReadonly(row, false);
+        } else {
+            var hasSelection = solSelect && solSelect.tomselect && solSelect.tomselect.getValue();
+            setRepFieldsReadonly(row, !!hasSelection);
+        }
+    }
+
+    function wireSolicitorMode(row, solicitorSearchUrl, excludeId) {
+        var uid = 'sm' + Date.now() + Math.floor(Math.random() * 10000);
+        var radios = row.querySelectorAll('.opp-party-solicitor-mode input[type="radio"]');
+        radios.forEach(function (radio) {
+            radio.name = 'solicitor_mode_' + uid;
+            radio.addEventListener('change', function () {
+                toggleSolicitorMode(row, this.value === 'manual');
+            });
+        });
+
+        var solSelect = row.querySelector('.opp-party-solicitor-select');
+        if (solSelect && solicitorSearchUrl) {
+            initSearchTomSelect(solSelect, solicitorSearchUrl, excludeId, 'Search solicitor (name, phone, email)…');
+            solSelect.addEventListener('change', function () {
+                var ts = solSelect.tomselect;
+                if (!ts) return;
+                var val = ts.getValue();
+                if (!val) {
+                    setRepFieldsReadonly(row, false);
+                    return;
+                }
+                var opt = ts.options[val] || ts.options[String(val)];
+                fillRepFieldsFromPerson(row, opt || {});
+                setRepFieldsReadonly(row, true);
+            });
+        }
+    }
+
     function selectPartyOnRow(row, person) {
         if (!row || !person) return;
         var leadSelect = row.querySelector('.opp-party-lead-select');
         if (!leadSelect) return;
         if (!leadSelect.tomselect && person.id) {
-            initOtherPartyTomSelect(leadSelect, window.OTHER_PARTY_SEARCH_URL || '', null);
+            initSearchTomSelect(leadSelect, global.OTHER_PARTY_SEARCH_URL || '', null, 'Search other party…');
         }
         var ts = leadSelect.tomselect;
         if (ts && person.id) {
@@ -70,16 +147,6 @@
 
     /**
      * Append an other-party row to a container.
-     *
-     * @param {HTMLElement|string} container
-     * @param {object} opts
-     * @param {string} opts.rowClass - CSS class on row wrapper
-     * @param {string} opts.searchUrl
-     * @param {string} opts.stream - matter stream for role dropdown
-     * @param {object} [opts.data] - prefill { opposing_lead_id, name, party_role, rep_* }
-     * @param {object} [opts.roles] - custom role map { value: label }
-     * @param {string|number} [opts.excludeId] - exclude this admin id from search
-     * @param {string} [opts.repSectionTitle] - optional heading above manual solicitor fields
      */
     function appendOtherPartyRow(container, opts) {
         opts = opts || {};
@@ -90,65 +157,73 @@
         var data = opts.data || {};
         var stream = opts.stream || 'general';
         var customRoles = opts.roles || null;
-        var repSectionTitle = opts.repSectionTitle || '';
+        var solicitorSearchUrl = opts.solicitorSearchUrl || global.CONTACT_PERSON_SEARCH_URL || '';
 
         var row = document.createElement('div');
-        row.className = rowClass + ' opp-party-row border rounded p-2 mb-2';
-        row.style.background = '#fff';
-
-        var repHeading = repSectionTitle
-            ? '<div class="small fw-semibold text-muted mt-2 mb-1 opp-party-rep-heading">' +
-                String(repSectionTitle).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;') +
-              '</div>'
-            : '';
+        row.className = rowClass + ' opp-party-row';
 
         row.innerHTML =
-            '<div class="row g-2 align-items-end">' +
-            '<div class="col-md-5">' +
-            '<label class="small mb-0 d-block">Other party <span class="text-danger">*</span></label>' +
-            '<select class="form-control opp-party-lead-select" data-placeholder="Search other party..."></select>' +
-            '<input type="hidden" class="opp-party-lead-id" value="">' +
-            '<input type="hidden" class="opp-party-name" value="">' +
+            '<div class="opp-party-row__top">' +
+                '<div class="opp-party-field opp-party-field--party">' +
+                    '<label>Other party <span class="text-danger">*</span></label>' +
+                    '<select class="form-control opp-party-lead-select" data-placeholder="Search other party…"></select>' +
+                    '<input type="hidden" class="opp-party-lead-id" value="">' +
+                    '<input type="hidden" class="opp-party-name" value="">' +
+                '</div>' +
+                '<div class="opp-party-field opp-party-field--role">' +
+                    '<label>Their role <span class="text-danger">*</span></label>' +
+                    '<select class="form-control opp-party-role-select">' + partyRoleOptionsHtml(stream, customRoles) + '</select>' +
+                '</div>' +
+                '<div class="opp-party-field opp-party-field--remove">' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger opp-party-remove">Remove</button>' +
+                '</div>' +
             '</div>' +
-            '<div class="col-md-3">' +
-            '<label class="small mb-0 d-block">Their role <span class="text-danger">*</span></label>' +
-            '<select class="form-control opp-party-role-select">' + partyRoleOptionsHtml(stream, customRoles) + '</select>' +
-            '</div>' +
-            '<div class="col-md-2">' +
-            '<label class="small mb-0 d-block">&nbsp;</label>' +
-            '<button type="button" class="btn btn-sm btn-outline-danger w-100 opp-party-remove">Remove</button>' +
-            '</div>' +
-            '</div>' +
-            repHeading +
-            '<div class="row g-2 mt-1 opp-party-rep-row">' +
-            '<div class="col-md-3"><label class="small mb-0">Solicitor firm</label><input type="text" class="form-control form-control-sm opp-party-rep-firm" maxlength="255" placeholder="Firm name"></div>' +
-            '<div class="col-md-3"><label class="small mb-0">Solicitor name</label><input type="text" class="form-control form-control-sm opp-party-rep-name" maxlength="255"></div>' +
-            '<div class="col-md-2"><label class="small mb-0">Email</label><input type="email" class="form-control form-control-sm opp-party-rep-email" maxlength="255"></div>' +
-            '<div class="col-md-2"><label class="small mb-0">Phone</label><input type="text" class="form-control form-control-sm opp-party-rep-phone" maxlength="64"></div>' +
-            '<div class="col-md-2"><label class="small mb-0">Notes</label><input type="text" class="form-control form-control-sm opp-party-rep-notes" maxlength="500"></div>' +
+            '<div class="opp-party-solicitor-block">' +
+                '<div class="opp-party-solicitor-block__head">Opposing solicitor <span class="text-muted fw-normal">(optional)</span></div>' +
+                '<div class="opp-party-solicitor-mode">' +
+                    '<label><input type="radio" value="search" checked> Search existing</label>' +
+                    '<label><input type="radio" value="manual"> Enter manually</label>' +
+                '</div>' +
+                '<div class="opp-party-solicitor-search-wrap">' +
+                    '<select class="form-control opp-party-solicitor-select" data-placeholder="Search solicitor…"></select>' +
+                '</div>' +
+                '<div class="opp-party-rep-fields">' +
+                    '<div class="opp-party-field"><label class="small mb-1">Solicitor firm</label>' +
+                        '<input type="text" class="form-control form-control-sm opp-party-rep-firm" maxlength="255" placeholder="Firm name"></div>' +
+                    '<div class="opp-party-field"><label class="small mb-1">Solicitor name</label>' +
+                        '<input type="text" class="form-control form-control-sm opp-party-rep-name" maxlength="255"></div>' +
+                    '<div class="opp-party-field"><label class="small mb-1">Email</label>' +
+                        '<input type="email" class="form-control form-control-sm opp-party-rep-email" maxlength="255"></div>' +
+                    '<div class="opp-party-field"><label class="small mb-1">Phone</label>' +
+                        '<input type="text" class="form-control form-control-sm opp-party-rep-phone" maxlength="64"></div>' +
+                    '<div class="opp-party-field opp-party-field--full"><label class="small mb-1">Notes</label>' +
+                        '<input type="text" class="form-control form-control-sm opp-party-rep-notes" maxlength="500" placeholder="Optional notes"></div>' +
+                '</div>' +
             '</div>';
 
         row.querySelector('.opp-party-remove').addEventListener('click', function () {
-            var sel = row.querySelector('.opp-party-lead-select');
-            if (sel && typeof global.destroyTS === 'function') global.destroyTS(sel);
+            row.querySelectorAll('.opp-party-lead-select, .opp-party-solicitor-select').forEach(function (sel) {
+                if (typeof global.destroyTS === 'function') global.destroyTS(sel);
+            });
             row.remove();
         });
 
         var leadSelect = row.querySelector('.opp-party-lead-select');
         var isLegacy = !data.opposing_lead_id && data.name;
+
         if (isLegacy) {
             row.classList.add('opp-party-legacy');
-            var legacyName = String(data.name || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-            var leadCol = row.querySelector('.col-md-5');
-            if (leadCol) {
-                leadCol.innerHTML =
-                    '<label class="small mb-0 d-block">Other party <span class="text-muted">(legacy — re-link)</span></label>' +
+            var partyField = row.querySelector('.opp-party-field--party');
+            if (partyField) {
+                var legacyName = String(data.name || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+                partyField.innerHTML =
+                    '<label>Other party <span class="text-muted">(legacy — re-link)</span></label>' +
                     '<input type="text" class="form-control form-control-sm opp-party-legacy-name" readonly value="' + legacyName + '">' +
                     '<input type="hidden" class="opp-party-lead-id" value="">' +
                     '<input type="hidden" class="opp-party-name" value="' + legacyName + '">';
             }
         } else if (opts.searchUrl && leadSelect) {
-            initOtherPartyTomSelect(leadSelect, opts.searchUrl, opts.excludeId);
+            initSearchTomSelect(leadSelect, opts.searchUrl, opts.excludeId, 'Search other party…');
             if (data.opposing_lead_id) {
                 var ts = leadSelect.tomselect;
                 var label = data.name || ('Other party #' + data.opposing_lead_id);
@@ -170,6 +245,8 @@
             });
         }
 
+        wireSolicitorMode(row, solicitorSearchUrl, opts.excludeId);
+
         var roleSel = row.querySelector('.opp-party-role-select');
         if (roleSel && data.party_role) roleSel.value = data.party_role;
 
@@ -178,6 +255,14 @@
         if (data.rep_email) row.querySelector('.opp-party-rep-email').value = data.rep_email;
         if (data.rep_phone) row.querySelector('.opp-party-rep-phone').value = data.rep_phone;
         if (data.rep_notes) row.querySelector('.opp-party-rep-notes').value = data.rep_notes;
+
+        if (data.rep_name && !data.rep_from_search) {
+            var manualRadio = row.querySelector('.opp-party-solicitor-mode input[value="manual"]');
+            if (manualRadio) {
+                manualRadio.checked = true;
+                toggleSolicitorMode(row, true);
+            }
+        }
 
         wrap.appendChild(row);
         return row;
@@ -262,7 +347,9 @@
         appendRow: appendOtherPartyRow,
         rebuildRoleSelects: rebuildRoleSelectsInContainer,
         collectRows: collectOtherPartyRows,
-        initTomSelect: initOtherPartyTomSelect,
+        initTomSelect: function (el, url, excludeId) {
+            return initSearchTomSelect(el, url, excludeId);
+        },
         selectParty: selectPartyOnRow,
         partyRoleOptionsHtml: partyRoleOptionsHtml,
         filterDynFields: filterDynFields,
