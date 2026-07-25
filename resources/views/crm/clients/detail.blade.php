@@ -1645,6 +1645,7 @@ $(document).ready(function() {
 <script>
     window.MATTER_PARTY_ROLES_BY_STREAM = @json(config('matter_streams.party_roles_by_stream', []));
     window.OTHER_PARTY_SEARCH_URL = @json(route('api.search.other.party'));
+    window.STORE_OTHER_PARTY_MINI_URL = @json(route('leads.store.other_party.mini'));
 </script>
 <script src="{{ URL::asset('js/crm/clients/matter-assignee-modal.js') }}?v={{ time() }}"></script>
 @if(is_array($matterFormForLead ?? null))

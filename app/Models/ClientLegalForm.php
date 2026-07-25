@@ -14,6 +14,7 @@ class ClientLegalForm extends Model
         'client_matter_id',
         'created_by',
         'form_type',
+        'is_uploaded',
         'matter_reference',
         'firm_name',
         'firm_contact',
@@ -50,6 +51,7 @@ class ClientLegalForm extends Model
     ];
 
     protected $casts = [
+        'is_uploaded' => 'boolean',
         'form_date' => 'date',
         'signed_date' => 'date',
         'estimated_legal_fees' => 'decimal:2',

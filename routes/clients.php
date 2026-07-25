@@ -308,6 +308,7 @@ Route::post('/clients/{admin}/upload-agreement', [ClientsController::class, 'upl
 
 // Legal Forms (Short Costs Disclosure, Long Cost Disclosure, Authority to Act)
 Route::post('/legal-forms', [\App\Http\Controllers\CRM\LegalFormsController::class, 'store'])->name('legal-forms.store');
+Route::post('/legal-forms/upload', [\App\Http\Controllers\CRM\LegalFormsController::class, 'uploadForm'])->name('legal-forms.upload');
 Route::post('/legal-forms/generate-scope-ai', [\App\Http\Controllers\CRM\LegalFormsController::class, 'generateScopeAI'])->name('legal-forms.generate-scope-ai');
 Route::get('/legal-forms/client-forms', [\App\Http\Controllers\CRM\LegalFormsController::class, 'getClientForms'])->name('legal-forms.client-forms');
 Route::get('/legal-forms/{legalForm}', [\App\Http\Controllers\CRM\LegalFormsController::class, 'show'])->name('legal-forms.show');

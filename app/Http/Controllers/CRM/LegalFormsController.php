@@ -23,6 +23,19 @@ class LegalFormsController extends Controller
 {
     private LegalFormDocxService $docxService;
 
+    /** Document extensions allowed for legal form uploads (no images or executables). */
+    private const UPLOAD_ALLOWED_EXTENSIONS = [
+        'pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'xls', 'xlsx', 'ppt', 'pptx', 'csv',
+    ];
+
+    /** Extensions that must always be rejected (scripts, executables, images). */
+    private const UPLOAD_BLOCKED_EXTENSIONS = [
+        'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico', 'tif', 'tiff', 'heic', 'heif',
+        'exe', 'msi', 'bat', 'cmd', 'com', 'scr', 'ps1', 'vbs', 'js', 'jsx', 'ts', 'tsx',
+        'php', 'py', 'pyc', 'rb', 'pl', 'sh', 'bash', 'zsh', 'jar', 'app', 'dmg',
+        'html', 'htm', 'xhtml', 'xml', 'json', 'yaml', 'yml', 'sql', 'dll', 'so', 'bin',
+    ];
+
     public function __construct(LegalFormDocxService $docxService)
     {
         $this->middleware('auth:admin');
@@ -119,6 +132,58 @@ class LegalFormsController extends Controller
         ]);
     }
 
+    public function uploadForm(Request $request): JsonResponse
+    {
+        $request->validate([
+            'client_id' => 'required|exists:admins,id',
+            'client_matter_id' => 'nullable|exists:client_matters,id',
+            'form_type' => 'required|in:short_costs_disclosure,cost_agreement,authority_to_act',
+            'form_date' => 'nullable|date',
+            'matter_reference' => 'nullable|string|max:100',
+            'file' => 'required|file|max:20480',
+        ]);
+
+        $this->validateUploadedDocument($request->file('file'));
+
+        $data = $request->only(['client_id', 'client_matter_id', 'form_type', 'form_date', 'matter_reference']);
+
+        if (empty($data['client_matter_id']) && ! empty($data['matter_reference'])) {
+            $resolvedMatterId = ClientMatter::query()
+                ->where('client_id', (int) $data['client_id'])
+                ->where('client_unique_matter_no', trim((string) $data['matter_reference']))
+                ->value('id');
+            if ($resolvedMatterId) {
+                $data['client_matter_id'] = $resolvedMatterId;
+            }
+        }
+
+        $data['created_by'] = Auth::id();
+        $data['is_uploaded'] = true;
+
+        try {
+            $form = DB::transaction(function () use ($request, $data) {
+                $form = ClientLegalForm::create($data);
+                $fileMeta = $this->storeUploadedFormFile($request->file('file'), (int) $form->client_id, (int) $form->id);
+                $form->update($fileMeta);
+
+                return $form;
+            });
+        } catch (\Throwable $e) {
+            Log::error('Legal form upload failed', ['exception' => $e]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage() ?: 'Could not upload the form file.',
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => (ClientLegalForm::FORM_TYPES[$form->form_type] ?? 'Form') . ' uploaded successfully.',
+            'form' => $form->load(['client', 'matter', 'creator']),
+        ]);
+    }
+
     public function show(ClientLegalForm $legalForm): JsonResponse
     {
         return response()->json([
@@ -197,6 +262,10 @@ class LegalFormsController extends Controller
 
     public function downloadDocx(ClientLegalForm $legalForm)
     {
+        if ($legalForm->is_uploaded) {
+            return $this->downloadUploadedFormFile($legalForm);
+        }
+
         $docxPath = $this->docxService->generate($legalForm);
         $legalForm->update(['pdf_path' => $docxPath]);
 
@@ -269,6 +338,165 @@ class LegalFormsController extends Controller
     }
 
     /**
+     * @return array{pdf_path: string, attachment_path: string, attachment_original_name: string}
+     */
+    private function storeUploadedFormFile(\Illuminate\Http\UploadedFile $file, int $clientId, int $formId): array
+    {
+        $dir = 'legal_forms/' . $clientId . '/uploads';
+        $fullDir = public_path($dir);
+        if (! is_dir($fullDir)) {
+            mkdir($fullDir, 0755, true);
+        }
+
+        $originalName = $file->getClientOriginalName();
+        $extension = strtolower($file->getClientOriginalExtension());
+        $safeName = time() . '_' . $formId . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', pathinfo($originalName, PATHINFO_FILENAME)) . '.' . $extension;
+        $file->move($fullDir, $safeName);
+        $relativePath = $dir . '/' . $safeName;
+
+        return [
+            'pdf_path' => $relativePath,
+            'attachment_path' => $relativePath,
+            'attachment_original_name' => $originalName,
+        ];
+    }
+
+    private function validateUploadedDocument(?\Illuminate\Http\UploadedFile $file): void
+    {
+        if (! $file || ! $file->isValid()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'file' => ['Please select a valid file to upload.'],
+            ]);
+        }
+
+        $extension = strtolower($file->getClientOriginalExtension());
+        $originalName = strtolower($file->getClientOriginalName());
+
+        if ($extension === '' || in_array($extension, self::UPLOAD_BLOCKED_EXTENSIONS, true)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'file' => ['This file type is not allowed. Images, scripts, and executable files cannot be uploaded.'],
+            ]);
+        }
+
+        if (! in_array($extension, self::UPLOAD_ALLOWED_EXTENSIONS, true)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'file' => ['Only document files are allowed (PDF, Word, Excel, PowerPoint, text, etc.).'],
+            ]);
+        }
+
+        foreach (self::UPLOAD_BLOCKED_EXTENSIONS as $blocked) {
+            if (str_ends_with($originalName, '.' . $blocked)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'file' => ['This file type is not allowed. Images, scripts, and executable files cannot be uploaded.'],
+                ]);
+            }
+        }
+
+        $mimeType = strtolower((string) $file->getMimeType());
+        if (str_starts_with($mimeType, 'image/') || str_starts_with($mimeType, 'application/x-msdownload')) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'file' => ['This file type is not allowed. Images and executable files cannot be uploaded.'],
+            ]);
+        }
+    }
+
+    private function uploadedFormFullPath(ClientLegalForm $legalForm): string
+    {
+        $path = $legalForm->pdf_path ?: $legalForm->attachment_path;
+        if (! $path) {
+            abort(404, 'Uploaded form file not found.');
+        }
+
+        $fullPath = public_path($path);
+        if (! file_exists($fullPath)) {
+            abort(404, 'Uploaded form file not found.');
+        }
+
+        return $fullPath;
+    }
+
+    private function downloadUploadedFormFile(ClientLegalForm $legalForm)
+    {
+        $fullPath = $this->uploadedFormFullPath($legalForm);
+        $filename = $legalForm->attachment_original_name ?: basename($fullPath);
+
+        return response()->download($fullPath, $filename);
+    }
+
+    private function previewUploadedFormFile(Request $request, ClientLegalForm $legalForm)
+    {
+        $fullPath = $this->uploadedFormFullPath($legalForm);
+        $filename = $legalForm->attachment_original_name ?: basename($fullPath);
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $safeFilename = str_replace('"', '\\"', $filename);
+
+        if ($request->boolean('embed')) {
+            if ($extension === 'pdf') {
+                $pdfData = file_get_contents($fullPath);
+                if (! is_string($pdfData) || $pdfData === '') {
+                    return response($this->legalFormPreviewErrorHtml('The uploaded PDF could not be loaded.'), 404)
+                        ->header('Content-Type', 'text/html; charset=UTF-8');
+                }
+
+                return response($pdfData, 200, [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'inline; filename="' . str_replace('"', '\\"', pathinfo($filename, PATHINFO_FILENAME) . '.pdf') . '"',
+                ]);
+            }
+
+            if (in_array($extension, ['doc', 'docx', 'rtf', 'odt'], true)) {
+                $fileContent = file_get_contents($fullPath);
+                if (! is_string($fileContent) || $fileContent === '') {
+                    return response($this->legalFormPreviewErrorHtml('The uploaded file could not be loaded.'), 404)
+                        ->header('Content-Type', 'text/html; charset=UTF-8');
+                }
+
+                $converter = app(PythonConverterService::class);
+                $result = $converter->convertBytesToPdf($fileContent, $filename, 45);
+                if (! empty($result['success']) && ! empty($result['pdf_data'])) {
+                    $pdfName = pathinfo($filename, PATHINFO_FILENAME) . '.pdf';
+
+                    return response($result['pdf_data'], 200, [
+                        'Content-Type' => 'application/pdf',
+                        'Content-Disposition' => 'inline; filename="' . str_replace('"', '\\"', $pdfName) . '"',
+                    ]);
+                }
+
+                $htmlPreview = $this->convertDocxBytesToHtml($fileContent, $filename);
+                if ($htmlPreview !== null) {
+                    return response($htmlPreview, 200, [
+                        'Content-Type' => 'text/html; charset=UTF-8',
+                    ]);
+                }
+            }
+
+            return response($this->legalFormPreviewErrorHtml('Preview is not available for this file type. Use Download to open the file.'), 503)
+                ->header('Content-Type', 'text/html; charset=UTF-8');
+        }
+
+        $mimeTypes = [
+            'pdf' => 'application/pdf',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'txt' => 'text/plain',
+            'rtf' => 'application/rtf',
+            'odt' => 'application/vnd.oasis.opendocument.text',
+            'xls' => 'application/vnd.ms-excel',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'ppt' => 'application/vnd.ms-powerpoint',
+            'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'csv' => 'text/csv',
+        ];
+
+        $disposition = $request->boolean('download') ? 'attachment' : 'inline';
+
+        return response()->file($fullPath, [
+            'Content-Type' => $mimeTypes[$extension] ?? 'application/octet-stream',
+            'Content-Disposition' => $disposition . '; filename="' . $safeFilename . '"',
+        ]);
+    }
+
+    /**
      * @return array{attachment_path?: string, attachment_original_name?: string}
      */
     private function storeAttachment(Request $request, int $clientId): array
@@ -308,6 +536,10 @@ class LegalFormsController extends Controller
 
     public function previewDocx(Request $request, ClientLegalForm $legalForm)
     {
+        if ($legalForm->is_uploaded) {
+            return $this->previewUploadedFormFile($request, $legalForm);
+        }
+
         $docxPath = $this->docxService->generate($legalForm);
         $legalForm->update(['pdf_path' => $docxPath]);
 

@@ -8090,6 +8090,10 @@ class ClientsController extends Controller
 
             if (Schema::hasColumn('admins', 'company_name')) {
                 $q->orWhere('company_name', $likeOperator, "%{$query}%");
+            } else {
+                $q->orWhereHas('company', function ($cq) use ($query, $likeOperator) {
+                    $cq->where('company_name', $likeOperator, "%{$query}%");
+                });
             }
 
             if (DB::getDriverName() === 'pgsql') {
@@ -8099,7 +8103,10 @@ class ClientsController extends Controller
             }
         })
             ->whereIn('type', ['client', 'lead'])
-            ->where('is_other_party', '=', true)
+            ->where('is_other_party', 1)
+            ->where(function ($q) {
+                $q->where('is_archived', 0)->orWhereNull('is_archived');
+            })
             ->whereNull('is_deleted')
             ->when($excludeId, function ($q) use ($excludeId) {
                 $q->where('id', '!=', $excludeId);
