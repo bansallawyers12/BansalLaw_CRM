@@ -30,6 +30,11 @@
             font-weight: 700;
             color: #ffffff;
         }
+        .header-subtitle {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #ffffff;
+        }
         .email-body {
             padding: 30px 25px;
         }
@@ -131,6 +136,7 @@
         <div class="email-header">
             <img src="{{ asset('img/logo.png') }}" alt="{{ config('app.name') }}" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
             <h1>Agreement Signature Request</h1>
+            <div class="header-subtitle">{{ config('app.name') }} — {{ config('app.brand.tagline') }}</div>
         </div>
 
         <!-- Body -->
@@ -188,7 +194,7 @@
             <p class="message" style="margin-top: 30px;">
                 <strong>Warm regards,</strong><br>
                 {{ config('app.name') }} Team<br>
-                <em>Your trusted immigration partner</em>
+                <em>{{ config('app.brand.tagline') }}</em>
             </p>
 
             @if(isset($emailSignature) && !empty($emailSignature))
@@ -201,7 +207,7 @@
         <!-- Footer -->
         <div class="email-footer">
             <p><strong>{{ config('app.name') }}</strong></p>
-            <p>Immigration & Visa Services</p>
+            <p>{{ config('app.brand.tagline') }}</p>
             <p>Email: <a href="mailto:{{ config('app.brand.public_email') }}">{{ config('app.brand.public_email') }}</a></p>
             <p>Phone: <a href="tel:+61292673945">+61 2 9267 3945</a></p>
             <p>Website: <a href="{{ config('app.brand.website_url') }}">{{ config('app.brand.website_label') }}</a></p>
@@ -209,9 +215,9 @@
             <p style="margin-top: 15px; font-size: 11px; color: #666666;">
                 This is an automated message. Please do not reply to this email.
             </p>
-            <p style="margin-top: 15px; font-size: 13px;">
+            <!-- <p style="margin-top: 15px; font-size: 13px;">
                 Consumer guide: <a href="https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf" style="color: #059669; text-decoration: none; font-weight: 600;">https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf</a>
-            </p>
+            </p> -->
         </div>
     </div>
 </body>

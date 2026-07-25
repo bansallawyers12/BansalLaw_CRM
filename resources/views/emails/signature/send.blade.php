@@ -193,7 +193,7 @@
             <div class="email-header">
                 <img src="{{ asset('img/logo.png') }}" alt="{{ config('app.name') }}" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
                 <h1>Document Signature Request</h1>
-                <div class="header-subtitle">{{ config('app.name') }} — Immigration &amp; visa services</div>
+                <div class="header-subtitle">{{ config('app.name') }} — {{ config('app.brand.tagline') }}</div>
             </div>
 
             <!-- Body -->
@@ -258,7 +258,7 @@
             <!-- Footer -->
             <div class="email-footer">
                 <div class="footer-brand-name">{{ config('app.name') }}</div>
-                <div class="footer-brand-tagline">Immigration & Visa Services</div>
+                <div class="footer-brand-tagline">{{ config('app.brand.tagline') }}</div>
                 
                 <div class="footer-contact-item">
                     Email: <a href="mailto:{{ config('app.brand.public_email') }}">{{ config('app.brand.public_email') }}</a>
@@ -270,9 +270,9 @@
                 <div class="footer-disclaimer">
                     This is an automated message. Please do not reply to this email.
                 </div>
-                <p style="margin-top: 15px; font-size: 13px;">
+                <!-- <p style="margin-top: 15px; font-size: 13px;">
                     Consumer guide: <a href="https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf" style="color: #2563eb; text-decoration: none; font-weight: 600;">https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf</a>
-                </p>
+                </p> -->
             </div>
         </div>
     </div>

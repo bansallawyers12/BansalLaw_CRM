@@ -75,6 +75,7 @@ return [
         'website_label' => env('APP_PUBLIC_WEBSITE_LABEL', 'www.bansallawyers.com.au'),
         'website_short_url' => env('APP_PUBLIC_WEBSITE_SHORT_URL', 'https://www.bansallawyers.com.au'),
         'website_short_label' => env('APP_PUBLIC_WEBSITE_SHORT_LABEL', 'www.bansallawyers.com.au'),
+        'tagline' => env('APP_BRAND_TAGLINE', "There is no legal puzzle that we can't solve"),
     ],
 
     /*

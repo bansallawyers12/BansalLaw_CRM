@@ -149,6 +149,7 @@
             <div class="email-header">
                 <img src="{{ asset('img/logo.png') }}" alt="{{ config('app.name') }}" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
                 <h1>Agreement Signature Request</h1>
+                <div style="font-size: 14px; color: #4b5563; margin-top: 8px;">{{ config('app.name') }} — {{ config('app.brand.tagline') }}</div>
             </div>
             
             <div class="email-body">
@@ -190,7 +191,7 @@
             
             <div class="email-footer">
                 <div class="footer-brand">{{ config('app.name') }}</div>
-                <div class="footer-contact">Immigration & Visa Services</div>
+                <div class="footer-contact">{{ config('app.brand.tagline') }}</div>
                 <div class="footer-contact">
                     Email: <a href="mailto:{{ config('app.brand.public_email') }}">{{ config('app.brand.public_email') }}</a>
                 </div>
