@@ -8076,7 +8076,12 @@ class ClientsController extends Controller
 
         $likeOperator = DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
 
-        $results = Admin::where(function ($q) use ($query, $likeOperator) {
+        $selectColumns = ['id', 'first_name', 'last_name', 'email', 'phone', 'client_id', 'type', 'is_company'];
+        if (Schema::hasColumn('admins', 'company_name')) {
+            $selectColumns[] = 'company_name';
+        }
+
+        $builder = Admin::where(function ($q) use ($query, $likeOperator) {
             $q->where('phone', $likeOperator, "%{$query}%")
                 ->orWhere('email', $likeOperator, "%{$query}%")
                 ->orWhere('first_name', $likeOperator, "%{$query}%")
@@ -8099,13 +8104,23 @@ class ClientsController extends Controller
             ->when($excludeId, function ($q) use ($excludeId) {
                 $q->where('id', '!=', $excludeId);
             })
-            ->select('id', 'first_name', 'last_name', 'email', 'phone', 'client_id', 'type', 'is_company', 'company_name')
+            ->select($selectColumns);
+
+        if (! Schema::hasColumn('admins', 'company_name')) {
+            $builder->with('company:id,admin_id,company_name');
+        }
+
+        $results = $builder
             ->limit(20)
             ->get()
             ->map(function ($person) {
                 $fullName = trim($person->first_name . ' ' . $person->last_name);
-                if ($fullName === '' && ! empty($person->company_name)) {
-                    $fullName = trim((string) $person->company_name);
+                if ($fullName === '') {
+                    if (! empty($person->company_name)) {
+                        $fullName = trim((string) $person->company_name);
+                    } elseif ($person->is_company && $person->relationLoaded('company') && $person->company) {
+                        $fullName = trim((string) ($person->company->company_name ?? ''));
+                    }
                 }
                 $displayText = $fullName !== '' ? $fullName : 'Other party';
                 if ($person->email) {
