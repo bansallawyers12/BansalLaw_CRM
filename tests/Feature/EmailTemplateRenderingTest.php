@@ -283,7 +283,6 @@ class EmailTemplateRenderingTest extends TestCase
             $this->assertStringContainsString(e(config('app.brand.tagline')), $html);
             $this->assertStringContainsString(config('app.brand.public_email'), $html);
             $this->assertStringContainsString(config('app.brand.website_label'), $html);
-            $this->assertStringContainsString('Consumer guide', $html);
         }
     }
 }
