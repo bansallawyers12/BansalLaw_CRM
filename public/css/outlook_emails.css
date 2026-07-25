@@ -4674,26 +4674,53 @@ body.gmail-email-reading-open {
     height: 100vh;
 }
 
+/* Unassigned mail: full-screen Gmail reading — hide app chrome so the email fills the viewport */
+body.gmail-email-reading-open:has(.unassigned-mail-page) .main-topbar,
+body.gmail-email-reading-open:has(.unassigned-mail-page) .main-footer {
+    display: none !important;
+}
+
+body.gmail-email-reading-open:has(.unassigned-mail-page) .main-wrapper {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+}
+
 body.gmail-email-reading-open .main-content.unassigned-mail-page {
     height: 100vh;
     max-height: 100vh;
     padding: 0;
+    margin-left: 0 !important;
+    width: 100% !important;
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    background: #fff;
 }
 
-/* Hide the page header while reading a mail so the email itself gets the full height */
 body.gmail-email-reading-open .unassigned-mail-page__header {
     display: none;
 }
 
-body.gmail-email-reading-open .unassigned-mail-section,
-body.gmail-email-reading-open .unassigned-mail-section .outlook-container {
+body.gmail-email-reading-open .unassigned-mail-section {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+body.gmail-email-reading-open .unassigned-mail-section .outlook-container,
+body.gmail-email-reading-open .unassigned-mail-section .outlook-container--unassigned {
+    flex: 1 1 auto;
     height: 100% !important;
     min-height: 0 !important;
     border-radius: 0;
     box-shadow: none;
     border: none;
+    overflow: hidden;
 }
 
 /* Client detail: full-screen Gmail reading — hide hero/tabs/feed so body gets the space */
