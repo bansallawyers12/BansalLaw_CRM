@@ -170,8 +170,30 @@
             <i class="fa-solid fa-circle-info"></i>
             <strong>Other party</strong> — search and select from records created as Other Party only.
             <strong>Opposing solicitor</strong> — enter manually below each party.
-            <a href="{{ route('leads.create', ['other_party' => 1]) }}" target="_blank" rel="noopener">Create other party</a>
         </p>
+
+        <div class="d-flex flex-wrap gap-2 mb-2">
+            <button type="button" class="btn btn-outline-primary btn-sm" id="cpCreateOtherPartyBtn">
+                <i class="fa-solid fa-user-plus"></i> Quick create other party
+            </button>
+            <a href="{{ route('leads.create', ['other_party' => 1]) }}" target="_blank" rel="noopener" class="btn btn-link btn-sm p-0 align-self-center">Open full create form</a>
+        </div>
+
+        <div id="cpMiniCreateOtherParty" class="border rounded p-2 mb-3" style="display:none;background:#fff;">
+            <p class="small fw-semibold mb-2">Quick create other party</p>
+            <div class="row g-2">
+                <div class="col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpFirst" placeholder="First name *"></div>
+                <div class="col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpLast" placeholder="Last name *"></div>
+                <div class="col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpPhone" placeholder="Phone"></div>
+                <div class="col-md-3"><input type="email" class="form-control form-control-sm" id="cpMiniOpEmail" placeholder="Email"></div>
+            </div>
+            <div class="mt-2 d-flex gap-2 align-items-center flex-wrap">
+                <button type="button" class="btn btn-sm btn-primary" id="cpMiniOpSave">Save &amp; select</button>
+                <button type="button" class="btn btn-sm btn-link" id="cpMiniOpCancel">Cancel</button>
+                <span class="text-muted small">Phone or email required. Saved as searchable Other Party.</span>
+            </div>
+            <div id="cpMiniOpMessage" class="mt-2" style="display:none;"></div>
+        </div>
 
         <div id="cpPartiesContainer"></div>
 
@@ -305,9 +327,9 @@
     function addPartyRow(data) {
         if (!window.OtherPartyPicker) {
             toast('Other party picker is not loaded.', false);
-            return;
+            return null;
         }
-        window.OtherPartyPicker.appendRow(container, {
+        return window.OtherPartyPicker.appendRow(container, {
             rowClass: 'cp-party-row',
             searchUrl: searchUrl,
             excludeId: clientId,
@@ -315,6 +337,100 @@
             repSectionTitle: 'Opposing solicitor (enter manually)',
             data: data || {}
         });
+    }
+
+    function selectPartyOnRow(row, party) {
+        if (!row || !party || !window.OtherPartyPicker) return;
+        window.OtherPartyPicker.selectParty(row, party);
+    }
+
+    function saveMiniOtherParty() {
+        var storeUrl = window.STORE_OTHER_PARTY_MINI_URL;
+        var msgBox = document.getElementById('cpMiniOpMessage');
+        var fn = document.getElementById('cpMiniOpFirst');
+        var ln = document.getElementById('cpMiniOpLast');
+        var ph = document.getElementById('cpMiniOpPhone');
+        var em = document.getElementById('cpMiniOpEmail');
+        if (!storeUrl || !fn || !ln) {
+            toast('Other party create is not configured.', false);
+            return;
+        }
+        if (!fn.value.trim() || !ln.value.trim()) {
+            if (msgBox) {
+                msgBox.style.display = 'block';
+                msgBox.className = 'mt-2 alert alert-warning';
+                msgBox.textContent = 'First and last name are required.';
+            }
+            return;
+        }
+        if (!(ph && ph.value.trim()) && !(em && em.value.trim())) {
+            if (msgBox) {
+                msgBox.style.display = 'block';
+                msgBox.className = 'mt-2 alert alert-warning';
+                msgBox.textContent = 'Phone or email is required.';
+            }
+            return;
+        }
+        var token = document.querySelector('meta[name="csrf-token"]');
+        var fd = new FormData();
+        fd.append('_token', token ? token.getAttribute('content') : '');
+        fd.append('first_name', fn.value.trim());
+        fd.append('last_name', ln.value.trim());
+        if (ph && ph.value.trim()) fd.append('phone', ph.value.trim());
+        if (em && em.value.trim()) fd.append('email', em.value.trim());
+        var saveBtn = document.getElementById('cpMiniOpSave');
+        if (saveBtn) saveBtn.disabled = true;
+        fetch(storeUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: fd,
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        })
+            .then(function (r) {
+                return r.text().then(function (text) {
+                    try { return { ok: r.ok, data: text ? JSON.parse(text) : {} }; }
+                    catch (e) { return { ok: false, data: { message: 'Invalid server response' } }; }
+                });
+            })
+            .then(function (res) {
+                if (saveBtn) saveBtn.disabled = false;
+                if (res.ok && res.data.success && res.data.party) {
+                    var targetRow = container && container.querySelector('.cp-party-row:last-child');
+                    if (!targetRow || (targetRow.querySelector('.opp-party-lead-id') || {}).value) {
+                        targetRow = addPartyRow({});
+                    }
+                    selectPartyOnRow(targetRow, {
+                        id: res.data.party.id,
+                        text: res.data.party.text,
+                        first_name: res.data.party.first_name,
+                        last_name: res.data.party.last_name,
+                        email: res.data.party.email,
+                        phone: res.data.party.phone,
+                        client_id: res.data.party.client_id
+                    });
+                    fn.value = '';
+                    ln.value = '';
+                    if (ph) ph.value = '';
+                    if (em) em.value = '';
+                    var box = document.getElementById('cpMiniCreateOtherParty');
+                    if (box) box.style.display = 'none';
+                    if (msgBox) msgBox.style.display = 'none';
+                    toast('Other party created and selected.', true);
+                } else {
+                    var err = (res.data && res.data.message) || 'Could not create other party.';
+                    if (msgBox) {
+                        msgBox.style.display = 'block';
+                        msgBox.className = 'mt-2 alert alert-danger';
+                        msgBox.textContent = err;
+                    } else {
+                        toast(err, false);
+                    }
+                }
+            })
+            .catch(function () {
+                if (saveBtn) saveBtn.disabled = false;
+                toast('Network error while creating other party.', false);
+            });
     }
 
     function destroyEditorRows() {
@@ -363,6 +479,24 @@
 
     if (addPartyBtn) {
         addPartyBtn.addEventListener('click', function () { addPartyRow(); });
+    }
+
+    var createOtherPartyBtn = document.getElementById('cpCreateOtherPartyBtn');
+    var miniCreateBox = document.getElementById('cpMiniCreateOtherParty');
+    if (createOtherPartyBtn && miniCreateBox) {
+        createOtherPartyBtn.addEventListener('click', function () {
+            miniCreateBox.style.display = miniCreateBox.style.display === 'none' ? 'block' : 'none';
+        });
+    }
+    var miniCancelBtn = document.getElementById('cpMiniOpCancel');
+    if (miniCancelBtn && miniCreateBox) {
+        miniCancelBtn.addEventListener('click', function () {
+            miniCreateBox.style.display = 'none';
+        });
+    }
+    var miniSaveBtn = document.getElementById('cpMiniOpSave');
+    if (miniSaveBtn) {
+        miniSaveBtn.addEventListener('click', saveMiniOtherParty);
     }
 
     function collectParties() {

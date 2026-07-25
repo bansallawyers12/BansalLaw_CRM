@@ -22,21 +22,39 @@
                         <h3><i class="fa-solid fa-file-signature"></i> Saved Forms</h3>
                         <span id="legal-forms-count" class="legal-forms-count">0</span>
                     </div>
-                    <div class="dropdown legal-forms-list-toolbar__actions">
-                        <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="createLegalFormBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fa-solid fa-plus"></i> Create
+                    <div class="legal-forms-list-toolbar__actions legal-forms-toolbar-actions">
+                        <button class="btn btn-sm btn-outline-primary legal-forms-upload-btn" type="button" onclick="openLegalFormUploadModal()" title="Upload an existing document">
+                            <i class="fa-solid fa-file-arrow-up"></i> Upload
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="createLegalFormBtn">
-                            <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('short_costs_disclosure')">
-                                <i class="fa-solid fa-file-invoice-dollar text-primary"></i> Short Costs Disclosure
-                            </a></li>
-                            <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('cost_agreement')">
-                                <i class="fa-solid fa-file-contract text-purple"></i> Long Cost Disclosure
-                            </a></li>
-                            <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('authority_to_act')">
-                                <i class="fa-solid fa-stamp text-success"></i> Authority to Act
-                            </a></li>
-                        </ul>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="createLegalFormBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fa-solid fa-plus"></i> Create
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end legal-forms-create-menu" aria-labelledby="createLegalFormBtn">
+                                <li class="dropdown-header">Generate new form</li>
+                                <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('short_costs_disclosure')">
+                                    <span class="lf-menu-icon lf-menu-icon--blue"><i class="fa-solid fa-file-invoice-dollar"></i></span>
+                                    <span class="lf-menu-text">
+                                        <strong>Short Costs Disclosure</strong>
+                                        <small>Quick cost estimate form</small>
+                                    </span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('cost_agreement')">
+                                    <span class="lf-menu-icon lf-menu-icon--purple"><i class="fa-solid fa-file-contract"></i></span>
+                                    <span class="lf-menu-text">
+                                        <strong>Long Cost Disclosure</strong>
+                                        <small>Detailed cost agreement</small>
+                                    </span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="javascript:;" onclick="openLegalFormModal('authority_to_act')">
+                                    <span class="lf-menu-icon lf-menu-icon--green"><i class="fa-solid fa-stamp"></i></span>
+                                    <span class="lf-menu-text">
+                                        <strong>Authority to Act</strong>
+                                        <small>Client authorisation form</small>
+                                    </span>
+                                </a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
                 <div id="legal-forms-list" class="legal-forms-list">
@@ -53,10 +71,109 @@
                 </div>
             </div>
         </div>
-        <input type="file"
-               id="legal-form-attachment-input"
-               class="d-none"
-               accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,.pdf,.doc,.docx,.txt,.xls,.xlsx">
+    </div>
+</div>
+
+{{-- Upload Legal Form Modal --}}
+<div class="modal fade legal-form-modal" id="legalFormUploadModal" tabindex="-1" aria-labelledby="legalFormUploadModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered legal-form-upload-dialog">
+        <div class="modal-content legal-form-modal-content">
+            <div class="modal-header legal-form-modal-header">
+                <div>
+                    <h5 class="modal-title" id="legalFormUploadModalLabel">Upload Form</h5>
+                    <p class="legal-form-upload-subtitle mb-0">Add an existing document to this client's legal forms</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body legal-form-upload-body">
+                <form id="legalFormUploadForm" autocomplete="off">
+                    @csrf
+                    <input type="hidden" name="client_id" value="{{ $fetchedData->id }}">
+                    <input type="hidden" name="client_matter_id" id="lf_upload_client_matter_id" value="">
+                    <input type="hidden" name="form_type" id="lf_upload_form_type" value="">
+
+                    <div class="legal-form-upload-section">
+                        <label class="legal-form-upload-label">What type of form is this?</label>
+                        <div class="legal-form-type-cards" role="group" aria-label="Form type">
+                            <button type="button" class="legal-form-type-card" data-form-type="short_costs_disclosure" onclick="selectLegalFormUploadType('short_costs_disclosure')">
+                                <span class="legal-form-type-card__icon legal-form-type-card__icon--blue"><i class="fa-solid fa-file-invoice-dollar"></i></span>
+                                <span class="legal-form-type-card__label">Short Costs Disclosure</span>
+                            </button>
+                            <button type="button" class="legal-form-type-card" data-form-type="cost_agreement" onclick="selectLegalFormUploadType('cost_agreement')">
+                                <span class="legal-form-type-card__icon legal-form-type-card__icon--purple"><i class="fa-solid fa-file-contract"></i></span>
+                                <span class="legal-form-type-card__label">Long Cost Disclosure</span>
+                            </button>
+                            <button type="button" class="legal-form-type-card" data-form-type="authority_to_act" onclick="selectLegalFormUploadType('authority_to_act')">
+                                <span class="legal-form-type-card__icon legal-form-type-card__icon--green"><i class="fa-solid fa-stamp"></i></span>
+                                <span class="legal-form-type-card__label">Authority to Act</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="legal-form-upload-section">
+                        <label class="legal-form-upload-label" for="lf_upload_dropzone">Choose your file</label>
+                        <div class="legal-form-upload-dropzone" id="lf_upload_dropzone" tabindex="0" role="button" aria-label="Click or drag a document file here">
+                            <input type="file"
+                                   name="file"
+                                   id="lf_upload_file"
+                                   class="legal-form-upload-file-input"
+                                   accept=".pdf,.doc,.docx,.txt,.rtf,.odt,.xls,.xlsx,.ppt,.pptx,.csv">
+                            <div class="legal-form-upload-dropzone__empty" id="lf_upload_dropzone_empty">
+                                <span class="legal-form-upload-dropzone__icon"><i class="fa-solid fa-cloud-arrow-up"></i></span>
+                                <span class="legal-form-upload-dropzone__title">Drag & drop your file here</span>
+                                <span class="legal-form-upload-dropzone__hint">or click to browse</span>
+                                <span class="legal-form-upload-dropzone__types">PDF, Word, Excel, PowerPoint, text</span>
+                            </div>
+                            <div class="legal-form-upload-dropzone__selected d-none" id="lf_upload_dropzone_selected">
+                                <span class="legal-form-upload-dropzone__file-icon"><i class="fa-solid fa-file-lines"></i></span>
+                                <span class="legal-form-upload-dropzone__file-name" id="lf_upload_file_name"></span>
+                                <button type="button" class="legal-form-upload-clear-btn" onclick="clearLegalFormUploadFile(event)" title="Remove file">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="legal-form-upload-fields">
+                        <div class="legal-form-upload-field">
+                            <label class="legal-form-upload-label" for="lf_upload_matter_reference">Matter</label>
+                            @if($lfClientMatters->isEmpty())
+                                <select id="lf_upload_matter_reference" name="matter_reference" class="form-control" disabled>
+                                    <option value="">No matters for this client</option>
+                                </select>
+                            @else
+                                <select id="lf_upload_matter_reference" name="matter_reference" class="form-control" required>
+                                    <option value="">Select matter</option>
+                                    @foreach($lfClientMatters as $lfMatter)
+                                        @php
+                                            $lfMatterTitle = $lfMatter->matter
+                                                ? \App\Models\Matter::displayTitleFromJoinedRow($lfMatter->matter->title ?? null)
+                                                : 'Matter';
+                                            $lfMatterLabel = trim($lfMatterTitle) . ' (' . ($lfMatter->client_unique_matter_no ?? '') . ')';
+                                        @endphp
+                                        <option value="{{ $lfMatter->client_unique_matter_no }}"
+                                                data-matter-id="{{ $lfMatter->id }}"
+                                                @selected($lfDefaultMatterRef !== '' && $lfDefaultMatterRef === (string) $lfMatter->client_unique_matter_no)>
+                                            {{ $lfMatterLabel }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            @endif
+                        </div>
+                        <div class="legal-form-upload-field legal-form-upload-field--date">
+                            <label class="legal-form-upload-label" for="lf_upload_form_date">Date</label>
+                            <input type="date" name="form_date" id="lf_upload_form_date" class="form-control" value="{{ date('Y-m-d') }}">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer legal-form-modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveLegalFormUploadBtn" onclick="saveLegalFormUpload()">
+                    <i class="fa-solid fa-file-arrow-up"></i> Upload
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -348,10 +465,12 @@
 
     // Keep modal out of .tab-content overflow/stacking contexts (footer was overlapping body).
     (function ensureLegalFormModalOnBody() {
-        var modalEl = document.getElementById('legalFormModal');
-        if (modalEl && modalEl.parentElement !== document.body) {
-            document.body.appendChild(modalEl);
-        }
+        ['legalFormModal', 'legalFormUploadModal'].forEach(function(modalId) {
+            var modalEl = document.getElementById(modalId);
+            if (modalEl && modalEl.parentElement !== document.body) {
+                document.body.appendChild(modalEl);
+            }
+        });
     })();
 
     function syncLegalFormMatterFromSelect() {
@@ -390,6 +509,258 @@
     }
 
     syncLegalFormMatterFromSelect();
+
+    function syncLegalFormUploadMatterFromSelect() {
+        var matterRefSelect = document.getElementById('lf_upload_matter_reference');
+        var matterIdInput = document.getElementById('lf_upload_client_matter_id');
+        if (!matterRefSelect || !matterIdInput || matterRefSelect.disabled) {
+            return;
+        }
+        var opt = matterRefSelect.options[matterRefSelect.selectedIndex];
+        matterIdInput.value = (opt && opt.getAttribute('data-matter-id')) ? opt.getAttribute('data-matter-id') : '';
+    }
+
+    function selectLegalFormUploadMatterByRef(matterRef) {
+        var matterRefSelect = document.getElementById('lf_upload_matter_reference');
+        if (!matterRefSelect || matterRefSelect.disabled || !matterRef) {
+            syncLegalFormUploadMatterFromSelect();
+            return;
+        }
+        var matched = false;
+        for (var i = 0; i < matterRefSelect.options.length; i++) {
+            if (matterRefSelect.options[i].value === matterRef) {
+                matterRefSelect.selectedIndex = i;
+                matched = true;
+                break;
+            }
+        }
+        if (!matched && matterRefSelect.options.length > 1 && !matterRefSelect.value) {
+            matterRefSelect.selectedIndex = 1;
+        }
+        syncLegalFormUploadMatterFromSelect();
+    }
+
+    var lfUploadMatterRefSelect = document.getElementById('lf_upload_matter_reference');
+    if (lfUploadMatterRefSelect) {
+        lfUploadMatterRefSelect.addEventListener('change', syncLegalFormUploadMatterFromSelect);
+    }
+    syncLegalFormUploadMatterFromSelect();
+
+    var LF_UPLOAD_BLOCKED_EXTENSIONS = ['jpg','jpeg','png','gif','webp','bmp','svg','ico','exe','bat','cmd','sh','js','php','py','html','htm'];
+
+    function updateLegalFormUploadFileDisplay() {
+        var fileInput = document.getElementById('lf_upload_file');
+        var emptyState = document.getElementById('lf_upload_dropzone_empty');
+        var selectedState = document.getElementById('lf_upload_dropzone_selected');
+        var fileNameEl = document.getElementById('lf_upload_file_name');
+        var dropzone = document.getElementById('lf_upload_dropzone');
+        if (!fileInput || !emptyState || !selectedState || !fileNameEl || !dropzone) {
+            return;
+        }
+
+        if (fileInput.files && fileInput.files.length) {
+            fileNameEl.textContent = fileInput.files[0].name;
+            emptyState.classList.add('d-none');
+            selectedState.classList.remove('d-none');
+            dropzone.classList.add('has-file');
+        } else {
+            emptyState.classList.remove('d-none');
+            selectedState.classList.add('d-none');
+            fileNameEl.textContent = '';
+            dropzone.classList.remove('has-file');
+        }
+    }
+
+    window.clearLegalFormUploadFile = function(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        var fileInput = document.getElementById('lf_upload_file');
+        if (fileInput) {
+            fileInput.value = '';
+        }
+        updateLegalFormUploadFileDisplay();
+    };
+
+    window.selectLegalFormUploadType = function(formType) {
+        var hiddenInput = document.getElementById('lf_upload_form_type');
+        if (hiddenInput) {
+            hiddenInput.value = formType || '';
+        }
+        document.querySelectorAll('.legal-form-type-card').forEach(function(card) {
+            card.classList.toggle('is-selected', card.getAttribute('data-form-type') === formType);
+        });
+    };
+
+    function initLegalFormUploadDropzone() {
+        var dropzone = document.getElementById('lf_upload_dropzone');
+        var fileInput = document.getElementById('lf_upload_file');
+        if (!dropzone || !fileInput) {
+            return;
+        }
+
+        dropzone.addEventListener('click', function(e) {
+            if (e.target.closest('.legal-form-upload-clear-btn')) {
+                return;
+            }
+            fileInput.click();
+        });
+
+        dropzone.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInput.click();
+            }
+        });
+
+        fileInput.addEventListener('change', updateLegalFormUploadFileDisplay);
+
+        ['dragenter', 'dragover'].forEach(function(eventName) {
+            dropzone.addEventListener(eventName, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.add('is-dragover');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(function(eventName) {
+            dropzone.addEventListener(eventName, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.remove('is-dragover');
+            });
+        });
+
+        dropzone.addEventListener('drop', function(e) {
+            var files = e.dataTransfer && e.dataTransfer.files;
+            if (!files || !files.length) {
+                return;
+            }
+            fileInput.files = files;
+            updateLegalFormUploadFileDisplay();
+        });
+    }
+
+    initLegalFormUploadDropzone();
+
+    window.openLegalFormUploadModal = function() {
+        document.getElementById('legalFormUploadForm').reset();
+        document.getElementById('lf_upload_form_date').value = new Date().toISOString().split('T')[0];
+        selectLegalFormUploadType('');
+        clearLegalFormUploadFile();
+
+        var sidebarMatterRef = '';
+        var matterSelect = document.getElementById('sel_matter_id_client_detail');
+        if (matterSelect && matterSelect.value) {
+            var selectedOption = matterSelect.options[matterSelect.selectedIndex];
+            if (selectedOption) {
+                sidebarMatterRef = selectedOption.getAttribute('data-clientuniquematterno') || '';
+            }
+        }
+        if (!sidebarMatterRef && window.ClientDetailShared && typeof window.ClientDetailShared.parseClientDetailMatterRefFromUrl === 'function') {
+            sidebarMatterRef = window.ClientDetailShared.parseClientDetailMatterRefFromUrl() || '';
+        }
+        selectLegalFormUploadMatterByRef(sidebarMatterRef);
+
+        var modal = new bootstrap.Modal(document.getElementById('legalFormUploadModal'));
+        modal.show();
+    };
+
+    window.saveLegalFormUpload = function() {
+        var form = document.getElementById('legalFormUploadForm');
+        syncLegalFormUploadMatterFromSelect();
+
+        var formTypeInput = document.getElementById('lf_upload_form_type');
+        if (!formTypeInput || !formTypeInput.value) {
+            if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                iziToast.error({ message: 'Please choose a form type.', position: 'topRight' });
+            } else {
+                alert('Please choose a form type.');
+            }
+            return;
+        }
+
+        var fileInput = document.getElementById('lf_upload_file');
+        if (!fileInput || !fileInput.files || !fileInput.files.length) {
+            if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                iziToast.error({ message: 'Please select a document file to upload.', position: 'topRight' });
+            } else {
+                alert('Please select a document file to upload.');
+            }
+            return;
+        }
+
+        var matterRefSelect = document.getElementById('lf_upload_matter_reference');
+        if (matterRefSelect && !matterRefSelect.disabled && !matterRefSelect.value) {
+            if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                iziToast.error({ message: 'Please select a matter reference.', position: 'topRight' });
+            } else {
+                alert('Please select a matter reference.');
+            }
+            return;
+        }
+
+        var blockedExtensions = LF_UPLOAD_BLOCKED_EXTENSIONS;
+        var fileName = fileInput.files[0].name.toLowerCase();
+        var fileExt = fileName.includes('.') ? fileName.split('.').pop() : '';
+        if (blockedExtensions.indexOf(fileExt) !== -1) {
+            if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                iziToast.error({ message: 'This file type is not allowed. Please upload a document file only.', position: 'topRight' });
+            } else {
+                alert('This file type is not allowed. Please upload a document file only.');
+            }
+            return;
+        }
+
+        var formData = new FormData(form);
+        var btn = document.getElementById('saveLegalFormUploadBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+
+        $.ajax({
+            url: LF_BASE + '/upload',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function(response) {
+                if (response.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('legalFormUploadModal')).hide();
+                    loadLegalForms();
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
+                        iziToast.success({ message: response.message || 'Form uploaded successfully!', position: 'topRight' });
+                    } else {
+                        alert(response.message || 'Form uploaded successfully!');
+                    }
+                } else {
+                    if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                        iziToast.error({ message: response.message || 'Failed to upload form.', position: 'topRight' });
+                    } else {
+                        alert(response.message || 'Failed to upload form.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var msg = 'Failed to upload form.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    msg = Object.values(xhr.responseJSON.errors).flat().join('\n');
+                }
+                if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
+                    iziToast.error({ message: msg, position: 'topRight' });
+                } else {
+                    alert(msg);
+                }
+            },
+            complete: function() {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-file-arrow-up"></i> Upload';
+            }
+        });
+    };
 
     window.openLegalFormModal = function(formType) {
         // Reset form
@@ -566,13 +937,14 @@
             + '</div>';
     }
 
-    window.previewLegalForm = function(formId, formLabel) {
+    window.previewLegalForm = function(formId, formLabel, previewType) {
         if (!formId) {
             return;
         }
 
         var previewUrl = LF_BASE + '/' + formId + '/preview';
         var downloadUrl = LF_BASE + '/' + formId + '/download';
+        var fileType = previewType || 'docx';
         var rows = document.querySelectorAll('.legal-form-row');
         rows.forEach(function(row) {
             row.classList.remove('is-preview-active');
@@ -583,7 +955,7 @@
         }
 
         if (typeof window.previewFile === 'function') {
-            window.previewFile('docx', previewUrl, 'preview-container-legal-forms', formLabel || 'Legal Form');
+            window.previewFile(fileType, previewUrl, 'preview-container-legal-forms', formLabel || 'Legal Form');
             window.setTimeout(function() {
                 var pane = document.querySelector('.preview-container-legal-forms');
                 if (!pane) {
@@ -647,7 +1019,7 @@
         }
 
         if (!forms || forms.length === 0) {
-            listEl.innerHTML = '<div class="legal-forms-empty"><div class="legal-forms-empty-icon"><i class="fa-solid fa-file-signature"></i></div><p>No legal forms yet</p><p class="text-muted">Use <strong>Create</strong> to add a Short Costs Disclosure, Long Cost Disclosure, or Authority to Act.</p></div>';
+            listEl.innerHTML = '<div class="legal-forms-empty"><div class="legal-forms-empty-icon"><i class="fa-solid fa-file-signature"></i></div><p>No legal forms yet</p><p class="text-muted">Use <strong>Create</strong> to generate a form or <strong>Upload</strong> to add an existing document.</p></div>';
             return;
         }
 
@@ -667,10 +1039,22 @@
             if (attachName.length > 18) {
                 attachName = attachName.substring(0, 15) + '...';
             }
+            var previewType = 'docx';
+            if (form.is_uploaded && form.attachment_original_name) {
+                var uploadedExt = String(form.attachment_original_name).split('.').pop().toLowerCase();
+                if (uploadedExt === 'pdf') {
+                    previewType = 'pdf';
+                } else if (['doc', 'docx'].indexOf(uploadedExt) !== -1) {
+                    previewType = 'docx';
+                } else {
+                    previewType = uploadedExt || 'docx';
+                }
+            }
+            var downloadTitle = form.is_uploaded ? 'Download file' : 'Download Word';
 
-            html += '<div class="legal-form-list-item legal-form-row" id="legal-form-row-' + form.id + '" data-form-id="' + form.id + '" data-preview-label="' + previewLabel.replace(/"/g, '&quot;') + '" style="--lf-accent:' + color + ';" role="button" tabindex="0">';
-            html += '<div class="legal-form-list-item__main" onclick="previewLegalForm(' + form.id + ', \'' + safePreviewLabel + '\')">';
-            html += '<div class="legal-form-list-item__title">' + label + '</div>';
+            html += '<div class="legal-form-list-item legal-form-row" id="legal-form-row-' + form.id + '" data-form-id="' + form.id + '" data-preview-label="' + previewLabel.replace(/"/g, '&quot;') + '" data-preview-type="' + previewType + '" style="--lf-accent:' + color + ';" role="button" tabindex="0">';
+            html += '<div class="legal-form-list-item__main" onclick="previewLegalForm(' + form.id + ', \'' + safePreviewLabel + '\', \'' + previewType + '\')">';
+            html += '<div class="legal-form-list-item__title">' + label + (form.is_uploaded ? ' <span class="legal-form-uploaded-badge">Uploaded</span>' : '') + '</div>';
             html += '<dl class="legal-form-list-item__meta">';
             if (amountText) {
                 html += '<div class="legal-form-meta-item legal-form-meta-item--amount"><dt>Amount</dt><dd>' + amountText + '</dd></div>';
@@ -684,8 +1068,7 @@
             }
             html += '</dl></div>';
             html += '<div class="legal-form-list-item__actions" onclick="event.stopPropagation();">';
-            html += '<a href="' + LF_BASE + '/' + form.id + '/download" class="legal-form-action-btn" title="Download Word"><i class="fa-solid fa-download"></i></a>';
-            html += '<button type="button" class="legal-form-action-btn legal-form-action-btn--attach' + (form.attachment_path ? ' is-attached' : '') + '" onclick="triggerLegalFormAttachmentUpload(' + form.id + ')" title="' + (form.attachment_path ? 'Replace attachment' : 'Add attachment') + '"><i class="fa-solid fa-file-arrow-up"></i></button>';
+            html += '<a href="' + LF_BASE + '/' + form.id + '/download" class="legal-form-action-btn" title="' + downloadTitle + '"><i class="fa-solid fa-download"></i></a>';
             html += '<button type="button" class="legal-form-action-btn legal-form-action-btn--danger" onclick="deleteLegalForm(' + form.id + ')" title="Delete"><i class="fa-solid fa-trash"></i></button>';
             html += '</div></div>';
         });
@@ -693,82 +1076,6 @@
         html += '</div>';
         listEl.innerHTML = html;
     }
-
-    window.triggerLegalFormAttachmentUpload = function(formId) {
-        var input = document.getElementById('legal-form-attachment-input');
-        if (!input || !formId) {
-            return;
-        }
-        input.dataset.formId = String(formId);
-        input.value = '';
-        input.click();
-    };
-
-    (function initLegalFormAttachmentUpload() {
-        var input = document.getElementById('legal-form-attachment-input');
-        if (!input) {
-            return;
-        }
-
-        input.addEventListener('change', function() {
-            var formId = input.dataset.formId;
-            if (!formId || !input.files || !input.files.length) {
-                return;
-            }
-
-            var formData = new FormData();
-            formData.append('attachment', input.files[0]);
-
-            var activeBtn = document.querySelector('#legal-form-row-' + formId + ' .legal-form-action-btn--attach');
-            if (activeBtn) {
-                activeBtn.disabled = true;
-                activeBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-            }
-
-            $.ajax({
-                url: LF_BASE + '/' + formId + '/attachment',
-                method: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-                success: function(response) {
-                    if (response.success) {
-                        loadLegalForms();
-                        if (typeof iziToast !== 'undefined' && typeof iziToast.success === 'function') {
-                            iziToast.success({ message: response.message || 'Attachment uploaded.', position: 'topRight' });
-                        }
-                    } else {
-                        var failMsg = (response && response.message) ? response.message : 'Failed to upload attachment.';
-                        if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
-                            iziToast.error({ message: failMsg, position: 'topRight' });
-                        } else {
-                            alert(failMsg);
-                        }
-                    }
-                },
-                error: function(xhr) {
-                    var msg = 'Failed to upload attachment.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        msg = xhr.responseJSON.message;
-                    }
-                    if (typeof iziToast !== 'undefined' && typeof iziToast.error === 'function') {
-                        iziToast.error({ message: msg, position: 'topRight' });
-                    } else {
-                        alert(msg);
-                    }
-                },
-                complete: function() {
-                    input.value = '';
-                    delete input.dataset.formId;
-                    if (activeBtn) {
-                        activeBtn.disabled = false;
-                        activeBtn.innerHTML = '<i class="fa-solid fa-file-arrow-up"></i>';
-                    }
-                }
-            });
-        });
-    })();
 
     window.generateWithAI = function(fieldName) {
         var clientId = {{ $fetchedData->id }};
@@ -885,7 +1192,8 @@
             e.preventDefault();
             var id = $(this).data('form-id');
             var label = $(this).data('preview-label') || '';
-            previewLegalForm(id, label);
+            var previewType = $(this).data('preview-type') || 'docx';
+            previewLegalForm(id, label, previewType);
         }
     });
 

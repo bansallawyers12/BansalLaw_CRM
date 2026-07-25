@@ -26,7 +26,8 @@
             global.destroyTS(selectEl);
         }
         if (!selectEl || typeof global.initTS !== 'function' || typeof global.buildContactPersonSearchTomSelectConfig !== 'function') {
-            return;
+            console.warn('Other party search: Tom Select helpers not loaded.');
+            return false;
         }
         var cfg = global.buildContactPersonSearchTomSelectConfig({
             url: searchUrl,
@@ -35,6 +36,36 @@
             excludeId: excludeId
         });
         global.initTS(selectEl, cfg);
+        return true;
+    }
+
+    function selectPartyOnRow(row, person) {
+        if (!row || !person) return;
+        var leadSelect = row.querySelector('.opp-party-lead-select');
+        if (!leadSelect) return;
+        if (!leadSelect.tomselect && person.id) {
+            initOtherPartyTomSelect(leadSelect, window.OTHER_PARTY_SEARCH_URL || '', null);
+        }
+        var ts = leadSelect.tomselect;
+        if (ts && person.id) {
+            ts.enable();
+            ts.addOption({
+                id: person.id,
+                text: person.text || ((person.first_name || '') + ' ' + (person.last_name || '')).trim(),
+                first_name: person.first_name || '',
+                last_name: person.last_name || '',
+                email: person.email || '',
+                phone: person.phone || '',
+                client_id: person.client_id != null && person.client_id !== '' ? person.client_id : ''
+            });
+            ts.setValue(String(person.id), true);
+        }
+        var leadIdEl = row.querySelector('.opp-party-lead-id');
+        if (leadIdEl) leadIdEl.value = person.id ? String(person.id) : '';
+        var nameEl = row.querySelector('.opp-party-name');
+        if (nameEl) {
+            nameEl.value = ((person.first_name || '') + ' ' + (person.last_name || '')).trim() || (person.text || '').split(' (')[0];
+        }
     }
 
     /**
@@ -232,6 +263,7 @@
         rebuildRoleSelects: rebuildRoleSelectsInContainer,
         collectRows: collectOtherPartyRows,
         initTomSelect: initOtherPartyTomSelect,
+        selectParty: selectPartyOnRow,
         partyRoleOptionsHtml: partyRoleOptionsHtml,
         filterDynFields: filterDynFields,
         isIndianOnlyDynField: isIndianOnlyDynField
