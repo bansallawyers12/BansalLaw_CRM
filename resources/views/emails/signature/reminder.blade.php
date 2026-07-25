@@ -30,6 +30,11 @@
             font-weight: 700;
             color: #ffffff;
         }
+        .header-subtitle {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #ffffff;
+        }
         .reminder-badge {
             display: inline-block;
             background-color: rgba(255, 255, 255, 0.2);
@@ -156,6 +161,7 @@
         <div class="email-header">
             <img src="{{ asset('img/logo.png') }}" alt="{{ config('app.name') }}" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
             <h1>Document Signature Reminder</h1>
+            <div class="header-subtitle">{{ config('app.name') }} — {{ config('app.brand.tagline') }}</div>
             <div class="reminder-badge">Reminder #{{ $reminderNumber }}</div>
         </div>
 
@@ -232,7 +238,7 @@
         <!-- Footer -->
         <div class="email-footer">
             <p><strong>{{ config('app.name') }}</strong></p>
-            <p>Immigration & Visa Services</p>
+            <p>{{ config('app.brand.tagline') }}</p>
             <p>Email: <a href="mailto:{{ config('app.brand.public_email') }}">{{ config('app.brand.public_email') }}</a></p>
             <p>Phone: <a href="tel:+61292673945">+61 2 9267 3945</a></p>
             <p>Website: <a href="{{ config('app.brand.website_url') }}">{{ config('app.brand.website_label') }}</a></p>

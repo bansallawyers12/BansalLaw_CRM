@@ -84,6 +84,7 @@
     <div class="header">
         <img src="{{ asset('img/logo.png') }}" alt="{{ config('app.name') }}" style="max-width: 180px; height: auto; margin-bottom: 10px;" />
         <h1>{{ config('app.name') }}</h1>
+        <p style="margin: 8px 0 0 0; font-size: 14px; font-style: italic;">{{ config('app.brand.tagline') }}</p>
         <p>Appointment Confirmation</p>
     </div>
 
@@ -154,9 +155,9 @@
 
     <div class="footer">
         <p>This is an automated confirmation email. Please do not reply to this email.</p>
-        <p style="margin-top: 15px; font-size: 14px;">
+        <!-- <p style="margin-top: 15px; font-size: 14px;">
             Consumer guide: <a href="https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf" style="color: #2563eb; text-decoration: none; font-weight: 600;">https://www.mara.gov.au/get-help-visa-subsite/FIles/consumer_guide_english.pdf</a>
-        </p>
+        </p> -->
         <p style="font-size: 0.8em; color: #666666;">
             &copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.
         </p>

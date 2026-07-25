@@ -33,6 +33,7 @@ class EmailTemplateRenderingTest extends TestCase
         // Assert branding elements
         $this->assertStringContainsString('Document Signature Request', $html);
         $this->assertStringContainsString('Review & Sign Document', $html);
+        $this->assertStringContainsString(e(config('app.brand.tagline')), $html);
 
         // Assert footer content
         $this->assertStringContainsString(config('app.brand.public_email'), $html);
@@ -279,6 +280,7 @@ class EmailTemplateRenderingTest extends TestCase
             
             // Assert footer information
             $this->assertStringContainsString(config('app.name'), $html);
+            $this->assertStringContainsString(e(config('app.brand.tagline')), $html);
             $this->assertStringContainsString(config('app.brand.public_email'), $html);
             $this->assertStringContainsString(config('app.brand.website_label'), $html);
             $this->assertStringContainsString('Consumer guide', $html);
