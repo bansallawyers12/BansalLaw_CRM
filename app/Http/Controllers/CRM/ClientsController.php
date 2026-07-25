@@ -246,6 +246,20 @@ class ClientsController extends Controller
                 $query->where('cm.sel_person_assisting', '=', $request->input('sel_person_assisting'));
             }
 
+            if ($request->filled('closure_status')) {
+                $closureStatus = $request->input('closure_status');
+                if ($closureStatus === 'complete') {
+                    $query->where('cm.matter_status', '=', '0')
+                        ->whereIn('cm.discontinue_reason', \App\Support\MatterCompletionChecklist::completeReasonValues());
+                } elseif ($closureStatus === 'discontinued') {
+                    $query->where('cm.matter_status', '=', '0')
+                        ->where(function ($q) {
+                            $q->whereNull('cm.discontinue_reason')
+                                ->orWhereNotIn('cm.discontinue_reason', \App\Support\MatterCompletionChecklist::completeReasonValues());
+                        });
+                }
+            }
+
             if (
                 $request->filled('quick_date_range') ||
                 $request->filled('from_date') ||
@@ -370,6 +384,20 @@ class ClientsController extends Controller
 
             if ($request->filled('sel_person_assisting')) {
                 $query->where('cm.sel_person_assisting', '=', $request->input('sel_person_assisting'));
+            }
+
+            if ($request->filled('closure_status')) {
+                $closureStatus = $request->input('closure_status');
+                if ($closureStatus === 'complete') {
+                    $query->where('cm.matter_status', '=', '0')
+                        ->whereIn('cm.discontinue_reason', \App\Support\MatterCompletionChecklist::completeReasonValues());
+                } elseif ($closureStatus === 'discontinued') {
+                    $query->where('cm.matter_status', '=', '0')
+                        ->where(function ($q) {
+                            $q->whereNull('cm.discontinue_reason')
+                                ->orWhereNotIn('cm.discontinue_reason', \App\Support\MatterCompletionChecklist::completeReasonValues());
+                        });
+                }
             }
 
             if (
