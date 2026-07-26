@@ -969,12 +969,41 @@ Full behaviour documented in `docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md`.
 
 ### Documentation
 
-See [`docs/README.md`](docs/README.md) for the full documentation index. Key guides:
+#### Operations & integration
 
-- **Email (AWS SES + Zoho):** `docs/AWS_SES_CRM_EMAIL_INSTRUCTIONS.md`
-- **Sent email S3 storage:** `docs/CRM_EMAIL_S3_IMPLEMENTATION.md`
-- **Cross-access / grants:** `docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md`
-- **Python services:** `python_services/README.md`
+| Document | Description |
+|----------|-------------|
+| [docs/AWS_SES_CRM_EMAIL_INSTRUCTIONS.md](docs/AWS_SES_CRM_EMAIL_INSTRUCTIONS.md) | Outbound email: AWS SES + Zoho SMTP setup, `.env`, routing, troubleshooting |
+| [docs/CRM_EMAIL_S3_IMPLEMENTATION.md](docs/CRM_EMAIL_S3_IMPLEMENTATION.md) | Archiving sent emails (HTML + attachments) to S3 |
+| [python_services/README.md](python_services/README.md) | Python microservices (email upload, DOCX→PDF) |
+| [python_services/LINUX_DEPLOYMENT.md](python_services/LINUX_DEPLOYMENT.md) | Linux deployment for Python services |
+| [python_services/QUICK_REFERENCE.md](python_services/QUICK_REFERENCE.md) | Python services command reference |
+
+#### Product & schema reference
+
+| Document | Description |
+|----------|-------------|
+| [docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md](docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md) | Allocated-only visibility, quick/supervisor access grants |
+| [docs/CLIENT_INTAKE_FORM_INSTRUCTIONS.md](docs/CLIENT_INTAKE_FORM_INSTRUCTIONS.md) | Website lead form JSON → CRM import |
+| [docs/theme.md](docs/theme.md) | UI colour tokens (Powder Blue & Soft Gold) |
+| [docs/FONT_AWESOME_MIGRATION.md](docs/FONT_AWESOME_MIGRATION.md) | Font Awesome local FA7 + class migration (complete) |
+
+#### Database column guides
+
+| Document | Description |
+|----------|-------------|
+| [docs/ADMINS_TABLE_COLUMNS.md](docs/ADMINS_TABLE_COLUMNS.md) | `admins` table column removal plan |
+| [docs/BOOKING_APPOINTMENTS_TABLE_COLUMNS.md](docs/BOOKING_APPOINTMENTS_TABLE_COLUMNS.md) | `booking_appointments` column guide |
+| [docs/DOCUMENTS_TABLE_COLUMNS.md](docs/DOCUMENTS_TABLE_COLUMNS.md) | `documents` table column reference |
+
+#### Migration / rename plans (partially complete)
+
+| Document | Status |
+|----------|--------|
+| [docs/APPLICATION_TO_MATTER_MIGRATION_PLAN.md](docs/APPLICATION_TO_MATTER_MIGRATION_PLAN.md) | Remaining application→matter terminology work |
+| [docs/PLAN_USER_TO_CLIENT_STAFF_RENAME.md](docs/PLAN_USER_TO_CLIENT_STAFF_RENAME.md) | Phases 1–3 done; DB renames 4–5 planned |
+
+SendGrid docs were removed — use **AWS SES** instructions above.
 
 ---
 
