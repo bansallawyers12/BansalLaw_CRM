@@ -1,5 +1,7 @@
 # Bansal Law CRM — Documentation Index
 
+Start here for product overview, stack, routes, and setup: [../README.md](../README.md).
+
 ## Operations & integration
 
 | Document | Description |

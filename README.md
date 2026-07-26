@@ -1,6 +1,6 @@
 # Bansal Law CRM
 
-A Laravel-based Customer Relationship Management (CRM) platform for **Australian legal practice**. It covers the full client lifecycle—from lead intake through matter management, documents, billing, appointments, and trust accounting—with role-based staff access, row-level visibility controls, and optional real-time notifications.
+A Laravel-based Customer Relationship Management (CRM) platform for **Australian legal practice**. It covers the full client lifecycle—from lead intake through matter management, documents, billing, appointments, and trust accounting—with role-based staff access, row-level visibility controls, and in-app broadcast notifications.
 
 ---
 
@@ -32,7 +32,7 @@ A Laravel-based Customer Relationship Management (CRM) platform for **Australian
 | **Assignee Module** | Tasks assigned to/by staff, completion tracking, action counts |
 | **Office Visits** | Walk-in queue (waiting → attending → completed), front-desk check-in wizard |
 | **Broadcasts** | In-app broadcast notifications to staff with read/unread history |
-| **Audit Logs** | Spatie activity log viewer for system changes |
+| **Audit Logs** | Staff login history (`StaffLoginLog`) at `/audit-logs` |
 | **Staff Analytics** | Login analytics (daily/weekly/monthly/hourly trends) |
 
 ### Documents & Signatures
@@ -65,7 +65,7 @@ A Laravel-based Customer Relationship Management (CRM) platform for **Australian
 
 ### Administration (Admin Console)
 
-Accessible at `/adminconsole` by Super Admin and Admin roles only:
+Accessible at `/adminconsole` by roles configured in `CRM_ADMIN_CONSOLE_ROLE_IDS` (default **1**, **12**, **17**):
 
 - Matter types, workflows, and stages
 - Document types and checklists
@@ -174,12 +174,14 @@ Staff searches client not in their allocation
 
 ## Technology Stack & Package Versions
 
+Versions below match the current `composer.lock` / `package.json` (Jul 2026). Re-check with `composer show --installed` and `npm ls --depth=0` after upgrades.
+
 ### Runtime Requirements
 
 | Requirement | Version |
 |-------------|---------|
-| PHP | ^8.3 |
-| Node.js | >= 22.0.0 |
+| PHP | ^8.3 (platform pin: 8.3.31) |
+| Node.js | >= 22.0.0 (see `.nvmrc`) |
 | npm | >= 11.0.0 |
 | PostgreSQL | 12+ (primary) |
 | Python | 3.x (optional, for DOCX→PDF and email parsing) |
@@ -188,30 +190,22 @@ Staff searches client not in their allocation
 
 | Package | Locked Version | Purpose |
 |---------|----------------|---------|
-| `laravel/framework` | v13.14.0 | Application framework |
-| `laravel/passport` | v13.7.5 | OAuth2 API authentication |
-| `laravel/sanctum` | v4.3.2 | SPA / mobile token authentication |
-| `laravel/reverb` | v1.10.2 | WebSocket broadcasting |
-| `laravel/socialite` | v5.27.0 | OAuth social login |
-| `laravel/ui` | v4.6.3 | Auth scaffolding |
-| `laravel/tinker` | ^3.0 | REPL |
-| `aws/aws-sdk-php` | 3.384.4 | AWS S3 and services |
-| `league/flysystem-aws-s3-v3` | ^3.0 | S3 file storage driver |
-| `barryvdh/laravel-dompdf` | v3.1.2 | PDF generation (invoices, receipts) |
+| `laravel/framework` | 13.22.0 | Application framework |
+| `laravel/sanctum` | 4.3.3 | SPA / mobile token authentication |
+| `laravel/tinker` | 3.0.2 | REPL |
+| `aws/aws-sdk-php` | 3.389.0 | AWS S3 and SES |
+| `league/flysystem-aws-s3-v3` | 3.35.2 | S3 file storage driver |
+| `barryvdh/laravel-dompdf` | 3.1.2 | PDF generation (invoices, receipts) |
 | `phpoffice/phpword` | 1.4.0 | DOCX document generation |
-| `stripe/stripe-php` | v20.2.0 | Payment processing |
+| `phpoffice/phpspreadsheet` | 5.9.0 | Spreadsheet import/export |
+| `stripe/stripe-php` | 21.0.0 | Payment processing |
 | `twilio/sdk` | 8.11.6 | SMS (Twilio provider) |
-| `spatie/laravel-activitylog` | 4.12.3 | Audit logging |
-| `spatie/laravel-query-builder` | ^7.0 | API query filtering |
-| `spatie/laravel-html` | ^3.12 | HTML form builders |
-| `yajra/laravel-datatables-oracle` | v13.1.2 | Server-side DataTables |
+| `webklex/php-imap` | 6.2.0 | IMAP inbox sync |
+| `spatie/laravel-query-builder` | 7.3.0 | API query filtering |
+| `yajra/laravel-datatables-oracle` | 13.1.5 | Server-side DataTables |
 | `kyslik/column-sortable` | 8.0.0 | Sortable table columns |
-| `mews/captcha` | 3.5.0 | CAPTCHA on login |
-| `guzzlehttp/guzzle` | ^7.9 | HTTP client |
-| `symfony/mailgun-mailer` | ^7.0 | Mailgun mail transport |
-| `symfony/postmark-mailer` | ^7.0 | Postmark mail transport |
-| `pusher/pusher-php-server` | ^7.2 | Push notifications |
-| `ezyang/htmlpurifier` | ^4.19 | HTML sanitization |
+| `guzzlehttp/guzzle` | 7.15.1 | HTTP client |
+| `ezyang/htmlpurifier` | 4.19.0 | HTML sanitization |
 
 ### Frontend (npm)
 
@@ -219,15 +213,25 @@ Staff searches client not in their allocation
 |---------|---------|---------|
 | `vite` | ^8.0.16 | Asset bundler |
 | `laravel-vite-plugin` | ^3.1.0 | Laravel Vite integration |
-| `tailwindcss` | ^3.4.0 | Utility CSS |
+| `tailwindcss` | ^4.3.2 | Utility CSS (via `@tailwindcss/vite`) |
 | `@tailwindcss/forms` | ^0.5.11 | Form styling |
 | `alpinejs` | ^3.15.3 | Lightweight JS reactivity |
 | `axios` | ^1.11.0 | HTTP client |
+| `jquery` | 3.7.1 | Legacy Blade / DataTables glue |
+| `bootstrap` | ^5.3.7 | CRM UI framework (copied to `public/`) |
+| `@fortawesome/fontawesome-free` | ^7.3.0 | Icons |
 | `@fullcalendar/core` | ^6.1.20 | Calendar (daygrid, timegrid, list, interaction) |
 | `flatpickr` | ^4.6.13 | Date/time pickers (DD/MM/YYYY) |
+| `datatables.net` / `datatables.net-bs5` | ^2.3.8 | Tables |
+| `chart.js` | ^4.5.1 | Analytics charts |
+| `sweetalert2` | ^11.26.25 | Confirm dialogs |
+| `tinymce` | ^8.7.0 | Rich text editor |
+| `tom-select` | ^2.6.2 | Searchable selects |
+| `toastify-js` | ^1.12.0 | Toast notifications |
+| `intl-tel-input` | ^29.1.2 | Phone number inputs |
 | `signature_pad` | ^5.1.1 | Canvas signatures |
-| `laravel-echo` | ^2.3.7 | WebSocket client |
-| `pusher-js` | ^8.5.0 | Real-time events |
+
+`npm install` runs `postinstall`, which copies vendor assets into `public/` (Bootstrap, Flatpickr, DataTables, TinyMCE, Font Awesome, etc.).
 
 ### Infrastructure & Services
 
@@ -235,17 +239,19 @@ Staff searches client not in their allocation
 |-----------|---------|
 | **Database** | PostgreSQL (primary); MySQL/SQLite supported for dev/migration |
 | **File Storage** | Local disk default; AWS S3 optional |
+| **Session** | Redis by default (`SESSION_DRIVER`); file/database also supported |
 | **Queue** | Database or Redis (`QUEUE_CONNECTION`) |
-| **Mail** | AWS SES (system), Zoho SMTP (staff), Mailgun, Postmark |
-| **Real-time** | Laravel Reverb + Echo (optional) |
-| **Python Services** | `python_services/` — DOCX→PDF conversion, email upload parsing |
-| **Build** | Vite; run `npm run copy:flatpickr` after install |
+| **Mail** | AWS SES (system default), Zoho SMTP (staff compose); see `config/mail_routing.php` |
+| **Notifications** | In-app broadcasts + polling (not WebSocket/Reverb) |
+| **SMS** | Twilio and Cellcast |
+| **Python Services** | `python_services/` — DOCX→PDF conversion, email upload parsing (default `http://localhost:5002`) |
+| **Build** | Vite (`npm run build` / `npm run dev`) |
 
 ---
 
 ## Routes
 
-The application defines **645 routes** across 13 route files (verified via `php artisan route:list`).
+The application defines **666 routes** across 12 route files (verified via `php artisan route:list`).
 
 > **Important:** Not every route file inherits `auth:admin` from `web.php`. Middleware depends on how each file is registered — see [Route registration](#route-registration) below.
 
@@ -259,7 +265,6 @@ Routes are loaded by `App\Providers\RouteServiceProvider`:
 | `routes/api.php` | `mapApiRoutes()` | `api` + `/api` prefix | Stateless JSON API |
 | `routes/web.php` | `mapWebRoutes()` | `web` | Main CRM; includes nested requires |
 | `routes/sms.php` | `mapSmsRoutes()` | `web` only | Public SMS webhooks (no auth) |
-| `routes/channels.php` | `BroadcastServiceProvider` | — | WebSocket channel policies |
 | `routes/console.php` | Laravel kernel | — | Scheduled Artisan commands |
 
 Within `routes/web.php`:
@@ -297,7 +302,7 @@ Within `routes/web.php`:
 | *(none)* | `/up` |
 | `web` | All browser routes (session, CSRF) |
 | `auth:admin` | CRM staff session (`Staff` model via `admin` guard) |
-| `adminconsole` | Admin Console only (roles 1, 12, or elevated Super Admin) |
+| `adminconsole` | Admin Console only (roles in `config('crm.admin_console_role_ids')`, default 1, 12, 17) |
 | `api` | `/api/*` routes in `routes/api.php` |
 | `auth:sanctum` | `/api/logout`, `/api/logout-all` |
 | `auth` | `/clear-cache` (default guard: `admin`) |
@@ -622,7 +627,7 @@ Calendar `{type}` accepts **`ajay`** or **`kunal`** only. Legacy calendar URLs r
 
 ### Admin Console (`auth:admin` + `adminconsole`)
 
-Prefix: `/adminconsole` — restricted to roles **1** (Super Admin) and **12** (Admin), unless the user has effective Super Admin elevation.
+Prefix: `/adminconsole` — restricted to roles in `CRM_ADMIN_CONSOLE_ROLE_IDS` (default **1**, **12**, **17**), unless the user has effective Super Admin elevation.
 
 #### Features (`/adminconsole/features/`)
 
@@ -782,7 +787,7 @@ Default guard: `admin`
 ### Admin Console Access
 
 - **Middleware:** `EnsureAdminConsoleAccess`
-- **Allowed roles:** 1 (Super Admin), 12 (Admin)
+- **Allowed roles:** Configurable via `CRM_ADMIN_CONSOLE_ROLE_IDS` (default **1**, **12**, **17**)
 - **Super Admin elevation:** Non–role-1 staff with effective super-admin privileges (via `CrmAccessService`) may also access
 - **Denied users:** Redirected to `/dashboard` with error message
 
@@ -799,7 +804,7 @@ Staff roles (stored on `staff.role`) control feature access. Key role IDs refere
 | 16 | Staff (API login allowed) |
 | 17 | Admin (cross-access exempt) |
 
-Admin Console, matter configuration, and staff management require roles 1 or 12.
+Admin Console, matter configuration, and staff management require roles in `CRM_ADMIN_CONSOLE_ROLE_IDS` (default 1, 12, 17).
 
 ### Row-Level Visibility (Cross-Access)
 
@@ -825,13 +830,7 @@ Configuration: `config/crm_access.php` and `.env` variables (see [Configuration]
 | **Email verification** | `/verify-email/{token}` — one-time email confirmation |
 | **Public documents** | `/documents/{id}` — access controlled by document settings |
 
-### OAuth / Passport
-
-`laravel/passport` is installed for OAuth2 server capabilities. Sanctum handles most current API token needs; Passport is available for third-party OAuth integrations.
-
-### Real-Time Authorization
-
-`routes/channels.php` defines broadcast channel policies. Laravel Reverb + Echo provide WebSocket subscriptions when configured.
+API tokens for staff mobile/integrations use **Laravel Sanctum** (`POST /api/admin-login`). There is no Passport OAuth server in this codebase.
 
 ---
 
@@ -844,8 +843,9 @@ git clone https://github.com/bansallawyers12/BansalLaw_CRM.git
 cd BansalLaw_CRM
 composer install
 npm install
-npm run copy:flatpickr
 ```
+
+`npm install` also runs `postinstall` (copies frontend vendor assets into `public/`).
 
 ### 2. Environment
 
@@ -865,6 +865,8 @@ DB_USERNAME=postgres
 DB_PASSWORD=
 APP_TIMEZONE=Australia/Melbourne
 ```
+
+For local sessions without Redis, set `SESSION_DRIVER=file` (or `database`).
 
 ### 3. Database
 
@@ -893,9 +895,22 @@ php artisan schedule:work
 
 Access at `http://localhost:8000` → redirects to `/login`.
 
-### Default credentials
+### Bootstrap admin
 
-After seeding, check `database/seeders/SuperAdminBootstrapSeeder.php` for the bootstrap admin account.
+`database/seeders/SuperAdminBootstrapSeeder.php` creates a Super Admin staff row when you set:
+
+```env
+SUPERADMIN_BOOTSTRAP_EMAIL=admin1@gmail.com
+SUPERADMIN_BOOTSTRAP_PASSWORD=your-secure-password
+```
+
+Then run:
+
+```bash
+php artisan db:seed --class=Database\\Seeders\\SuperAdminBootstrapSeeder
+```
+
+The seeder refuses to run if `SUPERADMIN_BOOTSTRAP_PASSWORD` is empty.
 
 ---
 
@@ -910,37 +925,42 @@ APP_URL=http://localhost:8000
 # Mail (AWS SES for system mail, Zoho for staff compose)
 CRM_SYSTEM_MAILER=ses
 CRM_PERSONAL_MAILER=zoho
+MAIL_MAILER=ses
 MAIL_FROM_ADDRESS=noreply@bansallawyers.com.au
 MAIL_FROM_NAME="Bansal Lawyers"
-AWS_ACCESS_KEY_ID=AKIAxxxx
-AWS_SECRET_ACCESS_KEY=xxxx
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
 AWS_DEFAULT_REGION=ap-southeast-2
 
 # Payments
-STRIPE_KEY=pk_live_xxx
-STRIPE_SECRET=sk_live_xxx
+STRIPE_KEY=
+STRIPE_SECRET=
 
 # Storage
 FILESYSTEM_DISK=local
-# AWS_BUCKET, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY for S3
+# AWS_BUCKET=... for S3
 
-# Queue
+# Queue / session
 QUEUE_CONNECTION=database
+SESSION_DRIVER=file
 
-# Python services
-PYTHON_CONVERTER_URL=http://localhost:5000
+# Python services (default port 5002)
+PYTHON_SERVICE_URL=http://localhost:5002
+PYTHON_CONVERTER_URL=http://localhost:5002
 
-# Reverb (optional real-time)
-REVERB_APP_ID, REVERB_APP_KEY, REVERB_APP_SECRET
+# Optional login CAPTCHA
+RECAPTCHA_SITE_KEY=
+RECAPTCHA_SITE_SECRET=
 ```
 
 ### CRM Cross-Access
 
 ```env
 CRM_ACCESS_EXEMPT_ROLE_IDS=1,17
-CRM_ACCESS_APPROVER_STAFF_IDS=36834,36524,...
+CRM_ACCESS_EXEMPT_STAFF_IDS=
 CRM_ACCESS_QUICK_ONLY_ROLE_IDS=14
 CRM_ACCESS_STRICT_ALLOCATION=false
+CRM_ACCESS_ALLOCATION_ENABLED=true
 CRM_ACCESS_QUICK_GRANT_MINUTES=15
 CRM_ACCESS_SUPERVISOR_GRANT_HOURS=24
 ```
@@ -979,15 +999,21 @@ routes/
 ├── booking_admin.php     # Appointments
 ├── documents.php         # E-signatures
 ├── matter_workflow.php   # Matter stages
-└── crm_matter_hub.php    # Matter hub utilities
+├── crm_matter_hub.php    # Matter hub utilities
+├── office_visits.php     # Walk-in queue
+├── sms.php               # SMS webhooks
+├── health.php            # /up health check
+└── console.php           # Scheduled commands
 
 resources/views/          # Blade templates
-resources/js/             # Vite entry (Alpine, Echo)
-public/build/             # Compiled assets
+resources/js/             # Vite entry (Alpine, Signature Pad)
+public/                   # Static + postinstall vendor copies
+public/build/             # Compiled Vite assets
 python_services/          # DOCX→PDF, email parsing microservices
 database/migrations/      # Schema
 database/seeders/         # Bootstrap data
-config/                   # auth, crm_access, services, reverb
+docs/                     # Ops and schema documentation
+config/                   # auth, crm_access, mail_routing, services
 ```
 
 ### Key Models
@@ -995,13 +1021,13 @@ config/                   # auth, crm_access, services, reverb
 | Model | Purpose |
 |-------|---------|
 | `Staff` | CRM users (authentication) |
-| `Admin` | Legacy admin records |
+| `Admin` | Client records (`admins` table; legacy naming) |
 | `Lead` | Pre-client inquiries |
-| `Admin` (client) | Client records (`admins` table) |
 | `ClientMatter` | Matter/case on a client |
 | `Document` | Uploaded and signed documents |
 | `BookingAppointment` | Scheduled appointments |
 | `ClientAccessGrant` | Cross-access audit trail |
+| `StaffLoginLog` | Staff login audit entries |
 | `AccountAllInvoiceReceipt` | Invoices and receipts |
 
 ---
