@@ -249,7 +249,8 @@ class ZohoImapFetcher
         try {
             return (string) decrypt($password);
         } catch (Throwable) {
-        return $password;
+            return $password;
+        }
     }
 
     /**
@@ -318,5 +319,4 @@ class ZohoImapFetcher
 
         return false;
     }
-}
 }
