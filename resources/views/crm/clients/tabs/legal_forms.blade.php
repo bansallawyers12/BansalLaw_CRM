@@ -969,10 +969,6 @@
                 if (openBtn) {
                     openBtn.href = downloadUrl;
                 }
-                var officeDownload = pane.querySelector('.client-doc-preview-office-bar a');
-                if (officeDownload) {
-                    officeDownload.href = downloadUrl;
-                }
             }, 50);
         } else {
             window.open(previewUrl, '_blank', 'noopener');

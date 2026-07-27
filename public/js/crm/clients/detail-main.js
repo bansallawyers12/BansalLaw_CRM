@@ -812,32 +812,35 @@ $(document).ready(function() {
         return 'calc(100vh - ' + (isOfficePreview ? '140' : '100') + 'px)';
     }
 
-    function buildPreviewHeaderHtml(fileType, fileUrl, fileLabel) {
+    function buildPreviewHeaderHtml(fileType, fileUrl, fileLabel, options) {
+        options = options || {};
         var normalizedType = (fileType || '').toLowerCase().replace(/^\./, '');
         var iconClass = documentFileIconClass(normalizedType);
         var label = fileLabel || normalizedType.toUpperCase() || 'Document';
         var safeLabel = $('<div/>').text(label).html();
         var downloadUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'download=1';
+        var showToggleList = options.showToggleList !== false;
+        var isOfficePreview = normalizedType.match(/^(docx?|xlsx?|pptx?|rtf|odt|ods|odp)$/);
+        var typeBadge = isOfficePreview
+            ? '<span class="client-doc-preview-type-badge">' + normalizedType.toUpperCase() + '</span>'
+            : '';
+        var toggleBtn = showToggleList
+            ? '<button type="button" class="btn btn-sm client-doc-preview-action-btn client-doc-preview-toggle-list-btn" title="Toggle document list" aria-label="Toggle document list" onclick="var $pane=$(this).closest(\'.subtab6-pane, .subtab2-pane, .subtab-pane, .not-used-layout, .tab-pane\'); $pane.toggleClass(\'hide-list-view\'); $(this).toggleClass(\'is-active\');"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>'
+            : '';
 
-        return `
-            <div class="client-doc-preview-header">
-                <div class="client-doc-preview-header-title">
-                    <i class="fa-solid ${iconClass}" aria-hidden="true"></i>
-                    <span class="client-doc-preview-filename" title="${safeLabel}">${safeLabel}</span>
-                </div>
-                <div class="client-doc-preview-header-actions">
-                    <button type="button" class="btn btn-sm btn-outline-secondary client-doc-preview-toggle-list-btn" title="Toggle Document List" onclick="$(this).closest('.subtab6-pane, .subtab2-pane, .subtab-pane, .not-used-layout, .tab-pane').toggleClass('hide-list-view'); $(this).find('i').toggleClass('fa-arrows-left-right-to-line fa-list');">
-                        <i class="fa-solid fa-arrows-left-right-to-line"></i> Toggle List
-                    </button>
-                    <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary client-doc-preview-open-btn">
-                        <i class="fa-solid fa-up-right-from-square"></i> Open
-                    </a>
-                    <a href="${downloadUrl}" class="btn btn-sm btn-outline-secondary client-doc-preview-download-btn">
-                        <i class="fa-solid fa-download"></i> Download
-                    </a>
-                </div>
-            </div>
-        `;
+        return ''
+            + '<div class="client-doc-preview-header">'
+            + (showToggleList ? '<div class="client-doc-preview-header-start">' + toggleBtn + '</div>' : '')
+            + '<div class="client-doc-preview-header-title">'
+            + '<i class="fa-solid ' + iconClass + '" aria-hidden="true"></i>'
+            + '<span class="client-doc-preview-filename" title="' + safeLabel + '">' + safeLabel + '</span>'
+            + typeBadge
+            + '</div>'
+            + '<div class="client-doc-preview-header-actions">'
+            + '<a href="' + fileUrl + '" target="_blank" rel="noopener" class="btn btn-sm client-doc-preview-action-btn client-doc-preview-open-btn" title="Open in new tab" aria-label="Open in new tab"><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i></a>'
+            + '<a href="' + downloadUrl + '" class="btn btn-sm client-doc-preview-action-btn client-doc-preview-download-btn" title="Download file" aria-label="Download file"><i class="fa-solid fa-download" aria-hidden="true"></i></a>'
+            + '</div>'
+            + '</div>';
     }
 
     function mountIframePreview(container, options) {
@@ -1033,8 +1036,10 @@ $(document).ready(function() {
         const embeddedPreviewUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'embed=1';
         const normalizedType = (fileType || '').toLowerCase();
         const isOfficePreview = normalizedType.match(/^(docx?|xlsx?|pptx?|rtf|odt|ods|odp)$/);
-        const previewHeaderHtml = buildPreviewHeaderHtml(fileType, fileUrl, fileLabel);
         const inDocPane = isClientDocPreviewPane(container);
+        const previewHeaderHtml = buildPreviewHeaderHtml(fileType, fileUrl, fileLabel, {
+            showToggleList: true
+        });
         const mediaMaxHeight = inDocPane ? '100%' : 'calc(100vh - 300px)';
 
         container.html(`
@@ -1098,22 +1103,10 @@ $(document).ready(function() {
             img.onerror = showPreviewError;
             img.src = embeddedPreviewUrl;
         } else if (normalizedType === 'pdf' || isOfficePreview) {
-            const iconClass = normalizedType.match(/^xls/) ? 'fa-file-excel'
-                : normalizedType.match(/^ppt/) ? 'fa-file-powerpoint'
-                : normalizedType.match(/^doc/) ? 'fa-file-word'
-                : 'fa-file-pdf';
-            const typeLabel = isOfficePreview ? normalizedType.toUpperCase() + ' preview' : 'PDF';
-            const downloadUrl = fileUrl + (fileUrl.indexOf('?') >= 0 ? '&' : '?') + 'download=1';
-            const toolbar = isOfficePreview ? `
-                    <div class="client-doc-preview-office-bar">
-                        <span><i class="fa-solid ${iconClass}" style="margin-right: 6px;"></i> ${typeLabel}</span>
-                        <a href="${downloadUrl}" class="btn btn-sm btn-outline-secondary">Download original</a>
-                    </div>` : '';
-
             mountIframePreview(container, {
                 embeddedPreviewUrl: embeddedPreviewUrl,
                 headerHtml: previewHeaderHtml,
-                toolbarHtml: toolbar,
+                toolbarHtml: '',
                 loadingMessage: isOfficePreview ? 'Preparing document preview…' : 'Loading PDF preview…',
                 slowMessage: isOfficePreview
                     ? 'Converting document for preview… please wait.'
