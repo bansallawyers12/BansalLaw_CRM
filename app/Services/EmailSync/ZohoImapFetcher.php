@@ -51,7 +51,7 @@ class ZohoImapFetcher
                 }
 
                 if ($since !== null) {
-                    $query = $this->applyPeekFetch($folder->query()->since($since)->limit($limit));
+                    $query = $this->applyPeekFetch($folder->query()->since($since)->limit($limit)->setFetchOrderDesc());
                 } elseif ($afterUid > 0) {
                     $query = $this->applyPeekFetch($folder->query()->where('UID', ($afterUid + 1) . ':*')->limit($limit));
                 } else {
@@ -70,6 +70,16 @@ class ZohoImapFetcher
                     // Date-range sync re-fetches messages that may have UIDs below the watermark.
                     if ($since === null && $uid <= $afterUid) {
                         continue;
+                    }
+
+                    if ($since !== null) {
+                        try {
+                            $msgDate = $message->getDate()?->toDate();
+                            if ($msgDate && $msgDate->lt($since)) {
+                                continue;
+                            }
+                        } catch (Throwable) {
+                        }
                     }
 
                     $isSeen = $this->messageIsSeen($message);
@@ -239,7 +249,74 @@ class ZohoImapFetcher
         try {
             return (string) decrypt($password);
         } catch (Throwable) {
-            return $password;
-        }
+        return $password;
     }
+
+    /**
+     * Read IMAP \Seen state for specific message UIDs in one folder (no body fetch).
+     *
+     * @param  list<int>  $uids
+     * @return array<int, bool>
+     */
+    public function fetchSeenFlagsForUids(Email $mailbox, array $uids, string $folderName): array
+    {
+        $uids = array_values(array_unique(array_filter(array_map('intval', $uids), static fn (int $uid): bool => $uid > 0)));
+        if ($uids === []) {
+            return [];
+        }
+
+        $password = $this->resolvePassword($mailbox);
+        if ($password === '') {
+            throw new \RuntimeException('Zoho app password is missing for ' . $mailbox->email);
+        }
+
+        $client = $this->connect($mailbox, $password);
+        $seen = [];
+
+        try {
+            $folder = $client->getFolder($folderName);
+            if ($folder === null) {
+                Log::warning('IMAP folder not found while reading seen flags', [
+                    'mailbox' => $mailbox->email,
+                    'folder' => $folderName,
+                ]);
+
+                return [];
+            }
+
+            foreach (array_chunk($uids, 100) as $chunk) {
+                $flagsByUid = $client->getConnection()->flags($chunk, IMAP::ST_UID)->validatedData();
+                foreach ($chunk as $uid) {
+                    $seen[$uid] = $this->flagsIndicateSeen($flagsByUid[$uid] ?? []);
+                }
+            }
+        } finally {
+            try {
+                $client->disconnect();
+            } catch (Throwable) {
+            }
+        }
+
+        return $seen;
+    }
+
+    /**
+     * @param  array<int|string, mixed>|mixed  $flags
+     */
+    protected function flagsIndicateSeen(mixed $flags): bool
+    {
+        if (! is_array($flags)) {
+            return false;
+        }
+
+        foreach ($flags as $flag) {
+            $normalized = strtolower(ltrim(trim((string) $flag), '\\'));
+            if ($normalized === 'seen') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
 }

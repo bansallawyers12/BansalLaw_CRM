@@ -689,25 +689,17 @@ body, html {
 
 .email-item.unread {
     font-weight: 600;
-    border-left: 3px solid var(--outlook-blue);
-    padding-left: 11px;
 }
 
-.email-item.unread .email-subject {
+.email-item.unread .email-subject,
+.email-item.unread .email-sender {
     color: var(--outlook-text);
     font-weight: 700;
 }
 
 .email-item.unread .email-subject::before {
-    content: '';
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--outlook-blue);
-    margin-right: 8px;
-    vertical-align: middle;
-    transform: translateY(-1px);
+    content: none;
+    display: none;
 }
 
 .email-item-header {
@@ -3821,8 +3813,8 @@ body.assign-email-modal-open .ts-dropdown .option.active {
 
 .outlook-container--unassigned .email-item--synced.unread,
 .outlook-container--unassigned .email-item--synced-compact.unread {
-    background: #f0f9ff;
-    border-color: #bae6fd;
+    background: inherit;
+    border-color: inherit;
     box-shadow: none;
 }
 
@@ -3892,6 +3884,7 @@ body.assign-email-modal-open .ts-dropdown .option.active {
     margin: 0;
 }
 
+.email-item--synced-compact.unread .email-sender-name,
 .email-item--synced-compact.unread .email-subject {
     color: #0f172a;
     font-weight: 700;
@@ -4035,6 +4028,7 @@ body.assign-email-modal-open .ts-dropdown .option.active {
 
 .email-item--synced.unread .email-subject {
     color: #0f172a;
+    font-weight: 700;
 }
 
 .email-item--synced .email-preview {
@@ -4881,11 +4875,13 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
 .outlook-container.ui-mode-gmail .email-item.unread,
 .outlook-container.ui-mode-gmail .email-item--synced.unread,
 .outlook-container.ui-mode-gmail .email-item--synced-compact.unread {
-    background: #fff;
+    background: inherit;
 }
 
 .outlook-container.ui-mode-gmail .email-item.unread .email-subject,
-.outlook-container.ui-mode-gmail .email-item--synced-compact.unread .email-subject {
+.outlook-container.ui-mode-gmail .email-item.unread .email-sender,
+.outlook-container.ui-mode-gmail .email-item--synced-compact.unread .email-subject,
+.outlook-container.ui-mode-gmail .email-item--synced-compact.unread .email-sender-name {
     font-weight: 700;
     color: #0f172a;
 }

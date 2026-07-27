@@ -121,11 +121,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const canDeleteEmail = !!(outlookContainer && outlookContainer.dataset.canDeleteEmail === '1');
     const canSelectSyncMailbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-select-sync-mailbox') === '1');
     const mattersUrl = outlookContainer ? outlookContainer.getAttribute('data-matters-url') : '';
-    const updateMailReadUrl = outlookContainer ? (outlookContainer.getAttribute('data-update-mail-read-url') || '') : '';
-    const markAllReadUrl = outlookContainer ? (outlookContainer.getAttribute('data-mark-all-read-url') || '') : '';
-    const markSyncedReadUrl = outlookContainer ? (outlookContainer.getAttribute('data-mark-synced-read-url') || '') : '';
-    const btnMarkAllRead = document.getElementById('btnMarkAllRead');
-    const btnMarkRead = document.getElementById('btnMarkRead');
     const btnGmailBack = document.getElementById('btnGmailBack');
     const gmailReadingToolbar = document.getElementById('gmailReadingToolbar');
     const gmailReadingFooter = document.getElementById('gmailReadingFooter');
@@ -135,13 +130,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const gmailReadNext = document.getElementById('gmailReadNext');
     const gmailReadMoreMenu = document.getElementById('gmailReadMoreMenu');
     const gmailIconDelete = document.getElementById('gmailIconDelete');
-    const gmailIconMarkRead = document.getElementById('gmailIconMarkRead');
     const gmailIconAssign = document.getElementById('gmailIconAssign');
     const gmailIconMore = document.getElementById('gmailIconMore');
     const gmailMenuResend = document.getElementById('gmailMenuResend');
     const GMAIL_FOLDER_LABELS = {
         inbox: 'Inbox',
-        unread: 'Unread',
         sent: 'Sent',
         outbox: 'Outbox',
         unassigned: 'Unassigned',
@@ -155,10 +148,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const EMAIL_UI_MODE_STORAGE_KEY = 'crm_email_ui_mode';
     let emailUiMode = 'outlook';
     const syncedDateSummaryEl = document.getElementById('syncedDateSummary');
-    const folderUnreadBadge = document.getElementById('folderUnreadBadge');
-    const folderUnassignedUnreadBadge = document.getElementById('folderUnassignedUnreadBadge');
-    const folderAssignedUnreadBadge = document.getElementById('folderAssignedUnreadBadge');
-    let unreadCount = 0;
     let syncedDateSummary = null;
     let selectedEmail = null;
 
@@ -196,10 +185,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     currentFolder = defaultFolder;
-    setEmailUiMode(getStoredEmailUiMode(), false);
+    setEmailUiMode('outlook', false);
     loadEmails();
     updateOutboxFiltersVisibility();
 
+    /*
     if (emailUiModeSwitch) {
         emailUiModeSwitch.addEventListener('click', function (event) {
             const button = event.target.closest('.email-ui-mode-btn');
@@ -219,6 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
             setEmailUiMode(nextMode, true);
         });
     }
+    */
 
     if (btnGmailBack) {
         btnGmailBack.addEventListener('click', function () {
@@ -244,12 +235,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (gmailIconDelete) {
         gmailIconDelete.addEventListener('click', function () {
             proxyClickButton(document.getElementById('btnDeleteEmail'));
-        });
-    }
-
-    if (gmailIconMarkRead && btnMarkRead) {
-        gmailIconMarkRead.addEventListener('click', function () {
-            proxyClickButton(btnMarkRead);
         });
     }
 
@@ -449,7 +434,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderSyncedClientBadge(email) {
         if (currentFolder !== 'assigned'
-            && currentFolder !== 'unread'
             && currentFolder !== 'inbox'
             && email.sync_assignment_status !== 'auto_assigned'
             && email.sync_assignment_status !== 'manual_assigned') {
@@ -600,9 +584,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (gmailIconDelete) {
             gmailIconDelete.hidden = !canDeleteEmail;
-        }
-        if (gmailIconMarkRead) {
-            gmailIconMarkRead.hidden = !email || !isEmailUnread(email);
         }
         if (gmailIconAssign && btnAssignToClient) {
             gmailIconAssign.hidden = btnAssignToClient.hidden;
@@ -811,61 +792,12 @@ document.addEventListener('DOMContentLoaded', function() {
         iframe.style.minHeight = '100%';
     }
 
-    function sortEmailsUnreadFirst(list) {
-        const items = Array.isArray(list) ? list.slice() : [];
-        const sortDir = sortOrder && sortOrder.value === 'asc' ? 1 : -1;
-
-        items.sort(function(a, b) {
-            const aUnread = isEmailUnread(a) ? 0 : 1;
-            const bUnread = isEmailUnread(b) ? 0 : 1;
-            if (aUnread !== bUnread) {
-                return aUnread - bUnread;
-            }
-
-            const aDate = new Date(getEmailDate(a) || 0).getTime();
-            const bDate = new Date(getEmailDate(b) || 0).getTime();
-            if (isNaN(aDate) || isNaN(bDate)) {
-                return 0;
-            }
-
-            return (aDate - bDate) * sortDir;
-        });
-
-        return items;
-    }
-
-    function updateMarkAllReadButtonVisibility() {
-        if (!btnMarkAllRead) {
-            return;
-        }
-
-        const isClientInbox = !!clientId
-            && !!markAllReadUrl
-            && unreadCount > 0
-            && (currentFolder === 'inbox' || currentFolder === 'unread');
-
-        const isSyncedFolder = !!markSyncedReadUrl
-            && unreadCount > 0
-            && (currentFolder === 'unassigned' || currentFolder === 'assigned');
-
-        const canMarkAll = isClientInbox || isSyncedFolder;
-
-        btnMarkAllRead.hidden = !canMarkAll;
-        btnMarkAllRead.disabled = false;
-    }
-
-    function updateMarkReadButtonVisibility(email) {
-        if (!btnMarkRead) {
-            return;
-        }
-        btnMarkRead.hidden = !email || !isEmailUnread(email);
-        if (gmailIconMarkRead) {
-            gmailIconMarkRead.hidden = btnMarkRead.hidden;
-        }
-    }
-
     function isSyncedInboxFolder(folder) {
         return folder === 'unassigned' || folder === 'assigned';
+    }
+
+    function renderSyncedDateSummaryBar(summary) {
+        syncedDateSummary = summary || null;
     }
 
     function getAppTzDateKey(dateInput) {
@@ -1000,204 +932,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return value.split('@')[0].replace(/[._-]+/g, ' ');
         }
         return value;
-    }
-
-    function renderSyncedFolderUnreadBadge(count) {
-        const badge = currentFolder === 'assigned'
-            ? folderAssignedUnreadBadge
-            : folderUnassignedUnreadBadge;
-        const otherBadge = currentFolder === 'assigned'
-            ? folderUnassignedUnreadBadge
-            : folderAssignedUnreadBadge;
-
-        if (otherBadge) {
-            otherBadge.hidden = true;
-            otherBadge.textContent = '';
-        }
-
-        if (!badge) {
-            return;
-        }
-
-        const safeCount = Math.max(0, Number(count) || 0);
-        if (safeCount > 0) {
-            badge.textContent = safeCount > 99 ? '99+' : String(safeCount);
-            badge.hidden = false;
-            badge.setAttribute('aria-label', safeCount + ' unread');
-        } else {
-            badge.textContent = '';
-            badge.hidden = true;
-            badge.removeAttribute('aria-label');
-        }
-    }
-
-    function renderSyncedDateSummaryBar(summary) {
-        syncedDateSummary = summary || null;
-    }
-
-    function updateUnreadTabBadge(count) {
-        unreadCount = Math.max(0, Number(count) || 0);
-        if (!folderUnreadBadge) {
-            if (unassignedOnly && isSyncedInboxFolder(currentFolder)) {
-                renderSyncedFolderUnreadBadge(unreadCount);
-            }
-            updateMarkAllReadButtonVisibility();
-            return;
-        }
-        if (unreadCount > 0) {
-            folderUnreadBadge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
-            folderUnreadBadge.hidden = false;
-            folderUnreadBadge.setAttribute('aria-label', unreadCount + ' unread');
-        } else {
-            folderUnreadBadge.textContent = '';
-            folderUnreadBadge.hidden = true;
-            folderUnreadBadge.removeAttribute('aria-label');
-        }
-        if (unassignedOnly && isSyncedInboxFolder(currentFolder)) {
-            renderSyncedFolderUnreadBadge(unreadCount);
-        }
-        updateMarkAllReadButtonVisibility();
-    }
-
-    async function markEmailAsRead(email, listElement) {
-        if (!email || !isEmailUnread(email)) {
-            return;
-        }
-
-        email.mail_is_read = true;
-        email.is_read = true;
-        if (listElement) {
-            listElement.classList.remove('unread');
-        }
-        updateUnreadTabBadge(unreadCount - 1);
-
-        if (currentFolder === 'unread') {
-            emails = emails.filter(function (item) {
-                return item.id !== email.id;
-            });
-            selectedEmailId = email.id;
-            renderEmailList();
-        } else if (currentFolder === 'inbox') {
-            emails = sortEmailsUnreadFirst(emails);
-            renderEmailList();
-        } else if (isSyncedInboxFolder(currentFolder)) {
-            renderEmailList();
-        }
-
-        updateMarkReadButtonVisibility(email);
-
-        if (!updateMailReadUrl) {
-            return;
-        }
-
-        try {
-            const formData = new FormData();
-            formData.append('mail_report_id', email.id);
-            formData.append('_token', getCsrfToken());
-            await fetch(updateMailReadUrl, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-        } catch (error) {
-            console.error('Failed to mark email as read', error);
-        }
-    }
-
-    async function markAllEmailsAsRead() {
-        const isSyncedFolder = isSyncedInboxFolder(currentFolder);
-
-        if (isSyncedFolder) {
-            if (!markSyncedReadUrl) {
-                crmToast('Cannot mark emails as read in this view.', 'warning');
-                return;
-            }
-        } else if (!markAllReadUrl || !clientId) {
-            crmToast('Cannot mark emails as read in this view.', 'warning');
-            return;
-        }
-
-        if (unreadCount <= 0) {
-            crmToast('No unread emails to update.', 'info');
-            return;
-        }
-
-        const originalHtml = btnMarkAllRead ? btnMarkAllRead.innerHTML : '';
-        if (btnMarkAllRead) {
-            btnMarkAllRead.disabled = true;
-            btnMarkAllRead.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i><span>Marking...</span>';
-        }
-
-        try {
-            let response;
-            if (isSyncedFolder) {
-                const formData = new FormData();
-                formData.append('folder', currentFolder);
-                formData.append('_token', getCsrfToken());
-                response = await fetch(markSyncedReadUrl, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-            } else {
-                const formData = new FormData();
-                formData.append('client_id', clientId);
-                if (matterId) {
-                    formData.append('client_matter_id', matterId);
-                }
-                formData.append('_token', getCsrfToken());
-                response = await fetch(markAllReadUrl, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-            }
-
-            const data = await response.json().catch(function () {
-                return {};
-            });
-
-            if (!response.ok || data.success === false) {
-                crmToast(data.message || 'Could not mark emails as read.', 'error');
-                return;
-            }
-
-            crmToast(data.message || 'All emails marked as read.', 'success');
-            currentPage = 1;
-            loadEmails();
-        } catch (error) {
-            crmToast('Could not mark emails as read: ' + (error.message || 'Unknown error'), 'error');
-        } finally {
-            if (btnMarkAllRead) {
-                btnMarkAllRead.disabled = false;
-                btnMarkAllRead.innerHTML = originalHtml;
-            }
-            updateMarkAllReadButtonVisibility();
-        }
-    }
-
-    if (btnMarkAllRead) {
-        btnMarkAllRead.addEventListener('click', function () {
-            markAllEmailsAsRead();
-        });
-    }
-
-    if (btnMarkRead) {
-        btnMarkRead.addEventListener('click', function () {
-            if (!selectedEmail) {
-                return;
-            }
-            const activeEl = document.querySelector('.email-item.active');
-            markEmailAsRead(selectedEmail, activeEl);
-        });
     }
 
     // Event Listeners
@@ -1356,6 +1090,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function switchToFolder(folder) {
+        if (folder === 'unread') {
+            folder = 'inbox';
+        }
         folderItems.forEach(function (f) {
             const isActive = f.dataset.folder === folder;
             f.classList.toggle('active', isActive);
@@ -1365,7 +1102,6 @@ document.addEventListener('DOMContentLoaded', function() {
         currentPage = 1;
         resetReadingPane();
         updateOutboxFiltersVisibility();
-        updateMarkAllReadButtonVisibility();
     }
 
     // Send Mail
@@ -3056,18 +2792,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             emails = Array.isArray(data.emails) ? data.emails : [];
-            if (typeof data.unread_count !== 'undefined') {
-                updateUnreadTabBadge(data.unread_count);
-            }
             if (data.date_summary) {
                 syncedDateSummary = data.date_summary;
                 renderSyncedDateSummaryBar(syncedDateSummary);
             } else if (unassignedOnly) {
                 syncedDateSummary = null;
                 renderSyncedDateSummaryBar(null);
-            }
-            if (currentFolder === 'inbox') {
-                emails = sortEmailsUnreadFirst(emails);
             }
             
             // Pagination
@@ -3482,11 +3212,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let emptyHint = '';
             let emptyIcon = 'fa-inbox';
 
-            if (currentFolder === 'unread') {
-                emptyMsg = 'No unread emails';
-                emptyHint = 'You\'re all caught up.';
-                emptyIcon = 'fa-envelope-open';
-            } else if (currentFolder === 'unassigned') {
+            if (currentFolder === 'unassigned') {
                 emptyMsg = 'No unassigned emails';
                 emptyHint = 'All synced mail is linked to clients. Use Sync now to fetch new mail from Zoho.';
                 emptyIcon = 'fa-user-clock';
@@ -3500,16 +3226,10 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        let insertedEarlierDivider = false;
-        const showInboxSections = currentFolder === 'inbox'
-            && emails.some(function(item) { return isEmailUnread(item); })
-            && emails.some(function(item) { return !isEmailUnread(item); });
         const showDateGroups = isSyncedInboxFolder(currentFolder);
         let lastDateGroup = null;
 
-        emails.forEach(function(email, index) {
-            const unread = isEmailUnread(email);
-
+        emails.forEach(function(email) {
             if (showDateGroups) {
                 const bucket = getEmailDateBucket(email);
                 if (bucket !== lastDateGroup) {
@@ -3531,15 +3251,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            if (showInboxSections && !unread && index > 0 && isEmailUnread(emails[index - 1]) && !insertedEarlierDivider) {
-                const divider = document.createElement('div');
-                divider.className = 'email-list-section-divider';
-                divider.innerHTML = '<span>Earlier messages</span>';
-                emailListContainer.appendChild(divider);
-                insertedEarlierDivider = true;
-            }
-
             const el = document.createElement('div');
+            const unread = isEmailUnread(email);
             el.className = 'email-item' + (unread ? ' unread' : '');
             if (selectedEmailId === email.id) {
                 el.classList.add('active');
@@ -3560,21 +3273,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const clientBadge = renderSyncedClientBadge(email);
             const syncSourceBadge = renderSyncSourceBadge(email);
             const calendarIndicator = renderCalendarListIndicator(email);
-            const autoAssignedBadge = unread && email.sync_assignment_status === 'auto_assigned'
+            const autoAssignedBadge = email.sync_assignment_status === 'auto_assigned'
                 ? '<span class="email-new-badge" title="Auto-assigned from synced inbox">New</span>'
-                : '';
-            const unreadBadge = unread && (currentFolder === 'inbox' || isSyncedInboxFolder(currentFolder))
-                ? '<span class="email-unread-label" title="Unread">Unread</span>'
-                : '';
-            const markReadAction = unread && isSyncedInboxFolder(currentFolder)
-                ? '<button type="button" class="email-item-mark-read email-item-mark-read--compact" title="Mark as read" aria-label="Mark as read"><i class="fa-solid fa-check"></i></button>'
                 : '';
 
             if (isSyncedInboxFolder(currentFolder)) {
                 const senderInitial = escapeHtml((sender.charAt(0) || '?').toUpperCase());
                 const senderName = escapeHtml(extractSenderName(sender));
-                const badgeRow = attachmentIcon + calendarIndicator + unreadBadge + autoAssignedBadge + statusBadge + syncSourceBadge + clientBadge;
-                const unreadDot = unread ? '<span class="email-item-unread-dot" aria-hidden="true"></span>' : '';
+                const badgeRow = attachmentIcon + calendarIndicator + autoAssignedBadge + statusBadge + syncSourceBadge + clientBadge;
                 const previewHtml = preview
                     ? '<div class="email-preview">' + escapeHtml(preview) + '</div>'
                     : '';
@@ -3583,7 +3289,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     + '<div class="email-item-synced email-item-synced--compact">'
                     + '  <div class="email-item-avatar-wrap">'
                     + '    <div class="email-item-avatar" aria-hidden="true">' + senderInitial + '</div>'
-                    +      unreadDot
                     + '  </div>'
                     + '  <div class="email-item-body">'
                     + '    <div class="email-item-line-main">'
@@ -3596,14 +3301,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     + '  </div>'
                     + '  <div class="email-item-side">'
                     + '    <div class="email-date">' + dateStr + '</div>'
-                    +      markReadAction
                     + '  </div>'
                     + '</div>';
             } else {
                 el.innerHTML = `
                 <div class="email-item-header">
-                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${calendarIndicator}${unreadBadge}${autoAssignedBadge}${statusBadge}${syncSourceBadge}${clientBadge}</div>
-                    ${markReadAction}
+                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${calendarIndicator}${autoAssignedBadge}${statusBadge}${syncSourceBadge}${clientBadge}</div>
                 </div>
                 <div class="email-subject">${escapeHtml(subject)}</div>
                 <div class="email-preview">${escapeHtml(preview)}</div>
@@ -3614,13 +3317,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             }
 
-            el.addEventListener('click', (e) => {
-                if (e.target.closest('.email-item-mark-read')) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    markEmailAsRead(email, el);
-                    return;
-                }
+            el.addEventListener('click', () => {
                 document.querySelectorAll('.email-item').forEach(i => i.classList.remove('active'));
                 el.classList.add('active');
                 selectedEmailId = email.id;
@@ -3654,9 +3351,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         selectedEmail = email;
-        updateMarkReadButtonVisibility(email);
-
-        markEmailAsRead(email, listElement);
 
         renderReadingPaneCalendarBanner(email);
 

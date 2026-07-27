@@ -106,11 +106,6 @@
     data-staff-signature-url="{{ route('crm.staff.email-signature') }}"
     data-staff-id="{{ auth()->id() }}"
     data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}"
-    data-update-mail-read-url="{{ route('clients.updatemailreadbit') }}"
-    data-mark-all-read-url="{{ route('clients.markAllEmailsRead') }}"
-    @if($canViewSyncedInbox && $unassignedOnly)
-    data-mark-synced-read-url="{{ route('clients.synced-emails.mark-read') }}"
-    @endif
     data-personal-folders='@json($emailUploadPersonalFolders)'
     data-matter-folders='@json($emailUploadMatterFolders)'>
     
@@ -128,6 +123,7 @@
     <div class="outlook-list-pane">
         <div class="list-toolbar{{ $unassignedOnly ? ' list-toolbar--sync-inbox' : '' }}">
             <div class="list-toolbar__actions">
+                {{-- Outlook/Gmail layout switch hidden — Outlook split view is the only UI for email + unassigned tabs.
                 <div class="email-ui-mode-switch" id="emailUiModeSwitch" role="group" aria-label="Choose email layout">
                     <button type="button" class="email-ui-mode-btn" data-ui-mode="outlook" title="Outlook split view — list and preview side by side">
                         <i class="fa-solid fa-table-columns" aria-hidden="true"></i>
@@ -138,6 +134,7 @@
                         <span>Gmail</span>
                     </button>
                 </div>
+                --}}
                 <button type="button" class="action-btn action-btn--upload" id="btnUploadEmail" title="Upload Outlook email ({{ $crmEmailUploadLabel }})" hidden>
                     <i class="fa-solid fa-upload"></i> Upload
                 </button>
@@ -146,19 +143,13 @@
                 @if($unassignedOnly)
                 <button type="button" class="folder-item active" data-folder="unassigned" role="tab" aria-selected="true">
                     <i class="fa-solid fa-user-clock"></i> Unassigned
-                    <span class="folder-synced-badge" id="folderUnassignedUnreadBadge" hidden aria-label="Unread unassigned count"></span>
                 </button>
                 <button type="button" class="folder-item" data-folder="assigned" role="tab" aria-selected="false">
                     <i class="fa-solid fa-user-check"></i> Assigned
-                    <span class="folder-synced-badge" id="folderAssignedUnreadBadge" hidden aria-label="Unread assigned count"></span>
                 </button>
                 @else
                 <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
                     <i class="fa-solid fa-inbox"></i> Inbox
-                </button>
-                <button type="button" class="folder-item" data-folder="unread" role="tab" aria-selected="false">
-                    <i class="fa-solid fa-envelope"></i> Unread
-                    <span class="folder-unread-badge" id="folderUnreadBadge" hidden aria-label="Unread count"></span>
                 </button>
                 <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
                     <i class="fa-solid fa-paper-plane"></i> Sent Items
@@ -187,10 +178,6 @@
                     <button type="button" class="sync-inbox-panel__btn" id="btnSyncInbox" title="{{ $canSelectSyncMailbox ? 'Fetch mail from Zoho for the selected mailbox and range' : 'Fetch mail from Zoho for the selected range' }}">
                         <i class="fa-solid fa-rotate"></i>
                         <span>Sync now</span>
-                    </button>
-                    <button type="button" class="sync-inbox-panel__btn sync-inbox-panel__btn--mark-read" id="btnMarkAllRead" title="Mark all unread emails in this tab as read" hidden>
-                        <i class="fa-solid fa-envelope-open"></i>
-                        <span>Mark all read</span>
                     </button>
                 </div>
             </div>
@@ -240,12 +227,6 @@
                         <div class="sync-inbox-panel__title">Synced inbox</div>
                     </div>
                 </div>
-                <div class="sync-inbox-panel__actions">
-                    <button type="button" class="sync-inbox-panel__btn sync-inbox-panel__btn--mark-read" id="btnMarkAllRead" title="Mark all unread emails in this tab as read" hidden>
-                        <i class="fa-solid fa-envelope-open"></i>
-                        <span>Mark all read</span>
-                    </button>
-                </div>
             </div>
             <div class="sync-inbox-panel__list-tools">
                 <div class="search-box search-box--compact">
@@ -279,10 +260,6 @@
                     <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
                     <input type="text" id="searchInput" placeholder="Search emails...">
                 </div>
-                <button type="button" class="mark-all-read-btn" id="btnMarkAllRead" title="Mark all unread emails as read" hidden>
-                    <i class="fa-solid fa-envelope-open" aria-hidden="true"></i>
-                    <span>Mark all read</span>
-                </button>
             </div>
             <div class="list-header-filters">
                 <select id="labelFilter" class="list-filter-select" aria-label="Filter by label">
@@ -388,9 +365,6 @@
                                 <i class="fa-solid fa-trash" aria-hidden="true"></i>
                             </button>
                             @endif
-                            <button type="button" class="gmail-icon-btn" id="gmailIconMarkRead" title="Mark as read" hidden>
-                                <i class="fa-solid fa-envelope-open" aria-hidden="true"></i>
-                            </button>
                             @if($canSyncInbox)
                             <button type="button" class="gmail-icon-btn" id="gmailIconAssign" title="Assign to client" hidden>
                                 <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
@@ -423,9 +397,6 @@
                     <button class="action-btn" id="btnReply"><i class="fa-solid fa-reply"></i> Reply</button>
                     <button class="action-btn" id="btnReplyAll"><i class="fa-solid fa-reply-all"></i> Reply All</button>
                     <button class="action-btn" id="btnForward"><i class="fa-solid fa-share"></i> Forward</button>
-                    <button type="button" class="action-btn action-btn--muted" id="btnMarkRead" hidden title="Mark this email as read">
-                        <i class="fa-solid fa-envelope-open"></i> Mark as read
-                    </button>
                     <button type="button" class="action-btn action-btn--warning" id="btnResend" hidden>
                         <i class="fa-solid fa-rotate-right"></i> Resend
                     </button>

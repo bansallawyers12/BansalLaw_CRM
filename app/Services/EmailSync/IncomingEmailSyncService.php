@@ -530,13 +530,26 @@ class IncomingEmailSyncService
             }
 
             $messageId = trim((string) ($parsedData['message_id'] ?? ''));
+            $fileHash = md5($rawEml);
 
             $match = $this->matchingService->suggestMatches($parsedData);
             $mailType = $defaultMailType === 'sent'
                 ? 'sent'
                 : ($match['mail_type'] ?? 'inbox');
 
-            if ($this->isDuplicate($mailbox, $messageId, $imapUid, $mailType, $parsedData)) {
+            // When Sent-folder sync is enabled, outgoing mail must only be imported from Sent.
+            // Zoho/mobile clients can surface the same sent message under INBOX or date catch-up.
+            if ($defaultMailType === 'inbox' && $mailbox->sync_sent_enabled && $mailType === 'sent') {
+                InboxSyncLogger::info('Skipped sent mail from INBOX; Sent folder sync handles outgoing mail', [
+                    'mailbox' => $mailbox->email,
+                    'imap_uid' => $imapUid,
+                    'subject' => $parsedData['subject'] ?? $subjectHint,
+                ]);
+
+                return ['success' => true, 'skipped' => true];
+            }
+
+            if ($this->isDuplicate($mailbox, $messageId, $imapUid, $mailType, $parsedData, $fileHash)) {
                 return ['success' => true, 'skipped' => true];
             }
 
@@ -587,6 +600,10 @@ class IncomingEmailSyncService
                 return $import;
             }
 
+            if (! empty($import['skipped'])) {
+                return ['success' => true, 'skipped' => true];
+            }
+
             return [
                 'success' => false,
                 'error' => $import['error'] ?? 'Import failed',
@@ -607,12 +624,36 @@ class IncomingEmailSyncService
         string $messageId,
         int $imapUid,
         string $mailType = 'inbox',
-        array $parsedData = []
+        array $parsedData = [],
+        ?string $fileHash = null
     ): bool {
         $mailboxEmail = strtolower(trim($mailbox->email));
+        $normalizedMessageId = $this->normalizeMessageId($messageId);
 
-        if ($messageId !== '') {
-            if (EmailLog::query()->where('message_id', $messageId)->exists()) {
+        if ($normalizedMessageId !== '') {
+            $exists = EmailLog::query()
+                ->where(function ($q) use ($normalizedMessageId, $messageId) {
+                    $q->where('message_id', $normalizedMessageId)
+                        ->orWhere('message_id', $messageId)
+                        ->orWhere('message_id', '<' . $normalizedMessageId . '>');
+                })
+                ->exists();
+
+            if ($exists) {
+                return true;
+            }
+        }
+
+        if ($fileHash !== null && $fileHash !== '') {
+            $hashExists = EmailLog::query()
+                ->where('file_hash', $fileHash)
+                ->where(function ($q) use ($mailbox, $mailboxEmail) {
+                    $q->where('synced_email_id', $mailbox->id)
+                        ->orWhereRaw('LOWER(mailbox_email) = ?', [$mailboxEmail]);
+                })
+                ->exists();
+
+            if ($hashExists) {
                 return true;
             }
         }
@@ -625,37 +666,76 @@ class IncomingEmailSyncService
             return true;
         }
 
-        if ($mailType === 'sent') {
-            $subject = strtolower(trim((string) ($parsedData['subject'] ?? '')));
-            $sender = strtolower(trim((string) ($parsedData['sender_email'] ?? $parsedData['from_mail'] ?? '')));
-            if ($subject !== '' && $sender !== '') {
-                $dupQuery = EmailLog::query()
-                    ->where('mail_body_type', 'sent')
-                    ->whereRaw('LOWER(subject) = ?', [$subject])
-                    ->where(function ($q) use ($sender, $mailboxEmail) {
-                        $q->whereRaw('LOWER(from_mail) LIKE ?', ['%' . $sender . '%'])
-                            ->orWhereRaw('LOWER(from_mail) LIKE ?', ['%' . $mailboxEmail . '%']);
-                    });
+        return $this->isFuzzyMailboxDuplicate($mailbox, $parsedData);
+    }
 
-                if (! empty($parsedData['sent_date'])) {
-                    try {
-                        $sentAt = \Carbon\Carbon::parse((string) $parsedData['sent_date']);
-                        $dupQuery->whereBetween('fetch_mail_sent_time', [
-                            $sentAt->copy()->subMinutes(3),
-                            $sentAt->copy()->addMinutes(3),
-                        ]);
-                    } catch (\Throwable) {
-                        // Ignore unparseable sent dates for fuzzy duplicate matching.
-                    }
-                }
+    protected function normalizeMessageId(string $messageId): string
+    {
+        $messageId = trim($messageId);
+        if ($messageId === '') {
+            return '';
+        }
 
-                if ($dupQuery->exists()) {
-                    return true;
-                }
+        if (preg_match('/^<(.+)>$/', $messageId, $matches)) {
+            return trim($matches[1]);
+        }
+
+        return $messageId;
+    }
+
+    /**
+     * Match same logical email across Sent/Inbox folders or date catch-up re-fetches.
+     */
+    protected function isFuzzyMailboxDuplicate(Email $mailbox, array $parsedData): bool
+    {
+        $subject = strtolower(trim((string) ($parsedData['subject'] ?? '')));
+        $sender = strtolower(trim((string) ($parsedData['sender_email'] ?? $parsedData['from_mail'] ?? '')));
+        $mailboxEmail = strtolower(trim($mailbox->email));
+
+        if ($subject === '') {
+            return false;
+        }
+
+        $dupQuery = EmailLog::query()
+            ->where(function ($q) use ($mailbox, $mailboxEmail) {
+                $q->where('synced_email_id', $mailbox->id)
+                    ->orWhereRaw('LOWER(mailbox_email) = ?', [$mailboxEmail]);
+            })
+            ->whereRaw('LOWER(subject) = ?', [$subject]);
+
+        if ($sender !== '') {
+            $dupQuery->where(function ($q) use ($sender, $mailboxEmail) {
+                $q->whereRaw('LOWER(from_mail) LIKE ?', ['%' . $sender . '%'])
+                    ->orWhereRaw('LOWER(from_mail) LIKE ?', ['%' . $mailboxEmail . '%']);
+            });
+        }
+
+        $sentAt = $this->resolveParsedSentTime($parsedData);
+        if ($sentAt !== null) {
+            $dupQuery->whereBetween('fetch_mail_sent_time', [
+                $sentAt->copy()->subMinutes(5),
+                $sentAt->copy()->addMinutes(5),
+            ]);
+        }
+
+        return $dupQuery->exists();
+    }
+
+    protected function resolveParsedSentTime(array $parsedData): ?\Carbon\Carbon
+    {
+        foreach (['sent_date', 'received_date'] as $key) {
+            if (empty($parsedData[$key])) {
+                continue;
+            }
+
+            try {
+                return \Carbon\Carbon::parse((string) $parsedData[$key]);
+            } catch (\Throwable) {
+                continue;
             }
         }
 
-        return false;
+        return null;
     }
 
     protected function resolveStoragePrefix(Email $mailbox, ?int $clientId): string
@@ -696,6 +776,11 @@ class IncomingEmailSyncService
     public static function syncRangeOptions(): array
     {
         return [
+            '10min' => '10 minutes',
+            '30min' => '30 minutes',
+            '1hour' => '1 hrs',
+            '2hours' => '2 hrs',
+            '5hours' => '5 hrs',
             'today' => 'Today',
             '2days' => 'Last 2 days',
             '5days' => 'Last 5 days',
@@ -722,6 +807,11 @@ class IncomingEmailSyncService
         $now = now($timezone);
 
         return match ($normalized) {
+            '10min', '10minutes', '10_minutes' => $now->copy()->subMinutes(10),
+            '30min', '30minutes', '30_minutes' => $now->copy()->subMinutes(30),
+            '1hour', '1hrs', '1_hour', '1_hrs' => $now->copy()->subHours(1),
+            '2hours', '2hrs', '2_hours', '2_hrs' => $now->copy()->subHours(2),
+            '5hours', '5hrs', '5_hours', '5_hrs' => $now->copy()->subHours(5),
             '2days' => $now->copy()->subDays(1)->startOfDay(),
             '5days' => $now->copy()->subDays(4)->startOfDay(),
             '1week' => $now->copy()->subDays(6)->startOfDay(),

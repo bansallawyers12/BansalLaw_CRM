@@ -8599,7 +8599,7 @@ class ClientsController extends Controller
 
         // Sort by actual email sent time, user-selectable direction (default: newest first)
         $sortDirection = strtolower($request->input('sort_order', 'desc')) === 'asc' ? 'ASC' : 'DESC';
-        if ($folder === 'inbox') {
+        if (in_array($folder, ['inbox', 'unassigned', 'assigned'], true)) {
             $query->orderByRaw('CASE WHEN (mail_is_read IS NULL OR mail_is_read = ?) THEN 0 ELSE 1 END ASC', [false]);
         }
         if ($folder === 'outbox' && $hasSendStatus) {
