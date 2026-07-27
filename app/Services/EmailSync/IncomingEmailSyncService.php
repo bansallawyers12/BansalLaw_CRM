@@ -20,6 +20,8 @@ class IncomingEmailSyncService
 {
     private const PARSER_DOWN_CACHE_KEY = 'inbox_sync_parser_unavailable';
 
+    private string $currentSyncSource = 'cron';
+
     public function __construct(
         private ZohoImapFetcher $imapFetcher,
         private EmailMatchingService $matchingService,
@@ -30,8 +32,10 @@ class IncomingEmailSyncService
     /**
      * @return array<string, mixed>
      */
-    public function syncAll(?string $mailboxFilter = null, ?\DateTimeInterface $since = null): array
+    public function syncAll(?string $mailboxFilter = null, ?\DateTimeInterface $since = null, string $syncSource = 'cron'): array
     {
+        $this->currentSyncSource = in_array($syncSource, ['manual', 'cron', 'compose'], true) ? $syncSource : 'cron';
+
         if (! config('imap_sync.enabled', true)) {
             return [
                 'success' => false,
@@ -526,9 +530,26 @@ class IncomingEmailSyncService
             }
 
             $messageId = trim((string) ($parsedData['message_id'] ?? ''));
+            $fileHash = md5($rawEml);
 
-            $mailType = $defaultMailType === 'sent' ? 'sent' : 'inbox';
-            if ($this->isDuplicate($mailbox, $messageId, $imapUid, $mailType)) {
+            $match = $this->matchingService->suggestMatches($parsedData);
+            $mailType = $defaultMailType === 'sent'
+                ? 'sent'
+                : ($match['mail_type'] ?? 'inbox');
+
+            // When Sent-folder sync is enabled, outgoing mail must only be imported from Sent.
+            // Zoho/mobile clients can surface the same sent message under INBOX or date catch-up.
+            if ($defaultMailType === 'inbox' && $mailbox->sync_sent_enabled && $mailType === 'sent') {
+                InboxSyncLogger::info('Skipped sent mail from INBOX; Sent folder sync handles outgoing mail', [
+                    'mailbox' => $mailbox->email,
+                    'imap_uid' => $imapUid,
+                    'subject' => $parsedData['subject'] ?? $subjectHint,
+                ]);
+
+                return ['success' => true, 'skipped' => true];
+            }
+
+            if ($this->isDuplicate($mailbox, $messageId, $imapUid, $mailType, $parsedData, $fileHash)) {
                 return ['success' => true, 'skipped' => true];
             }
 
@@ -536,11 +557,6 @@ class IncomingEmailSyncService
             if ($staff) {
                 $guard->login($staff);
                 $didLoginStaff = true;
-            }
-
-            $match = $this->matchingService->suggestMatches($parsedData);
-            if ($defaultMailType !== 'sent') {
-                $mailType = $match['mail_type'] ?? 'inbox';
             }
 
             $bestMatch = $match['best'] ?? null;
@@ -573,6 +589,7 @@ class IncomingEmailSyncService
                     'sync_assignment_status' => $isAutoAssigned ? 'auto_assigned' : 'unassigned',
                     'imap_uid' => $imapUid,
                     'message_id' => $messageId,
+                    'sync_source' => $this->currentSyncSource,
                     // New incoming mail must always appear unread in the CRM; the IMAP
                     // \Seen flag is unreliable (body fetch or webmail access sets it).
                     'mail_is_read' => $mailType === 'sent',
@@ -581,6 +598,10 @@ class IncomingEmailSyncService
 
             if (! empty($import['success'])) {
                 return $import;
+            }
+
+            if (! empty($import['skipped'])) {
+                return ['success' => true, 'skipped' => true];
             }
 
             return [
@@ -598,14 +619,23 @@ class IncomingEmailSyncService
         }
     }
 
-    protected function isDuplicate(Email $mailbox, string $messageId, int $imapUid, string $mailType = 'inbox'): bool
-    {
-        if ($messageId !== '') {
+    protected function isDuplicate(
+        Email $mailbox,
+        string $messageId,
+        int $imapUid,
+        string $mailType = 'inbox',
+        array $parsedData = [],
+        ?string $fileHash = null
+    ): bool {
+        $mailboxEmail = strtolower(trim($mailbox->email));
+        $normalizedMessageId = $this->normalizeMessageId($messageId);
+
+        if ($normalizedMessageId !== '') {
             $exists = EmailLog::query()
-                ->where('message_id', $messageId)
-                ->where(function ($q) use ($mailbox) {
-                    $q->where('mailbox_email', strtolower(trim($mailbox->email)))
-                        ->orWhere('synced_email_id', $mailbox->id);
+                ->where(function ($q) use ($normalizedMessageId, $messageId) {
+                    $q->where('message_id', $normalizedMessageId)
+                        ->orWhere('message_id', $messageId)
+                        ->orWhere('message_id', '<' . $normalizedMessageId . '>');
                 })
                 ->exists();
 
@@ -614,11 +644,98 @@ class IncomingEmailSyncService
             }
         }
 
-        return EmailLog::query()
+        if ($fileHash !== null && $fileHash !== '') {
+            $hashExists = EmailLog::query()
+                ->where('file_hash', $fileHash)
+                ->where(function ($q) use ($mailbox, $mailboxEmail) {
+                    $q->where('synced_email_id', $mailbox->id)
+                        ->orWhereRaw('LOWER(mailbox_email) = ?', [$mailboxEmail]);
+                })
+                ->exists();
+
+            if ($hashExists) {
+                return true;
+            }
+        }
+
+        if (EmailLog::query()
             ->where('synced_email_id', $mailbox->id)
             ->where('imap_uid', $imapUid)
             ->where('mail_body_type', $mailType)
-            ->exists();
+            ->exists()) {
+            return true;
+        }
+
+        return $this->isFuzzyMailboxDuplicate($mailbox, $parsedData);
+    }
+
+    protected function normalizeMessageId(string $messageId): string
+    {
+        $messageId = trim($messageId);
+        if ($messageId === '') {
+            return '';
+        }
+
+        if (preg_match('/^<(.+)>$/', $messageId, $matches)) {
+            return trim($matches[1]);
+        }
+
+        return $messageId;
+    }
+
+    /**
+     * Match same logical email across Sent/Inbox folders or date catch-up re-fetches.
+     */
+    protected function isFuzzyMailboxDuplicate(Email $mailbox, array $parsedData): bool
+    {
+        $subject = strtolower(trim((string) ($parsedData['subject'] ?? '')));
+        $sender = strtolower(trim((string) ($parsedData['sender_email'] ?? $parsedData['from_mail'] ?? '')));
+        $mailboxEmail = strtolower(trim($mailbox->email));
+
+        if ($subject === '') {
+            return false;
+        }
+
+        $dupQuery = EmailLog::query()
+            ->where(function ($q) use ($mailbox, $mailboxEmail) {
+                $q->where('synced_email_id', $mailbox->id)
+                    ->orWhereRaw('LOWER(mailbox_email) = ?', [$mailboxEmail]);
+            })
+            ->whereRaw('LOWER(subject) = ?', [$subject]);
+
+        if ($sender !== '') {
+            $dupQuery->where(function ($q) use ($sender, $mailboxEmail) {
+                $q->whereRaw('LOWER(from_mail) LIKE ?', ['%' . $sender . '%'])
+                    ->orWhereRaw('LOWER(from_mail) LIKE ?', ['%' . $mailboxEmail . '%']);
+            });
+        }
+
+        $sentAt = $this->resolveParsedSentTime($parsedData);
+        if ($sentAt !== null) {
+            $dupQuery->whereBetween('fetch_mail_sent_time', [
+                $sentAt->copy()->subMinutes(5),
+                $sentAt->copy()->addMinutes(5),
+            ]);
+        }
+
+        return $dupQuery->exists();
+    }
+
+    protected function resolveParsedSentTime(array $parsedData): ?\Carbon\Carbon
+    {
+        foreach (['sent_date', 'received_date'] as $key) {
+            if (empty($parsedData[$key])) {
+                continue;
+            }
+
+            try {
+                return \Carbon\Carbon::parse((string) $parsedData[$key]);
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        return null;
     }
 
     protected function resolveStoragePrefix(Email $mailbox, ?int $clientId): string
@@ -659,6 +776,11 @@ class IncomingEmailSyncService
     public static function syncRangeOptions(): array
     {
         return [
+            '10min' => '10 minutes',
+            '30min' => '30 minutes',
+            '1hour' => '1 hrs',
+            '2hours' => '2 hrs',
+            '5hours' => '5 hrs',
             'today' => 'Today',
             '2days' => 'Last 2 days',
             '5days' => 'Last 5 days',
@@ -685,6 +807,11 @@ class IncomingEmailSyncService
         $now = now($timezone);
 
         return match ($normalized) {
+            '10min', '10minutes', '10_minutes' => $now->copy()->subMinutes(10),
+            '30min', '30minutes', '30_minutes' => $now->copy()->subMinutes(30),
+            '1hour', '1hrs', '1_hour', '1_hrs' => $now->copy()->subHours(1),
+            '2hours', '2hrs', '2_hours', '2_hrs' => $now->copy()->subHours(2),
+            '5hours', '5hrs', '5_hours', '5_hrs' => $now->copy()->subHours(5),
             '2days' => $now->copy()->subDays(1)->startOfDay(),
             '5days' => $now->copy()->subDays(4)->startOfDay(),
             '1week' => $now->copy()->subDays(6)->startOfDay(),

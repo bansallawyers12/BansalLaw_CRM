@@ -151,7 +151,7 @@ class ManualInboxSyncRunner
         ];
 
         foreach ($addresses as $address) {
-            $partial = $this->syncService->syncAll($address, $since);
+            $partial = $this->syncService->syncAll($address, $since, 'manual');
             if (($partial['success'] ?? true) === false) {
                 $summary['success'] = false;
                 $summary['message'] = $partial['message'] ?? 'Inbox sync is disabled.';
@@ -163,6 +163,8 @@ class ManualInboxSyncRunner
                 $summary['total_failed'] += (int) ($result['failed'] ?? 0);
             }
         }
+
+        InboxSyncLogger::logRunSummary('manual', $summary, $email !== '' ? $email : null);
 
         $this->logExecutionResult($summary);
 

@@ -54,14 +54,14 @@ class SyncInboxEmails extends Command
         $this->info('Starting inbox sync' . ($email ? " for {$email}" : ' for all mailboxes') . '...');
 
         InboxSyncLogger::info('Scheduled inbox sync started', [
-            'source' => 'artisan',
+            'source' => 'cron',
             'email' => $email,
             'since' => $since?->format('c'),
             'full' => $this->option('full'),
             'today' => $this->option('today'),
         ]);
 
-        $summary = $syncService->syncAll($email, $since);
+        $summary = $syncService->syncAll($email, $since, 'cron');
 
         foreach ($summary['mailboxes'] as $mailboxEmail => $result) {
             $imported = (int) ($result['imported'] ?? 0);
@@ -87,13 +87,17 @@ class SyncInboxEmails extends Command
         ));
 
         $logContext = [
-            'source' => 'artisan',
+            'source' => 'cron',
             'email' => $email,
             'total_imported' => (int) ($summary['total_imported'] ?? 0),
             'total_skipped' => (int) ($summary['total_skipped'] ?? 0),
             'total_failed' => (int) ($summary['total_failed'] ?? 0),
             'mailboxes' => array_keys($summary['mailboxes'] ?? []),
         ];
+
+        InboxSyncLogger::logRunSummary('cron', array_merge($summary, [
+            'sync_range' => $this->option('full') ? 'full' : ($this->option('today') ? 'today' : 'incremental'),
+        ]), $email);
 
         if ((int) ($summary['total_failed'] ?? 0) > 0) {
             InboxSyncLogger::warning('Scheduled inbox sync completed with failures', $logContext);

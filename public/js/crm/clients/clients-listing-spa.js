@@ -119,14 +119,6 @@
         }
     }
 
-    function clearUnreadBadgesForClients(clientIds) {
-        clientIds.forEach(function (id) {
-            var $row = $root().find('#id_' + id);
-            $row.find('.client-unread-mail-badge').remove();
-            $row.find('.cb-element').attr('data-unread', '0');
-        });
-    }
-
     function removeClientRow(clientId) {
         $root().find('#id_' + clientId).fadeOut(200, function () {
             $(this).remove();
@@ -376,77 +368,6 @@
                             title: 'Merge failed',
                             text: 'Could not merge ' + recordTypeLabelPlural() + '.'
                         });
-                    }
-                });
-            });
-        });
-
-        $(document).on('click.clientsListingSpa', '#clients-listing-spa-root .mark-mails-read-btn', function () {
-            var clientIds = [];
-            $root().find('.cb-element:checked').each(function () {
-                var id = parseInt($(this).data('id'), 10);
-                if (id) {
-                    clientIds.push(id);
-                }
-            });
-
-            if (clientIds.length === 0) {
-                clientsSwalAlert({
-                    icon: 'info',
-                    title: 'Nothing selected',
-                    text: 'Please select at least one ' + recordTypeLabelPlural().slice(0, -1) + ' first.'
-                });
-                return;
-            }
-
-            clientsSwalConfirm({
-                title: 'Mark mail as read?',
-                html: 'Mark all unread inbox emails as read for <strong>' + clientIds.length + '</strong> selected ' + recordTypeLabelPlural() + '?',
-                icon: 'question',
-                confirmText: 'Yes, mark as read'
-            }).then(function (result) {
-                if (!result.isConfirmed) {
-                    return;
-                }
-
-                var $btn = $root().find('.mark-mails-read-btn');
-                var originalHtml = $btn.html();
-                $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Marking...');
-
-                $.ajax({
-                    type: 'POST',
-                    url: cfg().routes.markBulkEmailsRead,
-                    headers: { 'X-CSRF-TOKEN': cfg().csrfToken, 'Accept': 'application/json' },
-                    data: { client_ids: clientIds },
-                    success: function (data) {
-                        if (data && data.success) {
-                            clearUnreadBadgesForClients(clientIds);
-                            $root().find('.cb-element').prop('checked', false);
-                            resetSelectionState();
-                            updateBulkSelectionUI();
-                            clientsSwalAlert({
-                                icon: 'success',
-                                title: 'Emails updated',
-                                text: data.message || 'Emails marked as read.',
-                                timer: 2200
-                            });
-                        } else {
-                            clientsSwalAlert({
-                                icon: 'error',
-                                title: 'Could not update',
-                                text: (data && data.message) ? data.message : 'Could not mark emails as read.'
-                            });
-                        }
-                    },
-                    error: function (xhr) {
-                        var message = 'Could not mark emails as read.';
-                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                            message = xhr.responseJSON.message;
-                        }
-                        clientsSwalAlert({ icon: 'error', title: 'Something went wrong', text: message });
-                    },
-                    complete: function () {
-                        $btn.prop('disabled', false).html(originalHtml);
                     }
                 });
             });

@@ -451,6 +451,89 @@ class EmailUploadController extends Controller
     }
 
     /**
+     * Duplicate guard for IMAP-synced imports (same message across Sent/Inbox or catch-up re-fetch).
+     *
+     * @param  array<string, mixed>  $parsedData
+     * @param  array<string, mixed>  $syncMeta
+     */
+    protected function findExistingSyncedEmailLog(array $parsedData, string $fileHash, array $syncMeta): ?EmailLog
+    {
+        $mailboxEmail = strtolower(trim((string) ($syncMeta['mailbox_email'] ?? '')));
+        $syncedEmailId = (int) ($syncMeta['synced_email_id'] ?? 0);
+        $imapUid = (int) ($syncMeta['imap_uid'] ?? 0);
+        $mailType = (string) ($syncMeta['mail_body_type'] ?? $syncMeta['mail_type'] ?? 'inbox');
+
+        $scope = EmailLog::query()->where(function ($q) use ($syncedEmailId, $mailboxEmail) {
+            if ($syncedEmailId > 0) {
+                $q->where('synced_email_id', $syncedEmailId);
+            }
+            if ($mailboxEmail !== '') {
+                $q->orWhereRaw('LOWER(mailbox_email) = ?', [$mailboxEmail]);
+            }
+        });
+
+        if ($fileHash !== '') {
+            $byHash = (clone $scope)->where('file_hash', $fileHash)->first();
+            if ($byHash) {
+                return $byHash;
+            }
+        }
+
+        $messageId = trim((string) ($parsedData['message_id'] ?? ''));
+        if ($messageId !== '') {
+            $normalized = trim($messageId, '<>');
+            $byMessageId = (clone $scope)->where(function ($q) use ($messageId, $normalized) {
+                $q->where('message_id', $messageId)
+                    ->orWhere('message_id', $normalized)
+                    ->orWhere('message_id', '<' . $normalized . '>');
+            })->first();
+            if ($byMessageId) {
+                return $byMessageId;
+            }
+        }
+
+        if ($syncedEmailId > 0 && $imapUid > 0) {
+            $byUid = (clone $scope)
+                ->where('imap_uid', $imapUid)
+                ->where('mail_body_type', $mailType)
+                ->first();
+            if ($byUid) {
+                return $byUid;
+            }
+        }
+
+        $subject = strtolower(trim((string) ($parsedData['subject'] ?? '')));
+        $sender = strtolower(trim((string) ($parsedData['sender_email'] ?? $parsedData['from_mail'] ?? '')));
+        if ($subject === '') {
+            return null;
+        }
+
+        $fuzzy = (clone $scope)->whereRaw('LOWER(subject) = ?', [$subject]);
+        if ($sender !== '') {
+            $fuzzy->where(function ($q) use ($sender, $mailboxEmail) {
+                $q->whereRaw('LOWER(from_mail) LIKE ?', ['%' . $sender . '%']);
+                if ($mailboxEmail !== '') {
+                    $q->orWhereRaw('LOWER(from_mail) LIKE ?', ['%' . $mailboxEmail . '%']);
+                }
+            });
+        }
+
+        if (! empty($parsedData['sent_date'])) {
+            try {
+                $sentAt = $this->parseEmailDateTimeForStorage((string) $parsedData['sent_date']);
+                $fuzzy->whereBetween('fetch_mail_sent_time', [
+                    $sentAt->copy()->subMinutes(5),
+                    $sentAt->copy()->addMinutes(5),
+                ]);
+            } catch (\Throwable) {
+                // Ignore unparseable sent dates.
+            }
+        }
+
+        return $fuzzy->first();
+    }
+
+    /**
      * Build a user-facing duplicate email message.
      */
     protected function buildDuplicateErrorMessage(EmailLog $existing): string
@@ -549,6 +632,18 @@ class EmailUploadController extends Controller
                                 ? $existing->fetch_mail_sent_time->format('d/m/Y h:i a')
                                 : null,
                         ],
+                    ];
+                }
+            }
+
+            if (! $request->boolean('force_upload') && ! empty($syncMeta)) {
+                $existingSynced = $this->findExistingSyncedEmailLog($parsedData, $fileHash, $syncMeta);
+                if ($existingSynced) {
+                    return [
+                        'success' => true,
+                        'skipped' => true,
+                        'duplicate' => true,
+                        'existing_id' => $existingSynced->id,
                     ];
                 }
             }
@@ -701,6 +796,9 @@ class EmailUploadController extends Controller
                 $mailReport->synced_email_id = $syncMeta['synced_email_id'] ?? null;
                 $mailReport->sync_assignment_status = $syncMeta['sync_assignment_status'] ?? null;
                 $mailReport->imap_uid = $syncMeta['imap_uid'] ?? null;
+                if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_source')) {
+                    $mailReport->sync_source = $syncMeta['sync_source'] ?? null;
+                }
                 if (array_key_exists('mail_is_read', $syncMeta) && $syncMeta['mail_is_read'] !== null) {
                     $mailReport->mail_is_read = (bool) $syncMeta['mail_is_read'];
                 }

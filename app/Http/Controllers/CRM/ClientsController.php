@@ -8599,7 +8599,7 @@ class ClientsController extends Controller
 
         // Sort by actual email sent time, user-selectable direction (default: newest first)
         $sortDirection = strtolower($request->input('sort_order', 'desc')) === 'asc' ? 'ASC' : 'DESC';
-        if ($folder === 'inbox') {
+        if (in_array($folder, ['inbox', 'unassigned', 'assigned'], true)) {
             $query->orderByRaw('CASE WHEN (mail_is_read IS NULL OR mail_is_read = ?) THEN 0 ELSE 1 END ASC', [false]);
         }
         if ($folder === 'outbox' && $hasSendStatus) {
@@ -8625,6 +8625,8 @@ class ClientsController extends Controller
             $email->sync_assignment_status = $email->sync_assignment_status ?? '';
             $email->is_read = $this->emailLogIsRead($email);
             $email->mailbox_email = $email->mailbox_email ?? '';
+            $email->sync_source = $email->sync_source ?? '';
+            $email->sync_source_label = \App\Models\EmailLog::syncSourceLabel($email->sync_source ?: null);
             $email->client_name = '';
             $email->client_ref = '';
             if ($email->relationLoaded('client') && $email->client) {
