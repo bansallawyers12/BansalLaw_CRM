@@ -796,7 +796,12 @@
     /**
      * Format the warnings[] array from an upload response (attachment/PDF
      * soft-failures on otherwise successful uploads) for display.
+     * Calendar schedule notices are excluded — those are informational, not failures.
      */
+    function isCalendarUploadNotice(text) {
+        return /detected schedule date/i.test(String(text || ''));
+    }
+
     function formatEmailUploadWarnings(warnings) {
         if (!Array.isArray(warnings) || !warnings.length) {
             return '';
@@ -805,10 +810,69 @@
             if (!entry || typeof entry !== 'object') {
                 return '';
             }
-            var fileWarnings = Array.isArray(entry.warnings) ? entry.warnings : [];
+            var fileWarnings = (Array.isArray(entry.warnings) ? entry.warnings : [])
+                .filter(function (w) { return !isCalendarUploadNotice(w); });
+            if (!fileWarnings.length) {
+                return '';
+            }
             var name = entry.original_filename || entry.filename || 'Unknown file';
             return name + ':\n' + fileWarnings.map(function (w) { return '  - ' + w; }).join('\n');
         }).filter(Boolean).join('\n\n');
+    }
+
+    /**
+     * Format informational notices (e.g. calendar dates detected) for success messaging.
+     */
+    function formatEmailUploadNotices(notices) {
+        if (!Array.isArray(notices) || !notices.length) {
+            return '';
+        }
+        return notices.map(function (entry) {
+            if (!entry || typeof entry !== 'object') {
+                return '';
+            }
+            var fileNotices = Array.isArray(entry.notices) ? entry.notices : [];
+            if (!fileNotices.length) {
+                return '';
+            }
+            var name = entry.original_filename || entry.filename || 'Unknown file';
+            return name + ':\n' + fileNotices.map(function (n) { return '  - ' + n; }).join('\n');
+        }).filter(Boolean).join('\n\n');
+    }
+
+    /** Collect calendar-style notices that may still appear inside warnings[] (legacy). */
+    function extractCalendarNoticesFromWarnings(warnings) {
+        if (!Array.isArray(warnings) || !warnings.length) {
+            return '';
+        }
+        return warnings.map(function (entry) {
+            if (!entry || typeof entry !== 'object') {
+                return '';
+            }
+            var calendarNotes = (Array.isArray(entry.warnings) ? entry.warnings : [])
+                .filter(isCalendarUploadNotice);
+            if (!calendarNotes.length) {
+                return '';
+            }
+            var name = entry.original_filename || entry.filename || 'Unknown file';
+            return name + ':\n' + calendarNotes.map(function (n) { return '  - ' + n; }).join('\n');
+        }).filter(Boolean).join('\n\n');
+    }
+
+    /** Merge explicit notices[] with any legacy calendar strings still in warnings[]. */
+    function formatEmailUploadInfoNotices(responseOrNotices, maybeWarnings) {
+        var notices = responseOrNotices;
+        var warnings = maybeWarnings;
+        if (responseOrNotices && !Array.isArray(responseOrNotices) && typeof responseOrNotices === 'object') {
+            notices = responseOrNotices.notices;
+            warnings = responseOrNotices.warnings;
+        }
+        var fromNotices = formatEmailUploadNotices(notices);
+        var fromWarnings = extractCalendarNoticesFromWarnings(warnings);
+        if (fromNotices && fromWarnings) {
+            return fromNotices + '\n\n' + fromWarnings;
+        }
+        return fromNotices || fromWarnings || '';
     }
 
     /** Replace characters that often trigger mod_security on POST (subject line). */
@@ -878,6 +942,8 @@
     global.crmBuildEmailUploadTechnicalDetails = buildEmailUploadTechnicalDetails;
     global.crmEmailUploadHasServiceError = emailUploadHasServiceError;
     global.crmFormatEmailUploadWarnings = formatEmailUploadWarnings;
+    global.crmFormatEmailUploadNotices = formatEmailUploadNotices;
+    global.crmFormatEmailUploadInfoNotices = formatEmailUploadInfoNotices;
     global.crmWafSafeEmailSubject = wafSafeEmailSubject;
     global.crmEncodeSendmailMessage = encodeSendmailMessage;
     global.crmResolveSameOriginUrl = resolveSameOriginUrl;
