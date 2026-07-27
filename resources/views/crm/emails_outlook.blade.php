@@ -350,13 +350,27 @@
             <div class="email-list email-list--synced" id="emailList">
                 <div class="email-list-loading">Loading emails...</div>
             </div>
+            <div class="pagination-bar pagination-bar--synced" id="emailPaginationBar">
+                <div class="pagination-bar__summary">
+                    <span class="pagination-bar__total" id="listTotalCount">Total: 0 emails</span>
+                    <span class="pagination-bar__count" id="pageInfo">No emails found</span>
+                </div>
+                <div class="pagination-controls">
+                    <button type="button" class="pagination-btn" id="prevBtn" disabled aria-label="Previous page">
+                        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                        <span>Previous</span>
+                    </button>
+                    <button type="button" class="pagination-btn" id="nextBtn" disabled aria-label="Next page">
+                        <span>Next</span>
+                        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
         </div>
         @else
         <div class="email-list" id="emailList">
             <div style="padding:16px;text-align:center;color:#666;">Loading emails...</div>
         </div>
-        @endif
-
         <div class="pagination-bar" id="emailPaginationBar">
             <div class="pagination-bar__summary">
                 <span class="pagination-bar__page" id="pageSummary">Page 1 of 1</span>
@@ -373,6 +387,7 @@
                 </button>
             </div>
         </div>
+        @endif
     </div>
 
     <!-- Reading Pane -->

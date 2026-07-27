@@ -986,6 +986,25 @@ body, html {
     color: #64748b;
 }
 
+.pagination-bar__total {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.pagination-bar--synced .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pagination-bar--synced .pagination-bar__page {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+}
+
 .pagination-controls {
     display: inline-flex;
     align-items: center;
@@ -3169,6 +3188,10 @@ body.assign-email-modal-open .ts-dropdown .option.active {
     overflow: hidden;
 }
 
+.synced-mail-list-body .pagination-bar {
+    margin-top: auto;
+}
+
 .outlook-container--unassigned .email-list,
 .outlook-container--unassigned .email-list--synced {
     flex: 1 1 auto;
@@ -4074,6 +4097,11 @@ body.assign-email-modal-open .ts-dropdown .option.active {
     background: #fff;
     border-top: 1px solid #dbeafe;
     box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.outlook-container--unassigned .pagination-bar__total {
+    font-size: 15px;
+    color: #1e3a8a;
 }
 
 .outlook-container--unassigned .pagination-controls button,

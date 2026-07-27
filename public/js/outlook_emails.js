@@ -70,6 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const dateToFilter = document.getElementById('dateToFilter');
     const pageInfo = document.getElementById('pageInfo');
     const pageSummary = document.getElementById('pageSummary');
+    const listTotalCount = document.getElementById('listTotalCount');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
     
@@ -741,20 +742,37 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function formatMailTotalLabel(total) {
+        const safeTotal = Math.max(0, Number(total) || 0);
+        return safeTotal === 1 ? 'Total: 1 email' : 'Total: ' + safeTotal + ' emails';
+    }
+
     function updatePaginationDisplay(total, lastPage, from, to) {
         const safeLastPage = Math.max(1, Number(lastPage) || 1);
         const safeTotal = Math.max(0, Number(total) || 0);
         listTotal = safeTotal;
         listFrom = Math.max(0, Number(from) || 0);
         listLastPage = safeLastPage;
+        const syncedListFooter = isSyncedInboxFolder(currentFolder);
+
+        if (listTotalCount) {
+            listTotalCount.textContent = formatMailTotalLabel(safeTotal);
+        }
 
         if (pageSummary) {
             pageSummary.textContent = 'Page ' + currentPage + ' of ' + safeLastPage;
+            pageSummary.hidden = syncedListFooter;
         }
 
         if (pageInfo) {
             if (safeTotal > 0) {
-                pageInfo.textContent = 'Showing ' + from + '-' + to + ' of ' + safeTotal;
+                if (syncedListFooter) {
+                    pageInfo.textContent = safeLastPage > 1
+                        ? ('Showing ' + from + '-' + to + ' · Page ' + currentPage + ' of ' + safeLastPage)
+                        : ('Showing all ' + safeTotal);
+                } else {
+                    pageInfo.textContent = 'Showing ' + from + '-' + to + ' of ' + safeTotal;
+                }
             } else {
                 pageInfo.textContent = 'No emails found';
             }
