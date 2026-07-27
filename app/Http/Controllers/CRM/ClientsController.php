@@ -8501,6 +8501,11 @@ class ClientsController extends Controller
         }
 
         $mailboxFilter = $request->input('mailbox_filter');
+        if (! empty($mailboxFilter) && $isSyncedInboxFolder) {
+            if (! ($staff instanceof \App\Models\Staff && $staff->canViewAllSyncedInboxMail())) {
+                $mailboxFilter = null;
+            }
+        }
         if (! empty($mailboxFilter)) {
             if ($isSyncedInboxFolder) {
                 \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxListFilter($query, (string) $mailboxFilter);

@@ -78,10 +78,8 @@
         ? \App\Services\EmailSync\IncomingEmailSyncService::syncRangeOptionsForUnassignedTab($authStaff)
         : [];
     $defaultUnassignedSyncRange = $canSelectSyncMailbox ? '10min' : 'today';
-    $listMailboxFilterOptions = ($unassignedOnly && $authStaff instanceof \App\Models\Staff && $canViewSyncedInbox)
-        ? ($canSelectSyncMailbox
-            ? \App\Services\EmailSync\IncomingEmailSyncService::syncableMailboxAddresses()
-            : \App\Services\EmailSync\IncomingEmailSyncService::allowedSyncMailboxAddressesForStaff($authStaff))
+    $listMailboxFilterOptions = ($unassignedOnly && $canSelectSyncMailbox)
+        ? \App\Services\EmailSync\IncomingEmailSyncService::syncableMailboxAddresses()
         : [];
     $crmMailboxAddresses = \App\Models\Email::where('status', true)
         ->orderBy('email')
@@ -134,6 +132,7 @@
     <!-- Email List Pane -->
     <div class="outlook-list-pane">
         <div class="list-toolbar{{ $unassignedOnly ? ' list-toolbar--sync-inbox' : '' }}">
+            @if(! $unassignedOnly)
             <div class="list-toolbar__actions">
                 {{-- Outlook/Gmail layout switch hidden — Outlook split view is the only UI for email + unassigned tabs.
                 <div class="email-ui-mode-switch" id="emailUiModeSwitch" role="group" aria-label="Choose email layout">
@@ -151,26 +150,35 @@
                     <i class="fa-solid fa-upload"></i> Upload
                 </button>
             </div>
-            <div class="folder-tabs" role="tablist" aria-label="Mail folders">
+            @endif
+            <div class="{{ $unassignedOnly ? 'list-toolbar__folder-row' : '' }}">
+                <div class="folder-tabs" role="tablist" aria-label="Mail folders">
+                    @if($unassignedOnly)
+                    <button type="button" class="folder-item active" data-folder="unassigned" role="tab" aria-selected="true">
+                        <i class="fa-solid fa-user-clock"></i> Unassigned
+                    </button>
+                    <button type="button" class="folder-item" data-folder="assigned" role="tab" aria-selected="false">
+                        <i class="fa-solid fa-user-check"></i> Assigned
+                    </button>
+                    @else
+                    <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
+                        <i class="fa-solid fa-inbox"></i> Inbox
+                    </button>
+                    <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
+                        <i class="fa-solid fa-paper-plane"></i> Sent Items
+                    </button>
+                    {{-- Email Log tab hidden on client email view.
+                    <button type="button" class="folder-item" data-folder="outbox" role="tab" aria-selected="false">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Email Log
+                    </button>
+                    --}}
+                    @endif
+                </div>
                 @if($unassignedOnly)
-                <button type="button" class="folder-item active" data-folder="unassigned" role="tab" aria-selected="true">
-                    <i class="fa-solid fa-user-clock"></i> Unassigned
-                </button>
-                <button type="button" class="folder-item" data-folder="assigned" role="tab" aria-selected="false">
-                    <i class="fa-solid fa-user-check"></i> Assigned
-                </button>
-                @else
-                <button type="button" class="folder-item active" data-folder="inbox" role="tab" aria-selected="true">
-                    <i class="fa-solid fa-inbox"></i> Inbox
-                </button>
-                <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
-                    <i class="fa-solid fa-paper-plane"></i> Sent Items
-                </button>
-                {{-- Email Log tab hidden on client email view.
-                <button type="button" class="folder-item" data-folder="outbox" role="tab" aria-selected="false">
-                    <i class="fa-solid fa-clock-rotate-left"></i> Email Log
-                </button>
-                --}}
+                <div class="search-box search-box--compact list-toolbar__search">
+                    <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
+                    <input type="text" id="searchInput" placeholder="Search emails...">
+                </div>
                 @endif
             </div>
             <input type="file" id="outlookEmailFileInput" accept="{{ $crmEmailUploadAccept }}" multiple hidden>
@@ -219,10 +227,6 @@
                 @endif
             </div>
             <div class="sync-inbox-panel__list-tools">
-                <div class="search-box search-box--compact">
-                    <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
-                    <input type="text" id="searchInput" placeholder="Search emails...">
-                </div>
                 <select id="senderFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by sender">
                     <option value="">All senders</option>
                 </select>
@@ -253,10 +257,6 @@
                 </div>
             </div>
             <div class="sync-inbox-panel__list-tools">
-                <div class="search-box search-box--compact">
-                    <i class="fa-solid fa-search search-box-icon" aria-hidden="true"></i>
-                    <input type="text" id="searchInput" placeholder="Search emails...">
-                </div>
                 <select id="senderFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by sender">
                     <option value="">All senders</option>
                 </select>

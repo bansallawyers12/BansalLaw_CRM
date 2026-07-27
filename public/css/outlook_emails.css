@@ -3245,6 +3245,29 @@ body.assign-email-modal-open .ts-dropdown .option.active {
     flex-shrink: 0;
 }
 
+.outlook-container--unassigned .list-toolbar--sync-inbox {
+    gap: 0;
+}
+
+.outlook-container--unassigned .list-toolbar__folder-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.outlook-container--unassigned .list-toolbar__search {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 280px;
+    margin-left: auto;
+}
+
+.outlook-container--unassigned .list-toolbar__folder-row .folder-tabs {
+    flex: 0 0 auto;
+    width: auto;
+}
+
 .outlook-container--unassigned .outlook-reading-pane {
     min-height: 0;
     height: 100%;
@@ -3341,11 +3364,17 @@ body.assign-email-modal-open .ts-dropdown .option.active {
 
 .sync-inbox-panel__list-tools {
     display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(100px, 0.9fr) minmax(88px, 0.65fr);
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     gap: 8px;
     margin-top: 8px;
     padding-top: 8px;
     border-top: 1px solid #e2e8f0;
+}
+
+.outlook-container--unassigned .sync-inbox-panel--tools-only .sync-inbox-panel__list-tools {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
 }
 
 .search-box--compact {
@@ -4189,6 +4218,16 @@ body.assign-email-modal-open .ts-dropdown .option.active {
 }
 
 @media (max-width: 900px) {
+    .outlook-container--unassigned .list-toolbar__folder-row {
+        flex-wrap: wrap;
+    }
+
+    .outlook-container--unassigned .list-toolbar__search {
+        flex: 1 1 100%;
+        max-width: none;
+        margin-left: 0;
+    }
+
     .sync-inbox-panel__list-tools {
         grid-template-columns: 1fr;
     }
