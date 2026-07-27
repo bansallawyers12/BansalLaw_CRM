@@ -18,6 +18,8 @@ class SyncInboxEmails extends Command
 
     public function handle(IncomingEmailSyncService $syncService): int
     {
+        IncomingEmailSyncService::configureSyncRuntime();
+
         if (! config('imap_sync.enabled', true)) {
             $this->warn('Inbox sync is disabled. Set MAIL_INBOX_SYNC_ENABLED=true to enable.');
 

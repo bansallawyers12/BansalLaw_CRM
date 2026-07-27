@@ -34,6 +34,8 @@ class IncomingEmailSyncService
      */
     public function syncAll(?string $mailboxFilter = null, ?\DateTimeInterface $since = null, string $syncSource = 'cron'): array
     {
+        self::configureSyncRuntime();
+
         $this->currentSyncSource = in_array($syncSource, ['manual', 'cron', 'compose'], true) ? $syncSource : 'cron';
 
         if (! config('imap_sync.enabled', true)) {
@@ -332,6 +334,46 @@ class IncomingEmailSyncService
     }
 
     /**
+     * Raise PHP memory/time limits for IMAP sync when the current CLI limit is too low.
+     * Skips web requests that already have unlimited memory (-1).
+     */
+    public static function configureSyncRuntime(): void
+    {
+        $memoryLimit = trim((string) config('mail_sync.memory_limit', '1G'));
+        if ($memoryLimit !== '' && $memoryLimit !== '-1') {
+            $currentBytes = self::memoryLimitToBytes((string) ini_get('memory_limit'));
+            $targetBytes = self::memoryLimitToBytes($memoryLimit);
+
+            if ($currentBytes !== -1 && ($targetBytes === -1 || $targetBytes > $currentBytes)) {
+                @ini_set('memory_limit', $memoryLimit);
+            }
+        }
+
+        $timeout = (int) config('mail_sync.sync_timeout', 900);
+        if ($timeout > 0) {
+            @ini_set('max_execution_time', (string) $timeout);
+        }
+    }
+
+    protected static function memoryLimitToBytes(string $limit): int
+    {
+        $limit = trim($limit);
+        if ($limit === '' || $limit === '-1') {
+            return -1;
+        }
+
+        $unit = strtolower(substr($limit, -1));
+        $value = (int) $limit;
+
+        return match ($unit) {
+            'g' => $value * 1024 * 1024 * 1024,
+            'm' => $value * 1024 * 1024,
+            'k' => $value * 1024,
+            default => (int) $limit,
+        };
+    }
+
+    /**
      * @return array<string, mixed>
      */
     protected function syncMailboxFolder(
@@ -427,7 +469,12 @@ class IncomingEmailSyncService
                         'error' => $e->getMessage(),
                     ], $e);
                 }
+
+                unset($message);
             }
+
+            $fetchedCount = count($messages);
+            unset($messages);
 
             if ($since === null) {
                 if ($batchHighestUid <= $cursorUid) {
@@ -436,7 +483,7 @@ class IncomingEmailSyncService
                 $cursorUid = $batchHighestUid;
             }
 
-            if (count($messages) < $limit) {
+            if ($fetchedCount < $limit) {
                 break;
             }
         }

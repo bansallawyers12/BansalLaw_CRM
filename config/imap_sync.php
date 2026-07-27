@@ -19,13 +19,14 @@ return [
     */
     'enabled' => env('MAIL_INBOX_SYNC_ENABLED', true),
 
-    'max_messages_per_mailbox' => (int) env('MAIL_SYNC_MAX_MESSAGES', 25),
+    // Conservative defaults to avoid CLI memory exhaustion on large mailboxes (override via .env).
+    'max_messages_per_mailbox' => (int) env('MAIL_SYNC_MAX_MESSAGES', 10),
 
-    'range_sync_multiplier' => (int) env('MAIL_SYNC_RANGE_MULTIPLIER', 4),
+    'range_sync_multiplier' => (int) env('MAIL_SYNC_RANGE_MULTIPLIER', 2),
 
     'max_range_sync_batches' => (int) env('MAIL_SYNC_MAX_RANGE_BATCHES', 8),
 
-    'max_incremental_batches' => (int) env('MAIL_SYNC_MAX_INCREMENTAL_BATCHES', 6),
+    'max_incremental_batches' => (int) env('MAIL_SYNC_MAX_INCREMENTAL_BATCHES', 3),
 
     'folders' => array_values(array_filter(array_map(
         'trim',
@@ -37,7 +38,7 @@ return [
         explode(',', (string) env('MAIL_SYNC_SENT_FOLDERS', 'Sent'))
     ))),
 
-    'initial_backfill_multiplier' => (int) env('MAIL_SYNC_INITIAL_BACKFILL_MULTIPLIER', 4),
+    'initial_backfill_multiplier' => (int) env('MAIL_SYNC_INITIAL_BACKFILL_MULTIPLIER', 2),
 
     /*
     |--------------------------------------------------------------------------
