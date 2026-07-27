@@ -194,12 +194,14 @@ class SignatureAuditService
 
     protected function resolveActorType(?Signer $signer): string
     {
-        if ($signer) {
-            return self::ACTOR_SIGNER;
-        }
-
+        // Prefer authenticated staff when present so staff actions that also
+        // pass a Signer (email/remind/cancel) are not mis-tagged as signer.
         if (Auth::guard('admin')->check()) {
             return self::ACTOR_STAFF;
+        }
+
+        if ($signer) {
+            return self::ACTOR_SIGNER;
         }
 
         return self::ACTOR_SYSTEM;

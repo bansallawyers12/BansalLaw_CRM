@@ -5,9 +5,11 @@ namespace Tests\Unit;
 use App\Models\Document;
 use App\Models\SignatureActivity;
 use App\Models\Signer;
+use App\Models\Staff;
 use App\Services\SignatureAuditService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -99,5 +101,32 @@ class SignatureAuditServiceTest extends TestCase
         @unlink($original);
         @unlink($signed);
         @unlink($sigImg);
+    }
+
+    #[Test]
+    public function it_tags_staff_actor_even_when_signer_is_passed(): void
+    {
+        $staff = Staff::factory()->create();
+        Auth::guard('admin')->login($staff);
+
+        $document = Document::factory()->create(['status' => 'sent']);
+        $signer = Signer::factory()->create([
+            'document_id' => $document->id,
+            'email' => 'signer@example.com',
+            'name' => 'Test Signer',
+            'status' => 'pending',
+        ]);
+
+        $activity = app(SignatureAuditService::class)->log(
+            $document,
+            'email_sent',
+            'Email sent',
+            [],
+            $signer
+        );
+
+        $this->assertSame('staff', $activity->actor_type);
+        $this->assertSame($signer->id, $activity->signer_id);
+        $this->assertSame((int) $staff->id, (int) $activity->created_by);
     }
 }

@@ -653,6 +653,8 @@ class PublicDocumentController extends Controller
                         $auditSignaturePaths ?? [],
                         $request
                     );
+                    // Keep hash/certificate fields from evidence save before status update
+                    $document->refresh();
                 } catch (\Throwable $e) {
                     Log::warning('Failed to record signature completion evidence', [
                         'document_id' => $document->id,
@@ -1070,47 +1072,50 @@ class PublicDocumentController extends Controller
         try {
             $document = Document::findOrFail($id);
 
-            try {
-                app(\App\Services\SignatureAuditService::class)->log(
-                    $document,
-                    'downloaded_signed',
-                    'Signed PDF downloaded',
-                    [],
-                    null,
-                    auth('admin')->check()
-                        ? \App\Services\SignatureAuditService::ACTOR_STAFF
-                        : \App\Services\SignatureAuditService::ACTOR_SIGNER
-                );
-            } catch (\Throwable $e) {
-                // non-blocking
-            }
-
             if ($document->signed_doc_link) {
                 $signedDocUrl = $document->signed_doc_link;
-                
+
                 // Parse the URL to get the path
                 $parsed = parse_url($signedDocUrl);
                 $urlPath = $parsed['path'] ?? '';
-                
+
+                $logDownload = function () use ($document) {
+                    try {
+                        app(\App\Services\SignatureAuditService::class)->log(
+                            $document,
+                            'downloaded_signed',
+                            'Signed PDF downloaded',
+                            [],
+                            null,
+                            auth('admin')->check()
+                                ? \App\Services\SignatureAuditService::ACTOR_STAFF
+                                : \App\Services\SignatureAuditService::ACTOR_SIGNER
+                        );
+                    } catch (\Throwable $e) {
+                        // non-blocking
+                    }
+                };
+
                 // Check if it's a local storage path (contains /storage/)
                 if (strpos($urlPath, '/storage/') !== false) {
                     // Extract the path after /storage/
                     $parts = explode('/storage/', $urlPath);
                     $relativePath = end($parts);
-                    
+
                     // Check if file exists in local storage
                     if (Storage::disk('public')->exists($relativePath)) {
                         $filePath = storage_path('app/public/' . $relativePath);
+                        $logDownload();
                         return response()->download($filePath, $document->getSignedDownloadFilename());
                     }
                 }
-                
+
                 // Try S3 storage
                 if (isset($parsed['path'])) {
                     $s3Key = ltrim($parsed['path'], '/');
                     /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
                     $disk = Storage::disk('s3');
-                    
+
                     if ($disk->exists($s3Key)) {
                         $dlName = $document->getSignedDownloadFilename();
                         $tempUrl = $disk->temporaryUrl(
@@ -1118,6 +1123,7 @@ class PublicDocumentController extends Controller
                             now()->addMinutes(5),
                             ['ResponseContentDisposition' => 'attachment; filename="' . str_replace('"', "'", $dlName) . '"']
                         );
+                        $logDownload();
                         return redirect($tempUrl);
                     }
                 }

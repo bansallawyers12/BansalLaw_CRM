@@ -48,14 +48,16 @@ return new class extends Migration
     public function down(): void
     {
         if (Schema::hasTable('signature_activities')) {
+            if (Schema::hasColumn('signature_activities', 'signer_id')) {
+                Schema::table('signature_activities', function (Blueprint $table) {
+                    $table->dropConstrainedForeignId('signer_id');
+                });
+            }
+
             Schema::table('signature_activities', function (Blueprint $table) {
-                foreach (['signer_id', 'actor_type', 'ip_address', 'user_agent'] as $column) {
+                foreach (['actor_type', 'ip_address', 'user_agent'] as $column) {
                     if (Schema::hasColumn('signature_activities', $column)) {
-                        if ($column === 'signer_id') {
-                            $table->dropConstrainedForeignId('signer_id');
-                        } else {
-                            $table->dropColumn($column);
-                        }
+                        $table->dropColumn($column);
                     }
                 }
             });
