@@ -767,9 +767,6 @@
                             <a class="btn btn-primary btn-sm is_checked_client emailmodal" href="javascript:;" style="display:none;">
                                 <i class="fa-regular fa-envelope"></i> Send Mail
                             </a>
-                            <button type="button" class="btn btn-primary btn-sm is_checked_client mark-mails-read-btn" style="display:none;" title="Mark all unread mail as read for selected leads">
-                                <i class="fa-solid fa-envelope-open"></i> Mark Mail Read
-                            </button>
                             <a class="btn btn-primary btn-sm is_checked_client" href="javascript:;" style="display:none;">
                                 <i class="fa-solid fa-user-pen"></i> Change Assignee
                             </a>
@@ -1340,7 +1337,6 @@ window.ClientsListingSpaConfig = {
         leadsIndex: @json(url('/leads')),
         archivedIndex: @json(url('/archived')),
         unarchive: @json(url('/unarchive')),
-        markBulkEmailsRead: @json(route('clients.markBulkClientsEmailsRead')),
         mergeRecords: @json(url('/merge_records')),
         getRecipients: @json(url('/clients/get-recipients')),
         getTemplates: @json(url('/get-templates'))
