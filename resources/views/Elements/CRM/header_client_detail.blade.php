@@ -5,13 +5,8 @@
     $_canSyncInboxNav = $_staffTop instanceof \App\Models\Staff && $_staffTop->canSyncInboxEmails();
     $_canViewSyncedInboxNav = $_staffTop instanceof \App\Models\Staff && $_staffTop->canViewSyncedInboxMail();
     $_unassignedMailCount = 0;
-    if ($_canViewSyncedInboxNav && \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
-        $_unassignedQuery = \App\Models\EmailLog::query();
-        \App\Services\EmailSync\IncomingEmailSyncService::applyUnassignedSyncedInboxScope($_unassignedQuery);
-        if ($_staffTop instanceof \App\Models\Staff) {
-            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedInboxVisibilityFilter($_unassignedQuery, $_staffTop);
-        }
-        $_unassignedMailCount = $_unassignedQuery->count();
+    if ($_canViewSyncedInboxNav && $_staffTop instanceof \App\Models\Staff) {
+        $_unassignedMailCount = \App\Services\EmailSync\IncomingEmailSyncService::countUnassignedSyncedInboxMail($_staffTop);
     }
 @endphp
 <nav class="main-topbar">
@@ -71,10 +66,10 @@
                 </div>
             </div>
             @if($_canViewSyncedInboxNav)
-            <a href="{{ route('clients.unassigned-emails') }}" class="icon-btn {{ request()->routeIs('clients.unassigned-emails') ? 'active' : '' }}" title="Unassigned Mail" style="position: relative;">
+            <a href="{{ route('clients.unassigned-emails') }}" id="crmNavUnassignedMail" class="icon-btn {{ request()->routeIs('clients.unassigned-emails') ? 'active' : '' }}" title="Unassigned Mail" style="position: relative;">
                 <i class="fa-solid fa-user-clock"></i>
                 @if($_unassignedMailCount > 0)
-                    <span class="badge bg-danger" style="position: absolute; top: -5px; right: -5px; font-size: 10px; padding: 2px 5px; border-radius: 10px;">{{ $_unassignedMailCount }}</span>
+                    <span class="badge bg-danger crm-nav-unassigned-badge" style="position: absolute; top: -5px; right: -5px; font-size: 10px; padding: 2px 5px; border-radius: 10px;">{{ $_unassignedMailCount }}</span>
                 @endif
             </a>
             @endif

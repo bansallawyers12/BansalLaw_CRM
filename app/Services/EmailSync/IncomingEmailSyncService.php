@@ -976,6 +976,19 @@ class IncomingEmailSyncService
         }
     }
 
+    public static function countUnassignedSyncedInboxMail(Staff $staff): int
+    {
+        if (! Schema::hasColumn('email_logs', 'sync_assignment_status')) {
+            return 0;
+        }
+
+        $query = EmailLog::query();
+        self::applyUnassignedSyncedInboxScope($query);
+        self::applySyncedInboxVisibilityFilter($query, $staff);
+
+        return (int) $query->count();
+    }
+
     /**
      * Limit synced inbox lists to mail relevant to the staff member.
      * Staff see mail when their login email appears in To/Cc, their mailbox was synced, or they sent it.

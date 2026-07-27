@@ -97,6 +97,9 @@
     data-sync-inbox-url="{{ url('/clients/synced-emails/sync-now') }}"
     data-sync-status-url="{{ url('/clients/synced-emails/sync-status') }}"
     @endif
+    @if($canViewSyncedInbox)
+    data-unassigned-count-url="{{ route('clients.synced-emails.unassigned-count') }}"
+    @endif
     data-can-sync-inbox="{{ $canSyncInbox ? '1' : '0' }}"
     data-can-view-synced-inbox="{{ $canViewSyncedInbox ? '1' : '0' }}"
     data-can-select-sync-mailbox="{{ $canSelectSyncMailbox ? '1' : '0' }}"
@@ -154,9 +157,11 @@
                 <button type="button" class="folder-item" data-folder="sent" role="tab" aria-selected="false">
                     <i class="fa-solid fa-paper-plane"></i> Sent Items
                 </button>
+                {{-- Email Log tab hidden on client email view.
                 <button type="button" class="folder-item" data-folder="outbox" role="tab" aria-selected="false">
                     <i class="fa-solid fa-clock-rotate-left"></i> Email Log
                 </button>
+                --}}
                 @endif
             </div>
             <input type="file" id="outlookEmailFileInput" accept="{{ $crmEmailUploadAccept }}" multiple hidden>

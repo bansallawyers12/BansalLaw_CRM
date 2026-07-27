@@ -392,6 +392,7 @@ Route::get('/email-logs/{id}/preview-html', [\App\Http\Controllers\CRM\ClientsCo
 Route::get('/clients/outlook-emails', [\App\Http\Controllers\CRM\ClientsController::class, 'outlookEmails'])->name('clients.outlook.emails');
 Route::get('/clients/outlook/fetch-all', [\App\Http\Controllers\CRM\ClientsController::class, 'fetchAllOutlookEmails'])->name('clients.outlook.fetchAll');
 Route::get('/clients/unassigned-emails', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'unassignedIndex'])->name('clients.unassigned-emails');
+Route::get('/clients/synced-emails/unassigned-count', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'unassignedCount'])->name('clients.synced-emails.unassigned-count');
 Route::post('/clients/synced-emails/assign', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'assignToClient'])->name('clients.synced-emails.assign');
 Route::post('/clients/synced-emails/mark-read', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'markFolderRead'])->name('clients.synced-emails.mark-read');
 Route::post('/clients/synced-emails/sync-now', [\App\Http\Controllers\CRM\SyncedEmailController::class, 'syncNow'])->name('clients.synced-emails.sync-now');

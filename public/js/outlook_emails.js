@@ -116,6 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const assignEmailUrl = outlookContainer ? outlookContainer.getAttribute('data-assign-email-url') : '';
     const syncInboxUrl = outlookContainer ? outlookContainer.getAttribute('data-sync-inbox-url') : '';
     const syncStatusUrlBase = outlookContainer ? outlookContainer.getAttribute('data-sync-status-url') : '';
+    const unassignedCountUrl = outlookContainer ? (outlookContainer.getAttribute('data-unassigned-count-url') || '') : '';
     const canSyncInbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-sync-inbox') === '1');
     const canViewSyncedInbox = !!(outlookContainer && outlookContainer.getAttribute('data-can-view-synced-inbox') === '1');
     const canDeleteEmail = !!(outlookContainer && outlookContainer.dataset.canDeleteEmail === '1');
@@ -4360,6 +4361,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         switchToFolder('inbox');
                     }
                     loadEmails();
+                    refreshUnassignedNavCount();
                     return;
                 }
                 crmToast(data.message || 'Could not assign email.', 'error');
@@ -4394,6 +4396,56 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (syncMailboxFilter) {
             syncMailboxFilter.disabled = isBusy;
+        }
+    }
+
+    async function refreshUnassignedNavCount() {
+        if (!unassignedCountUrl) {
+            return;
+        }
+
+        try {
+            const response = await fetch(unassignedCountUrl, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+            const data = await response.json().catch(function () {
+                return {};
+            });
+            if (!response.ok || data.success === false) {
+                return;
+            }
+
+            const link = document.getElementById('crmNavUnassignedMail');
+            if (!link) {
+                return;
+            }
+
+            const count = Math.max(0, Number(data.count) || 0);
+            let badge = link.querySelector('.crm-nav-unassigned-badge');
+
+            if (count > 0) {
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'badge bg-danger crm-nav-unassigned-badge';
+                    badge.style.position = 'absolute';
+                    badge.style.top = '-5px';
+                    badge.style.right = '-5px';
+                    badge.style.fontSize = '10px';
+                    badge.style.padding = '2px 5px';
+                    badge.style.borderRadius = '10px';
+                    link.appendChild(badge);
+                }
+                badge.textContent = String(count);
+            } else if (badge) {
+                badge.remove();
+            }
+        } catch (error) {
+            console.error('Failed to refresh unassigned mail count', error);
         }
     }
 
@@ -4472,6 +4524,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (status === 'completed') {
                     finishSyncUi();
                     loadEmails();
+                    refreshUnassignedNavCount();
                     crmToast(buildInboxSyncResultMessage(data, rangeLabel), 'success');
                     return;
                 }
@@ -4621,6 +4674,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 setSyncUiBusy(false, originalHtml);
                 loadEmails();
+                refreshUnassignedNavCount();
                 const toastType = (data.total_failed || 0) > 0 ? 'error' : 'success';
                 crmToast(buildInboxSyncResultMessage(data, rangeLabel), toastType);
             } catch (error) {
