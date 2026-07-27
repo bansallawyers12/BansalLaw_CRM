@@ -1076,19 +1076,27 @@
                                     <strong>Error:</strong> {{ \Illuminate\Support\Str::limit($activity['error'], 150) }}
                                 </div>
                                 @endif
-                                @if(!empty($activity['meta']['ip']) || !empty($activity['meta']['hash']) || (!empty($activity['note']) && !empty($activity['note']->metadata['request_id'])))
+                                @php
+                                    $meta = is_array($activity['meta'] ?? null) ? $activity['meta'] : [];
+                                    $noteModel = $activity['note'] ?? null;
+                                    $requestId = (is_object($noteModel) && is_array($noteModel->metadata ?? null))
+                                        ? ($noteModel->metadata['request_id'] ?? null)
+                                        : null;
+                                    $hasMetaRow = !empty($meta['ip']) || !empty($meta['hash']) || !empty($meta['actor']) || !empty($requestId);
+                                @endphp
+                                @if($hasMetaRow)
                                 <div style="margin-top: 3px; font-size: 11px; color: #6c757d;">
-                                    @if(!empty($activity['meta']['ip']))
-                                        IP: {{ $activity['meta']['ip'] }}
+                                    @if(!empty($meta['ip']))
+                                        IP: {{ $meta['ip'] }}
                                     @endif
-                                    @if(!empty($activity['meta']['actor']))
-                                        · Actor: {{ $activity['meta']['actor'] }}
+                                    @if(!empty($meta['actor']))
+                                        · Actor: {{ $meta['actor'] }}
                                     @endif
-                                    @if(!empty($activity['note']->metadata['request_id']))
-                                        · Request ID: {{ \Illuminate\Support\Str::limit($activity['note']->metadata['request_id'], 30) }}
+                                    @if(!empty($requestId))
+                                        · Request ID: {{ \Illuminate\Support\Str::limit($requestId, 30) }}
                                     @endif
-                                    @if(!empty($activity['meta']['hash']))
-                                        <div style="word-break: break-all;">Hash: {{ $activity['meta']['hash'] }}</div>
+                                    @if(!empty($meta['hash']))
+                                        <div style="word-break: break-all;">Hash: {{ $meta['hash'] }}</div>
                                     @endif
                                 </div>
                                 @endif

@@ -394,12 +394,13 @@ class SignatureDashboardController extends Controller
             'text' => 'Document created',
             'icon' => 'fa-solid fa-file-plus',
             'type' => 'created',
-            'meta' => null,
+            'meta' => [],
         ]);
 
         foreach ($document->signatureActivities as $note) {
-            $metadata = $note->metadata ?? [];
+            $metadata = is_array($note->metadata) ? $note->metadata : [];
             $error = $metadata['error'] ?? null;
+            $evidence = is_array($metadata['evidence'] ?? null) ? $metadata['evidence'] : [];
             $activities->push([
                 'date' => $note->created_at,
                 'text' => $note->note ?: $note->action_text,
@@ -410,8 +411,8 @@ class SignatureDashboardController extends Controller
                 'meta' => [
                     'ip' => $note->ip_address,
                     'actor' => $note->actor_type,
-                    'hash' => $metadata['evidence']['signed_sha256']
-                        ?? $metadata['evidence']['original_sha256']
+                    'hash' => $evidence['signed_sha256']
+                        ?? $evidence['original_sha256']
                         ?? null,
                 ],
             ]);
@@ -429,7 +430,7 @@ class SignatureDashboardController extends Controller
                     'text' => "Opened by {$signer->name}",
                     'icon' => 'fa-solid fa-eye',
                     'type' => 'opened',
-                    'meta' => null,
+                    'meta' => [],
                 ]);
             }
 
@@ -443,7 +444,21 @@ class SignatureDashboardController extends Controller
                     'text' => "Signed by {$signer->name}",
                     'icon' => 'fa-solid fa-circle-check',
                     'type' => 'signed',
-                    'meta' => null,
+                    'meta' => [],
+                ]);
+            }
+
+            $hasCancelled = $document->signatureActivities->contains(function ($a) use ($signer) {
+                return $a->action_type === 'signature_cancelled'
+                    && (($a->signer_id === $signer->id) || (($a->metadata['signer_id'] ?? null) == $signer->id));
+            });
+            if ($signer->cancelled_at && !$hasCancelled) {
+                $activities->push([
+                    'date' => $signer->cancelled_at,
+                    'text' => "Signature cancelled for {$signer->name}",
+                    'icon' => 'fa-solid fa-circle-xmark',
+                    'type' => 'signature_cancelled',
+                    'meta' => [],
                 ]);
             }
         }
