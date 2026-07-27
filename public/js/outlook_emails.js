@@ -416,6 +416,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderSyncSourceBadge(email) {
+        // Sync source badge (Manual sync / Cron / Compose) hidden from mail UI.
+        return '';
+
+        /*
         const source = (email.sync_source || '').trim();
         const label = (email.sync_source_label || '').trim();
         if (! source || ! label) {
@@ -433,6 +437,7 @@ document.addEventListener('DOMContentLoaded', function() {
             + '<i class="fa-solid ' + icon + '" aria-hidden="true"></i> '
             + escapeHtml(label)
             + '</span>';
+        */
     }
 
     function renderSyncedClientBadge(email) {
@@ -450,9 +455,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return '';
         }
 
+        const iconClass = unassignedOnly ? 'fa-user' : 'fa-user-check';
+        const badgeClass = unassignedOnly
+            ? 'email-client-badge email-client-badge--list'
+            : 'email-client-badge';
         const assignLabel = email.sync_assignment_status === 'manual_assigned' ? 'Manual' : 'Auto';
-        return '<span class="email-client-badge" title="' + escapeHtml(assignLabel + ' assigned to client') + '">'
-            + '<i class="fa-solid fa-user-check" aria-hidden="true"></i> '
+        return '<span class="' + badgeClass + '" title="' + escapeHtml(assignLabel + ' assigned to client') + '">'
+            + '<i class="fa-solid ' + iconClass + '" aria-hidden="true"></i> '
             + escapeHtml(clientLabel)
             + '</span>';
     }
@@ -806,6 +815,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function isSyncedInboxFolder(folder) {
+        if (unassignedOnly) {
+            return folder === 'inbox' || folder === 'unassigned' || folder === 'assigned';
+        }
+
         return folder === 'unassigned' || folder === 'assigned';
     }
 
@@ -952,10 +965,7 @@ document.addEventListener('DOMContentLoaded', function() {
         item.addEventListener('click', (e) => {
             const target = e.currentTarget;
             const folder = target.dataset.folder || 'inbox';
-            if (folder === 'unassigned' && !canViewSyncedInbox) {
-                return;
-            }
-            if (folder === 'assigned' && !canViewSyncedInbox) {
+            if ((folder === 'inbox' || folder === 'unassigned' || folder === 'assigned') && !canViewSyncedInbox) {
                 return;
             }
             switchToFolder(folder);
@@ -2779,8 +2789,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Fetch from backend
     async function loadEmails() {
-        if ((currentFolder === 'unassigned' || currentFolder === 'assigned') && !canViewSyncedInbox) {
-            currentFolder = unassignedOnly ? 'unassigned' : 'inbox';
+        if (unassignedOnly && isSyncedInboxFolder(currentFolder) && !canViewSyncedInbox) {
+            currentFolder = 'inbox';
             switchToFolder(currentFolder);
         }
 
@@ -3256,7 +3266,11 @@ document.addEventListener('DOMContentLoaded', function() {
             let emptyHint = '';
             let emptyIcon = 'fa-inbox';
 
-            if (currentFolder === 'unassigned') {
+            if (currentFolder === 'inbox' && unassignedOnly) {
+                emptyMsg = 'No synced inbox emails';
+                emptyHint = 'Use Sync now to fetch mail from Zoho.';
+                emptyIcon = 'fa-inbox';
+            } else if (currentFolder === 'unassigned') {
                 emptyMsg = 'No unassigned emails';
                 emptyHint = 'All synced mail is linked to clients. Use Sync now to fetch new mail from Zoho.';
                 emptyIcon = 'fa-user-clock';
@@ -3304,15 +3318,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const sender = email.from_mail || 'Unknown';
             const subject = email.subject || '(No Subject)';
-            const preview = normalizePreviewText(email.text_preview || '', 55);
+            const preview = (unassignedOnly && isSyncedInboxFolder(currentFolder))
+                ? normalizePreviewText(email.text_preview || '', 90)
+                : normalizePreviewText(email.text_preview || '', 55);
             
             const hasAttachment = getUserEmailAttachments(email).length > 0;
             const attachmentIcon = hasAttachment ? '<i class="fa-solid fa-paperclip email-list-clip" title="Has attachments"></i>' : '';
             const attachmentSummary = renderEmailAttachmentListSummary(email);
 
-            let dateStr = isSyncedInboxFolder(currentFolder)
-                ? formatListEmailDate(email)
-                : formatEmailDate(getEmailDate(email));
+            let dateStr;
+            if (unassignedOnly && isSyncedInboxFolder(currentFolder)) {
+                dateStr = formatEmailDate(getEmailDate(email));
+            } else {
+                dateStr = isSyncedInboxFolder(currentFolder)
+                    ? formatListEmailDate(email)
+                    : formatEmailDate(getEmailDate(email));
+            }
             const statusBadge = renderSendStatusBadge(email);
             const clientBadge = renderSyncedClientBadge(email);
             const syncSourceBadge = renderSyncSourceBadge(email);
@@ -3321,7 +3342,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? '<span class="email-new-badge" title="Auto-assigned from synced inbox">New</span>'
                 : '';
 
-            if (isSyncedInboxFolder(currentFolder)) {
+            if (unassignedOnly && isSyncedInboxFolder(currentFolder)) {
+                const senderEmail = escapeHtml(sender);
+                const tagHtml = [clientBadge, attachmentIcon, calendarIndicator].filter(Boolean).join('');
+                const tagsBlock = tagHtml
+                    ? '<div class="email-item-synced-list__tags">' + tagHtml + '</div>'
+                    : '';
+                const previewHtml = preview
+                    ? '<div class="email-item-synced-list__preview">' + escapeHtml(preview) + '</div>'
+                    : '';
+
+                el.classList.add('email-item--synced', 'email-item--synced-list');
+                el.innerHTML = ''
+                    + '<div class="email-item-synced-list">'
+                    + '  <div class="email-item-synced-list__head">'
+                    + '    <span class="email-item-synced-list__sender">' + senderEmail + '</span>'
+                    +      tagsBlock
+                    + '  </div>'
+                    + '  <div class="email-item-synced-list__subject">' + escapeHtml(subject) + '</div>'
+                    +      previewHtml
+                    + '  <div class="email-item-synced-list__footer">'
+                    + '    <span class="email-item-synced-list__date">' + dateStr + '</span>'
+                    + '  </div>'
+                    + '</div>';
+            } else if (isSyncedInboxFolder(currentFolder)) {
                 const senderInitial = escapeHtml((sender.charAt(0) || '?').toUpperCase());
                 const senderName = escapeHtml(extractSenderName(sender));
                 const badgeRow = attachmentIcon + calendarIndicator + autoAssignedBadge + statusBadge + syncSourceBadge + clientBadge;
@@ -3379,7 +3423,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         selectedEmailId = email.id;
         if (listElement) {
-            document.querySelectorAll('.email-item, .email-item--synced, .email-item--synced-compact').forEach(function (item) {
+            document.querySelectorAll('.email-item, .email-item--synced, .email-item--synced-compact, .email-item--synced-list').forEach(function (item) {
                 item.classList.remove('active');
             });
             listElement.classList.add('active');

@@ -1016,6 +1016,24 @@ class IncomingEmailSyncService
         }
     }
 
+    /**
+     * All Zoho-synced incoming inbox mail (assigned + unassigned).
+     */
+    public static function applyAllSyncedInboxScope($query): void
+    {
+        $query->where('mail_type', 1)
+            ->where(function ($inboxQuery) {
+                $inboxQuery->where('mail_body_type', 'inbox')
+                    ->orWhereNull('mail_body_type');
+            });
+
+        if (Schema::hasColumn('email_logs', 'synced_email_id')) {
+            $query->whereNotNull('synced_email_id');
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+    }
+
     public static function countUnassignedSyncedInboxMail(Staff $staff): int
     {
         if (! Schema::hasColumn('email_logs', 'sync_assignment_status')) {

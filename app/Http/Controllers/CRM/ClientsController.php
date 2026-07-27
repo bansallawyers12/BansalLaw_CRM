@@ -8445,7 +8445,7 @@ class ClientsController extends Controller
         $canSyncInbox = $staff instanceof \App\Models\Staff && $staff->canSyncInboxEmails();
         $canViewSyncedInbox = $staff instanceof \App\Models\Staff && $staff->canViewSyncedInboxMail();
 
-        if (in_array($folder, ['unassigned', 'assigned'], true) && ! $canViewSyncedInbox) {
+        if (empty($clientId) && empty($clientMatterId) && in_array($folder, ['inbox', 'unassigned', 'assigned'], true) && ! $canViewSyncedInbox) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
@@ -8470,7 +8470,8 @@ class ClientsController extends Controller
         $dateTo = $request->input('date_to');
         $perPage = 15;
         $hasSendStatus = \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'send_status');
-        $isSyncedInboxFolder = in_array($folder, ['unassigned', 'assigned'], true);
+        $isGlobalSyncedMailView = empty($clientId) && empty($clientMatterId);
+        $isSyncedInboxFolder = $isGlobalSyncedMailView && in_array($folder, ['inbox', 'unassigned', 'assigned'], true);
         $hasCalendarLinksTable = \Illuminate\Support\Facades\Schema::hasTable('email_calendar_links');
 
         // Base query with attachments (+ client for assigned synced mail)
@@ -8536,10 +8537,13 @@ class ClientsController extends Controller
             }
         }
 
-        // Apply folder logic
-        // Inbox = all incoming mail (read + unread). Unread tab = incoming mail that is not read yet.
+        // Inbox = all incoming mail (read + unread). On synced mail page, inbox = all Zoho-synced mail.
         if ($folder === 'inbox') {
-            $this->applyIncomingInboxScope($query);
+            if ($isGlobalSyncedMailView) {
+                \App\Services\EmailSync\IncomingEmailSyncService::applyAllSyncedInboxScope($query);
+            } else {
+                $this->applyIncomingInboxScope($query);
+            }
         } elseif ($folder === 'sent') {
             $query->where(function ($q) use ($hasSendStatus) {
                 $q->where(function ($crm) use ($hasSendStatus) {
@@ -8722,6 +8726,8 @@ class ClientsController extends Controller
 
             if ($folder === 'unassigned') {
                 \App\Services\EmailSync\IncomingEmailSyncService::applyUnassignedSyncedInboxScope($unreadCountQuery);
+            } elseif ($folder === 'inbox') {
+                \App\Services\EmailSync\IncomingEmailSyncService::applyAllSyncedInboxScope($unreadCountQuery);
             } else {
                 if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
                     $unreadCountQuery->whereIn('sync_assignment_status', ['auto_assigned', 'manual_assigned'])
@@ -8775,6 +8781,8 @@ class ClientsController extends Controller
 
         if ($folder === 'unassigned') {
             \App\Services\EmailSync\IncomingEmailSyncService::applyUnassignedSyncedInboxScope($query);
+        } elseif ($folder === 'inbox') {
+            \App\Services\EmailSync\IncomingEmailSyncService::applyAllSyncedInboxScope($query);
         } elseif (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_assignment_status')) {
             $query->whereIn('sync_assignment_status', ['auto_assigned', 'manual_assigned'])
                 ->whereNotNull('client_id');
