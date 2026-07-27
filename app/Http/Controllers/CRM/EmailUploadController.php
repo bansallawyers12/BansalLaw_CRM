@@ -87,7 +87,7 @@ class EmailUploadController extends Controller
      * Import a parsed .msg file with explicit client/matter context (smart import flow).
      *
      * @param \Illuminate\Http\UploadedFile $file
-     * @return array{success: bool, document_id?: int, email_log_id?: int, warnings?: list<string>, error?: string, error_code?: string, technical_error?: string|null, reference?: string}
+     * @return array{success: bool, document_id?: int, email_log_id?: int, warnings?: list<string>, notices?: list<string>, error?: string, error_code?: string, technical_error?: string|null, reference?: string}
      */
     public function importEmailFromContext($file, int $clientId, string $mailType, int $clientMatterId, string $recordType = 'client'): array
     {
@@ -191,6 +191,7 @@ class EmailUploadController extends Controller
             $failedCount = 0;
             $errors = [];
             $warnings = [];
+            $notices = [];
 
             foreach ($request->file('email_files') as $file) {
                 try {
@@ -203,6 +204,13 @@ class EmailUploadController extends Controller
                                 'filename' => $this->sanitizedUploadFilename($file),
                                 'original_filename' => $file->getClientOriginalName(),
                                 'warnings' => $result['warnings'],
+                            ];
+                        }
+                        if (!empty($result['notices'])) {
+                            $notices[] = [
+                                'filename' => $this->sanitizedUploadFilename($file),
+                                'original_filename' => $file->getClientOriginalName(),
+                                'notices' => $result['notices'],
                             ];
                         }
                     } else {
@@ -272,6 +280,7 @@ class EmailUploadController extends Controller
                 'failed' => $failedCount,
                 'errors' => $errors,
                 'warnings' => $warnings,
+                'notices' => $notices,
                 'total_files' => $uploadedCount + $failedCount
             ], 200);
 
@@ -572,6 +581,7 @@ class EmailUploadController extends Controller
             }
 
             $warnings = [];
+            $notices = [];
 
             // Sanitized name is used for S3 keys, document records, and Python parsing.
             $sanitizedFileName = $fileName;
@@ -870,7 +880,8 @@ class EmailUploadController extends Controller
                         $icsAttachments
                     );
                     if (($calendarResult['merged'] ?? 0) > 0 || ($calendarResult['pending'] ?? 0) > 0) {
-                        $warnings[] = 'Detected schedule date(s) in this email'
+                        // Informational only — not a save failure; keep out of warnings[].
+                        $notices[] = 'Detected schedule date(s) in this email'
                             . (($calendarResult['merged'] ?? 0) > 0 ? ' and added to calendar.' : ' (will merge when assigned to a client).');
                     }
                 } catch (\Throwable $calendarException) {
@@ -940,6 +951,7 @@ class EmailUploadController extends Controller
                 'document_id' => $document->id,
                 'email_log_id' => $mailReport->id,
                 'warnings' => $warnings,
+                'notices' => $notices,
             ];
 
         } catch (EmailUploadException $e) {

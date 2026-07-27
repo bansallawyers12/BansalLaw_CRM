@@ -411,6 +411,11 @@
         const warningsText = (typeof window.crmFormatEmailUploadWarnings === 'function')
             ? window.crmFormatEmailUploadWarnings(data.warnings)
             : '';
+        const noticesText = (typeof window.crmFormatEmailUploadInfoNotices === 'function')
+            ? window.crmFormatEmailUploadInfoNotices(data)
+            : ((typeof window.crmFormatEmailUploadNotices === 'function')
+                ? window.crmFormatEmailUploadNotices(data.notices)
+                : '');
 
         if (data.status || data.success) {
             const failedCount = data.failed || 0;
@@ -443,6 +448,9 @@
                 if (warningsText) {
                     errorMessage += '\n\nWarnings for uploaded emails:\n' + warningsText;
                 }
+                if (noticesText) {
+                    errorMessage += '\n\nNotes:\n' + noticesText;
+                }
 
                 showUploadNotification(errorMessage, 'error', 'Upload Failed', technicalDetails);
 
@@ -469,14 +477,22 @@
                 }
                 fileStatus.textContent = 'Upload successful!';
                 if (warningsText) {
+                    let warningMessage = (data.message || 'Files uploaded successfully!')
+                        + '\n\nSome items could not be fully saved:\n' + warningsText;
+                    if (noticesText) {
+                        warningMessage += '\n\nNotes:\n' + noticesText;
+                    }
                     showUploadNotification(
-                        (data.message || 'Files uploaded successfully!')
-                            + '\n\nSome items could not be fully saved:\n' + warningsText,
+                        warningMessage,
                         'warning',
                         'Uploaded With Warnings'
                     );
                 } else {
-                    showUploadNotification(data.message || 'Files uploaded successfully!', 'success', 'Upload Successful');
+                    let successMessage = data.message || 'Files uploaded successfully!';
+                    if (noticesText) {
+                        successMessage += '\n\n' + noticesText;
+                    }
+                    showUploadNotification(successMessage, 'success', 'Upload Successful');
                 }
 
                 setTimeout(function() {
@@ -1125,6 +1141,7 @@
             let totalFailed = 0;
             const allErrors = [];
             const allWarnings = [];
+            const allNotices = [];
             let stoppedEarly = false;
 
             for (let i = 0; i < files.length; i++) {
@@ -1160,6 +1177,9 @@
                     if (data.warnings && Array.isArray(data.warnings) && data.warnings.length) {
                         allWarnings.push.apply(allWarnings, data.warnings);
                     }
+                    if (data.notices && Array.isArray(data.notices) && data.notices.length) {
+                        allNotices.push.apply(allNotices, data.notices);
+                    }
 
                     if (data.errors && Array.isArray(data.errors)) {
                         allErrors.push.apply(allErrors, data.errors);
@@ -1192,6 +1212,7 @@
                 failed: totalFailed,
                 errors: allErrors,
                 warnings: allWarnings,
+                notices: allNotices,
                 message: stoppedEarly
                     ? (allErrors[0] && allErrors[0].error) || 'Upload stopped due to a session or security error.'
                     : (totalUploaded > 0 && totalFailed > 0

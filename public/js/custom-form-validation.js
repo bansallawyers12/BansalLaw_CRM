@@ -31,7 +31,14 @@ $(document).ready(function() {
  * and technical details reach the user instead of a generic message.
  */
 function crmEmailUploadHasWarnings(response) {
-    return !!(response && Array.isArray(response.warnings) && response.warnings.length);
+    if (!(response && Array.isArray(response.warnings) && response.warnings.length)) {
+        return false;
+    }
+    // Calendar schedule messages are informational — only real soft-failures count.
+    if (typeof window.crmFormatEmailUploadWarnings === 'function') {
+        return !!window.crmFormatEmailUploadWarnings(response.warnings);
+    }
+    return true;
 }
 
 function crmEmailUploadSuccessToastMessage(response) {
@@ -40,6 +47,11 @@ function crmEmailUploadSuccessToastMessage(response) {
         var warningsText = window.crmFormatEmailUploadWarnings(response.warnings);
         if (warningsText) {
             message += '\nSome items could not be fully saved:\n' + warningsText;
+        }
+    } else if (typeof window.crmFormatEmailUploadInfoNotices === 'function') {
+        var noticesText = window.crmFormatEmailUploadInfoNotices(response);
+        if (noticesText) {
+            message += '\n' + noticesText;
         }
     }
     return message;

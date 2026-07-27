@@ -2479,6 +2479,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 rejected: 0,
                 errors: result.errors || [],
                 warnings: result.warnings || [],
+                notices: result.notices || [],
                 message: result.message || '',
                 attachmentStorage: attachmentStorage
             };
@@ -2539,6 +2540,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let totalRejected = 0;
             const allErrors = [];
             const allWarnings = [];
+            const allNotices = [];
             const uploadedAttachmentStorage = [];
 
             try {
@@ -2576,6 +2578,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (fileResult.warnings && fileResult.warnings.length) {
                             allWarnings.push.apply(allWarnings, fileResult.warnings);
                         }
+                        if (fileResult.notices && fileResult.notices.length) {
+                            allNotices.push.apply(allNotices, fileResult.notices);
+                        }
                     } catch (fileError) {
                         totalFailed += 1;
                         const errorText = fileError.message || 'Upload failed';
@@ -2601,6 +2606,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const warningsText = (typeof window.crmFormatEmailUploadWarnings === 'function')
                     ? window.crmFormatEmailUploadWarnings(allWarnings)
                     : '';
+                const noticesText = (typeof window.crmFormatEmailUploadInfoNotices === 'function')
+                    ? window.crmFormatEmailUploadInfoNotices(allNotices, allWarnings)
+                    : ((typeof window.crmFormatEmailUploadNotices === 'function')
+                        ? window.crmFormatEmailUploadNotices(allNotices)
+                        : '');
                 const refreshUploadedDocumentFolders = function() {
                     if (uploadedAttachmentStorage.length) {
                         return refreshDocumentFoldersFromStorage(uploadedAttachmentStorage);
@@ -2615,14 +2625,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         uploadStatus.textContent = 'Upload complete!';
                     }
                     if (warningsText) {
+                        let warningMsg = 'Successfully uploaded ' + totalUploaded + ' email' + (totalUploaded > 1 ? 's' : '')
+                            + ', but some items could not be fully saved:\n\n' + warningsText;
+                        if (noticesText) {
+                            warningMsg += '\n\nNotes:\n' + noticesText;
+                        }
                         showUploadResultModal(
                             'warning',
-                            'Successfully uploaded ' + totalUploaded + ' email' + (totalUploaded > 1 ? 's' : '')
-                                + ', but some items could not be fully saved:\n\n' + warningsText,
+                            warningMsg,
                             'Uploaded With Warnings'
                         );
                     } else {
-                        showUploadSuccessToast('Successfully uploaded ' + totalUploaded + ' email' + (totalUploaded > 1 ? 's' : '') + '.');
+                        let successMsg = 'Successfully uploaded ' + totalUploaded + ' email' + (totalUploaded > 1 ? 's' : '') + '.';
+                        if (noticesText) {
+                            successMsg += '\n\n' + noticesText;
+                        }
+                        showUploadSuccessToast(successMsg);
                     }
                     loadEmails();
                     refreshUploadedDocumentFolders();
@@ -2640,6 +2658,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         if (warningsText) {
                             errorMsg += '\n\nWarnings for uploaded emails:\n' + warningsText;
+                        }
+                        if (noticesText) {
+                            errorMsg += '\n\nNotes:\n' + noticesText;
                         }
                         showUploadErrorAlert(errorMsg, undefined, technicalDetails);
                     }
