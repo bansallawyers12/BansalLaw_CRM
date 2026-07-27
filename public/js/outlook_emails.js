@@ -761,18 +761,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (pageSummary) {
             pageSummary.textContent = 'Page ' + currentPage + ' of ' + safeLastPage;
-            pageSummary.hidden = syncedListFooter;
         }
 
         if (pageInfo) {
             if (safeTotal > 0) {
-                if (syncedListFooter) {
-                    pageInfo.textContent = safeLastPage > 1
-                        ? ('Showing ' + from + '-' + to + ' · Page ' + currentPage + ' of ' + safeLastPage)
-                        : ('Showing all ' + safeTotal);
-                } else {
-                    pageInfo.textContent = 'Showing ' + from + '-' + to + ' of ' + safeTotal;
-                }
+                pageInfo.textContent = 'Showing ' + from + '-' + to + ' of ' + safeTotal;
             } else {
                 pageInfo.textContent = 'No emails found';
             }

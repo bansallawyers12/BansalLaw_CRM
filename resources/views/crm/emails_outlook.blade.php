@@ -352,6 +352,7 @@
             </div>
             <div class="pagination-bar pagination-bar--synced" id="emailPaginationBar">
                 <div class="pagination-bar__summary">
+                    <span class="pagination-bar__page" id="pageSummary">Page 1 of 1</span>
                     <span class="pagination-bar__total" id="listTotalCount">Total: 0 emails</span>
                     <span class="pagination-bar__count" id="pageInfo">No emails found</span>
                 </div>
