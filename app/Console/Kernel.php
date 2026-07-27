@@ -127,6 +127,56 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('access:expire-grants')->hourly();
         $schedule->command('access:cache-grant-stats')->hourly();
+
+        // Automatic inbox fetch every N minutes (default 5). No nightly full sync.
+        if (config('imap_sync.enabled', true)) {
+            $minutes = max(1, (int) config('imap_sync.schedule_minutes', 5));
+            $mailboxes = $this->syncEnabledMailboxes();
+
+            if ($mailboxes === []) {
+                $schedule->command('emails:sync-inbox')
+                    ->cron('*/' . $minutes . ' * * * *')
+                    ->withoutOverlapping(10)
+                    ->appendOutputTo(storage_path('logs/inbox-sync/email-inbox-sync.log'));
+            } else {
+                foreach ($mailboxes as $address) {
+                    $logFile = storage_path('logs/inbox-sync/email-inbox-sync-' . $this->mailboxLogSlug($address) . '.log');
+
+                    $schedule->command('emails:sync-inbox', [$address])
+                        ->cron('*/' . $minutes . ' * * * *')
+                        ->withoutOverlapping(10)
+                        ->appendOutputTo($logFile);
+                }
+            }
+        }
+    }
+
+    /**
+     * Active mailbox addresses that have IMAP sync enabled.
+     *
+     * @return list<string>
+     */
+    protected function syncEnabledMailboxes(): array
+    {
+        try {
+            return \App\Models\Email::query()
+                ->where('status', true)
+                ->where('sync_enabled', true)
+                ->orderBy('email')
+                ->pluck('email')
+                ->filter()
+                ->map(fn ($email) => strtolower(trim((string) $email)))
+                ->unique()
+                ->values()
+                ->all();
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    protected function mailboxLogSlug(string $address): string
+    {
+        return trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($address)), '-');
     }
 
     /**
