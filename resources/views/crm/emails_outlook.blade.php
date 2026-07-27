@@ -67,13 +67,22 @@
     $canSelectSyncMailbox = $canSyncInbox
         && $authStaff instanceof \App\Models\Staff
         && $authStaff->canViewAllSyncedInboxMail();
+    $unassignedOnly = ! empty($unassignedOnly);
     $syncMailboxOptions = $canSelectSyncMailbox
         ? \App\Services\EmailSync\IncomingEmailSyncService::syncableMailboxAddresses()
         : [];
     $staffSyncMailboxAddresses = ($authStaff instanceof \App\Models\Staff && $canSyncInbox && ! $canSelectSyncMailbox)
         ? \App\Services\EmailSync\IncomingEmailSyncService::allowedSyncMailboxAddressesForStaff($authStaff)
         : [];
-    $unassignedOnly = ! empty($unassignedOnly);
+    $unassignedSyncRangeOptions = ($authStaff instanceof \App\Models\Staff && $unassignedOnly)
+        ? \App\Services\EmailSync\IncomingEmailSyncService::syncRangeOptionsForUnassignedTab($authStaff)
+        : [];
+    $defaultUnassignedSyncRange = $canSelectSyncMailbox ? '10min' : 'today';
+    $listMailboxFilterOptions = ($unassignedOnly && $authStaff instanceof \App\Models\Staff && $canViewSyncedInbox)
+        ? ($canSelectSyncMailbox
+            ? \App\Services\EmailSync\IncomingEmailSyncService::syncableMailboxAddresses()
+            : \App\Services\EmailSync\IncomingEmailSyncService::allowedSyncMailboxAddressesForStaff($authStaff))
+        : [];
     $crmMailboxAddresses = \App\Models\Email::where('status', true)
         ->orderBy('email')
         ->pluck('email')
@@ -198,14 +207,16 @@
                     </select>
                 </div>
                 @endif
+                @if($canSelectSyncMailbox)
                 <div class="sync-inbox-panel__field">
                     <label class="sync-inbox-panel__label" for="syncRangeFilter">Sync range</label>
                     <select id="syncRangeFilter" class="list-filter-select sync-range-select" aria-label="Sync date range">
-                        @foreach(\App\Services\EmailSync\IncomingEmailSyncService::syncRangeOptions() as $rangeValue => $rangeLabel)
-                            <option value="{{ $rangeValue }}" @selected($rangeValue === 'today')>{{ $rangeLabel }}</option>
+                        @foreach($unassignedSyncRangeOptions as $rangeValue => $rangeLabel)
+                            <option value="{{ $rangeValue }}" @selected($rangeValue === $defaultUnassignedSyncRange)>{{ $rangeLabel }}</option>
                         @endforeach
                     </select>
                 </div>
+                @endif
             </div>
             <div class="sync-inbox-panel__list-tools">
                 <div class="search-box search-box--compact">
@@ -215,6 +226,14 @@
                 <select id="senderFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by sender">
                     <option value="">All senders</option>
                 </select>
+                @if(! empty($listMailboxFilterOptions))
+                <select id="listMailboxFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by mailbox">
+                    <option value="">All mailboxes</option>
+                    @foreach($listMailboxFilterOptions as $mailboxAddress)
+                        <option value="{{ $mailboxAddress }}">{{ $mailboxAddress }}</option>
+                    @endforeach
+                </select>
+                @endif
                 <select id="sortOrder" class="list-filter-select list-filter-select--compact" aria-label="Sort order">
                     <option value="desc" selected>Newest</option>
                     <option value="asc">Oldest</option>
@@ -241,6 +260,14 @@
                 <select id="senderFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by sender">
                     <option value="">All senders</option>
                 </select>
+                @if(! empty($listMailboxFilterOptions))
+                <select id="listMailboxFilter" class="list-filter-select list-filter-select--compact" aria-label="Filter by mailbox">
+                    <option value="">All mailboxes</option>
+                    @foreach($listMailboxFilterOptions as $mailboxAddress)
+                        <option value="{{ $mailboxAddress }}">{{ $mailboxAddress }}</option>
+                    @endforeach
+                </select>
+                @endif
                 <select id="sortOrder" class="list-filter-select list-filter-select--compact" aria-label="Sort order">
                     <option value="desc" selected>Newest</option>
                     <option value="asc">Oldest</option>

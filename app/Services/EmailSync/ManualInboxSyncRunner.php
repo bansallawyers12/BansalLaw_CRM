@@ -20,7 +20,7 @@ class ManualInboxSyncRunner
         $syncRange = strtolower(trim($syncRange));
         $email = strtolower(trim($email));
 
-        if (! IncomingEmailSyncService::isValidSyncRange($syncRange)) {
+        if (! IncomingEmailSyncService::isValidSyncRangeForStaff($staff, $syncRange)) {
             return [
                 'success' => false,
                 'message' => 'Invalid sync range selected.',

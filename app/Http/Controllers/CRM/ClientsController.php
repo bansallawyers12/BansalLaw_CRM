@@ -8501,8 +8501,12 @@ class ClientsController extends Controller
         }
 
         $mailboxFilter = $request->input('mailbox_filter');
-        if (! empty($mailboxFilter) && \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'mailbox_email')) {
-            $query->whereRaw('LOWER(mailbox_email) = ?', [strtolower(trim((string) $mailboxFilter))]);
+        if (! empty($mailboxFilter)) {
+            if ($isSyncedInboxFolder) {
+                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxListFilter($query, (string) $mailboxFilter);
+            } elseif (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'mailbox_email')) {
+                $query->whereRaw('LOWER(mailbox_email) = ?', [strtolower(trim((string) $mailboxFilter))]);
+            }
         }
 
         // Synced inbox queues: admin/super admin see all mail; staff see their mailbox / To/Cc/Bcc matches.
@@ -8725,12 +8729,16 @@ class ClientsController extends Controller
                 }
             }
 
+            if (! empty($mailboxFilter)) {
+                \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxListFilter($unreadCountQuery, (string) $mailboxFilter);
+            }
+
             $unreadCount = $unreadCountQuery->count();
         }
 
         $dateSummary = null;
         if ($isSyncedInboxFolder && $staff instanceof \App\Models\Staff) {
-            $dateSummary = $this->syncedInboxDateSummary($folder, $staff);
+            $dateSummary = $this->syncedInboxDateSummary($folder, $staff, ! empty($mailboxFilter) ? (string) $mailboxFilter : null);
         }
 
         return response()->json([
@@ -8751,10 +8759,14 @@ class ClientsController extends Controller
     /**
      * Count synced inbox emails by date bucket (today, yesterday, this week, earlier).
      */
-    protected function syncedInboxDateSummary(string $folder, \App\Models\Staff $staff): array
+    protected function syncedInboxDateSummary(string $folder, \App\Models\Staff $staff, ?string $mailboxFilter = null): array
     {
         $query = \App\Models\EmailLog::query();
         \App\Services\EmailSync\IncomingEmailSyncService::applySyncedInboxVisibilityFilter($query, $staff);
+
+        if (! empty($mailboxFilter)) {
+            \App\Services\EmailSync\IncomingEmailSyncService::applySyncedMailboxListFilter($query, $mailboxFilter);
+        }
 
         if ($folder === 'unassigned') {
             \App\Services\EmailSync\IncomingEmailSyncService::applyUnassignedSyncedInboxScope($query);

@@ -95,6 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnSyncInbox = document.getElementById('btnSyncInbox');
     const syncRangeFilter = document.getElementById('syncRangeFilter');
     const syncMailboxFilter = document.getElementById('syncMailboxFilter');
+    const listMailboxFilter = document.getElementById('listMailboxFilter');
     const assignEmailModal = document.getElementById('assignSyncedEmailModal');
     const assignClientSelect = document.getElementById('assignClientId');
     const assignMatterHiddenInput = document.getElementById('assignClientMatterId');
@@ -967,6 +968,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (senderFilter) {
         senderFilter.addEventListener('change', () => {
+            currentPage = 1;
+            loadEmails();
+        });
+    }
+
+    if (listMailboxFilter) {
+        listMailboxFilter.addEventListener('change', () => {
             currentPage = 1;
             loadEmails();
         });
@@ -2780,6 +2788,9 @@ document.addEventListener('DOMContentLoaded', function() {
             url.searchParams.append('label_id', label);
             url.searchParams.append('sender_filter', sender);
             url.searchParams.append('sort_order', sortOrder ? sortOrder.value : 'desc');
+            if (isSyncedInboxFolder(folderToFetch) && listMailboxFilter && listMailboxFilter.value) {
+                url.searchParams.append('mailbox_filter', listMailboxFilter.value);
+            }
             if (folderToFetch === 'outbox') {
                 if (sendStatusFilter && sendStatusFilter.value) {
                     url.searchParams.append('send_status', sendStatusFilter.value);

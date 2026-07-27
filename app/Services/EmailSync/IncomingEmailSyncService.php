@@ -771,6 +771,45 @@ class IncomingEmailSyncService
     }
 
     /**
+     * Short-interval sync ranges for Admin / Super Admin on the Unassigned mail tab.
+     *
+     * @return array<string, string>
+     */
+    public static function adminUnassignedSyncRangeOptions(): array
+    {
+        return [
+            '10min' => '10 minutes',
+            '20min' => '20 minutes',
+            '1hour' => '1 hour',
+            '2hours' => '2 hours',
+            '5hours' => '5 hours',
+        ];
+    }
+
+    /**
+     * Sync range choices shown on the Unassigned mail tab.
+     *
+     * @return array<string, string>
+     */
+    public static function syncRangeOptionsForUnassignedTab(Staff $staff): array
+    {
+        if ($staff->canViewAllSyncedInboxMail()) {
+            return self::adminUnassignedSyncRangeOptions();
+        }
+
+        return [
+            'today' => 'Today',
+        ];
+    }
+
+    public static function isValidSyncRangeForStaff(Staff $staff, string $range): bool
+    {
+        $normalized = strtolower(trim($range));
+
+        return array_key_exists($normalized, self::syncRangeOptionsForUnassignedTab($staff));
+    }
+
+    /**
      * @return array<string, string>
      */
     public static function syncRangeOptions(): array
@@ -808,6 +847,7 @@ class IncomingEmailSyncService
 
         return match ($normalized) {
             '10min', '10minutes', '10_minutes' => $now->copy()->subMinutes(10),
+            '20min', '20minutes', '20_minutes' => $now->copy()->subMinutes(20),
             '30min', '30minutes', '30_minutes' => $now->copy()->subMinutes(30),
             '1hour', '1hrs', '1_hour', '1_hrs' => $now->copy()->subHours(1),
             '2hours', '2hrs', '2_hours', '2_hrs' => $now->copy()->subHours(2),
@@ -987,6 +1027,21 @@ class IncomingEmailSyncService
         self::applySyncedInboxVisibilityFilter($query, $staff);
 
         return (int) $query->count();
+    }
+
+    /**
+     * Filter synced inbox lists to mail addressed To the selected mailbox only.
+     */
+    public static function applySyncedMailboxListFilter($query, string $mailboxEmail): void
+    {
+        $email = strtolower(trim($mailboxEmail));
+        if ($email === '') {
+            return;
+        }
+
+        $query->where(function ($match) use ($email) {
+            self::applyStaffEmailFieldMatch($match, 'to_mail', $email);
+        });
     }
 
     /**
