@@ -19,6 +19,22 @@ class EmailLog extends Authenticatable
 
     public const SEND_STATUS_FAILED = 'failed';
 
+    public const SYNC_SOURCE_MANUAL = 'manual';
+
+    public const SYNC_SOURCE_CRON = 'cron';
+
+    public const SYNC_SOURCE_COMPOSE = 'compose';
+
+    public static function syncSourceLabel(?string $source): string
+    {
+        return match ($source) {
+            self::SYNC_SOURCE_MANUAL => 'Manual sync',
+            self::SYNC_SOURCE_CRON => 'Auto fetch',
+            self::SYNC_SOURCE_COMPOSE => 'CRM sent',
+            default => '',
+        };
+    }
+
 	protected $table = 'email_logs';
 
 	protected $fillable = [
@@ -29,6 +45,7 @@ class EmailLog extends Authenticatable
         'synced_email_id',
         'sync_assignment_status',
         'imap_uid',
+        'sync_source',
         'to_mail',
         'cc',
         'bcc',

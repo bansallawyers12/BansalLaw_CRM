@@ -103,9 +103,18 @@ return [
 
         'inbox_sync' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/inbox-sync.log'),
+            'path' => storage_path('logs/inbox-sync/inbox-sync.log'),
             'level' => 'debug',
-            'days' => 30,
+            'days' => 90,
+            'permission' => 0644,
+            'tap' => [App\Logging\Utf8LogFormatter::class],
+        ],
+
+        'inbox_sync_runs' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/inbox-sync-runs/inbox-sync-run.log'),
+            'level' => 'info',
+            'days' => 90,
             'permission' => 0644,
             'tap' => [App\Logging\Utf8LogFormatter::class],
         ],

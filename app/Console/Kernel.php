@@ -140,16 +140,16 @@ class Kernel extends ConsoleKernel
                 $schedule->command('emails:sync-inbox')
                     ->cron('*/' . $minutes . ' * * * *')
                     ->withoutOverlapping(10)
-                    ->appendOutputTo(storage_path('logs/email-inbox-sync.log'));
+                    ->appendOutputTo(storage_path('logs/inbox-sync/email-inbox-sync.log'));
 
                 $schedule->command('emails:sync-inbox --full')
                     ->dailyAt('02:00')
                     ->timezone('Australia/Melbourne')
                     ->withoutOverlapping(60)
-                    ->appendOutputTo(storage_path('logs/email-inbox-sync.log'));
+                    ->appendOutputTo(storage_path('logs/inbox-sync/email-inbox-sync.log'));
             } else {
                 foreach ($mailboxes as $address) {
-                    $logFile = storage_path('logs/email-inbox-sync-' . $this->mailboxLogSlug($address) . '.log');
+                    $logFile = storage_path('logs/inbox-sync/email-inbox-sync-' . $this->mailboxLogSlug($address) . '.log');
 
                     $schedule->command('emails:sync-inbox', [$address])
                         ->cron('*/' . $minutes . ' * * * *')

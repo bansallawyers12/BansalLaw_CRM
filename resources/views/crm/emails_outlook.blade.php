@@ -127,6 +127,21 @@
     <!-- Email List Pane -->
     <div class="outlook-list-pane">
         <div class="list-toolbar{{ $unassignedOnly ? ' list-toolbar--sync-inbox' : '' }}">
+            <div class="list-toolbar__actions">
+                <div class="email-ui-mode-switch" id="emailUiModeSwitch" role="group" aria-label="Choose email layout">
+                    <button type="button" class="email-ui-mode-btn" data-ui-mode="outlook" title="Outlook split view — list and preview side by side">
+                        <i class="fa-solid fa-table-columns" aria-hidden="true"></i>
+                        <span>Outlook</span>
+                    </button>
+                    <button type="button" class="email-ui-mode-btn" data-ui-mode="gmail" title="Gmail view — full list, open email in full page">
+                        <i class="fa-solid fa-list" aria-hidden="true"></i>
+                        <span>Gmail</span>
+                    </button>
+                </div>
+                <button type="button" class="action-btn action-btn--upload" id="btnUploadEmail" title="Upload Outlook email ({{ $crmEmailUploadLabel }})" hidden>
+                    <i class="fa-solid fa-upload"></i> Upload
+                </button>
+            </div>
             <div class="folder-tabs" role="tablist" aria-label="Mail folders">
                 @if($unassignedOnly)
                 <button type="button" class="folder-item active" data-folder="unassigned" role="tab" aria-selected="true">
@@ -152,21 +167,6 @@
                     <i class="fa-solid fa-clock-rotate-left"></i> Email Log
                 </button>
                 @endif
-            </div>
-            <div class="list-toolbar__actions">
-                <div class="email-ui-mode-switch" id="emailUiModeSwitch" role="group" aria-label="Choose email layout">
-                    <button type="button" class="email-ui-mode-btn" data-ui-mode="outlook" title="Outlook split view — list and preview side by side">
-                        <i class="fa-solid fa-table-columns" aria-hidden="true"></i>
-                        <span>Outlook</span>
-                    </button>
-                    <button type="button" class="email-ui-mode-btn" data-ui-mode="gmail" title="Gmail view — full list, open email in full page">
-                        <i class="fa-solid fa-list" aria-hidden="true"></i>
-                        <span>Gmail</span>
-                    </button>
-                </div>
-                <button type="button" class="action-btn action-btn--upload" id="btnUploadEmail" title="Upload Outlook email ({{ $crmEmailUploadLabel }})" hidden>
-                    <i class="fa-solid fa-upload"></i> Upload
-                </button>
             </div>
             <input type="file" id="outlookEmailFileInput" accept="{{ $crmEmailUploadAccept }}" multiple hidden>
         </div>
@@ -456,6 +456,7 @@
                     </div>
                     <div class="gmail-read-meta__right">
                         <div class="meta-date" id="readDate"></div>
+                        <div class="meta-sync-source" id="readSyncSource" hidden></div>
                         <div class="gmail-read-meta__icons">
                             <button type="button" class="gmail-icon-btn gmail-icon-btn--sm" id="gmailMetaReply" title="Reply">
                                 <i class="fa-solid fa-reply" aria-hidden="true"></i>

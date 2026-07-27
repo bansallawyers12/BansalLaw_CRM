@@ -1319,6 +1319,13 @@ public function getChapters(Request $request)
 		}
 
 		$obj->from_mail 	=  $requestData['email_from'];
+        $fromMailbox = strtolower(trim((string) ($requestData['email_from'] ?? '')));
+        if ($fromMailbox !== '' && \Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'mailbox_email')) {
+            $obj->mailbox_email = $fromMailbox;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_source')) {
+            $obj->sync_source = \App\Models\EmailLog::SYNC_SOURCE_COMPOSE;
+        }
 		// email_to / email_cc are Admin or Agent row IDs from the compose UI — store actual addresses
 		$emailToList = $this->normalizeComposeRecipientInput($requestData['email_to'] ?? null);
 		$resolvedTo = [];

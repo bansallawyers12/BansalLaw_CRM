@@ -8625,6 +8625,8 @@ class ClientsController extends Controller
             $email->sync_assignment_status = $email->sync_assignment_status ?? '';
             $email->is_read = $this->emailLogIsRead($email);
             $email->mailbox_email = $email->mailbox_email ?? '';
+            $email->sync_source = $email->sync_source ?? '';
+            $email->sync_source_label = \App\Models\EmailLog::syncSourceLabel($email->sync_source ?: null);
             $email->client_name = '';
             $email->client_ref = '';
             if ($email->relationLoaded('client') && $email->client) {

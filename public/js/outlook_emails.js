@@ -427,6 +427,26 @@ document.addEventListener('DOMContentLoaded', function() {
         bannerEl.innerHTML = html;
     }
 
+    function renderSyncSourceBadge(email) {
+        const source = (email.sync_source || '').trim();
+        const label = (email.sync_source_label || '').trim();
+        if (! source || ! label) {
+            return '';
+        }
+
+        const icon = source === 'manual'
+            ? 'fa-hand-pointer'
+            : (source === 'cron' ? 'fa-clock-rotate-left' : 'fa-paper-plane');
+        const modifier = source === 'manual'
+            ? 'manual'
+            : (source === 'cron' ? 'cron' : 'compose');
+
+        return '<span class="email-sync-source-badge email-sync-source-badge--' + modifier + '" title="' + escapeHtml(label) + '">'
+            + '<i class="fa-solid ' + icon + '" aria-hidden="true"></i> '
+            + escapeHtml(label)
+            + '</span>';
+    }
+
     function renderSyncedClientBadge(email) {
         if (currentFolder !== 'assigned'
             && currentFolder !== 'unread'
@@ -3538,6 +3558,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 : formatEmailDate(getEmailDate(email));
             const statusBadge = renderSendStatusBadge(email);
             const clientBadge = renderSyncedClientBadge(email);
+            const syncSourceBadge = renderSyncSourceBadge(email);
             const calendarIndicator = renderCalendarListIndicator(email);
             const autoAssignedBadge = unread && email.sync_assignment_status === 'auto_assigned'
                 ? '<span class="email-new-badge" title="Auto-assigned from synced inbox">New</span>'
@@ -3552,7 +3573,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (isSyncedInboxFolder(currentFolder)) {
                 const senderInitial = escapeHtml((sender.charAt(0) || '?').toUpperCase());
                 const senderName = escapeHtml(extractSenderName(sender));
-                const badgeRow = attachmentIcon + calendarIndicator + unreadBadge + autoAssignedBadge + statusBadge + clientBadge;
+                const badgeRow = attachmentIcon + calendarIndicator + unreadBadge + autoAssignedBadge + statusBadge + syncSourceBadge + clientBadge;
                 const unreadDot = unread ? '<span class="email-item-unread-dot" aria-hidden="true"></span>' : '';
                 const previewHtml = preview
                     ? '<div class="email-preview">' + escapeHtml(preview) + '</div>'
@@ -3581,7 +3602,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 el.innerHTML = `
                 <div class="email-item-header">
-                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${calendarIndicator}${unreadBadge}${autoAssignedBadge}${statusBadge}${clientBadge}</div>
+                    <div class="email-sender">${escapeHtml(sender)}${attachmentIcon}${calendarIndicator}${unreadBadge}${autoAssignedBadge}${statusBadge}${syncSourceBadge}${clientBadge}</div>
                     ${markReadAction}
                 </div>
                 <div class="email-subject">${escapeHtml(subject)}</div>
@@ -3702,6 +3723,18 @@ document.addEventListener('DOMContentLoaded', function() {
             readDateEl.textContent = isGmailUiMode()
                 ? formatGmailReadDate(email)
                 : formatEmailDate(getEmailDate(email));
+        }
+
+        const readSyncSourceEl = document.getElementById('readSyncSource');
+        if (readSyncSourceEl) {
+            const syncBadge = renderSyncSourceBadge(email);
+            if (syncBadge) {
+                readSyncSourceEl.hidden = false;
+                readSyncSourceEl.innerHTML = syncBadge;
+            } else {
+                readSyncSourceEl.hidden = true;
+                readSyncSourceEl.innerHTML = '';
+            }
         }
         
         const initial = (email.from_mail || '?').charAt(0).toUpperCase();
@@ -4873,7 +4906,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 setSyncUiBusy(false, originalHtml);
                 loadEmails();
-                crmToast(buildInboxSyncResultMessage(data, rangeLabel), (data.total_failed || 0) > 0 ? 'error' : 'success');
+                const toastType = (data.total_failed || 0) > 0 ? 'error' : 'success';
+                crmToast(buildInboxSyncResultMessage(data, rangeLabel), toastType);
             } catch (error) {
                 setSyncUiBusy(false, originalHtml);
                 crmToast('Sync failed: ' + (error.message || 'Unknown error'), 'error');

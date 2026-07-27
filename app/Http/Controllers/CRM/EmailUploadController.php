@@ -691,6 +691,9 @@ class EmailUploadController extends Controller
                 $mailReport->synced_email_id = $syncMeta['synced_email_id'] ?? null;
                 $mailReport->sync_assignment_status = $syncMeta['sync_assignment_status'] ?? null;
                 $mailReport->imap_uid = $syncMeta['imap_uid'] ?? null;
+                if (\Illuminate\Support\Facades\Schema::hasColumn('email_logs', 'sync_source')) {
+                    $mailReport->sync_source = $syncMeta['sync_source'] ?? null;
+                }
                 if (array_key_exists('mail_is_read', $syncMeta) && $syncMeta['mail_is_read'] !== null) {
                     $mailReport->mail_is_read = (bool) $syncMeta['mail_is_read'];
                 }

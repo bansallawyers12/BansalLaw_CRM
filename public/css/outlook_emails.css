@@ -50,29 +50,22 @@ body, html {
 /* Folder tabs toolbar (replaces sidebar) */
 .list-toolbar {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
     padding: 10px 12px;
     border-bottom: 1px solid var(--outlook-border);
     background: var(--outlook-bg-secondary);
     flex-shrink: 0;
 }
 
-.list-toolbar--sync-inbox {
-    justify-content: flex-start;
-}
-
-.list-toolbar--sync-inbox .folder-tabs {
-    flex: 1;
-}
-
 .list-toolbar__actions {
-    display: inline-flex;
+    display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 10px;
     flex-shrink: 0;
-    margin-left: auto;
+    width: 100%;
 }
 
 .email-ui-mode-switch {
@@ -175,11 +168,44 @@ body, html {
     text-overflow: ellipsis;
 }
 
+.email-sync-source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.email-sync-source-badge--manual {
+    background: #e3f2fd;
+    color: #0d47a1;
+}
+
+.email-sync-source-badge--cron {
+    background: #f3e5f5;
+    color: #4a148c;
+}
+
+.email-sync-source-badge--compose {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.meta-sync-source {
+    margin-top: 4px;
+    font-size: 12px;
+}
+
 .folder-tabs {
     display: flex;
     align-items: center;
     gap: 4px;
-    flex: 1;
+    width: 100%;
     min-width: 0;
     overflow-x: auto;
 }
@@ -2638,19 +2664,6 @@ body.email-upload-in-progress .attachment-storage-modal-overlay.active {
         min-height: 280px;
     }
 
-    .list-toolbar {
-        flex-wrap: wrap;
-    }
-
-    .folder-tabs {
-        order: 1;
-        width: 100%;
-    }
-
-    .action-btn--upload {
-        order: 2;
-        margin-left: auto;
-    }
 }
 
 /* Assign email modal */
@@ -4915,12 +4928,7 @@ body.gmail-email-reading-open .outlook-container.ui-mode-gmail.gmail-reading-ope
         padding: 10px 12px;
     }
 
-    .list-toolbar {
-        flex-wrap: wrap;
-    }
-
     .list-toolbar__actions {
-        width: 100%;
         justify-content: space-between;
     }
 
