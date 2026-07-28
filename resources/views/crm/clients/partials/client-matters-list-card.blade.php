@@ -2,11 +2,15 @@
     $__sch = \Illuminate\Support\Facades\Schema::class;
     $clientMattersList = collect();
     if ($__sch::hasTable('client_matters')) {
+        $with = ['matter'];
+        if ($__sch::hasTable('client_matter_opposing_parties')) {
+            $with[] = 'opposingParties';
+        }
+
         $clientMattersList = \App\Models\ClientMatter::query()
             ->where('client_id', $fetchedData->id)
             ->where('matter_status', 1)
-            ->whereNotNull('sel_matter_id')
-            ->with(['matter', 'opposingParties'])
+            ->with($with)
             ->orderByDesc('id')
             ->get();
     }
@@ -16,11 +20,12 @@
         $currentMatterRef = (string) ($clientMattersList->first()->client_unique_matter_no ?? '');
     }
 
-    $encodedClientId = base64_encode(convert_uuencode($fetchedData->id));
-    $activeTab = strtolower((string) ($activeTab ?? 'personaldetails'));
-    if ($activeTab === 'overview') {
-        $activeTab = 'personaldetails';
+    $clientDetailTab = strtolower((string) ($activeTab ?? 'personaldetails'));
+    if ($clientDetailTab === 'overview') {
+        $clientDetailTab = 'personaldetails';
     }
+
+    $clientDetailEncodeId = $encodeId ?? base64_encode(convert_uuencode($fetchedData->id));
 @endphp
 
 @if($clientMattersList->count() > 1)
@@ -35,16 +40,18 @@
         @php
             $matterNo = trim((string) ($cmRow->client_unique_matter_no ?? ''));
             $natureLabel = \App\Models\Matter::displayTitleFromJoinedRow($cmRow->matter->title ?? null);
-            $otherPartyNames = $cmRow->opposingParties
-                ->map(fn ($p) => trim((string) ($p->name ?? '')))
-                ->filter()
-                ->values();
+            $otherPartyNames = ($__sch::hasTable('client_matter_opposing_parties') && $cmRow->relationLoaded('opposingParties'))
+                ? $cmRow->opposingParties
+                    ->map(fn ($p) => trim((string) ($p->name ?? '')))
+                    ->filter()
+                    ->values()
+                : collect();
             $otherPartyLabel = $otherPartyNames->isNotEmpty()
                 ? $otherPartyNames->implode(', ')
                 : '—';
             $isCurrent = $matterNo !== '' && $matterNo === $currentMatterRef;
             $matterUrl = $matterNo !== ''
-                ? url('/clients/detail/' . $encodedClientId . '/' . rawurlencode($matterNo) . '/' . $activeTab)
+                ? route('clients.detail', [$clientDetailEncodeId, $matterNo, $clientDetailTab])
                 : null;
         @endphp
         <div class="field-group client-matter-list-row{{ $isCurrent ? ' client-matter-list-row--current' : '' }}"
@@ -82,6 +89,11 @@
 
 <script>
 (function () {
+    var card = document.getElementById('clientMattersListCard');
+    if (!card) {
+        return;
+    }
+
     function switchClientMatter(url) {
         if (!url) {
             return;
@@ -91,16 +103,24 @@
         }
     }
 
-    document.querySelectorAll('#clientMattersListCard .client-matter-list-row[data-matter-url]').forEach(function (row) {
-        row.addEventListener('click', function () {
-            switchClientMatter(row.getAttribute('data-matter-url'));
-        });
-        row.addEventListener('keydown', function (event) {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                switchClientMatter(row.getAttribute('data-matter-url'));
-            }
-        });
+    card.addEventListener('click', function (event) {
+        var row = event.target.closest('.client-matter-list-row[data-matter-url]');
+        if (!row) {
+            return;
+        }
+        switchClientMatter(row.getAttribute('data-matter-url'));
+    });
+
+    card.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' && event.key !== ' ') {
+            return;
+        }
+        var row = event.target.closest('.client-matter-list-row[data-matter-url]');
+        if (!row) {
+            return;
+        }
+        event.preventDefault();
+        switchClientMatter(row.getAttribute('data-matter-url'));
     });
 })();
 </script>

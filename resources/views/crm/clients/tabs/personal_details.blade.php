@@ -936,6 +936,7 @@
 
                         @include('crm.clients.partials.client-matters-list-card', [
                             'fetchedData' => $fetchedData,
+                            'encodeId' => $encodeId ?? null,
                             'selectedClientMatter' => $selectedClientMatter ?? null,
                             'activeTab' => $activeTab ?? 'personaldetails',
                         ])
