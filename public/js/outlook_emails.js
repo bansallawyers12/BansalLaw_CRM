@@ -452,14 +452,32 @@ document.addEventListener('DOMContentLoaded', function() {
         if (clientLabel || email.sync_assignment_status === 'auto_assigned' || email.sync_assignment_status === 'manual_assigned') {
             const labelStr = clientLabel || 'Assigned';
             const iconClass = 'fa-user-check';
+            const isLead = (email.client_type === 'lead');
+            const typeLabel = email.client_type_label || (isLead ? 'Lead' : 'Client');
+            
             const badgeClass = unassignedOnly
-                ? 'email-client-badge email-client-badge--list'
-                : 'email-client-badge';
+                ? (isLead ? 'email-client-badge email-client-badge--lead email-client-badge--list' : 'email-client-badge email-client-badge--list')
+                : (isLead ? 'email-client-badge email-client-badge--lead' : 'email-client-badge');
+
             const assignLabel = email.sync_assignment_status === 'manual_assigned' ? 'Manual' : 'Auto';
-            return '<span class="' + badgeClass + '" title="' + escapeHtml(assignLabel + ' assigned to client: ' + labelStr) + '">'
+            
+            let matterBadge = '';
+            if (email.matter_number) {
+                matterBadge = '<span class="email-matter-tag" title="Matter ' + escapeHtml(email.matter_number) + '">'
+                    + '<i class="fa-solid fa-folder-open" aria-hidden="true"></i> ' + escapeHtml(email.matter_number)
+                    + '</span>';
+            }
+
+            const typePill = '<span class="email-stage-pill email-stage-pill--' + (isLead ? 'lead' : 'client') + '" title="' + escapeHtml(typeLabel) + '">'
+                + escapeHtml(typeLabel)
+                + '</span>';
+
+            return typePill
+                + '<span class="' + badgeClass + '" title="' + escapeHtml(assignLabel + ' assigned to ' + typeLabel + ': ' + labelStr) + '">'
                 + '<i class="fa-solid ' + iconClass + '" aria-hidden="true"></i> '
                 + escapeHtml(labelStr)
-                + '</span>';
+                + '</span>'
+                + matterBadge;
         }
 
         return '<span class="email-unassigned-badge" title="Unassigned mail">'

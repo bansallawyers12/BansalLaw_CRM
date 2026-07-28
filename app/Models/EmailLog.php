@@ -139,6 +139,14 @@ class EmailLog extends Authenticatable
     }
 
     /**
+     * Get the client matter linked to the email.
+     */
+    public function matter(): BelongsTo
+    {
+        return $this->belongsTo(ClientMatter::class, 'client_matter_id');
+    }
+
+    /**
      * Get the user who uploaded the email.
      */
     public function uploader(): BelongsTo

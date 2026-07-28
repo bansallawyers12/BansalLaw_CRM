@@ -4129,6 +4129,58 @@ body.assign-email-modal-open .ts-dropdown .option.active {
     font-size: 11px;
 }
 
+.outlook-container--unassigned .email-client-badge--lead {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+.outlook-container--unassigned .email-client-badge--lead i {
+    color: #0284c7;
+}
+
+.email-stage-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.email-stage-pill--lead {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #ffedd5;
+}
+
+.email-stage-pill--client {
+    background: #f0fdf4;
+    color: #15803d;
+    border: 1px solid #dcfce7;
+}
+
+.email-matter-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #f8fafc;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.email-matter-tag i {
+    font-size: 10px;
+    color: #64748b;
+}
+
 .outlook-container--unassigned .email-list-date-group {
     padding: 8px 14px 6px;
     margin: 0;
