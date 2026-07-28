@@ -113,6 +113,67 @@
         min-width: 0;
         overflow: visible;
     }
+    #conflictPartiesCard .cp-edit .cp-card-header {
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+    }
+    #conflictPartiesCard .cp-edit-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    #conflictPartiesCard .cp-close-icon-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        border: 1px solid #dbe1ea;
+        color: #5f6b7a;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        background: #fff;
+    }
+    #conflictPartiesCard .cp-close-icon-btn:hover {
+        background: #f5f7fb;
+        color: #2f3f53;
+    }
+    #conflictPartiesCard .cp-edit-block {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #e9ecef;
+    }
+    #conflictPartiesCard .cp-edit > .cp-edit-block:first-of-type {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: 0;
+    }
+    #conflictPartiesCard .cp-edit-actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 4;
+        background: #fff;
+        border-top: 1px solid #e9ecef;
+        margin: 0 -4px;
+        padding: 10px 4px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    #conflictPartiesCard .cp-cancel-ghost {
+        color: #6c757d;
+        text-decoration: none;
+    }
+    #conflictPartiesCard .cp-cancel-ghost:hover {
+        color: #495057;
+        text-decoration: underline;
+    }
 </style>
 <link rel="stylesheet" href="{{ asset('css/crm/other-party-picker.css') }}?v={{ @filemtime(public_path('css/crm/other-party-picker.css')) ?: time() }}">
 
@@ -182,49 +243,50 @@
          aria-label="Edit other parties"
          aria-hidden="true">
         <div class="cp-card-header">
-            <span><i class="fa-solid fa-pen-to-square text-primary me-1"></i>Editing other parties</span>
-            <button type="button" class="btn btn-link btn-sm p-0 cp-open-edit" aria-label="Close editor">Close</button>
-        </div>
-
-        <p class="text-muted small mb-2">
-            Search and select an <strong>other party</strong>, choose their <strong>role</strong>, and optionally add the <strong>opposing solicitor</strong> (search existing or enter manually).
-        </p>
-
-        <div class="d-flex flex-wrap gap-2 mb-2 align-items-center">
-            <button type="button" class="btn btn-outline-primary btn-sm" id="cpCreateOtherPartyBtn">
-                <i class="fa-solid fa-user-plus"></i> New other party
+            <h4 class="cp-edit-title"><i class="fa-solid fa-pen-to-square text-primary"></i>Editing other parties</h4>
+            <button type="button" class="cp-open-edit cp-close-icon-btn" aria-label="Close editor">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
             </button>
-            <a href="{{ route('leads.create', ['other_party' => 1]) }}" target="_blank" rel="noopener" class="small">Full create form</a>
         </div>
 
-        <div id="cpMiniCreateOtherParty" class="cp-mini-create" style="display:none;">
-            <p class="small fw-semibold mb-2 mb-0">Quick create other party</p>
-            <p class="text-muted small mb-2">First &amp; last name required. Phone or email required.</p>
-            <div class="row g-2">
-                <div class="col-sm-6 col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpFirst" placeholder="First name *"></div>
-                <div class="col-sm-6 col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpLast" placeholder="Last name *"></div>
-                <div class="col-sm-6 col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpPhone" placeholder="Phone"></div>
-                <div class="col-sm-6 col-md-3"><input type="email" class="form-control form-control-sm" id="cpMiniOpEmail" placeholder="Email"></div>
+        <div class="cp-edit-block" id="cpOtherPartiesSection">
+            <div class="d-flex flex-wrap gap-2 mb-2 align-items-center">
+                <button type="button" class="btn btn-outline-primary btn-sm" id="cpCreateOtherPartyBtn">
+                    <i class="fa-solid fa-user-plus"></i> New other party
+                </button>
+                <a href="{{ route('leads.create', ['other_party' => 1]) }}" target="_blank" rel="noopener" class="small">Full create form</a>
             </div>
-            <div class="mt-2 d-flex gap-2 flex-wrap">
-                <button type="button" class="btn btn-sm btn-primary" id="cpMiniOpSave">Save &amp; select</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="cpMiniOpCancel">Cancel</button>
+
+            <div id="cpMiniCreateOtherParty" class="cp-mini-create" style="display:none;">
+                <p class="small fw-semibold mb-2 mb-0">Quick create other party</p>
+                <p class="text-muted small mb-2">First &amp; last name required. Phone or email required.</p>
+                <div class="row g-2">
+                    <div class="col-sm-6 col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpFirst" placeholder="First name *"></div>
+                    <div class="col-sm-6 col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpLast" placeholder="Last name *"></div>
+                    <div class="col-sm-6 col-md-3"><input type="text" class="form-control form-control-sm" id="cpMiniOpPhone" placeholder="Phone"></div>
+                    <div class="col-sm-6 col-md-3"><input type="email" class="form-control form-control-sm" id="cpMiniOpEmail" placeholder="Email"></div>
+                </div>
+                <div class="mt-2 d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn btn-sm btn-primary" id="cpMiniOpSave">Save &amp; select</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="cpMiniOpCancel">Cancel</button>
+                </div>
+                <div id="cpMiniOpMessage" class="mt-2" style="display:none;"></div>
             </div>
-            <div id="cpMiniOpMessage" class="mt-2" style="display:none;"></div>
+
+            <div id="cpPartiesContainer"></div>
+
+            <div class="cp-edit-actions">
+                <button type="button" class="btn btn-outline-primary btn-sm" id="cpAddPartyBtn">
+                    <i class="fa-solid fa-plus"></i> Add party
+                </button>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-primary btn-sm" id="cpSavePartiesBtn">Save parties</button>
+                    <button type="button" class="btn btn-link btn-sm cp-open-edit cp-cancel-ghost">Cancel</button>
+                </div>
+            </div>
         </div>
 
-        <div id="cpPartiesContainer"></div>
-
-        <button type="button" class="btn btn-outline-primary btn-sm mb-3" id="cpAddPartyBtn">
-            <i class="fa-solid fa-plus"></i> Add party
-        </button>
-
-        <div class="d-flex gap-2 mb-4">
-            <button type="button" class="btn btn-primary btn-sm" id="cpSavePartiesBtn">Save parties</button>
-            <button type="button" class="btn btn-secondary btn-sm cp-open-edit">Cancel</button>
-        </div>
-
-        <div class="cp-subsection" id="cpOutcomeSection">
+        <div class="cp-subsection cp-edit-block" id="cpOutcomeSection">
             <div class="cp-subsection-title"><i class="fa-solid fa-clipboard-check"></i> Conflict check outcome</div>
             <p class="text-muted small mb-2" id="cpLastCheckHint">
                 @if($latestCheckedAt && $latestOutcomeLabel)

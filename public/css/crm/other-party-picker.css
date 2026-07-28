@@ -12,7 +12,7 @@
 
 .opp-party-row__top {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.85fr) minmax(120px, 1fr);
     gap: 10px 12px;
     align-items: end;
     min-width: 0;
@@ -20,7 +20,6 @@
 
 .opp-party-row__top .opp-party-role-select.form-control {
     min-height: 38px;
-    height: 38px;
     padding-top: 6px;
     padding-bottom: 6px;
 }
@@ -34,39 +33,9 @@
     min-width: 0;
 }
 
-.opp-party-field--remove {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: flex-end;
-    justify-content: flex-end;
-    flex-shrink: 0;
-    margin-top: 2px;
-}
-
-.opp-party-field--remove .opp-party-remove {
-    min-height: 38px;
-}
-
-/* Wide enough row: party | role | remove on one line */
-@container (min-width: 460px) {
-    .opp-party-row__top {
-        grid-template-columns: minmax(0, 1fr) minmax(100px, 140px) auto;
-    }
-
-    .opp-party-field--remove {
-        grid-column: auto;
-        grid-row: 1;
-        margin-top: 0;
-    }
-}
-
 @media (max-width: 768px) {
     .opp-party-row__top {
         grid-template-columns: 1fr;
-    }
-
-    .opp-party-field--remove {
-        grid-column: 1;
     }
 }
 
@@ -78,9 +47,34 @@
     margin-bottom: 4px;
 }
 
+.opp-party-field--role > label {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+}
+
 .opp-party-remove {
     white-space: nowrap;
     flex-shrink: 0;
+    min-height: 32px;
+    width: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.opp-party-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+    min-height: 32px;
+}
+
+.opp-party-label-row > label {
+    margin-bottom: 0;
 }
 
 .opp-party-solicitor-block {
@@ -89,11 +83,31 @@
     border-top: 1px dashed #e9ecef;
 }
 
-.opp-party-solicitor-block__head {
+.opp-party-solicitor-toggle {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-size: 13px;
     font-weight: 600;
     color: #343a40;
-    margin-bottom: 8px;
+    text-align: left;
+}
+
+.opp-party-solicitor-toggle:hover {
+    color: #1f2937;
+}
+
+.opp-party-solicitor-toggle__icon {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.opp-party-solicitor-body {
+    margin-top: 10px;
 }
 
 .opp-party-solicitor-mode {
@@ -142,12 +156,15 @@
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
+    position: relative;
     background: #fff !important;
     border: 1px solid #ced4da;
     border-radius: 6px;
     min-height: 38px;
-    height: 38px;
-    padding: 6px 12px;
+    /* Keep top/left/bottom only — leave right padding for clear_button plugin */
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 12px;
     box-shadow: none;
     overflow: hidden;
 }
@@ -159,17 +176,22 @@
 
 /* Selected value reads as normal select text, not a multi-select chip */
 .opp-party-row .ts-wrapper.single .ts-control .item {
-    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
     background: transparent;
     color: #212529;
     border-radius: 0;
     padding: 0;
     margin: 0;
-    max-width: 100%;
+    line-height: 1.5;
+    overflow: hidden;
+}
+
+.opp-party-row .ts-wrapper.single .ts-control .item,
+.opp-party-row .ts-wrapper.single .ts-control .item > div {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    line-height: 1.5;
 }
 
 /* While typing to re-search, hide the selected label */
@@ -187,10 +209,15 @@
 /* Keep the empty search input from stacking under the selected name */
 .opp-party-row .ts-wrapper.single.has-items:not(.input-active) .ts-control > input {
     position: absolute;
-    left: -9999px;
-    width: 0 !important;
+    left: 0;
+    top: 0;
+    width: 1px !important;
     min-width: 0 !important;
+    height: 1px !important;
+    margin: 0 !important;
+    padding: 0 !important;
     opacity: 0;
+    border: 0 !important;
     pointer-events: none;
 }
 
@@ -200,6 +227,7 @@
 
 .opp-party-row .opp-party-rep-fields input.form-control {
     font-size: 13px;
+    min-height: 38px;
 }
 
 .opp-party-row .opp-party-rep-fields input[readonly] {

@@ -35,6 +35,9 @@
             dropdownParent: 'body',
             excludeId: excludeId
         });
+        // Enforce exactly one selected party per row.
+        cfg.maxItems = 1;
+        cfg.create = false;
         global.initTS(selectEl, cfg);
         return true;
     }
@@ -66,6 +69,42 @@
         });
     }
 
+    function setSolicitorExpanded(row, expanded) {
+        if (!row) return;
+        var body = row.querySelector('.opp-party-solicitor-body');
+        var toggle = row.querySelector('.opp-party-solicitor-toggle');
+        if (body) {
+            body.hidden = !expanded;
+        }
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            var icon = toggle.querySelector('.opp-party-solicitor-toggle__icon');
+            if (icon) {
+                icon.classList.toggle('fa-chevron-down', !expanded);
+                icon.classList.toggle('fa-chevron-up', expanded);
+            }
+        }
+        if (expanded && typeof row._oppEnsureSolicitorSearch === 'function') {
+            row._oppEnsureSolicitorSearch();
+        }
+    }
+
+    function updatePartyDisplayTitle(row, labelText) {
+        if (!row) return;
+        var title = labelText || '';
+        function apply() {
+            var control = row.querySelector('.opp-party-field--party .ts-control');
+            if (control) control.setAttribute('title', title);
+            var item = row.querySelector('.opp-party-field--party .ts-control .item');
+            if (item) item.setAttribute('title', title);
+            var itemDiv = row.querySelector('.opp-party-field--party .ts-control .item > div');
+            if (itemDiv) itemDiv.setAttribute('title', title);
+        }
+        apply();
+        // Tom Select re-renders the selected item after setValue/change.
+        window.setTimeout(apply, 0);
+    }
+
     function toggleSolicitorMode(row, isManual) {
         if (!row) return;
         var searchWrap = row.querySelector('.opp-party-solicitor-search-wrap');
@@ -89,17 +128,30 @@
     }
 
     function wireSolicitorMode(row, solicitorSearchUrl, excludeId) {
+        var toggle = row.querySelector('.opp-party-solicitor-toggle');
+        if (toggle) {
+            toggle.addEventListener('click', function () {
+                var isOpen = toggle.getAttribute('aria-expanded') === 'true';
+                setSolicitorExpanded(row, !isOpen);
+            });
+        }
+
         var uid = 'sm' + Date.now() + Math.floor(Math.random() * 10000);
         var radios = row.querySelectorAll('.opp-party-solicitor-mode input[type="radio"]');
         radios.forEach(function (radio) {
             radio.name = 'solicitor_mode_' + uid;
             radio.addEventListener('change', function () {
+                if (this.value === 'manual') {
+                    setSolicitorExpanded(row, true);
+                }
                 toggleSolicitorMode(row, this.value === 'manual');
             });
         });
 
-        var solSelect = row.querySelector('.opp-party-solicitor-select');
-        if (solSelect && solicitorSearchUrl) {
+        // Lazy-init solicitor Tom Select when first expanded (avoids 0-width while hidden).
+        row._oppEnsureSolicitorSearch = function () {
+            var solSelect = row.querySelector('.opp-party-solicitor-select');
+            if (!solSelect || !solicitorSearchUrl || solSelect.tomselect) return;
             initSearchTomSelect(solSelect, solicitorSearchUrl, excludeId, 'Search solicitor (name, phone, email)…');
             solSelect.addEventListener('change', function () {
                 var ts = solSelect.tomselect;
@@ -109,11 +161,12 @@
                     setRepFieldsReadonly(row, false);
                     return;
                 }
+                setSolicitorExpanded(row, true);
                 var opt = ts.options[val] || ts.options[String(val)];
                 fillRepFieldsFromPerson(row, opt || {});
                 setRepFieldsReadonly(row, true);
             });
-        }
+        };
     }
 
     function selectPartyOnRow(row, person) {
@@ -144,7 +197,9 @@
             var fromNames = ((person.first_name || '') + ' ' + (person.last_name || '')).trim();
             var fromText = (person.text || '').split(' (')[0].trim();
             var fromCompany = (person.company_name || '').trim();
-            nameEl.value = fromCompany || fromNames || fromText;
+            var displayName = fromCompany || fromNames || fromText;
+            nameEl.value = displayName;
+            updatePartyDisplayTitle(row, displayName);
         }
     }
 
@@ -168,7 +223,12 @@
         row.innerHTML =
             '<div class="opp-party-row__top">' +
                 '<div class="opp-party-field opp-party-field--party">' +
-                    '<label>Other party <span class="text-danger">*</span></label>' +
+                    '<div class="opp-party-label-row">' +
+                        '<label>Other party <span class="text-danger">*</span></label>' +
+                        '<button type="button" class="btn btn-sm btn-outline-danger opp-party-remove" aria-label="Remove this party">' +
+                            '<i class="fa-solid fa-trash-can" aria-hidden="true"></i>' +
+                        '</button>' +
+                    '</div>' +
                     '<select class="form-control opp-party-lead-select" data-placeholder="Search other party…"></select>' +
                     '<input type="hidden" class="opp-party-lead-id" value="">' +
                     '<input type="hidden" class="opp-party-name" value="">' +
@@ -177,34 +237,40 @@
                     '<label>Their role <span class="text-danger">*</span></label>' +
                     '<select class="form-control opp-party-role-select">' + partyRoleOptionsHtml(stream, customRoles) + '</select>' +
                 '</div>' +
-                '<div class="opp-party-field opp-party-field--remove">' +
-                    '<button type="button" class="btn btn-sm btn-outline-danger opp-party-remove">Remove</button>' +
-                '</div>' +
             '</div>' +
             '<div class="opp-party-solicitor-block">' +
-                '<div class="opp-party-solicitor-block__head">Opposing solicitor <span class="text-muted fw-normal">(optional)</span></div>' +
-                '<div class="opp-party-solicitor-mode">' +
-                    '<label><input type="radio" value="search" checked> Search existing</label>' +
-                    '<label><input type="radio" value="manual"> Enter manually</label>' +
-                '</div>' +
-                '<div class="opp-party-solicitor-search-wrap">' +
-                    '<select class="form-control opp-party-solicitor-select" data-placeholder="Search solicitor…"></select>' +
-                '</div>' +
-                '<div class="opp-party-rep-fields">' +
-                    '<div class="opp-party-field"><label class="small mb-1">Solicitor firm</label>' +
-                        '<input type="text" class="form-control form-control-sm opp-party-rep-firm" maxlength="255" placeholder="Firm name"></div>' +
-                    '<div class="opp-party-field"><label class="small mb-1">Solicitor name</label>' +
-                        '<input type="text" class="form-control form-control-sm opp-party-rep-name" maxlength="255"></div>' +
-                    '<div class="opp-party-field"><label class="small mb-1">Email</label>' +
-                        '<input type="email" class="form-control form-control-sm opp-party-rep-email" maxlength="255"></div>' +
-                    '<div class="opp-party-field"><label class="small mb-1">Phone</label>' +
-                        '<input type="text" class="form-control form-control-sm opp-party-rep-phone" maxlength="64"></div>' +
-                    '<div class="opp-party-field opp-party-field--full"><label class="small mb-1">Notes</label>' +
-                        '<input type="text" class="form-control form-control-sm opp-party-rep-notes" maxlength="500" placeholder="Optional notes"></div>' +
+                '<button type="button" class="opp-party-solicitor-toggle" aria-expanded="false">' +
+                    '<span>Opposing solicitor <span class="text-muted fw-normal">(optional)</span></span>' +
+                    '<i class="fa-solid fa-chevron-down opp-party-solicitor-toggle__icon" aria-hidden="true"></i>' +
+                '</button>' +
+                '<div class="opp-party-solicitor-body" hidden>' +
+                    '<div class="opp-party-solicitor-mode">' +
+                        '<label><input type="radio" value="search" checked> Search existing</label>' +
+                        '<label><input type="radio" value="manual"> Enter manually</label>' +
+                    '</div>' +
+                    '<div class="opp-party-solicitor-search-wrap">' +
+                        '<select class="form-control opp-party-solicitor-select" data-placeholder="Search solicitor…"></select>' +
+                    '</div>' +
+                    '<div class="opp-party-rep-fields">' +
+                        '<div class="opp-party-field"><label class="small mb-1">Solicitor firm</label>' +
+                            '<input type="text" class="form-control form-control-sm opp-party-rep-firm" maxlength="255" placeholder="Firm name"></div>' +
+                        '<div class="opp-party-field"><label class="small mb-1">Solicitor name</label>' +
+                            '<input type="text" class="form-control form-control-sm opp-party-rep-name" maxlength="255"></div>' +
+                        '<div class="opp-party-field"><label class="small mb-1">Email</label>' +
+                            '<input type="email" class="form-control form-control-sm opp-party-rep-email" maxlength="255"></div>' +
+                        '<div class="opp-party-field"><label class="small mb-1">Phone</label>' +
+                            '<input type="text" class="form-control form-control-sm opp-party-rep-phone" maxlength="64"></div>' +
+                        '<div class="opp-party-field opp-party-field--full"><label class="small mb-1">Notes</label>' +
+                            '<input type="text" class="form-control form-control-sm opp-party-rep-notes" maxlength="500" placeholder="Optional notes"></div>' +
+                    '</div>' +
                 '</div>' +
             '</div>';
 
-        row.querySelector('.opp-party-remove').addEventListener('click', function () {
+        // Delegate so remove still works after legacy HTML rewrite.
+        row.addEventListener('click', function (event) {
+            var btn = event.target.closest('.opp-party-remove');
+            if (!btn || !row.contains(btn)) return;
+            event.preventDefault();
             row.querySelectorAll('.opp-party-lead-select, .opp-party-solicitor-select').forEach(function (sel) {
                 if (typeof global.destroyTS === 'function') global.destroyTS(sel);
             });
@@ -220,8 +286,13 @@
             if (partyField) {
                 var legacyName = String(data.name || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
                 partyField.innerHTML =
-                    '<label>Other party <span class="text-muted">(legacy — re-link)</span></label>' +
-                    '<input type="text" class="form-control form-control-sm opp-party-legacy-name" readonly value="' + legacyName + '">' +
+                    '<div class="opp-party-label-row">' +
+                        '<label>Other party <span class="text-muted">(legacy — re-link)</span></label>' +
+                        '<button type="button" class="btn btn-sm btn-outline-danger opp-party-remove" aria-label="Remove this party">' +
+                            '<i class="fa-solid fa-trash-can" aria-hidden="true"></i>' +
+                        '</button>' +
+                    '</div>' +
+                    '<input type="text" class="form-control form-control-sm opp-party-legacy-name" readonly value="' + legacyName + '" title="' + legacyName + '">' +
                     '<input type="hidden" class="opp-party-lead-id" value="">' +
                     '<input type="hidden" class="opp-party-name" value="' + legacyName + '">';
             }
@@ -236,6 +307,7 @@
                 }
                 row.querySelector('.opp-party-lead-id').value = String(data.opposing_lead_id);
                 row.querySelector('.opp-party-name').value = data.name || '';
+                updatePartyDisplayTitle(row, data.name || label);
             }
             leadSelect.addEventListener('change', function () {
                 var ts2 = leadSelect.tomselect;
@@ -245,7 +317,11 @@
                     var opt = ts2.options[val];
                     var label = opt && opt.text ? String(opt.text).split(' (')[0].trim() : '';
                     var company = opt && opt.company_name ? String(opt.company_name).trim() : '';
-                    row.querySelector('.opp-party-name').value = company || label;
+                    var displayName = company || label;
+                    row.querySelector('.opp-party-name').value = displayName;
+                    updatePartyDisplayTitle(row, displayName);
+                } else {
+                    updatePartyDisplayTitle(row, '');
                 }
             });
         }
@@ -261,6 +337,12 @@
         if (data.rep_phone) row.querySelector('.opp-party-rep-phone').value = data.rep_phone;
         if (data.rep_notes) row.querySelector('.opp-party-rep-notes').value = data.rep_notes;
 
+        wrap.appendChild(row);
+
+        // Expand/init solicitor after the row is in the DOM so Tom Select gets a real width.
+        var shouldExpandSolicitor = !!(data.rep_firm || data.rep_name || data.rep_email || data.rep_phone || data.rep_notes);
+        setSolicitorExpanded(row, shouldExpandSolicitor);
+
         if (data.rep_name && !data.rep_from_search) {
             var manualRadio = row.querySelector('.opp-party-solicitor-mode input[value="manual"]');
             if (manualRadio) {
@@ -269,7 +351,6 @@
             }
         }
 
-        wrap.appendChild(row);
         return row;
     }
 
