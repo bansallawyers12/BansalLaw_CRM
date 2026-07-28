@@ -474,6 +474,8 @@
                 text: text,
                 first_name: item.first_name,
                 last_name: item.last_name,
+                company_name: item.company_name || null,
+                is_company: !!item.is_company,
                 email: item.email,
                 phone: item.phone,
                 client_id: item.client_id

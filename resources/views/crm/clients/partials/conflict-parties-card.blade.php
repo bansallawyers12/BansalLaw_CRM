@@ -350,7 +350,7 @@
             return null;
         }
         return window.OtherPartyPicker.appendRow(container, {
-            rowClass: 'cp-party-row',
+            rowClass: 'cp-party-row opp-party-row',
             searchUrl: searchUrl,
             solicitorSearchUrl: solicitorSearchUrl,
             excludeId: clientId,
@@ -621,16 +621,41 @@
 
     if (savePartiesBtn) {
         savePartiesBtn.addEventListener('click', function () {
+            if (!window.OtherPartyPicker) {
+                toast('Other party picker is not loaded. Refresh the page and try again.', false);
+                return;
+            }
+            var issues = window.OtherPartyPicker.validateRows
+                ? window.OtherPartyPicker.validateRows(container)
+                : [];
+            if (issues.length) {
+                toast(issues[0], false);
+                return;
+            }
             var parties = collectParties();
+            if (!parties.length) {
+                var rowCount = container
+                    ? container.querySelectorAll('.opp-party-row, .cp-party-row').length
+                    : 0;
+                if (rowCount > 0) {
+                    toast('Each party needs a selected other party and a role.', false);
+                    return;
+                }
+                if (!window.confirm('Remove all other parties from this matter?')) {
+                    return;
+                }
+            }
+            if (!clientMatterId) {
+                toast('No active matter selected. Open a matter, then save other parties.', false);
+                return;
+            }
             var token = document.querySelector('meta[name="csrf-token"]');
             var fd = new FormData();
             fd.append('_token', token ? token.getAttribute('content') : '');
             fd.append('id', clientId);
             fd.append('section', 'conflictParties');
             fd.append('conflict_parties_json', JSON.stringify(parties));
-            if (clientMatterId) {
-                fd.append('client_matter_id', clientMatterId);
-            }
+            fd.append('client_matter_id', clientMatterId);
             savePartiesBtn.disabled = true;
             fetch('{{ url('/clients/save-section') }}', {
                 method: 'POST',

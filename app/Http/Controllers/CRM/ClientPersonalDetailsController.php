@@ -2676,7 +2676,14 @@ class ClientPersonalDetailsController extends Controller
             $scopeLabel = $clientMatterId ? 'for this matter' : 'for this client';
             $this->logClientActivity($client->id, 'updated other parties', $count . ' party record(s) saved ' . $scopeLabel, 'activity');
 
-            return response()->json(['success' => true, 'message' => 'Other parties saved successfully.', 'count' => $count]);
+            return response()->json([
+                'success' => true,
+                'message' => $count === 0
+                    ? 'Other parties cleared for this matter.'
+                    : ($count . ' other part' . ($count === 1 ? 'y' : 'ies') . ' saved for this matter.'),
+                'count' => $count,
+                'client_matter_id' => $clientMatterId,
+            ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error saving other parties: ' . $e->getMessage()], 500);
         }

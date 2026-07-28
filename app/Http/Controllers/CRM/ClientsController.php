@@ -8132,14 +8132,20 @@ class ClientsController extends Controller
             ->limit(20)
             ->get()
             ->map(function ($person) {
-                $fullName = trim($person->first_name . ' ' . $person->last_name);
-                if ($fullName === '') {
-                    if (! empty($person->company_name)) {
-                        $fullName = trim((string) $person->company_name);
-                    } elseif ($person->is_company && $person->relationLoaded('company') && $person->company) {
-                        $fullName = trim((string) ($person->company->company_name ?? ''));
-                    }
+                $companyName = '';
+                if (! empty($person->company_name)) {
+                    $companyName = trim((string) $person->company_name);
+                } elseif ($person->is_company && $person->relationLoaded('company') && $person->company) {
+                    $companyName = trim((string) ($person->company->company_name ?? ''));
                 }
+
+                $personName = trim($person->first_name . ' ' . $person->last_name);
+                if ((bool) ($person->is_company ?? false)) {
+                    $fullName = $companyName !== '' ? $companyName : $personName;
+                } else {
+                    $fullName = $personName !== '' ? $personName : $companyName;
+                }
+
                 $displayText = $fullName !== '' ? $fullName : 'Other party';
                 if ($person->email) {
                     $displayText .= " ({$person->email})";
@@ -8154,6 +8160,8 @@ class ClientsController extends Controller
                     'text' => $displayText,
                     'first_name' => $person->first_name,
                     'last_name' => $person->last_name,
+                    'company_name' => $companyName !== '' ? $companyName : null,
+                    'is_company' => (bool) ($person->is_company ?? false),
                     'email' => $person->email,
                     'phone' => $person->phone,
                     'client_id' => $person->client_id,

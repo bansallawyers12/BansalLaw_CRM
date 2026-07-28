@@ -141,7 +141,10 @@
         if (leadIdEl) leadIdEl.value = person.id ? String(person.id) : '';
         var nameEl = row.querySelector('.opp-party-name');
         if (nameEl) {
-            nameEl.value = ((person.first_name || '') + ' ' + (person.last_name || '')).trim() || (person.text || '').split(' (')[0];
+            var fromNames = ((person.first_name || '') + ' ' + (person.last_name || '')).trim();
+            var fromText = (person.text || '').split(' (')[0].trim();
+            var fromCompany = (person.company_name || '').trim();
+            nameEl.value = fromCompany || fromNames || fromText;
         }
     }
 
@@ -240,7 +243,9 @@
                 row.querySelector('.opp-party-lead-id').value = val || '';
                 if (ts2 && val) {
                     var opt = ts2.options[val];
-                    row.querySelector('.opp-party-name').value = opt && opt.text ? opt.text.split(' (')[0] : '';
+                    var label = opt && opt.text ? String(opt.text).split(' (')[0].trim() : '';
+                    var company = opt && opt.company_name ? String(opt.company_name).trim() : '';
+                    row.querySelector('.opp-party-name').value = company || label;
                 }
             });
         }
@@ -282,14 +287,12 @@
         var wrap = typeof container === 'string' ? document.querySelector(container) : container;
         if (!wrap) return [];
         var rows = [];
-        wrap.querySelectorAll('.opp-party-row, .dyn-opp-row, .cm-opp-row').forEach(function (row) {
+        wrap.querySelectorAll('.opp-party-row, .cp-party-row, .dyn-opp-row, .cm-opp-row').forEach(function (row) {
             var leadIdEl = row.querySelector('.opp-party-lead-id');
             var leadId = leadIdEl ? parseInt(leadIdEl.value, 10) : 0;
-            if (!leadId) {
-                var tsEl = row.querySelector('.opp-party-lead-select');
-                if (tsEl && tsEl.tomselect) {
-                    leadId = parseInt(tsEl.tomselect.getValue(), 10) || 0;
-                }
+            var tsEl = row.querySelector('.opp-party-lead-select');
+            if (!leadId && tsEl && tsEl.tomselect) {
+                leadId = parseInt(tsEl.tomselect.getValue(), 10) || 0;
             }
             var roleEl = row.querySelector('.opp-party-role-select') || row.querySelector('.dyn-opp-role') || row.querySelector('.cm-opp-role');
             var partyRole = roleEl ? String(roleEl.value || '').trim() : '';
@@ -297,34 +300,73 @@
             var legacyNameEl = row.querySelector('.opp-party-legacy-name');
             var name = nameEl ? String(nameEl.value || '').trim() : (legacyNameEl ? String(legacyNameEl.value || '').trim() : '');
 
-            if (leadId <= 0 && name !== '' && partyRole !== '') {
-                rows.push({
-                    opposing_lead_id: 0,
-                    name: name,
-                    party_role: partyRole,
-                    rep_firm: (row.querySelector('.opp-party-rep-firm') || {}).value || '',
-                    rep_name: (row.querySelector('.opp-party-rep-name') || {}).value || '',
-                    rep_email: (row.querySelector('.opp-party-rep-email') || {}).value || '',
-                    rep_phone: (row.querySelector('.opp-party-rep-phone') || {}).value || '',
-                    rep_notes: (row.querySelector('.opp-party-rep-notes') || {}).value || ''
-                });
-                return;
+            // Prefer Tom Select label when hidden name was not populated (common for companies).
+            if (name === '' && tsEl && tsEl.tomselect && leadId > 0) {
+                var opt = tsEl.tomselect.options[String(leadId)];
+                if (opt && opt.text) {
+                    name = String(opt.text).split(' (')[0].trim();
+                }
             }
 
-            if (leadId <= 0 || partyRole === '') return;
-
-            rows.push({
-                opposing_lead_id: leadId,
-                name: name,
-                party_role: partyRole,
+            var rep = {
                 rep_firm: (row.querySelector('.opp-party-rep-firm') || {}).value || '',
                 rep_name: (row.querySelector('.opp-party-rep-name') || {}).value || '',
                 rep_email: (row.querySelector('.opp-party-rep-email') || {}).value || '',
                 rep_phone: (row.querySelector('.opp-party-rep-phone') || {}).value || '',
                 rep_notes: (row.querySelector('.opp-party-rep-notes') || {}).value || ''
-            });
+            };
+
+            if (leadId <= 0 && name !== '' && partyRole !== '') {
+                rows.push(Object.assign({
+                    opposing_lead_id: 0,
+                    name: name,
+                    party_role: partyRole
+                }, rep));
+                return;
+            }
+
+            if (leadId <= 0 || partyRole === '') return;
+
+            rows.push(Object.assign({
+                opposing_lead_id: leadId,
+                name: name,
+                party_role: partyRole
+            }, rep));
         });
         return rows;
+    }
+
+    /**
+     * Returns validation issues for incomplete editor rows (party selected without role, etc.).
+     */
+    function validateOtherPartyRows(container) {
+        var wrap = typeof container === 'string' ? document.querySelector(container) : container;
+        if (!wrap) return [];
+        var issues = [];
+        wrap.querySelectorAll('.opp-party-row, .cp-party-row, .dyn-opp-row, .cm-opp-row').forEach(function (row, index) {
+            var leadIdEl = row.querySelector('.opp-party-lead-id');
+            var leadId = leadIdEl ? parseInt(leadIdEl.value, 10) : 0;
+            var tsEl = row.querySelector('.opp-party-lead-select');
+            if (!leadId && tsEl && tsEl.tomselect) {
+                leadId = parseInt(tsEl.tomselect.getValue(), 10) || 0;
+            }
+            var roleEl = row.querySelector('.opp-party-role-select') || row.querySelector('.dyn-opp-role') || row.querySelector('.cm-opp-role');
+            var partyRole = roleEl ? String(roleEl.value || '').trim() : '';
+            var nameEl = row.querySelector('.opp-party-name');
+            var legacyNameEl = row.querySelector('.opp-party-legacy-name');
+            var name = nameEl ? String(nameEl.value || '').trim() : (legacyNameEl ? String(legacyNameEl.value || '').trim() : '');
+            var hasAny = leadId > 0 || name !== '' || partyRole !== '';
+            if (!hasAny) {
+                return; // blank unused row
+            }
+            if (leadId <= 0 && name === '') {
+                issues.push('Row ' + (index + 1) + ': select an other party.');
+            }
+            if (partyRole === '') {
+                issues.push('Row ' + (index + 1) + ': select their role (e.g. Defendant).');
+            }
+        });
+        return issues;
     }
 
     function isIndianOnlyDynField(f) {
@@ -347,6 +389,7 @@
         appendRow: appendOtherPartyRow,
         rebuildRoleSelects: rebuildRoleSelectsInContainer,
         collectRows: collectOtherPartyRows,
+        validateRows: validateOtherPartyRows,
         initTomSelect: function (el, url, excludeId) {
             return initSearchTomSelect(el, url, excludeId);
         },

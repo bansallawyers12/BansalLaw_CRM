@@ -17,7 +17,9 @@
 
     $matterRefInUrl = trim((string) ($matterRefInUrl ?? ''));
     $currentMatterRef = (string) (($selectedClientMatter ?? null)?->client_unique_matter_no ?? '');
-    if ($currentMatterRef === '' && $matterRefInUrl === '' && $clientMattersList->isNotEmpty()) {
+    if ($currentMatterRef === '' && $matterRefInUrl !== '') {
+        $currentMatterRef = $matterRefInUrl;
+    } elseif ($currentMatterRef === '' && $clientMattersList->isNotEmpty()) {
         $currentMatterRef = (string) ($clientMattersList->first()->client_unique_matter_no ?? '');
     }
 
@@ -27,15 +29,31 @@
     }
 
     $clientDetailEncodeId = $encodeId ?? base64_encode(convert_uuencode($fetchedData->id));
+
+    $canAddClientMatter = is_array($matterFormForLead ?? null) && empty($isClosedMatterView);
+    $matterCount = $clientMattersList->count();
+    $showClientMattersListCard = $matterCount > 1
+        || ($canAddClientMatter && $matterCount >= 1);
 @endphp
 
-@if($clientMattersList->count() > 1)
+@if($showClientMattersListCard)
 <div class="card" id="clientMattersListCard">
-    <h3><i class="fa-solid fa-folder-open"></i> Client Matters</h3>
+    <div class="client-matter-list-card-header">
+        <h3><i class="fa-solid fa-folder-open"></i> Client Matters</h3>
+        @if($canAddClientMatter)
+            <button type="button"
+                    class="client-matter-list-add-btn"
+                    title="Add a new matter for this client"
+                    aria-label="Add a new matter for this client"
+                    onclick="if (typeof window.openAddMatterModal === 'function') { window.openAddMatterModal(); }">+</button>
+        @endif
+    </div>
 
+    @if($matterCount > 1)
     <p class="text-muted mb-2" style="font-size:13px;">
         Click a matter to switch the active matter for this client.
     </p>
+    @endif
 
     <div class="client-matter-list-grid client-matter-list-grid--header">
         <span class="client-matter-list-col client-matter-list-col--matter">Matter</span>
@@ -47,6 +65,9 @@
         @php
             $matterNo = trim((string) ($cmRow->client_unique_matter_no ?? ''));
             $natureLabel = \App\Models\Matter::displayTitleFromJoinedRow($cmRow->matter?->title ?? null);
+            if ($natureLabel === '' || $natureLabel === '—') {
+                $natureLabel = $matterNo !== '' ? $matterNo : ('Matter #' . (int) ($cmRow->id ?? 0));
+            }
             $stream = (string) ($cmRow->matter?->stream ?? 'general');
             if ($stream === '') {
                 $stream = 'general';
@@ -104,6 +125,44 @@
 </div>
 
 <style>
+    #clientMattersListCard .client-matter-list-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    #clientMattersListCard .client-matter-list-card-header h3 {
+        margin: 0;
+        flex: 1;
+    }
+    #clientMattersListCard .client-matter-list-add-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: none;
+        font-weight: 700;
+        font-size: 1.05rem;
+        line-height: 1;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        padding: 0;
+        background: #dbeafe;
+        color: #1d4ed8;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    }
+    #clientMattersListCard .client-matter-list-add-btn:hover {
+        background: #bfdbfe;
+        color: #1e3a8a;
+        transform: scale(1.05);
+    }
+    #clientMattersListCard .client-matter-list-add-btn:focus-visible {
+        outline: 2px solid #2563eb;
+        outline-offset: 2px;
+    }
     #clientMattersListCard .client-matter-list-grid {
         display: grid;
         grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr) minmax(0, 0.9fr);
@@ -162,6 +221,9 @@
     }
 
     card.addEventListener('click', function (event) {
+        if (event.target.closest('.client-matter-list-add-btn')) {
+            return;
+        }
         var row = event.target.closest('.client-matter-list-row[data-matter-url]');
         if (!row) {
             return;

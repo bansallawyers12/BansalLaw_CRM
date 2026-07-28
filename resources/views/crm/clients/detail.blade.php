@@ -116,7 +116,6 @@ use App\Http\Controllers\Controller;
                     ->first();
                 $cdnMatterRefLabel = $cdnMatterRow?->client_unique_matter_no;
             }
-            $cdnMatterChipTitle = \App\Models\Matter::displayTitleFromJoinedRow($cdnMatterRow?->matter->title ?? null);
 
             $cdnWorkflowStageLabel = null;
             if ($cdnMatterRefLabel) {

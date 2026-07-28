@@ -940,6 +940,8 @@
                             'selectedClientMatter' => $selectedClientMatter ?? null,
                             'matterRefInUrl' => $id1 ?? null,
                             'activeTab' => $activeTab ?? 'personaldetails',
+                            'matterFormForLead' => $matterFormForLead ?? null,
+                            'isClosedMatterView' => $isClosedMatterView ?? false,
                         ])
                     <?php
                     } ?>
