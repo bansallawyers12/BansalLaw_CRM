@@ -8642,37 +8642,12 @@ class ClientsController extends Controller
             $email->sync_source_label = \App\Models\EmailLog::syncSourceLabel($email->sync_source ?: null);
             $email->client_name = '';
             $email->client_ref = '';
-            $email->client_type = '';
-            $email->client_stage = '';
-            $email->client_type_label = '';
-            $email->matter_number = '';
-            $email->matter_status = '';
+            $email->client_url = '';
 
             if ($email->relationLoaded('client') && $email->client) {
                 $email->client_name = trim(($email->client->first_name ?? '') . ' ' . ($email->client->last_name ?? ''));
                 $email->client_ref = (string) ($email->client->client_id ?? '');
-                $typeRaw = strtolower((string) ($email->client->type ?? ''));
-                if ($typeRaw === 'lead') {
-                    $email->client_type = 'lead';
-                    $stageRaw = trim((string) ($email->client->lead_status ?? ''));
-                    $email->client_stage = $stageRaw;
-                    $email->client_type_label = $stageRaw && strtolower($stageRaw) !== 'lead'
-                        ? ('Lead (' . ucfirst($stageRaw) . ')')
-                        : 'Lead';
-                } elseif ($typeRaw === 'client') {
-                    $email->client_type = 'client';
-                    $email->client_stage = 'Client';
-                    $email->client_type_label = 'Client';
-                } else {
-                    $email->client_type = $typeRaw ?: 'client';
-                    $email->client_stage = '';
-                    $email->client_type_label = ucfirst($typeRaw ?: 'Client');
-                }
-            }
-
-            if ($email->relationLoaded('matter') && $email->matter) {
-                $email->matter_number = (string) ($email->matter->client_unique_matter_no ?? '');
-                $email->matter_status = (string) ($email->matter->matter_status ?? '');
+                $email->client_url = url('/clients/detail/' . base64_encode(convert_uuencode((string) $email->client->id)));
             }
 
             $appTimezone = config('app.timezone', 'Australia/Melbourne');

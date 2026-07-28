@@ -351,22 +351,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const mergedCount = calendar.merged_count || 0;
         const pendingCount = calendar.pending_count || 0;
         const totalCount = calendar.count || (mergedCount + pendingCount) || 1;
-        let title = 'Calendar event detected';
+        
         if (mergedCount > 0) {
-            title = mergedCount + ' event(s) added to calendar';
-        } else if (pendingCount > 0) {
-            title = 'Schedule detected — will merge when assigned to client';
-        } else if (hasCalendarAttachment(email)) {
-            title = 'Calendar invite attachment (.ics)';
+            // Calendar event icon
+            return '<span class="email-list-calendar email-list-calendar--event" title="' + escapeHtml(mergedCount + ' calendar event(s) added') + '" aria-label="Calendar event">'
+                + '<i class="fa-solid fa-calendar-check" aria-hidden="true"></i>'
+                + (totalCount > 1 ? '<span class="email-calendar-count">' + totalCount + '</span>' : '')
+                + '</span>';
         }
 
-        const badge = mergedCount > 0
-            ? '<span class="email-calendar-badge email-calendar-badge--merged">Calendar</span>'
-            : '<span class="email-calendar-badge email-calendar-badge--detected">Schedule</span>';
-
-        return '<span class="email-list-calendar" title="' + escapeHtml(title) + '" aria-label="' + escapeHtml(title) + '">'
-            + '<i class="fa-solid fa-calendar-days"></i>'
-            + badge
+        // Calendar schedule icon
+        const scheduleTitle = (pendingCount > 0)
+            ? 'Calendar schedule detected'
+            : 'Calendar invite (.ics)';
+        return '<span class="email-list-calendar email-list-calendar--schedule" title="' + escapeHtml(scheduleTitle) + '" aria-label="Calendar schedule">'
+            + '<i class="fa-solid fa-calendar-days" aria-hidden="true"></i>'
             + (totalCount > 1 ? '<span class="email-calendar-count">' + totalCount + '</span>' : '')
             + '</span>';
     }
@@ -393,22 +392,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (events.length > 0) {
             html += '<ul class="email-calendar-banner__list">';
-            events.forEach(function(event) {
-                const statusLabel = event.status === 'merged' ? 'Added to calendar' : 'Pending merge';
-                const typeLabel = formatCalendarEventType(event.event_type || 'meeting');
-                html += '<li>'
-                    + '<span class="email-calendar-banner__type">' + escapeHtml(typeLabel) + '</span>'
-                    + '<span class="email-calendar-banner__title">' + escapeHtml(event.event_title || 'Scheduled event') + '</span>'
-                    + (event.starts_at ? '<span class="email-calendar-banner__when">' + escapeHtml(event.starts_at) + '</span>' : '')
-                    + (event.location ? '<span class="email-calendar-banner__where">' + escapeHtml(event.location) + '</span>' : '')
-                    + '<span class="email-calendar-banner__status email-calendar-banner__status--' + escapeHtml(event.status || 'merged') + '">' + escapeHtml(statusLabel) + '</span>'
-                    + '</li>';
+            events.forEach((ev) => {
+                html += '<li><i class="fa-solid fa-clock"></i> ' + escapeHtml(ev.title || 'Event') + ' (' + escapeHtml(ev.status || '') + ')</li>';
             });
             html += '</ul>';
-        } else if (hasCalendarAttachment(email)) {
-            html += '<p class="email-calendar-banner__message">This email includes a calendar invite attachment.</p>';
-        } else {
-            html += '<p class="email-calendar-banner__message">A schedule date was detected in this email.</p>';
         }
 
         bannerEl.hidden = false;
@@ -452,32 +439,23 @@ document.addEventListener('DOMContentLoaded', function() {
         if (clientLabel || email.sync_assignment_status === 'auto_assigned' || email.sync_assignment_status === 'manual_assigned') {
             const labelStr = clientLabel || 'Assigned';
             const iconClass = 'fa-user-check';
-            const isLead = (email.client_type === 'lead');
-            const typeLabel = email.client_type_label || (isLead ? 'Lead' : 'Client');
-            
             const badgeClass = unassignedOnly
-                ? (isLead ? 'email-client-badge email-client-badge--lead email-client-badge--list' : 'email-client-badge email-client-badge--list')
-                : (isLead ? 'email-client-badge email-client-badge--lead' : 'email-client-badge');
-
+                ? 'email-client-badge email-client-badge--list email-client-badge--clickable'
+                : 'email-client-badge email-client-badge--clickable';
             const assignLabel = email.sync_assignment_status === 'manual_assigned' ? 'Manual' : 'Auto';
-            
-            let matterBadge = '';
-            if (email.matter_number) {
-                matterBadge = '<span class="email-matter-tag" title="Matter ' + escapeHtml(email.matter_number) + '">'
-                    + '<i class="fa-solid fa-folder-open" aria-hidden="true"></i> ' + escapeHtml(email.matter_number)
-                    + '</span>';
+            const clientUrl = email.client_url || (email.client_id ? (`${baseUrl}/clients/detail/${encodeURIComponent(email.client_id)}`) : '');
+
+            if (clientUrl) {
+                return '<a href="' + escapeHtml(clientUrl) + '" class="' + badgeClass + '" title="' + escapeHtml(assignLabel + ' assigned: click to view detail') + '" onclick="event.stopPropagation();" target="_blank">'
+                    + '<i class="fa-solid ' + iconClass + '" aria-hidden="true"></i> '
+                    + escapeHtml(labelStr)
+                    + '</a>';
             }
 
-            const typePill = '<span class="email-stage-pill email-stage-pill--' + (isLead ? 'lead' : 'client') + '" title="' + escapeHtml(typeLabel) + '">'
-                + escapeHtml(typeLabel)
-                + '</span>';
-
-            return typePill
-                + '<span class="' + badgeClass + '" title="' + escapeHtml(assignLabel + ' assigned to ' + typeLabel + ': ' + labelStr) + '">'
+            return '<span class="email-client-badge email-client-badge--list" title="' + escapeHtml(assignLabel + ' assigned') + '">'
                 + '<i class="fa-solid ' + iconClass + '" aria-hidden="true"></i> '
                 + escapeHtml(labelStr)
-                + '</span>'
-                + matterBadge;
+                + '</span>';
         }
 
         return '<span class="email-unassigned-badge" title="Unassigned mail">'

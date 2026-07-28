@@ -4122,11 +4122,35 @@ body.assign-email-modal-open .ts-dropdown .option.active {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    text-decoration: none !important;
+    transition: all 0.15s ease;
 }
 
 .outlook-container--unassigned .email-client-badge--list i {
     color: #2e7d32;
     font-size: 11px;
+}
+
+.email-client-badge--clickable {
+    cursor: pointer;
+    text-decoration: none !important;
+}
+
+.email-client-badge--clickable:hover {
+    background: #dcfce7 !important;
+    border-color: #86efac !important;
+    color: #14532d !important;
+    text-decoration: none !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(20, 83, 45, 0.1);
+}
+
+.email-list-calendar--event i {
+    color: #059669 !important;
+}
+
+.email-list-calendar--schedule i {
+    color: #0284c7 !important;
 }
 
 .outlook-container--unassigned .email-client-badge--lead {
