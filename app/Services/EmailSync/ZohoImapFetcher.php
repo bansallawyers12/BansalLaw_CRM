@@ -50,21 +50,14 @@ class ZohoImapFetcher
                     continue;
                 }
 
-                // Pass 1: flags/headers only so we know unread state before body fetch can set \Seen.
-                $seenByUid = $this->collectSeenFlagsByUid(
-                    $folder,
-                    $afterUid,
-                    $limit,
-                    $since
-                );
+                // Discover candidate UIDs without bodies, then read authoritative FLAGS before any body fetch.
+                $candidateUids = $this->collectCandidateUids($folder, $afterUid, $limit, $since);
+                $seenByUid = $this->usePeekFetch()
+                    ? $this->readSeenFlagsFromClient($client, $candidateUids)
+                    : [];
 
-                if ($since !== null) {
-                    $query = $this->applyPeekFetch($folder->query()->since($since)->limit($limit)->setFetchOrderDesc());
-                } elseif ($afterUid > 0) {
-                    $query = $this->applyPeekFetch($folder->query()->where('UID', ($afterUid + 1) . ':*')->limit($limit));
-                } else {
-                    $query = $this->applyPeekFetch($folder->messages()->all()->limit($limit)->setFetchOrderDesc());
-                }
+                $query = $this->buildFolderQuery($folder, $afterUid, $limit, $since);
+                $query = $this->applyPeekFetch($query);
 
                 /** @var \Webklex\PHPIMAP\Support\MessageCollection $messages */
                 $messages = $query->get();
@@ -90,9 +83,9 @@ class ZohoImapFetcher
                         }
                     }
 
-                    // Prefer pre-body flag state; fall back to post-fetch only if pass 1 missed the UID.
-                    $isSeen = array_key_exists($uid, $seenByUid)
-                        ? $seenByUid[$uid]
+                    // Never trust post-body hasFlag('seen'). Missing FLAGS => treat as unread (safer).
+                    $isSeen = $this->usePeekFetch()
+                        ? (bool) ($seenByUid[$uid] ?? false)
                         : $this->messageIsSeen($message);
 
                     $rawEml = $this->buildRawEml($message);
@@ -211,11 +204,30 @@ class ZohoImapFetcher
     }
 
     /**
-     * Read \Seen flags without fetching message bodies (avoids false "already read" after body fetch).
+     * Build the folder query used for both UID discovery and body fetch.
      *
-     * @return array<int, bool> uid => was seen
+     * @param  mixed  $folder
+     * @return Query|\Webklex\PHPIMAP\Query\WhereQuery
      */
-    protected function collectSeenFlagsByUid(
+    protected function buildFolderQuery(mixed $folder, int $afterUid, int $limit, ?\DateTimeInterface $since = null)
+    {
+        if ($since !== null) {
+            return $folder->query()->since($since)->limit($limit)->setFetchOrderDesc();
+        }
+
+        if ($afterUid > 0) {
+            return $folder->query()->where('UID', ($afterUid + 1) . ':*')->limit($limit);
+        }
+
+        return $folder->messages()->all()->limit($limit)->setFetchOrderDesc();
+    }
+
+    /**
+     * Discover candidate UIDs without fetching bodies.
+     *
+     * @return list<int>
+     */
+    protected function collectCandidateUids(
         mixed $folder,
         int $afterUid,
         int $limit,
@@ -226,21 +238,14 @@ class ZohoImapFetcher
         }
 
         try {
-            if ($since !== null) {
-                $query = $this->applyPeekFetch($folder->query()->since($since)->limit($limit)->setFetchOrderDesc());
-            } elseif ($afterUid > 0) {
-                $query = $this->applyPeekFetch($folder->query()->where('UID', ($afterUid + 1) . ':*')->limit($limit));
-            } else {
-                $query = $this->applyPeekFetch($folder->messages()->all()->limit($limit)->setFetchOrderDesc());
-            }
-
+            $query = $this->applyPeekFetch($this->buildFolderQuery($folder, $afterUid, $limit, $since));
             if (method_exists($query, 'setFetchBody')) {
                 $query->setFetchBody(false);
             }
 
             /** @var \Webklex\PHPIMAP\Support\MessageCollection $messages */
             $messages = $query->get();
-            $seenByUid = [];
+            $uids = [];
 
             /** @var Message $message */
             foreach ($messages as $message) {
@@ -251,17 +256,65 @@ class ZohoImapFetcher
                 if ($since === null && $uid <= $afterUid) {
                     continue;
                 }
-                $seenByUid[$uid] = $this->messageIsSeen($message);
+
+                if ($since !== null) {
+                    try {
+                        $msgDate = $message->getDate()?->toDate();
+                        if ($msgDate && $msgDate->lt($since)) {
+                            continue;
+                        }
+                    } catch (Throwable) {
+                    }
+                }
+
+                $uids[] = $uid;
             }
 
-            return $seenByUid;
+            return array_values(array_unique($uids));
         } catch (Throwable $e) {
-            Log::debug('IMAP pre-fetch seen flags skipped', [
+            Log::warning('IMAP candidate UID discovery failed; treating messages as unread for restore', [
                 'error' => $e->getMessage(),
             ]);
 
             return [];
         }
+    }
+
+    /**
+     * Authoritative FLAGS-only Seen map (no body fetch).
+     *
+     * @param  list<int>  $uids
+     * @return array<int, bool> uid => was seen before body fetch
+     */
+    protected function readSeenFlagsFromClient(Client $client, array $uids): array
+    {
+        $uids = array_values(array_unique(array_filter(array_map('intval', $uids), static fn (int $uid): bool => $uid > 0)));
+        if ($uids === []) {
+            return [];
+        }
+
+        $seen = [];
+
+        try {
+            foreach (array_chunk($uids, 100) as $chunk) {
+                $flagsByUid = $client->getConnection()->flags($chunk, IMAP::ST_UID)->validatedData();
+                foreach ($chunk as $uid) {
+                    // Missing flag payload => treat as unread (safer than leaving wrongly Read).
+                    $seen[$uid] = $this->flagsIndicateSeen($flagsByUid[$uid] ?? []);
+                }
+            }
+        } catch (Throwable $e) {
+            Log::warning('IMAP FLAGS read failed; treating messages as unread for restore', [
+                'uids' => $uids,
+                'error' => $e->getMessage(),
+            ]);
+
+            foreach ($uids as $uid) {
+                $seen[$uid] = false;
+            }
+        }
+
+        return $seen;
     }
 
     protected function messageIsSeen(Message $message): bool
@@ -275,7 +328,7 @@ class ZohoImapFetcher
 
     /**
      * If the message was unread before sync, clear server \Seen after body fetch.
-     * Already-read mail is left untouched so Outlook/Gmail read state is preserved.
+     * Already-read mail (FLAGS said Seen) is left untouched.
      */
     protected function restoreUnreadStateIfNeeded(Message $message, bool $wasSeenBeforeFetch): void
     {
@@ -283,23 +336,35 @@ class ZohoImapFetcher
             return;
         }
 
-        try {
-            // Prefer explicit unset: library peek() often no-ops once local flags already show Seen.
-            if (method_exists($message, 'unsetFlag')) {
-                $message->unsetFlag('Seen');
+        $lastError = null;
+
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            try {
+                if (method_exists($message, 'unsetFlag')) {
+                    $message->unsetFlag('Seen');
+
+                    return;
+                }
+
+                if (method_exists($message, 'peek')) {
+                    $message->peek();
+
+                    return;
+                }
 
                 return;
+            } catch (Throwable $e) {
+                $lastError = $e;
+                if ($attempt < 2) {
+                    usleep(100000);
+                }
             }
-
-            if (method_exists($message, 'peek')) {
-                $message->peek();
-            }
-        } catch (Throwable $e) {
-            Log::warning('IMAP unread restore failed', [
-                'uid' => $message->getUid(),
-                'error' => $e->getMessage(),
-            ]);
         }
+
+        Log::warning('IMAP unread restore failed', [
+            'uid' => $message->getUid(),
+            'error' => $lastError?->getMessage(),
+        ]);
     }
 
     protected function buildRawEml(Message $message): string
