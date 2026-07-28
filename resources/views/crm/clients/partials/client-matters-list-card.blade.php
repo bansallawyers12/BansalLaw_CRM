@@ -75,10 +75,7 @@
     @foreach($clientMattersList as $cmRow)
         @php
             $matterNo = trim((string) ($cmRow->client_unique_matter_no ?? ''));
-            $natureLabel = \App\Models\Matter::displayTitleFromJoinedRow($cmRow->matter?->title ?? null);
-            if ($natureLabel === '') {
-                $natureLabel = $matterNo !== '' ? $matterNo : ('Matter #' . (int) ($cmRow->id ?? 0));
-            }
+            $matterRefLabel = $matterNo !== '' ? $matterNo : ('Matter #' . (int) ($cmRow->id ?? 0));
             $stream = (string) ($cmRow->matter?->stream ?? 'general');
             if ($stream === '') {
                 $stream = 'general';
@@ -122,7 +119,7 @@
                  @endif>
                 <span class="client-matter-list-col client-matter-list-col--matter">
                     @if($loop->first)
-                        {{ $natureLabel }}
+                        {{ $matterRefLabel }}
                         @if($isCurrent)
                             <span class="badge badge-light ml-1" style="font-size:11px;font-weight:600;color:#1a73e8;">Current</span>
                             @if($canCloseClientMatter)
