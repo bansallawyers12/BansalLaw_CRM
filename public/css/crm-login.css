@@ -1,0 +1,396 @@
+/* Bansal Lawyers CRM - Modern Premium Login Styles */
+
+:root {
+    --login-primary: #0284c7;
+    --login-primary-hover: #0369a1;
+    --login-navy: #0f172a;
+    --login-navy-light: #1e293b;
+    --login-blue-accent: #38bdf8;
+    --login-text-dark: #0f172a;
+    --login-text-muted: #64748b;
+    --login-border: #e2e8f0;
+    --login-bg: #f8fafc;
+    --login-card-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(226, 232, 240, 0.8);
+    --login-radius: 18px;
+}
+
+body.crm-login-page {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    background: radial-gradient(circle at 15% 15%, #f1f5f9 0%, #e2e8f0 50%, #cbd5e1 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Ambient backdrop circles */
+body.crm-login-page::before {
+    content: '';
+    position: absolute;
+    top: -10%;
+    left: -10%;
+    width: 45vw;
+    height: 45vw;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(2, 132, 199, 0.12) 0%, rgba(255, 255, 255, 0) 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+body.crm-login-page::after {
+    content: '';
+    position: absolute;
+    bottom: -10%;
+    right: -10%;
+    width: 50vw;
+    height: 50vw;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(15, 23, 42, 0.08) 0%, rgba(255, 255, 255, 0) 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.crm-login-wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 1020px;
+    margin: 24px auto;
+    padding: 0 16px;
+    box-sizing: border-box;
+}
+
+.crm-login-card {
+    display: flex;
+    background: #ffffff;
+    border-radius: var(--login-radius);
+    box-shadow: var(--login-card-shadow);
+    overflow: hidden;
+    min-height: 560px;
+}
+
+/* Left Branding Side Panel */
+.crm-login-branding {
+    flex: 1 1 45%;
+    background: linear-gradient(145deg, #0f172a 0%, #1e3a8a 55%, #0284c7 100%);
+    padding: 48px 40px;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+.crm-login-branding::before {
+    content: '';
+    position: absolute;
+    top: -30%;
+    right: -30%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.crm-login-branding::after {
+    content: '';
+    position: absolute;
+    bottom: -20%;
+    left: -20%;
+    width: 250px;
+    height: 250px;
+    background: rgba(2, 132, 199, 0.15);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.brand-header-logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.brand-header-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #38bdf8;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.brand-header-text {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+    line-height: 1.2;
+}
+
+.brand-header-sub {
+    font-size: 13px;
+    color: #94a3b8;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.brand-body-content {
+    margin: 40px 0;
+}
+
+.brand-headline {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.25;
+    margin-bottom: 12px;
+    color: #ffffff;
+    letter-spacing: -0.01em;
+}
+
+.brand-subline {
+    font-size: 14px;
+    color: #cbd5e1;
+    line-height: 1.6;
+    margin-bottom: 28px;
+}
+
+.brand-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.brand-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13.5px;
+    color: #f1f5f9;
+    font-weight: 500;
+}
+
+.brand-feature-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(56, 189, 248, 0.18);
+    color: #38bdf8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.brand-footer-text {
+    font-size: 12px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.brand-footer-text i {
+    color: #38bdf8;
+    font-size: 13px;
+}
+
+/* Right Form Side Panel */
+.crm-login-form-panel {
+    flex: 1 1 55%;
+    padding: 48px 44px;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.form-header-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--login-text-dark);
+    margin: 0 0 6px 0;
+    letter-spacing: -0.01em;
+}
+
+.form-header-sub {
+    font-size: 14px;
+    color: var(--login-text-muted);
+    margin-bottom: 28px;
+}
+
+.login-form-group {
+    margin-bottom: 20px;
+}
+
+.login-form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 8px;
+}
+
+.login-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.login-input-icon {
+    position: absolute;
+    left: 14px;
+    color: #94a3b8;
+    font-size: 15px;
+    pointer-events: none;
+    transition: color 0.2s ease;
+}
+
+.login-input-control {
+    width: 100%;
+    height: 48px;
+    padding: 10px 14px 10px 42px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #0f172a;
+    background: #f8fafc;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.login-input-control:focus {
+    background: #ffffff;
+    border-color: var(--login-primary);
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12);
+}
+
+.login-input-wrap:focus-within .login-input-icon {
+    color: var(--login-primary);
+}
+
+.btn-toggle-password {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 6px;
+    font-size: 14px;
+    transition: color 0.15s ease;
+}
+
+.btn-toggle-password:hover {
+    color: #334155;
+}
+
+.login-row-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    margin-top: 4px;
+}
+
+.remember-check-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 13.5px;
+    color: #475569;
+    font-weight: 500;
+}
+
+.remember-check-input {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--login-primary);
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.recaptcha-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.btn-login-submit {
+    width: 100%;
+    height: 48px;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+    transition: all 0.2s ease;
+}
+
+.btn-login-submit:hover {
+    background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+    box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
+    transform: translateY(-1px);
+}
+
+.btn-login-submit:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2);
+}
+
+.alert-flash-wrap {
+    margin-bottom: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+    .crm-login-card {
+        flex-direction: column;
+        min-height: auto;
+    }
+    
+    .crm-login-branding {
+        padding: 32px 28px;
+    }
+
+    .brand-body-content {
+        margin: 24px 0;
+    }
+
+    .brand-headline {
+        font-size: 22px;
+    }
+
+    .crm-login-form-panel {
+        padding: 32px 28px;
+    }
+}
