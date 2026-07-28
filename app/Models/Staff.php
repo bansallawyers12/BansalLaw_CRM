@@ -410,14 +410,15 @@ class Staff extends Authenticatable
 
     /**
      * Admin / Super Admin may sync and view all synced inbox mail across mailboxes.
+     * Regular staff (e.g. Solicitors like Michael, Assistants, Accountants) are strictly restricted
+     * to mail addressed To/Cc/From them or assigned mailboxes.
      */
     public function canViewAllSyncedInboxMail(): bool
     {
-        if ($this->hasEffectiveSuperAdminPrivileges()) {
-            return true;
-        }
+        $roleId = (int) ($this->role ?? 0);
 
-        return in_array((int) ($this->role ?? 0), self::inboxSyncGrantRoleIds(), true);
+        // Only true Super Admin (role 1) and Admin (role 17) may view all synced inbox mail across all mailboxes.
+        return in_array($roleId, [1, 17], true);
     }
 
     /**
