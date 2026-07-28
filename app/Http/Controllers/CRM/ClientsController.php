@@ -2304,10 +2304,16 @@ class ClientsController extends Controller
                     }
                 }
 
-                $conflictParties = \App\Models\ClientConflictParty::where('client_id', $id)
-                    ->with(['phones', 'emails', 'opposingLead'])
-                    ->orderBy('sort_order')
-                    ->get();
+                // Prefer URL-selected matter; fall back to latest active only when no matter ref is in the URL.
+                // If a matter ref was provided but not found, leave null (do not show another matter's parties).
+                $activeClientMatterId = null;
+                if ($selectedClientMatter) {
+                    $activeClientMatterId = (int) $selectedClientMatter->id;
+                } elseif ($id1 === null || $id1 === '') {
+                    $activeClientMatterId = \App\Support\MatterOtherPartiesHelper::resolveClientMatterId((int) $id, null, null);
+                }
+
+                $conflictParties = \App\Support\MatterOtherPartiesHelper::loadDisplayParties((int) $id, $activeClientMatterId);
 
                 $latestConflictCheck = \App\Models\ClientConflictCheck::where('client_id', $id)
                     ->orderByDesc('checked_at')
@@ -2356,7 +2362,8 @@ class ClientsController extends Controller
                     'assignableStaff', 'leadStageLabels', 'showGoogleReviewReminderModal',
                     'matterFormForLead', '__crmEditLeadType',
                     'selectedClientMatter', 'isClosedMatterView',
-                    'conflictParties', 'latestConflictCheck', 'conflictCheckHistory', 'otherMatterParties'
+                    'conflictParties', 'latestConflictCheck', 'conflictCheckHistory', 'otherMatterParties',
+                    'activeClientMatterId'
                 ));
             } else {
                 return redirect()->route('clients.index')->with('error', 'Clients Not Exist');
@@ -5888,6 +5895,11 @@ class ClientsController extends Controller
             DB::transaction(function () use ($row, $opposingParties, $admin) {
                 $row->save();
                 \App\Support\OpposingPartyHelper::syncForMatter((int) $row->id, $opposingParties);
+                \App\Support\MatterOtherPartiesHelper::syncConflictPartiesAfterMatterSave(
+                    (int) $admin->id,
+                    (int) $row->id,
+                    $opposingParties
+                );
                 \App\Services\LeadMatterAssignedConversion::applyForAdminId((int) $admin->id);
             });
         } catch (\Throwable $e) {

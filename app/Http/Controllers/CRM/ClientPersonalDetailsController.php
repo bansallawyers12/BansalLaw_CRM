@@ -928,9 +928,14 @@ class ClientPersonalDetailsController extends Controller
 
         $saved = false;
         try {
-            DB::transaction(function () use ($obj, $decodedOpposing) {
+            DB::transaction(function () use ($obj, $decodedOpposing, $postedClientId) {
                 $obj->save();
                 \App\Support\OpposingPartyHelper::syncForMatter((int) $obj->id, $decodedOpposing);
+                \App\Support\MatterOtherPartiesHelper::syncConflictPartiesAfterMatterSave(
+                    (int) $postedClientId,
+                    (int) $obj->id,
+                    $decodedOpposing
+                );
             });
             $saved = true;
         } catch (\Throwable $e) {
@@ -2623,7 +2628,7 @@ class ClientPersonalDetailsController extends Controller
     }
 
     /**
-     * Save other parties for conflict check — client/lead level, not matter level.
+     * Save other parties for the active matter (or client-level when no matter exists).
      */
     private function saveConflictPartiesSection(Request $request, Admin $client)
     {
@@ -2635,73 +2640,41 @@ class ClientPersonalDetailsController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
 
+        $requestedMatterId = $request->filled('client_matter_id')
+            ? (int) $request->input('client_matter_id')
+            : null;
+        $matterRef = trim((string) ($request->input('client_unique_matter_no', '')));
+        $explicitMatterRequested = ($requestedMatterId !== null && $requestedMatterId > 0) || $matterRef !== '';
+        $clientMatterId = \App\Support\MatterOtherPartiesHelper::resolveClientMatterId(
+            (int) $client->id,
+            $requestedMatterId,
+            $matterRef !== '' ? $matterRef : null
+        );
+
+        if ($explicitMatterRequested && ! $clientMatterId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or missing matter. Refresh the page and try again.',
+            ], 422);
+        }
+
+        if (! $clientMatterId && Schema::hasTable('client_matters')) {
+            $hasActiveMatter = \App\Models\ClientMatter::query()
+                ->where('client_id', (int) $client->id)
+                ->where('matter_status', 1)
+                ->exists();
+            if ($hasActiveMatter) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No active matter selected. Open a matter, then save other parties.',
+                ], 422);
+            }
+        }
+
         try {
-            DB::transaction(function () use ($client, $parties) {
-                ClientConflictParty::where('client_id', $client->id)->delete();
-
-                foreach ($parties as $i => $p) {
-                    $leadId = isset($p['opposing_lead_id']) ? (int) $p['opposing_lead_id'] : 0;
-                    $lead = ($leadId > 0) ? Admin::query()->find($leadId) : null;
-
-                    $data = [
-                        'client_id'     => $client->id,
-                        'party_role'    => $p['party_role'],
-                        'sort_order'    => $i,
-                        'created_by'    => Auth::id(),
-                        'rep_firm_name' => ($p['rep_firm'] ?? '') !== '' ? $p['rep_firm'] : null,
-                        'rep_name'      => ($p['rep_name'] ?? '') !== '' ? $p['rep_name'] : null,
-                        'rep_email'     => ($p['rep_email'] ?? '') !== '' ? $p['rep_email'] : null,
-                        'rep_phone'     => ($p['rep_phone'] ?? '') !== '' ? $p['rep_phone'] : null,
-                        'notes'         => ($p['rep_notes'] ?? '') !== '' ? $p['rep_notes'] : null,
-                        'country'       => 'Australia',
-                    ];
-
-                    if (Schema::hasColumn('client_conflict_parties', 'opposing_lead_id')) {
-                        $data['opposing_lead_id'] = ($leadId > 0) ? $leadId : null;
-                    }
-
-                    if ($lead) {
-                        if ((bool) ($lead->is_company ?? false)) {
-                            $data['party_type'] = 'company';
-                            $data['company_name'] = trim((string) ($lead->company_name ?? ''))
-                                ?: trim($lead->first_name . ' ' . $lead->last_name)
-                                ?: null;
-                        } else {
-                            $data['party_type'] = 'individual';
-                            $data['first_name'] = $lead->first_name;
-                            $data['last_name'] = $lead->last_name;
-                        }
-                    } else {
-                        $name = trim((string) ($p['name'] ?? ''));
-                        $parts = preg_split('/\s+/', $name, 2);
-                        $data['party_type'] = 'individual';
-                        $data['first_name'] = $parts[0] ?? null;
-                        $data['last_name'] = $parts[1] ?? null;
-                    }
-
-                    $party = ClientConflictParty::create($data);
-
-                    if ($lead && $lead->phone) {
-                        ConflictPartyContact::create([
-                            'conflict_party_id' => $party->id,
-                            'contact_type'      => 'Mobile',
-                            'country_code'      => '+61',
-                            'phone'             => $lead->phone,
-                        ]);
-                    }
-
-                    if ($lead && $lead->email && ! str_ends_with((string) $lead->email, '@lead.internal')) {
-                        ConflictPartyEmail::create([
-                            'conflict_party_id' => $party->id,
-                            'email_type'        => 'Personal',
-                            'email'             => $lead->email,
-                        ]);
-                    }
-                }
-            });
-
-            $count = ClientConflictParty::where('client_id', $client->id)->count();
-            $this->logClientActivity($client->id, 'updated other parties', $count . ' party record(s) saved', 'activity');
+            $count = \App\Support\MatterOtherPartiesHelper::saveParties((int) $client->id, $clientMatterId, $parties);
+            $scopeLabel = $clientMatterId ? 'for this matter' : 'for this client';
+            $this->logClientActivity($client->id, 'updated other parties', $count . ' party record(s) saved ' . $scopeLabel, 'activity');
 
             return response()->json(['success' => true, 'message' => 'Other parties saved successfully.', 'count' => $count]);
         } catch (\Exception $e) {
@@ -2827,7 +2800,16 @@ class ClientPersonalDetailsController extends Controller
 
         try {
             $client->loadMissing('company');
-            $result = $service->run($client);
+            $requestedMatterId = $request->filled('client_matter_id')
+                ? (int) $request->input('client_matter_id')
+                : null;
+            $matterRef = trim((string) ($request->input('client_unique_matter_no', '')));
+            $clientMatterId = \App\Support\MatterOtherPartiesHelper::resolveClientMatterId(
+                (int) $client->id,
+                $requestedMatterId,
+                $matterRef !== '' ? $matterRef : null
+            );
+            $result = $service->run($client, $clientMatterId);
 
             $activityDetail = $result['match_count'] === 0
                 ? 'Automated search completed — no matches'

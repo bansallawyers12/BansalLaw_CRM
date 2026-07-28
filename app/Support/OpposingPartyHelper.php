@@ -56,7 +56,7 @@ class OpposingPartyHelper
                 continue;
             }
 
-            $lead = Admin::query()->find($leadId);
+            $lead = Admin::query()->with('company')->find($leadId);
             if (! $lead) {
                 throw new \InvalidArgumentException('One of the selected other parties could not be found.');
             }
@@ -66,7 +66,12 @@ class OpposingPartyHelper
             }
 
             if ($name === '') {
-                $name = trim($lead->first_name . ' ' . $lead->last_name);
+                if ((bool) ($lead->is_company ?? false)) {
+                    $name = trim((string) ($lead->company_name ?? ''))
+                        ?: trim($lead->first_name . ' ' . $lead->last_name);
+                } else {
+                    $name = trim($lead->first_name . ' ' . $lead->last_name);
+                }
             }
 
             $rows[] = self::normalizeRow($leadId, $name, $partyRole, $row);

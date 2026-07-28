@@ -27,14 +27,11 @@ class ConflictCheckService
      *     party_count: int
      * }
      */
-    public function run(Admin $client): array
+    public function run(Admin $client, ?int $clientMatterId = null): array
     {
         $client->loadMissing('company');
 
-        $parties = ClientConflictParty::where('client_id', $client->id)
-            ->with(['phones', 'emails', 'opposingLead'])
-            ->orderBy('sort_order')
-            ->get();
+        $parties = \App\Support\MatterOtherPartiesHelper::loadForConflictSearch((int) $client->id, $clientMatterId);
 
         $searchTerms = $this->buildSearchTerms($client, $parties);
 
@@ -74,7 +71,7 @@ class ConflictCheckService
         $warnings = [];
 
         if ($parties->isEmpty()) {
-            $warnings[] = 'No opposing parties are saved for this client. The search ran on this client\'s details only. Save other parties first for a fuller check.';
+            $warnings[] = 'No opposing parties are saved for this matter. The search ran on this client\'s details only. Save other parties first for a fuller check.';
         }
 
         $partyTerms = $searchTerms['parties'] ?? [];

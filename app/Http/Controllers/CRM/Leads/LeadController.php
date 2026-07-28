@@ -1566,10 +1566,10 @@ class LeadController extends Controller
             'declined' => 'Declined',
         ];
 
-        $conflictParties = \App\Models\ClientConflictParty::where('client_id', $id)
-            ->with(['phones', 'emails', 'opposingLead'])
-            ->orderBy('sort_order')
-            ->get();
+        $conflictParties = \App\Support\MatterOtherPartiesHelper::loadDisplayParties(
+            (int) $id,
+            \App\Support\MatterOtherPartiesHelper::resolveClientMatterId((int) $id, null, null)
+        );
 
         $latestConflictCheck = \App\Models\ClientConflictCheck::where('client_id', $id)
             ->orderByDesc('checked_at')

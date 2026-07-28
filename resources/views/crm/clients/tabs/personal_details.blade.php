@@ -1074,6 +1074,7 @@
                         'conflictParties'       => $conflictParties ?? collect(),
                         'latestConflictCheck'   => $latestConflictCheck ?? null,
                         'conflictCheckHistory'  => $conflictCheckHistory ?? collect(),
+                        'activeClientMatterId'  => $activeClientMatterId ?? null,
                     ])
 
                     @include('crm.clients.partials.other-matter-parties-card', [

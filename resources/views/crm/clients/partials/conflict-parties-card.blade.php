@@ -116,7 +116,9 @@
 </style>
 <link rel="stylesheet" href="{{ asset('css/crm/other-party-picker.css') }}?v={{ @filemtime(public_path('css/crm/other-party-picker.css')) ?: time() }}">
 
-<div class="card" id="conflictPartiesCard" data-client-id="{{ $fetchedData->id }}">
+<div class="card" id="conflictPartiesCard"
+     data-client-id="{{ $fetchedData->id }}"
+     data-client-matter-id="{{ $activeClientMatterId ?? '' }}">
     <div id="conflictPartiesView" class="cp-view" role="region" aria-label="Other parties summary">
         <div class="cp-card-header">
             <h3><i class="fa-solid fa-user-shield"></i> Other Parties &amp; Conflict Check</h3>
@@ -129,6 +131,12 @@
                 <i class="fa-solid fa-pen" aria-hidden="true"></i>
             </button>
         </div>
+
+        @if(! empty($activeClientMatterId))
+        <p class="text-muted mb-2" style="font-size:13px;">
+            Other parties for the active matter only. Each matter can have its own defendants.
+        </p>
+        @endif
 
         <div class="field-group">
             <span class="field-label">Recorded parties</span>
@@ -319,6 +327,7 @@
     var solicitorSearchUrl = window.CONTACT_PERSON_SEARCH_URL || @json(route('api.search.contact.person'));
     var runCheckUrl = @json(route('clients.conflictCheck.run'));
     var clientId = card.getAttribute('data-client-id');
+    var clientMatterId = card.getAttribute('data-client-matter-id') || '';
     var latestOutcome = @json($latestOutcome);
     var lastSearchTerms = null;
     var lastMatches = null;
@@ -619,6 +628,9 @@
             fd.append('id', clientId);
             fd.append('section', 'conflictParties');
             fd.append('conflict_parties_json', JSON.stringify(parties));
+            if (clientMatterId) {
+                fd.append('client_matter_id', clientMatterId);
+            }
             savePartiesBtn.disabled = true;
             fetch('{{ url('/clients/save-section') }}', {
                 method: 'POST',
@@ -635,16 +647,8 @@
                     savePartiesBtn.disabled = false;
                     if (res.ok && res.data.success) {
                         toast(res.data.message || 'Saved', true);
-                        initialParties = parties;
-                        refreshViewSummary(parties, res.data.count);
-                        searchWasRun = false;
-                        lastSearchTerms = null;
-                        lastMatches = null;
-                        if (latestOutcome === 'clear' || latestOutcome === 'waived') {
-                            var stale = document.getElementById('cpStaleHint');
-                            if (stale) stale.style.display = '';
-                        }
-                        setEditMode(false);
+                        // Reload so Client Matters list and this tile stay in sync for the active matter.
+                        window.setTimeout(function () { window.location.reload(); }, 400);
                     } else {
                         toast((res.data && res.data.message) || 'Save failed', false);
                     }
@@ -688,6 +692,9 @@
             var fd = new FormData();
             fd.append('_token', token ? token.getAttribute('content') : '');
             fd.append('id', clientId);
+            if (clientMatterId) {
+                fd.append('client_matter_id', clientMatterId);
+            }
             runCheckBtn.disabled = true;
             renderWarnings([]);
             if (statusEl) statusEl.textContent = 'Searching…';
