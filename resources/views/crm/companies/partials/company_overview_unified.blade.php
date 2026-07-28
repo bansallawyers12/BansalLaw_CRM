@@ -4,9 +4,6 @@
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h3><i class="fa-solid fa-building"></i> Company Information</h3>
         <div style="display:flex; align-items:center; gap:12px;">
-            @if(!empty($cdnHeroLastUpdateOn))
-                <span class="text-muted" style="font-size:12px; white-space:nowrap;">Last update on {{ $cdnHeroLastUpdateOn }}</span>
-            @endif
             @if(empty($isClosedMatterView))
             <a href="{{ route('clients.edit', base64_encode(convert_uuencode($fetchedData->id))) }}"
                class="btn btn-sm btn-primary">
@@ -71,6 +68,11 @@
         </div>
         @endif
     </div>
+    @if(!empty($cdnHeroLastUpdateOn))
+    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #edf2f7; text-align: right;">
+        <span class="text-muted" style="font-size:12px;">Last update on {{ $cdnHeroLastUpdateOn }}</span>
+    </div>
+    @endif
 </div>
 
 {{-- Company Phone & Email Card --}}

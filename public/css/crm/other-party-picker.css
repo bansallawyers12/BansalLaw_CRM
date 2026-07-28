@@ -18,6 +18,13 @@
     min-width: 0;
 }
 
+.opp-party-row__top .opp-party-role-select.form-control {
+    min-height: 38px;
+    height: 38px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
 .opp-party-field {
     min-width: 0;
 }
@@ -34,6 +41,10 @@
     justify-content: flex-end;
     flex-shrink: 0;
     margin-top: 2px;
+}
+
+.opp-party-field--remove .opp-party-remove {
+    min-height: 38px;
 }
 
 /* Wide enough row: party | role | remove on one line */
@@ -122,18 +133,23 @@
     grid-column: 1 / -1;
 }
 
-/* Tom Select — readable selected state (fix solid blue bar) */
+/* Tom Select — one-line control matching native role select */
 .opp-party-row .ts-wrapper.single {
     width: 100%;
 }
 
 .opp-party-row .ts-wrapper.single .ts-control {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
     background: #fff !important;
     border: 1px solid #ced4da;
     border-radius: 6px;
     min-height: 38px;
-    padding: 4px 8px;
+    height: 38px;
+    padding: 6px 12px;
     box-shadow: none;
+    overflow: hidden;
 }
 
 .opp-party-row .ts-wrapper.single.focus .ts-control {
@@ -141,21 +157,41 @@
     box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
 }
 
+/* Selected value reads as normal select text, not a multi-select chip */
 .opp-party-row .ts-wrapper.single .ts-control .item {
-    background: #eef4ff;
-    color: #1a4480;
-    border-radius: 4px;
-    padding: 2px 8px;
-    margin: 2px 0;
+    display: block;
+    background: transparent;
+    color: #212529;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.5;
+}
+
+/* While typing to re-search, hide the selected label */
+.opp-party-row .ts-wrapper.single.input-active .ts-control .item {
+    display: none;
 }
 
 .opp-party-row .ts-wrapper.single .ts-control input {
     color: #212529 !important;
     background: transparent !important;
-    min-width: 80px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+/* Keep the empty search input from stacking under the selected name */
+.opp-party-row .ts-wrapper.single.has-items:not(.input-active) .ts-control > input {
+    position: absolute;
+    left: -9999px;
+    width: 0 !important;
+    min-width: 0 !important;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .opp-party-row .ts-wrapper.single .ts-control input::placeholder {

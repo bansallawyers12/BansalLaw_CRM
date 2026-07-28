@@ -28,9 +28,6 @@
                     <div class="card">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h3><i class="fa-solid fa-user"></i> Personal Information</h3>
-                            @if(!empty($cdnHeroLastUpdateOn))
-                                <span class="text-muted" style="font-size:12px; white-space:nowrap;">Last update on {{ $cdnHeroLastUpdateOn }}</span>
-                            @endif
                         </div>
                         <div class="field-group">
                             <span class="field-label">Age / Date of Birth</span>
@@ -229,6 +226,11 @@
                             </span>
                         </div>
                         <?php endif; ?>
+                        @if(!empty($cdnHeroLastUpdateOn))
+                        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #edf2f7; text-align: right;">
+                            <span class="text-muted" style="font-size:12px;">Last update on {{ $cdnHeroLastUpdateOn }}</span>
+                        </div>
+                        @endif
                     </div>
 
                     @php
